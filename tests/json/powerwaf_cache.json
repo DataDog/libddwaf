@@ -1,0 +1,66 @@
+{
+	"manifest": {
+		"param": {
+			"inherit_from": "param",
+			"run_on_value": true,
+			"run_on_key": true
+		},
+		"param2": {
+			"inherit_from": "param2",
+			"run_on_value": true,
+			"run_on_key": true
+		}
+	},
+	"rules": [
+		{
+			"rule_id": "1",
+			"filters": [
+				{
+					"operator": "@rx",
+					"targets": [
+						"param"
+					],
+					"transformations": [],
+					"value": "Sqreen"
+				}
+			]
+		}, {
+			"rule_id": "2",
+			"filters": [
+				{
+					"operator": "@rx",
+					"targets": [
+						"param2"
+					],
+					"transformations": [],
+					"value": "Sqreen"
+				}
+			]
+		}
+	],
+	"flows": [
+		{
+			"name": "flow1",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"1", "2"
+					],
+					"on_fail": "exit_flow",
+					"on_match": "step2"
+				},
+				{
+					"id": "step2",
+					"rule_ids": [
+						"1"
+					],
+					"on_fail": "exit_flow",
+					"on_match": "exit_monitor"
+				}
+			]
+		}
+	]
+}
+
+

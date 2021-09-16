@@ -1,0 +1,25 @@
+LIBRARY ddwaf
+EXPORTS
+  ddwaf_init
+  ddwaf_destroy
+  ddwaf_context_init
+  ddwaf_run
+  ddwaf_context_destroy
+  ddwaf_result_free
+  ddwaf_object_invalid
+  ddwaf_object_string
+  ddwaf_object_stringl
+  ddwaf_object_stringl_nc
+  ddwaf_object_unsigned
+  ddwaf_object_signed
+  ddwaf_object_unsigned_force
+  ddwaf_object_signed_force
+  ddwaf_object_array
+  ddwaf_object_map
+  ddwaf_object_array_add
+  ddwaf_object_map_add
+  ddwaf_object_map_addl
+  ddwaf_object_map_addl_nc
+  ddwaf_object_free
+  ddwaf_get_version
+  ddwaf_set_log_cb

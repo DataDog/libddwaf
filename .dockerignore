@@ -1,0 +1,7 @@
+*.a
+*.so
+*.o
+/Debug
+/Release
+/RelWithDebInfo
+/perf

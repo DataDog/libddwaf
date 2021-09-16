@@ -1,0 +1,86 @@
+{
+	"manifest":
+	{
+		"ARGS1":
+		{
+			"inherit_from": "blob0",
+			"run_on_key": false,
+			"run_on_value": true,
+			"processor":[{
+				"regex_subset": "^.(.+).$"
+			}, {
+				"transforms": ["lowercase"],
+				"regex_subset": "^123(rule\\d+\\s*)"
+			}]
+		},
+		"ARGS2": {
+			"inherit_from": "blob1",
+			"run_on_value": false,
+			"run_on_key": true,
+			"need_cache": true,
+			"processor":[{
+				"transforms": ["normalizePath"],
+				"regex_subset": "^.(.+)$"
+			}, {
+				"transforms": ["lowercase"],
+				"regex_subset": "^(.*)$"
+			}]
+		},
+		"ARGS3": {
+			"inherit_from": "blob2",
+			"run_on_value": true,
+			"run_on_key": true
+		}
+	},
+	"rules": [
+		{
+			"rule_id": "1",
+			"filters": [
+				{
+					"operator": "@rx",
+					"targets": [
+						"ARGS1",
+						"ARGS3"
+					],
+					"transformations": ["compressWhiteSpace"],
+					"value": "^rule1"
+				}
+			]
+		},
+		{
+			"rule_id": "2",
+			"filters": [
+				{
+					"operator": "@rx",
+					"targets": [
+						"ARGS2",
+						"ARGS3"
+					],
+					"value": "^rule2$"
+				}
+			]
+		}
+	],
+	"flows": [
+		{
+			"name": "flow1",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"1"
+					],
+					"on_match": "exit_block",
+					"on_fail": "step1"
+				},
+				{
+					"id": "step1",
+					"rule_ids": [
+						"2"
+					],
+					"on_match": "exit_monitor"
+				}
+			]
+		}
+	]
+}

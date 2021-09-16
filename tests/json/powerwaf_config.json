@@ -1,0 +1,47 @@
+{
+  "config": {
+      "stop_on_missing_target": true
+  },
+  "manifest": {
+	  "value": {
+		  "inherit_from": "value",
+		  "run_on_value": true,
+		  "run_on_key": false
+	  },
+	  "key": {
+		  "inherit_from": "key",
+		  "run_on_value": false,
+		  "run_on_key": true
+	  }
+  },
+  "rules": [
+    {
+      "rule_id": "1",
+      "filters": [
+        {
+          "operator": "@rx",
+          "targets": [
+            "value",
+            "key"
+          ],
+          "transformations": [],
+          "value": "rule1"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "flow1",
+      "steps": [
+        {
+          "id": "start",
+          "rule_ids": [
+            "1"
+          ],
+          "on_match": "exit_block"
+        }
+      ]
+    }
+  ]
+}

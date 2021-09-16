@@ -1,0 +1,167 @@
+// Unless explicitly stated otherwise all files in this repository are
+// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
+//
+// This product includes software developed at Datadog (https://www.datadoghq.com/).
+// Copyright 2021 Datadog, Inc.
+
+#include "test.h"
+
+void populateManifest(PWManifest& manifest);
+
+TEST(TestAdditive, TestMultiCall)
+{
+    //Initialize a PowerWAF rule
+    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2], regex: .*}}], action: record}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object param1, param2, tmp;
+    ddwaf_object_map(&param1);
+    ddwaf_object_map(&param2);
+
+    ddwaf_object_map_add(&param1, "arg1", ddwaf_object_string(&tmp, "string 1"));
+    ddwaf_object_map_add(&param2, "arg2", ddwaf_object_string(&tmp, "string 2"));
+
+    ddwaf_result ret;
+
+    // Run with just arg1
+    auto code = ddwaf_run(context, &param1, &ret, LONG_TIME);
+    EXPECT_EQ(code, DDWAF_GOOD);
+    EXPECT_EQ(ret.action, DDWAF_GOOD);
+    ddwaf_result_free(&ret);
+
+    // Run with both arg1 and arg2
+    code = ddwaf_run(context, &param2, &ret, LONG_TIME);
+    EXPECT_EQ(code, DDWAF_MONITOR);
+    EXPECT_EQ(ret.action, DDWAF_MONITOR);
+    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":".*","binding_accessor":"arg1","manifest_key":"arg1","resolved_value":"string 1","match_status":"string 1"},{"operator":"match_regex","operator_value":".*","binding_accessor":"arg2","manifest_key":"arg2","resolved_value":"string 2","match_status":"string 2"}]}])");
+    ddwaf_result_free(&ret);
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestAdditive, TestBad)
+{
+    EXPECT_EQ(ddwaf_context_init(nullptr, nullptr), nullptr);
+
+    ddwaf_object object, tmp;
+    ddwaf_object_string(&object, "stringvalue");
+
+    // Since the call was performed with a null context, the parameters will not
+    // be freed.
+    EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, 0), DDWAF_ERR_INVALID_ARGUMENT);
+    ddwaf_object_free(&object);
+
+    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2], regex: .*}}], action: record}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ASSERT_NE(context, nullptr);
+
+    // In case of an invalid object, the parameters will be freed on the spot
+    ddwaf_object_string(&object, "stringvalue");
+    EXPECT_EQ(ddwaf_run(context, &object, nullptr, 0), DDWAF_ERR_INVALID_OBJECT);
+
+    // In case of timeout, the parameters will be owned by the context and freed
+    // during destruction
+    object = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&object, "arg1", ddwaf_object_string(&tmp, "value"));
+    EXPECT_EQ(ddwaf_run(context, &object, nullptr, 0), DDWAF_ERR_TIMEOUT);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+
+    EXPECT_NO_FATAL_FAILURE(ddwaf_context_destroy(nullptr));
+}
+
+TEST(TestAdditive, TestParameterOverride)
+{
+    //Initialize a PowerWAF rule
+    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: ^string.*}}, {operation: match_regex, parameters: {inputs: [arg2], regex: .*}}], action: record}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object param1 = DDWAF_OBJECT_MAP, param2 = DDWAF_OBJECT_MAP, tmp;
+
+    ddwaf_object_map_add(&param1, "arg1", ddwaf_object_string(&tmp, "not string 1"));
+    ddwaf_object_map_add(&param1, "arg2", ddwaf_object_string(&tmp, "string 2"));
+
+    ddwaf_object_map_add(&param2, "arg1", ddwaf_object_string(&tmp, "string 1"));
+
+    // Run with both arg1 and arg2, but arg1 is wrong
+    //	// Run with just arg1
+    ddwaf_result ret;
+    auto code = ddwaf_run(context, &param1, &ret, LONG_TIME);
+    EXPECT_EQ(code, DDWAF_GOOD);
+    EXPECT_EQ(ret.action, DDWAF_GOOD);
+    ddwaf_result_free(&ret);
+
+    // Override `arg1`
+    code = ddwaf_run(context, &param2, &ret, LONG_TIME);
+    EXPECT_EQ(code, DDWAF_MONITOR);
+    EXPECT_EQ(ret.action, DDWAF_MONITOR);
+    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"^string.*","binding_accessor":"arg1","manifest_key":"arg1","resolved_value":"string 1","match_status":"string 1"},{"operator":"match_regex","operator_value":".*","binding_accessor":"arg2","manifest_key":"arg2","resolved_value":"string 2","match_status":"string 2"}]}])");
+    ddwaf_result_free(&ret);
+
+    // Run again without change
+    code = ddwaf_run(context, ddwaf_object_map(&tmp), &ret, LONG_TIME);
+    EXPECT_EQ(code, DDWAF_GOOD);
+    EXPECT_EQ(ret.action, DDWAF_GOOD);
+    ddwaf_result_free(&ret);
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestAdditive, SelectiveRerun)
+{
+    PWManifest manifest;
+    populateManifest(manifest);
+
+    PWRetriever retriever(manifest, DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
+
+    // Manufacture parameters
+    ddwaf_object map = DDWAF_OBJECT_MAP, tmp;
+    ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "valueA"));
+    ddwaf_object_map_add(&map, "mixed", ddwaf_object_string(&tmp, "valueB"));
+    ddwaf_object_map_add(&map, "mixed2", ddwaf_object_string(&tmp, "valueC"));
+
+    // Let the fun start
+    retriever.addParameter(map);
+    retriever.newestBatch.clear();
+    retriever.newestBatch.insert(manifest.getTargetArgID("mixed"));
+    retriever.runOnNewOnly = true;
+
+    // We're expecting to skip the first and last parameters
+    std::vector<PWManifest::ARG_ID> targets = {
+        manifest.getTargetArgID("value"),
+        manifest.getTargetArgID("mixed"),
+        manifest.getTargetArgID("mixed2")
+    };
+
+    auto& iter = retriever.getIterator(targets);
+
+    EXPECT_EQ(iter.getActiveTarget(), manifest.getTargetArgID("mixed"));
+
+    retriever.moveIteratorForward(iter);
+
+    EXPECT_TRUE(iter.isOver());
+
+    ddwaf_object_free(&map);
+}

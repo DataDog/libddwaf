@@ -1,0 +1,24 @@
+version: '1.0'
+events:
+  - id: 1
+    tags:
+      type: flow1
+    conditions:
+      - operation: match_regex
+        parameters:
+          inputs:
+              - blob1:a
+              - blob2:-1
+              - blob3:alpha
+          regex: target
+    action: record
+  - id: 2
+    tags:
+      type: flow2
+    conditions:
+      - operation: match_regex
+        parameters:
+          inputs:
+              - arg
+          regex: target
+    action: record

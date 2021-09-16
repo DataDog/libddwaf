@@ -1,0 +1,25 @@
+version: '1.0'
+events:
+  - id: 2
+    tags:
+      type: flow1
+    conditions:
+      - operation: match_regex
+        parameters:
+          inputs:
+            - param2
+          regex: Sqreen
+    action: record
+  - id: 1
+    tags:
+      type: flow1
+    conditions:
+      - operation: match_regex
+        parameters:
+          inputs:
+            - param1
+          regex: Sqreen
+          options:
+            case_sensitive: true
+    action: record
+

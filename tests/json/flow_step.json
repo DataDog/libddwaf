@@ -1,0 +1,31 @@
+[
+	{
+		"id": "start",
+		"rule_ids": [
+			"1504",
+			"4242"
+		],
+		"on_match": "exit_monitor",
+		"on_fail": "lol"
+	},
+	{
+		"id": "lol",
+		"rule_ids": [
+			"4353"
+		],
+		"on_fail": "exit_block",
+		"on_match": "heisenWAF"
+	},
+	{
+		"id": "heisenWAF",
+		"rule_ids": [
+			"4353",
+			"1504",
+			"4242"
+		],
+		"on_match": "exit_block",
+		"on_fail": "exit_monitor"
+	}
+]
+ 
+

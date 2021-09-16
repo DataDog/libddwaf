@@ -1,0 +1,13 @@
+version: '1.0'
+events:
+  - id: 1
+    tags:
+      type: test_rule
+    conditions:
+      - operation: match_regex
+        parameters:
+          inputs:
+            - value
+          regex: .*
+    action: record
+

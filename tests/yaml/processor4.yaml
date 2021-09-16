@@ -1,0 +1,23 @@
+version: '1.0'
+events:
+  - id: 1
+    tags:
+      type: flow1
+    conditions:
+      - operation: match_regex
+        parameters:
+          inputs:
+            - param1
+          regex: Sqreen
+    action: record
+  - id: 2
+    tags:
+      type: flow2
+    conditions:
+      - operation: match_regex
+        parameters:
+          inputs:
+            - param2
+          regex: Sqreen
+    action: record
+

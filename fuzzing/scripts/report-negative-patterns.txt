@@ -1,0 +1,17 @@
+INITED cov
+REDUCE cov
+NEW \{1,\}cov
+NEW_FUNC
+RELOAD cov
+pulse \{1,\}cov
+INFO: seed
+INFO: Seed
+INFO: Loaded
+[0-9]\{1,\} files found in corpus
+[0-9]\{1,\} files from corpus
+# Uses: [0-9]\{1,\}
+Base64
+###### Recommended dictionary. ######
+###### End of recommended dictionary. ######
+Dictionary: [0-9]\{1,\} entries
+Done [0-9]\{1,\} runs in [0-9]\{1,\} second(s)

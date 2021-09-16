@@ -1,0 +1,106 @@
+{
+	"manifest": {
+		"value": {
+			"inherit_from": "value",
+			"run_on_value": true,
+			"run_on_key": true
+		}
+	},
+	"rules": [
+		{
+			"rule_id": "eq_noNull_lc",
+			"filters": [
+				{
+					"operator": "@eq",
+					"targets": ["value"],
+					"transformations": ["removeNulls", "lowercase"],
+					"value": "string to match"
+				}
+			]
+		},
+		{
+			"rule_id": "eq_noNull",
+			"filters": [
+				{
+					"operator": "@eq",
+					"targets": ["value"],
+					"transformations": ["removeNulls"],
+					"value": "string to match"
+				}
+			]
+		},
+		{
+			"rule_id": "eq_lc",
+			"filters": [
+				{
+					"operator": "@eq",
+					"targets": ["value"],
+					"transformations": ["lowercase"],
+					"value": "string to match"
+				}
+			]
+		},
+		{
+			"rule_id": "eq",
+			"filters": [
+				{
+					"operator": "@eq",
+					"targets": ["value"],
+					"transformations": [],
+					"value": "string to match"
+				}
+			]
+		}
+	],
+	"flows": [
+		{
+			"name": "eq_noNull_lc",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"eq_noNull_lc"
+					],
+					"on_match": "exit_monitor"
+				}
+			]
+		},
+		{
+			"name": "eq_noNull",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"eq_noNull"
+					],
+					"on_match": "exit_monitor"
+				}
+			]
+		},
+		{
+			"name": "eq_lc",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"eq_lc"
+					],
+					"on_match": "exit_monitor"
+				}
+			]
+		},
+		{
+			"name": "eq",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"eq"
+					],
+					"on_match": "exit_monitor"
+				}
+			]
+		}
+	]
+}
+

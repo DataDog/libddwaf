@@ -1,0 +1,41 @@
+[
+	{
+		"name": "crs_monitor",
+		"steps": [
+			{
+				"id": "start",
+				"rule_ids": [
+					"1504",
+					"4242"
+				],
+				"on_match": "exit_monitor"
+			}
+		]
+	},
+	{
+		"name": "crs_block",
+		"steps": [
+			{
+				"id": "start",
+				"rule_ids": [
+					"4353"
+				],
+				"on_fail": "exit_block"
+			}
+		]
+	},
+	{
+		"name": "crs_block",
+		"steps": [
+			{
+				"id": "start",
+				"rule_ids": [
+					"4353"
+				],
+				"on_match": "exit_block",
+				"on_fail": "exit_block"
+			}
+		]
+	}
+]
+

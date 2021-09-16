@@ -1,0 +1,71 @@
+{
+	"manifest": {
+		"keys": {
+			"inherit_from": "keys",
+			"run_on_value": true,
+			"run_on_key": true
+		},
+		"values": {
+			"inherit_from": "values",
+			"run_on_value": true,
+			"run_on_key": true
+		}
+	},
+	"rules": [
+		{
+			"rule_id": "1504",
+			"filters": [
+				{
+					"operator": "@rx",
+					"targets": [
+						"keys",
+						"values"
+					],
+					"transformations": [],
+					"value": "bla"
+				}
+			]
+		},
+		{
+			"rule_id": "4353",
+			"filters": [
+				{
+					"operator": "@rx",
+					"targets": [
+						"keys",
+						"values"
+					],
+					"transformations": [],
+					"value": "bla"
+				}
+			]
+		}
+	],
+	"flows": [
+		{
+			"name": "crs_monitor",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"1504"
+					],
+					"on_match": "exit_monitor"
+				}
+			]
+		},
+		{
+			"name": "crs_block",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"4353"
+					],
+					"on_match": "exit_block"
+				}
+			]
+		}
+	]
+}
+

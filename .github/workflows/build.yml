@@ -1,0 +1,233 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - "*"
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron:  30 0 * * *
+jobs:
+  llvm-builds:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - amd64
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: docker/setup-qemu-action@v1
+        with:
+          platforms: ${{ matrix.arch }}
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+      - name: Build and test
+        run: docker builder build -f docker/libddwaf/gcc/linux/Dockerfile --platform=linux/${{matrix.arch}} -o /tmp/ .
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libddwaf-linux-${{matrix.arch}}
+          path: /tmp/opt/packages
+
+  windows-builds:
+    runs-on: vs2017-win2016
+    strategy:
+      matrix:
+        arch:
+          - Win32
+          - x64
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Create Directories
+        run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
+      - name: Generating Build Scripts
+        run: cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIBDDWAF_PACKAGE_PROCESSOR=${{ matrix.arch }} -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }} -A ${{ matrix.arch }}
+        working-directory: ${{ github.workspace }}/build
+      - name: Build
+        run: cmake --build . --target package --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target tests/testPowerWAF -j
+        working-directory: ${{ github.workspace }}/build
+      - name: Test
+        run: ${{ github.workspace }}/build/tests/testPowerWAF
+        working-directory: ${{ github.workspace }}/tests
+      - name: Remove Temporary Files
+        run: cmake -E remove_directory _CPack_Packages
+        working-directory: ${{ github.workspace }}/packages
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libddwaf-windows-${{ matrix.arch }}
+          path: ${{ github.workspace }}/packages
+
+  macos-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Create Build Directory
+        run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
+      - name: Generating Build Scripts
+        run: cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
+        working-directory: ${{ github.workspace }}/build
+      - name: Build Binaries
+        run: cmake --build . --config RelWithDebInfo --verbose --target all --target testPowerWAF -j
+        working-directory: ${{ github.workspace }}/build
+      - name: Test
+        run: ${{ github.workspace }}/build/tests/testPowerWAF
+        working-directory: ${{ github.workspace }}/tests
+      - name: Build Packages
+        run: cmake --build . --target package --config RelWithDebInfo --verbose
+        working-directory: ${{ github.workspace }}/build
+      - name: Remove Temporary Files
+        run: cmake -E remove_directory _CPack_Packages
+        working-directory: ${{ github.workspace }}/packages
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libddwaf-macos
+          path: ${{ github.workspace }}/packages
+
+  docker-builds:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - name: linux_musl
+            dockerfile: docker/libddwaf/alpine/Dockerfile
+            package: libddwaf-linux-musl
+          - name: linux_glibc
+            dockerfile: docker/libddwaf/manylinux/Dockerfile
+            package: libddwaf-linux-glibc
+          - name: mingw64
+            dockerfile: docker/libddwaf/gcc/mingw64/Dockerfile
+            package: libddwaf-linux-mingw64
+          - name: aarch64
+            qemu_action_arch: arm64
+            dockerfile: docker/libddwaf/aarch64/Dockerfile
+            check_script: docker/libddwaf/aarch64/check
+            package: libddwaf-linux-aarch64
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+      - uses: docker/setup-qemu-action@v1
+        if: matrix.target.qemu_action_arch == 'arm64'
+        with:
+          platforms: ${{ matrix.target.qemu_action_arch }}
+      - run: docker build -f ${{ matrix.target.dockerfile }} -o /tmp/packages .
+      - run: ${{ matrix.target.check_script }}
+        if: matrix.target.check_script
+        name: Invoke check script
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.target.package }}
+          path: /tmp/packages
+  test-asan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Build PowerWAF
+        env:
+          CC: gcc-9
+          CXX: g++-9
+        run: |
+          set -ex
+          mkdir Debug && cd Debug
+          cmake .. -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address -fsanitize=leak -DASAN_BUILD" \
+            -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=leak -DASAN_BUILD" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address -fsanitize=leak" \
+            -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address -fsanitize=leak"
+          VERBOSE=1 make -j testPowerWAF
+      - name: Test PowerWAF
+        run: |
+          set -ex
+          cd Debug
+          ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" \
+            LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5 CTEST_OUTPUT_ON_FAILURE=1 \
+            make test
+
+
+  package-nuget:
+    needs: [ windows-builds, macos-build, docker-builds, llvm-builds ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: nuget/setup-nuget@v1
+        with:
+          nuget-version: '5.x'
+
+      - uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Package Nuget
+        run: |
+          mkdir ./temp
+
+          # extract binaries
+          mkdir ./temp/linux-x64
+          unzip ./artifacts/libddwaf-linux-glibc/libddwaf-*-linux-x86_64-glibc*.zip -d ./temp/linux-x64
+
+          mkdir ./temp/linux-musl-x64
+          unzip ./artifacts/libddwaf-linux-musl/libddwaf-*-linux-x86_64-muslc*.zip -d ./temp/linux-musl-x64
+
+          mkdir ./temp/osx-x64
+          unzip ./artifacts/libddwaf-macos/libddwaf-*-darwin-x86_64*.zip -d ./temp/osx-x64
+
+          mkdir ./temp/win-x86
+          unzip ./artifacts/libddwaf-windows-Win32/libddwaf-*-windows-win32*.zip -d ./temp/win-x86
+
+          mkdir ./temp/win-x64
+          unzip ./artifacts/libddwaf-windows-x64/libddwaf-*-windows-x64*.zip -d ./temp/win-x64
+
+          # move binaries to location nuget expects
+          mkdir ./packages/nuget/runtimes
+
+          mkdir ./packages/nuget/runtimes/linux-x64
+          mkdir ./packages/nuget/runtimes/linux-x64/native
+          cp ./temp/linux-x64/libddwaf-*-linux-x86_64-glibc*/lib64/libddwaf.so ./packages/nuget/runtimes/linux-x64/native
+
+          mkdir ./packages/nuget/runtimes/linux-musl-x64
+          mkdir ./packages/nuget/runtimes/linux-musl-x64/native
+          cp ./temp/linux-musl-x64/libddwaf-*-linux-x86_64-muslc*/lib64/libddwaf.so ./packages/nuget/runtimes/linux-musl-x64/native
+
+          mkdir ./packages/nuget/runtimes/osx-x64
+          mkdir ./packages/nuget/runtimes/osx-x64/native
+          cp ./temp/osx-x64/libddwaf-*-darwin-x86_64*/lib/libddwaf.dylib ./packages/nuget/runtimes/osx-x64/native
+
+          mkdir ./packages/nuget/runtimes/win-x86
+          mkdir ./packages/nuget/runtimes/win-x86/native
+          cp ./temp/win-x86/libddwaf-*-windows-win32*/lib/ddwaf.dll ./packages/nuget/runtimes/win-x86/native
+
+          mkdir ./packages/nuget/runtimes/win-x64
+          mkdir ./packages/nuget/runtimes/win-x64/native
+          cp ./temp/win-x64/libddwaf-*-windows-x64*/lib/ddwaf.dll ./packages/nuget/runtimes/win-x64/native
+
+          # create nuget
+          version=`cat ./version`
+          echo Version is: $version
+
+          mkdir output-packages
+          nuget pack ./packages/nuget/libddwaf.nuspec -Version $version -OutputDirectory ./output-packages
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: nuget
+          path: ${{ github.workspace }}/output-packages

@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>libddwaf</id>
+    <version>0</version>
+    <title>libddwaf - native bindings</title>
+    <authors>datadog</authors>
+    <owners>datadog</owners>
+    <license type="expression">Apache-2.0 OR BSD-3-Clause</license>
+    <projectUrl>https://github.com/dataDog/dd-trace-dotnet</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>The Datadog libddwaf native bindings for .NET</description>
+    <summary>The Datadog libddwaf native bindings for .NET</summary>
+    <releaseNotes>Release of libddwaf</releaseNotes>
+    <copyright>Copyright 2015-2021</copyright>
+    <tags>native C C++ nativepackage</tags>
+  </metadata>
+  <files>
+    <file src="..\..\LICENSE" target="LICENSE" />
+    <file src="..\..\LICENSE-3rdparty.csv" target="LICENSE-3rdparty.csv" />
+    <file src="..\..\LICENSE.Apache" target="LICENSE.Apache" />
+    <file src="..\..\LICENSE.BSD3" target="LICENSE.BSD3" />
+    <file src="..\..\NOTICE" target="NOTICE" />
+    <file src="runtimes\**\*" target="runtimes" />
+  </files>
+</package>

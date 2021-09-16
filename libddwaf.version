@@ -1,0 +1,4 @@
+LIBDDWAF_1.0 {
+	global: ddwaf_*;
+	local: *;
+};

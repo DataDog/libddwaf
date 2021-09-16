@@ -1,0 +1,6 @@
+[submodule "third_party/spdlog"]
+	path = third_party/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "third_party/lua-aho-corasick"]
+	path = third_party/lua-aho-corasick
+	url = https://github.com/sqreen/lua-aho-corasick.git

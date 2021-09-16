@@ -1,0 +1,100 @@
+{
+	"manifest": {
+		"value": {
+			"inherit_from": "value",
+			"run_on_value": true,
+			"run_on_key": false
+		},
+		"key": {
+			"inherit_from": "key",
+			"run_on_value": false,
+			"run_on_key": true
+		},
+		"mixed": {
+			"inherit_from": "mixed",
+			"run_on_value": true,
+			"run_on_key": true
+		}
+	},
+	"rules": [
+		{
+			"rule_id": "1",
+			"filters": [
+				{
+					"operator": "@rx",
+					"targets": [
+						"key",
+						"value",
+						"mixed"
+					],
+					"transformations": [],
+					"value": "rule1"
+				}
+			]
+		},
+		{
+			"rule_id": "2",
+			"filters": [
+				{
+					"operator": "@rx",
+					"targets": [
+						"value"
+					],
+					"transformations": [],
+					"value": "rule2"
+				}
+			]
+		},
+		{
+			"rule_id": "3",
+			"filters": [
+				{
+					"operator": "@rx",
+					"targets": [
+						"key"
+					],
+					"transformations": [],
+					"value": "rule3"
+				}
+			]
+		}
+	],
+	"flows": [
+		{
+			"name": "flow1",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"1"
+					],
+					"on_fail": "exit_flow",
+					"on_match": "exit_block"
+				}
+			]
+		},
+		{
+			"name": "flow2",
+			"steps": [
+				{
+					"id": "start",
+					"rule_ids": [
+						"1"
+					],
+					"on_match": "exit_flow",
+					"on_fail": "step2"
+				},
+				{
+					"id": "step2",
+					"rule_ids": [
+						"2",
+						"3"
+					],
+					"on_match": "exit_monitor",
+					"on_fail": "exit_flow"
+				}
+			]
+		}
+	]
+}
+
