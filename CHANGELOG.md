@@ -1,5 +1,10 @@
 # libddwaf release
 
+### v1.0.11 (unstable) - 2021/09/16
+- Improve contributor onboarding and readme.
+- Cross-compile aarch64 static/shared libraries.
+- Improve corpus generator for fuzzer.
+
 ### v1.0.10 (unstable) - 2021/09/13
 - Add license to nuget package.
 
