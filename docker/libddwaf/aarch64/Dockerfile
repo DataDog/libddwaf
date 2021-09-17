@@ -2,7 +2,8 @@ FROM debian@sha256:08db48d59c0a91afb802ebafc921be3154e200c452e4d0b19634b426b03e0
 RUN apt-get update && \
 	apt-get install -y curl xz-utils make file cmake lld clang git patchelf
 RUN mkdir /build
-ADD docker/libddwaf/aarch64/Makefile docker/libddwaf/aarch64/CHECKSUMS /build/
+ADD docker/libddwaf/common/Makefile docker/libddwaf/common/CHECKSUMS /build/
+ENV TARGET_ARCH=aarch64
 RUN cd /build && make install && make clean
 
 FROM toolchain AS package_build

@@ -12,7 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(smoketest ${SOURCE_FILES})
 
 if(LINK_DDWAF_STATIC)
-	target_link_libraries(smoketest PRIVATE libddwaf_static -Wl,--push-state -Wl,-L/muslsysroot/lib -l:libc++.a -l:libc++abi.a -Wl,--pop-state pthread)
+	target_link_libraries(smoketest PRIVATE libddwaf_static -Wl,--push-state -Wl,-L/muslsysroot/lib -l:libc++.a -l:libc++abi.a -Wl,--pop-state)
 else()
   target_link_libraries(smoketest PRIVATE libddwaf_shared)
 endif()

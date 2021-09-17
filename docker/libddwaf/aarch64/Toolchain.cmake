@@ -12,7 +12,7 @@ set(CMAKE_CXX_COMPILER /usr/bin/clang++-11)
 set(CMAKE_CXX_COMPILER_TARGET ${triple})
 set(CMAKE_CXX_FLAGS "-stdlib=libc++ -isystem/muslsysroot/include/c++/v1 ${c_cxx_flags}")
 
-set(linker_flags "-v -fuse-ld=lld -nodefaultlibs -Wl,-Bstatic -lc++ -lc++abi /muslsysroot/lib/linux/libclang_rt.builtins-aarch64.a -lunwind -Wl,-Bdynamic -lc /muslsysroot/lib/linux/libclang_rt.builtins-aarch64.a")
+set(linker_flags "-v -fuse-ld=lld -nodefaultlibs -Wl,-Bstatic -lc++ -lc++abi /muslsysroot/lib/linux/libclang_rt.builtins-${CMAKE_SYSTEM_PROCESSOR}.a -lunwind -Wl,-Bdynamic -lc /muslsysroot/lib/linux/libclang_rt.builtins-${CMAKE_SYSTEM_PROCESSOR}.a")
 set(CMAKE_EXE_LINKER_FLAGS_INIT ${linker_flags})
 set(CMAKE_SHARED_LINKER_FLAGS_INIT ${linker_flags})
 

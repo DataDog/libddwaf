@@ -1,6 +1,6 @@
 set(target x86_64-none-linux-gnu)
 set(tool_prefix "")
-#set(CMAKE_SYSROOT /gcctoolchain/${target}/libc)
+set(CMAKE_SYSROOT /)
 set(CMAKE_AR ${tool_prefix}ar)
 set(CMAKE_ASM_COMPILER_TARGET ${target})
 set(CMAKE_C_COMPILER ${tool_prefix}gcc)
