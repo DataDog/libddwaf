@@ -113,7 +113,7 @@ jobs:
             check_script: docker/libddwaf/aarch64/check
             package: libddwaf-linux-aarch64
           - name: x86_64
-            qemu_action_arch: arm64
+            qemu_action_arch: amd64
             dockerfile: docker/libddwaf/x86_64/Dockerfile
             check_script: docker/libddwaf/x86_64/check
             package: libddwaf-linux-x86_64
