@@ -88,6 +88,10 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 # needed for glibc <2.17. We compile with --as-needed so the library won't
 # be linked on more 2.17+, but dependencies might since it's part of the public
 # interface of the target
+    find_library(LIBPTHREAD pthread)
+    if (LIBPTHREAD)
+        list(APPEND LIBDDWAF_INTERFACE_LIBRARIES pthread)
+    endif()
     find_library(LIBRT rt)
     if (LIBRT)
         list(APPEND LIBDDWAF_INTERFACE_LIBRARIES rt)
