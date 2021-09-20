@@ -27,17 +27,6 @@ PWManifest::ArgDetails::ArgDetails(const std::string& addr)
     }
 }
 
-std::vector<std::string_view> PWManifest::get_root_addresses()
-{
-    std::vector<std::string_view> addresses;
-    for (const auto& [id, details]: argManifest) {
-        if (details.keyPaths.empty()) {
-            addresses.push_back(details.inheritFrom);
-        }
-    }
-    return addresses;
-}
-
 void PWManifest::reserve(std::size_t count)
 {
     argIDTable.reserve(count);
@@ -48,6 +37,12 @@ void PWManifest::insert(std::string_view name, PWManifest::ArgDetails&& arg)
 {
     argManifest.emplace(counter, std::move(arg));
     argIDTable.emplace(name, counter);
+
+    auto &details = argManifest.find(counter)->second;
+    if (details.keyPaths.empty()) {
+       root_addresses.push_back(details.inheritFrom.c_str());
+    }
+
     ++counter;
 }
 
