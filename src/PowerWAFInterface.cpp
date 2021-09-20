@@ -89,6 +89,38 @@ extern "C"
         }
     }
 
+    char** ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size) {
+        if (handle == nullptr)
+        {
+            return nullptr;
+        }
+
+        PowerWAF *waf = reinterpret_cast<PowerWAF *>(handle);
+        auto addresses = waf->manifest.get_root_addresses();
+
+        if (addresses.empty()) { return nullptr; }
+
+        char **output = (char **)malloc(sizeof(char *)*addresses.size());
+        if (output == nullptr) { return nullptr; }
+
+        for (size_t i = 0; i < addresses.size(); i++) {
+            auto length = addresses[i].length();
+            char *copy = (char *)malloc(length + 1);
+            if (copy == nullptr) {
+                for (size_t j = 0; j < i; j++) {
+                    free((void *)output[i]);
+                }
+                return nullptr;
+            }
+            memcpy(copy, addresses[i].data(), length);
+            copy[length] = '\0';
+            output[i] = copy;
+        }
+
+        *size = addresses.size();
+        return output;
+    }
+
     ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_object_free_fn obj_free)
     {
         ddwaf_context output = nullptr;

@@ -59,6 +59,8 @@ public:
     void insert(std::string_view name, ArgDetails &&arg);
     bool empty() { return argIDTable.empty(); }
 
+    std::vector<std::string_view> get_root_addresses();
+
 	bool hasTarget(const std::string& string) const;
 	ARG_ID getTargetArgID(const std::string& target) const;
 	const ArgDetails& getDetailsForTarget(const PWManifest::ARG_ID& argID) const;

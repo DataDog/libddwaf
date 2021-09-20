@@ -189,6 +189,18 @@ ddwaf_handle ddwaf_init(const ddwaf_object *rule, const ddwaf_config* config);
 void ddwaf_destroy(ddwaf_handle handle);
 
 /**
+ * ddwaf_required_addresses
+ *
+ * Get a list of required (root) addresses. The memory is owned by the user, each
+ * element and the array should be freed with 'free'.
+ *
+ * @param Handle to the WAF instance.
+ * @param size Output parameter in which the size will be returned. The value of
+ *             size will be undefined if the return value is NULL.
+ * @return NULL if error, otherwise a pointer to an array with size elements.
+ **/
+char** ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size);
+/**
  * ddwaf_context_init
  *
  * Context object to perform matching using the provided WAF instance.

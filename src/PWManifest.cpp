@@ -27,6 +27,17 @@ PWManifest::ArgDetails::ArgDetails(const std::string& addr)
     }
 }
 
+std::vector<std::string_view> PWManifest::get_root_addresses()
+{
+    std::vector<std::string_view> addresses;
+    for (const auto& [id, details]: argManifest) {
+        if (details.keyPaths.empty()) {
+            addresses.push_back(details.inheritFrom);
+        }
+    }
+    return addresses;
+}
+
 void PWManifest::reserve(std::size_t count)
 {
     argIDTable.reserve(count);
