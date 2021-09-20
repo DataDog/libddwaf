@@ -199,7 +199,7 @@ void ddwaf_destroy(ddwaf_handle handle);
  *             size will be 0 if the return value is nullptr.
  * @return NULL if error, otherwise a pointer to an array with size elements.
  **/
-const char** ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size);
+const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size);
 /**
  * ddwaf_context_init
  *

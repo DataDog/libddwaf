@@ -89,7 +89,7 @@ extern "C"
         }
     }
 
-    const char** ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size) {
+    const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size) {
         if (handle == nullptr)
         {
             *size = 0;

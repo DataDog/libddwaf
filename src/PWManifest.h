@@ -60,7 +60,7 @@ public:
     void insert(std::string_view name, ArgDetails &&arg);
     bool empty() { return argIDTable.empty(); }
 
-    std::vector<const char *>& get_root_addresses() { return root_addresses; };
+    const std::vector<const char *>& get_root_addresses() const { return root_addresses; };
 
 	bool hasTarget(const std::string& string) const;
 	ARG_ID getTargetArgID(const std::string& target) const;
