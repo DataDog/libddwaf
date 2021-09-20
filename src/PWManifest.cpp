@@ -37,6 +37,12 @@ void PWManifest::insert(std::string_view name, PWManifest::ArgDetails&& arg)
 {
     argManifest.emplace(counter, std::move(arg));
     argIDTable.emplace(name, counter);
+
+    auto &details = argManifest.find(counter)->second;
+    if (details.keyPaths.empty()) {
+       root_addresses.push_back(details.inheritFrom.c_str());
+    }
+
     ++counter;
 }
 

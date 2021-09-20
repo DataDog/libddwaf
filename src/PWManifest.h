@@ -45,6 +45,7 @@ public:
 private:
 	std::unordered_map<std::string, ARG_ID> argIDTable;
 	std::unordered_map<ARG_ID, ArgDetails> argManifest;
+    std::vector<const char *> root_addresses;
     ARG_ID counter{0};
 public:
     PWManifest() = default;
@@ -58,6 +59,8 @@ public:
     void reserve(std::size_t count);
     void insert(std::string_view name, ArgDetails &&arg);
     bool empty() { return argIDTable.empty(); }
+
+    const std::vector<const char *>& get_root_addresses() const { return root_addresses; };
 
 	bool hasTarget(const std::string& string) const;
 	ARG_ID getTargetArgID(const std::string& target) const;
