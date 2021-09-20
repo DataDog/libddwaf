@@ -169,13 +169,13 @@ def _get_random_array(builder, min_length=0, max_length=2, allow_none=True, **kw
 
 class InitPayloadGenerator:
     event_id_max_length = 32
-    target_key_max_length = 32
+    address_name_length = 4
 
     # Arrays max sizes
     condition_max_count = 4
     event_max_count = 100
 
-    target_max_count = 4
+    address_max_count = 4
     transformation_max_count = 10
 
     operations = [
@@ -184,7 +184,7 @@ class InitPayloadGenerator:
     ]
 
     def __init__(self):
-        self.inputs = None
+        self.addresses = None
         self.event_ids = None
 
         self.regexs = data.re2_regexs_with_metadata
@@ -211,25 +211,27 @@ class InitPayloadGenerator:
 
         self.used_operations = None
 
-    def save_value(self, value, inputs):
+    def save_value(self, value, addresses):
         self.values.add(value)
 
         if value is None:
             pass
         else:
-            for input in inputs:
-                self.inputs_values.add((input, value))
+            for address in addresses:
+                self.address_values.add((address, value))
 
     def get_payload(self):
         self.used_operations = set()
-        self.inputs = [
-            "".join(choices(printable_chars, k=_lograndint(5, self.target_key_max_length)))
-            for _ in range(self.target_max_count)
+
+        # At least one address with a ':'
+        self.addresses = ["".join(choices(printable_chars, k=self.address_name_length)) + ":x", ] + [
+            "".join(choices(printable_chars, k=self.address_name_length))
+            for _ in range(self.address_max_count)
         ]
 
         self.event_ids = []
         self.values = set()
-        self.inputs_values = set()
+        self.address_values = set()
 
         def get_random_event_id():
             result = "".join(choices(printable_chars, k=_lograndint(1, self.event_id_max_length)))
@@ -245,8 +247,8 @@ class InitPayloadGenerator:
                 "id": get_random_event_id(),
                 "name": get_random_event_name(),
                 "tags": {
-                    "type": "security_scanner",
-                    "crs_id": "913110",
+                    "type": "".join(choices(printable_chars, k=10)),
+                    "crs_id": "".join(choices(printable_chars, k=10)),
                 },
                 "conditions": get_random_condition_array(),
                 "transformers": get_random_transformation_array(),
@@ -262,8 +264,8 @@ class InitPayloadGenerator:
 
             return operation
 
-        def get_random_input_array():
-            return _get_random_array2(self.inputs, 1, self.target_max_count, allow_none=False, unique=True)
+        def get_random_address_array():
+            return _get_random_array2(self.addresses, 1, self.address_max_count, allow_none=False, unique=True)
 
         def get_random_transformation_array():
             """Id are presents in getIDForString function"""
@@ -296,37 +298,37 @@ class InitPayloadGenerator:
                 allow_none=True,
             )
 
-        def get_random_value(inputs):
+        def get_random_value(addresses):
             result = choice(self.possible_values, )
             result = result if result is not None else ""
 
-            self.save_value(result, inputs)
+            self.save_value(result, addresses)
 
             return result
 
         def get_random_condition(i):
             operation = get_random_operation()
-            inputs = get_random_input_array()
+            addresses = get_random_address_array()
 
             result = {
                 "operation": operation,
                 "parameters": {
-                    "inputs": inputs,
+                    "inputs": addresses,
                 },
             }
 
             if operation == "phrase_match":
-                result["parameters"]["list"] = [get_random_value(inputs) for _ in range(randint(1, 200))]
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
             elif operation == "match_regex":
                 temp = choice(self.regexs)
 
-                self.save_value(temp["MatchingText"], inputs)
-                self.save_value(temp["NonMatchingText"], inputs)
+                self.save_value(temp["MatchingText"], addresses)
+                self.save_value(temp["NonMatchingText"], addresses)
 
-                result["regex"] = temp["Pattern"]
-                result["options"] = {
+                result["parameters"]["regex"] = temp["Pattern"]
+                result["parameters"]["options"] = {
                   "case_sensitive": choice((True, False)),
-                  "min_length": 0
+                  "min_length": randint(0, 5),
                 }
 
             return result
@@ -343,9 +345,9 @@ class InitPayloadGenerator:
                 "events": events
             },
 
-            "inputs": self.inputs,
+            "addresses": self.addresses,
             "values": self.values,
-            "inputs_values": self.inputs_values
+            "address_values": self.address_values
         }
 
         return result
@@ -379,7 +381,7 @@ def main():
             "\x06\x06\x06",
         ]
 
-        for item in payload["inputs"] + list(payload["values"]) + libfuzz_magics:
+        for item in payload["addresses"] + list(payload["values"]) + libfuzz_magics:
             if isinstance(item, str):
                 f.write("# " + repr(item) + "\n")
                 f.write('"\\x02' + "".join(map(to_fuzz_dict, str(item))) + '\\x1f"\n')
@@ -390,11 +392,11 @@ def main():
     except FileExistsError:
         pass
 
-    for i, (input, value) in enumerate(payload["inputs_values"]):
+    for i, (input, value) in enumerate(payload["address_values"]):
         write_corpus_file(f"corpus_{i}", {input: value})
 
     print(f"{len(generator.used_operations)} operations")
-    print(f"{len(payload['inputs'])} inputs")
+    print(f"{len(payload['addresses'])} addresses")
     print(f"{len(payload['values'])} values")
 
 
