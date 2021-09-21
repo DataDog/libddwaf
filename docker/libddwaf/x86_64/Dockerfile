@@ -15,7 +15,7 @@ RUN make -C /build libddwaf && \
 	cp /build/build/libddwaf/*.tar.gz /opt && \
 	cp /build/build/libddwaf/tests/testPowerWAF /build && \
 	rm -rf /build/build
-RUN tar -C /muslsysroot/lib -czf /opt/libc++-static.tar.gz libc++.a libc++abi.a
+RUN tar -C /muslsysroot/lib -czf /opt/libc++-static-${TARGET_ARCH}-linux.tar.gz libc++.a libc++abi.a
 
 # PowerWAF tetsts
 RUN cd /build/src/libddwaf/tests && /build/testPowerWAF
