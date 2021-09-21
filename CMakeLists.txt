@@ -3,6 +3,10 @@ file(READ "version" version)
 project(libddwaf VERSION ${version})
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
+if(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR
+  CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+  set(CPU_TYPE ${CMAKE_OSX_ARCHITECTURES})
+endif()
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 17)
@@ -11,7 +15,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(LIBDDWAF_SHARED_LINKER_FLAGS "-static-libstdc++" CACHE STRING "Shared library extra linker flags")
 set(LIBDDWAF_EXE_LINKER_FLAGS "" CACHE STRING "Executable extra linker flags")
 set(LIBDDWAF_PACKAGE_SUFFIX "" CACHE STRING "Suffix for packaging purposes")
-set(LIBDDWAF_PACKAGE_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "Alternative processor for packaging purposes")
+if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+    set(LIBDDWAF_PACKAGE_PROCESSOR ${CMAKE_OSX_ARCHITECTURES} CACHE STRING "Alternative processor for packaging purposes")
+else()
+    set(LIBDDWAF_PACKAGE_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "Alternative processor for packaging purposes")
+endif()
 
 option(LIBDDWAF_BUILD_SHARED "Build shared library" ON)
 option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
@@ -144,16 +152,31 @@ if (LIBDDWAF_BUILD_STATIC)
             COMMAND ${CMAKE_COMMAND} -E copy lib_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     else()
-        add_custom_command(TARGET libddwaf_static POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory ar_comb
-            COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:libddwaf_static>
-            COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_re2>
-            COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_ac>
-            COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_injection>
-            COMMAND cd ar_comb && ${CMAKE_AR} -qcs combined${CMAKE_STATIC_LIBRARY_SUFFIX} *.o*
-            COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
-            COMMAND rm -rf ar_comb
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+        if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+          add_custom_command(TARGET libddwaf_static POST_BUILD
+              COMMAND ${CMAKE_COMMAND} -E make_directory ar_comb
+              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:libddwaf_static>
+              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_re2>
+              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_ac>
+              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_injection>
+              COMMAND cd ar_comb && libtool -static -o combined.a -arch_only ${CMAKE_OSX_ARCHITECTURES} *.o*
+
+              COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
+              COMMAND rm -rf ar_comb
+              WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+        else()
+          add_custom_command(TARGET libddwaf_static POST_BUILD
+              COMMAND ${CMAKE_COMMAND} -E make_directory ar_comb
+              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:libddwaf_static>
+              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_re2>
+              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_ac>
+              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_injection>
+              COMMAND cd ar_comb && ${CMAKE_AR} -qcs combined${CMAKE_STATIC_LIBRARY_SUFFIX} *.o*
+
+              COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
+              COMMAND rm -rf ar_comb
+              WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+        endif()
     endif()
 endif()
 
