@@ -1,14 +1,14 @@
 FROM debian@sha256:08db48d59c0a91afb802ebafc921be3154e200c452e4d0b19634b426b03e0e25 AS toolchain
 RUN apt-get update && \
-	apt-get install -y curl xz-utils make file cmake lld clang git patchelf
+	apt-get install -y curl xz-utils make file cmake lld clang git patchelf gcc libgcc-s1
 RUN mkdir /build
 ADD docker/libddwaf/common/Makefile docker/libddwaf/common/CHECKSUMS /build/
-ENV TARGET_ARCH=aarch64
+ENV TARGET_ARCH=x86_64
 RUN cd /build && make install && make clean
 
 FROM toolchain AS package_build
 ADD . /build/src/libddwaf
-ADD docker/libddwaf/aarch64/Toolchain.cmake /build/
+ADD docker/libddwaf/x86_64/Toolchain.cmake /build/
 RUN make -C /build libddwaf && \
 	make -C /build/build/libddwaf testPowerWAF && \
 	mkdir -p /opt && \
@@ -18,13 +18,12 @@ RUN make -C /build libddwaf && \
 RUN tar -C /muslsysroot/lib -czf /opt/libc++-static-${TARGET_ARCH}-linux.tar.gz libc++.a libc++abi.a
 
 # PowerWAF tetsts
-RUN apt-get update && apt-get install -y qemu-user-static
-RUN cd /build/src/libddwaf/tests && qemu-aarch64-static /build/testPowerWAF
+RUN cd /build/src/libddwaf/tests && /build/testPowerWAF
 
 # Smoke tests building
 RUN tar -xvzf /opt/libddwaf-*.tar.gz -C /muslsysroot --strip-components=1
 ENV VERBOSE=1
-WORKDIR /build/src/libddwaf/docker/libddwaf/aarch64/smoketest
+WORKDIR /build/src/libddwaf/docker/libddwaf/x86_64/smoketest
 RUN ./smoke_musl_shared.sh
 RUN ./smoke_musl_static_libgcc.sh
 RUN ./smoke_musl_static_llvm.sh

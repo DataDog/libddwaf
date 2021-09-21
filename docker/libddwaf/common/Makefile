@@ -4,21 +4,43 @@ SHELL := /bin/bash
 RELTYPE := RelWithDebInfo
 
 # need to be in sync with Toolchain*.cmake files
-GCC_TOOLCHAIN := /gcctoolchain
 MUSL_SYSROOT := /muslsysroot
-TARGET := aarch64-none-linux-musl
 
-GCC_TOOLCHAIN_VERSION := 10.3-2021.07
-GCC_TOOLCHAIN_FILE := gcc-arm-$(GCC_TOOLCHAIN_VERSION)-x86_64-aarch64-none-linux-gnu.tar.xz
+ifndef TARGET_ARCH
+	$(error TARGET_ARCH must be set e.g. aarch64)
+endif
+TARGET := $(TARGET_ARCH)-none-linux-musl
+
 
 install: .orig-sysroot-copied .libcxx-installed .libcxxabi-installed
 clean:
 	rm -rf src/ build/ *.tar.xz *.tar.gz
 .PHONY: install clean
 
+ifeq ($(TARGET_ARCH),aarch64)
+GCC_TOOLCHAIN := /gcctoolchain
+GCC_TOOL_PREFIX := $(GCC_TOOLCHAIN)/bin/aarch64-none-linux-gnu-
+GCC_TOOLCHAIN_SYSROOT := $(GCC_TOOLCHAIN)/aarch64-none-linux-gnu/libc/
+
+GCC_TOOLCHAIN_VERSION := 10.3-2021.07
+GCC_TOOLCHAIN_FILE := gcc-arm-$(GCC_TOOLCHAIN_VERSION)-x86_64-aarch64-none-linux-gnu.tar.xz
 $(GCC_TOOLCHAIN_FILE):
 	curl -o $@ -Lf https://sqreen-download-private.s3.amazonaws.com/libddwaf/$(GCC_TOOLCHAIN_FILE)
 	grep -F $@ CHECKSUMS | sha512sum --check
+
+.gcc-toolchain-installed: $(GCC_TOOLCHAIN_FILE)
+	mkdir -p $(GCC_TOOLCHAIN) && \
+		tar --strip-components=1 -C $(GCC_TOOLCHAIN) -xJf $< && \
+		touch $@
+else # amd64
+GCC_TOOLCHAIN := /usr
+GCC_TOOL_PREFIX := /usr/bin/
+GCC_TOOLCHAIN_SYSROOT := /
+
+.gcc-toolchain-installed:
+	cp -v /lib/x86_64-linux-gnu/libgcc_s.so.1 /usr/lib/gcc/x86_64-linux-gnu/10/libgcc_s.so.1
+	touch $@
+endif
 
 musl-$(MUSL_VERSION).tar.gz:
 	curl -o $@ -Lf https://musl.libc.org/releases/musl-1.2.2.tar.gz
@@ -32,10 +54,6 @@ libcxx-$(LLVM_VERSION).src.tar.xz \
 	curl -o $@ -Lf https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/$@
 	grep -F $@ CHECKSUMS | sha512sum --check
 
-.gcc-toolchain-installed: $(GCC_TOOLCHAIN_FILE)
-	mkdir -p $(GCC_TOOLCHAIN) && \
-		tar --strip-components=1 -C $(GCC_TOOLCHAIN) -xJf $< && \
-		touch $@
 
 src/musl/.finger: musl-$(MUSL_VERSION).tar.gz
 	mkdir -p src/musl && \
@@ -50,9 +68,9 @@ src/%/.finger: %-$(LLVM_VERSION).src.tar.xz
 .musl-installed: src/musl/.finger .gcc-toolchain-installed
 	mkdir -p build/musl && \
 		pushd build/musl && \
-		CC=$(GCC_TOOLCHAIN)/bin/aarch64-none-linux-gnu-gcc \
-		AR=$(GCC_TOOLCHAIN)/bin/aarch64-none-linux-gnu-ar \
-		RANLIB=$(GCC_TOOLCHAIN)/bin/aarch64-none-linux-gnu-ranlib \
+		CC=$(GCC_TOOL_PREFIX)gcc \
+		AR=$(GCC_TOOL_PREFIX)ar \
+		RANLIB=$(GCC_TOOL_PREFIX)ranlib \
 			../../src/musl/configure --prefix=$(MUSL_SYSROOT) && \
 		$(MAKE) -j && \
 		$(MAKE) install && \
@@ -124,9 +142,10 @@ COMMON_CMAKE_OPTIONS := -DCMAKE_BUILD_TYPE=$(RELTYPE) \
 		touch $@
 
 .orig-sysroot-copied: .musl-installed
-	cp -a $(GCC_TOOLCHAIN)/aarch64-none-linux-gnu/libc/usr/include/{linux,asm,asm-generic} $(MUSL_SYSROOT)/include/ && \
-	cp $(GCC_TOOLCHAIN)/lib/gcc/aarch64-none-linux-gnu/10.3.1/crtbegin{,S,T}.o $(MUSL_SYSROOT)/lib && \
-	cp $(GCC_TOOLCHAIN)/lib/gcc/aarch64-none-linux-gnu/10.3.1/crtend{,S}.o $(MUSL_SYSROOT)/lib && \
+	for dir in $(GCC_TOOLCHAIN_SYSROOT)usr/include/{linux,asm,asm-generic,$$($(GCC_TOOL_PREFIX)gcc -print-multiarch)/asm}; do \
+		test ! -d "$$dir" || cp -av "$$dir" $(MUSL_SYSROOT)/include/; done && \
+		cp $$(dirname $$($(GCC_TOOL_PREFIX)gcc -print-libgcc-file-name))/crtbegin{,S,T}.o $(MUSL_SYSROOT)/lib && \
+		cp $$(dirname $$($(GCC_TOOL_PREFIX)gcc -print-libgcc-file-name))/crtend{,S}.o $(MUSL_SYSROOT)/lib && \
 	touch $@
 
 

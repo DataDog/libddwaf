@@ -1,0 +1,30 @@
+#!/bin/bash -e
+
+set -x
+
+cd /tmp/packages
+tar -C /tmp -xf libddwaf-*.tar.gz --strip-components=2 `tar -tf libddwaf-*.tar.gz | grep /libddwaf.so`
+
+docker run --rm -i -v /tmp/packages/smoketest/gnu_static-smoketest:/usr/local/bin/smoketest \
+	ubuntu@sha256:9d6a8699fb5c9c39cf08a0871bd6219f0400981c570894cd8cbea30d3424a31f \
+	smoketest
+docker run --rm -i --platform amd64 -v /tmp/packages/smoketest/gnu_shared-smoketest:/usr/local/bin/smoketest \
+	-v /tmp/libddwaf.so:/usr/local/lib/libddwaf.so \
+  -e LD_LIBRARY_PATH=/usr/local/lib \
+	ubuntu@sha256:9d6a8699fb5c9c39cf08a0871bd6219f0400981c570894cd8cbea30d3424a31f \
+  smoketest
+
+docker run --rm -i -v /tmp/packages/smoketest/musl_static_libgcc-smoketest:/usr/local/bin/smoketest \
+  alpine@sha256:e1c082e3d3c45cccac829840a25941e679c25d438cc8412c2fa221cf1a824e6a \
+  smoketest
+
+docker run --rm -i -v /tmp/packages/smoketest/musl_static_llvm-smoketest:/usr/local/bin/smoketest \
+  alpine@sha256:e1c082e3d3c45cccac829840a25941e679c25d438cc8412c2fa221cf1a824e6a \
+  smoketest
+
+docker run --rm -i -v /tmp/packages/smoketest/musl_shared-smoketest:/usr/local/bin/smoketest \
+	-v /tmp/libddwaf.so:/usr/local/lib/libddwaf.so \
+  alpine@sha256:e1c082e3d3c45cccac829840a25941e679c25d438cc8412c2fa221cf1a824e6a \
+  smoketest
+
+rm -rf /tmp/packages/smoketest
