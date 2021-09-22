@@ -66,7 +66,32 @@ jobs:
         working-directory: ${{ github.workspace }}/packages
       - uses: actions/upload-artifact@v2
         with:
-          name: libddwaf-macos
+          name: libddwaf-macos-x86_64
+          path: ${{ github.workspace }}/packages
+
+  macos-cross-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Create Build Directory
+        run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
+      - name: Generating Build Scripts
+        run: cmake -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
+        working-directory: ${{ github.workspace }}/build
+      - name: Build Binaries
+        run: cmake --build . --config RelWithDebInfo --verbose --target all -j
+        working-directory: ${{ github.workspace }}/build
+      - name: Build Packages
+        run: cmake --build . --target package --config RelWithDebInfo --verbose
+        working-directory: ${{ github.workspace }}/build
+      - name: Remove Temporary Files
+        run: cmake -E remove_directory _CPack_Packages
+        working-directory: ${{ github.workspace }}/packages
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libddwaf-macos-arm64
           path: ${{ github.workspace }}/packages
 
   docker-builds:
@@ -165,7 +190,7 @@ jobs:
 
           extract_file ./artifacts/libddwaf-linux-x86_64/libddwaf-*-linux-x86_64*.tar.gz \
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-x64/native
-          extract_file ./artifacts/libddwaf-macos/libddwaf-*-darwin-x86_64*.zip \
+          extract_file ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.zip \
             '/libddwaf\.dylib$' ./packages/nuget/runtimes/osx-x64/native
           extract_file ./artifacts/libddwaf-windows-Win32/libddwaf-*-windows-win32*.zip \
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x86/native
