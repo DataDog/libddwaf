@@ -821,7 +821,7 @@ bool PWTransformer::transformEncodeBase64(ddwaf_object* parameter, bool readOnly
     // We need to allocate a buffer to contain the base64 encoded string
     const uint64_t originalLength = parameter->nbEntries;
     const uint64_t encodedLength  = (originalLength + 2) / 3 * 4;
-    const uint8_t* oldString         = reinterpret_cast<const uint8_t*>(parameter->stringValue);
+    const uint8_t* oldString      = reinterpret_cast<const uint8_t*>(parameter->stringValue);
     char* newString               = (char*) malloc((size_t) encodedLength + 1);
 
     // We don't have a good way to make this test fail in the CI, thus crapping on the coverage

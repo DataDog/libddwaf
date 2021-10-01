@@ -35,7 +35,7 @@ TEST(TestPWManifest, TestBasic)
     EXPECT_EQ(argsImpacted.size(), 1);
     EXPECT_NE(argsImpacted.find(id), argsImpacted.end());
 
-    auto &addresses = manifest.get_root_addresses();
+    auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 1);
     EXPECT_STREQ(addresses[0], "path");
 }
@@ -65,7 +65,7 @@ TEST(TestPWManifest, TestMultipleAddrs)
         EXPECT_NE(argsImpacted.find(id), argsImpacted.end());
     }
 
-    auto &addresses = manifest.get_root_addresses();
+    auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
     EXPECT_STREQ(addresses[0], "path0");
     EXPECT_STREQ(addresses[1], "path1");
@@ -111,7 +111,7 @@ TEST(TestPWManifest, TestKeyPaths)
         EXPECT_NE(argsImpacted.find(id), argsImpacted.end());
     }
 
-    auto &addresses = manifest.get_root_addresses();
+    auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 1);
     EXPECT_STREQ(addresses[0], "path");
 }
