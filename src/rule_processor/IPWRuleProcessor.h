@@ -56,6 +56,9 @@ public:
     virtual uint64_t expectedTypes() const;
     virtual bool hasStringRepresentation() const;
     virtual const std::string getStringRepresentation() const;
+    /* The return value of this function should outlive the function scope,
+     * for example, through a constexpr class static string_view initialised
+     * with a literal. */
     virtual std::string_view operatorName() const = 0;
 };
 

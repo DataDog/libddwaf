@@ -1,5 +1,12 @@
 # libddwaf release
 
+### v1.0.12 (unstable) - 2021/10/01
+- Add libinjection SQL and XSS rule processors.
+- Add support for ruleset format v1.1 (adding is\_sqli and is\_xss operators).
+- Improved universal x86\_64 and arm64 builds.
+- Added darwin arm64 build.
+- Fixed error on corpus generator for fuzzer.
+
 ### v1.0.11 (unstable) - 2021/09/16
 - Improve contributor onboarding and readme.
 - Cross-compile aarch64 static/shared libraries.

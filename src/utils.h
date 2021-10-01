@@ -65,8 +65,8 @@ size_t findStringCutoff(const char* str, size_t length);
 // IP Utils
 typedef struct
 {
-	uint8_t ip[16]; // big endian
-	bool isIPv6;
+    uint8_t ip[16]; // big endian
+    bool isIPv6;
 } parsed_ip;
 
 // Need the ddwaf_object declaration

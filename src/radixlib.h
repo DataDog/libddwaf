@@ -54,40 +54,40 @@ extern "C"
 {
 #endif
 
-	typedef struct _prefix_t
-	{
-		union
-		{
-			uint8_t sin[4];
-			uint8_t sin6[16];
-		} add;
-		int ref_count;
-		uint8_t family; /* AF_INET | AF_INET6 */
-		uint8_t bitlen;
-	} prefix_t;
+    typedef struct _prefix_t
+    {
+        union
+        {
+            uint8_t sin[4];
+            uint8_t sin6[16];
+        } add;
+        int ref_count;
+        uint8_t family; /* AF_INET | AF_INET6 */
+        uint8_t bitlen;
+    } prefix_t;
 
-	typedef struct _radix_node_t
-	{
-		prefix_t* prefix;             /* who we are in radix tree; null if glue */
-		struct _radix_node_t *l, *r;  /* left and right children */
-		struct _radix_node_t* parent; /* may be used */
-		uint8_t bit;                  /* flag if this node used */
-	} radix_node_t;
+    typedef struct _radix_node_t
+    {
+        prefix_t* prefix;             /* who we are in radix tree; null if glue */
+        struct _radix_node_t *l, *r;  /* left and right children */
+        struct _radix_node_t* parent; /* may be used */
+        uint8_t bit;                  /* flag if this node used */
+    } radix_node_t;
 
-	typedef struct _radix_tree_t
-	{
-		radix_node_t* head;
-		uint8_t maxbits;
-	} radix_tree_t;
+    typedef struct _radix_tree_t
+    {
+        radix_node_t* head;
+        uint8_t maxbits;
+    } radix_tree_t;
 
-	prefix_t* radix_prefix_init(uint8_t family, void* addr, uint8_t bitlen, prefix_t* _prefix);
+    prefix_t* radix_prefix_init(uint8_t family, void* addr, uint8_t bitlen, prefix_t* _prefix);
 
-	radix_tree_t* radix_new(uint8_t max_bits);
-	void radix_free(radix_tree_t* radix);
+    radix_tree_t* radix_new(uint8_t max_bits);
+    void radix_free(radix_tree_t* radix);
 
-	bool radix_matching_do(radix_tree_t* radix, prefix_t* prefix);
-	radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix);
-	void radix_remove(radix_tree_t* radix, radix_node_t* node);
+    bool radix_matching_do(radix_tree_t* radix, prefix_t* prefix);
+    radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix);
+    void radix_remove(radix_tree_t* radix, radix_node_t* node);
 
 #ifdef __cplusplus
 }

@@ -7,33 +7,33 @@
 #ifndef test_h
 #define test_h
 
+#include <chrono>
 #include <iostream>
-#include <string>
+#include <limits>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <chrono>
-#include <limits>
 
 #include <gtest/gtest.h>
 #include <re2/re2.h>
 
 #include <rapidjson/document.h>
-#include <rapidjson/prettywriter.h>
-#include <rapidjson/filereadstream.h>
 #include <rapidjson/error/en.h>
+#include <rapidjson/filereadstream.h>
+#include <rapidjson/prettywriter.h>
 using namespace std;
 
 struct PowerWAF;
-#include <ddwaf.h>
-#include <PowerWAF.hpp>
-#include <PWAdditive.hpp>
-#include <utils.h>
 #include <Clock.hpp>
-#include <log.hpp>
-#include <yaml-cpp/yaml.h>
+#include <PWAdditive.hpp>
+#include <PowerWAF.hpp>
+#include <ddwaf.h>
 #include <exception.hpp>
+#include <log.hpp>
+#include <utils.h>
+#include <yaml-cpp/yaml.h>
 
 using namespace ddwaf;
 // 1s and 1us
@@ -43,16 +43,17 @@ using namespace ddwaf;
 #define TIME_FAR (SQPowerWAF::monotonic_clock::now() + chrono::seconds(1))
 #define TIME_NEAR (SQPowerWAF::monotonic_clock::now())
 
-extern ddwaf_object readFile(const char * filename);
-extern ddwaf_object readRule(const char * rule);
-extern void compareData(const char * rulename, ddwaf_object input, size_t time, const char * expectedOutput);
+extern ddwaf_object readFile(const char* filename);
+extern ddwaf_object readRule(const char* rule);
+extern void compareData(const char* rulename, ddwaf_object input, size_t time, const char* expectedOutput);
 extern DDWAF_RET_CODE getCodeForRun(ddwaf_result input);
 extern std::unordered_map<std::string, std::shared_ptr<PowerWAF>>& exportInternalRuleCollection();
 
-
-namespace YAML {
+namespace YAML
+{
 template <>
-struct as_if<ddwaf_object, void> {
+struct as_if<ddwaf_object, void>
+{
     explicit as_if(const Node& node_);
     ddwaf_object operator()() const;
     const Node& node;
@@ -60,11 +61,29 @@ struct as_if<ddwaf_object, void> {
 
 }
 
-#define DDWAF_OBJECT_INVALID {NULL, 0, {NULL}, 0, DDWAF_OBJ_INVALID}
-#define DDWAF_OBJECT_MAP {NULL, 0, {NULL}, 0, DDWAF_OBJ_MAP}
-#define DDWAF_OBJECT_ARRAY {NULL, 0, {NULL}, 0, DDWAF_OBJ_ARRAY}
-#define DDWAF_OBJECT_SIGNED_FORCE(value) {NULL, 0, {(const char *)value}, 0, DDWAF_OBJ_SIGNED}
-#define DDWAF_OBJECT_UNSIGNED_FORCE(value) {NULL, 0, {(const char *)value}, 0, DDWAF_OBJ_UNSIGNED}
-#define DDWAF_OBJECT_STRING_PTR(string, length) {NULL, 0, {string}, length, DDWAF_OBJ_STRING}
+#define DDWAF_OBJECT_INVALID                    \
+    {                                           \
+        NULL, 0, { NULL }, 0, DDWAF_OBJ_INVALID \
+    }
+#define DDWAF_OBJECT_MAP                    \
+    {                                       \
+        NULL, 0, { NULL }, 0, DDWAF_OBJ_MAP \
+    }
+#define DDWAF_OBJECT_ARRAY                    \
+    {                                         \
+        NULL, 0, { NULL }, 0, DDWAF_OBJ_ARRAY \
+    }
+#define DDWAF_OBJECT_SIGNED_FORCE(value)                      \
+    {                                                         \
+        NULL, 0, { (const char*) value }, 0, DDWAF_OBJ_SIGNED \
+    }
+#define DDWAF_OBJECT_UNSIGNED_FORCE(value)                      \
+    {                                                           \
+        NULL, 0, { (const char*) value }, 0, DDWAF_OBJ_UNSIGNED \
+    }
+#define DDWAF_OBJECT_STRING_PTR(string, length)       \
+    {                                                 \
+        NULL, 0, { string }, length, DDWAF_OBJ_STRING \
+    }
 
 #endif /* test_h */
