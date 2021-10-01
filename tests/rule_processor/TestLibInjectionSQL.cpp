@@ -27,7 +27,7 @@ TEST(TestLibInjectionSQL, TestBasic)
 TEST(TestLibInjectionSQL, TestRuleset)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: is_sqli, parameters: {inputs: [arg1]}}], action: record}]})");
+    auto rule = readRule(R"({version: '1.1', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: is_sqli, parameters: {inputs: [arg1]}}], action: record}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
