@@ -15,13 +15,12 @@
 class RE2Manager : public IPWRuleProcessor
 {
 public:
-    using IPWRuleProcessor::IPWRuleProcessor;
     RE2Manager(const std::string& regex_str, bool caseSensitive);
     ~RE2Manager() = default;
 
     bool hasStringRepresentation() const override;
     const std::string getStringRepresentation() const override;
-    const std::string& operatorName() const override { return name; }
+    std::string_view operatorName() const override { return name; }
 #ifdef TESTING
     FRIEND_TEST(TestOptions, TestInit);
 #endif
@@ -29,7 +28,7 @@ protected:
     bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const override;
 
 protected:
-    std::string name { "match_regex" };
+    static constexpr std::string_view name { "match_regex" };
     uint8_t groupsToCatch { 0 };
     std::unique_ptr<re2::RE2> regex { nullptr };
 };

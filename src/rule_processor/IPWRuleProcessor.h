@@ -12,6 +12,7 @@
 
 #include <ddwaf.h>
 #include <utils.h>
+#include <string_view>
 
 typedef enum
 {
@@ -55,7 +56,7 @@ public:
 	virtual uint64_t expectedTypes() const;
 	virtual bool hasStringRepresentation() const;
 	virtual const std::string getStringRepresentation() const;
-    virtual const std::string& operatorName() const = 0;
+    virtual std::string_view operatorName() const = 0;
 };
 
 #define OP_REGEX "@rx"
@@ -75,5 +76,6 @@ public:
 
 #include "perf_match.hpp"
 #include "re2.hpp"
+#include "libinjection.hpp"
 
 #endif /* IPWRuleProcessor_h */

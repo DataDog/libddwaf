@@ -16,15 +16,14 @@ struct ac_t;
 class PerfMatch : public IPWRuleProcessor
 {
 public:
-    using IPWRuleProcessor::IPWRuleProcessor;
     PerfMatch(std::vector<const char*> pattern, std::vector<uint32_t> lengths);
-    const std::string& operatorName() const override { return name; }
+    std::string_view operatorName() const override { return name; }
 
 protected:
     bool performMatch(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const override;
 
 protected:
-    std::string name { "phrase_match" };
+    static constexpr std::string_view name { "phrase_match" };
     std::unique_ptr<ac_t, void (*)(void*)> ac { nullptr, nullptr };
 };
 

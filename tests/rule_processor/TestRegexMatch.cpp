@@ -10,7 +10,7 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {
     RE2Manager processor("^rEgEx$", false);
     EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^rEgEx$");
-    EXPECT_STREQ(processor.operatorName().c_str(), "match_regex");
+    EXPECT_STREQ(processor.operatorName().data(), "match_regex");
 
     std::vector<uint8_t> matchestogather;
     MatchGatherer gatherer(matchestogather);
@@ -29,7 +29,7 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
 {
     RE2Manager processor("^rEgEx$", true);
     EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^rEgEx$");
-    EXPECT_STREQ(processor.operatorName().c_str(), "match_regex");
+    EXPECT_STREQ(processor.operatorName().data(), "match_regex");
 
     std::vector<uint8_t> matchestogather;
     MatchGatherer gatherer(matchestogather);
@@ -53,7 +53,7 @@ TEST(TestRegexMatch, TestCaptureGroups)
 {
     RE2Manager processor("^(regex)(.*)$", false);
     EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^(regex)(.*)$");
-    EXPECT_STREQ(processor.operatorName().c_str(), "match_regex");
+    EXPECT_STREQ(processor.operatorName().data(), "match_regex");
 
     std::vector<uint8_t> matchestogather { 1, 2 };
     MatchGatherer gatherer(matchestogather);

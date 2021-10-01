@@ -148,6 +148,14 @@ static PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
         // TODO support min length
         processor = std::make_unique<RE2Manager>(regex, case_sensitive);
     }
+    else if (operation == "is_xss")
+    {
+        processor = std::make_unique<LibInjectionXSS>();
+    }
+    else if (operation == "is_sqli")
+    {
+        processor = std::make_unique<LibInjectionSQL>();
+    }
     else
     {
         throw parsing_error("unknown processor: " + std::string(operation));
