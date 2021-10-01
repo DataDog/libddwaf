@@ -15,8 +15,10 @@ public:
     using IPWRuleProcessor::IPWRuleProcessor;
     LibInjectionSQL() = default;
     std::string_view operatorName() const override { return name; }
+
 protected:
     bool performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const override;
+
 protected:
     static constexpr std::string_view name { "is_sqli" };
 };
@@ -27,8 +29,10 @@ public:
     using IPWRuleProcessor::IPWRuleProcessor;
     LibInjectionXSS() = default;
     std::string_view operatorName() const override { return name; }
+
 protected:
     bool performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const override;
+
 protected:
     static constexpr std::string_view name { "is_xss" };
 };
