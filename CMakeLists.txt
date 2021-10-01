@@ -73,6 +73,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule_processor/IPWRuleProcessor.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/perf_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/re2.cpp
+    ${libddwaf_SOURCE_DIR}/src/rule_processor/libinjection.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})
 

@@ -11,51 +11,52 @@
 #include <vector>
 
 #include <ddwaf.h>
+#include <string_view>
 #include <utils.h>
 
 typedef enum
 {
-	NONE           = 0,
-	NEGATE         = 1 << 0,
-	RUN_ON_NO_DATA = 1 << 1
+    NONE           = 0,
+    NEGATE         = 1 << 0,
+    RUN_ON_NO_DATA = 1 << 1
 } OperatorCommand;
 
 struct MatchGatherer
 {
-	std::string resolvedValue;
-	std::string matchedValue;
-	std::vector<std::pair<uint8_t, std::string>> submatches;
-	const std::vector<uint8_t>& submatchToGather;
-	std::vector<ddwaf_object> keyPath;
-	std::string dataSource;
-	std::string manifestKey;
+    std::string resolvedValue;
+    std::string matchedValue;
+    std::vector<std::pair<uint8_t, std::string>> submatches;
+    const std::vector<uint8_t>& submatchToGather;
+    std::vector<ddwaf_object> keyPath;
+    std::string dataSource;
+    std::string manifestKey;
 
-	MatchGatherer(const std::vector<uint8_t>& matchToGather);
+    MatchGatherer(const std::vector<uint8_t>& matchToGather);
 
-	void clear();
+    void clear();
 };
 
 class IPWRuleProcessor
 {
 protected:
-	bool wantMatch{true};
-	bool runOnMissing{false};
-	bool matchAny{false};
+    bool wantMatch { true };
+    bool runOnMissing { false };
+    bool matchAny { false };
 
-	virtual bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const = 0;
+    virtual bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const = 0;
 
 public:
-	IPWRuleProcessor() = default;
-	virtual ~IPWRuleProcessor() = default;
+    IPWRuleProcessor()          = default;
+    virtual ~IPWRuleProcessor() = default;
 
-	virtual bool doesMatch(const ddwaf_object* pattern, MatchGatherer& gatherer) const;
-	virtual bool doesMatchKey(const ddwaf_object* pattern, MatchGatherer& gatherer) const;
-	bool matchIfMissing() const;
-	bool matchAnyInput() const;
-	virtual uint64_t expectedTypes() const;
-	virtual bool hasStringRepresentation() const;
-	virtual const std::string getStringRepresentation() const;
-    virtual const std::string& operatorName() const = 0;
+    virtual bool doesMatch(const ddwaf_object* pattern, MatchGatherer& gatherer) const;
+    virtual bool doesMatchKey(const ddwaf_object* pattern, MatchGatherer& gatherer) const;
+    bool matchIfMissing() const;
+    bool matchAnyInput() const;
+    virtual uint64_t expectedTypes() const;
+    virtual bool hasStringRepresentation() const;
+    virtual const std::string getStringRepresentation() const;
+    virtual std::string_view operatorName() const = 0;
 };
 
 #define OP_REGEX "@rx"
@@ -73,6 +74,7 @@ public:
 #define OP_EXIST "@exist"
 #define OP_IPM "@ipMatch"
 
+#include "libinjection.hpp"
 #include "perf_match.hpp"
 #include "re2.hpp"
 

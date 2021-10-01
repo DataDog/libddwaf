@@ -11,20 +11,30 @@
 
 class LibInjectionSQL : public IPWRuleProcessor
 {
-    bool performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const override;
-
 public:
     using IPWRuleProcessor::IPWRuleProcessor;
-    bool buildProcessor(const rapidjson::Value&, bool) override;
+    LibInjectionSQL() = default;
+    std::string_view operatorName() const override { return name; }
+
+protected:
+    bool performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const override;
+
+protected:
+    static constexpr std::string_view name { "is_sqli" };
 };
 
 class LibInjectionXSS : public IPWRuleProcessor
 {
-    bool performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const override;
-
 public:
     using IPWRuleProcessor::IPWRuleProcessor;
-    bool buildProcessor(const rapidjson::Value&, bool) override;
+    LibInjectionXSS() = default;
+    std::string_view operatorName() const override { return name; }
+
+protected:
+    bool performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const override;
+
+protected:
+    static constexpr std::string_view name { "is_xss" };
 };
 
 #endif /* libinjection_h */

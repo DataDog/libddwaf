@@ -29,11 +29,6 @@ bool LibInjectionSQL::performMatch(const char* pattern, size_t length, MatchGath
     return output;
 }
 
-bool LibInjectionSQL::buildProcessor(const rapidjson::Value&, bool)
-{
-    return true;
-}
-
 bool LibInjectionXSS::performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const
 {
     const size_t computedLength = findStringCutoff(pattern, length);
@@ -44,9 +39,4 @@ bool LibInjectionXSS::performMatch(const char* pattern, size_t length, MatchGath
         gatherer.resolvedValue = std::string(pattern, computedLength);
 
     return output;
-}
-
-bool LibInjectionXSS::buildProcessor(const rapidjson::Value&, bool)
-{
-    return true;
 }

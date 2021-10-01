@@ -14,7 +14,7 @@ TEST(TestPhraseMatch, TestBasic)
 
     PerfMatch processor(strings, lengths);
 
-    EXPECT_STREQ(processor.operatorName().c_str(), "phrase_match");
+    EXPECT_STREQ(processor.operatorName().data(), "phrase_match");
 
     std::vector<uint8_t> matchestogather;
     MatchGatherer gatherer(matchestogather);
@@ -41,7 +41,7 @@ TEST(TestPhraseMatch, TestEmptyArrays)
     std::vector<uint32_t> lengths;
     PerfMatch processor(strings, lengths);
 
-    EXPECT_STREQ(processor.operatorName().c_str(), "phrase_match");
+    EXPECT_STREQ(processor.operatorName().data(), "phrase_match");
 
     std::vector<uint8_t> matchestogather;
     MatchGatherer gatherer(matchestogather);

@@ -76,8 +76,8 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     rapidjson::Value output, opNameValue, opValue, baValue, manifestKey;
     output.SetObject();
 
-    const std::string& opName = processor->operatorName();
-    opNameValue.SetString(opName.c_str(), static_cast<rapidjson::SizeType>(opName.size()));
+    std::string_view opName = processor->operatorName();
+    opNameValue.SetString(opName.data(), static_cast<rapidjson::SizeType>(opName.size()));
     output.AddMember("operator", opNameValue, allocator);
 
     if (processor->hasStringRepresentation())
