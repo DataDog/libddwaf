@@ -102,7 +102,7 @@ static void validateVersion(std::string_view version)
 static PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
                              std::vector<PW_TRANSFORM_ID>& transformers)
 {
-    auto operation = at<std::string_view>(rule, "operation");
+    auto operation = at<std::string_view>(rule, "operator");
     auto params    = at<parameter::map>(rule, "parameters");
 
     parameter::map options;
@@ -163,12 +163,23 @@ static PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
 
     std::vector<PWManifest::ARG_ID> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
-    for (ddwaf::parameter& address_param : inputs)
+    for (parameter::map input : inputs)
     {
-        std::string address { address_param };
-        if (!manifest.hasTarget(address))
+        auto address = at<std::string>(input, "address");
+        auto key_paths = at<parameter::vector>(input, "key_path", parameter::vector());
+
+        if (manifest.hasTarget(address))
         {
-            manifest.insert(address, PWManifest::ArgDetails(address));
+            auto &details = manifest.getDetailsForTarget(address);
+            for (const std::string &path : key_paths) {
+                details.keyPaths.insert(path);
+            }
+        } else {
+            PWManifest::ArgDetails details(address);
+            for (const std::string &path : key_paths) {
+                details.keyPaths.insert(path);
+            }
+            manifest.insert(address, std::move(details));
         }
 
         targets.push_back(manifest.getTargetArgID(address));
@@ -177,28 +188,24 @@ static PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
     return PWRule(std::move(targets), std::move(transformers), std::move(processor));
 }
 
-static void parseEvent(parameter::map& event, PWRuleManager& ruleManager,
+static void parseRule(parameter::map& rule, PWRuleManager& ruleManager,
                        PWManifest& manifest,
                        std::unordered_map<std::string, std::vector<std::string>>& flows)
 {
-    auto id = at<std::string>(event, "id");
+    auto id = at<std::string>(rule, "id");
     if (ruleManager.hasRule(id))
     {
         DDWAF_WARN("duplicate rule %s", id.c_str());
         return;
     }
 
-    // Action is a required key, however currently ignored as the only action
-    // supported is 'record'
-    auto action = at<std::string>(event, "action");
-
-    auto tags = at<parameter::map>(event, "tags");
+    auto tags = at<parameter::map>(rule, "tags");
     auto type = at<std::string>(tags, "type");
 
     auto& flow = flows[type];
 
     std::vector<PW_TRANSFORM_ID> rule_transformers;
-    auto transformers = at<parameter::vector>(event, "transformers", parameter::vector());
+    auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
     for (std::string_view transformer : transformers)
     {
         PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
@@ -210,7 +217,7 @@ static void parseEvent(parameter::map& event, PWRuleManager& ruleManager,
     }
 
     std::vector<PWRule> rules;
-    parameter::vector conditions = event.at("conditions");
+    parameter::vector conditions = rule.at("conditions");
     for (parameter::map condition : conditions)
     {
         PWRule rule = parseCondition(condition, manifest, rule_transformers);
@@ -223,21 +230,21 @@ static void parseEvent(parameter::map& event, PWRuleManager& ruleManager,
 
 PowerWAF* PowerWAF::fromConfig(const ddwaf_object rules_, const ddwaf_config* config)
 {
-    parameter::map rules = parameter(rules_);
+    parameter::map ruleset = parameter(rules_);
 
-    std::string_view version = at<std::string_view>(rules, "version");
+    std::string_view version = at<std::string_view>(ruleset, "version");
     validateVersion(version);
 
     PWRuleManager ruleManager;
     PWManifest manifest;
     std::unordered_map<std::string, std::vector<std::string>> flows;
 
-    auto events = at<parameter::vector>(rules, "events");
-    for (parameter::map event : events)
+    auto rules = at<parameter::vector>(ruleset, "rules");
+    for (parameter::map rule : rules)
     {
         try
         {
-            parseEvent(event, ruleManager, manifest, flows);
+            parseRule(rule, ruleManager, manifest, flows);
         }
         catch (const std::exception& e)
         {
@@ -247,7 +254,7 @@ PowerWAF* PowerWAF::fromConfig(const ddwaf_object rules_, const ddwaf_config* co
 
     if (ruleManager.isEmpty() || flows.empty())
     {
-        throw parsing_error("no valid events found");
+        throw parsing_error("no valid rules found");
     }
 
     return new PowerWAF(std::move(manifest), std::move(ruleManager),

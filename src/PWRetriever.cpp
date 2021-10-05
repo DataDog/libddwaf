@@ -422,7 +422,7 @@ bool PWRetriever::ArgsIterator::isOver() const
     return state.isOver();
 }
 
-bool PWRetriever::ArgsIterator::matchIterOnPath(const std::vector<std::string>& path, bool isAllowList, size_t& blockDepth) const
+bool PWRetriever::ArgsIterator::matchIterOnPath(const std::set<std::string>& path, bool isAllowList, size_t& blockDepth) const
 {
     size_t stackPos          = 1;
     const auto& currentStack = state.stack;
@@ -590,7 +590,7 @@ bool PWRetriever::Iterator::shouldMatchValue() const
     return (argsIterator.getActiveItem()->type & PWI_CONTAINER_TYPES) == 0;
 }
 
-bool PWRetriever::Iterator::matchIterOnPath(const std::vector<std::string>& path, bool isAllowList, size_t& blockDepth) const
+bool PWRetriever::Iterator::matchIterOnPath(const std::set<std::string>& path, bool isAllowList, size_t& blockDepth) const
 {
     return argsIterator.matchIterOnPath(path, isAllowList, blockDepth);
 }

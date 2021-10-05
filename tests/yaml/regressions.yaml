@@ -1,13 +1,11 @@
-version: '1.0'
-events:
+version: '2.1'
+rules:
   - id: 1
     tags:
       type: test_rule
     conditions:
-      - operation: match_regex
+      - operator: match_regex
         parameters:
           inputs:
-            - value
+            - address: value
           regex: .*
-    action: record
-

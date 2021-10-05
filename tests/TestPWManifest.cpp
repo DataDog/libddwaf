@@ -100,7 +100,7 @@ TEST(TestPWManifest, TestKeyPaths)
         EXPECT_TRUE(details.runOnValue);
         EXPECT_FALSE(details.runOnKey);
         EXPECT_EQ(details.keyPaths.size(), 1);
-        EXPECT_STREQ(details.keyPaths[0].c_str(), key.c_str());
+        EXPECT_TRUE(details.keyPaths.find(key) != details.keyPaths.end());
         EXPECT_STREQ(details.inheritFrom.c_str(), main.c_str());
 
         std::unordered_set<std::string> newFields { main };

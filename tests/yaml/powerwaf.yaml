@@ -1,13 +1,12 @@
-version: '1.0'
-events:
+version: '2.1'
+rules:
   - id: 1
     tags:
       type: security_scanner
     conditions:
-      - operation: match_regex
+      - operator: match_regex
         parameters:
           inputs:
-            - value
+            - address: value
           regex: rule1
-    action: record
 

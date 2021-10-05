@@ -23,7 +23,7 @@ PWManifest::ArgDetails::ArgDetails(const std::string& addr)
 
     if (end + 1 < addr.size())
     {
-        keyPaths.push_back(addr.substr(end + 1, addr.size()));
+        keyPaths.insert(addr.substr(end + 1, addr.size()));
     }
 }
 
@@ -62,6 +62,14 @@ const PWManifest::ArgDetails& PWManifest::getDetailsForTarget(const PWManifest::
     // We can't really return a dummy object when the key doesn't exist so the caller need to call `hasTarget` first.
     return argManifest.find(argID)->second;
 }
+
+PWManifest::ArgDetails& PWManifest::getDetailsForTarget(const std::string& target)
+{
+    // We can't really return a dummy object when the key doesn't exist so the caller need to call `hasTarget` first.
+    auto id = argIDTable.find(target)->second;
+    return argManifest.find(id)->second;
+}
+
 
 const std::string& PWManifest::getTargetName(const PWManifest::ARG_ID& target) const
 {

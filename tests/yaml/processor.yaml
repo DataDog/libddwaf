@@ -1,17 +1,16 @@
-version: '1.0'
-events:
+version: '2.1'
+rules:
   - id: 1
     tags:
       type: flow1
     conditions:
-      - operation: match_regex
+      - operator: match_regex
         parameters:
           inputs:
-            - value
+            - address: value
           regex: rule2
-      - operation: match_regex
+      - operator: match_regex
         parameters:
           inputs:
-            - value2
+            - address: value2
           regex: rule3
-    action: record

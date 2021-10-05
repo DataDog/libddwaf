@@ -1,15 +1,14 @@
-version: '1.0'
-events:
+version: '2.1'
+rules:
   - id: 1
     tags:
       type: test_coverage
     conditions:
-      - operation: match_regex
+      - operator: match_regex
         parameters:
           inputs:
-            - arg
+            - address: arg
           regex: .*
     transformers:
         - removeNulls
-    action: record
 

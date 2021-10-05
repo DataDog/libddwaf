@@ -10,7 +10,7 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
+#include <set>
 
 #include <re2/re2.h>
 #include <utils.h>
@@ -30,7 +30,7 @@ public:
         bool runOnKey { false };
         bool runOnValue { true };
         std::string inheritFrom; // Name of the ARG_ID to report the BA we matched
-        std::vector<std::string> keyPaths;
+        std::set<std::string> keyPaths;
         bool isAllowList { true };
 
         ArgDetails(const std::string& addr);
@@ -66,6 +66,8 @@ public:
     bool hasTarget(const std::string& string) const;
     ARG_ID getTargetArgID(const std::string& target) const;
     const ArgDetails& getDetailsForTarget(const PWManifest::ARG_ID& argID) const;
+    // Helper used for initialisation
+    ArgDetails& getDetailsForTarget(const std::string &target);
     const std::string& getTargetName(const PWManifest::ARG_ID& argID) const;
 
     void findImpactedArgs(const std::unordered_set<std::string>& newFields, std::unordered_set<ARG_ID>& argsImpacted) const;

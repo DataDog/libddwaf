@@ -68,7 +68,7 @@ TEST(TestPWProcessor, TestMissingParameter)
 TEST(TestPWProcessor, TestInvalidUTF8Input)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: match_regex, parameters: {inputs: [values, keys], regex: bla}}], action: record}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -405,7 +405,7 @@ TEST(TestPWProcessor, TestPerfReporting)
 TEST(TestPWProcessor, TestPerfReportingIncomplete)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: bla}, conditions: [{operation: match_regex, parameters: {inputs: [bla], regex: pouet}}], action: record}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: bla}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: pouet}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -456,7 +456,7 @@ TEST(TestPWProcessor, TestDisablePerfReporting)
     ddwaf_config config = { 0, 0, 0 };
 
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: bla}, conditions: [{operation: match_regex, parameters: {inputs: [bla], regex: pouet}}], action: record}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: bla}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: pouet}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, &config);

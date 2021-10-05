@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <set>
 
 #include <IPWRuleProcessor.h>
 #include <PWManifest.h>
@@ -76,7 +77,7 @@ public:
         void getKeyPath(std::vector<ddwaf_object>& keyPath) const;
         bool isOver() const;
 
-        bool matchIterOnPath(const std::vector<std::string>& path, bool isAllowList, size_t& blockDepth) const;
+        bool matchIterOnPath(const std::set<std::string>& path, bool isAllowList, size_t& blockDepth) const;
 
         friend PWRetriever;
 
@@ -119,7 +120,7 @@ public:
         bool shouldMatchKey() const;
         bool shouldMatchValue() const;
 
-        bool matchIterOnPath(const std::vector<std::string>& path, bool isAllowList, size_t& blockDepth) const;
+        bool matchIterOnPath(const std::set<std::string>& path, bool isAllowList, size_t& blockDepth) const;
     };
 
     struct MatchHistory
