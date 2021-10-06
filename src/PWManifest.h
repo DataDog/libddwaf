@@ -33,7 +33,10 @@ public:
         std::set<std::string> keyPaths;
         bool isAllowList { true };
 
+        ArgDetails() = default;
         ArgDetails(const std::string& addr): inheritFrom(addr) {}
+        ArgDetails(const std::string& addr, const std::string &path):
+            inheritFrom(addr), keyPaths({path}) {}
         ArgDetails(ArgDetails&&)      = default;
         ArgDetails(const ArgDetails&) = delete;
         ArgDetails& operator=(ArgDetails&&) = default;
@@ -58,7 +61,7 @@ public:
     PWManifest& operator=(const PWManifest&) = delete;
 
     void reserve(std::size_t count);
-    void insert(std::string_view name, ArgDetails&& arg);
+    ARG_ID insert(std::string_view name, ArgDetails&& arg);
     bool empty() { return argIDTable.empty(); }
 
     const std::vector<const char*>& get_root_addresses() const { return root_addresses; };

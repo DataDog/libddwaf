@@ -84,23 +84,25 @@ PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
     auto inputs = at<parameter::vector>(params, "inputs");
     for (std::string input : inputs)
     {
-        size_t start = 0, end;
-        end = input.find(':', start);
-        if (end == std::string::npos)
-        {
-            manifest.insert(input, PWManifest::ArgDetails(input));
-            targets.push_back(manifest.getTargetArgID(input));
-        }
-        else
-        {
-            std::string address = input.substr(0, end);
-            PWManifest::ArgDetails details(address);
-            if (end + 1 < input.size()) {
-                details.keyPaths.emplace(input.substr(end + 1, input.size()));
+        PWManifest::ARG_ID id;
+        if (manifest.hasTarget(input)) {
+            id = manifest.getTargetArgID(input);
+        } else {
+            PWManifest::ArgDetails details;
+            size_t pos = input.find(':', 0);
+            if (pos == std::string::npos  || pos + 1 >= input.size())
+            {
+                details.inheritFrom = input;
             }
-            manifest.insert(address, std::move(details));
-            targets.push_back(manifest.getTargetArgID(address));
+            else
+            {
+                details.inheritFrom = input.substr(0, pos);
+                details.keyPaths.emplace(input.substr(pos + 1, input.size()));
+            }
+
+            id = manifest.insert(input, std::move(details));
         }
+        targets.push_back(id);
     }
 
     return PWRule(std::move(targets), std::move(transformers), std::move(processor));
