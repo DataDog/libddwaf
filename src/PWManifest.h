@@ -33,7 +33,7 @@ public:
         std::set<std::string> keyPaths;
         bool isAllowList { true };
 
-        ArgDetails(const std::string& addr);
+        ArgDetails(const std::string& addr): inheritFrom(addr) {}
         ArgDetails(ArgDetails&&)      = default;
         ArgDetails(const ArgDetails&) = delete;
         ArgDetails& operator=(ArgDetails&&) = default;

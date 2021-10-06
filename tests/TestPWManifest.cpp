@@ -73,49 +73,6 @@ TEST(TestPWManifest, TestMultipleAddrs)
     EXPECT_STREQ(addresses[3], "path3");
 }
 
-TEST(TestPWManifest, TestKeyPaths)
-{
-    PWManifest manifest;
-
-    std::vector<std::string> paths { "path:x-key-0", "path:x-key-1",
-                                     "path:x-key-2", "path:x-key-3" };
-
-    manifest.insert("path", PWManifest::ArgDetails("path"));
-
-    for (auto& str : paths)
-    {
-        manifest.insert(str, PWManifest::ArgDetails(str));
-    }
-
-    for (const std::string& str : paths)
-    {
-        auto id = manifest.getTargetArgID(str);
-
-        size_t end = str.find(':', 0);
-
-        auto main = str.substr(0, end);
-        auto key  = str.substr(end + 1, str.size());
-
-        auto& details = manifest.getDetailsForTarget(id);
-        EXPECT_TRUE(details.runOnValue);
-        EXPECT_FALSE(details.runOnKey);
-        EXPECT_EQ(details.keyPaths.size(), 1);
-        EXPECT_TRUE(details.keyPaths.find(key) != details.keyPaths.end());
-        EXPECT_STREQ(details.inheritFrom.c_str(), main.c_str());
-
-        std::unordered_set<std::string> newFields { main };
-        std::unordered_set<PWManifest::ARG_ID> argsImpacted;
-
-        manifest.findImpactedArgs(newFields, argsImpacted);
-        EXPECT_EQ(argsImpacted.size(), 5);
-        EXPECT_NE(argsImpacted.find(id), argsImpacted.end());
-    }
-
-    auto& addresses = manifest.get_root_addresses();
-    EXPECT_EQ(addresses.size(), 1);
-    EXPECT_STREQ(addresses[0], "path");
-}
-
 TEST(TestPWManifest, TestUnknownArgID)
 {
     PWManifest manifest;

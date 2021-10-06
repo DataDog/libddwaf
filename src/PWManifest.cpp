@@ -7,26 +7,6 @@
 #include <PWManifest.h>
 #include <utils.h>
 
-PWManifest::ArgDetails::ArgDetails(const std::string& addr)
-{
-    size_t start = 0, end;
-
-    end = addr.find(':', start);
-
-    if (end == std::string::npos)
-    {
-        inheritFrom = addr;
-        return;
-    }
-
-    inheritFrom = addr.substr(0, end);
-
-    if (end + 1 < addr.size())
-    {
-        keyPaths.insert(addr.substr(end + 1, addr.size()));
-    }
-}
-
 void PWManifest::reserve(std::size_t count)
 {
     argIDTable.reserve(count);

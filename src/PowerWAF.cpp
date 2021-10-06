@@ -171,13 +171,13 @@ static PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
         if (manifest.hasTarget(address))
         {
             auto &details = manifest.getDetailsForTarget(address);
-            for (const std::string &path : key_paths) {
-                details.keyPaths.insert(path);
+            for (std::string_view path : key_paths) {
+                details.keyPaths.emplace(path);
             }
         } else {
             PWManifest::ArgDetails details(address);
-            for (const std::string &path : key_paths) {
-                details.keyPaths.insert(path);
+            for (std::string_view path : key_paths) {
+                details.keyPaths.emplace(path);
             }
             manifest.insert(address, std::move(details));
         }
