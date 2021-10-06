@@ -69,8 +69,6 @@ public:
     bool hasTarget(const std::string& string) const;
     ARG_ID getTargetArgID(const std::string& target) const;
     const ArgDetails& getDetailsForTarget(const PWManifest::ARG_ID& argID) const;
-    // Helper used for initialisation
-    ArgDetails& getDetailsForTarget(const std::string &target);
     const std::string& getTargetName(const PWManifest::ARG_ID& argID) const;
 
     void findImpactedArgs(const std::unordered_set<std::string>& newFields, std::unordered_set<ARG_ID>& argsImpacted) const;

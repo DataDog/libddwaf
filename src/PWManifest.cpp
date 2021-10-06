@@ -43,14 +43,6 @@ const PWManifest::ArgDetails& PWManifest::getDetailsForTarget(const PWManifest::
     return argManifest.find(argID)->second;
 }
 
-PWManifest::ArgDetails& PWManifest::getDetailsForTarget(const std::string& target)
-{
-    // We can't really return a dummy object when the key doesn't exist so the caller need to call `hasTarget` first.
-    auto id = argIDTable.find(target)->second;
-    return argManifest.find(id)->second;
-}
-
-
 const std::string& PWManifest::getTargetName(const PWManifest::ARG_ID& target) const
 {
     static const std::string& dummyTargetName("<invalid>");
