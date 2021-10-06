@@ -136,6 +136,8 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, size_t timeLeftInUs)
     ddwaf_result res;
     auto code = ddwaf_run(context, &args, &res, timeLeftInUs);
 
+    // TODO split input in several ddwaf_object, and call ddwaf_run on the same context
+
     if (code == DDWAF_ERR_INTERNAL)
     {
         __builtin_trap();

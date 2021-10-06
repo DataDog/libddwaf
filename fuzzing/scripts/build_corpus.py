@@ -181,6 +181,8 @@ class InitPayloadGenerator:
     operators = [
         "match_regex",
         "phrase_match",
+        "is_xss",
+        "is_sqli"
     ]
 
     def __init__(self):
@@ -339,7 +341,14 @@ class InitPayloadGenerator:
                   "case_sensitive": choice((True, False)),
                   "min_length": randint(0, 5),
                 }
+            elif operation == "is_xss":
+                # TODO: get interesting XSS patterns
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
 
+            elif operation == "is_sqli":
+                # TODO: get interesting SQLI patterns
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
+                
             return result
 
         def get_random_rules():
