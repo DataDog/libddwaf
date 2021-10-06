@@ -218,7 +218,7 @@ class InitPayloadGenerator:
             pass
         else:
             for address in addresses:
-                self.address_values.add((address, value))
+                self.address_values.add((address.get("address"), value))
 
     def get_payload(self):
         self.used_operations = set()
@@ -265,7 +265,34 @@ class InitPayloadGenerator:
             return operation
 
         def get_random_address_array():
-            return _get_random_array2(self.addresses, 1, self.address_max_count, allow_none=False, unique=True)
+            addresses = _get_random_array2(self.addresses, 1, self.address_max_count, allow_none=False, unique=True)
+            seen_addresses = dict()
+            for address in addresses:
+                key = address
+                path = None
+
+                comp = address.split(":")
+                if len(comp) == 2:
+                    key,path = comp
+
+                if key in seen_addresses:
+                    if path is not None:
+                        key_paths = seen_addresses.get(key)
+                        key_paths.append(path)
+                else:
+                    if path is None:
+                        seen_addresses[key] = []
+                    else:
+                        seen_addresses[key] = [path]
+
+            final_addresses = []
+            for k,v in seen_addresses.items():
+                if len(v) > 0:
+                    final_addresses.append({"address": k, "key_path": v})
+                else:
+                    final_addresses.append({"address": k})
+            return final_addresses
+
 
         def get_random_transformation_array():
             """Id are presents in getIDForString function"""
@@ -311,9 +338,9 @@ class InitPayloadGenerator:
             addresses = get_random_address_array()
 
             result = {
-                "operation": operation,
+                "operator": operation,
                 "parameters": {
-                    "inputs": addresses,
+                    "inputs": addresses
                 },
             }
 
@@ -341,8 +368,8 @@ class InitPayloadGenerator:
 
         result = {
             "init_payload": {
-                "version": "1.0",
-                "events": events
+                "version": "2.1",
+                "rules": events
             },
 
             "addresses": self.addresses,
