@@ -178,7 +178,7 @@ class InitPayloadGenerator:
     address_max_count = 4
     transformation_max_count = 10
 
-    operations = [
+    operators = [
         "match_regex",
         "phrase_match",
     ]
@@ -209,7 +209,7 @@ class InitPayloadGenerator:
             # " " * 1000000,
         ]
 
-        self.used_operations = None
+        self.used_operators = None
 
     def save_value(self, value, addresses):
         self.values.add(value)
@@ -221,7 +221,7 @@ class InitPayloadGenerator:
                 self.address_values.add((address.get("address"), value))
 
     def get_payload(self):
-        self.used_operations = set()
+        self.used_operators = set()
 
         # At least one address with a ':'
         self.addresses = ["".join(choices(printable_chars, k=self.address_name_length)) + ":x", ] + [
@@ -258,11 +258,11 @@ class InitPayloadGenerator:
         def get_random_condition_array():
             return _get_random_array(get_random_condition, 1, self.condition_max_count, allow_none=False)
 
-        def get_random_operation():
-            operation = choice(self.operations)
-            self.used_operations.add(operation)
+        def get_random_operator():
+            operator = choice(self.operators)
+            self.used_operators.add(operator)
 
-            return operation
+            return operator
 
         def get_random_address_array():
             addresses = _get_random_array2(self.addresses, 1, self.address_max_count, allow_none=False, unique=True)
@@ -334,19 +334,19 @@ class InitPayloadGenerator:
             return result
 
         def get_random_condition(i):
-            operation = get_random_operation()
+            operator = get_random_operator()
             addresses = get_random_address_array()
 
             result = {
-                "operator": operation,
+                "operator": operator,
                 "parameters": {
                     "inputs": addresses
                 },
             }
 
-            if operation == "phrase_match":
+            if operator == "phrase_match":
                 result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
-            elif operation == "match_regex":
+            elif operator == "match_regex":
                 temp = choice(self.regexs)
 
                 self.save_value(temp["MatchingText"], addresses)
@@ -360,16 +360,16 @@ class InitPayloadGenerator:
 
             return result
 
-        def get_random_events():
+        def get_random_rules():
             return _get_random_array(get_random_event, 1, self.event_max_count, allow_none=False)
 
 
-        events = get_random_events()
+        rules = get_random_rules()
 
         result = {
             "init_payload": {
                 "version": "2.1",
-                "rules": events
+                "rules": rules
             },
 
             "addresses": self.addresses,
@@ -422,7 +422,7 @@ def main():
     for i, (input, value) in enumerate(payload["address_values"]):
         write_corpus_file(f"corpus_{i}", {input: value})
 
-    print(f"{len(generator.used_operations)} operations")
+    print(f"{len(generator.used_operators)} operators")
     print(f"{len(payload['addresses'])} addresses")
     print(f"{len(payload['values'])} values")
 
