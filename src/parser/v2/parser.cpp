@@ -4,21 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <algorithm>
-#include <unordered_map>
-
-#include "Clock.hpp"
-#include <PWProcessor.hpp>
-#include <PWRet.hpp>
-#include <PWRetriever.hpp>
-#include <PowerWAF.hpp>
-#include <ddwaf.h>
 #include <exception.hpp>
-#include <iostream>
 #include <log.hpp>
-#include <parameter.hpp>
-#include <stdexcept>
-#include <utils.h>
+
 #include <parser/v2/parser.hpp>
 
 using namespace std::literals;

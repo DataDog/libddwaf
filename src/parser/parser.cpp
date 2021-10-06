@@ -11,14 +11,13 @@ namespace ddwaf::parser {
 void parse(parameter& rules, PWRuleManager& ruleManager, PWManifest& manifest,
            std::unordered_map<std::string, std::vector<std::string>>& flows)
 {
-    uint16_t major, minor;
-
     parameter::map ruleset = rules;
     std::string_view version = at<std::string_view>(ruleset, "version");
-    int ret = std::sscanf(version.data(), "%hu.%hu", &major, &minor);
-    if (ret != 2)
+
+    uint16_t major, minor;
+    if (std::sscanf(version.data(), "%hu.%hu", &major, &minor) != 2)
     {
-        throw parsing_error("invalid version format");
+        throw parsing_error("invalid version format, expected major.minor");
     }
 
     switch(major) {

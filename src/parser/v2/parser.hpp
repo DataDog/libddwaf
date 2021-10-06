@@ -4,8 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <string>
+#include <vector>
+#include <unordered_map>
 #include <PWRetriever.hpp>
-#include <PowerWAF.hpp>
+#include <PWManifest.h>
+#include <PWRuleManager.hpp>
 #include <parameter.hpp>
 
 namespace ddwaf::parser::v2 {
