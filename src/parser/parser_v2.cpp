@@ -87,21 +87,27 @@ PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
         auto address = at<std::string>(input, "address");
         auto key_paths = at<parameter::vector>(input, "key_path", parameter::vector());
 
-        if (manifest.hasTarget(address))
-        {
-            auto &details = manifest.getDetailsForTarget(address);
-            for (std::string_view path : key_paths) {
-                details.keyPaths.emplace(path);
+        PWManifest::ARG_ID id;
+        if (key_paths.empty()) {
+            if (manifest.hasTarget(address)) {
+                id = manifest.getTargetArgID(address);
+            } else {
+                id = manifest.insert(address, PWManifest::ArgDetails(address));
             }
-        } else {
-            PWManifest::ArgDetails details(address);
-            for (std::string_view path : key_paths) {
-                details.keyPaths.emplace(path);
-            }
-            manifest.insert(address, std::move(details));
+            targets.push_back(id);
+            continue;
         }
 
-        targets.push_back(manifest.getTargetArgID(address));
+        for (std::string path : key_paths) {
+            std::string full_address = address + ":" + path;
+            if (manifest.hasTarget(full_address)) {
+                id = manifest.getTargetArgID(full_address);
+            } else {
+                id = manifest.insert(full_address,
+                        PWManifest::ArgDetails(address, path)); 
+            }
+            targets.push_back(id);
+        }
     }
 
     return PWRule(std::move(targets), std::move(transformers), std::move(processor));

@@ -13,7 +13,7 @@ void PWManifest::reserve(std::size_t count)
     argManifest.reserve(count);
 }
 
-void PWManifest::insert(std::string_view name, PWManifest::ArgDetails&& arg)
+PWManifest::ARG_ID PWManifest::insert(std::string_view name, PWManifest::ArgDetails&& arg)
 {
     argManifest.emplace(counter, std::move(arg));
     argIDTable.emplace(name, counter);
@@ -24,7 +24,7 @@ void PWManifest::insert(std::string_view name, PWManifest::ArgDetails&& arg)
         root_addresses.push_back(details.inheritFrom.c_str());
     }
 
-    ++counter;
+    return counter++;
 }
 
 bool PWManifest::hasTarget(const std::string& string) const
