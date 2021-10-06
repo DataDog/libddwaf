@@ -1,12 +1,26 @@
+// Unless explicitly stated otherwise all files in this repository are
+// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
+//
+// This product includes software developed at Datadog (https://www.datadoghq.com/).
+// Copyright 2021 Datadog, Inc.
+
 #include <iostream>
 #include <string_view>
 #include <log.hpp>
 #include <exception.hpp>
 #include <parser/parser.hpp>
-#include <parser/v1/parser.hpp>
-#include <parser/v2/parser.hpp>
 
 namespace ddwaf::parser {
+
+namespace v1 {
+    void parse(parameter::map& ruleset, PWRuleManager& ruleManager, PWManifest& manifest,
+               std::unordered_map<std::string, std::vector<std::string>>& flows);
+}
+
+namespace v2 {
+    void parse(parameter::map& ruleset, PWRuleManager& ruleManager, PWManifest& manifest,
+               std::unordered_map<std::string, std::vector<std::string>>& flows);
+}
 
 void parse(parameter& rules, PWRuleManager& ruleManager, PWManifest& manifest,
            std::unordered_map<std::string, std::vector<std::string>>& flows)

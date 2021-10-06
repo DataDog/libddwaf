@@ -4,12 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <PWRetriever.hpp>
+#include <PWManifest.h>
+#include <PWRuleManager.hpp>
+#include <parameter.hpp>
 #include <exception.hpp>
 #include <log.hpp>
 
-#include <parser/v1/parser.hpp>
-
-using namespace std::literals;
 using namespace ddwaf;
 
 namespace {
@@ -17,7 +21,7 @@ namespace {
 PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
                              std::vector<PW_TRANSFORM_ID>& transformers)
 {
-    auto operation = at<std::string_view>(rule, "operation");
+    auto operation = at<std::string_view>(rule, "operator");
     auto params    = at<parameter::map>(rule, "parameters");
 
     parameter::map options;
@@ -78,25 +82,26 @@ PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
 
     std::vector<PWManifest::ARG_ID> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
-    for (std::string input : inputs)
+    for (parameter::map input : inputs)
     {
-        size_t start = 0, end;
-        end = input.find(':', start);
-        if (end == std::string::npos)
+        auto address = at<std::string>(input, "address");
+        auto key_paths = at<parameter::vector>(input, "key_path", parameter::vector());
+
+        if (manifest.hasTarget(address))
         {
-            manifest.insert(input, PWManifest::ArgDetails(input));
-            targets.push_back(manifest.getTargetArgID(input));
-        }
-        else
-        {
-            std::string address = input.substr(0, end);
+            auto &details = manifest.getDetailsForTarget(address);
+            for (std::string_view path : key_paths) {
+                details.keyPaths.emplace(path);
+            }
+        } else {
             PWManifest::ArgDetails details(address);
-            if (end + 1 < input.size()) {
-                details.keyPaths.emplace(input.substr(end + 1, input.size()));
+            for (std::string_view path : key_paths) {
+                details.keyPaths.emplace(path);
             }
             manifest.insert(address, std::move(details));
-            targets.push_back(manifest.getTargetArgID(address));
         }
+
+        targets.push_back(manifest.getTargetArgID(address));
     }
 
     return PWRule(std::move(targets), std::move(transformers), std::move(processor));
@@ -143,12 +148,12 @@ void parseRule(parameter::map& rule, PWRuleManager& ruleManager, PWManifest& man
 
 }
 
-namespace ddwaf::parser::v1 {
+namespace ddwaf::parser::v2 {
 
 void parse(parameter::map& ruleset, PWRuleManager& ruleManager, PWManifest& manifest,
            std::unordered_map<std::string, std::vector<std::string>>& flows)
 {
-    auto rules = at<parameter::vector>(ruleset, "events");
+    auto rules = at<parameter::vector>(ruleset, "rules");
     for (parameter::map rule : rules)
     {
         try
