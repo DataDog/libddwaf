@@ -12,6 +12,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <exception.hpp>
 
 namespace ddwaf
 {
@@ -70,6 +71,31 @@ struct parameter_traits<parameter::vector>
 {
     static const char* name() { return "parameter::vector"; }
 };
+
+template <typename T>
+T at(parameter::map& map, const std::string& key)
+{
+    try
+    {
+        return map.at(key);
+    }
+    catch (const std::out_of_range& e)
+    {
+        throw missing_key(key);
+    }
+    catch (const bad_cast& e)
+    {
+        throw invalid_type(key, parameter_traits<T>::name());
+    }
+}
+
+template <typename T>
+T at(parameter::map& map, const std::string& key, const T& default_)
+{
+    auto it = map.find(key);
+    return it == map.end() ? default_ : it->second;
+}
+
 
 }
 #endif // PARAMETER_H
