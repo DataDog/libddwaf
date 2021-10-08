@@ -90,25 +90,6 @@ TEST(TestPWProcessor, TestKeyPaths)
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
-
-    context = ddwaf_context_init(handle, ddwaf_object_free);
-    ASSERT_NE(context, nullptr);
-
-    //Generate a wrapper
-    root  = DDWAF_OBJECT_MAP;
-    param = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&param, "x", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&param, "y", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&param, "z", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&root, "param", &param);
-
-    EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MONITOR);
-
-    EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow2","rule":"2","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param","manifest_key":"param:z","key_path":["z"],"resolved_value":"Sqreen","match_status":"Sqreen"}]},{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param","manifest_key":"param:x","key_path":["x"],"resolved_value":"Sqreen","match_status":"Sqreen"}]}])");
-
-    ddwaf_result_free(&ret);
-    ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
