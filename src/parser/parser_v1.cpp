@@ -4,22 +4,25 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <PWRetriever.hpp>
 #include <PWManifest.h>
+#include <PWRetriever.hpp>
 #include <PWRuleManager.hpp>
-#include <parameter.hpp>
 #include <exception.hpp>
 #include <log.hpp>
+#include <parameter.hpp>
+#include <parser/common.hpp>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 using namespace ddwaf;
+using namespace ddwaf::parser;
 
-namespace {
+namespace
+{
 
 PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
-                             std::vector<PW_TRANSFORM_ID>& transformers)
+                      std::vector<PW_TRANSFORM_ID>& transformers)
 {
     auto operation = at<std::string_view>(rule, "operation");
     auto params    = at<parameter::map>(rule, "parameters");
@@ -84,13 +87,21 @@ PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
     auto inputs = at<parameter::vector>(params, "inputs");
     for (std::string input : inputs)
     {
+        if (input.empty())
+        {
+            throw parsing_error("empty address");
+        }
+
         PWManifest::ARG_ID id;
-        if (manifest.hasTarget(input)) {
+        if (manifest.hasTarget(input))
+        {
             id = manifest.getTargetArgID(input);
-        } else {
+        }
+        else
+        {
             PWManifest::ArgDetails details;
             size_t pos = input.find(':', 0);
-            if (pos == std::string::npos  || pos + 1 >= input.size())
+            if (pos == std::string::npos || pos + 1 >= input.size())
             {
                 details.inheritFrom = input;
             }
@@ -118,38 +129,46 @@ void parseRule(parameter::map& rule, PWRuleManager& ruleManager, PWManifest& man
         return;
     }
 
-    auto tags = at<parameter::map>(rule, "tags");
-    auto type = at<std::string>(tags, "type");
-
-    auto& flow = flows[type];
-
-    std::vector<PW_TRANSFORM_ID> rule_transformers;
-    auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
-    for (std::string_view transformer : transformers)
+    try
     {
-        PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
-        if (transform_id == PWT_INVALID)
+        auto tags = at<parameter::map>(rule, "tags");
+        auto type = at<std::string>(tags, "type");
+
+        auto& flow = flows[type];
+
+        std::vector<PW_TRANSFORM_ID> rule_transformers;
+        auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
+        for (std::string_view transformer : transformers)
         {
-            throw parsing_error("invalid transformer" + std::string(transformer));
+            PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
+            if (transform_id == PWT_INVALID)
+            {
+                throw parsing_error("invalid transformer" + std::string(transformer));
+            }
+            rule_transformers.push_back(transform_id);
         }
-        rule_transformers.push_back(transform_id);
-    }
 
-    std::vector<PWRule> rules;
-    parameter::vector conditions = rule.at("conditions");
-    for (parameter::map condition : conditions)
+        std::vector<PWRule> rules;
+        parameter::vector conditions = rule.at("conditions");
+        for (parameter::map condition : conditions)
+        {
+            PWRule rule = parseCondition(condition, manifest, rule_transformers);
+            rules.push_back(std::move(rule));
+        }
+
+        ruleManager.addRule(id, std::move(rules));
+        flow.push_back(id);
+    }
+    catch (const std::exception& e)
     {
-        PWRule rule = parseCondition(condition, manifest, rule_transformers);
-        rules.push_back(std::move(rule));
+        DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
     }
-
-    ruleManager.addRule(id, std::move(rules));
-    flow.push_back(id);
 }
 
 }
 
-namespace ddwaf::parser::v1 {
+namespace ddwaf::parser::v1
+{
 
 void parse(parameter::map& ruleset, PWRuleManager& ruleManager, PWManifest& manifest,
            std::unordered_map<std::string, std::vector<std::string>>& flows)

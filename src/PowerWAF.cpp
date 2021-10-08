@@ -17,9 +17,9 @@
 #include <iostream>
 #include <log.hpp>
 #include <parameter.hpp>
+#include <parser/parser.hpp>
 #include <stdexcept>
 #include <utils.h>
-#include <parser/parser.hpp>
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -50,7 +50,7 @@ PowerWAF::PowerWAF(PWManifest&& manifest_, PWRuleManager&& ruleManager_,
     }
 }
 
-PowerWAF* PowerWAF::fromConfig(const ddwaf_object rules_, const ddwaf_config* config)
+PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset, const ddwaf_config* config)
 {
     PWRuleManager ruleManager;
     PWManifest manifest;
@@ -58,7 +58,6 @@ PowerWAF* PowerWAF::fromConfig(const ddwaf_object rules_, const ddwaf_config* co
 
     try
     {
-        auto ruleset = parameter(rules_);
         parser::parse(ruleset, ruleManager, manifest, flows);
         return new PowerWAF(std::move(manifest), std::move(ruleManager),
                             std::move(flows), config);

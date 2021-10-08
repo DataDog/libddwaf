@@ -8,12 +8,12 @@
 #define PWArgsWrapper_h
 
 #include <functional>
+#include <set>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <set>
 
 #include <IPWRuleProcessor.h>
 #include <PWManifest.h>

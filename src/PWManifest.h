@@ -8,9 +8,9 @@
 #define PWArgManifest_h
 
 #include <memory>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
-#include <set>
 
 #include <re2/re2.h>
 #include <utils.h>
@@ -34,9 +34,8 @@ public:
         bool isAllowList { true };
 
         ArgDetails() = default;
-        ArgDetails(const std::string& addr): inheritFrom(addr) {}
-        ArgDetails(const std::string& addr, const std::string &path):
-            inheritFrom(addr), keyPaths({path}) {}
+        ArgDetails(const std::string& addr) : inheritFrom(addr) {}
+        ArgDetails(const std::string& addr, const std::string& path) : inheritFrom(addr), keyPaths({ path }) {}
         ArgDetails(ArgDetails&&)      = default;
         ArgDetails(const ArgDetails&) = delete;
         ArgDetails& operator=(ArgDetails&&) = default;

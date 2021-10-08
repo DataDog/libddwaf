@@ -56,6 +56,6 @@ TEST(TestParser, TestV2)
     ddwaf_object_free(&rule);
 
     run_test(handle);
-    
+
     ddwaf_destroy(handle);
 }

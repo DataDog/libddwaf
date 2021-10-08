@@ -1,0 +1,26 @@
+version: '2.1'
+rules:
+  - id: 1
+    tags:
+      type: flow1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: param
+              key_path:
+                - x
+                - y
+          regex: Sqreen
+  - id: 2
+    tags:
+      type: flow2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: param
+              key_path:
+                - z
+          regex: Sqreen
+
