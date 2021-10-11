@@ -8,6 +8,7 @@
 #define PARAMETER_H
 
 #include <ddwaf.h>
+#include <exception.hpp>
 #include <string>
 #include <string_view>
 #include <unordered_map>

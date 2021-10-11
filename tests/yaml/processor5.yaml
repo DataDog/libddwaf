@@ -7,7 +7,10 @@ rules:
       - operator: match_regex
         parameters:
           inputs:
-            - address: param1
+            - address: param
+              key_path:
+                - x
+                - y
           regex: Sqreen
   - id: 2
     tags:
@@ -16,6 +19,8 @@ rules:
       - operator: match_regex
         parameters:
           inputs:
-            - address: param2
+            - address: param
+              key_path:
+                - z
           regex: Sqreen
 

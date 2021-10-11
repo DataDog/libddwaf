@@ -11,7 +11,7 @@ void populateManifest(PWManifest& manifest);
 TEST(TestAdditive, TestMultiCall)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2], regex: .*}}], action: record}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -59,7 +59,7 @@ TEST(TestAdditive, TestBad)
     EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, 0), DDWAF_ERR_INVALID_ARGUMENT);
     ddwaf_object_free(&object);
 
-    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2], regex: .*}}], action: record}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -87,7 +87,7 @@ TEST(TestAdditive, TestBad)
 TEST(TestAdditive, TestParameterOverride)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: ^string.*}}, {operation: match_regex, parameters: {inputs: [arg2], regex: .*}}], action: record}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: ^string.*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);

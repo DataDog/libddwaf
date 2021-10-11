@@ -8,9 +8,9 @@
 #define PWArgManifest_h
 
 #include <memory>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
 #include <re2/re2.h>
 #include <utils.h>
@@ -30,10 +30,12 @@ public:
         bool runOnKey { false };
         bool runOnValue { true };
         std::string inheritFrom; // Name of the ARG_ID to report the BA we matched
-        std::vector<std::string> keyPaths;
+        std::set<std::string> keyPaths;
         bool isAllowList { true };
 
-        ArgDetails(const std::string& addr);
+        ArgDetails() = default;
+        ArgDetails(const std::string& addr) : inheritFrom(addr) {}
+        ArgDetails(const std::string& addr, const std::string& path) : inheritFrom(addr), keyPaths({ path }) {}
         ArgDetails(ArgDetails&&)      = default;
         ArgDetails(const ArgDetails&) = delete;
         ArgDetails& operator=(ArgDetails&&) = default;
@@ -45,7 +47,11 @@ public:
 private:
     std::unordered_map<std::string, ARG_ID> argIDTable;
     std::unordered_map<ARG_ID, ArgDetails> argManifest;
+    // Unique set of inheritFrom (root) addresses
+    std::unordered_set<std::string_view> root_address_set;
+    // Root address memory to be returned to the API caller
     std::vector<const char*> root_addresses;
+
     ARG_ID counter { 0 };
 
 public:
@@ -58,7 +64,7 @@ public:
     PWManifest& operator=(const PWManifest&) = delete;
 
     void reserve(std::size_t count);
-    void insert(std::string_view name, ArgDetails&& arg);
+    ARG_ID insert(std::string_view name, ArgDetails&& arg);
     bool empty() { return argIDTable.empty(); }
 
     const std::vector<const char*>& get_root_addresses() const { return root_addresses; };

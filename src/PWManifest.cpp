@@ -7,44 +7,24 @@
 #include <PWManifest.h>
 #include <utils.h>
 
-PWManifest::ArgDetails::ArgDetails(const std::string& addr)
-{
-    size_t start = 0, end;
-
-    end = addr.find(':', start);
-
-    if (end == std::string::npos)
-    {
-        inheritFrom = addr;
-        return;
-    }
-
-    inheritFrom = addr.substr(0, end);
-
-    if (end + 1 < addr.size())
-    {
-        keyPaths.push_back(addr.substr(end + 1, addr.size()));
-    }
-}
-
 void PWManifest::reserve(std::size_t count)
 {
     argIDTable.reserve(count);
     argManifest.reserve(count);
 }
 
-void PWManifest::insert(std::string_view name, PWManifest::ArgDetails&& arg)
+PWManifest::ARG_ID PWManifest::insert(std::string_view name, PWManifest::ArgDetails&& arg)
 {
-    argManifest.emplace(counter, std::move(arg));
+    auto [it, result] = argManifest.emplace(counter, std::move(arg));
+    (void) result; // unused
     argIDTable.emplace(name, counter);
 
-    auto& details = argManifest.find(counter)->second;
-    if (details.keyPaths.empty())
-    {
-        root_addresses.push_back(details.inheritFrom.c_str());
+    if(root_address_set.find(it->second.inheritFrom) == root_address_set.end()) {
+        root_address_set.emplace(it->second.inheritFrom);
+        root_addresses.push_back(it->second.inheritFrom.c_str());
     }
 
-    ++counter;
+    return counter++;
 }
 
 bool PWManifest::hasTarget(const std::string& string) const

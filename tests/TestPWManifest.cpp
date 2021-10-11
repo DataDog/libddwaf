@@ -73,47 +73,37 @@ TEST(TestPWManifest, TestMultipleAddrs)
     EXPECT_STREQ(addresses[3], "path3");
 }
 
-TEST(TestPWManifest, TestKeyPaths)
+TEST(TestPWManifest, TestMultipleAddrsKeyPath)
 {
     PWManifest manifest;
 
-    std::vector<std::string> paths { "path:x-key-0", "path:x-key-1",
-                                     "path:x-key-2", "path:x-key-3" };
-
-    manifest.insert("path", PWManifest::ArgDetails("path"));
-
-    for (auto& str : paths)
+    for (auto str : { "path0", "path1", "path2", "path3" })
     {
-        manifest.insert(str, PWManifest::ArgDetails(str));
-    }
+        manifest.insert(str, PWManifest::ArgDetails(str, "key_path"));
+        EXPECT_TRUE(manifest.hasTarget(str));
 
-    for (const std::string& str : paths)
-    {
         auto id = manifest.getTargetArgID(str);
-
-        size_t end = str.find(':', 0);
-
-        auto main = str.substr(0, end);
-        auto key  = str.substr(end + 1, str.size());
 
         auto& details = manifest.getDetailsForTarget(id);
         EXPECT_TRUE(details.runOnValue);
         EXPECT_FALSE(details.runOnKey);
         EXPECT_EQ(details.keyPaths.size(), 1);
-        EXPECT_STREQ(details.keyPaths[0].c_str(), key.c_str());
-        EXPECT_STREQ(details.inheritFrom.c_str(), main.c_str());
+        EXPECT_STREQ(details.inheritFrom.c_str(), str);
 
-        std::unordered_set<std::string> newFields { main };
+        std::unordered_set<std::string> newFields { str };
         std::unordered_set<PWManifest::ARG_ID> argsImpacted;
 
         manifest.findImpactedArgs(newFields, argsImpacted);
-        EXPECT_EQ(argsImpacted.size(), 5);
+        EXPECT_EQ(argsImpacted.size(), 1);
         EXPECT_NE(argsImpacted.find(id), argsImpacted.end());
     }
 
     auto& addresses = manifest.get_root_addresses();
-    EXPECT_EQ(addresses.size(), 1);
-    EXPECT_STREQ(addresses[0], "path");
+    EXPECT_EQ(addresses.size(), 4);
+    EXPECT_STREQ(addresses[0], "path0");
+    EXPECT_STREQ(addresses[1], "path1");
+    EXPECT_STREQ(addresses[2], "path2");
+    EXPECT_STREQ(addresses[3], "path3");
 }
 
 TEST(TestPWManifest, TestUnknownArgID)

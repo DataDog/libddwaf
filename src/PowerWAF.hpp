@@ -32,7 +32,6 @@ struct PowerWAF
 
     static PowerWAF* fromConfig(const ddwaf_object rules, const ddwaf_config* config);
 
-    static constexpr ddwaf_version ruleset_version { 1, 1, 0 };
     static constexpr ddwaf_version waf_version { 1, 0, 12 };
 };
 

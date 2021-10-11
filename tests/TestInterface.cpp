@@ -298,7 +298,7 @@ TEST(FunctionalTests, ddwaf_get_version)
 
 TEST(FunctionalTests, ddwaf_runNull)
 {
-    auto rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: arachni_detection}, conditions: [{operation: match_regex, parameters: {inputs: [bla], regex: Arachni}}], action: record}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: arachni_detection}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -321,7 +321,7 @@ TEST(FunctionalTests, ddwaf_runNull)
     ddwaf_destroy(handle);
 
     ////Add a removeNull transformer
-    rule = readRule(R"({version: '1.0', events: [{id: 1, tags: {type: arachni_detection}, conditions: [{operation: match_regex, parameters: {inputs: [bla], regex: Arachni}}], transformers: [removeNulls], action: record}]})");
+    rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: arachni_detection}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}], transformers: [removeNulls]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);

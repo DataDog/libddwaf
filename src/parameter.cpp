@@ -95,7 +95,7 @@ parameter::operator parameter::map()
 {
     if (type != DDWAF_OBJ_MAP)
     {
-        throw bad_cast("parameter " + strtype(type) + " -> map");
+        throw bad_cast("map", strtype(type));
     }
 
     if (array == nullptr || nbEntries == 0)
@@ -110,7 +110,7 @@ parameter::operator parameter::map()
         const parameter& kv = array[i];
         if (kv.parameterName == nullptr)
         {
-            throw bad_cast("invalid key on parameter map entry");
+            throw malformed_object("invalid key on map entry");
         }
 
         map.emplace(std::string_view(kv.parameterName, kv.parameterNameLength), kv);
@@ -123,7 +123,7 @@ parameter::operator parameter::vector()
 {
     if (type != DDWAF_OBJ_ARRAY)
     {
-        throw bad_cast("parameter(" + strtype(type) + ") -> vector");
+        throw bad_cast("array", strtype(type));
     }
 
     if (array == nullptr || nbEntries == 0)
@@ -137,7 +137,7 @@ parameter::operator std::string_view()
 {
     if (type != DDWAF_OBJ_STRING || stringValue == nullptr)
     {
-        throw bad_cast("parameter " + strtype(type) + " -> string_view");
+        throw bad_cast("string", strtype(type));
     }
 
     return std::string_view(stringValue, nbEntries);
@@ -147,7 +147,7 @@ parameter::operator std::string()
 {
     if (type != DDWAF_OBJ_STRING || stringValue == nullptr)
     {
-        throw bad_cast("parameter " + strtype(type) + " -> string");
+        throw bad_cast("string", strtype(type));
     }
 
     return std::string(stringValue, nbEntries);

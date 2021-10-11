@@ -1,24 +1,29 @@
-version: '1.0'
-events:
+version: '2.1'
+rules:
   - id: 1
     tags:
       type: flow1
     conditions:
-      - operation: match_regex
+      - operator: match_regex
         parameters:
           inputs:
-              - blob1:a
-              - blob2:-1
-              - blob3:alpha
+              - address: blob1
+                key_path:
+                  - a
+              - address: blob2
+                key_path: 
+                  - -1
+              - address: blob3
+                key_path:
+                  - alpha
           regex: target
     action: record
   - id: 2
     tags:
       type: flow2
     conditions:
-      - operation: match_regex
+      - operator: match_regex
         parameters:
           inputs:
-              - arg
+              - address: arg
           regex: target
-    action: record

@@ -10,7 +10,7 @@ static ddwaf_object *prepare_rule() {
     ddwaf_object_map(ret);
 
     ddwaf_object version;
-    ddwaf_object_map_add(ret, "version", ddwaf_object_string(&version, "1.0"));
+    ddwaf_object_map_add(ret, "version", ddwaf_object_string(&version, "2.1"));
 
     ddwaf_object events;
     ddwaf_object_array(&events);
@@ -29,14 +29,17 @@ static ddwaf_object *prepare_rule() {
     ddwaf_object condition;
     ddwaf_object_map(&condition);
 
-    ddwaf_object_map_add(&condition, "operation", DDSTR("match_regex"));
+    ddwaf_object_map_add(&condition, "operator", DDSTR("match_regex"));
 
     ddwaf_object parameters;
     ddwaf_object_map(&parameters);
 
     ddwaf_object inputs;
     ddwaf_object_array(&inputs);
-    ddwaf_object_array_add(&inputs, DDSTR("key"));
+    ddwaf_object key;
+    ddwaf_object_map(&key);
+    ddwaf_object_map_add(&key, "address", DDSTR("key"));
+    ddwaf_object_array_add(&inputs, &key);
     ddwaf_object_map_add(&parameters, "inputs", &inputs);
     ddwaf_object_map_add(&parameters, "regex", DDSTR("Arachni"));
     ddwaf_object_map_add(&condition, "parameters", &parameters);
@@ -52,7 +55,7 @@ static ddwaf_object *prepare_rule() {
     ddwaf_object_map_add(&event, "action", DDSTR("record"));
 
     ddwaf_object_array_add(&events, &event);
-    ddwaf_object_map_add(ret, "events", &events);
+    ddwaf_object_map_add(ret, "rules", &events);
 
     return ret;
 }
