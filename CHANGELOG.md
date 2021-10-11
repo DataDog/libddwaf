@@ -1,5 +1,10 @@
 # libddwaf release
 
+### v1.0.13 (unstable) - 2021/10/11
+- Add support for ruleset format v2.1.
+- Update fuzzer.
+- Fix addresses with key path missing from ddwaf\_required\_addresses.
+
 ### v1.0.12 (unstable) - 2021/10/01
 - Add libinjection SQL and XSS rule processors.
 - Add support for ruleset format v1.1 (adding is\_sqli and is\_xss operators).
