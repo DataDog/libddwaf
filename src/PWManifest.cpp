@@ -15,13 +15,13 @@ void PWManifest::reserve(std::size_t count)
 
 PWManifest::ARG_ID PWManifest::insert(std::string_view name, PWManifest::ArgDetails&& arg)
 {
-    argManifest.emplace(counter, std::move(arg));
+    auto [it, result] = argManifest.emplace(counter, std::move(arg));
+    (void) result; // unused
     argIDTable.emplace(name, counter);
 
-    auto& details = argManifest.find(counter)->second;
-    if (details.keyPaths.empty())
-    {
-        root_addresses.push_back(details.inheritFrom.c_str());
+    if(root_address_set.find(it->second.inheritFrom) == root_address_set.end()) {
+        root_address_set.emplace(it->second.inheritFrom);
+        root_addresses.push_back(it->second.inheritFrom.c_str());
     }
 
     return counter++;

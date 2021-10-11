@@ -73,6 +73,39 @@ TEST(TestPWManifest, TestMultipleAddrs)
     EXPECT_STREQ(addresses[3], "path3");
 }
 
+TEST(TestPWManifest, TestMultipleAddrsKeyPath)
+{
+    PWManifest manifest;
+
+    for (auto str : { "path0", "path1", "path2", "path3" })
+    {
+        manifest.insert(str, PWManifest::ArgDetails(str, "key_path"));
+        EXPECT_TRUE(manifest.hasTarget(str));
+
+        auto id = manifest.getTargetArgID(str);
+
+        auto& details = manifest.getDetailsForTarget(id);
+        EXPECT_TRUE(details.runOnValue);
+        EXPECT_FALSE(details.runOnKey);
+        EXPECT_EQ(details.keyPaths.size(), 1);
+        EXPECT_STREQ(details.inheritFrom.c_str(), str);
+
+        std::unordered_set<std::string> newFields { str };
+        std::unordered_set<PWManifest::ARG_ID> argsImpacted;
+
+        manifest.findImpactedArgs(newFields, argsImpacted);
+        EXPECT_EQ(argsImpacted.size(), 1);
+        EXPECT_NE(argsImpacted.find(id), argsImpacted.end());
+    }
+
+    auto& addresses = manifest.get_root_addresses();
+    EXPECT_EQ(addresses.size(), 4);
+    EXPECT_STREQ(addresses[0], "path0");
+    EXPECT_STREQ(addresses[1], "path1");
+    EXPECT_STREQ(addresses[2], "path2");
+    EXPECT_STREQ(addresses[3], "path3");
+}
+
 TEST(TestPWManifest, TestUnknownArgID)
 {
     PWManifest manifest;

@@ -150,6 +150,13 @@ int main(int argc, char* argv[])
     }
 
     DDWAF_INFO("Ruleset loaded successfully");
+
+    uint32_t required_size;
+    const char* const* required = ddwaf_required_addresses(handle, &required_size);
+    DDWAF_INFO("Required addresses: %u", required_size);
+    for (uint32_t i = 0; i < required_size; i++) {
+        DDWAF_INFO("    - %s", required[i]);
+    }
     ddwaf_destroy(handle);
 
     return EXIT_SUCCESS;

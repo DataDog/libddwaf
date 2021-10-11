@@ -47,7 +47,11 @@ public:
 private:
     std::unordered_map<std::string, ARG_ID> argIDTable;
     std::unordered_map<ARG_ID, ArgDetails> argManifest;
+    // Unique set of inheritFrom (root) addresses
+    std::unordered_set<std::string_view> root_address_set;
+    // Root address memory to be returned to the API caller
     std::vector<const char*> root_addresses;
+
     ARG_ID counter { 0 };
 
 public:
