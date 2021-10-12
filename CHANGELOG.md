@@ -4,6 +4,7 @@
 - Add support for ruleset format v2.1.
 - Update fuzzer.
 - Fix addresses with key path missing from ddwaf\_required\_addresses.
+- Improve ruleset parsing logging.
 
 ### v1.0.12 (unstable) - 2021/10/01
 - Add libinjection SQL and XSS rule processors.
