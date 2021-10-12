@@ -273,8 +273,8 @@ install(EXPORT libddwaf-config
 set(CPACK_PACKAGE_VENDOR "libddwaf")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "DataDog WAF Library")
 set(CPACK_RESOURCE_FILE_README "${libddwaf_SOURCE_DIR}/README.md")
-set(CPACK_GENERATOR "TGZ;ZIP")
-set(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
+set(CPACK_GENERATOR "TGZ")
+set(CPACK_SOURCE_GENERATOR "TGZ")
 
 ## Package name
 execute_process(COMMAND git describe --exact-match --tags HEAD
