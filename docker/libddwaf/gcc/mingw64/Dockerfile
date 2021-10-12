@@ -2,7 +2,7 @@
 # win64)
 FROM alpine:3.14 AS build
 
-RUN apk --update-cache add cmake make mingw-w64-gcc mingw-w64-winpthreads
+RUN apk --update-cache add cmake make mingw-w64-gcc mingw-w64-winpthreads git
 
 ARG BUILD_TYPE=Release
 COPY . /usr/local/src/libddwaf
