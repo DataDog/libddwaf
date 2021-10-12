@@ -190,11 +190,11 @@ jobs:
 
           extract_file ./artifacts/libddwaf-linux-x86_64/libddwaf-*-linux-x86_64*.tar.gz \
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-x64/native
-          extract_file ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.zip \
+          extract_file ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.tar.gz \
             '/libddwaf\.dylib$' ./packages/nuget/runtimes/osx-x64/native
-          extract_file ./artifacts/libddwaf-windows-Win32/libddwaf-*-windows-win32*.zip \
+          extract_file ./artifacts/libddwaf-windows-Win32/libddwaf-*-windows-win32*.tar.gz \
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x86/native
-          extract_file ./artifacts/libddwaf-windows-x64/libddwaf-*-windows-x64*.zip \
+          extract_file ./artifacts/libddwaf-windows-x64/libddwaf-*-windows-x64*.tar.gz \
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x64/native
 
           # create nuget
