@@ -190,6 +190,9 @@ void parse(parameter::map& ruleset, PWRuleManager& ruleManager, PWManifest& mani
     {
         throw parsing_error("no valid rules found");
     }
+
+    DDWAF_DEBUG("Loaded %zu rules out of %zu available in the ruleset",
+                ruleManager.getNbRules(), rules.size());
 }
 
 }
