@@ -39,7 +39,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: libddwaf-windows-${{ matrix.arch }}
-          path: ${{ github.workspace }}/packages
+          path: ${{ github.workspace }}/packages/*.tar.gz
 
   macos-build:
     runs-on: macos-latest
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: libddwaf-macos-x86_64
-          path: ${{ github.workspace }}/packages
+          path: ${{ github.workspace }}/packages/*.tar.gz
 
   macos-cross-build:
     runs-on: macos-latest
@@ -92,7 +92,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: libddwaf-macos-arm64
-          path: ${{ github.workspace }}/packages
+          path: ${{ github.workspace }}/packages/*.tar.gz
 
   docker-builds:
     runs-on: ubuntu-latest
@@ -131,7 +131,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.target.package }}
-          path: /tmp/packages
+          path: /tmp/packages/*.tar.gz
   test-asan:
     runs-on: ubuntu-latest
     steps:
