@@ -49,6 +49,7 @@ ExternalProject_Add(proj_re2
     URL         https://github.com/google/re2/archive/${RE2_COMMIT}.tar.gz
     INSTALL_DIR ${INSTALL_DIR}
     CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+    -DCMAKE_INSTALL_LIBDIR=lib
     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -62,7 +63,7 @@ ExternalProject_Add(proj_re2
 # alas, we can't use find_package because by the package is not downloaded by config time
 # so manually creating the library
 add_library(lib_re2 STATIC IMPORTED GLOBAL)
-set_property(TARGET lib_re2 PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX})
+set_property(TARGET lib_re2 PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX})
 target_include_directories(lib_re2 INTERFACE ${INSTALL_DIR}/include)
 if(NOT MSVC)
     target_link_libraries(lib_re2 INTERFACE -lpthread)
@@ -74,6 +75,7 @@ ExternalProject_Add(proj_gtest
     URL         https://github.com/google/googletest/archive/${GOOGLETEST_COMMIT}.tar.gz
     INSTALL_DIR ${INSTALL_DIR}
     CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+                -DCMAKE_INSTALL_LIBDIR=lib
                 -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
                 -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                 -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -92,7 +94,7 @@ else()
 endif()
 
 add_library(lib_gtest STATIC IMPORTED GLOBAL)
-set_property(TARGET lib_gtest PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/${LIBGTEST_FILENAME})
+set_property(TARGET lib_gtest PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBGTEST_FILENAME})
 target_include_directories(lib_gtest INTERFACE ${INSTALL_DIR}/include)
 if(NOT MSVC)
     target_link_libraries(lib_gtest INTERFACE -lpthread)
@@ -120,6 +122,7 @@ ExternalProject_Add(proj_yamlcpp
     URL               https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.6.3.zip
     INSTALL_DIR       ${INSTALL_DIR}
     CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+                -DCMAKE_INSTALL_LIBDIR=lib
                 -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                 -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                 -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
