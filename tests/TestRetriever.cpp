@@ -126,8 +126,7 @@ TEST(TestPWRetriever, TestAccessSimplePath)
 
         ASSERT_EQ(ddwaf_run(context, &paramHolder, &ret, LONG_TIME), DDWAF_MONITOR);
         ASSERT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"target","binding_accessor":"blob1","manifest_key":"blob1:a","key_path":["a"],"resolved_value":"real_target","match_status":"target"}]}])");
-
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"target","parameters":[{"address":"blob1","key_path":["a"],"resolved_value":"real_target"}],"highlight":["target"]}]}])");
         ddwaf_result_free(&ret);
         ddwaf_context_destroy(context);
     }
@@ -140,8 +139,7 @@ TEST(TestPWRetriever, TestAccessSimplePath)
 
         ASSERT_EQ(ddwaf_run(context, &paramHolder, &ret, LONG_TIME), DDWAF_MONITOR);
         ASSERT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"target","binding_accessor":"blob2","manifest_key":"blob2:-1","key_path":["-1"],"resolved_value":"target_bait2","match_status":"target"}]}])");
-
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"target","parameters":[{"address":"blob2","key_path":["-1"],"resolved_value":"target_bait2"}],"highlight":["target"]}]}])");
         ddwaf_result_free(&ret);
         ddwaf_context_destroy(context);
     }
@@ -154,8 +152,7 @@ TEST(TestPWRetriever, TestAccessSimplePath)
 
         ASSERT_EQ(ddwaf_run(context, &paramHolder, &ret, LONG_TIME), DDWAF_MONITOR);
         ASSERT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"target","binding_accessor":"blob3","manifest_key":"blob3:alpha","key_path":["alpha"],"resolved_value":"targeto","match_status":"target"}]}])");
-
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"target","parameters":[{"address":"blob3","key_path":["alpha"],"resolved_value":"targeto"}],"highlight":["target"]}]}])");
         ddwaf_result_free(&ret);
         ddwaf_context_destroy(context);
     }

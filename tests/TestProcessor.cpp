@@ -29,7 +29,7 @@ TEST(TestPWProcessor, TestOutput)
     EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);
 
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, "[{\"ret_code\":1,\"flow\":\"flow1\",\"rule\":\"1\",\"filter\":[{\"operator\":\"match_regex\",\"operator_value\":\"rule2\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"resolved_value\":\"rule2\",\"match_status\":\"rule2\"},{\"operator\":\"match_regex\",\"operator_value\":\"rule3\",\"binding_accessor\":\"value2\",\"manifest_key\":\"value2\",\"key_path\":[\"key\"],\"resolved_value\":\"rule3\",\"match_status\":\"rule3\"}]}]");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value","key_path":[],"resolved_value":"rule2"}],"highlight":["rule2"]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["key"],"resolved_value":"rule3"}],"highlight":["rule3"]}]}])");
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -57,7 +57,7 @@ TEST(TestPWProcessor, TestKeyPaths)
     EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MONITOR);
 
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param","manifest_key":"param:x","key_path":["x"],"resolved_value":"Sqreen","match_status":"Sqreen"}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["x"],"resolved_value":"Sqreen"}],"highlight":["Sqreen"]}]}])");
 
     ddwaf_result_free(&ret);
 
@@ -69,7 +69,7 @@ TEST(TestPWProcessor, TestKeyPaths)
     EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MONITOR);
 
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow2","rule":"2","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param","manifest_key":"param:z","key_path":["z"],"resolved_value":"Sqreen","match_status":"Sqreen"}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["z"],"resolved_value":"Sqreen"}],"highlight":["Sqreen"]}]}])");
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -86,7 +86,7 @@ TEST(TestPWProcessor, TestKeyPaths)
     EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MONITOR);
 
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param","manifest_key":"param:y","key_path":["y"],"resolved_value":"Sqreen","match_status":"Sqreen"}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["y"],"resolved_value":"Sqreen"}],"highlight":["Sqreen"]}]}])");
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -204,7 +204,7 @@ TEST(TestPWProcessor, TestCache)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MONITOR);
         EXPECT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param","manifest_key":"param","resolved_value":"Sqreen","match_status":"Sqreen"},{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param2","manifest_key":"param2","resolved_value":"Sqreen","match_status":"Sqreen"}]}])");
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":[],"resolved_value":"Sqreen"}],"highlight":["Sqreen"]},{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"resolved_value":"Sqreen"}],"highlight":["Sqreen"]}]}])");
 
         EXPECT_TRUE(add->processor.ranCache.at("1").first);
         EXPECT_EQ(add->processor.ranCache.at("1").second, add->processor.runCount);
@@ -237,7 +237,7 @@ TEST(TestPWProcessor, TestCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param1, &ret, LONG_TIME), DDWAF_MONITOR);
         EXPECT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param1","manifest_key":"param1","resolved_value":"Sqreen","match_status":"Sqreen"}]}])");
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"resolved_value":"Sqreen"}],"highlight":["Sqreen"]}]}])");
 
         ddwaf_result_free(&ret);
     }
@@ -259,7 +259,7 @@ TEST(TestPWProcessor, TestCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MONITOR);
         EXPECT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"2","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param2","manifest_key":"param2","resolved_value":"Sqreen","match_status":"Sqreen"}]}])");
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow1","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"resolved_value":"Sqreen"}],"highlight":["Sqreen"]}]}])");
 
         ddwaf_result_free(&ret);
     }
@@ -288,7 +288,7 @@ TEST(TestPWProcessor, TestMultiFlowCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MONITOR);
         EXPECT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param1","manifest_key":"param1","resolved_value":"Sqreen","match_status":"Sqreen"}]}])");
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"resolved_value":"Sqreen"}],"highlight":["Sqreen"]}]}])");
 
         ddwaf_result_free(&ret);
     }
@@ -310,7 +310,7 @@ TEST(TestPWProcessor, TestMultiFlowCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MONITOR);
         EXPECT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow2","rule":"2","filter":[{"operator":"match_regex","operator_value":"Sqreen","binding_accessor":"param2","manifest_key":"param2","resolved_value":"Sqreen","match_status":"Sqreen"}]}])");
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"resolved_value":"Sqreen"}],"highlight":["Sqreen"]}]}])");
 
         ddwaf_result_free(&ret);
     }
@@ -356,10 +356,7 @@ TEST(TestPWProcessor, TestBudget)
 
     processor.runFlow("flow1", flows["flow1"], rManager);
     ddwaf_result ret = rManager.synthetize();
-
-    std::string result = std::string(ret.data).substr(0, strlen(R"([{"ret_code":-1,"flow":"flow1")"));
-
-    EXPECT_STREQ(result.c_str(), R"([{"ret_code":-1,"flow":"flow1")");
+    EXPECT_EQ(ret.data, nullptr);
 
     mapItem.parameterName = NULL;
 

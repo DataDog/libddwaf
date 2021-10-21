@@ -45,7 +45,6 @@ public:
     void startRule();
     void recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather);
 
-    void commitResult(DDWAF_RET_CODE code, const std::string& flow);
     void reportMatch(const std::string& id,
                      const std::string& type, const std::string& category,
                      const std::string& name, const rapidjson::Value& filters);

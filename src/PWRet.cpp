@@ -142,52 +142,11 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     ruleCollector.PushBack(output, allocator);
 }
 
-void PWRetManager::commitResult(DDWAF_RET_CODE code, [[maybe_unused]] const std::string& flow)
-{
-    /*    rapidjson::Value output, flowValue;*/
-
-    //output.SetObject();
-    //flowValue.SetString(flow.c_str(), static_cast<rapidjson::SizeType>(flow.size()), allocator);
-
-    //output.AddMember("ret_code", (int) code, allocator);
-    //output.AddMember("flow", flowValue, allocator);
-
-    /*outputDocument.PushBack(output, allocator);*/
-    recordResult(code);
-}
-
 rapidjson::Value PWRetManager::fetchRuleCollector()
 {
     // This will actually move the content of the ruleCollector: We're now an empty shell
     return ruleCollector.GetArray();
 }
-
-/*
- "rule": {
-    "id": "494034",
-    "name": "Detect script",
-    "tags": {
-       "type": "xss",
-       "category": "attack_attempt"
-    }
-},
-"rule_match": {
-  "operator": "match_regex",
-  "operator_value": "^<script>",
-  "parameters": [
-      {
-          "address": "server.request.query",
-          "key_path": [
-              "search"
-          ],
-          "value": "<script>alert() only if PII scrubbed, null otherwise"
-      }
-  ],
-  "highlight": [
-      "<script> only if PII scrubbed, empty otherwise"
-  ]
-}
-*/
 
 void PWRetManager::reportMatch(const std::string& id,
                                const std::string& type, const std::string& category,

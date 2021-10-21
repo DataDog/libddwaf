@@ -26,7 +26,7 @@ void run_test(ddwaf_handle handle)
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":".*","binding_accessor":"arg1","manifest_key":"arg1","resolved_value":"string 1","match_status":"string 1"},{"operator":"match_regex","operator_value":".*","binding_accessor":"arg2","manifest_key":"arg2:x","key_path":["x"],"resolved_value":"string 2","match_status":"string 2"},{"operator":"match_regex","operator_value":".*","binding_accessor":"arg2","manifest_key":"arg2:y","key_path":["y"],"resolved_value":"string 3","match_status":"string 3"}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"resolved_value":"string 1"}],"highlight":["string 1"]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":["x"],"resolved_value":"string 2"}],"highlight":["string 2"]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":["y"],"resolved_value":"string 3"}],"highlight":["string 3"]}]}])");
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);
