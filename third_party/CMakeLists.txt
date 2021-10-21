@@ -27,6 +27,7 @@ ExternalProject_Add(proj_rapidjson
 add_library(lib_rapidjson INTERFACE IMPORTED GLOBAL)
 target_include_directories(lib_rapidjson INTERFACE ${INSTALL_DIR}/include)
 add_dependencies(lib_rapidjson proj_rapidjson)
+target_compile_definitions(lib_rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING=1)
 
 if(MSVC)
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")

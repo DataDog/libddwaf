@@ -6,6 +6,8 @@
 
 #include "test.h"
 
+using namespace ddwaf;
+
 void compareArraysOfTargets(const PWManifest& manifest, const rapidjson::Value& _array1, const vector<PWManifest::ARG_ID>& array2)
 {
     const auto& array1 = _array1.GetArray();
@@ -33,8 +35,8 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
     ASSERT_NE(context, nullptr);
 
     //Access the rule
-    PowerWAF* waf      = reinterpret_cast<PowerWAF*>(handle);
-    const PWRule& rule = waf->ruleManager.getRules("1")[0];
+    PowerWAF* waf         = reinterpret_cast<PowerWAF*>(handle);
+    const condition& cond = waf->rules.find("1")->second.conditions[0];
 
     //Send garbage input
     PWRetriever retriever(waf->manifest, 256, 256);
@@ -54,12 +56,12 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
     gather.resolvedValue = "lol";
     gather.matchedValue  = "lol2";
 
-    EXPECT_FALSE(rule.matchWithTransformer(*iterator, gather, false, true));
+    EXPECT_FALSE(cond.matchWithTransformer(*iterator, gather, false, true));
     EXPECT_EQ(gather.resolvedValue, "lol");
     EXPECT_EQ(gather.matchedValue, "lol2");
 
     parameter.parameterName = "";
-    EXPECT_FALSE(rule.matchWithTransformer(*iterator, gather, false, true));
+    EXPECT_FALSE(cond.matchWithTransformer(*iterator, gather, false, true));
     EXPECT_EQ(gather.resolvedValue, "lol");
     EXPECT_EQ(gather.matchedValue, "lol2");
 

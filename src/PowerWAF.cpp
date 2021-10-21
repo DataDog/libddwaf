@@ -24,11 +24,10 @@
 using namespace ddwaf;
 using namespace std::literals;
 
-PowerWAF::PowerWAF(PWManifest&& manifest_, PWRuleManager&& ruleManager_,
-                   std::unordered_map<std::string, std::vector<std::string>>&& flows_,
-                   const ddwaf_config* config)
+PowerWAF::PowerWAF(PWManifest&& manifest_, rule_map&& rules_,
+                   flow_map&& flows_, const ddwaf_config* config)
     : manifest(std::move(manifest_)),
-      ruleManager(std::move(ruleManager_)),
+      rules(std::move(rules_)),
       flows(std::move(flows_))
 {
     if (config != nullptr)
@@ -52,14 +51,14 @@ PowerWAF::PowerWAF(PWManifest&& manifest_, PWRuleManager&& ruleManager_,
 
 PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset, const ddwaf_config* config)
 {
-    PWRuleManager ruleManager;
     PWManifest manifest;
-    std::unordered_map<std::string, std::vector<std::string>> flows;
+    rule_map rules;
+    flow_map flows;
 
     try
     {
-        parser::parse(ruleset, ruleManager, manifest, flows);
-        return new PowerWAF(std::move(manifest), std::move(ruleManager),
+        parser::parse(ruleset, rules, manifest, flows);
+        return new PowerWAF(std::move(manifest), std::move(rules),
                             std::move(flows), config);
     }
     catch (const std::exception& e)

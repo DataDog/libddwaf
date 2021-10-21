@@ -125,7 +125,7 @@ TEST(TestPWProcessor, TestMissingParameter)
 TEST(TestPWProcessor, TestInvalidUTF8Input)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -346,12 +346,12 @@ TEST(TestPWProcessor, TestBudget)
     ASSERT_TRUE(wrapper.isValid());
 
     //Fetch the rule and flow managers
-    auto& flows                      = waf->flows;
-    const PWRuleManager& ruleManager = waf->ruleManager;
+    auto& flows = waf->flows;
+    auto& rules = waf->rules;
 
     rapidjson::Document document;
     PWRetManager rManager(TIME_STORE_DEFAULT, document.GetAllocator());
-    PWProcessor processor(wrapper, ruleManager);
+    PWProcessor processor(wrapper, rules);
     processor.startNewRun(SQPowerWAF::monotonic_clock::now() + chrono::microseconds(50));
 
     processor.runFlow("flow1", flows["flow1"], rManager);
@@ -387,7 +387,6 @@ TEST(TestPWProcessor, TestBudgetRules)
 
     EXPECT_EQ(ddwaf_run(context, &param, &ret, 50), DDWAF_GOOD);
     EXPECT_EQ(ret.action, DDWAF_GOOD);
-    EXPECT_TRUE(!strncmp(ret.data, R"([{"ret_code":-1,"flow":"flow1")", strlen(R"([{"ret_code":-1,"flow":"flow1")")));
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -462,7 +461,7 @@ TEST(TestPWProcessor, TestPerfReporting)
 TEST(TestPWProcessor, TestPerfReportingIncomplete)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: bla}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: pouet}}]}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: bla, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: pouet}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -513,7 +512,7 @@ TEST(TestPWProcessor, TestDisablePerfReporting)
     ddwaf_config config = { 0, 0, 0 };
 
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: bla}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: pouet}}]}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: bla, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: pouet}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, &config);

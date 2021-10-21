@@ -15,7 +15,7 @@ PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
     : wafReference(_wafReference),
       wafHandle(_wafReference.get()),
       retriever(wafHandle->manifest, wafHandle->maxMapDepth, wafHandle->maxArrayLength),
-      processor(retriever, wafHandle->ruleManager),
+      processor(retriever, wafHandle->rules),
       obj_free(ddwaf_object_free)
 {
     argCache.reserve(ADDITIVE_BUFFER_PREALLOC);
@@ -24,7 +24,7 @@ PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
 PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
     : wafHandle((const PowerWAF*) _waf),
       retriever(wafHandle->manifest, wafHandle->maxMapDepth, wafHandle->maxArrayLength),
-      processor(retriever, wafHandle->ruleManager),
+      processor(retriever, wafHandle->rules),
       obj_free(free_fn)
 {
     argCache.reserve(ADDITIVE_BUFFER_PREALLOC);

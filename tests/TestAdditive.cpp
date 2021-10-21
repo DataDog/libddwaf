@@ -11,7 +11,7 @@ void populateManifest(PWManifest& manifest);
 TEST(TestAdditive, TestMultiCall)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -40,7 +40,7 @@ TEST(TestAdditive, TestMultiCall)
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":".*","binding_accessor":"arg1","manifest_key":"arg1","resolved_value":"string 1","match_status":"string 1"},{"operator":"match_regex","operator_value":".*","binding_accessor":"arg2","manifest_key":"arg2","resolved_value":"string 2","match_status":"string 2"}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"resolved_value":"string 1"}],"highlight":["string 1"]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"resolved_value":"string 2"}],"highlight":["string 2"]}]}])");
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);
@@ -59,7 +59,7 @@ TEST(TestAdditive, TestBad)
     EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, 0), DDWAF_ERR_INVALID_ARGUMENT);
     ddwaf_object_free(&object);
 
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -87,7 +87,7 @@ TEST(TestAdditive, TestBad)
 TEST(TestAdditive, TestParameterOverride)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: ^string.*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: ^string.*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -101,7 +101,6 @@ TEST(TestAdditive, TestParameterOverride)
 
     ddwaf_object_map_add(&param1, "arg1", ddwaf_object_string(&tmp, "not string 1"));
     ddwaf_object_map_add(&param1, "arg2", ddwaf_object_string(&tmp, "string 2"));
-
     ddwaf_object_map_add(&param2, "arg1", ddwaf_object_string(&tmp, "string 1"));
 
     // Run with both arg1 and arg2, but arg1 is wrong
@@ -116,7 +115,8 @@ TEST(TestAdditive, TestParameterOverride)
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"^string.*","binding_accessor":"arg1","manifest_key":"arg1","resolved_value":"string 1","match_status":"string 1"},{"operator":"match_regex","operator_value":".*","binding_accessor":"arg2","manifest_key":"arg2","resolved_value":"string 2","match_status":"string 2"}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"^string.*","parameters":[{"address":"arg1","key_path":[],"resolved_value":"string 1"}],"highlight":["string 1"]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"resolved_value":"string 2"}],"highlight":["string 2"]}]}])");
+    //EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"^string.*","binding_accessor":"arg1","manifest_key":"arg1","resolved_value":"string 1","match_status":"string 1"},{"operator":"match_regex","operator_value":".*","binding_accessor":"arg2","manifest_key":"arg2","resolved_value":"string 2","match_status":"string 2"}]}])");
     ddwaf_result_free(&ret);
 
     // Run again without change

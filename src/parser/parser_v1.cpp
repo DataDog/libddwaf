@@ -6,23 +6,23 @@
 
 #include <PWManifest.h>
 #include <PWRetriever.hpp>
-#include <PWRuleManager.hpp>
 #include <exception.hpp>
 #include <log.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
+#include <rule.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-using namespace ddwaf;
-using namespace ddwaf::parser;
+using ddwaf::parameter;
+using ddwaf::parser::at;
 
 namespace
 {
 
-PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
-                      std::vector<PW_TRANSFORM_ID>& transformers)
+ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
+                                std::vector<PW_TRANSFORM_ID>& transformers)
 {
     auto operation = at<std::string_view>(rule, "operation");
     auto params    = at<parameter::map>(rule, "parameters");
@@ -43,7 +43,7 @@ PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
         {
             if (pattern.type != DDWAF_OBJ_STRING)
             {
-                throw parsing_error("phrase_match list item not a string");
+                throw ddwaf::parsing_error("phrase_match list item not a string");
             }
 
             patterns.push_back(pattern.stringValue);
@@ -80,7 +80,7 @@ PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
     }
     else
     {
-        throw parsing_error("unknown processor: " + std::string(operation));
+        throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
     }
 
     std::vector<PWManifest::ARG_ID> targets;
@@ -89,7 +89,7 @@ PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
     {
         if (input.empty())
         {
-            throw parsing_error("empty address");
+            throw ddwaf::parsing_error("empty address");
         }
 
         PWManifest::ARG_ID id;
@@ -116,14 +116,14 @@ PWRule parseCondition(parameter::map& rule, PWManifest& manifest,
         targets.push_back(id);
     }
 
-    return PWRule(std::move(targets), std::move(transformers), std::move(processor));
+    return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor));
 }
 
-void parseRule(parameter::map& rule, PWRuleManager& ruleManager, PWManifest& manifest,
-               std::unordered_map<std::string, std::vector<std::string>>& flows)
+void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
+               PWManifest& manifest, ddwaf::flow_map& flows)
 {
     auto id = at<std::string>(rule, "id");
-    if (ruleManager.hasRule(id))
+    if (rules.find(id) != rules.end())
     {
         DDWAF_WARN("duplicate rule %s", id.c_str());
         return;
@@ -131,10 +131,7 @@ void parseRule(parameter::map& rule, PWRuleManager& ruleManager, PWManifest& man
 
     try
     {
-        auto tags = at<parameter::map>(rule, "tags");
-        auto type = at<std::string>(tags, "type");
-
-        auto& flow = flows[type];
+        ddwaf::rule parsed_rule;
 
         std::vector<PW_TRANSFORM_ID> rule_transformers;
         auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
@@ -143,20 +140,28 @@ void parseRule(parameter::map& rule, PWRuleManager& ruleManager, PWManifest& man
             PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
             if (transform_id == PWT_INVALID)
             {
-                throw parsing_error("invalid transformer" + std::string(transformer));
+                throw ddwaf::parsing_error("invalid transformer" + std::string(transformer));
             }
             rule_transformers.push_back(transform_id);
         }
 
-        std::vector<PWRule> rules;
-        parameter::vector conditions = rule.at("conditions");
-        for (parameter::map condition : conditions)
+        std::vector<ddwaf::condition> conditions;
+        parameter::vector conditions_array = rule.at("conditions");
+        for (parameter::map cond : conditions_array)
         {
-            PWRule rule = parseCondition(condition, manifest, rule_transformers);
-            rules.push_back(std::move(rule));
+            parsed_rule.conditions.push_back(
+                std::move(parseCondition(cond, manifest, rule_transformers)));
         }
 
-        ruleManager.addRule(id, std::move(rules));
+        auto tags = at<parameter::map>(rule, "tags");
+        auto type = at<std::string>(tags, "type");
+
+        parsed_rule.name     = at<std::string>(rule, "name");
+        parsed_rule.category = at<std::string>(tags, "category", "");
+
+        rules.emplace(id, std::move(parsed_rule));
+
+        auto& flow = flows[type];
         flow.push_back(id);
     }
     catch (const std::exception& e)
@@ -170,15 +175,15 @@ void parseRule(parameter::map& rule, PWRuleManager& ruleManager, PWManifest& man
 namespace ddwaf::parser::v1
 {
 
-void parse(parameter::map& ruleset, PWRuleManager& ruleManager, PWManifest& manifest,
-           std::unordered_map<std::string, std::vector<std::string>>& flows)
+void parse(parameter::map& ruleset, ddwaf::rule_map& rules,
+           PWManifest& manifest, ddwaf::flow_map& flows)
 {
-    auto rules = at<parameter::vector>(ruleset, "events");
-    for (parameter::map rule : rules)
+    auto rules_array = at<parameter::vector>(ruleset, "events");
+    for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, ruleManager, manifest, flows);
+            parseRule(rule, rules, manifest, flows);
         }
         catch (const std::exception& e)
         {
@@ -186,13 +191,13 @@ void parse(parameter::map& ruleset, PWRuleManager& ruleManager, PWManifest& mani
         }
     }
 
-    if (ruleManager.isEmpty() || flows.empty())
+    if (rules.empty() || flows.empty())
     {
-        throw parsing_error("no valid rules found");
+        throw ddwaf::parsing_error("no valid rules found");
     }
 
     DDWAF_DEBUG("Loaded %zu rules out of %zu available in the ruleset",
-                ruleManager.getNbRules(), rules.size());
+                rules.size(), rules_array.size());
 }
 
 }

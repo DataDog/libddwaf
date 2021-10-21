@@ -6,6 +6,8 @@
 
 #include "test.h"
 
+using namespace ddwaf;
+
 TEST(TestPWRetriever, TestCreateNoTarget)
 {
     PWManifest manifest;
@@ -182,9 +184,9 @@ TEST(PWRetriever, NullErrorManagement)
     rapidjson::Document document;
     PWRetManager rManager(TIME_STORE_DEFAULT, document.GetAllocator());
 
-    const PWRule& pwRule = ((PowerWAF*) handle)->ruleManager.rules.find("1")->second.front();
+    const condition& cond = ((PowerWAF*) handle)->rules.find("1")->second.conditions.front();
 
-    EXPECT_EQ(pwRule.performMatching(retriever, TIME_FAR, rManager), MISSING_ARG);
+    EXPECT_EQ(cond.performMatching(retriever, TIME_FAR, rManager), condition::status::missing_arg);
 
     ddwaf_object_free(&rule);
     ddwaf_object_free(&map);

@@ -16,20 +16,20 @@ namespace ddwaf::parser
 
 namespace v1
 {
-    void parse(parameter::map& ruleset, PWRuleManager& ruleManager, PWManifest& manifest,
-               std::unordered_map<std::string, std::vector<std::string>>& flows);
+    void parse(parameter::map& ruleset, ddwaf::rule_map& ruleManager,
+               PWManifest& manifest, ddwaf::flow_map& flows);
 }
 
 namespace v2
 {
-    void parse(parameter::map& ruleset, PWRuleManager& ruleManager, PWManifest& manifest,
-               std::unordered_map<std::string, std::vector<std::string>>& flows);
+    void parse(parameter::map& ruleset, ddwaf::rule_map& ruleManager,
+               PWManifest& manifest, ddwaf::flow_map& flows);
 }
 
-void parse(parameter rules, PWRuleManager& ruleManager, PWManifest& manifest,
-           std::unordered_map<std::string, std::vector<std::string>>& flows)
+void parse(parameter object, ddwaf::rule_map& ruleManager,
+           PWManifest& manifest, ddwaf::flow_map& flows)
 {
-    parameter::map ruleset   = parameter::map(rules);
+    parameter::map ruleset   = parameter::map(object);
     std::string_view version = at<std::string_view>(ruleset, "version");
 
     uint16_t major, minor;

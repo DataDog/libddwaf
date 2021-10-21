@@ -27,7 +27,7 @@ TEST(TestLibInjectionXSS, TestBasic)
 TEST(TestLibInjectionXSS, TestRuleset)
 {
     //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: is_xss, parameters: {inputs: [{address: arg1}]}}]}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_xss, parameters: {inputs: [{address: arg1}]}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -46,7 +46,7 @@ TEST(TestLibInjectionXSS, TestRuleset)
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"is_xss","binding_accessor":"arg1","manifest_key":"arg1","resolved_value":"<script>alert(1);</script>"}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"is_xss","operator_value":"","parameters":[{"address":"arg1","key_path":[],"resolved_value":"<script>alert(1);</script>"}],"highlight":[]}]}])");
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

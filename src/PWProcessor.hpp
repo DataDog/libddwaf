@@ -16,13 +16,13 @@ struct PWProcessor;
 #include <Clock.hpp>
 #include <PWRet.hpp>
 #include <PWRetriever.hpp>
-#include <PWRuleManager.hpp>
+#include <rule.hpp>
 
 struct PWProcessor
 {
     rapidjson::Document document;
     PWRetriever& parameters;
-    const PWRuleManager& ruleManager;
+    const ddwaf::rule_map& rules;
 
     SQPowerWAF::monotonic_clock::time_point deadline;
     uint64_t runCount;
@@ -31,10 +31,10 @@ struct PWProcessor
     std::unordered_map<std::string, rapidjson::Value> matchCache;
 
     bool hasCacheHit(const std::string& ruleID, bool& hadNegativeMatch, bool& hitFromThisRun) const;
-    bool shouldIgnoreCacheHit(const std::vector<PWRule>& rules) const;
+    bool shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& rules) const;
 
 public:
-    PWProcessor(PWRetriever& input, const PWRuleManager& rManager);
+    PWProcessor(PWRetriever& input, const ddwaf::rule_map& rules);
     void startNewRun(const SQPowerWAF::monotonic_clock::time_point& _deadline);
     void runFlow(const std::string& name, const std::vector<std::string>& flow, PWRetManager& manager);
 
