@@ -27,59 +27,155 @@ public:
 
         if (sd.Parse(buffer).HasParseError())
         {
-            throw std::invalid_argument("Failed to parse schema");
+            throw std::runtime_error("failed to parse schema");
         }
 
         schema    = std::make_unique<SchemaDocument>(sd);
         validator = std::make_unique<SchemaValidator>(*schema);
+
+        auto rule = readFile("schema.yaml");
+        if (rule.type == DDWAF_OBJ_INVALID) {
+            throw std::runtime_error("failed to load schema.yaml");
+        }
+
+        handle = ddwaf_init(&rule, nullptr);
+        if (handle == nullptr) {
+            throw std::runtime_error("failed to obtain waf handle");
+        }
+
+        ddwaf_object_free(&rule);
+    }
+
+    ~TestSchemaFixture()
+    {
+        ddwaf_destroy(handle);
     }
 
     void SetUp()
     {
         validator->Reset();
+
+        context = ddwaf_context_init(handle, ddwaf_object_free);
+        ASSERT_NE(context, nullptr);
     }
 
-    bool Validate(const std::string& json)
+    void TearDown()
+    {
+        ddwaf_context_destroy(context);
+        context = nullptr;
+    }
+
+    std::string Error() {
+        StringBuffer sb;
+        PrettyWriter<StringBuffer> w(sb);
+        validator->GetError().Accept(w);
+        return sb.GetString();
+    }
+
+    void Validate(ddwaf_result ret)
     {
         Document d;
-        if (d.Parse(json).HasParseError())
-        {
-            return false;
+        EXPECT_EQ(ret.action, DDWAF_MONITOR);
+        EXPECT_NE(ret.data, nullptr);
+        if (!HasFailure()) {
+            EXPECT_FALSE(d.Parse(ret.data).HasParseError());
+            EXPECT_TRUE(d.Accept(*validator)) << Error();
         }
-
-        return d.Accept(*validator);
     }
 
 protected:
     Document sd;
     std::unique_ptr<SchemaDocument> schema;
     std::unique_ptr<SchemaValidator> validator;
+
+    ddwaf_handle handle{nullptr};
+
+    ddwaf_context context{nullptr};
 };
 
-TEST_F(TestSchemaFixture, BasicTest)
+TEST_F(TestSchemaFixture, SimpleResult)
 {
-    //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
-    ASSERT_NE(context, nullptr);
-
     ddwaf_object param, tmp;
     ddwaf_object_map(&param);
 
-    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "string 1"));
-    ddwaf_object_map_add(&param, "arg2", ddwaf_object_string(&tmp, "string 2"));
+    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "rule1"));
 
     ddwaf_result ret;
     ddwaf_run(context, &param, &ret, LONG_TIME);
-    EXPECT_TRUE(Validate(ret.data));
+    Validate(ret);
     ddwaf_result_free(&ret);
+}
 
-    ddwaf_context_destroy(context);
-    ddwaf_destroy(handle);
+TEST_F(TestSchemaFixture, SimpleResultWithKeyPath)
+{
+    ddwaf_object param, arg2, tmp;
+    ddwaf_object_map(&param);
+    ddwaf_object_map(&arg2);
+    ddwaf_object_map_add(&arg2, "key1", ddwaf_object_string(&tmp, "rule2"));
+    ddwaf_object_map_add(&param, "arg2", &arg2);
+
+    ddwaf_result ret;
+    ddwaf_run(context, &param, &ret, LONG_TIME);
+    Validate(ret);
+    ddwaf_result_free(&ret);
+}
+
+TEST_F(TestSchemaFixture, SimpleResultWithMultiKeyPath)
+{
+    ddwaf_object param, arg2, array, tmp;
+    ddwaf_object_map(&param);
+
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "rule2"));
+    ddwaf_object_map(&arg2);
+    ddwaf_object_map_add(&arg2, "key1", &array);
+    ddwaf_object_map_add(&param, "arg2", &arg2);
+
+    ddwaf_result ret;
+    ddwaf_run(context, &param, &ret, LONG_TIME);
+    Validate(ret);
+    ddwaf_result_free(&ret);
+}
+
+TEST_F(TestSchemaFixture, ResultWithMultiCondition)
+{
+    ddwaf_object param, arg4, tmp;
+    ddwaf_object_map(&param);
+    
+    ddwaf_object_map_add(&param, "arg3", ddwaf_object_string(&tmp, "rule3_value"));
+
+    ddwaf_object_map(&arg4);
+    ddwaf_object_map_add(&arg4, "key1", ddwaf_object_string(&tmp, "rule3"));
+    ddwaf_object_map_add(&param, "arg4", &arg4);
+
+    ddwaf_result ret;
+    ddwaf_run(context, &param, &ret, LONG_TIME);
+    Validate(ret);
+    ddwaf_result_free(&ret);
+}
+
+TEST_F(TestSchemaFixture, MultiResultWithMultiCondition)
+{
+    ddwaf_object param, arg2, arg4, array,tmp;
+    ddwaf_object_map(&param);
+
+    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "rule1"));
+
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "rule2"));
+    ddwaf_object_map(&arg2);
+    ddwaf_object_map_add(&arg2, "key1", &array);
+    ddwaf_object_map_add(&param, "arg2", &arg2);
+
+    ddwaf_object_map_add(&param, "arg3", ddwaf_object_string(&tmp, "rule3_value"));
+
+    ddwaf_object_map(&arg4);
+    ddwaf_object_map_add(&arg4, "key1", ddwaf_object_string(&tmp, "rule3"));
+    ddwaf_object_map_add(&param, "arg4", &arg4);
+
+
+    ddwaf_result ret;
+    ddwaf_run(context, &param, &ret, LONG_TIME);
+    Validate(ret);
+    ddwaf_result_free(&ret);
 }

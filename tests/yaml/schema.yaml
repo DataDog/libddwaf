@@ -1,0 +1,46 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: 'simple rule'
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg1
+          regex: ^rule1
+  - id: 2
+    name: 'simple rule with key_path'
+    tags:
+      type: flow2
+      category: category2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg2
+              key_path:
+                - key1
+          regex: ^rule2
+  - id: 3
+    name: 'rule with multiple conditions'
+    tags:
+      type: flow3
+      category: category3
+    conditions:
+      - operator: phrase_match
+        parameters:
+          inputs:
+            - address: arg3
+          list:
+            - rule3_value
+            - rule3_othervalue
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg4
+              key_path:
+                - key1
+          regex: ^rule3

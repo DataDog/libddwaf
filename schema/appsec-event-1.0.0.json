@@ -23,7 +23,7 @@
                         "properties": {
                             "type": {
                                 "type": "string",
-                                "description": "The type of the rule as defined in the rulesed"
+                                "description": "The type of the rule as defined in the ruleset"
                             },
                             "category": {
                                 "type": "string",
@@ -77,7 +77,7 @@
                                     },
                                     "value": {
                                         "type": "string",
-                                        "description": "The value that triggered the rule. It is currently optional to provide this value until we have a PII strategy."
+                                        "description": "The value that triggered the rule."
                                     }
                                 },
                                 "required": [
@@ -89,7 +89,7 @@
                         },
                         "highlight": {
                             "type": "array",
-                            "description": "The part of the value that triggered the rule. It is currently optional to provide this value until we have a PII strategy.",
+                            "description": "The part of the value that triggered the rule.",
                             "items": {
                                 "type": "string"
                             }
