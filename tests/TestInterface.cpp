@@ -316,8 +316,6 @@ TEST(FunctionalTests, ddwaf_runNull)
     EXPECT_EQ(out.action, DDWAF_MONITOR);
     EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"resolved_value":"\u0000Arachni\u0000"}],"highlight":["Arachni"]}]}])");
 
-    //[{"ret_code":1,"flow":"arachni_detection","rule":"1","filter":[{"operator":"match_regex","operator_value":"Arachni","binding_accessor":"bla","manifest_key":"bla","resolved_value":"\u0000Arachni\u0000","match_status":"Arachni"}]}])");
-
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

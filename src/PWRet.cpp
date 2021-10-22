@@ -10,7 +10,6 @@
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <string>
-
 #include "ddwaf.h"
 #include <Clock.hpp>
 #include <PWRet.hpp>
@@ -78,16 +77,7 @@ rapidjson::GenericStringRef<char> ref_from_string(std::string_view sv)
     {
         return { "", 0 };
     }
-    return { sv.data(), sv.size() };
-}
-
-rapidjson::GenericStringRef<char> ref_from_string(const std::string& sv)
-{
-    if (sv.empty())
-    {
-        return { "", 0 };
-    }
-    return { sv.c_str(), sv.size() };
+    return { sv.data(), static_cast<rapidjson::SizeType>(sv.size()) };
 }
 
 void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather)
