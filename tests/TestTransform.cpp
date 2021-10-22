@@ -101,25 +101,25 @@ TEST(TestTransforms, TestGood)
     //ba.type = DDWAF_OBJ_ARRAY;
     //ba.array = &has_pattern;
 
-    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"resolved_value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_noNull\",\"step\":\"start\",\"rule\":\"eq_noNull\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"resolved_value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_lc\",\"step\":\"start\",\"rule\":\"eq_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"resolved_value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq\",\"step\":\"start\",\"rule\":\"eq\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"resolved_value\":\"string to match\"}]}]");
+    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_noNull\",\"step\":\"start\",\"rule\":\"eq_noNull\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_lc\",\"step\":\"start\",\"rule\":\"eq_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq\",\"step\":\"start\",\"rule\":\"eq\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"value\":\"string to match\"}]}]");
     //EXPECT_STREQ((const char*) has_pattern.stringValue, "string to match");
 
     //ba.array = &has_uppercase;
-    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"resolved_value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_lc\",\"step\":\"start\",\"rule\":\"eq_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"resolved_value\":\"string to match\"}]}]");
+    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_lc\",\"step\":\"start\",\"rule\":\"eq_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"value\":\"string to match\"}]}]");
     //EXPECT_STREQ((const char*) has_uppercase.stringValue, "String To Match");
 
     //ba.array = &has_null;
-    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"resolved_value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_noNull\",\"step\":\"start\",\"rule\":\"eq_noNull\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"resolved_value\":\"string to match\"}]}]");
+    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_noNull\",\"step\":\"start\",\"rule\":\"eq_noNull\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"value\":\"string to match\"}]}]");
     //EXPECT_STREQ(&((const char*) has_null.stringValue)[1], "string to match");
     //EXPECT_EQ(*(const char*) has_null.stringValue, 0);
 
     //ba.array = &has_uppercase_and_null;
-    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"resolved_value\":\"string to match\"}]}]");
+    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0],\"value\":\"string to match\"}]}]");
     //EXPECT_STREQ(&((const char*) has_uppercase_and_null.stringValue)[1], "String To Match");
     //EXPECT_EQ(*(const char*) has_uppercase_and_null.stringValue, 0);
 
     //ba.array = &map;
-    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0,\"String To Match\"],\"resolved_value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_lc\",\"step\":\"start\",\"rule\":\"eq_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0,\"String To Match\"],\"resolved_value\":\"string to match\"}]}]");
+    //compareData("rule", parameter, LONG_TIME, "[{\"ret_code\":1,\"flow\":\"eq_noNull_lc\",\"step\":\"start\",\"rule\":\"eq_noNull_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0,\"String To Match\"],\"value\":\"string to match\"}]},{\"ret_code\":1,\"flow\":\"eq_lc\",\"step\":\"start\",\"rule\":\"eq_lc\",\"filter\":[{\"operator\":\"@eq\",\"operator_value\":\"string to match\",\"binding_accessor\":\"value\",\"manifest_key\":\"value\",\"key_path\":[0,\"String To Match\"],\"value\":\"string to match\"}]}]");
     //EXPECT_STREQ(has_uppercase_in_key.parameterName, "String To Match");
 
     //free((void*) has_pattern.stringValue);
@@ -658,7 +658,7 @@ TEST(TestTransforms, TestCoverage)
     ddwaf_result ret;
     EXPECT_EQ(ddwaf_run(context, &map, &ret, LONG_TIME), DDWAF_MONITOR);
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"test_coverage","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg","key_path":[],"resolved_value":""}],"highlight":[]}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"test_coverage","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg","key_path":[],"value":""}],"highlight":[]}]}])");
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -675,7 +675,7 @@ TEST(TestURLTransforms, DISABLED_Functionnal)
 
     //ddwaf_result ret = pw_runH(handle, map, LONG_TIME);
     //EXPECT_EQ(ret.action, DDWAF_BLOCK);
-    //EXPECT_STREQ(ret.data, R"([{"ret_code":2,"flow":"test","step":"start","rule":"1","filter":[{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_base","resolved_value":"path.php","match_status":"path.php"},{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_file","resolved_value":"/bla/path.php","match_status":"/bla/path.php"},{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_query","resolved_value":"a=b","match_status":"a=b"}]}])");
+    //EXPECT_STREQ(ret.data, R"([{"ret_code":2,"flow":"test","step":"start","rule":"1","filter":[{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_base","value":"path.php","match_status":"path.php"},{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_file","value":"/bla/path.php","match_status":"/bla/path.php"},{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_query","value":"a=b","match_status":"a=b"}]}])");
     //ddwaf_result_free(&ret);
 
     //ddwaf_object_free(&map);
@@ -693,7 +693,7 @@ TEST(TestURLTransforms, DISABLED_Functionnal)
 
     //ddwaf_result ret = pw_runH(handle, map, LONG_TIME);
     //EXPECT_EQ(ret.action, DDWAF_BLOCK);
-    //EXPECT_STREQ(ret.data, R"([{"ret_code":2,"flow":"test","step":"start","rule":"1","filter":[{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_query","resolved_value":"a=b","match_status":"a=b"}]}])");
+    //EXPECT_STREQ(ret.data, R"([{"ret_code":2,"flow":"test","step":"start","rule":"1","filter":[{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_query","value":"a=b","match_status":"a=b"}]}])");
     //ddwaf_result_free(&ret);
 
     //ddwaf_object_free(&map);
@@ -705,7 +705,7 @@ TEST(TestURLTransforms, DISABLED_Functionnal)
 
     //ddwaf_result ret = pw_runH(handle, map, LONG_TIME);
     //EXPECT_EQ(ret.action, DDWAF_BLOCK);
-    //EXPECT_STREQ(ret.data, R"([{"ret_code":2,"flow":"test","step":"start","rule":"1","filter":[{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_base","resolved_value":"bla","match_status":"bla"},{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_file","resolved_value":"/bla","match_status":"/bla"}]}])");
+    //EXPECT_STREQ(ret.data, R"([{"ret_code":2,"flow":"test","step":"start","rule":"1","filter":[{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_base","value":"bla","match_status":"bla"},{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_file","value":"/bla","match_status":"/bla"}]}])");
     //ddwaf_result_free(&ret);
 
     //ddwaf_object_free(&map);
@@ -717,7 +717,7 @@ TEST(TestURLTransforms, DISABLED_Functionnal)
 
     //ddwaf_result ret = pw_runH(handle, map, LONG_TIME);
     //EXPECT_EQ(ret.action, DDWAF_BLOCK);
-    //EXPECT_STREQ(ret.data, R"([{"ret_code":2,"flow":"test","step":"start","rule":"1","filter":[{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_base","resolved_value":"bla.php","match_status":"bla.php"},{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_file","resolved_value":"bla.php","match_status":"bla.php"}]}])");
+    //EXPECT_STREQ(ret.data, R"([{"ret_code":2,"flow":"test","step":"start","rule":"1","filter":[{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_base","value":"bla.php","match_status":"bla.php"},{"operator":"@rx","operator_value":".*","binding_accessor":"arg","manifest_key":"arg_file","value":"bla.php","match_status":"bla.php"}]}])");
     //ddwaf_result_free(&ret);
 
     //ddwaf_object_free(&map);

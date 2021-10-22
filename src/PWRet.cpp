@@ -6,13 +6,13 @@
 
 #undef TESTING
 
+#include "ddwaf.h"
+#include <Clock.hpp>
+#include <PWRet.hpp>
 #include <iostream>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <string>
-#include "ddwaf.h"
-#include <Clock.hpp>
-#include <PWRet.hpp>
 
 ddwaf_result returnErrorCode(DDWAF_RET_CODE code)
 {
@@ -116,7 +116,7 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
         key_path.PushBack(jsonKey, allocator);
     }
     param.AddMember("key_path", key_path, allocator);
-    param.AddMember("resolved_value", gather.resolvedValue, allocator);
+    param.AddMember("value", gather.resolvedValue, allocator);
     parameters.PushBack(param, allocator);
     output.AddMember("parameters", parameters, allocator);
 
