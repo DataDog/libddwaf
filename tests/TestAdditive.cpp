@@ -40,7 +40,7 @@ TEST(TestAdditive, TestMultiCall)
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"value":"string 1"}],"highlight":["string 1"]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2"}],"highlight":["string 2"]}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);
@@ -115,7 +115,7 @@ TEST(TestAdditive, TestParameterOverride)
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"^string.*","parameters":[{"address":"arg1","key_path":[],"value":"string 1"}],"highlight":["string 1"]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2"}],"highlight":["string 2"]}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"^string.*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
     ddwaf_result_free(&ret);
 
     // Run again without change

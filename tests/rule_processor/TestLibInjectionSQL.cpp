@@ -46,7 +46,7 @@ TEST(TestLibInjectionSQL, TestRuleset)
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"is_sqli","operator_value":"","parameters":[{"address":"arg1","key_path":[],"value":"'OR 1=1/*"}],"highlight":["s&1c"]}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"is_sqli","operator_value":"","parameters":[{"address":"arg1","key_path":[],"value":"'OR 1=1/*","highlight":["s&1c"]}]}]}])");
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

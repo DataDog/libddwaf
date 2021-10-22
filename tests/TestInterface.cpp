@@ -198,7 +198,7 @@ TEST(FunctionalTests, HandleGood)
         EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);
 
         EXPECT_EQ(DDWAF_MONITOR, ret.action);
-        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value1","key_path":[0],"value":"rule2"}],"highlight":["rule2"]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["bla"],"value":"rule3"}],"highlight":["rule3"]}]}])");
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value1","key_path":[0],"value":"rule2","highlight":["rule2"]}]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["bla"],"value":"rule3","highlight":["rule3"]}]}]}])");
 
         ddwaf_result_free(&ret);
         ddwaf_context_destroy(context);
@@ -314,7 +314,7 @@ TEST(FunctionalTests, ddwaf_runNull)
     ddwaf_result out;
     EXPECT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MONITOR);
     EXPECT_EQ(out.action, DDWAF_MONITOR);
-    EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"\u0000Arachni\u0000"}],"highlight":["Arachni"]}]}])");
+    EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"\u0000Arachni\u0000","highlight":["Arachni"]}]}]}])");
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -333,7 +333,7 @@ TEST(FunctionalTests, ddwaf_runNull)
     EXPECT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MONITOR);
 
     EXPECT_EQ(out.action, DDWAF_MONITOR);
-    EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"Arachni"}],"highlight":["Arachni"]}]}])");
+    EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"Arachni","highlight":["Arachni"]}]}]}])");
 
     ddwaf_object_free(&map);
     ddwaf_result_free(&out);

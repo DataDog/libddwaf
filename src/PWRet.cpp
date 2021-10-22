@@ -107,6 +107,10 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
         rapidjson::Value jsonKey;
         if (key.type == DDWAF_OBJ_STRING)
         {
+            if (key.stringValue == nullptr || key.nbEntries == 0) {
+                // This shouldn't happen
+                continue;
+            }
             jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
         }
         else
@@ -117,9 +121,6 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     }
     param.AddMember("key_path", key_path, allocator);
     param.AddMember("value", gather.resolvedValue, allocator);
-    parameters.PushBack(param, allocator);
-    output.AddMember("parameters", parameters, allocator);
-
     rapidjson::Value highlight, matchedValue;
     highlight.SetArray();
     if (!gather.matchedValue.empty())
@@ -127,7 +128,9 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
         matchedValue.SetString(gather.matchedValue, allocator);
         highlight.PushBack(matchedValue, allocator);
     }
-    output.AddMember("highlight", highlight, allocator);
+    param.AddMember("highlight", highlight, allocator);
+    parameters.PushBack(param, allocator);
+    output.AddMember("parameters", parameters, allocator);
 
     ruleCollector.PushBack(output, allocator);
 }

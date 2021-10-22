@@ -78,28 +78,29 @@
                                     "value": {
                                         "type": "string",
                                         "description": "The value that triggered the rule."
+                                    },
+                                    "highlight": {
+                                        "type": "array",
+                                        "description": "The part of the value that triggered the rule.",
+                                        "items": {
+                                            "type": "string"
+                                        }
                                     }
                                 },
                                 "required": [
                                     "address",
                                     "key_path",
-                                    "value"
+                                    "value",
+                                    "highlight"
                                 ]
                             }
-                        },
-                        "highlight": {
-                            "type": "array",
-                            "description": "The part of the value that triggered the rule.",
-                            "items": {
-                                "type": "string"
-                            }
                         }
+
                     },
                     "required": [
                         "operator",
                         "operator_value",
-                        "parameters",
-                        "highlight"
+                        "parameters"
                     ]
                 }
             }
