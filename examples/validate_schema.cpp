@@ -9,7 +9,7 @@
 
 using namespace rapidjson;
 
-std::string read_rule_file(const std::string_view& filename)
+std::string read_file(const std::string_view& filename)
 {
     std::ifstream rule_file(filename.data(), std::ios::in);
     if (!rule_file)
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    auto schemaJson = read_rule_file(argv[1]);
+    auto schemaJson = read_file(argv[1]);
     Document sd;
     if (sd.Parse(schemaJson).HasParseError())
     {
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     }
     SchemaDocument schema(sd);
 
-    auto inputJson = read_rule_file(argv[2]);
+    auto inputJson = read_file(argv[2]);
     Document d;
     if (d.Parse(inputJson).HasParseError())
     {

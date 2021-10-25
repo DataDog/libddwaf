@@ -165,7 +165,7 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
         for (parameter::map cond : conditions_array)
         {
             parsed_rule.conditions.push_back(
-                std::move(parseCondition(cond, manifest, rule_transformers)));
+                parseCondition(cond, manifest, rule_transformers));
         }
 
         auto tags = at<parameter::map>(rule, "tags");

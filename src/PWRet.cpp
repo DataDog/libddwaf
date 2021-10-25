@@ -71,21 +71,16 @@ void PWRetManager::startRule()
     ruleCollector.SetArray();
 }
 
-rapidjson::GenericStringRef<char> ref_from_string(std::string_view sv)
-{
-    if (sv.empty())
-    {
-        return { "", 0 };
-    }
-    return { sv.data(), static_cast<rapidjson::SizeType>(sv.size()) };
-}
-
 void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather)
 {
     rapidjson::Value output;
     output.SetObject();
 
-    output.AddMember("operator", ref_from_string(processor->operatorName()), allocator);
+    auto op = processor->operatorName();
+    output.AddMember("operator",
+                     rapidjson::GenericStringRef<char>(op.data(),
+                                                       static_cast<rapidjson::SizeType>(op.size())),
+                     allocator);
 
     if (processor->hasStringRepresentation())
     {
@@ -107,7 +102,8 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
         rapidjson::Value jsonKey;
         if (key.type == DDWAF_OBJ_STRING)
         {
-            if (key.stringValue == nullptr || key.nbEntries == 0) {
+            if (key.stringValue == nullptr || key.nbEntries == 0)
+            {
                 // This shouldn't happen
                 continue;
             }
@@ -145,7 +141,6 @@ void PWRetManager::reportMatch(const std::string& id,
                                const std::string& type, const std::string& category,
                                const std::string& name, const rapidjson::Value& filters)
 {
-    // We don't want to report matches caused by the cache
     rapidjson::Value output, ruleValue, tagsValue;
 
     output.SetObject();

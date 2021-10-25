@@ -34,12 +34,14 @@ public:
         validator = std::make_unique<SchemaValidator>(*schema);
 
         auto rule = readFile("schema.yaml");
-        if (rule.type == DDWAF_OBJ_INVALID) {
+        if (rule.type == DDWAF_OBJ_INVALID)
+        {
             throw std::runtime_error("failed to load schema.yaml");
         }
 
         handle = ddwaf_init(&rule, nullptr);
-        if (handle == nullptr) {
+        if (handle == nullptr)
+        {
             throw std::runtime_error("failed to obtain waf handle");
         }
 
@@ -65,7 +67,8 @@ public:
         context = nullptr;
     }
 
-    std::string Error() {
+    std::string Error()
+    {
         StringBuffer sb;
         PrettyWriter<StringBuffer> w(sb);
         validator->GetError().Accept(w);
@@ -77,7 +80,8 @@ public:
         Document d;
         EXPECT_EQ(ret.action, DDWAF_MONITOR);
         EXPECT_NE(ret.data, nullptr);
-        if (!HasFailure()) {
+        if (!HasFailure())
+        {
             EXPECT_FALSE(d.Parse(ret.data).HasParseError());
             EXPECT_TRUE(d.Accept(*validator)) << Error();
         }
@@ -88,9 +92,9 @@ protected:
     std::unique_ptr<SchemaDocument> schema;
     std::unique_ptr<SchemaValidator> validator;
 
-    ddwaf_handle handle{nullptr};
+    ddwaf_handle handle { nullptr };
 
-    ddwaf_context context{nullptr};
+    ddwaf_context context { nullptr };
 };
 
 TEST_F(TestSchemaFixture, SimpleResult)
@@ -141,7 +145,7 @@ TEST_F(TestSchemaFixture, ResultWithMultiCondition)
 {
     ddwaf_object param, arg4, tmp;
     ddwaf_object_map(&param);
-    
+
     ddwaf_object_map_add(&param, "arg3", ddwaf_object_string(&tmp, "rule3_value"));
 
     ddwaf_object_map(&arg4);
@@ -156,7 +160,7 @@ TEST_F(TestSchemaFixture, ResultWithMultiCondition)
 
 TEST_F(TestSchemaFixture, MultiResultWithMultiCondition)
 {
-    ddwaf_object param, arg2, arg4, array,tmp;
+    ddwaf_object param, arg2, arg4, array, tmp;
     ddwaf_object_map(&param);
 
     ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "rule1"));
@@ -172,7 +176,6 @@ TEST_F(TestSchemaFixture, MultiResultWithMultiCondition)
     ddwaf_object_map(&arg4);
     ddwaf_object_map_add(&arg4, "key1", ddwaf_object_string(&tmp, "rule3"));
     ddwaf_object_map_add(&param, "arg4", &arg4);
-
 
     ddwaf_result ret;
     ddwaf_run(context, &param, &ret, LONG_TIME);
