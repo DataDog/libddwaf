@@ -184,7 +184,7 @@ rules:
          - { address: "http.server.query" }
 ```
 
-produces the following result:
+applied to the `http.server.query` value `http://localhost/?q=<script>alert() hello world` produces the following result:
 ```json
 [
   {
