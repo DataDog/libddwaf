@@ -7,10 +7,10 @@
 #include <vector>
 
 #include <PWRetriever.hpp>
-#include <PWRule.hpp>
 #include <PWTransformer.h>
 #include <PowerWAF.hpp>
 #include <log.hpp>
+#include <rule.hpp>
 
 bool PWRetriever::PWArgsWrapper::_validate_object(const ddwaf_object& input, uint32_t depth) const
 {

@@ -13,8 +13,9 @@
 
 class PWRetManager;
 
-#include <PWRule.hpp>
+#include <IPWRuleProcessor.h>
 #include <ddwaf.h>
+#include <memory>
 #include <utils.h>
 
 class PWRetManager
@@ -44,9 +45,9 @@ public:
     void startRule();
     void recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather);
 
-    void returnCode(DDWAF_RET_CODE code);
-    void commitResult(DDWAF_RET_CODE code, const std::string& flow);
-    void reportMatch(DDWAF_RET_CODE code, const std::string& flow, const std::string& rule, const rapidjson::Value& filters);
+    void reportMatch(const std::string& id,
+                     const std::string& type, const std::string& category,
+                     const std::string& name, const rapidjson::Value& filters);
 
     rapidjson::Value fetchRuleCollector();
 

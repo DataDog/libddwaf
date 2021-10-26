@@ -6,13 +6,13 @@
 
 #undef TESTING
 
+#include "ddwaf.h"
+#include <Clock.hpp>
+#include <PWRet.hpp>
 #include <iostream>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <string>
-
-#include "ddwaf.h"
-#include <PWRet.hpp>
 
 ddwaf_result returnErrorCode(DDWAF_RET_CODE code)
 {
@@ -73,80 +73,62 @@ void PWRetManager::startRule()
 
 void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather)
 {
-    rapidjson::Value output, opNameValue, opValue, baValue, manifestKey;
+    rapidjson::Value output;
     output.SetObject();
 
-    std::string_view opName = processor->operatorName();
-    opNameValue.SetString(opName.data(), static_cast<rapidjson::SizeType>(opName.size()));
-    output.AddMember("operator", opNameValue, allocator);
+    auto op = processor->operatorName();
+    output.AddMember("operator",
+                     rapidjson::GenericStringRef<char>(op.data(),
+                                                       static_cast<rapidjson::SizeType>(op.size())),
+                     allocator);
 
     if (processor->hasStringRepresentation())
     {
-        const std::string representation = processor->getStringRepresentation();
-        opValue.SetString(representation.c_str(), static_cast<rapidjson::SizeType>(representation.size()), allocator);
-        output.AddMember("operator_value", opValue, allocator);
+        output.AddMember("operator_value", processor->getStringRepresentation(), allocator);
+    }
+    else
+    {
+        output.AddMember("operator_value", "", allocator);
     }
 
-    if (!gather.dataSource.empty())
-    {
-        baValue.SetString(gather.dataSource.c_str(), static_cast<rapidjson::SizeType>(gather.dataSource.size()), allocator);
-        output.AddMember("binding_accessor", baValue, allocator);
-    }
+    rapidjson::Value parameters, param, key_path;
+    parameters.SetArray();
 
-    if (!gather.manifestKey.empty())
+    param.SetObject();
+    param.AddMember("address", gather.dataSource, allocator);
+    key_path.SetArray();
+    for (const ddwaf_object& key : gather.keyPath)
     {
-        manifestKey.SetString(gather.manifestKey.c_str(), static_cast<rapidjson::SizeType>(gather.manifestKey.size()), allocator);
-        output.AddMember("manifest_key", manifestKey, allocator);
-    }
-
-    if (!gather.keyPath.empty())
-    {
-        rapidjson::Value keyPathCopy;
-        keyPathCopy.SetArray();
-
-        for (const ddwaf_object& key : gather.keyPath)
+        rapidjson::Value jsonKey;
+        if (key.type == DDWAF_OBJ_STRING)
         {
-            rapidjson::Value jsonKey;
-            if (key.type == DDWAF_OBJ_STRING)
-                jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
-            else
-                jsonKey.SetUint64(key.uintValue);
-
-            keyPathCopy.PushBack(jsonKey, allocator);
+            if (key.stringValue == nullptr || key.nbEntries == 0)
+            {
+                // This shouldn't happen
+                continue;
+            }
+            jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
         }
-
-        output.AddMember("key_path", keyPathCopy, allocator);
+        else
+        {
+            jsonKey.SetUint64(key.uintValue);
+        }
+        key_path.PushBack(jsonKey, allocator);
     }
-
-    if (!gather.resolvedValue.empty())
-    {
-        rapidjson::Value resolvedValue;
-        resolvedValue.SetString(gather.resolvedValue.c_str(), static_cast<rapidjson::SizeType>(gather.resolvedValue.size()), allocator);
-        output.AddMember("resolved_value", resolvedValue, allocator);
-    }
-
+    param.AddMember("key_path", key_path, allocator);
+    param.AddMember("value", gather.resolvedValue, allocator);
+    rapidjson::Value highlight, matchedValue;
+    highlight.SetArray();
     if (!gather.matchedValue.empty())
     {
-        rapidjson::Value matchStatus;
-        matchStatus.SetString(gather.matchedValue.c_str(), static_cast<rapidjson::SizeType>(gather.matchedValue.size()), allocator);
-        output.AddMember("match_status", matchStatus, allocator);
+        matchedValue.SetString(gather.matchedValue, allocator);
+        highlight.PushBack(matchedValue, allocator);
     }
+    param.AddMember("highlight", highlight, allocator);
+    parameters.PushBack(param, allocator);
+    output.AddMember("parameters", parameters, allocator);
 
     ruleCollector.PushBack(output, allocator);
-}
-
-void PWRetManager::commitResult(DDWAF_RET_CODE code, const std::string& flow)
-{
-    rapidjson::Value output, flowValue;
-
-    output.SetObject();
-    flowValue.SetString(flow.c_str(), static_cast<rapidjson::SizeType>(flow.size()), allocator);
-
-    output.AddMember("ret_code", (int) code, allocator);
-    output.AddMember("flow", flowValue, allocator);
-
-    outputDocument.PushBack(output, allocator);
-    recordResult(code);
 }
 
 rapidjson::Value PWRetManager::fetchRuleCollector()
@@ -155,51 +137,30 @@ rapidjson::Value PWRetManager::fetchRuleCollector()
     return ruleCollector.GetArray();
 }
 
-void PWRetManager::removeResultFlow(const std::string& flow)
+void PWRetManager::reportMatch(const std::string& id,
+                               const std::string& type, const std::string& category,
+                               const std::string& name, const rapidjson::Value& filters)
 {
-    rapidjson::SizeType lastIndex = outputDocument.GetArray().Size();
-    while (lastIndex-- > 0)
-    {
-        const rapidjson::Value& obj = outputDocument.GetArray()[lastIndex];
-
-        // If we're reporting an error, keep the report
-        if (OBJ_HAS_KEY_AS_INT(obj, "ret_code") && obj["ret_code"].GetInt64() < 0)
-        {
-            break;
-        }
-
-        // If the flow is still the one we're deleting, pop the item
-        else if (OBJ_HAS_KEY_AS_STRING(obj, "flow") && flow == obj["flow"].GetString())
-        {
-            outputDocument.GetArray().PopBack();
-        }
-
-        // If we're done with the flow, leave the function
-        else
-        {
-            break;
-        }
-    }
-}
-
-void PWRetManager::reportMatch(DDWAF_RET_CODE code, const std::string& flow, const std::string& rule, const rapidjson::Value& filters)
-{
-    // We don't want to report matches caused by the cache
-    rapidjson::Value output, flowValue, ruleValue;
+    rapidjson::Value output, ruleValue, tagsValue;
 
     output.SetObject();
-    flowValue.SetString(flow.c_str(), static_cast<rapidjson::SizeType>(flow.size())); // Safe without an allocator because the underlying buffer is long lived
-    ruleValue.SetString(rule.c_str(), static_cast<rapidjson::SizeType>(rule.size()), allocator);
 
-    output.AddMember("ret_code", (int) code, allocator);
-    output.AddMember("flow", flowValue, allocator);
+    tagsValue.SetObject();
+    tagsValue.AddMember("type", type, allocator);
+    tagsValue.AddMember("category", category, allocator);
+
+    ruleValue.SetObject();
+    ruleValue.AddMember("id", id, allocator);
+    ruleValue.AddMember("name", name, allocator);
+    ruleValue.AddMember("tags", tagsValue, allocator);
+
     output.AddMember("rule", ruleValue, allocator);
 
     if (filters.IsArray() && filters.GetArray().Size())
     {
         rapidjson::Value array;
         array.CopyFrom(filters, allocator);
-        output.AddMember("filter", array, allocator);
+        output.AddMember("rule_matches", array, allocator);
     }
 
     outputDocument.PushBack(output, allocator);

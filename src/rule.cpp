@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <PWRule.hpp>
+#include <rule.hpp>
 
 #include <IPWRuleProcessor.h>
 #include <PowerWAF.hpp>
@@ -12,7 +12,10 @@
 #include "Clock.hpp"
 #include <log.hpp>
 
-bool PWRule::matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer, bool onKey, bool readOnlyArg) const
+namespace ddwaf
+{
+
+bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer, bool onKey, bool readOnlyArg) const
 {
     const bool hasTransformation        = !transformation.empty();
     const bool canRunTransformation     = onKey || (baseInput->type == DDWAF_OBJ_STRING);
@@ -113,7 +116,7 @@ bool PWRule::matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& 
     return matched;
 }
 
-PWRULE_MATCH_STATUS PWRule::_matchTargets(PWRetriever& retriever, const SQPowerWAF::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
+condition::status condition::_matchTargets(PWRetriever& retriever, const SQPowerWAF::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
 {
     PWRetriever::Iterator& iterator = retriever.getIterator(targets);
     retriever.moveIteratorForward(iterator, false);
@@ -123,10 +126,10 @@ PWRULE_MATCH_STATUS PWRule::_matchTargets(PWRetriever& retriever, const SQPowerW
         //If no BAs for this rule have resolved, we return MISSING_ARG
         //	(that is, unless the processor "match" in this case)
         if (!processor->matchIfMissing())
-            return MISSING_ARG;
+            return status::missing_arg;
 
         retManager.recordRuleMatch(processor, MatchGatherer(matchesToGather));
-        return MATCHED;
+        return status::matched;
     }
 
     bool matched             = false;
@@ -138,7 +141,7 @@ PWRULE_MATCH_STATUS PWRule::_matchTargets(PWRetriever& retriever, const SQPowerW
     {
         // Only check the time every 16 runs
         if ((++counter & 0xf) == 0 && deadline <= SQPowerWAF::monotonic_clock::now())
-            return TIMEOUT;
+            return status::timeout;
 
         bool didMatch = retriever.runIterOnLambda(iterator, saveParamOnMatch, [&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
             if ((type & processor->expectedTypes()) == 0)
@@ -167,7 +170,7 @@ PWRULE_MATCH_STATUS PWRule::_matchTargets(PWRetriever& retriever, const SQPowerW
             // Actually, we can only stop processing if we were not collecting matches for a further filter
             //	If we stopped, it'd open trivial bypasses of the next stage
             if (!savingMatches && !options.keepRunningOnMatch)
-                return MATCHED;
+                return status::matched;
 
             retriever.commitMatch(gather);
             matched = true;
@@ -178,26 +181,26 @@ PWRULE_MATCH_STATUS PWRule::_matchTargets(PWRetriever& retriever, const SQPowerW
     if (!matched && processor->matchAnyInput())
     {
         retManager.recordRuleMatch(processor, MatchGatherer(matchesToGather));
-        return MATCHED;
+        return status::matched;
     }
 
     //	If at least one resolved, but didn't matched, we return NO_MATCH
-    return matched ? MATCHED : NO_MATCH;
+    return matched ? status::matched : status::no_match;
 }
 
-PWRULE_MATCH_STATUS PWRule::performMatching(PWRetriever& retriever, const SQPowerWAF::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
+condition::status condition::performMatching(PWRetriever& retriever, const SQPowerWAF::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
 {
     bool matched = false;
 
-    PWRULE_MATCH_STATUS output = _matchTargets(retriever, deadline, retManager);
+    condition::status output = _matchTargets(retriever, deadline, retManager);
 
-    if (matched && (output == NO_MATCH || output == MISSING_ARG))
-        return MATCHED;
+    if (matched && (output == status::no_match || output == status::missing_arg))
+        return status::matched;
 
     return output;
 }
 
-bool PWRule::doesUseNewParameters(const PWRetriever& retriever) const
+bool condition::doesUseNewParameters(const PWRetriever& retriever) const
 {
     for (const PWManifest::ARG_ID& target : targets)
     {
@@ -206,4 +209,6 @@ bool PWRule::doesUseNewParameters(const PWRetriever& retriever) const
     }
 
     return false;
+}
+
 }

@@ -1,8 +1,10 @@
 version: '2.1'
 rules:
   - id: 1
+    name: rule1
     tags:
       type: flow1
+      category: category1
     conditions:
       - operator: match_regex
         parameters:
@@ -11,8 +13,10 @@ rules:
             - address: value2
           regex: rule1
   - id: 2
+    name: rule2
     tags:
       type: flow2
+      category: category2
     conditions:
       - operator: match_regex
         parameters:
@@ -20,8 +24,10 @@ rules:
             - address: value1
           regex: rule2
   - id: 3
+    name: rule3
     tags:
       type: flow2
+      category: category3
     conditions:
       - operator: match_regex
         parameters:

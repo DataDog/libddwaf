@@ -198,7 +198,7 @@ TEST(FunctionalTests, HandleGood)
         EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);
 
         EXPECT_EQ(DDWAF_MONITOR, ret.action);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"rule2","binding_accessor":"value1","manifest_key":"value1","key_path":[0],"resolved_value":"rule2","match_status":"rule2"},{"operator":"match_regex","operator_value":"rule3","binding_accessor":"value2","manifest_key":"value2","key_path":["bla"],"resolved_value":"rule3","match_status":"rule3"}]}])");
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value1","key_path":[0],"value":"rule2","highlight":["rule2"]}]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["bla"],"value":"rule3","highlight":["rule3"]}]}]}])");
 
         ddwaf_result_free(&ret);
         ddwaf_context_destroy(context);
@@ -298,7 +298,7 @@ TEST(FunctionalTests, ddwaf_get_version)
 
 TEST(FunctionalTests, ddwaf_runNull)
 {
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: arachni_detection}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -314,14 +314,14 @@ TEST(FunctionalTests, ddwaf_runNull)
     ddwaf_result out;
     EXPECT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MONITOR);
     EXPECT_EQ(out.action, DDWAF_MONITOR);
-    EXPECT_STREQ(out.data, R"([{"ret_code":1,"flow":"arachni_detection","rule":"1","filter":[{"operator":"match_regex","operator_value":"Arachni","binding_accessor":"bla","manifest_key":"bla","resolved_value":"\u0000Arachni\u0000","match_status":"Arachni"}]}])");
+    EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"\u0000Arachni\u0000","highlight":["Arachni"]}]}]}])");
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 
     ////Add a removeNull transformer
-    rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: arachni_detection}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}], transformers: [removeNulls]}]})");
+    rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}], transformers: [removeNulls]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -333,7 +333,7 @@ TEST(FunctionalTests, ddwaf_runNull)
     EXPECT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MONITOR);
 
     EXPECT_EQ(out.action, DDWAF_MONITOR);
-    EXPECT_STREQ(out.data, R"([{"ret_code":1,"flow":"arachni_detection","rule":"1","filter":[{"operator":"match_regex","operator_value":"Arachni","binding_accessor":"bla","manifest_key":"bla","resolved_value":"Arachni","match_status":"Arachni"}]}])");
+    EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"Arachni","highlight":["Arachni"]}]}]}])");
 
     ddwaf_object_free(&map);
     ddwaf_result_free(&out);

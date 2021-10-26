@@ -8,11 +8,8 @@
 #define pw_hpp
 
 #include <PWManifest.h>
-#include <memory>
-#include <unordered_map>
+#include <rule.hpp>
 #include <utils.h>
-
-#include <PWRuleManager.hpp>
 
 struct PowerWAF
 {
@@ -23,12 +20,11 @@ struct PowerWAF
     uint32_t maxTimeStore { TIME_STORE_DEFAULT };
 
     PWManifest manifest;
-    PWRuleManager ruleManager;
-    std::unordered_map<std::string, std::vector<std::string>> flows;
+    ddwaf::rule_map rules;
+    ddwaf::flow_map flows;
 
-    PowerWAF(PWManifest&& manifest_, PWRuleManager&& ruleManager_,
-             std::unordered_map<std::string, std::vector<std::string>>&& flows_,
-             const ddwaf_config* config);
+    PowerWAF(PWManifest&& manifest_, ddwaf::rule_map&& rules_,
+             ddwaf::flow_map&& flows_, const ddwaf_config* config);
 
     static PowerWAF* fromConfig(const ddwaf_object rules, const ddwaf_config* config);
 

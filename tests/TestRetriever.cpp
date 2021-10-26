@@ -6,6 +6,8 @@
 
 #include "test.h"
 
+using namespace ddwaf;
+
 TEST(TestPWRetriever, TestCreateNoTarget)
 {
     PWManifest manifest;
@@ -124,8 +126,7 @@ TEST(TestPWRetriever, TestAccessSimplePath)
 
         ASSERT_EQ(ddwaf_run(context, &paramHolder, &ret, LONG_TIME), DDWAF_MONITOR);
         ASSERT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"target","binding_accessor":"blob1","manifest_key":"blob1:a","key_path":["a"],"resolved_value":"real_target","match_status":"target"}]}])");
-
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"target","parameters":[{"address":"blob1","key_path":["a"],"value":"real_target","highlight":["target"]}]}]}])");
         ddwaf_result_free(&ret);
         ddwaf_context_destroy(context);
     }
@@ -138,8 +139,7 @@ TEST(TestPWRetriever, TestAccessSimplePath)
 
         ASSERT_EQ(ddwaf_run(context, &paramHolder, &ret, LONG_TIME), DDWAF_MONITOR);
         ASSERT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"target","binding_accessor":"blob2","manifest_key":"blob2:-1","key_path":["-1"],"resolved_value":"target_bait2","match_status":"target"}]}])");
-
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"target","parameters":[{"address":"blob2","key_path":["-1"],"value":"target_bait2","highlight":["target"]}]}]}])");
         ddwaf_result_free(&ret);
         ddwaf_context_destroy(context);
     }
@@ -152,8 +152,7 @@ TEST(TestPWRetriever, TestAccessSimplePath)
 
         ASSERT_EQ(ddwaf_run(context, &paramHolder, &ret, LONG_TIME), DDWAF_MONITOR);
         ASSERT_EQ(ret.action, DDWAF_MONITOR);
-        EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":"target","binding_accessor":"blob3","manifest_key":"blob3:alpha","key_path":["alpha"],"resolved_value":"targeto","match_status":"target"}]}])");
-
+        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"target","parameters":[{"address":"blob3","key_path":["alpha"],"value":"targeto","highlight":["target"]}]}]}])");
         ddwaf_result_free(&ret);
         ddwaf_context_destroy(context);
     }
@@ -182,9 +181,9 @@ TEST(PWRetriever, NullErrorManagement)
     rapidjson::Document document;
     PWRetManager rManager(TIME_STORE_DEFAULT, document.GetAllocator());
 
-    const PWRule& pwRule = ((PowerWAF*) handle)->ruleManager.rules.find("1")->second.front();
+    const condition& cond = ((PowerWAF*) handle)->rules.find("1")->second.conditions.front();
 
-    EXPECT_EQ(pwRule.performMatching(retriever, TIME_FAR, rManager), MISSING_ARG);
+    EXPECT_EQ(cond.performMatching(retriever, TIME_FAR, rManager), condition::status::missing_arg);
 
     ddwaf_object_free(&rule);
     ddwaf_object_free(&map);

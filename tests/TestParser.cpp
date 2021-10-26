@@ -26,7 +26,7 @@ void run_test(ddwaf_handle handle)
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
     EXPECT_EQ(ret.action, DDWAF_MONITOR);
-    EXPECT_STREQ(ret.data, R"([{"ret_code":1,"flow":"flow1","rule":"1","filter":[{"operator":"match_regex","operator_value":".*","binding_accessor":"arg1","manifest_key":"arg1","resolved_value":"string 1","match_status":"string 1"},{"operator":"match_regex","operator_value":".*","binding_accessor":"arg2","manifest_key":"arg2:x","key_path":["x"],"resolved_value":"string 2","match_status":"string 2"},{"operator":"match_regex","operator_value":".*","binding_accessor":"arg2","manifest_key":"arg2:y","key_path":["y"],"resolved_value":"string 3","match_status":"string 3"}]}])");
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":["x"],"value":"string 2","highlight":["string 2"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":["y"],"value":"string 3","highlight":["string 3"]}]}]}])");
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);
@@ -34,7 +34,7 @@ void run_test(ddwaf_handle handle)
 
 TEST(TestParser, TestV1)
 {
-    auto rule = readRule(R"({version: '1.1', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
+    auto rule = readRule(R"({version: '1.1', events: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);
@@ -48,7 +48,7 @@ TEST(TestParser, TestV1)
 
 TEST(TestParser, TestV2)
 {
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, tags: {type: flow1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
+    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr);

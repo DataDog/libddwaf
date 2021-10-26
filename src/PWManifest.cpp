@@ -19,7 +19,8 @@ PWManifest::ARG_ID PWManifest::insert(std::string_view name, PWManifest::ArgDeta
     (void) result; // unused
     argIDTable.emplace(name, counter);
 
-    if(root_address_set.find(it->second.inheritFrom) == root_address_set.end()) {
+    if (root_address_set.find(it->second.inheritFrom) == root_address_set.end())
+    {
         root_address_set.emplace(it->second.inheritFrom);
         root_addresses.push_back(it->second.inheritFrom.c_str());
     }

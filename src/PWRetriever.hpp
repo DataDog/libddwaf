@@ -204,6 +204,4 @@ public:
 #endif
 };
 
-#include <PWRule.hpp>
-
 #endif /* PWArgsWrapper_h */
