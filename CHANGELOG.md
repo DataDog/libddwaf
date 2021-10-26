@@ -1,5 +1,11 @@
 # libddwaf release
 
+### v1.0.14 (unstable) - 2021/10/26
+- WAF output now conforms to the appsec event format v1.0.0.
+- Add schema for output validation.
+- Remove zip package generation.
+- Minor improvements.
+
 ### v1.0.13 (unstable) - 2021/10/11
 - Add support for ruleset format v2.1.
 - Update fuzzer.
