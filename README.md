@@ -181,7 +181,7 @@ rules:
       parameters:
         regex: "^<script>"
         inputs:
-         - { address: "http.server.query" }
+         - address: http.server.query
 ```
 
 applied to the `http.server.query` value `http://localhost/?q=<script>alert() hello world` produces the following result:
