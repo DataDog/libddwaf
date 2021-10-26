@@ -165,5 +165,55 @@ struct as_if<ddwaf_object, void> {
 }
 ```
 
+### Example rule
 
+The following rule:
+```yaml
+version: 2.1
+rules:
+ - id: crs-042-001
+   name: Detect a script tag
+   tags:
+     category: attack_attempt
+     type: xss
+   conditions:
+    - operator: match_regex
+      parameters:
+        regex: "^<script>"
+        inputs:
+         - address: http.server.query
+```
 
+applied to the `http.server.query` value `http://localhost/?q=<script>alert() hello world` produces the following result:
+```json
+[
+  {
+    "rule": {
+      "id": "crs-042-001",
+      "name": "Detect a script tag",
+      "tags": {
+        "category": "attack_attempt",
+        "type": "xss"
+      }
+    },
+    "rule_matches": [
+      {
+        "operator": "match_regex",
+        "operator_value": "^<script>",
+        "parameters": [
+          {
+            "address": "http.server.query",
+            "key_path": [
+              "q"
+            ],
+            "value": "<script>alert() hello world",
+            "highlight": [
+              "<script>"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+```
