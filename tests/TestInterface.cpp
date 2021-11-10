@@ -6,13 +6,6 @@
 
 #include "test.h"
 
-DDWAF_RET_CODE getCodeForRun(ddwaf_result input)
-{
-    auto output = input.action;
-    ddwaf_result_free(&input);
-    return output;
-}
-
 TEST(FunctionalTests, ddwaf_run)
 {
     auto rule = readFile("interface.yaml");
@@ -196,8 +189,8 @@ TEST(FunctionalTests, HandleGood)
 
         ddwaf_result ret;
         EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);
+        EXPECT_FALSE(ret.timeout);
 
-        EXPECT_EQ(DDWAF_MONITOR, ret.action);
         EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value1","key_path":[0],"value":"rule2","highlight":["rule2"]}]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["bla"],"value":"rule3","highlight":["rule3"]}]}]}])");
 
         ddwaf_result_free(&ret);
@@ -215,7 +208,7 @@ TEST(FunctionalTests, HandleBad)
     EXPECT_NO_FATAL_FAILURE(ddwaf_destroy(nullptr));
 
     ddwaf_object_string(&object, "value");
-    EXPECT_EQ(ddwaf_run(nullptr, &object, NULL, 1), DDWAF_ERR_INVALID_ARGUMENT);
+    EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, 1), DDWAF_ERR_INVALID_ARGUMENT);
     ddwaf_object_free(&object);
 
     auto rule = readFile("interface.yaml");
@@ -233,7 +226,10 @@ TEST(FunctionalTests, HandleBad)
 
     object = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&object, "value1", ddwaf_object_string(&tmp, "value"));
-    EXPECT_EQ(ddwaf_run(context, &object, NULL, 0), DDWAF_ERR_TIMEOUT);
+    ddwaf_result res;
+    EXPECT_EQ(ddwaf_run(context, &object, &res, 0), DDWAF_GOOD);
+    EXPECT_TRUE(res.timeout);
+
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -271,11 +267,18 @@ TEST(FunctionalTests, Budget)
     ddwaf_object_map_add(&parameter, "value2", &param_key);
     ddwaf_object_map_add(&parameter, "value1", &param_val);
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter, NULL, LONG_TIME), DDWAF_MONITOR);
-    EXPECT_EQ(ddwaf_run(context2, &parameter, NULL, LONG_TIME), DDWAF_MONITOR);
+    ddwaf_result ret;
+    EXPECT_EQ(ddwaf_run(context1, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);
+    EXPECT_FALSE(ret.timeout);
+    ddwaf_result_free(&ret);
+    EXPECT_EQ(ddwaf_run(context2, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);
+    EXPECT_FALSE(ret.timeout);
+    ddwaf_result_free(&ret);
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter, NULL, SHORT_TIME), DDWAF_GOOD);
-    EXPECT_EQ(ddwaf_run(context2, &parameter, NULL, SHORT_TIME), DDWAF_GOOD);
+    EXPECT_EQ(ddwaf_run(context1, &parameter, &ret, SHORT_TIME), DDWAF_GOOD);
+    EXPECT_FALSE(ret.timeout);
+    EXPECT_EQ(ddwaf_run(context2, &parameter, &ret, SHORT_TIME), DDWAF_GOOD);
+    EXPECT_FALSE(ret.timeout);
 
     ddwaf_object_free(&parameter);
 
@@ -313,7 +316,6 @@ TEST(FunctionalTests, ddwaf_runNull)
 
     ddwaf_result out;
     EXPECT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MONITOR);
-    EXPECT_EQ(out.action, DDWAF_MONITOR);
     EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"\u0000Arachni\u0000","highlight":["Arachni"]}]}]}])");
 
     ddwaf_result_free(&out);
@@ -331,8 +333,7 @@ TEST(FunctionalTests, ddwaf_runNull)
     ASSERT_NE(context, nullptr);
 
     EXPECT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MONITOR);
-
-    EXPECT_EQ(out.action, DDWAF_MONITOR);
+    EXPECT_FALSE(out.timeout);
     EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"Arachni","highlight":["Arachni"]}]}]}])");
 
     ddwaf_object_free(&map);

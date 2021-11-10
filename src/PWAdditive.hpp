@@ -13,6 +13,7 @@
 #include <PowerWAF.hpp>
 #include <ddwaf.h>
 #include <utils.h>
+#include <optional>
 
 class PWAdditive
 {
@@ -31,7 +32,8 @@ public:
 
     PWAdditive(const PWAdditive&) = delete;
 
-    ddwaf_result run(ddwaf_object, uint64_t);
+    DDWAF_RET_CODE run(ddwaf_object, uint64_t);
+    DDWAF_RET_CODE run(ddwaf_object, std::optional<std::reference_wrapper<ddwaf_result>>, uint64_t);
 
     void flushCaches();
 

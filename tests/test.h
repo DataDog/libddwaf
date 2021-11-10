@@ -46,7 +46,6 @@ using namespace ddwaf;
 extern ddwaf_object readFile(const char* filename);
 extern ddwaf_object readRule(const char* rule);
 extern void compareData(const char* rulename, ddwaf_object input, size_t time, const char* expectedOutput);
-extern DDWAF_RET_CODE getCodeForRun(ddwaf_result input);
 extern std::unordered_map<std::string, std::shared_ptr<PowerWAF>>& exportInternalRuleCollection();
 
 namespace YAML

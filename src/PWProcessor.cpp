@@ -75,7 +75,7 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
     if (deadline <= now)
     {
         DDWAF_INFO("Ran out of time while running flow %s", name.c_str());
-        retManager.recordResult(DDWAF_ERR_TIMEOUT);
+        retManager.recordTimeout();
         return;
     }
 
@@ -146,7 +146,7 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
             else if (matchingStatus == status::timeout)
             {
                 DDWAF_INFO("Ran out of time when processing %s", ruleID.c_str());
-                retManager.recordResult(DDWAF_ERR_TIMEOUT);
+                retManager.recordTimeout();
                 return;
             }
             else
@@ -193,7 +193,7 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
         if (deadline <= now)
         {
             DDWAF_INFO("Ran out of time while running flow %s and rule %s", name.c_str(), ruleID.c_str());
-            retManager.recordResult(DDWAF_ERR_TIMEOUT);
+            retManager.recordTimeout();
             return;
         }
     }

@@ -28,9 +28,7 @@ TEST(TestRegressions, TruncatedUTF8)
 
     ddwaf_result out;
     ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MONITOR);
-
-    //We should have matched something
-    ASSERT_EQ(out.action, DDWAF_MONITOR);
+    EXPECT_FALSE(out.timeout);
 
     //The emoji should be trimmed out of the result
     EXPECT_TRUE(memchr(out.data, emoji[0], strlen(out.data)) == NULL);
@@ -38,24 +36,4 @@ TEST(TestRegressions, TruncatedUTF8)
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
-}
-
-TEST(TestRegression, DISABLED_segfault)
-{
-    /* const char * jsonFile = readFile("processor_libinj_xss.json");*/
-    //ASSERT_TRUE(jsonFile != nullptr);
-    //ASSERT_TRUE(pw_init("rule", jsonFile, NULL, NULL));
-    //free((void*) jsonFile);
-
-    //ddwaf_object map = DDWAF_OBJECT_MAP, string = pw_createString("style=e");
-    //pw_addMap(&map, "value", 0, string);
-
-    //ddwaf_result out = pw_run("rule", map, 2000);
-
-    ////We should have matched something
-    //EXPECT_EQ(out.action, DDWAF_MONITOR);
-
-    //ddwaf_object_free(&map);
-    //ddwaf_result_free(&out);
-    /*pw_clearRule("rule");*/
 }

@@ -131,30 +131,18 @@ extern "C"
 
     DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data, ddwaf_result* result, uint64_t timeout)
     {
-        DDWAF_RET_CODE code = DDWAF_ERR_INTERNAL;
         try
         {
-            ddwaf_result res;
             if (context == nullptr || data == nullptr)
             {
                 DDWAF_WARN("Illegal WAF call: context or data was null");
-                res = returnErrorCode(DDWAF_ERR_INVALID_ARGUMENT);
-            }
-            else
-            {
-                PWAdditive* additive = reinterpret_cast<PWAdditive*>(context);
-                res                  = additive->run(*data, timeout);
+                return DDWAF_ERR_INVALID_ARGUMENT;
             }
 
-            code = res.action;
-            if (result != nullptr)
-            {
-                *result = res;
-            }
-            else
-            {
-                ddwaf_result_free(&res);
-            }
+            PWAdditive* additive = reinterpret_cast<PWAdditive*>(context);
+
+            return result ? additive->run(*data, *result, timeout) :
+                            additive->run(*data, timeout);
         }
         catch (const std::exception& e)
         {
@@ -166,7 +154,7 @@ extern "C"
             DDWAF_ERROR("unknown exception");
         }
 
-        return code;
+        return DDWAF_ERR_INTERNAL;
     }
 
     void ddwaf_context_destroy(ddwaf_context context)

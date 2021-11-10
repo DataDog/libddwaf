@@ -75,11 +75,12 @@ public:
         return sb.GetString();
     }
 
-    void Validate(ddwaf_result ret)
+    void Validate(ddwaf_result ret, DDWAF_RET_CODE code)
     {
         Document d;
-        EXPECT_EQ(ret.action, DDWAF_MONITOR);
+        EXPECT_EQ(code, DDWAF_MONITOR);
         EXPECT_NE(ret.data, nullptr);
+        EXPECT_FALSE(ret.timeout);
         if (!HasFailure())
         {
             EXPECT_FALSE(d.Parse(ret.data).HasParseError());
@@ -105,8 +106,8 @@ TEST_F(TestSchemaFixture, SimpleResult)
     ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "rule1"));
 
     ddwaf_result ret;
-    ddwaf_run(context, &param, &ret, LONG_TIME);
-    Validate(ret);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    Validate(ret, code);
     ddwaf_result_free(&ret);
 }
 
@@ -119,8 +120,8 @@ TEST_F(TestSchemaFixture, SimpleResultWithKeyPath)
     ddwaf_object_map_add(&param, "arg2", &arg2);
 
     ddwaf_result ret;
-    ddwaf_run(context, &param, &ret, LONG_TIME);
-    Validate(ret);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    Validate(ret, code);
     ddwaf_result_free(&ret);
 }
 
@@ -136,8 +137,8 @@ TEST_F(TestSchemaFixture, SimpleResultWithMultiKeyPath)
     ddwaf_object_map_add(&param, "arg2", &arg2);
 
     ddwaf_result ret;
-    ddwaf_run(context, &param, &ret, LONG_TIME);
-    Validate(ret);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    Validate(ret, code);
     ddwaf_result_free(&ret);
 }
 
@@ -153,8 +154,8 @@ TEST_F(TestSchemaFixture, ResultWithMultiCondition)
     ddwaf_object_map_add(&param, "arg4", &arg4);
 
     ddwaf_result ret;
-    ddwaf_run(context, &param, &ret, LONG_TIME);
-    Validate(ret);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    Validate(ret, code);
     ddwaf_result_free(&ret);
 }
 
@@ -178,7 +179,7 @@ TEST_F(TestSchemaFixture, MultiResultWithMultiCondition)
     ddwaf_object_map_add(&param, "arg4", &arg4);
 
     ddwaf_result ret;
-    ddwaf_run(context, &param, &ret, LONG_TIME);
-    Validate(ret);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    Validate(ret, code);
     ddwaf_result_free(&ret);
 }

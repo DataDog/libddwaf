@@ -33,13 +33,13 @@ TEST(TestAdditive, TestMultiCall)
     // Run with just arg1
     auto code = ddwaf_run(context, &param1, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_GOOD);
-    EXPECT_EQ(ret.action, DDWAF_GOOD);
+    EXPECT_FALSE(ret.timeout);
     ddwaf_result_free(&ret);
 
     // Run with both arg1 and arg2
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
-    EXPECT_EQ(ret.action, DDWAF_MONITOR);
+    EXPECT_FALSE(ret.timeout);
     EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
     ddwaf_result_free(&ret);
 
@@ -49,6 +49,7 @@ TEST(TestAdditive, TestMultiCall)
 
 TEST(TestAdditive, TestBad)
 {
+    ddwaf_result ret;
     EXPECT_EQ(ddwaf_context_init(nullptr, nullptr), nullptr);
 
     ddwaf_object object, tmp;
@@ -56,7 +57,8 @@ TEST(TestAdditive, TestBad)
 
     // Since the call was performed with a null context, the parameters will not
     // be freed.
-    EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, 0), DDWAF_ERR_INVALID_ARGUMENT);
+    EXPECT_EQ(ddwaf_run(nullptr, &object, &ret, 0), DDWAF_ERR_INVALID_ARGUMENT);
+    EXPECT_FALSE(ret.timeout);
     ddwaf_object_free(&object);
 
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
@@ -71,13 +73,15 @@ TEST(TestAdditive, TestBad)
 
     // In case of an invalid object, the parameters will be freed on the spot
     ddwaf_object_string(&object, "stringvalue");
-    EXPECT_EQ(ddwaf_run(context, &object, nullptr, 0), DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_EQ(ddwaf_run(context, &object, &ret, 0), DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_FALSE(ret.timeout);
 
     // In case of timeout, the parameters will be owned by the context and freed
     // during destruction
     object = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&object, "arg1", ddwaf_object_string(&tmp, "value"));
-    EXPECT_EQ(ddwaf_run(context, &object, nullptr, 0), DDWAF_ERR_TIMEOUT);
+    EXPECT_EQ(ddwaf_run(context, &object, &ret, 0), DDWAF_GOOD);
+    EXPECT_TRUE(ret.timeout);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 
@@ -108,20 +112,19 @@ TEST(TestAdditive, TestParameterOverride)
     ddwaf_result ret;
     auto code = ddwaf_run(context, &param1, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_GOOD);
-    EXPECT_EQ(ret.action, DDWAF_GOOD);
+    EXPECT_FALSE(ret.timeout);
     ddwaf_result_free(&ret);
 
     // Override `arg1`
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
-    EXPECT_EQ(ret.action, DDWAF_MONITOR);
     EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"^string.*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
     ddwaf_result_free(&ret);
 
     // Run again without change
     code = ddwaf_run(context, ddwaf_object_map(&tmp), &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_GOOD);
-    EXPECT_EQ(ret.action, DDWAF_GOOD);
+    EXPECT_FALSE(ret.timeout);
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);
