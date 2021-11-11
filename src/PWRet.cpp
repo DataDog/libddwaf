@@ -14,33 +14,10 @@
 #include <rapidjson/prettywriter.h>
 #include <string>
 
-ddwaf_result returnErrorCode(DDWAF_RET_CODE code)
-{
-    ddwaf_result output;
-
-    output.action           = code;
-    output.data             = NULL;
-    output.perfTotalRuntime = 0;
-    output.perfData         = NULL;
-
-    return output;
-}
-
 PWRetManager::PWRetManager(uint32_t slotsToSaveTimeFor, rapidjson::Document::AllocatorType& alloc) : allocator(alloc), roomInTimeStore(slotsToSaveTimeFor)
 {
     outputDocument.SetArray();
     timeStore.resize(slotsToSaveTimeFor);
-}
-
-bool PWRetManager::shouldRecordTime() const
-{
-    return roomInTimeStore != 0;
-}
-
-void PWRetManager::recordResult(DDWAF_RET_CODE code)
-{
-    if (worstCode < code)
-        worstCode = code;
 }
 
 void PWRetManager::recordTime(const std::string& ruleName, SQPowerWAF::monotonic_clock::duration _duration)
@@ -214,9 +191,9 @@ void PWRetManager::synthetizeTimeSlots(rapidjson::Document& timeSlotDocument) co
     timeSlotDocument.AddMember("topRuleRuntime", recordCollector, timeSlotDocument.GetAllocator());
 }
 
-ddwaf_result PWRetManager::synthetize() const
+DDWAF_RET_CODE PWRetManager::synthetize(ddwaf_result &output) const
 {
-    ddwaf_result output = returnErrorCode(worstCode);
+    output = {0};
 
     if (outputDocument.GetArray().Size() > 0)
     {
@@ -242,7 +219,7 @@ ddwaf_result PWRetManager::synthetize() const
             output.perfData = strdup(buffer.GetString());
     }
 
-    return output;
+    return worstCode;
 }
 
 extern "C"
@@ -251,5 +228,6 @@ extern "C"
     {
         free(const_cast<char*>(result->data));
         free(const_cast<char*>(result->perfData));
+        *result = {0};
     }
 }

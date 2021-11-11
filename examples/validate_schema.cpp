@@ -6,6 +6,7 @@
 
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/schema.h"
+#include "rapidjson/error/en.h"
 
 using namespace rapidjson;
 
@@ -46,9 +47,12 @@ int main(int argc, char* argv[])
 
     auto inputJson = read_file(argv[2]);
     Document d;
-    if (d.Parse(inputJson).HasParseError())
+    rapidjson::ParseResult result = d.Parse(inputJson);
+    if (!result)
     {
-        std::cout << "Failed to parse input json" << std::endl;
+        std::cout << "Failed to parse input json: " 
+                  << rapidjson::GetParseError_En(result.Code())
+                  << result.Offset() << std::endl;
         return EXIT_FAILURE;
     }
 

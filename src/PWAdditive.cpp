@@ -30,7 +30,12 @@ PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
     argCache.reserve(ADDITIVE_BUFFER_PREALLOC);
 }
 
-ddwaf_result PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft)
+DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft) {
+    return run(newParameters, std::nullopt, timeLeft);
+}
+
+DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, 
+    std::optional<std::reference_wrapper<ddwaf_result>> res, uint64_t timeLeft)
 {
     if (!retriever.addParameter(newParameters))
     {
@@ -39,7 +44,7 @@ ddwaf_result PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft)
         {
             obj_free(&newParameters);
         }
-        return returnErrorCode(DDWAF_ERR_INVALID_OBJECT);
+        return DDWAF_ERR_INVALID_OBJECT;
     }
 
     // Take ownership of newParameters
@@ -50,7 +55,11 @@ ddwaf_result PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft)
     // consistent across all possible timeout scenarios.
     if (timeLeft == 0)
     {
-        return returnErrorCode(DDWAF_ERR_TIMEOUT);
+        if (res) {
+            ddwaf_result &output = res.value();
+            output.timeout = true;
+        }
+        return DDWAF_GOOD;
     }
 
     const SQPowerWAF::monotonic_clock::time_point now      = SQPowerWAF::monotonic_clock::now();
@@ -59,7 +68,7 @@ ddwaf_result PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft)
     // If this is a new run but no rule care about those new params, let's skip the run
     if (!processor.isFirstRun() && !retriever.hasNewArgs())
     {
-        return returnErrorCode(DDWAF_GOOD);
+        return DDWAF_GOOD;
     }
 
     processor.startNewRun(deadline);
@@ -70,12 +79,16 @@ ddwaf_result PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft)
         processor.runFlow(key, flow, retManager);
     }
 
-    ddwaf_result output = retManager.synthetize();
+    DDWAF_RET_CODE code = retManager.getResult();
+    if (res) {
+        ddwaf_result &output = res.value();
+        retManager.synthetize(output);
 
-    const SQPowerWAF::monotonic_clock::duration runTime = SQPowerWAF::monotonic_clock::now() - now;
-    output.perfTotalRuntime                             = (uint32_t) std::min(runTime.count() / 1000, SQPowerWAF::monotonic_clock::duration::rep(UINT32_MAX));
+        const SQPowerWAF::monotonic_clock::duration runTime = SQPowerWAF::monotonic_clock::now() - now;
+        output.perfTotalRuntime                             = (uint32_t) std::min(runTime.count() / 1000, SQPowerWAF::monotonic_clock::duration::rep(UINT32_MAX));
+    }
 
-    return output;
+    return code;
 }
 
 void PWAdditive::flushCaches()

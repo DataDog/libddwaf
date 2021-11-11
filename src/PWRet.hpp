@@ -24,12 +24,13 @@ class PWRetManager
     rapidjson::Document::AllocatorType& allocator;
     rapidjson::Value ruleCollector;
 
-    DDWAF_RET_CODE worstCode = DDWAF_GOOD;
+    DDWAF_RET_CODE worstCode{DDWAF_GOOD};
+    bool timeout{false};
 
     // Time reporting
     const uint32_t roomInTimeStore;
-    uint32_t lowestTime      = 0;
-    uint32_t lowestTimeIndex = 0;
+    uint32_t lowestTime{0};
+    uint32_t lowestTimeIndex{0};
     std::vector<std::pair<std::pair<const char*, size_t>, uint32_t>> timeStore;
 
     void synthetizeTimeSlots(rapidjson::Document& timeSlotCollector) const;
@@ -37,9 +38,20 @@ class PWRetManager
 public:
     PWRetManager(uint32_t slotsToSaveTimeFor, rapidjson::Document::AllocatorType& allocator);
 
-    bool shouldRecordTime() const;
+    bool shouldRecordTime() const { return roomInTimeStore != 0; }
 
-    void recordResult(DDWAF_RET_CODE code);
+    DDWAF_RET_CODE getResult() const { return worstCode; }
+
+    void recordResult(DDWAF_RET_CODE code) {
+        if (worstCode < code) {
+            worstCode = code;
+        }
+    }
+
+    void recordTimeout() {
+        timeout = true;
+    }
+
     void recordTime(const std::string& ruleName, SQPowerWAF::monotonic_clock::duration duration);
 
     void startRule();
@@ -51,16 +63,15 @@ public:
 
     rapidjson::Value fetchRuleCollector();
 
+
     void removeResultFlow(const std::string& flow);
 
-    ddwaf_result synthetize() const;
+    DDWAF_RET_CODE synthetize(ddwaf_result &output) const;
 
 #ifdef TESTING
     FRIEND_TEST(TestPWProcessor, TestCache);
     FRIEND_TEST(TestPWProcessor, TestBudget);
 #endif
 };
-
-extern ddwaf_result returnErrorCode(DDWAF_RET_CODE code);
 
 #endif /* PWRet_hpp */

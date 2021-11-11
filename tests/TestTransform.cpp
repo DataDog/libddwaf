@@ -592,7 +592,7 @@ TEST(TestTransforms, TestCoverage)
 
     ddwaf_result ret;
     EXPECT_EQ(ddwaf_run(context, &map, &ret, LONG_TIME), DDWAF_MONITOR);
-    EXPECT_EQ(ret.action, DDWAF_MONITOR);
+    EXPECT_FALSE(ret.timeout);
     EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"test_coverage","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg","key_path":[],"value":"","highlight":[]}]}]}])");
 
     ddwaf_result_free(&ret);
