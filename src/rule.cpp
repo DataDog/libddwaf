@@ -144,12 +144,9 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
             return status::timeout;
 
         bool didMatch = retriever.runIterOnLambda(iterator, saveParamOnMatch, [&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
-            if ((type & processor->expectedTypes()) == 0)
+            if ((type & processor->expectedTypes()) == 0) {
                 return false;
-
-            const uint64_t stringLength = runOnKey ? input->parameterNameLength : input->nbEntries;
-            if (type == DDWAF_OBJ_STRING && stringLength < options.minLength)
-                return false;
+            }
 
             return matchWithTransformer(input, gather, runOnKey, isReadOnlyArg);
         });

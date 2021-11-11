@@ -74,7 +74,6 @@ protected:
     bool saveParamOnMatch { false };
     struct
     {
-        uint64_t minLength         = 0;
         bool keepRunningOnMatch    = false;
         bool matchInterTransformer = false;
     } options;
