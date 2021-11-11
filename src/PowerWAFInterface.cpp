@@ -131,16 +131,16 @@ extern "C"
 
     DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data, ddwaf_result* result, uint64_t timeout)
     {
+        if (result != nullptr) { *result = {0}; }
+
+        if (context == nullptr || data == nullptr)
+        {
+            DDWAF_WARN("Illegal WAF call: context or data was null");
+            return DDWAF_ERR_INVALID_ARGUMENT;
+        }
         try
         {
-            if (context == nullptr || data == nullptr)
-            {
-                DDWAF_WARN("Illegal WAF call: context or data was null");
-                return DDWAF_ERR_INVALID_ARGUMENT;
-            }
-
             PWAdditive* additive = reinterpret_cast<PWAdditive*>(context);
-
             return result ? additive->run(*data, *result, timeout) :
                             additive->run(*data, timeout);
         }

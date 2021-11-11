@@ -57,7 +57,7 @@ TEST(TestAdditive, TestBad)
 
     // Since the call was performed with a null context, the parameters will not
     // be freed.
-    EXPECT_EQ(ddwaf_run(nullptr, &object, &ret, 0), DDWAF_ERR_INVALID_ARGUMENT);
+    EXPECT_EQ(ddwaf_run(nullptr, &object, &ret, LONG_TIME), DDWAF_ERR_INVALID_ARGUMENT);
     EXPECT_FALSE(ret.timeout);
     ddwaf_object_free(&object);
 
@@ -73,7 +73,7 @@ TEST(TestAdditive, TestBad)
 
     // In case of an invalid object, the parameters will be freed on the spot
     ddwaf_object_string(&object, "stringvalue");
-    EXPECT_EQ(ddwaf_run(context, &object, &ret, 0), DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_EQ(ddwaf_run(context, &object, &ret, LONG_TIME), DDWAF_ERR_INVALID_OBJECT);
     EXPECT_FALSE(ret.timeout);
 
     // In case of timeout, the parameters will be owned by the context and freed
