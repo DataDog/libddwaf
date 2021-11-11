@@ -8,7 +8,7 @@
 
 TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {
-    RE2Manager processor("^rEgEx$", false);
+    RE2Manager processor("^rEgEx$", 0, false);
     EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^rEgEx$");
     EXPECT_STREQ(processor.operatorName().data(), "match_regex");
 
@@ -27,7 +27,7 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
 
 TEST(TestRegexMatch, TestBasicCaseSensitive)
 {
-    RE2Manager processor("^rEgEx$", true);
+    RE2Manager processor("^rEgEx$", 0, true);
     EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^rEgEx$");
     EXPECT_STREQ(processor.operatorName().data(), "match_regex");
 
@@ -49,9 +49,30 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
     ddwaf_object_free(&param2);
 }
 
+TEST(TestRegexMatch, TestMinLength)
+{
+    RE2Manager processor("^rEgEx.*$", 6, true);
+    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^rEgEx.*$");
+    EXPECT_STREQ(processor.operatorName().data(), "match_regex");
+
+    std::vector<uint8_t> matchestogather;
+    MatchGatherer gatherer(matchestogather);
+    ddwaf_object param, param2;
+    ddwaf_object_string(&param, "rEgEx");
+    ddwaf_object_string(&param2, "rEgExe");
+
+    EXPECT_FALSE(processor.doesMatch(&param, gatherer));
+    EXPECT_TRUE(processor.doesMatch(&param2, gatherer));
+    EXPECT_STREQ(gatherer.resolvedValue.c_str(), "rEgExe");
+    EXPECT_STREQ(gatherer.matchedValue.c_str(), "rEgExe");
+
+    ddwaf_object_free(&param);
+    ddwaf_object_free(&param2);
+}
+
 TEST(TestRegexMatch, TestCaptureGroups)
 {
-    RE2Manager processor("^(regex)(.*)$", false);
+    RE2Manager processor("^(regex)(.*)$", 0, false);
     EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^(regex)(.*)$");
     EXPECT_STREQ(processor.operatorName().data(), "match_regex");
 
@@ -76,13 +97,13 @@ TEST(TestRegexMatch, TestCaptureGroups)
 
 TEST(TestRegexMatch, TestBadRegex)
 {
-    EXPECT_THROW(RE2Manager("(?:<\\?(?!xml\\s)|<\\?php|\\[(?:/|\\\\\\\\)?php\\])", true),
+    EXPECT_THROW(RE2Manager("(?:<\\?(?!xml\\s)|<\\?php|\\[(?:/|\\\\\\\\)?php\\])", 0, true),
                  parsing_error);
 }
 
 TEST(TestRegexMatch, TestComplexRegex)
 {
-    RE2Manager processor("^(?i:(?:[a-z]{3,10}\\s+(?:\\w{3,7}?://[\\w\\-\\./]*(?::\\d+)?)?/[^?#]*(?:\\?[^#\\s]*)?(?:#[\\S]*)?|connect (?:\\d{1,3}\\.){3}\\d{1,3}\\.?(?::\\d+)?|options \\*)\\s+[\\w\\./]+|get /[^?#]*(?:\\?[^#\\s]*)?(?:#[\\S]*)?)$", false);
+    RE2Manager processor("^(?i:(?:[a-z]{3,10}\\s+(?:\\w{3,7}?://[\\w\\-\\./]*(?::\\d+)?)?/[^?#]*(?:\\?[^#\\s]*)?(?:#[\\S]*)?|connect (?:\\d{1,3}\\.){3}\\d{1,3}\\.?(?::\\d+)?|options \\*)\\s+[\\w\\./]+|get /[^?#]*(?:\\?[^#\\s]*)?(?:#[\\S]*)?)$", 0, false);
 
     ddwaf_object param;
     ddwaf_object_string(&param, "GET /test.php:blablabla");
