@@ -67,8 +67,14 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
                 case_sensitive = true;
             }
         }
-        // TODO support min length
-        processor = std::make_unique<RE2Manager>(regex, case_sensitive);
+
+        int min_length = 0;
+        if (options.find("min_length") != options.end()) {
+            std::string length_opt = options["min_length"];
+            min_length = std::stoi(length_opt);
+        }
+
+        processor = std::make_unique<RE2Manager>(regex, min_length, case_sensitive);
     }
     else if (operation == "is_xss")
     {

@@ -15,7 +15,7 @@
 class RE2Manager : public IPWRuleProcessor
 {
 public:
-    RE2Manager(const std::string& regex_str, bool caseSensitive);
+    RE2Manager(const std::string& regex_str, std::size_t minLength, bool caseSensitive);
     ~RE2Manager() = default;
 
     bool hasStringRepresentation() const override;
@@ -31,6 +31,7 @@ protected:
     static constexpr std::string_view name { "match_regex" };
     uint8_t groupsToCatch { 0 };
     std::unique_ptr<re2::RE2> regex { nullptr };
+    std::size_t min_length;
 };
 
 #endif /* re2_hpp */
