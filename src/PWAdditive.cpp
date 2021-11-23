@@ -55,8 +55,8 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     // consistent across all possible timeout scenarios.
     if (timeLeft == 0)
     {
-        if (res) {
-            ddwaf_result &output = res.value();
+        if (res.has_value()) {
+            ddwaf_result &output = *res;
             output.timeout = true;
         }
         return DDWAF_GOOD;
@@ -80,8 +80,8 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     }
 
     DDWAF_RET_CODE code = retManager.getResult();
-    if (res) {
-        ddwaf_result &output = res.value();
+    if (res.has_value()) {
+        ddwaf_result &output = *res;
         retManager.synthetize(output);
 
         const SQPowerWAF::monotonic_clock::duration runTime = SQPowerWAF::monotonic_clock::now() - now;
