@@ -11,7 +11,7 @@ RUN mkdir -p /opt/packages
 
 RUN src=/usr/local/src/libddwaf build=$src/build; \
     cmake -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_VERBOSE_MAKEFILE=1 \
-          -DLIBDDWAF_BUILD_SHARED=OFF \
+          -DLIBDDWAF_BUILD_SHARED=ON \
           -DBUILD_TESTING=OFF \
           -DCMAKE_INSTALL_PREFIX=/opt/libddwaf \
           -DCMAKE_TOOLCHAIN_FILE=/usr/local/src/libddwaf/docker/libddwaf/gcc/mingw64/x86_64-w64-mingw32.cmake \
