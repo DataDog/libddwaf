@@ -29,8 +29,9 @@ class condition;
 using rule_map = std::unordered_map<std::string, rule>;
 using flow_map = std::unordered_map<std::string, std::vector<std::string>>;
 
-struct rule
+class rule
 {
+public:
     std::string name;
     std::string category;
     std::vector<condition> conditions;

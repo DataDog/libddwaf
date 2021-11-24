@@ -50,7 +50,7 @@ jobs:
       - name: Create Build Directory
         run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
       - name: Generating Build Scripts
-        run: cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
+        run: cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMACOSX_DEPLOYMENT_TARGET=10.9 -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
         working-directory: ${{ github.workspace }}/build
       - name: Build Binaries
         run: cmake --build . --config RelWithDebInfo --verbose --target all --target testPowerWAF -j
@@ -78,7 +78,7 @@ jobs:
       - name: Create Build Directory
         run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
       - name: Generating Build Scripts
-        run: cmake -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
+        run: cmake -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMACOSX_DEPLOYMENT_TARGET=10.9 -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
         working-directory: ${{ github.workspace }}/build
       - name: Build Binaries
         run: cmake --build . --config RelWithDebInfo --verbose --target all -j
