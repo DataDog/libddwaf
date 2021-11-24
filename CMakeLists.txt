@@ -31,14 +31,6 @@ endif()
 
 set(LIBDDWAF_MSVC_RUNTIME_LIBRARY "/MT" CACHE STRING "MSVC RuntimeLibrary")
 
-include(GNUInstallDirs)
-
-add_subdirectory(third_party)
-
-# This adds the option BUILD_TESTING, which we can use to determine if tests
-# should or shouldn't be built
-include(CTest)
-
 if(NOT MSVC)
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing")
     set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing -ggdb")
@@ -53,13 +45,17 @@ else()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${LIBDDWAF_MSVC_RUNTIME_LIBRARY}")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} ${LIBDDWAF_MSVC_RUNTIME_LIBRARY}")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${LIBDDWAF_MSVC_RUNTIME_LIBRARY}d")
-    if(CMAKE_BUILD_TYPE MATCHES "R[Ee][Ll]")
-        add_compile_options("${LIBDDWAF_MSVC_RUNTIME_LIBRARY}")
-    else()
-        add_compile_options("${LIBDDWAF_MSVC_RUNTIME_LIBRARY}d")
-    endif()
+
     add_definitions(-D_CRT_SECURE_NO_WARNINGS=1 -Dstrdup=_strdup -Dputenv=_putenv)
 endif()
+
+include(GNUInstallDirs)
+
+add_subdirectory(third_party)
+
+# This adds the option BUILD_TESTING, which we can use to determine if tests
+# should or shouldn't be built
+include(CTest)
 
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/Clock.cpp
