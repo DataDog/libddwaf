@@ -1,5 +1,13 @@
 # libddwaf release
 
+### v1.0.15 (unstable) - 2021/12/07
+- Support `min_length` option on `regex_match` operator.
+- Remove `DDWAF_ERR_TIMEOUT` and update value of other errors.
+- Add timeout field to `ddwaf_result`.
+- Remove action field from `ddwaf_result`.
+- Support MacOS 10.9.
+- Minor CMake compatibility improvements.
+
 ### v1.0.14 (unstable) - 2021/10/26
 - WAF output now conforms to the appsec event format v1.0.0.
 - Add schema for output validation.
