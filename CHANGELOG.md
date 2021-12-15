@@ -1,5 +1,8 @@
 # libddwaf release
 
+### v1.0.16 (unstable) - 2021/12/15
+- Fix duplicate matches in output ([#36](https://github.com/DataDog/libddwaf/issues/36))
+
 ### v1.0.15 (unstable) - 2021/12/07
 - Support `min_length` option on `regex_match` operator.
 - Remove `DDWAF_ERR_TIMEOUT` and update value of other errors.
