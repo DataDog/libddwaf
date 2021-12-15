@@ -37,3 +37,32 @@ TEST(TestRegressions, TruncatedUTF8)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+TEST(TestRegressions, DuplicateFlowMatches)
+{
+    //Initialize a PowerWAF rule
+    auto rule = readFile("regressions2.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ASSERT_NE(context, nullptr);
+
+    //Setup the parameter structure
+    ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+    ddwaf_object_map_add(&parameter, "param1", ddwaf_object_string(&tmp, "Sqreen"));
+    ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp,"Duplicate"));
+
+    ddwaf_result ret;
+    EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);
+
+    EXPECT_FALSE(ret.timeout);
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow1","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]},{"operator":"match_regex","operator_value":"Duplicate","parameters":[{"address":"param2","key_path":[],"value":"Duplicate","highlight":["Duplicate"]}]}]}])");
+
+    ddwaf_result_free(&ret);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}

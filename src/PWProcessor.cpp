@@ -83,12 +83,12 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
 
     ddwaf::rule_map::const_iterator ruleMatched;
 
-    retManager.startRule();
-
     //Process each rule we have to run for this step of the flow
     for (const std::string& ruleID : flow)
     {
         DDWAF_DEBUG("Running the WAF on rule %s", ruleID.c_str());
+
+        retManager.startRule();
 
         //Have we already ran this rule?
         bool cachedNegativeMatch = false, hitFromThisRun = false;
