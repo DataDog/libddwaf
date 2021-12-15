@@ -1,0 +1,50 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: param1
+          regex: Sqreen
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: param2
+          regex: fail_value
+  - id: 2
+    name: rule2
+    tags:
+      type: flow1
+      category: category2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: param1
+          regex: Sqreen
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: param2
+          regex: Duplicate
+  - id: 3
+    name: rule3
+    tags:
+      type: flow1
+      category: category3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: param1
+          regex: Sqreen
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: param2
+          regex: another_fail_value
