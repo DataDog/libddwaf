@@ -78,7 +78,7 @@ bool PWRetriever::PWArgsWrapper::_validate_object(const ddwaf_object& input, uin
                 }
                 else
                 {
-                    DDWAF_TRACE("Performing recursive validation of item #%zu", i);
+                    DDWAF_TRACE("Performing recursive validation of item #%llu", i);
                 }
 
                 if (!_validate_object(array[i], depth + 1))
