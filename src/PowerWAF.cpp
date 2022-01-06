@@ -44,7 +44,7 @@ PowerWAF::PowerWAF(PWManifest&& manifest_, rule_map&& rules_,
 
         if (config->maxTimeStore >= 0)
         {
-            maxTimeStore = config->maxTimeStore;
+            maxTimeStore = (uint32_t) config->maxTimeStore;
         }
     }
 }

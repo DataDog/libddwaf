@@ -844,10 +844,10 @@ bool PWTransformer::transformEncodeBase64(ddwaf_object* parameter, bool readOnly
     for (; read + 2 < originalLength; read += 3)
     {
         const uint8_t quartet[4] = {
-            oldString[read] >> 2,
-            (oldString[read] & 0x3) << 4 | (oldString[read + 1] >> 4),
-            (oldString[read + 1] & 0xf) << 2 | oldString[read + 2] >> 6,
-            oldString[read + 2] & 0x3f
+			static_cast<uint8_t>(oldString[read] >> 2),
+			static_cast<uint8_t>((oldString[read] & 0x3) << 4 | (oldString[read + 1] >> 4)),
+			static_cast<uint8_t>((oldString[read + 1] & 0xf) << 2 | oldString[read + 2] >> 6),
+			static_cast<uint8_t>(oldString[read + 2] & 0x3f)
         };
 
         newString[write++] = b64Encoding[quartet[0]];
@@ -862,14 +862,14 @@ bool PWTransformer::transformEncodeBase64(ddwaf_object* parameter, bool readOnly
         // We know that must have either one, or two bytes to process (otherwise the loop above would have run one more time)
         const uint8_t originalBytes[2] = {
             oldString[read],
-            read + 1 == originalLength ? (char) 0 : oldString[read + 1]
+            read + 1 == originalLength ? (uint8_t) 0 : oldString[read + 1]
         };
 
         // Compute the codes, only three as the forth is only set by the third, missing input byte
         const uint8_t convertedBytes[3] = {
-            originalBytes[0] >> 2,
-            (originalBytes[0] & 0x3) << 4 | (originalBytes[1] >> 4),
-            (originalBytes[1] & 0xf) << 2
+			static_cast<uint8_t>(originalBytes[0] >> 2),
+			static_cast<uint8_t>((originalBytes[0] & 0x3) << 4 | (originalBytes[1] >> 4)),
+			static_cast<uint8_t>((originalBytes[1] & 0xf) << 2)
         };
 
         // The first byte is always set in this branch, so no matter what we must set the first two bytes in the output

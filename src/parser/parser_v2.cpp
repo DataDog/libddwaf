@@ -47,7 +47,7 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
             }
 
             patterns.push_back(pattern.stringValue);
-            lengths.push_back(pattern.nbEntries);
+            lengths.push_back((uint32_t) pattern.nbEntries);
         }
 
         processor = std::make_unique<PerfMatch>(patterns, lengths);

@@ -111,7 +111,7 @@ extern "C"
 
         // INT64_MIN is 20 char long
         char container[sizeof(STR(INT64_MIN))] = { 0 };
-        int length                             = snprintf(container, sizeof(container), "%" PRId64, value);
+        size_t length                          = (size_t) snprintf(container, sizeof(container), "%" PRId64, value);
 
         return ddwaf_object_stringl(object, container, length);
     }
@@ -125,7 +125,7 @@ extern "C"
 
         // UINT64_MAX is 20 char long
         char container[sizeof(STR(UINT64_MAX))] = { 0 };
-        int length                              = snprintf(container, sizeof(container), "%" PRIu64, value);
+        size_t length                           = (size_t) snprintf(container, sizeof(container), "%" PRIu64, value);
 
         return ddwaf_object_stringl(object, container, length);
     }

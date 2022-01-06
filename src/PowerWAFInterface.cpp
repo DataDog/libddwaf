@@ -99,11 +99,13 @@ extern "C"
 
         PowerWAF* waf   = reinterpret_cast<PowerWAF*>(handle);
         auto& addresses = waf->manifest.get_root_addresses();
-        *size           = addresses.size();
-        if (addresses.empty())
+        if (addresses.empty() || addresses.size() > std::numeric_limits<uint32_t>::max())
         {
+            *size = 0;
             return nullptr;
         }
+
+		*size           = (uint32_t) addresses.size();
         return addresses.data();
     }
 
