@@ -133,6 +133,7 @@ ddwaf_object convertRuleToRuleset(YAML::Node rulePayload)
 	return root;
 }
 
+// Convert a string from the format a/b:c to a ddwaf_object with the following content {a: {b: c} }
 ddwaf_object getPayloadForVector(std::string testVector)
 {
 	ddwaf_object root, object;
