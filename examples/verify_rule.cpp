@@ -11,114 +11,124 @@
 #include <fstream>
 #include <parameter.hpp>
 
-
 #define LONG_TIME 1000000
 
-namespace YAML
-{
-
-class parsing_error : public std::exception
-{
-public:
-    parsing_error(const std::string& what) : what_(what) {}
-    const char* what() { return what_.c_str(); }
-
-protected:
-    const std::string what_;
-};
-
-ddwaf_object node_to_arg(const Node& node)
-{
-    switch (node.Type())
-    {
-        case NodeType::Sequence:
-        {
-            ddwaf_object arg;
-            ddwaf_object_array(&arg);
-            for (auto it = node.begin(); it != node.end(); ++it)
-            {
-                ddwaf_object child = node_to_arg(*it);
-                ddwaf_object_array_add(&arg, &child);
-            }
-            return arg;
-        }
-        case NodeType::Map:
-        {
-            ddwaf_object arg;
-            ddwaf_object_map(&arg);
-            for (auto it = node.begin(); it != node.end(); ++it)
-            {
-                std::string key    = it->first.as<std::string>();
-                ddwaf_object child = node_to_arg(it->second);
-                ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
-            }
-            return arg;
-        }
-        case NodeType::Scalar:
-        {
-            const std::string& value = node.Scalar();
-            ddwaf_object arg;
-            ddwaf_object_stringl(&arg, value.c_str(), value.size());
-            return arg;
-        }
-        case NodeType::Null:
-        case NodeType::Undefined:
-            ddwaf_object arg;
-            ddwaf_object_invalid(&arg);
-            return arg;
-    }
-
-    throw parsing_error("Invalid YAML node type");
-}
-
-template <>
-struct as_if<ddwaf_object, void>
-{
-    explicit as_if(const Node& node_) : node(node_) {}
-    ddwaf_object operator()() const { return node_to_arg(node); }
-    const Node& node;
-};
-
-}
+#ifdef VERBOSE
 
 const char* level_to_str(DDWAF_LOG_LEVEL level)
 {
-    switch (level)
-    {
-        case DDWAF_LOG_TRACE:
-            return "trace";
-        case DDWAF_LOG_DEBUG:
-            return "debug";
-        case DDWAF_LOG_ERROR:
-            return "error";
-        case DDWAF_LOG_WARN:
-            return "warn";
-        case DDWAF_LOG_INFO:
-            return "info";
-        case DDWAF_LOG_OFF:
-            break;
-    }
+	switch (level)
+	{
+		case DDWAF_LOG_TRACE:
+			return "trace";
+		case DDWAF_LOG_DEBUG:
+			return "debug";
+		case DDWAF_LOG_ERROR:
+			return "error";
+		case DDWAF_LOG_WARN:
+			return "warn";
+		case DDWAF_LOG_INFO:
+			return "info";
+		case DDWAF_LOG_OFF:
+			break;
+	}
+	
+	return "off";
+}
 
-    return "off";
+void log_cb(DDWAF_LOG_LEVEL level,
+			const char* function, const char* file, unsigned line,
+			const char* message, uint64_t)
+{
+	printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line, message);
+}
+
+#endif
+
+namespace YAML
+{
+	
+	class parsing_error : public std::exception
+	{
+	public:
+		parsing_error(const std::string& what) : what_(what) {}
+		const char* what() const _NOEXCEPT { return what_.c_str(); }
+		
+	protected:
+		const std::string what_;
+	};
+	
+	ddwaf_object node_to_arg(const Node& node)
+	{
+		switch (node.Type())
+		{
+			case NodeType::Sequence:
+			{
+				ddwaf_object arg;
+				ddwaf_object_array(&arg);
+				for (auto it = node.begin(); it != node.end(); ++it)
+				{
+					ddwaf_object child = node_to_arg(*it);
+					ddwaf_object_array_add(&arg, &child);
+				}
+				return arg;
+			}
+			case NodeType::Map:
+			{
+				ddwaf_object arg;
+				ddwaf_object_map(&arg);
+				for (auto it = node.begin(); it != node.end(); ++it)
+				{
+					std::string key    = it->first.as<std::string>();
+					ddwaf_object child = node_to_arg(it->second);
+					ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
+				}
+				return arg;
+			}
+			case NodeType::Scalar:
+			{
+				const std::string& value = node.Scalar();
+				ddwaf_object arg;
+				ddwaf_object_stringl(&arg, value.c_str(), value.size());
+				return arg;
+			}
+			case NodeType::Null:
+			case NodeType::Undefined:
+				ddwaf_object arg;
+				ddwaf_object_invalid(&arg);
+				return arg;
+		}
+		
+		throw parsing_error("Invalid YAML node type");
+	}
+	
+	template <>
+	struct as_if<ddwaf_object, void>
+	{
+		explicit as_if(const Node& node_) : node(node_) {}
+		ddwaf_object operator()() const { return node_to_arg(node); }
+		const Node& node;
+	};
+	
 }
 
 std::string read_rule_file(const std::string_view& filename)
 {
-    std::ifstream rule_file(filename.data(), std::ios::in);
-    if (!rule_file)
-    {
-        throw std::system_error(errno, std::generic_category());
-    }
-
-    // Create a buffer equal to the file size
-    std::string buffer;
-    rule_file.seekg(0, std::ios::end);
-    buffer.resize(rule_file.tellg());
-    rule_file.seekg(0, std::ios::beg);
-
-    rule_file.read(&buffer[0], buffer.size());
-    rule_file.close();
-    return buffer;
+	std::ifstream rule_file(filename.data(), std::ios::in);
+	if (!rule_file)
+	{
+		throw std::system_error(errno, std::generic_category());
+	}
+	
+	// Create a buffer equal to the file size
+	std::string buffer;
+	rule_file.seekg(0, std::ios::end);
+	buffer.resize(rule_file.tellg());
+	rule_file.seekg(0, std::ios::beg);
+	
+	rule_file.read(&buffer[0], buffer.size());
+	rule_file.close();
+	return buffer;
 }
 
 ddwaf_object convertRuleToRuleset(YAML::Node rulePayload)
@@ -128,7 +138,7 @@ ddwaf_object convertRuleToRuleset(YAML::Node rulePayload)
 	ddwaf_object_map(&root);
 	ddwaf_object_array(&array);
 	ddwaf_object_array_add(&array, &rule);
-
+	
 	ddwaf_object_map_add(&root, "version", ddwaf_object_string(&version, "2.1"));
 	ddwaf_object_map_add(&root, "rules", &array);
 	return root;
@@ -137,13 +147,13 @@ ddwaf_object convertRuleToRuleset(YAML::Node rulePayload)
 ddwaf_object getPayloadForVector(std::string testVector)
 {
 	ddwaf_object root, object;
-
+	
 	uint64_t kvSplitPosition = testVector.find(':');
 	if(kvSplitPosition == std::string::npos || kvSplitPosition == 0) {
 		DDWAF_ERROR("Test vector %s is invalid", testVector.data());
 		return *ddwaf_object_invalid(&root);
 	}
-
+	
 	ddwaf_object_map(&root);
 	ddwaf_object_stringl(&object, &testVector.data()[kvSplitPosition + 1], testVector.size() - kvSplitPosition - 1);
 	
@@ -172,21 +182,14 @@ ddwaf_object getPayloadForVector(std::string testVector)
 	return root;
 }
 
-void log_cb(DDWAF_LOG_LEVEL level,
-            const char* function, const char* file, unsigned line,
-            const char* message, uint64_t)
-{
-    printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line, message);
-}
-
 bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 {
 	bool success = true;
 	std::string ruleID = rule["id"].as<std::string>();
-	YAML::Node positiveMatches = rule["test_vectors"][runPositiveMatches ? "matches" : "no_matches"];
-	if (positiveMatches != nullptr)
+	YAML::Node matches = rule["test_vectors"][runPositiveMatches ? "matches" : "no_matches"];
+	if (matches != nullptr)
 	{
-		for (YAML::const_iterator vector = positiveMatches.begin(); vector != positiveMatches.end(); ++vector) {
+		for (YAML::const_iterator vector = matches.begin(); vector != matches.end(); ++vector) {
 			ddwaf_object root = getPayloadForVector(vector->as<std::string>());
 			if(root.type != DDWAF_OBJ_INVALID) {
 				ddwaf_context ctx = ddwaf_context_init(handle, NULL);
@@ -196,13 +199,13 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 				bool hadMatch = !hadError && ret != DDWAF_GOOD;
 				
 				if (hadError) {
-					printf("The WAF encountered an error processing rule %s and positive test vector %s", rule["id"].as<std::string>().data(), vector->as<std::string>().data());
+					printf("The WAF encountered an error processing rule %s and positive test vector %s\n", rule["id"].as<std::string>().data(), vector->as<std::string>().data());
 					success = false;
 				} else if (runPositiveMatches && !hadMatch) {
-					printf("Rule %s didn't match positive test vector `%s`", rule["id"].as<std::string>().data(), vector->as<std::string>().data());
+					printf("Rule %s didn't match positive test vector `%s`\n", rule["id"].as<std::string>().data(), vector->as<std::string>().data());
 					success = false;
 				} else if (!runPositiveMatches && hadMatch) {
-					printf("Rule %s matched negative test vector `%s`", rule["id"].as<std::string>().data(), vector->as<std::string>().data());
+					printf("Rule %s matched negative test vector `%s`\n", rule["id"].as<std::string>().data(), vector->as<std::string>().data());
 					success = false;
 				}
 				
@@ -217,15 +220,15 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 int main(int argc, char* argv[])
 {
 #ifdef VERBOSE
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
+	ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
 #endif
-
-    if (argc < 2)
-    {
-        printf("Usage: %s <json/yaml file>", argv[0]);
-        return EXIT_FAILURE;
-    }
-
+	
+	if (argc < 2)
+	{
+		printf("Usage: %s <json/yaml file>\n", argv[0]);
+		return EXIT_FAILURE;
+	}
+	
 	bool success = true;
 	for(int fileIndex = 1; fileIndex < argc; ++fileIndex)
 	{
@@ -236,25 +239,28 @@ int main(int argc, char* argv[])
 		
 		if (handle == nullptr)
 		{
-			printf("Failed to load rule %s", argv[fileIndex]);
+			printf("Failed to load rule %s\n", argv[fileIndex]);
 			success = false;
 			continue;
 		}
-
-		if(rule["test_vectors"] == nullptr)
+		
+		if(rule["test_vectors"] != nullptr)
 		{
-			// No vector for the rule, alright!
-			continue;
+			// Run positive test vectors (patterns the rule should match)
+			success &= runVectors(rule, handle, true);
+			
+			// Run negative test vectors (patterns the rule shouldn't match)
+			success &= runVectors(rule, handle, false);
 		}
 		
-		// Run positive test vectors (patterns the rule should match)
-		success &= runVectors(rule, handle, true);
-
-		// Run negative test vectors (patterns the rule shouldn't match)
-		success &= runVectors(rule, handle, false);
-
 		ddwaf_destroy(handle);
 	}
-
-    return success ? EXIT_SUCCESS : EXIT_FAILURE;
+	
+	if (success)
+	{
+		printf("Validated a total of %d rules\n", argc);
+	}
+	
+	return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
+
