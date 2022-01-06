@@ -47,17 +47,6 @@ void log_cb(DDWAF_LOG_LEVEL level,
 
 namespace YAML
 {
-	
-	class parsing_error : public std::exception
-	{
-	public:
-		parsing_error(const std::string& what) : what_(what) {}
-		const char* what() const _NOEXCEPT { return what_.c_str(); }
-		
-	protected:
-		const std::string what_;
-	};
-	
 	ddwaf_object node_to_arg(const Node& node)
 	{
 		switch (node.Type())
@@ -99,7 +88,7 @@ namespace YAML
 				return arg;
 		}
 		
-		throw parsing_error("Invalid YAML node type");
+		throw std::runtime_error("Invalid YAML node type");
 	}
 	
 	template <>
