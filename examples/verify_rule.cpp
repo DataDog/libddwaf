@@ -133,45 +133,6 @@ ddwaf_object convertRuleToRuleset(YAML::Node rulePayload)
 	return root;
 }
 
-// Convert a string from the format a/b:c to a ddwaf_object with the following content {a: {b: c} }
-ddwaf_object getPayloadForVector(std::string testVector)
-{
-	ddwaf_object root, object;
-	
-	uint64_t kvSplitPosition = testVector.find(':');
-	if(kvSplitPosition == std::string::npos || kvSplitPosition == 0) {
-		DDWAF_ERROR("Test vector %s is invalid", testVector.data());
-		return *ddwaf_object_invalid(&root);
-	}
-	
-	ddwaf_object_map(&root);
-	ddwaf_object_stringl(&object, &testVector.data()[kvSplitPosition + 1], testVector.size() - kvSplitPosition - 1);
-	
-	uint64_t commaIndex;
-	kvSplitPosition -= 1;
-	do
-	{
-		commaIndex = testVector.rfind('/', kvSplitPosition);
-		if(commaIndex != std::string::npos) {
-			if(!ddwaf_object_map_addl(&root, &testVector.data()[commaIndex + 1], kvSplitPosition - commaIndex, &object)) {
-				DDWAF_ERROR("Test vector %s is invalid", testVector.data());
-				break;
-			}
-			object = root;
-			ddwaf_object_map(&root);
-			kvSplitPosition = commaIndex - 1;
-		}
-		else {
-			if(!ddwaf_object_map_addl(&root, testVector.data(), kvSplitPosition + 1, &object)) {
-				DDWAF_ERROR("Test vector %s is invalid", testVector.data());
-				break;
-			}
-		}
-	} while(commaIndex != std::string::npos);
-	
-	return root;
-}
-
 bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 {
 	bool success = true;
@@ -180,7 +141,7 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 	if (matches != nullptr)
 	{
 		for (YAML::const_iterator vector = matches.begin(); vector != matches.end(); ++vector) {
-			ddwaf_object root = getPayloadForVector(vector->as<std::string>());
+			ddwaf_object root = vector->as<ddwaf_object>();
 			if(root.type != DDWAF_OBJ_INVALID) {
 				ddwaf_context ctx = ddwaf_context_init(handle, NULL);
 				DDWAF_RET_CODE ret = ddwaf_run(ctx, &root, NULL, LONG_TIME);
