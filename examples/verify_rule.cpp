@@ -140,7 +140,8 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 	YAML::Node matches = rule["test_vectors"][runPositiveMatches ? "matches" : "no_matches"];
 	if (matches != nullptr)
 	{
-		for (YAML::const_iterator vector = matches.begin(); vector != matches.end(); ++vector) {
+		size_t counter = 0;
+		for (YAML::const_iterator vector = matches.begin(); vector != matches.end(); ++vector, ++counter) {
 			ddwaf_object root = vector->as<ddwaf_object>();
 			if(root.type != DDWAF_OBJ_INVALID) {
 				ddwaf_context ctx = ddwaf_context_init(handle, NULL);
@@ -150,13 +151,13 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 				bool hadMatch = !hadError && ret != DDWAF_GOOD;
 				
 				if (hadError) {
-					printf("The WAF encountered an error processing rule %s and positive test vector %s\n", rule["id"].as<std::string>().data(), vector->as<std::string>().data());
+					printf("The WAF encountered an error processing rule %s and %s test vector #%zu\n", rule["id"].as<std::string>().data(), runPositiveMatches ? "positive" : "negative", counter);
 					success = false;
 				} else if (runPositiveMatches && !hadMatch) {
-					printf("Rule %s didn't match positive test vector `%s`\n", rule["id"].as<std::string>().data(), vector->as<std::string>().data());
+					printf("Rule %s didn't match positive test vector #%zu\n", rule["id"].as<std::string>().data(), counter);
 					success = false;
 				} else if (!runPositiveMatches && hadMatch) {
-					printf("Rule %s matched negative test vector `%s`\n", rule["id"].as<std::string>().data(), vector->as<std::string>().data());
+					printf("Rule %s matched negative test vector #%zu\n", rule["id"].as<std::string>().data(), counter);
 					success = false;
 				}
 				
@@ -183,6 +184,9 @@ int main(int argc, char* argv[])
 	bool success = true;
 	for(int fileIndex = 1; fileIndex < argc; ++fileIndex)
 	{
+#ifdef VERBOSE
+		printf("Processing %s\n", argv[fileIndex]);
+#endif
 		YAML::Node rule = YAML::Load(read_rule_file(argv[fileIndex]));
 		ddwaf_object convertedRule = convertRuleToRuleset(rule);
 		ddwaf_handle handle = ddwaf_init(&convertedRule, nullptr);
