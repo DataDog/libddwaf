@@ -144,7 +144,7 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 		for (YAML::const_iterator vector = matches.begin(); vector != matches.end(); ++vector, ++counter) {
 			ddwaf_object root = vector->as<ddwaf_object>();
 			if(root.type != DDWAF_OBJ_INVALID) {
-				ddwaf_context ctx = ddwaf_context_init(handle, NULL);
+				ddwaf_context ctx = ddwaf_context_init(handle, ddwaf_object_free);
 				DDWAF_RET_CODE ret = ddwaf_run(ctx, &root, NULL, LONG_TIME);
 				
 				bool hadError = ret < DDWAF_GOOD;
@@ -162,7 +162,6 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 				}
 				
 				ddwaf_context_destroy(ctx);
-				ddwaf_object_free(&root);
 			}
 		}
 	}
