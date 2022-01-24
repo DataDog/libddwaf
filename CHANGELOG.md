@@ -1,5 +1,11 @@
 # libddwaf release
 
+### v1.0.17 (unstable) - 2022/01/24
+- Add missing libunwind to x86\_64 linux build.
+- Fix potential integer overflow in `DDWAF_LOG_HELPER`.
+- Add missing shared mingw64 build.
+- Add example tool to run the WAF on a single rule with multiple test vectors.
+
 ### v1.0.16 (unstable) - 2021/12/15
 - Fix duplicate matches in output ([#36](https://github.com/DataDog/libddwaf/issues/36))
 
