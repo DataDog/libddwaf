@@ -33,7 +33,9 @@ enum PW_TRANSFORM_ID
     PWT_EXTRACT_QUERYSTR  = 1 << 17,
     PWT_REMOVE_COMMENTS   = 1 << 18,
     PWT_NUMERIZE          = 1 << 19,
-    PWT_INVALID           = 1 << 20
+    PWT_RUNONKEYS         = 1 << 20,
+    PWT_RUNONVALS         = 1 << 21,
+    PWT_INVALID           = 1 << 22
 };
 
 /*
