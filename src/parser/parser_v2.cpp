@@ -21,8 +21,8 @@ using ddwaf::parser::at;
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
-                                std::vector<PW_TRANSFORM_ID>& transformers)
+ddwaf::condition parseCondition(parameter::map& rule, bool runOnKey, bool runOnVal,
+								PWManifest& manifest, std::vector<PW_TRANSFORM_ID>& transformers)
 {
     auto operation = at<std::string_view>(rule, "operator");
     auto params    = at<parameter::map>(rule, "parameters");
@@ -114,13 +114,13 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
         PWManifest::ARG_ID id;
         if (key_paths.empty())
         {
-            if (manifest.hasTarget(address))
+            if (manifest.hasTarget(address, RUN_ON_MASK(runOnKey, runOnVal)))
             {
-                id = manifest.getTargetArgID(address);
+                id = manifest.getTargetArgID(address, RUN_ON_MASK(runOnKey, runOnVal));
             }
             else
             {
-                id = manifest.insert(address, PWManifest::ArgDetails(address));
+                id = manifest.insert(address, PWManifest::ArgDetails(address, runOnKey, runOnVal));
             }
             targets.push_back(id);
             continue;
@@ -134,14 +134,14 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
             }
 
             std::string full_address = address + ":" + path;
-            if (manifest.hasTarget(full_address))
+            if (manifest.hasTarget(full_address, RUN_ON_MASK(runOnKey, runOnVal)))
             {
-                id = manifest.getTargetArgID(full_address);
+                id = manifest.getTargetArgID(full_address, RUN_ON_MASK(runOnKey, runOnVal));
             }
             else
             {
                 id = manifest.insert(full_address,
-                                     PWManifest::ArgDetails(address, path));
+                                     PWManifest::ArgDetails(address, runOnKey, runOnVal, path));
             }
             targets.push_back(id);
         }
@@ -199,7 +199,7 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
         for (parameter::map cond : conditions_array)
         {
             parsed_rule.conditions.push_back(
-                parseCondition(cond, manifest, rule_transformers));
+                parseCondition(cond, runOnKey, runOnVal, manifest, rule_transformers));
         }
 
         auto tags = at<parameter::map>(rule, "tags");

@@ -18,6 +18,8 @@
 #include <PWTransformer.h>
 #include <ddwaf.h>
 
+#define RUN_ON_MASK(key, val) ((uint8_t) ((key << 1) | val))
+
 class PWRetriever;
 
 class PWManifest
@@ -34,8 +36,8 @@ public:
         bool isAllowList { true };
 
         ArgDetails() = default;
-        ArgDetails(const std::string& addr) : inheritFrom(addr) {}
-        ArgDetails(const std::string& addr, const std::string& path) : inheritFrom(addr), keyPaths({ path }) {}
+        ArgDetails(const std::string& addr, bool runOnKey, bool runOnVal) : inheritFrom(addr), runOnKey(runOnKey), runOnValue(runOnVal) {}
+        ArgDetails(const std::string& addr, bool runOnKey, bool runOnVal, const std::string& path) : inheritFrom(addr), runOnKey(runOnKey), runOnValue(runOnVal), keyPaths({ path }) {}
         ArgDetails(ArgDetails&&)      = default;
         ArgDetails(const ArgDetails&) = delete;
         ArgDetails& operator=(ArgDetails&&) = default;
@@ -45,7 +47,17 @@ public:
     };
 
 private:
-    std::unordered_map<std::string, ARG_ID> argIDTable;
+	struct hash_pair {
+		template <class T1, class T2>
+		size_t operator()(const std::pair<T1, T2>& p) const
+		{
+			auto hash1 = std::hash<T1>{}(p.first);
+			auto hash2 = std::hash<T2>{}(p.second);
+			return hash1 ^ hash2;
+		}
+	};
+	
+    std::unordered_map<std::pair<std::string, uint8_t>, ARG_ID, hash_pair> argIDTable;
     std::unordered_map<ARG_ID, ArgDetails> argManifest;
     // Unique set of inheritFrom (root) addresses
     std::unordered_set<std::string_view> root_address_set;
@@ -69,8 +81,8 @@ public:
 
     const std::vector<const char*>& get_root_addresses() const { return root_addresses; };
 
-    bool hasTarget(const std::string& string) const;
-    ARG_ID getTargetArgID(const std::string& target) const;
+    bool hasTarget(const std::string& string, uint8_t runOnMask) const;
+    ARG_ID getTargetArgID(const std::string& target, uint8_t runOnMask) const;
     const ArgDetails& getDetailsForTarget(const PWManifest::ARG_ID& argID) const;
     const std::string& getTargetName(const PWManifest::ARG_ID& argID) const;
 

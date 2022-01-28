@@ -109,9 +109,9 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
         }
 
         PWManifest::ARG_ID id;
-        if (manifest.hasTarget(input))
+        if (manifest.hasTarget(input, 0x1))
         {
-            id = manifest.getTargetArgID(input);
+            id = manifest.getTargetArgID(input, 0x1);
         }
         else
         {
