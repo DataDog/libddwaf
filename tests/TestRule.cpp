@@ -16,7 +16,7 @@ void compareArraysOfTargets(const PWManifest& manifest, const rapidjson::Value& 
 
     for (uint32_t i = 0, length = array1.Size(); i < length; ++i)
     {
-        EXPECT_EQ(manifest.getTargetArgID(array1[i].GetString()), array2[i]);
+        EXPECT_EQ(manifest.getTargetArgID(array1[i].GetString(), 0x1), array2[i]);
     }
 }
 

@@ -36,8 +36,8 @@ public:
         bool isAllowList { true };
 
         ArgDetails() = default;
-        ArgDetails(const std::string& addr, bool runOnKey, bool runOnVal) : inheritFrom(addr), runOnKey(runOnKey), runOnValue(runOnVal) {}
-        ArgDetails(const std::string& addr, bool runOnKey, bool runOnVal, const std::string& path) : inheritFrom(addr), runOnKey(runOnKey), runOnValue(runOnVal), keyPaths({ path }) {}
+        ArgDetails(const std::string& addr, bool runOnKey, bool runOnVal) : runOnKey(runOnKey), runOnValue(runOnVal), inheritFrom(addr) {}
+        ArgDetails(const std::string& addr, bool runOnKey, bool runOnVal, const std::string& path) : runOnKey(runOnKey), runOnValue(runOnVal), inheritFrom(addr), keyPaths({ path }) {}
         ArgDetails(ArgDetails&&)      = default;
         ArgDetails(const ArgDetails&) = delete;
         ArgDetails& operator=(ArgDetails&&) = default;

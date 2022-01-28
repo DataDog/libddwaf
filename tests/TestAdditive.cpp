@@ -147,19 +147,19 @@ TEST(TestAdditive, SelectiveRerun)
     // Let the fun start
     retriever.addParameter(map);
     retriever.newestBatch.clear();
-    retriever.newestBatch.insert(manifest.getTargetArgID("mixed"));
+    retriever.newestBatch.insert(manifest.getTargetArgID("mixed", 0x1));
     retriever.runOnNewOnly = true;
 
     // We're expecting to skip the first and last parameters
     std::vector<PWManifest::ARG_ID> targets = {
-        manifest.getTargetArgID("value"),
-        manifest.getTargetArgID("mixed"),
-        manifest.getTargetArgID("mixed2")
+        manifest.getTargetArgID("value", 0x1),
+        manifest.getTargetArgID("mixed", 0x1),
+        manifest.getTargetArgID("mixed2", 0x1)
     };
 
     auto& iter = retriever.getIterator(targets);
 
-    EXPECT_EQ(iter.getActiveTarget(), manifest.getTargetArgID("mixed"));
+    EXPECT_EQ(iter.getActiveTarget(), manifest.getTargetArgID("mixed", 0x1));
 
     retriever.moveIteratorForward(iter);
 

@@ -9,15 +9,16 @@
 TEST(TestPWManifest, TestBasic)
 {
     PWManifest manifest;
-    EXPECT_FALSE(manifest.hasTarget("path"));
+    EXPECT_FALSE(manifest.hasTarget("path", 0x1));
     EXPECT_TRUE(manifest.empty());
 
-    manifest.insert("path", PWManifest::ArgDetails("path"));
+    manifest.insert("path", PWManifest::ArgDetails("path", false, true));
 
-    EXPECT_TRUE(manifest.hasTarget("path"));
-    EXPECT_FALSE(manifest.empty());
+	EXPECT_TRUE(manifest.hasTarget("path", 0x1));
+	EXPECT_FALSE(manifest.hasTarget("path", 0x2));
+	EXPECT_FALSE(manifest.empty());
 
-    auto id  = manifest.getTargetArgID("path");
+    auto id  = manifest.getTargetArgID("path", 0x1);
     auto str = manifest.getTargetName(id);
 
     EXPECT_STREQ(str.c_str(), "path");
@@ -46,10 +47,10 @@ TEST(TestPWManifest, TestMultipleAddrs)
 
     for (auto str : { "path0", "path1", "path2", "path3" })
     {
-        manifest.insert(str, PWManifest::ArgDetails(str));
-        EXPECT_TRUE(manifest.hasTarget(str));
+        manifest.insert(str, PWManifest::ArgDetails(str, false, true));
+        EXPECT_TRUE(manifest.hasTarget(str, 0x1));
 
-        auto id = manifest.getTargetArgID(str);
+        auto id = manifest.getTargetArgID(str, 0x1);
 
         auto& details = manifest.getDetailsForTarget(id);
         EXPECT_TRUE(details.runOnValue);
@@ -79,10 +80,10 @@ TEST(TestPWManifest, TestMultipleAddrsKeyPath)
 
     for (auto str : { "path0", "path1", "path2", "path3" })
     {
-        manifest.insert(str, PWManifest::ArgDetails(str, "key_path"));
-        EXPECT_TRUE(manifest.hasTarget(str));
+		manifest.insert(str, PWManifest::ArgDetails(str, false, true, "key_path"));
+        EXPECT_TRUE(manifest.hasTarget(str, 0x1));
 
-        auto id = manifest.getTargetArgID(str);
+        auto id = manifest.getTargetArgID(str, 0x1);
 
         auto& details = manifest.getDetailsForTarget(id);
         EXPECT_TRUE(details.runOnValue);
