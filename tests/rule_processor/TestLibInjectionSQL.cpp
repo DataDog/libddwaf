@@ -12,8 +12,7 @@ TEST(TestLibInjectionSQL, TestBasic)
     EXPECT_STREQ(processor.getStringRepresentation().c_str(), "(null)");
     EXPECT_STREQ(processor.operatorName().data(), "is_sqli");
 
-    std::vector<uint8_t> matchestogather;
-    MatchGatherer gatherer(matchestogather);
+    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "'OR 1=1/*");
 

@@ -737,7 +737,6 @@ void PWRetriever::registerMatch(const char* value, uint64_t length)
 
 void PWRetriever::commitMatch(MatchGatherer& gather)
 {
-    history.saveSubmatches(std::move(gather.submatches));
     history.commitMatch(std::move(gather.dataSource), std::move(gather.manifestKey), std::move(gather.keyPath));
     gather.clear();
 }
@@ -761,8 +760,6 @@ bool PWRetriever::isValid() const
 void PWRetriever::MatchHistory::Match::reset()
 {
     hasFullMatch = false;
-    hasSubMatch  = false;
-    subMatch.clear();
 }
 
 void PWRetriever::MatchHistory::saveFullMatch(const char* value, size_t length)
@@ -775,18 +772,10 @@ void PWRetriever::MatchHistory::saveFullMatch(const char* value, size_t length)
     }
 }
 
-void PWRetriever::MatchHistory::saveSubmatches(submatchType&& submatches)
-{
-    if (!submatches.empty())
-    {
-        currentMatch.hasSubMatch = true;
-        currentMatch.subMatch    = std::move(submatches);
-    }
-}
 
 void PWRetriever::MatchHistory::commitMatch(std::string&& dataSource, std::string&& manifestKey, std::vector<ddwaf_object>&& keyPath)
 {
-    if (currentMatch.hasSubMatch || currentMatch.hasFullMatch)
+    if (currentMatch.hasFullMatch)
     {
         currentMatch.dataSource  = std::move(dataSource);
         currentMatch.manifestKey = std::move(manifestKey);

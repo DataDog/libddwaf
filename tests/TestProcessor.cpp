@@ -6,6 +6,8 @@
 
 #include "test.h"
 
+using match_status = ddwaf::condition::status;
+
 TEST(TestPWProcessor, TestOutput)
 {
     //Initialize a PowerWAF rule
@@ -182,8 +184,7 @@ TEST(TestPWProcessor, TestCache)
         ddwaf_result_free(&ret);
 
         EXPECT_GE(add->processor.ranCache.size(), 1);
-        EXPECT_FALSE(add->processor.ranCache.at("1").first);
-        EXPECT_EQ(add->processor.ranCache.at("1").second, add->processor.runCount);
+        EXPECT_EQ(add->processor.ranCache.at("1"), match_status::no_match);
     }
 
     {
@@ -194,8 +195,7 @@ TEST(TestPWProcessor, TestCache)
         EXPECT_FALSE(ret.timeout);
         ddwaf_result_free(&ret);
 
-        EXPECT_FALSE(add->processor.ranCache.at("1").first);
-        EXPECT_EQ(add->processor.ranCache.at("1").second, add->processor.runCount);
+        EXPECT_EQ(add->processor.ranCache.at("1"), match_status::no_match);
     }
 
     {
@@ -206,8 +206,7 @@ TEST(TestPWProcessor, TestCache)
         EXPECT_FALSE(ret.timeout);
         EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]},{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
 
-        EXPECT_TRUE(add->processor.ranCache.at("1").first);
-        EXPECT_EQ(add->processor.ranCache.at("1").second, add->processor.runCount);
+        EXPECT_EQ(add->processor.ranCache.at("1"), match_status::matched);
 
         ddwaf_result_free(&ret);
     }
