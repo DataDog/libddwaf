@@ -7,13 +7,12 @@
 #include <PWProcessor.hpp>
 #include <PWRet.hpp>
 #include <ddwaf.h>
-#include <iostream>
 #include <log.hpp>
 
-using status = ddwaf::condition::status;
+using match_status = ddwaf::condition::status;
 
 PWProcessor::PWProcessor(PWRetriever& input, const ddwaf::rule_map& rules_)
-    : parameters(input), rules(rules_), runCount(0)
+    : parameters(input), rules(rules_)
 {
     ranCache.reserve(rules.size());
     matchCache.reserve(16);
@@ -24,25 +23,17 @@ void PWProcessor::startNewRun(const SQPowerWAF::monotonic_clock::time_point& _de
 {
     document.GetArray().Clear();
     deadline = _deadline;
-    runCount += 1;
 }
 
-bool PWProcessor::hasCacheHit(const std::string& ruleID, bool& hadNegativeMatch, bool& hitFromThisRun) const
+match_status PWProcessor::hasCacheHit(const std::string& ruleID) const
 {
-    const auto cacheHit    = ranCache.find(ruleID);
-    const bool hasCacheHit = cacheHit != ranCache.end();
-    if (hasCacheHit)
+    const auto cacheHit = ranCache.find(ruleID);
+    if (cacheHit != ranCache.end())
     {
-        if (cacheHit->second.first)
-        {
-            return true;
-        }
-
-        hadNegativeMatch = true;
-        hitFromThisRun   = cacheHit->second.second == runCount;
+        return cacheHit->second;
     }
 
-    return false;
+    return match_status::invalid;
 }
 
 bool PWProcessor::shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& conditions) const
@@ -79,8 +70,7 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
         return;
     }
 
-    bool didMatch = false, skippedRule = true;
-
+    match_status status;
     ddwaf::rule_map::const_iterator ruleMatched;
 
     //Process each rule we have to run for this step of the flow
@@ -88,15 +78,12 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
     {
         DDWAF_DEBUG("Running the WAF on rule %s", ruleID.c_str());
 
+        status = match_status::invalid;
         retManager.startRule();
 
         //Have we already ran this rule?
-        bool cachedNegativeMatch = false, hitFromThisRun = false;
-        if (hasCacheHit(ruleID, cachedNegativeMatch, hitFromThisRun))
-        {
-            didMatch = false;
-            break;
-        }
+        const auto cache_status = hasCacheHit(ruleID);
+        if (cache_status == match_status::matched) { break; }
 
         // Let's fetch the filters for the rule
         auto it = rules.find(ruleID);
@@ -105,21 +92,20 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
             // This shouldn't happen
             DDWAF_ERROR("Invalid rule (%s) in flow (%s), this is a bug",
                         ruleID.c_str(), name.c_str());
-            skippedRule = true;
             continue;
         }
 
         const ddwaf::rule& rule = it->second;
-        didMatch                = false;
+
+        bool cachedNegativeMatch = cache_status == match_status::no_match;
 
         // If we had a negative match in the past, let's check if we have a reason to run again
-        if (cachedNegativeMatch && (hitFromThisRun || !shouldIgnoreCacheHit(rule.conditions)))
+        if (cachedNegativeMatch && !shouldIgnoreCacheHit(rule.conditions))
         {
-            skippedRule = true;
             continue;
         }
 
-        if (retManager.shouldRecordTime() && skippedRule)
+        if (retManager.shouldRecordTime())
         {
             past = SQPowerWAF::monotonic_clock::now();
         }
@@ -132,44 +118,29 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
         for (const ddwaf::condition& cond : rule.conditions)
         {
             parameters.setActiveFilter(filter++);
-            status matchingStatus = cond.performMatching(parameters, deadline, retManager);
-
+            status = cond.performMatching(parameters, deadline, retManager);
             //Stop if we didn't matched any of the parameters (2) or that the parameter couldn't be found
-            if (matchingStatus == status::no_match || matchingStatus == status::missing_arg)
-            {
-                if (matchingStatus == status::missing_arg)
-                    DDWAF_DEBUG("Missing arguments to run rule %s", ruleID.c_str());
-                didMatch = false;
+            if (status == match_status::no_match) {
                 break;
-            }
-
-            else if (matchingStatus == status::timeout)
-            {
+            } else if (status == match_status::missing_arg) {
+                DDWAF_DEBUG("Missing arguments to run rule %s", ruleID.c_str());
+                break;
+            } else if (status == match_status::timeout) {
                 DDWAF_INFO("Ran out of time when processing %s", ruleID.c_str());
                 retManager.recordTimeout();
                 return;
-            }
-            else
-            {
+            } else {
                 DDWAF_DEBUG("Matched rule %s", ruleID.c_str());
-                didMatch = true;
             }
         }
 
         //Store the result of the rule in the cache
-        if (cachedNegativeMatch)
-        {
-            // If we bypassed the cache, then we need to overwrite the entry
-            ranCache.at(ruleID) = { didMatch, runCount };
-        }
-        else
-        {
-            // If that's the first execution, insert the cache entry
-            ranCache.insert({ ruleID, { didMatch, runCount } });
+        if (status != match_status::missing_arg) {
+            ranCache.insert_or_assign(ruleID, status);
         }
 
         // Collect the match payload
-        if (didMatch)
+        if (status == match_status::matched)
         {
             auto pair = std::pair<std::string, rapidjson::Value>(ruleID, retManager.fetchRuleCollector().GetArray());
             matchCache.insert(std::move(pair));
@@ -184,7 +155,7 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
             past = now;
         }
 
-        if (didMatch)
+        if (status == match_status::matched)
         {
             ruleMatched = it;
             break;
@@ -199,10 +170,10 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
     }
 
     // We don't want to report a trigger that only happened in the cache
-    if (didMatch)
+    if (status == match_status::matched)
     {
         DDWAF_RET_CODE code = DDWAF_MONITOR;
-        // This should always be the case but let's be carefull
+        // This should always be the case but let's be careful
         const auto& match = matchCache.find(ruleMatched->first);
         if (match != matchCache.end())
         {

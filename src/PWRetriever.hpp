@@ -125,18 +125,12 @@ public:
 
     struct MatchHistory
     {
-        using submatchType = std::vector<std::pair<uint8_t, std::string>>;
-
         struct Match
         {
             // Full matches (MATCHED_VARS)
             bool hasFullMatch = false;
             const char* fullMatch;
             size_t fullMatchLength;
-
-            // Submatches if asked. More complex but less common so trying to untie this overhead from the more comment matchSession
-            bool hasSubMatch = false;
-            submatchType subMatch;
 
             std::string dataSource;
             std::string manifestKey;
@@ -155,7 +149,6 @@ public:
         void setActiveFilter(size_t newFilter);
 
         void saveFullMatch(const char* value, size_t length);
-        void saveSubmatches(submatchType&& submatches);
         void commitMatch(std::string&& dataSource, std::string&& manifestKey, std::vector<ddwaf_object>&& keyPath);
 
         void reset();

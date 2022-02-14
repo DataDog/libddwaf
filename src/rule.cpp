@@ -128,20 +128,20 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
         if (!processor->matchIfMissing())
             return status::missing_arg;
 
-        retManager.recordRuleMatch(processor, MatchGatherer(matchesToGather));
+        retManager.recordRuleMatch(processor, MatchGatherer());
         return status::matched;
     }
 
     bool matched             = false;
     size_t counter           = 0;
-    const bool savingMatches = saveParamOnMatch || !matchesToGather.empty();
-    MatchGatherer gather(matchesToGather);
+    MatchGatherer gather;
 
     do
     {
         // Only check the time every 16 runs
-        if ((++counter & 0xf) == 0 && deadline <= SQPowerWAF::monotonic_clock::now())
+        if ((++counter & 0xf) == 0 && deadline <= SQPowerWAF::monotonic_clock::now()) {
             return status::timeout;
+        }
 
         bool didMatch = retriever.runIterOnLambda(iterator, saveParamOnMatch, [&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
             if ((type & processor->expectedTypes()) == 0) {
@@ -166,7 +166,7 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
 
             // Actually, we can only stop processing if we were not collecting matches for a further filter
             //	If we stopped, it'd open trivial bypasses of the next stage
-            if (!savingMatches && !options.keepRunningOnMatch)
+            if (!saveParamOnMatch && !options.keepRunningOnMatch)
                 return status::matched;
 
             retriever.commitMatch(gather);
@@ -177,7 +177,7 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
     // Only @exist care about this branch, it's at the end to enable a better report when there is a real value
     if (!matched && processor->matchAnyInput())
     {
-        retManager.recordRuleMatch(processor, MatchGatherer(matchesToGather));
+        retManager.recordRuleMatch(processor, MatchGatherer());
         return status::matched;
     }
 

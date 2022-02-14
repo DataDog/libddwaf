@@ -25,13 +25,11 @@ struct MatchGatherer
 {
     std::string resolvedValue;
     std::string matchedValue;
-    std::vector<std::pair<uint8_t, std::string>> submatches;
-    const std::vector<uint8_t>& submatchToGather;
     std::vector<ddwaf_object> keyPath;
     std::string dataSource;
     std::string manifestKey;
 
-    MatchGatherer(const std::vector<uint8_t>& matchToGather);
+    MatchGatherer() = default;
 
     void clear();
 };

@@ -41,8 +41,7 @@ bool RE2Manager::performMatch(const char* str, size_t length, MatchGatherer& gat
                                  0,
                                  computedLength,
                                  re2::RE2::UNANCHORED,
-                                 match,
-                                 gatherer.submatchToGather.empty() ? 1 : groupsToCatch);
+                                 match, 1);
 
     //Copy on match
     bool output = didMatch == wantMatch;
@@ -53,19 +52,6 @@ bool RE2Manager::performMatch(const char* str, size_t length, MatchGatherer& gat
         if (didMatch)
         {
             gatherer.matchedValue = match[0].as_string();
-            if (!gatherer.submatchToGather.empty())
-            {
-                gatherer.submatches.clear();
-                for (const uint8_t subMatch : gatherer.submatchToGather)
-                {
-                    if (subMatch > groupsToCatch || match[subMatch].empty())
-                    {
-                        break;
-                    }
-
-                    gatherer.submatches.emplace_back(subMatch, match[subMatch].as_string());
-                }
-            }
         }
     }
 

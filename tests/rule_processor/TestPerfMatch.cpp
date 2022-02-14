@@ -16,8 +16,7 @@ TEST(TestPhraseMatch, TestBasic)
 
     EXPECT_STREQ(processor.operatorName().data(), "phrase_match");
 
-    std::vector<uint8_t> matchestogather;
-    MatchGatherer gatherer(matchestogather);
+    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
@@ -43,8 +42,7 @@ TEST(TestPhraseMatch, TestEmptyArrays)
 
     EXPECT_STREQ(processor.operatorName().data(), "phrase_match");
 
-    std::vector<uint8_t> matchestogather;
-    MatchGatherer gatherer(matchestogather);
+    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
@@ -70,8 +68,7 @@ TEST(TestPhraseMatch, TestComplex)
     PerfMatch processor(strings, lengths);
 
     auto run = [&processor](const char* str, const char* expect) {
-        std::vector<uint8_t> matchestogather;
-        MatchGatherer gatherer(matchestogather);
+        MatchGatherer gatherer;
         ddwaf_object param;
         ddwaf_object_string(&param, str);
         if (expect)
