@@ -640,11 +640,6 @@ const ddwaf_object* PWRetriever::getParameter(const PWManifest::ARG_ID paramID)
     return wrapper.getParameter(details.inheritFrom);
 }
 
-const PWRetriever::MatchHistory& PWRetriever::getMatchHistory() const
-{
-    return history;
-}
-
 bool PWRetriever::moveIteratorForward(Iterator& iter, bool shouldIncrementFirst)
 {
     if (shouldIncrementFirst)
@@ -694,7 +689,7 @@ bool PWRetriever::moveIteratorForward(Iterator& iter, bool shouldIncrementFirst)
     return false;
 }
 
-bool PWRetriever::runIterOnLambda(const PWRetriever::Iterator& iterator, const bool saveOnMatch, const std::function<ruleCallback>& lambda)
+bool PWRetriever::runIterOnLambda(const PWRetriever::Iterator& iterator, const std::function<ruleCallback>& lambda)
 {
     const ddwaf_object* input = *iterator;
     //Do we have data?
@@ -708,90 +703,23 @@ bool PWRetriever::runIterOnLambda(const PWRetriever::Iterator& iterator, const b
     //We match the key of the ddwaf_object if it exists
     if (iterator.shouldMatchKey() && lambda(input, DDWAF_OBJ_STRING, true, true))
     {
-        if (saveOnMatch)
-            registerMatch(input->parameterName, input->parameterNameLength);
-
         return true;
     }
 
     if (iterator.shouldMatchValue() && lambda(input, input->type, false, true))
     {
-        if (saveOnMatch && input->type == DDWAF_OBJ_STRING)
-            registerMatch(input->stringValue, input->nbEntries);
-
         return true;
     }
 
     return false;
 }
 
-PWRetriever::MatchHistory::MatchHistory()
-{
-    matchSession.reserve(8);
-}
-
-void PWRetriever::registerMatch(const char* value, uint64_t length)
-{
-    history.saveFullMatch(value, (size_t) length);
-}
-
-void PWRetriever::commitMatch(MatchGatherer& gather)
-{
-    history.commitMatch(std::move(gather.dataSource), std::move(gather.manifestKey), std::move(gather.keyPath));
-    gather.clear();
-}
-
-void PWRetriever::setActiveFilter(size_t newFilter)
-{
-    history.setActiveFilter(newFilter);
-}
-
 void PWRetriever::resetMatchSession(bool _runOnNew)
 {
-    history.reset();
     runOnNewOnly = _runOnNew;
 }
 
 bool PWRetriever::isValid() const
 {
     return wrapper.isValid();
-}
-
-void PWRetriever::MatchHistory::Match::reset()
-{
-    hasFullMatch = false;
-}
-
-void PWRetriever::MatchHistory::saveFullMatch(const char* value, size_t length)
-{
-    if (value != NULL)
-    {
-        currentMatch.hasFullMatch    = true;
-        currentMatch.fullMatch       = value;
-        currentMatch.fullMatchLength = length;
-    }
-}
-
-
-void PWRetriever::MatchHistory::commitMatch(std::string&& dataSource, std::string&& manifestKey, std::vector<ddwaf_object>&& keyPath)
-{
-    if (currentMatch.hasFullMatch)
-    {
-        currentMatch.dataSource  = std::move(dataSource);
-        currentMatch.manifestKey = std::move(manifestKey);
-        currentMatch.keyPath     = std::move(keyPath);
-        matchSession.emplace_back(std::make_pair(currentFilter, std::move(currentMatch)));
-    }
-}
-
-void PWRetriever::MatchHistory::setActiveFilter(size_t newFilter)
-{
-    currentFilter = newFilter;
-    currentMatch.reset();
-}
-
-void PWRetriever::MatchHistory::reset()
-{
-    matchSession.clear();
-    currentMatch.reset();
 }

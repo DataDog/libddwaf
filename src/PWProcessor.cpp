@@ -114,10 +114,8 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
         //	We tell the PWRetriever to skip old parameters if this is safe to do so
         parameters.resetMatchSession(cachedNegativeMatch && rule.conditions.size() == 1);
 
-        size_t filter = 0;
         for (const ddwaf::condition& cond : rule.conditions)
         {
-            parameters.setActiveFilter(filter++);
             status = cond.performMatching(parameters, deadline, retManager);
             //Stop if we didn't matched any of the parameters (2) or that the parameter couldn't be found
             if (status == match_status::no_match) {
