@@ -134,7 +134,6 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
 
     bool matched             = false;
     size_t counter           = 0;
-    MatchGatherer gather;
 
     do
     {
@@ -143,7 +142,8 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
             return status::timeout;
         }
 
-        bool didMatch = retriever.runIterOnLambda(iterator, saveParamOnMatch, [&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
+        MatchGatherer gather;
+        bool didMatch = retriever.runIterOnLambda(iterator, [&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
             if ((type & processor->expectedTypes()) == 0) {
                 return false;
             }
@@ -166,10 +166,9 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
 
             // Actually, we can only stop processing if we were not collecting matches for a further filter
             //	If we stopped, it'd open trivial bypasses of the next stage
-            if (!saveParamOnMatch && !options.keepRunningOnMatch)
+            if (!options.keepRunningOnMatch)
                 return status::matched;
 
-            retriever.commitMatch(gather);
             matched = true;
         }
     } while (retriever.moveIteratorForward(iterator));

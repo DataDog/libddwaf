@@ -123,41 +123,9 @@ public:
         bool matchIterOnPath(const std::set<std::string>& path, bool isAllowList, size_t& blockDepth) const;
     };
 
-    struct MatchHistory
-    {
-        struct Match
-        {
-            // Full matches (MATCHED_VARS)
-            bool hasFullMatch = false;
-            const char* fullMatch;
-            size_t fullMatchLength;
-
-            std::string dataSource;
-            std::string manifestKey;
-            std::vector<ddwaf_object> keyPath;
-
-            void reset();
-        };
-
-        size_t currentFilter;
-        Match currentMatch;
-
-        std::vector<std::pair<size_t, Match>> matchSession;
-
-        MatchHistory();
-
-        void setActiveFilter(size_t newFilter);
-
-        void saveFullMatch(const char* value, size_t length);
-        void commitMatch(std::string&& dataSource, std::string&& manifestKey, std::vector<ddwaf_object>&& keyPath);
-
-        void reset();
-    };
-
 private:
     const PWManifest& manifest;
     PWArgsWrapper wrapper;
-    MatchHistory history;
 
     Iterator internalIterator;
 
@@ -176,16 +144,11 @@ public:
 
     Iterator& getIterator(const std::vector<PWManifest::ARG_ID>& targets);
     const ddwaf_object* getParameter(const PWManifest::ARG_ID paramID);
-    const MatchHistory& getMatchHistory() const;
 
     bool moveIteratorForward(Iterator& iter, bool shouldIncrementFirst = true);
 
-    bool runIterOnLambda(const PWRetriever::Iterator& iterator, const bool saveOnMatch, const std::function<ruleCallback>& lambda);
+    bool runIterOnLambda(const PWRetriever::Iterator& iterator, const std::function<ruleCallback>& lambda);
 
-    void registerMatch(const char* value, uint64_t length);
-    void commitMatch(MatchGatherer& gather);
-
-    void setActiveFilter(size_t newFilter);
     void resetMatchSession(bool runOnNew);
 
     bool isValid() const;
