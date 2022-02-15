@@ -38,7 +38,7 @@ endif()
 # To avoid building everything for re2, including test binvaries:
 #     BUILD_COMMAND cmake --build <BINARY_DIR> --target re2
 # But this is not enough, because the install target run afterwards insists on building everything
-set(RE2_COMMIT b83705e2d297f21b0805202bac86c935670634f8)
+set(RE2_COMMIT 885eb38accf49e2ccdd2fa6786f3590cf40a3e23)
 ExternalProject_Add(proj_re2
     URL         https://github.com/google/re2/archive/${RE2_COMMIT}.tar.gz
     INSTALL_DIR ${INSTALL_DIR}
