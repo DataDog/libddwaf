@@ -44,11 +44,11 @@ bool PWTransformer::transformLowerCase(ddwaf_object* parameter, bool readOnly)
             //First loop looking for the first non-lowercase char
             for (; pos < length && (array[pos] < 'A' || array[pos] > 'Z'); ++pos) {}
 
-            //	If we're checking whether we need to do change, finding such a char mean we need to do so (we return true if we need to update)
+            //  If we're checking whether we need to do change, finding such a char mean we need to do so (we return true if we need to update)
             if (readOnly)
                 return pos != length;
 
-            //	If we're mutating the string, then we have the starting offset
+            //  If we're mutating the string, then we have the starting offset
             for (; pos < length; ++pos)
             {
                 if (array[pos] >= 'A' && array[pos] <= 'Z')
@@ -68,11 +68,11 @@ bool PWTransformer::transformNoNull(ddwaf_object* parameter, bool readOnly)
             uint64_t read = 0;
             for (; read < length && array[read]; ++read) {}
 
-            //	If we're checking whether we need to do change, finding such a char mean we need to do so (we return true if we need to update)
+            //  If we're checking whether we need to do change, finding such a char mean we need to do so (we return true if we need to update)
             if (readOnly)
                 return read != length;
 
-            //	If we're mutating the string, then we have the starting offset
+            //  If we're mutating the string, then we have the starting offset
             uint64_t write = read;
             for (; read < length; ++read)
             {
@@ -101,11 +101,11 @@ bool PWTransformer::transformCompressWhiteSpace(ddwaf_object* parameter, bool re
             uint64_t read = 1;
             for (; read < length && (array[read] != ' ' || array[read - 1] != ' '); ++read) {}
 
-            //	If we're checking whether we need to do change, finding such a chain mean we need to do so (we return true if we need to update)
+            //  If we're checking whether we need to do change, finding such a chain mean we need to do so (we return true if we need to update)
             if (readOnly)
                 return read < length;
 
-            //	If we're mutating the string, then we have the starting offset
+            //  If we're mutating the string, then we have the starting offset
             uint64_t write = read;
             while (read < length)
             {
@@ -162,8 +162,8 @@ bool PWTransformer::transformNormalize(ddwaf_object* parameter, bool readOnly)
             uint64_t read = 0, write = 0;
 
             // Our algorithm is quite simple: we look for `./`. If we find that, we check if the preceeding char is:
-            //	- `/` (and thus skip the `./`)
-            //	- `/.` and we thus erase the last directory
+            //  - `/` (and thus skip the `./`)
+            //  - `/.` and we thus erase the last directory
             while (read < length)
             {
                 // Everything is cool, writing away
@@ -189,7 +189,7 @@ bool PWTransformer::transformNormalize(ddwaf_object* parameter, bool readOnly)
                         return true;
 
                     // The write head already wrote /., we need to move it back by three
-                    //	MIN make sure we can't underflow although I don't really see how that could happen
+                    //  MIN make sure we can't underflow although I don't really see how that could happen
                     write -= std::min(write, (uint64_t) 3);
 
                     while (write != 0 && array[write] != '/')
@@ -244,7 +244,7 @@ bool PWTransformer::transformNormalizeWin(ddwaf_object* parameter, bool readOnly
             return true;
 
         // That's quite a blunt conversion but that's what ModSecurity is doing so ¯\_(ツ)_/¯
-        //	https://github.com/SpiderLabs/ModSecurity/blob/b66224853b4e9d30e0a44d16b29d5ed3842a6b11/src/actions/transformations/normalise_path.cc#L64
+        //  https://github.com/SpiderLabs/ModSecurity/blob/b66224853b4e9d30e0a44d16b29d5ed3842a6b11/src/actions/transformations/normalise_path.cc#L64
         do
         {
             if (parameter->stringValue[pos] == '\\')
@@ -262,9 +262,9 @@ bool PWTransformer::transformNormalizeWin(ddwaf_object* parameter, bool readOnly
 bool PWTransformer::transformDecodeURL(ddwaf_object* parameter, bool readOnly, bool readIIS)
 {
     /*
-	 * ModSecurity's documentation is atrocious and the code isn't much better
-	 * Bypasses are very helpfully documented here: https://www.postexplo.com/forum/ids-ips/network-based/764-ids-evasion-techniques-using-url-encoding
-	 */
+     * ModSecurity's documentation is atrocious and the code isn't much better
+     * Bypasses are very helpfully documented here: https://www.postexplo.com/forum/ids-ips/network-based/764-ids-evasion-techniques-using-url-encoding
+     */
     return runTransform(
         parameter, [readIIS](char* array, uint64_t& length, bool readOnly) -> bool {
             uint64_t read = 0;
@@ -434,9 +434,9 @@ bool PWTransformer::transformDecodeJS(ddwaf_object* parameter, bool readOnly)
 
             uint64_t write = read;
             //There are three kinds of escape in JS:
-            //	\X where X is an ASCII character (\n...) Can also escape normal ASCII characters
-            //	\xYY where YY are one hex-encoded byte
-            //	\uZZZZ where ZZZZ are a UTF-16 representation in hex, which we need to convert to UTF-8
+            //  \X where X is an ASCII character (\n...) Can also escape normal ASCII characters
+            //  \xYY where YY are one hex-encoded byte
+            //  \uZZZZ where ZZZZ are a UTF-16 representation in hex, which we need to convert to UTF-8
 
             while (read < length)
             {
@@ -568,9 +568,9 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object* parameter, bool readOnly)
             uint64_t read = 0;
 
             //There are three kinds of escape in HTML:
-            //	&#XXXXX; where XX are numerical digits
-            //	&#xYYY; or &#XYYY; where YYY is an hex-encoded codepoint
-            //	&ZZZZ; where ZZZZ is an alphanumerical name for the character
+            //  &#XXXXX; where XX are numerical digits
+            //  &#xYYY; or &#XYYY; where YYY is an hex-encoded codepoint
+            //  &ZZZZ; where ZZZZ is an alphanumerical name for the character
             // In practice, the semicolon is optional
 
             if (readOnly)
@@ -717,7 +717,7 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object* parameter, bool readOnly)
 }
 
 // Two versions of base64, with 2045 being very permissive
-//	https://en.wikipedia.org/wiki/Base64#Variants_summary_table
+//  https://en.wikipedia.org/wiki/Base64#Variants_summary_table
 bool PWTransformer::transformDecodeBase64RFC4648(ddwaf_object* parameter, bool readOnly)
 {
     return runTransform(
@@ -808,7 +808,7 @@ bool PWTransformer::transformDecodeBase64RFC2045(ddwaf_object* parameter, bool r
 bool PWTransformer::transformEncodeBase64(ddwaf_object* parameter, bool readOnly)
 {
     // If that's a non empty string, we can encode it (assuming it's not too long)
-    //	We likely could extend to the other scallars but not until someone ask for it
+    //  We likely could extend to the other scallars but not until someone ask for it
     if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == NULL
         || parameter->nbEntries == 0 || parameter->nbEntries >= UINT64_MAX / 4 * 3)
     {
@@ -844,10 +844,10 @@ bool PWTransformer::transformEncodeBase64(ddwaf_object* parameter, bool readOnly
     for (; read + 2 < originalLength; read += 3)
     {
         const uint8_t quartet[4] = {
-			static_cast<uint8_t>(oldString[read] >> 2),
-			static_cast<uint8_t>((oldString[read] & 0x3) << 4 | (oldString[read + 1] >> 4)),
-			static_cast<uint8_t>((oldString[read + 1] & 0xf) << 2 | oldString[read + 2] >> 6),
-			static_cast<uint8_t>(oldString[read + 2] & 0x3f)
+            static_cast<uint8_t>(oldString[read] >> 2),
+            static_cast<uint8_t>((oldString[read] & 0x3) << 4 | (oldString[read + 1] >> 4)),
+            static_cast<uint8_t>((oldString[read + 1] & 0xf) << 2 | oldString[read + 2] >> 6),
+            static_cast<uint8_t>(oldString[read + 2] & 0x3f)
         };
 
         newString[write++] = b64Encoding[quartet[0]];
@@ -867,9 +867,9 @@ bool PWTransformer::transformEncodeBase64(ddwaf_object* parameter, bool readOnly
 
         // Compute the codes, only three as the forth is only set by the third, missing input byte
         const uint8_t convertedBytes[3] = {
-			static_cast<uint8_t>(originalBytes[0] >> 2),
-			static_cast<uint8_t>((originalBytes[0] & 0x3) << 4 | (originalBytes[1] >> 4)),
-			static_cast<uint8_t>((originalBytes[1] & 0xf) << 2)
+            static_cast<uint8_t>(originalBytes[0] >> 2),
+            static_cast<uint8_t>((originalBytes[0] & 0x3) << 4 | (originalBytes[1] >> 4)),
+            static_cast<uint8_t>((originalBytes[1] & 0xf) << 2)
         };
 
         // The first byte is always set in this branch, so no matter what we must set the first two bytes in the output
@@ -903,21 +903,21 @@ bool PWTransformer::transformEncodeBase64(ddwaf_object* parameter, bool readOnly
 bool PWTransformer::transformCmdLine(ddwaf_object* parameter, bool readOnly)
 {
     /*
-	 * Reimplementing the cmdLine ModSecurity operator.
-	 * It is documented as follow:
-	 *
-	 * The cmdLine transformation function avoids this problem by manipulating the variable contend in the following ways:
-	 * 1. deleting all backslashes [\]
-	 * 2. deleting all double quotes ["]
-	 * 3. deleting all single quotes [']
-	 * 4. deleting all carets [^]
-	 * 5. deleting spaces before a slash [/]
-	 * 6. deleting spaces before an open parentesis [(]
-	 * 7. replacing all commas [,] and semicolon [;] into a space
-	 * 8. replacing all multiple spaces (including tab, newline, etc.) into one space
-	 * 9. transform all characters to lowercase
-	 
-	 */
+     * Reimplementing the cmdLine ModSecurity operator.
+     * It is documented as follow:
+     *
+     * The cmdLine transformation function avoids this problem by manipulating the variable contend in the following ways:
+     * 1. deleting all backslashes [\]
+     * 2. deleting all double quotes ["]
+     * 3. deleting all single quotes [']
+     * 4. deleting all carets [^]
+     * 5. deleting spaces before a slash [/]
+     * 6. deleting spaces before an open parentesis [(]
+     * 7. replacing all commas [,] and semicolon [;] into a space
+     * 8. replacing all multiple spaces (including tab, newline, etc.) into one space
+     * 9. transform all characters to lowercase
+     
+     */
     return runTransform(
         parameter, [](char* array, uint64_t& length, bool readOnly) -> bool {
             uint64_t read = 0;
@@ -985,7 +985,7 @@ bool PWTransformer::transformCmdLine(ddwaf_object* parameter, bool readOnly)
                     array[write++] = ' ';
                 }
                 // Handle upper case character
-                //	We could use a single branch for both cases by calling systematically tolower() but I'm a bit worried on the perf impact
+                //  We could use a single branch for both cases by calling systematically tolower() but I'm a bit worried on the perf impact
                 else if (c >= 'A' && c <= 'Z')
                 {
                     array[write++] = array[read] | 0x20;
@@ -1010,15 +1010,15 @@ bool PWTransformer::transformCmdLine(ddwaf_object* parameter, bool readOnly)
 bool PWTransformer::transformRemoveComments(ddwaf_object* parameter, bool readOnly)
 {
     /* Remove different types of comments:
-	 *   - C-style comments starting in slash asterisk and ending in asterisk slash.
-	 *   - HTML comments starting in <!-- and ending in -->.
-	 *   - Shell-style comments starting in # with no terminator.
-	 *   - SQL-style comments starting in -- with no terminator.
-	 * Special considerations:
-	 *   - Everything after # or -- is removed, since there is no comment terminator.
-	 *   - If the comment style requires a terminator, but it's missing, everything
-	 *     after the beginning of the comment will be removed.
-	 */
+     *   - C-style comments starting in slash asterisk and ending in asterisk slash.
+     *   - HTML comments starting in <!-- and ending in -->.
+     *   - Shell-style comments starting in # with no terminator.
+     *   - SQL-style comments starting in -- with no terminator.
+     * Special considerations:
+     *   - Everything after # or -- is removed, since there is no comment terminator.
+     *   - If the comment style requires a terminator, but it's missing, everything
+     *     after the beginning of the comment will be removed.
+     */
     return runTransform(
         parameter, [](char* array, uint64_t& length, bool readOnly) -> bool {
             enum class CommentType
@@ -1154,7 +1154,7 @@ bool PWTransformer::transformNumerize(ddwaf_object* parameter, bool readOnly)
     }
 
     // Check if the value can be represented as a negative 64bit
-    //	Also reject `-`
+    //  Also reject `-`
     if (isNegative && (value > INT64_MAX || parameter->nbEntries == 1))
         return false;
 
@@ -1189,7 +1189,7 @@ bool PWTransformer::transformURLBaseName(ddwaf_object* parameter, bool readOnly)
     }
 
     // From the following URI: `/path/index.php?a=b`
-    //	We need to compute `index.php`
+    //  We need to compute `index.php`
 
     return runTransform(
         parameter, [](char* array, uint64_t& length, bool) -> bool {
@@ -1236,7 +1236,7 @@ bool PWTransformer::transformURLFilename(ddwaf_object* parameter, bool readOnly)
     }
 
     // From the following URI: `/path/index.php?a=b`
-    //	We need to compute `/path/index.php`
+    //  We need to compute `/path/index.php`
 
     return runTransform(
         parameter, [](char* array, uint64_t& length, bool) -> bool {
@@ -1262,7 +1262,7 @@ bool PWTransformer::transformURLQueryString(ddwaf_object* parameter, bool readOn
     }
 
     // From the following URI: `/path/index.php?a=b`
-    //	We need to compute `a=b`
+    //  We need to compute `a=b`
 
     return runTransform(
         parameter, [](char* array, uint64_t& length, bool) -> bool {
@@ -1328,7 +1328,7 @@ bool PWTransformer::transform(PW_TRANSFORM_ID transformID, ddwaf_object* paramet
         case PWT_DECODE_URL_IIS:
         {
             // Repeatedly decode the URL as this is a bypass vector
-            //	We don't do it for PWT_DECODE_URL as it's the standard compliant one
+            //  We don't do it for PWT_DECODE_URL as it's the standard compliant one
             bool output;
             do
             {
@@ -1420,10 +1420,10 @@ PW_TRANSFORM_ID PWTransformer::getIDForString(std::string_view str)
         return PWT_REMOVE_COMMENTS;
     else if (str == "numerize")
         return PWT_NUMERIZE;
-	else if (str == "run_on_keys")
-		return PWT_RUNONKEYS;
-	else if (str == "run_on_values")
-		return PWT_RUNONVALS;
+    else if (str == "run_on_keys")
+        return PWT_RUNONKEYS;
+    else if (str == "run_on_values")
+        return PWT_RUNONVALS;
 
     return PWT_INVALID;
 }
@@ -1460,14 +1460,14 @@ PROD_STATIC uint8_t codepointToUTF8(uint32_t codepoint, char* utf8_buffer)
     }
 
     /*
-	 You're reading the UTF-8 encoding code, I'm sorry.
-	 There are multiple representations depending of the codepoint:
-	 0x000000-0x00007F: 0xxxxxxx
-	 0x000080-0x0007FF: 110xxxxx 10xxxxxx
-	 0x000800-0x00FFFF: 1110xxxx 10xxxxxx 10xxxxxx
-	 0x010000-0x10FFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-	 This code could be made a bit denser but let's not look for trouble
-	 */
+     You're reading the UTF-8 encoding code, I'm sorry.
+     There are multiple representations depending of the codepoint:
+     0x000000-0x00007F: 0xxxxxxx
+     0x000080-0x0007FF: 110xxxxx 10xxxxxx
+     0x000800-0x00FFFF: 1110xxxx 10xxxxxx 10xxxxxx
+     0x010000-0x10FFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+     This code could be made a bit denser but let's not look for trouble
+     */
 
     // Out of range codepoint
     if (codepoint > 0x001FFFFF)
@@ -1501,12 +1501,12 @@ PROD_STATIC uint8_t codepointToUTF8(uint32_t codepoint, char* utf8_buffer)
 
 static uint8_t writeCodePoint(uint32_t codepoint, char* utf8_buffer, uint64_t lengthLeft)
 {
-    //	If null, a surrogate or larger than the allowed range, buzz off
+    //  If null, a surrogate or larger than the allowed range, buzz off
     if (codepoint == 0 || (codepoint >= 0xd800 && codepoint <= 0xdfff) || codepoint > 0x10ffff)
     {
         // Insert U+FFFD as an error character per-spec
-        //	We need three bytes to encode it, which may be a problem as `\0` only takes two
-        //	A fully correct implementation would make room for the error bytes if there isn't enough room but we won't bother with that
+        //  We need three bytes to encode it, which may be a problem as `\0` only takes two
+        //  A fully correct implementation would make room for the error bytes if there isn't enough room but we won't bother with that
         if (lengthLeft > 2)
         {
             *((uint8_t*) utf8_buffer++) = 0xEFu;
@@ -1544,8 +1544,8 @@ static bool replaceIfMatch(char* array, uint64_t& readHead, uint64_t& writeHead,
 static bool decodeBase64(char* array, uint64_t& length)
 {
     /*
-	 * We ignore the invalid characters in this loop as `doesNeedTransform` will prevent decoding invalid base64 sequences
-	 */
+     * We ignore the invalid characters in this loop as `doesNeedTransform` will prevent decoding invalid base64 sequences
+     */
 
     const static char b64Reverse[256] = {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
