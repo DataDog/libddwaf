@@ -33,6 +33,7 @@ struct PowerWAF;
 #include <exception.hpp>
 #include <log.hpp>
 #include <utils.h>
+#include <validator.hpp>
 #include <yaml-cpp/yaml.h>
 
 using namespace ddwaf;

@@ -72,11 +72,6 @@ protected:
     std::vector<PWManifest::ARG_ID> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
     std::unique_ptr<IPWRuleProcessor> processor;
-    struct
-    {
-        bool keepRunningOnMatch    = false;
-        bool matchInterTransformer = false;
-    } options;
 };
 
 }

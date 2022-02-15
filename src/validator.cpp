@@ -14,8 +14,8 @@
 namespace ddwaf
 {
 
-validator::validator(uint64_t max_array_length, uint64_t max_map_depth)
-    : max_array_length_(max_array_length), max_map_depth_(max_map_depth)
+validator::validator(uint64_t max_map_depth, uint64_t max_array_length)
+    : max_map_depth_(max_map_depth), max_array_length_(max_array_length)
 {
     //Do the limits make sense?
     if (max_map_depth_ == 0)

@@ -26,29 +26,15 @@ class PWRetriever
 public:
     class PWArgsWrapper
     {
-        std::unordered_map<std::string, const ddwaf_object*> parameters;
-        const uint64_t maxArrayLength;
-
-        bool _validate_object(const ddwaf_object& input, uint32_t depth = 0) const;
 
     public:
-        const uint64_t maxMapDepth;
-
-        PWArgsWrapper(uint64_t _maxMapDepth, uint64_t _maxArrayLength);
+        PWArgsWrapper() = default;
         bool addParameter(const ddwaf_object input);
         const ddwaf_object* getParameter(const std::string& paramName) const;
         bool isValid() const;
 
-#ifdef TESTING
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedUnsignedInt);
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedSignedInt);
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedString);
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedMap);
-        FRIEND_TEST(TestPWArgsWrapper, TestRecursiveMap);
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedArray);
-        FRIEND_TEST(TestPWArgsWrapper, TestRecursiveArray);
-        FRIEND_TEST(TestPWArgsWrapper, TestInvalidType);
-#endif
+    protected:
+        std::unordered_map<std::string, const ddwaf_object*> parameters;
     };
 
     class ArgsIterator
@@ -126,7 +112,8 @@ public:
 private:
     const PWManifest& manifest;
     PWArgsWrapper wrapper;
-
+    uint64_t max_map_depth;
+    uint64_t max_array_length;
     Iterator internalIterator;
 
     std::unordered_set<PWManifest::ARG_ID> newestBatch;
