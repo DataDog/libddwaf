@@ -12,148 +12,16 @@
 #include <log.hpp>
 #include <rule.hpp>
 
-bool PWRetriever::PWArgsWrapper::_validate_object(const ddwaf_object& input, uint32_t depth) const
-{
-    if (depth > maxMapDepth)
-    {
-        DDWAF_DEBUG("Validation error: Structure depth exceed the allowed limit!");
-        return false;
-    }
-
-    switch (input.type)
-    {
-        case DDWAF_OBJ_SIGNED:
-        case DDWAF_OBJ_UNSIGNED:
-        {
-            if (input.nbEntries != 0)
-            {
-                DDWAF_DEBUG("Validation error: Trying to encode an integer but nbEntries isn't 0");
-                return false;
-            }
-            break;
-        }
-
-        case DDWAF_OBJ_STRING:
-        {
-            if (input.stringValue == nullptr)
-            {
-                DDWAF_DEBUG("Validation error: Trying to encode a string but payload is null");
-                return false;
-            }
-            break;
-        }
-
-        case DDWAF_OBJ_ARRAY:
-        case DDWAF_OBJ_MAP:
-        {
-            if (input.nbEntries != 0 && input.array == nullptr)
-            {
-                DDWAF_DEBUG("Validation error: Array claim not to be empty but actually is");
-                return false;
-            }
-
-            else if (input.nbEntries > maxArrayLength)
-            {
-                DDWAF_DEBUG("Validation error: Array is unacceptably long");
-                return false;
-            }
-
-            const bool isMap = input.type == DDWAF_OBJ_MAP;
-
-            const ddwaf_object* array = input.array;
-            for (uint64_t i = 0; i < input.nbEntries; ++i)
-            {
-                //Arrays aren't allowed to have parameter names but maps must have them
-                // Therefore, unless hasParamName == isMap, something is wrong
-                bool hasParamName = array[i].parameterName != nullptr;
-                if (hasParamName != isMap)
-                {
-                    DDWAF_DEBUG("Validation error: key name are mandatory in maps (%u - %s)", isMap, (hasParamName ? array[i].parameterName : "(null)"));
-                    return false;
-                }
-
-                if (isMap)
-                {
-                    DDWAF_TRACE("Performing recursive validation of key %s", array[i].parameterName);
-                }
-                else
-                {
-                    DDWAF_TRACE("Performing recursive validation of item #%" PRIu64, i);
-                }
-
-                if (!_validate_object(array[i], depth + 1))
-                {
-                    DDWAF_DEBUG("Validation error: the recursive validation failed");
-                    return false;
-                }
-            }
-            break;
-        }
-
-        default:
-            DDWAF_DEBUG("Validation error: Unrecognized type %u", input.type);
-            return false;
-    }
-
-    return true;
-}
-
-PWRetriever::PWArgsWrapper::PWArgsWrapper(uint64_t _maxMapDepth, uint64_t _maxArrayLength) : maxArrayLength(_maxArrayLength), maxMapDepth(_maxMapDepth) {}
-
 bool PWRetriever::PWArgsWrapper::addParameter(const ddwaf_object input)
 {
-    DDWAF_TRACE("Sanitizing WAF parameters");
-
-    //Do the limits make sense?
-    if (maxMapDepth == 0 || maxArrayLength == 0)
-    {
-        DDWAF_DEBUG("Illegal WAF call: the sanitization constants don't make sense!");
-        return false;
-    }
-
-    //Is the input even remotely valid
-    if (input.type != DDWAF_OBJ_MAP)
-    {
-        DDWAF_DEBUG("Illegal WAF call: parameter structure isn't a map!");
-        return false;
-    }
-
-    //Note: map can be empty
-    if (input.nbEntries != 0 && input.array == nullptr)
-    {
-        DDWAF_DEBUG("Illegal WAF call: parameter structure claim not to be empty but actually is");
-        return false;
-    }
-
-    // Sanitize the parameters, and if they're all good, insert them in the array
-    const ddwaf_object* mainArray = input.array;
-    for (size_t i = 0; i < input.nbEntries; ++i)
-    {
-        const char* parameterName = mainArray[i].parameterName;
-
-        if (parameterName == nullptr)
-        {
-            DDWAF_DEBUG("Parameter #%zu doesn't have a name!", i);
-            return false;
-        }
-
-        DDWAF_TRACE("Sanitizing parameter %s", parameterName);
-
-        if (!_validate_object(mainArray[i]))
-        {
-            DDWAF_DEBUG("Sanitizing parameter %s failed!", parameterName);
-            return false;
-        }
-    }
-
     // Ok, let's insert them
+    const ddwaf_object* mainArray = input.array;
     parameters.reserve(parameters.size() + (size_t) input.nbEntries);
     for (size_t i = 0; i < input.nbEntries; ++i)
     {
         parameters[std::string(mainArray[i].parameterName, (size_t) mainArray[i].parameterNameLength)] = &mainArray[i];
     }
 
-    DDWAF_TRACE("Parameter sanitization was successfull");
     return true;
 }
 
@@ -472,7 +340,7 @@ bool PWRetriever::Iterator::State::isOver() const
     return targetCursor == targetEnd;
 }
 
-PWRetriever::Iterator::Iterator(PWRetriever& _retriever) : retriever(_retriever), state(retriever.wrapper.maxMapDepth), argsIterator(nullptr, state.maxDepth) {}
+PWRetriever::Iterator::Iterator(PWRetriever& _retriever) : retriever(_retriever), state(retriever.max_map_depth), argsIterator(nullptr, state.maxDepth) {}
 
 void PWRetriever::Iterator::reset(const std::vector<PWManifest::ARG_ID>& targets)
 {
@@ -595,7 +463,9 @@ bool PWRetriever::Iterator::matchIterOnPath(const std::set<std::string>& path, b
     return argsIterator.matchIterOnPath(path, isAllowList, blockDepth);
 }
 
-PWRetriever::PWRetriever(const PWManifest& _manifest, uint64_t _maxMapDepth, uint64_t _maxArrayLength) : manifest(_manifest), wrapper(_maxMapDepth, _maxArrayLength), internalIterator(*this) {}
+PWRetriever::PWRetriever(const PWManifest& _manifest, uint64_t _maxMapDepth, uint64_t _maxArrayLength) :
+    manifest(_manifest), wrapper(), max_map_depth(_maxMapDepth),
+    max_array_length(_maxArrayLength), internalIterator(*this) {}
 
 bool PWRetriever::addParameter(const ddwaf_object input)
 {

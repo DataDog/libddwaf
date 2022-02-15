@@ -6,7 +6,13 @@
 
 #include "test.h"
 
-void populateManifest(PWManifest& manifest);
+void populateManifest(PWManifest& manifest)
+{
+    for (auto key : { "value", "key", "mixed", "mixed2" })
+    {
+        manifest.insert(key, PWManifest::ArgDetails(key));
+    }
+}
 
 TEST(TestAdditive, TestMultiCall)
 {

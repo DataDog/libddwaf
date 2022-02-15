@@ -66,33 +66,6 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     bool transformFailed = false, matched = false;
     for (const PW_TRANSFORM_ID& transform : transformation)
     {
-        //
-        // Okay, this is going to look weird but it make sense:
-        //	- matchInterTransformer mean we need to run the operator on each version of the parameter through the transformer chain
-        //	- This mean to run on the original version, then each intermediary representation, and the final one
-        //	- The simplest way to do that is actually to run _before_ the transformer, and use the "normal" run at the end
-        //	- It is important to realize this run is actually the one _before_ the transformer
-        //	- Therefore, if the transformer isn't going to do anything, this run can be skipped
-        //
-
-        if (options.matchInterTransformer)
-        {
-            // Will the transformer modify the parameter? If not, skip the iteration
-            if (!PWTransformer::transform(transform, &copyInput, true))
-            {
-                continue;
-            }
-
-            // Run the operator
-            matched |= processor->doesMatch(&copyInput, gatherer);
-
-            // If it matched and that we don't want to do multiple runs
-            if (matched && !options.keepRunningOnMatch)
-            {
-                break;
-            }
-        }
-
         transformFailed = !PWTransformer::transform(transform, &copyInput);
         if (transformFailed || (copyInput.type == DDWAF_OBJ_STRING && copyInput.nbEntries == 0))
         {
@@ -100,12 +73,9 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
         }
     }
 
-    //Run the transformed input if options.matchInterTransformer didn't already matched
-    if (!matched || options.keepRunningOnMatch)
-    {
-        const ddwaf_object* paramToUse = transformFailed ? baseInput : &copyInput;
-        matched |= processor->doesMatch(paramToUse, gatherer);
-    }
+    //Run the transformed input 
+    const ddwaf_object* paramToUse = transformFailed ? baseInput : &copyInput;
+    matched |= processor->doesMatch(paramToUse, gatherer);
 
     // Otherwise, the caller is in charge of freeing the pointer
     if (readOnlyArg)
@@ -166,10 +136,7 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
 
             // Actually, we can only stop processing if we were not collecting matches for a further filter
             //	If we stopped, it'd open trivial bypasses of the next stage
-            if (!options.keepRunningOnMatch)
-                return status::matched;
-
-            matched = true;
+            return status::matched;
         }
     } while (retriever.moveIteratorForward(iterator));
 

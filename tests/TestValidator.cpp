@@ -6,47 +6,32 @@
 
 #include "test.h"
 
-bool tryInitializeRetriver(ddwaf_object input, uint32_t map = DDWAF_MAX_MAP_DEPTH, uint32_t array = DDWAF_MAX_ARRAY_LENGTH)
-{
-    PWManifest manifest;
-    PWRetriever retriever(manifest, map, array);
-    return retriever.wrapper.addParameter(input);
-}
 
-void populateManifest(PWManifest& manifest)
+TEST(TestValidator, TestMalformedMasterParam)
 {
-    for (auto key : { "value", "key", "mixed", "mixed2" })
-    {
-        manifest.insert(key, PWManifest::ArgDetails(key, PWT_VALUES_ONLY));
-    }
-}
-
-TEST(TestPWArgsWrapper, TestMalformedMasterParam)
-{
-    PWManifest manifest;
-    populateManifest(manifest);
+    ddwaf::validator validator;
 
     ddwaf_object masterMap = DDWAF_OBJECT_MAP, tmp;
     ddwaf_object_map_add(&masterMap, "value", ddwaf_object_unsigned_force(&tmp, 42));
 
-    EXPECT_TRUE(tryInitializeRetriver(masterMap));
-    EXPECT_FALSE(tryInitializeRetriver(DDWAF_OBJECT_INVALID));
+    EXPECT_TRUE(validator.validate(masterMap));
+    EXPECT_FALSE(validator.validate(DDWAF_OBJECT_INVALID));
 
     masterMap.type = DDWAF_OBJ_ARRAY;
-    EXPECT_FALSE(tryInitializeRetriver(masterMap));
-    masterMap.type = DDWAF_OBJ_MAP;
+    EXPECT_FALSE(validator.validate(masterMap));
 
+    masterMap.type = DDWAF_OBJ_MAP;
     masterMap.nbEntries = 0;
-    EXPECT_TRUE(PWRetriever(manifest, DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH).addParameter(masterMap));
+    EXPECT_TRUE(validator.validate(masterMap));
 
     {
         auto backup = masterMap.array;
 
         masterMap.array = nullptr;
-        EXPECT_TRUE(PWRetriever(manifest, DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH).addParameter(masterMap));
+        EXPECT_TRUE(validator.validate(masterMap));
 
         masterMap.nbEntries = 1;
-        EXPECT_FALSE(tryInitializeRetriver(masterMap));
+        EXPECT_FALSE(validator.validate(masterMap));
 
         masterMap.array = backup;
     }
@@ -54,52 +39,50 @@ TEST(TestPWArgsWrapper, TestMalformedMasterParam)
     ddwaf_object_free(&masterMap);
 }
 
-TEST(TestPWArgsWrapper, TestMalformedUnsignedInt)
+TEST(TestValidator, TestMalformedUnsignedInt)
 {
+    ddwaf::validator validator;
+
     ddwaf_object param = DDWAF_OBJECT_UNSIGNED_FORCE(42);
 
-    PWRetriever::PWArgsWrapper wrapper(DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
-
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
+    EXPECT_TRUE(validator.validate_helper(param));
 
     param.nbEntries = 1;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
+    EXPECT_FALSE(validator.validate_helper(param));
 }
 
-TEST(TestPWArgsWrapper, TestMalformedSignedInt)
+TEST(TestValidator, TestMalformedSignedInt)
 {
+    ddwaf::validator validator;
+
     ddwaf_object param = DDWAF_OBJECT_SIGNED_FORCE(42);
 
-    PWRetriever::PWArgsWrapper wrapper(DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
-
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
+    EXPECT_TRUE(validator.validate_helper(param));
 
     param.nbEntries = 1;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
+    EXPECT_FALSE(validator.validate_helper(param));
 }
 
-TEST(TestPWArgsWrapper, TestMalformedString)
+TEST(TestValidator, TestMalformedString)
 {
+    ddwaf::validator validator;
+
     ddwaf_object param;
     ddwaf_object_string(&param, "Sqreen");
 
-    PWRetriever::PWArgsWrapper wrapper(DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
-
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
+    EXPECT_TRUE(validator.validate_helper(param));
 
     param.nbEntries = 0;
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
+    EXPECT_TRUE(validator.validate_helper(param));
 
     free((void*) param.array);
     param.array = nullptr;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
+    EXPECT_FALSE(validator.validate_helper(param));
 }
 
-TEST(TestPWArgsWrapper, TestMalformedMap)
+TEST(TestValidator, TestMalformedMap)
 {
-    PWRetriever::PWArgsWrapper wrapper(DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
-    PWManifest manifest;
-    populateManifest(manifest);
+    ddwaf::validator validator;
 
     ddwaf_object mapItem, param = DDWAF_OBJECT_MAP;
     ddwaf_object_string(&mapItem, "Sqreen");
@@ -110,34 +93,31 @@ TEST(TestPWArgsWrapper, TestMalformedMap)
     mapItem.parameterName       = string;
     mapItem.parameterNameLength = strlen(string);
 
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
-    EXPECT_TRUE(tryInitializeRetriver(param));
+    EXPECT_TRUE(validator.validate_helper(param));
 
     param.array = nullptr;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
-    EXPECT_FALSE(tryInitializeRetriver(param));
+    EXPECT_FALSE(validator.validate_helper(param));
     param.array = &mapItem;
 
     param.nbEntries = 0;
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
-    EXPECT_TRUE(PWRetriever(PWManifest(), DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH).addParameter(param));
+    EXPECT_TRUE(validator.validate_helper(param));
     param.nbEntries = 1;
 
     mapItem.parameterName = nullptr;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
-    EXPECT_FALSE(tryInitializeRetriver(param));
+    EXPECT_FALSE(validator.validate_helper(param));
     mapItem.parameterName = string;
 
     //Invalid subItem
     free((void*) mapItem.array);
     mapItem.array = NULL;
 
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
-    EXPECT_FALSE(tryInitializeRetriver(param));
+    EXPECT_FALSE(validator.validate_helper(param));
 }
 
-TEST(TestPWArgsWrapper, TestRecursiveMap)
+TEST(TestValidator, TestRecursiveMap)
 {
+    ddwaf::validator validator;
+
     ddwaf_object param;
 
     param.nbEntries     = 1;
@@ -145,67 +125,64 @@ TEST(TestPWArgsWrapper, TestRecursiveMap)
     param.type          = DDWAF_OBJ_STRING;
     param.array         = &param;
 
-    PWRetriever::PWArgsWrapper wrapper(DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
-
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
+    EXPECT_TRUE(validator.validate_helper(param));
 
     param.type = DDWAF_OBJ_MAP;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
-    EXPECT_FALSE(tryInitializeRetriver(param));
+    EXPECT_FALSE(validator.validate_helper(param));
 }
 
-TEST(TestPWArgsWrapper, TestMalformedArray)
+TEST(TestValidator, TestMalformedArray)
 {
+    ddwaf::validator validator;
+
     const char* string = "Sqreen";
     ddwaf_object param = DDWAF_OBJECT_ARRAY, mapItem = DDWAF_OBJECT_SIGNED_FORCE(42);
 
     param.nbEntries = 1;
     param.array     = &mapItem;
 
-    PWRetriever::PWArgsWrapper wrapper(DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
-
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
+    EXPECT_TRUE(validator.validate_helper(param));
 
     param.array = nullptr;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
+    EXPECT_FALSE(validator.validate_helper(param));
     param.array = &mapItem;
 
     param.nbEntries = 0;
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
+    EXPECT_TRUE(validator.validate_helper(param));
     param.nbEntries = 1;
 
     mapItem.parameterName = string;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
+    EXPECT_FALSE(validator.validate_helper(param));
     mapItem.parameterName = nullptr;
 
     //Invalid subItem
     mapItem.nbEntries = 1;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
+    EXPECT_FALSE(validator.validate_helper(param));
 }
 
-TEST(TestPWArgsWrapper, TestRecursiveArray)
+TEST(TestValidator, TestRecursiveArray)
 {
-    PWRetriever::PWArgsWrapper wrapper(DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
+    ddwaf::validator validator;
 
     ddwaf_object param = DDWAF_OBJECT_ARRAY;
 
     param.nbEntries = 1;
     param.array     = &param;
-    EXPECT_FALSE(wrapper._validate_object(param, 0));
+    EXPECT_FALSE(validator.validate_helper(param));
 
     param.type = DDWAF_OBJ_STRING;
-    EXPECT_TRUE(wrapper._validate_object(param, 0));
+    EXPECT_TRUE(validator.validate_helper(param));
 }
 
-TEST(TestPWArgsWrapper, TestInvalidType)
+TEST(TestValidator, TestInvalidType)
 {
-    PWRetriever::PWArgsWrapper wrapper(DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
-    EXPECT_FALSE(wrapper._validate_object(DDWAF_OBJECT_INVALID, 0));
+    ddwaf::validator validator;
+    EXPECT_FALSE(validator.validate_helper(DDWAF_OBJECT_INVALID));
 }
 
-TEST(TestPWArgsWrapper, TestGetUnknownParameter)
+TEST(TestValidator, TestGetUnknownParameter)
 {
-    PWManifest manifest;
+    ddwaf::validator validator;
     ddwaf_object param = DDWAF_OBJECT_MAP, mapItem = DDWAF_OBJECT_SIGNED_FORCE(42);
     const char* string = "Sqreen";
 
@@ -214,16 +191,10 @@ TEST(TestPWArgsWrapper, TestGetUnknownParameter)
     mapItem.parameterName       = string;
     mapItem.parameterNameLength = strlen(string);
 
-    PWRetriever::PWArgsWrapper wrapper(DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
-
-    ASSERT_TRUE(wrapper.addParameter(param));
-    ASSERT_TRUE(wrapper.isValid());
-
-    EXPECT_NE(wrapper.getParameter(string), nullptr);
-    EXPECT_EQ(wrapper.getParameter("random name"), nullptr);
+    EXPECT_TRUE(validator.validate(param));
 }
 
-TEST(TestPWArgsWrapper, TestLimits)
+TEST(TestValidator, TestLimits)
 {
     ddwaf_object param = DDWAF_OBJECT_MAP, mapItem = DDWAF_OBJECT_SIGNED_FORCE(42);
     const char* string = "Sqreen";
@@ -232,9 +203,9 @@ TEST(TestPWArgsWrapper, TestLimits)
     param.array           = &mapItem;
     mapItem.parameterName = string;
 
-    EXPECT_FALSE(tryInitializeRetriver(param, 0, 42));
-    EXPECT_FALSE(tryInitializeRetriver(param, 42, 0));
-    EXPECT_TRUE(tryInitializeRetriver(param, 1, 1));
+    EXPECT_THROW(validator(0, 42), std::invalid_argument);
+    EXPECT_THROW(validator(42, 0), std::invalid_argument);
+    EXPECT_TRUE(validator(1, 1).validate(param));
 
     ddwaf_object array = DDWAF_OBJECT_ARRAY, tmp;
 
@@ -245,17 +216,17 @@ TEST(TestPWArgsWrapper, TestLimits)
 
     array.parameterName = string;
     param.array         = &array;
-    EXPECT_FALSE(tryInitializeRetriver(param, 1, 450));
-    EXPECT_TRUE(tryInitializeRetriver(param, 1, 500));
+    EXPECT_FALSE(validator(1, 450).validate(param));
+    EXPECT_TRUE(validator(1, 500).validate(param));
 
     ddwaf_object subArray = DDWAF_OBJECT_ARRAY;
     ddwaf_object_array_add(&subArray, ddwaf_object_unsigned_force(&tmp, 42));
 
     ddwaf_object_array_add(&array, &subArray);
 
-    EXPECT_FALSE(tryInitializeRetriver(param, 10, 500));
-    EXPECT_TRUE(tryInitializeRetriver(param, 10, 501));
-    EXPECT_FALSE(tryInitializeRetriver(param, 1, 501));
+    EXPECT_FALSE(validator(10, 500).validate(param));
+    EXPECT_TRUE(validator(10, 501).validate(param));
+    EXPECT_FALSE(validator(1, 501).validate(param));
 
     array.parameterName = 0;
     ddwaf_object_free(&array);
