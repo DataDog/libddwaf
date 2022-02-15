@@ -14,18 +14,10 @@
 #include <ddwaf.h>
 #include <utils.h>
 #include <optional>
+#include <validator.hpp>
 
 class PWAdditive
 {
-    std::shared_ptr<PowerWAF> wafReference;
-    const PowerWAF* wafHandle;
-
-    std::vector<ddwaf_object> argCache;
-
-    PWRetriever retriever;
-    PWProcessor processor;
-    ddwaf_object_free_fn obj_free;
-
 public:
     PWAdditive(std::shared_ptr<PowerWAF>);
     PWAdditive(const ddwaf_handle, ddwaf_object_free_fn free_fn);
@@ -41,6 +33,16 @@ public:
     FRIEND_TEST(TestPWProcessor, TestCache);
     FRIEND_TEST(TestPWManifest, TestUnknownArgID);
 #endif
+protected:
+    std::shared_ptr<PowerWAF> wafReference;
+    const PowerWAF* wafHandle;
+
+    std::vector<ddwaf_object> argCache;
+
+    ddwaf::validator object_validator;
+    PWRetriever retriever;
+    PWProcessor processor;
+    ddwaf_object_free_fn obj_free;
 };
 
 #endif /* PWAdditive_hpp */

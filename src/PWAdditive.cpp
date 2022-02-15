@@ -14,6 +14,7 @@
 PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
     : wafReference(_wafReference),
       wafHandle(_wafReference.get()),
+      object_validator(wafHandle->maxMapDepth, wafHandle->maxArrayLength),
       retriever(wafHandle->manifest, wafHandle->maxMapDepth, wafHandle->maxArrayLength),
       processor(retriever, wafHandle->rules),
       obj_free(ddwaf_object_free)
@@ -23,6 +24,7 @@ PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
 
 PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
     : wafHandle((const PowerWAF*) _waf),
+      object_validator(wafHandle->maxMapDepth, wafHandle->maxArrayLength),
       retriever(wafHandle->manifest, wafHandle->maxMapDepth, wafHandle->maxArrayLength),
       processor(retriever, wafHandle->rules),
       obj_free(free_fn)
@@ -37,7 +39,8 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft) {
 DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, 
     std::optional<std::reference_wrapper<ddwaf_result>> res, uint64_t timeLeft)
 {
-    if (!retriever.addParameter(newParameters))
+
+    if (!object_validator.validate(newParameters))
     {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         if (obj_free != nullptr)
@@ -47,6 +50,7 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
         return DDWAF_ERR_INVALID_OBJECT;
     }
 
+    retriever.addParameter(newParameters);
     // Take ownership of newParameters
     argCache.emplace_back(newParameters);
 
