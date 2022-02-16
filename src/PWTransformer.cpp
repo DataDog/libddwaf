@@ -1420,10 +1420,8 @@ PW_TRANSFORM_ID PWTransformer::getIDForString(std::string_view str)
         return PWT_REMOVE_COMMENTS;
     else if (str == "numerize")
         return PWT_NUMERIZE;
-    else if (str == "run_on_keys")
+    else if (str == "keys_only")
         return PWT_RUNONKEYS;
-    else if (str == "run_on_values")
-        return PWT_RUNONVALS;
 
     return PWT_INVALID;
 }
