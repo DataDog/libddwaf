@@ -12,4 +12,4 @@ rules:
             - address: value
           regex: rule1
     transformers:
-        - run_on_keys
+        - keys_only
