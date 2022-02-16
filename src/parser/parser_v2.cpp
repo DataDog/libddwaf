@@ -165,7 +165,7 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
         ddwaf::rule parsed_rule;
 
         std::vector<PW_TRANSFORM_ID> rule_transformers;
-		bool runOnKey = false, runOnVal = true; // By default, we run on value
+        bool runOnKey = false, runOnVal = true; // By default, we run on value
         auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
         for (std::string_view transformer : transformers)
         {
@@ -176,10 +176,10 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
             }
             else if (transform_id == PWT_RUNONKEYS)
             {
-				if (rule_transformers.empty()) {
-					runOnKey = true;
-					runOnVal = false;
-				}
+                if (rule_transformers.empty()) {
+                    runOnKey = true;
+                    runOnVal = false;
+                }
             }
             else
             {
