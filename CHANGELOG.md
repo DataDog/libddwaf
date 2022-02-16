@@ -1,5 +1,9 @@
 # libddwaf release
 
+### v1.0.18 (unstable) - 2022/02/16
+- Add arm64 build to nuget package.
+- Upgrade RE2 to 2022-02-01.
+
 ### v1.0.17 (unstable) - 2022/01/24
 - Add missing libunwind to x86\_64 linux build.
 - Fix potential integer overflow in `DDWAF_LOG_HELPER`.
