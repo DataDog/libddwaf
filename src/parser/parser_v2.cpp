@@ -176,8 +176,10 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
             }
             else if (transform_id == PWT_RUNONKEYS)
             {
-                runOnKey = true;
-				runOnVal = false;
+				if (rule_transformers.empty()) {
+					runOnKey = true;
+					runOnVal = false;
+				}
             }
             else
             {
