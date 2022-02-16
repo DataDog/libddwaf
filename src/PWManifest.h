@@ -18,7 +18,10 @@
 #include <PWTransformer.h>
 #include <ddwaf.h>
 
-#define RUN_ON_MASK(key, val) ((uint8_t) ((key << 1) | val))
+#define RUN_ON_MASK_KEY_SHIFT 1
+#define RUN_ON_MASK_VAL_SHIFT 0
+
+#define RUN_ON_MASK(key, val) ((uint8_t) ((key << RUN_ON_MASK_KEY_SHIFT) | (val << RUN_ON_MASK_VAL_SHIFT)))
 
 class PWRetriever;
 
