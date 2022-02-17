@@ -8,6 +8,10 @@
 #define DDWAF_LOG_H
 
 #include <ddwaf.h>
+
+// Required for PRIu64 format specifier in older systems
+#define __STDC_FORMAT_MACROS
+
 #include <cinttypes>
 #include <string>
 #include <type_traits>
