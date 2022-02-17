@@ -8,6 +8,7 @@
 #define DDWAF_LOG_H
 
 #include <ddwaf.h>
+
 #include <cinttypes>
 #include <string>
 #include <type_traits>
