@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 //
-#include <inttypes.h>
 #include <stdint.h>
 #include <string>
 #include <stdexcept>
@@ -141,7 +140,7 @@ bool validator::validate_helper(ddwaf_object input, uint64_t depth) const
                 }
                 else
                 {
-                    DDWAF_TRACE("Performing recursive validation of item #" PRIu64, i);
+                    DDWAF_TRACE("Performing recursive validation of item #%" PRIu64, i);
                 }
 
                 if (!validate_helper(array[i], depth + 1))
