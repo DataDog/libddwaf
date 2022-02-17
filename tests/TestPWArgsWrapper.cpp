@@ -17,7 +17,7 @@ void populateManifest(PWManifest& manifest)
 {
     for (auto key : { "value", "key", "mixed", "mixed2" })
     {
-        manifest.insert(key, PWManifest::ArgDetails(key, false, true));
+        manifest.insert(key, PWManifest::ArgDetails(key, PWT_VALUES_ONLY));
     }
 }
 

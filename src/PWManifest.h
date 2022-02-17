@@ -18,11 +18,6 @@
 #include <PWTransformer.h>
 #include <ddwaf.h>
 
-#define RUN_ON_MASK_KEY_SHIFT 1
-#define RUN_ON_MASK_VAL_SHIFT 0
-
-#define RUN_ON_MASK(key, val) ((uint8_t) ((key << RUN_ON_MASK_KEY_SHIFT) | (val << RUN_ON_MASK_VAL_SHIFT)))
-
 class PWRetriever;
 
 class PWManifest
@@ -32,15 +27,19 @@ public:
 
     struct ArgDetails
     {
-        bool runOnKey { false };
-        bool runOnValue { true };
+        PW_TRANSFORM_ID inline_transformer{PWT_VALUES_ONLY};
         std::string inheritFrom; // Name of the ARG_ID to report the BA we matched
         std::set<std::string> keyPaths;
         bool isAllowList { true };
 
         ArgDetails() = default;
-        ArgDetails(const std::string& addr, bool runOnKey, bool runOnVal) : runOnKey(runOnKey), runOnValue(runOnVal), inheritFrom(addr) {}
-        ArgDetails(const std::string& addr, bool runOnKey, bool runOnVal, const std::string& path) : runOnKey(runOnKey), runOnValue(runOnVal), inheritFrom(addr), keyPaths({ path }) {}
+        ArgDetails(const std::string& addr, PW_TRANSFORM_ID transformer) :
+            inline_transformer(transformer),
+            inheritFrom(addr) {}
+
+        ArgDetails(const std::string& addr, const std::string& path, PW_TRANSFORM_ID transformer) :
+            inline_transformer(transformer), inheritFrom(addr), keyPaths({ path }) {}
+
         ArgDetails(ArgDetails&&)      = default;
         ArgDetails(const ArgDetails&) = delete;
         ArgDetails& operator=(ArgDetails&&) = default;
@@ -60,7 +59,7 @@ private:
         }
     };
     
-    std::unordered_map<std::pair<std::string, uint8_t>, ARG_ID, hash_pair> argIDTable;
+    std::unordered_map<std::pair<std::string, PW_TRANSFORM_ID>, ARG_ID, hash_pair> argIDTable;
     std::unordered_map<ARG_ID, ArgDetails> argManifest;
     // Unique set of inheritFrom (root) addresses
     std::unordered_set<std::string_view> root_address_set;
@@ -84,8 +83,10 @@ public:
 
     const std::vector<const char*>& get_root_addresses() const { return root_addresses; };
 
-    bool hasTarget(const std::string& string, uint8_t runOnMask) const;
-    ARG_ID getTargetArgID(const std::string& target, uint8_t runOnMask) const;
+    bool hasTarget(const std::string& string,
+        PW_TRANSFORM_ID transformer = PWT_VALUES_ONLY) const;
+    ARG_ID getTargetArgID(const std::string& target,
+        PW_TRANSFORM_ID transformer = PWT_VALUES_ONLY) const;
     const ArgDetails& getDetailsForTarget(const PWManifest::ARG_ID& argID) const;
     const std::string& getTargetName(const PWManifest::ARG_ID& argID) const;
 
