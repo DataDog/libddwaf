@@ -176,18 +176,17 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
             }
             else if (transform_id == PWT_KEYS_ONLY)
             {
+                if (!rule_transformers.empty()) {
+                    DDWAF_WARN("keys_only transformer should be the first one "
+                            "in the list, all transformers will be applied to "
+                            "keys and not values");
+                }
                 inline_transformer = PWT_KEYS_ONLY;
             }
             else
             {
                 rule_transformers.push_back(transform_id);
             }
-        }
-
-        if (inline_transformer == PWT_KEYS_ONLY && !rule_transformers.empty()) {
-            DDWAF_WARN("keys_only transformer is not compatible with other"
-                "transformers, so they will be ignored");
-            rule_transformers.clear();
         }
 
         std::vector<ddwaf::condition> conditions;
