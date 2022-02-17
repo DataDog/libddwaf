@@ -29,7 +29,7 @@ public:
 
     public:
         PWArgsWrapper() = default;
-        bool addParameter(const ddwaf_object input);
+        void addParameter(const ddwaf_object input);
         const ddwaf_object* getParameter(const std::string& paramName) const;
         bool isValid() const;
 
@@ -125,7 +125,7 @@ private:
 
 public:
     PWRetriever(const PWManifest& _manifest, uint64_t _maxMapDepth, uint64_t _maxArrayLength);
-    bool addParameter(const ddwaf_object input);
+    void addParameter(const ddwaf_object input);
     bool hasNewArgs() const;
     bool isKeyInLastBatch(PWManifest::ARG_ID key) const;
 

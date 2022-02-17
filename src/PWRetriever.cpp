@@ -12,7 +12,7 @@
 #include <log.hpp>
 #include <rule.hpp>
 
-bool PWRetriever::PWArgsWrapper::addParameter(const ddwaf_object input)
+void PWRetriever::PWArgsWrapper::addParameter(const ddwaf_object input)
 {
     // Ok, let's insert them
     const ddwaf_object* mainArray = input.array;
@@ -21,8 +21,6 @@ bool PWRetriever::PWArgsWrapper::addParameter(const ddwaf_object input)
     {
         parameters[std::string(mainArray[i].parameterName, (size_t) mainArray[i].parameterNameLength)] = &mainArray[i];
     }
-
-    return true;
 }
 
 const ddwaf_object* PWRetriever::PWArgsWrapper::getParameter(const std::string& paramName) const
@@ -467,11 +465,10 @@ PWRetriever::PWRetriever(const PWManifest& _manifest, uint64_t _maxMapDepth, uin
     manifest(_manifest), wrapper(), max_map_depth(_maxMapDepth),
     max_array_length(_maxArrayLength), internalIterator(*this) {}
 
-bool PWRetriever::addParameter(const ddwaf_object input)
+void PWRetriever::addParameter(const ddwaf_object input)
 {
     newestBatch.clear();
-    if (!wrapper.addParameter(input))
-        return false;
+    wrapper.addParameter(input);
 
     if (input.nbEntries)
     {
@@ -485,7 +482,6 @@ bool PWRetriever::addParameter(const ddwaf_object input)
 
         manifest.findImpactedArgs(keyNames, newestBatch);
     }
-    return true;
 }
 
 bool PWRetriever::hasNewArgs() const

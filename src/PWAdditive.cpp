@@ -39,7 +39,6 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft) {
 DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, 
     std::optional<std::reference_wrapper<ddwaf_result>> res, uint64_t timeLeft)
 {
-
     if (!object_validator.validate(newParameters))
     {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");

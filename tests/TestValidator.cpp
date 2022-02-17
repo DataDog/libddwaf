@@ -6,6 +6,8 @@
 
 #include "test.h"
 
+namespace ddwaf
+{
 
 TEST(TestValidator, TestMalformedMasterParam)
 {
@@ -230,4 +232,6 @@ TEST(TestValidator, TestLimits)
 
     array.parameterName = 0;
     ddwaf_object_free(&array);
+}
+
 }
