@@ -541,8 +541,8 @@ void PWRetriever::Iterator::gotoNext(bool skipIncrement)
 void PWRetriever::Iterator::updateTargetMetadata()
 {
     const auto& fullDetails = retriever.manifest.getDetailsForTarget(*state.targetCursor);
-    currentTargetRunOnKey   = fullDetails.runOnKey;
-    currentTargetRunOnValue = fullDetails.runOnValue;
+    currentTargetRunOnKey   = fullDetails.inline_transformer & PWT_KEYS_ONLY;
+    currentTargetRunOnValue = fullDetails.inline_transformer & PWT_VALUES_ONLY;
 }
 
 bool PWRetriever::Iterator::isOver() const

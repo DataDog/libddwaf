@@ -17,7 +17,8 @@ PWManifest::ARG_ID PWManifest::insert(std::string_view name, PWManifest::ArgDeta
 {
     auto [it, result] = argManifest.emplace(counter, std::move(arg));
     (void) result; // unused
-    argIDTable.emplace(name, counter);
+    argIDTable.emplace(std::pair<std::string, PW_TRANSFORM_ID>(
+        name, arg.inline_transformer), counter);
 
     if (root_address_set.find(it->second.inheritFrom) == root_address_set.end())
     {
@@ -28,14 +29,14 @@ PWManifest::ARG_ID PWManifest::insert(std::string_view name, PWManifest::ArgDeta
     return counter++;
 }
 
-bool PWManifest::hasTarget(const std::string& string) const
+bool PWManifest::hasTarget(const std::string& string, PW_TRANSFORM_ID transformer) const
 {
-    return argIDTable.find(string) != argIDTable.cend();
+    return argIDTable.find(std::pair<std::string, PW_TRANSFORM_ID>(string, transformer)) != argIDTable.cend();
 }
 
-PWManifest::ARG_ID PWManifest::getTargetArgID(const std::string& target) const
+PWManifest::ARG_ID PWManifest::getTargetArgID(const std::string& target, PW_TRANSFORM_ID transformer) const
 {
-    return argIDTable.find(target)->second;
+    return argIDTable.find(std::pair<std::string, PW_TRANSFORM_ID>(target, transformer))->second;
 }
 
 const PWManifest::ArgDetails& PWManifest::getDetailsForTarget(const PWManifest::ARG_ID& argID) const
@@ -52,7 +53,7 @@ const std::string& PWManifest::getTargetName(const PWManifest::ARG_ID& target) c
     {
         if (argIDDefinition.second == target)
         {
-            return argIDDefinition.first;
+            return argIDDefinition.first.first;
         }
     }
 
