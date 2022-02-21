@@ -7,8 +7,8 @@
 #ifndef DDWAF_LOG_H
 #define DDWAF_LOG_H
 
-#include <ddwaf.h>
 #include <cinttypes>
+#include <ddwaf.h>
 #include <string>
 #include <type_traits>
 
@@ -60,7 +60,7 @@ constexpr const char* base_name(const char* path)
             int _bytes                     = snprintf(NULL, 0, fmt, ##__VA_ARGS__);      \
             if (_bytes > 0)                                                              \
             {                                                                            \
-                size_t bytes = (size_t) _bytes;                                          \
+                size_t bytes  = (size_t) _bytes;                                         \
                 char* message = (char*) malloc(bytes + 1);                               \
                 if (message != NULL)                                                     \
                 {                                                                        \

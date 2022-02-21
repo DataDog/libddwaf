@@ -461,9 +461,8 @@ bool PWRetriever::Iterator::matchIterOnPath(const std::set<std::string>& path, b
     return argsIterator.matchIterOnPath(path, isAllowList, blockDepth);
 }
 
-PWRetriever::PWRetriever(const PWManifest& _manifest, uint64_t _maxMapDepth, uint64_t _maxArrayLength) :
-    manifest(_manifest), wrapper(), max_map_depth(_maxMapDepth),
-    max_array_length(_maxArrayLength), internalIterator(*this) {}
+PWRetriever::PWRetriever(const PWManifest& _manifest, uint64_t _maxMapDepth, uint64_t _maxArrayLength) : manifest(_manifest), wrapper(), max_map_depth(_maxMapDepth),
+                                                                                                         max_array_length(_maxArrayLength), internalIterator(*this) {}
 
 void PWRetriever::addParameter(const ddwaf_object input)
 {

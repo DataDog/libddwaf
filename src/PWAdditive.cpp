@@ -32,12 +32,13 @@ PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
     argCache.reserve(ADDITIVE_BUFFER_PREALLOC);
 }
 
-DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft) {
+DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, uint64_t timeLeft)
+{
     return run(newParameters, std::nullopt, timeLeft);
 }
 
-DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, 
-    std::optional<std::reference_wrapper<ddwaf_result>> res, uint64_t timeLeft)
+DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
+                               std::optional<std::reference_wrapper<ddwaf_result>> res, uint64_t timeLeft)
 {
     if (!object_validator.validate(newParameters))
     {
@@ -58,9 +59,10 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     // consistent across all possible timeout scenarios.
     if (timeLeft == 0)
     {
-        if (res.has_value()) {
-            ddwaf_result &output = *res;
-            output.timeout = true;
+        if (res.has_value())
+        {
+            ddwaf_result& output = *res;
+            output.timeout       = true;
         }
         return DDWAF_GOOD;
     }
@@ -83,8 +85,9 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     }
 
     DDWAF_RET_CODE code = retManager.getResult();
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
+    if (res.has_value())
+    {
+        ddwaf_result& output = *res;
         retManager.synthetize(output);
 
         const SQPowerWAF::monotonic_clock::duration runTime = SQPowerWAF::monotonic_clock::now() - now;

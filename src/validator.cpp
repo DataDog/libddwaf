@@ -4,10 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 //
+#include <log.hpp>
+#include <stdexcept>
 #include <stdint.h>
 #include <string>
-#include <stdexcept>
-#include <log.hpp>
 #include <validator.hpp>
 
 namespace ddwaf
@@ -72,7 +72,6 @@ bool validator::validate(ddwaf_object input) const
     DDWAF_TRACE("Parameter sanitization was successfull");
     return true;
 }
-
 
 bool validator::validate_helper(ddwaf_object input, uint64_t depth) const
 {

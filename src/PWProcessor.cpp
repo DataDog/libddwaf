@@ -83,7 +83,10 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
 
         //Have we already ran this rule?
         const auto cache_status = hasCacheHit(ruleID);
-        if (cache_status == match_status::matched) { break; }
+        if (cache_status == match_status::matched)
+        {
+            break;
+        }
 
         // Let's fetch the filters for the rule
         auto it = rules.find(ruleID);
@@ -118,22 +121,30 @@ void PWProcessor::runFlow(const std::string& name, const std::vector<std::string
         {
             status = cond.performMatching(parameters, deadline, retManager);
             //Stop if we didn't matched any of the parameters (2) or that the parameter couldn't be found
-            if (status == match_status::no_match) {
+            if (status == match_status::no_match)
+            {
                 break;
-            } else if (status == match_status::missing_arg) {
+            }
+            else if (status == match_status::missing_arg)
+            {
                 DDWAF_DEBUG("Missing arguments to run rule %s", ruleID.c_str());
                 break;
-            } else if (status == match_status::timeout) {
+            }
+            else if (status == match_status::timeout)
+            {
                 DDWAF_INFO("Ran out of time when processing %s", ruleID.c_str());
                 retManager.recordTimeout();
                 return;
-            } else {
+            }
+            else
+            {
                 DDWAF_DEBUG("Matched rule %s", ruleID.c_str());
             }
         }
 
         //Store the result of the rule in the cache
-        if (status != match_status::missing_arg) {
+        if (status != match_status::missing_arg)
+        {
             ranCache.insert_or_assign(ruleID, status);
         }
 

@@ -105,7 +105,7 @@ extern "C"
             return nullptr;
         }
 
-		*size           = (uint32_t) addresses.size();
+        *size = (uint32_t) addresses.size();
         return addresses.data();
     }
 
@@ -133,7 +133,10 @@ extern "C"
 
     DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data, ddwaf_result* result, uint64_t timeout)
     {
-        if (result != nullptr) { *result = {0}; }
+        if (result != nullptr)
+        {
+            *result = { 0 };
+        }
 
         if (context == nullptr || data == nullptr)
         {
@@ -143,8 +146,7 @@ extern "C"
         try
         {
             PWAdditive* additive = reinterpret_cast<PWAdditive*>(context);
-            return result ? additive->run(*data, *result, timeout) :
-                            additive->run(*data, timeout);
+            return result ? additive->run(*data, *result, timeout) : additive->run(*data, timeout);
         }
         catch (const std::exception& e)
         {

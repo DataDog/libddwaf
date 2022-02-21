@@ -54,7 +54,7 @@ TEST(TestRegressions, DuplicateFlowMatches)
     //Setup the parameter structure
     ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
     ddwaf_object_map_add(&parameter, "param1", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp,"Duplicate"));
+    ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp, "Duplicate"));
 
     ddwaf_result ret;
     EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);

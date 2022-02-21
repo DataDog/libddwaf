@@ -73,7 +73,7 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
         }
     }
 
-    //Run the transformed input 
+    //Run the transformed input
     const ddwaf_object* paramToUse = transformFailed ? baseInput : &copyInput;
     matched |= processor->doesMatch(paramToUse, gatherer);
 
@@ -102,19 +102,21 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
         return status::matched;
     }
 
-    bool matched             = false;
-    size_t counter           = 0;
+    bool matched   = false;
+    size_t counter = 0;
 
     do
     {
         // Only check the time every 16 runs
-        if ((++counter & 0xf) == 0 && deadline <= SQPowerWAF::monotonic_clock::now()) {
+        if ((++counter & 0xf) == 0 && deadline <= SQPowerWAF::monotonic_clock::now())
+        {
             return status::timeout;
         }
 
         MatchGatherer gather;
         bool didMatch = retriever.runIterOnLambda(iterator, [&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
-            if ((type & processor->expectedTypes()) == 0) {
+            if ((type & processor->expectedTypes()) == 0)
+            {
                 return false;
             }
 

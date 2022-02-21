@@ -191,9 +191,9 @@ void PWRetManager::synthetizeTimeSlots(rapidjson::Document& timeSlotDocument) co
     timeSlotDocument.AddMember("topRuleRuntime", recordCollector, timeSlotDocument.GetAllocator());
 }
 
-DDWAF_RET_CODE PWRetManager::synthetize(ddwaf_result &output) const
+DDWAF_RET_CODE PWRetManager::synthetize(ddwaf_result& output) const
 {
-    output = {0};
+    output = { 0 };
 
     if (outputDocument.GetArray().Size() > 0)
     {
@@ -228,6 +228,6 @@ extern "C"
     {
         free(const_cast<char*>(result->data));
         free(const_cast<char*>(result->perfData));
-        *result = {0};
+        *result = { 0 };
     }
 }

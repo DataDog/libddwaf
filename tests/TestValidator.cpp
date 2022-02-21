@@ -22,7 +22,7 @@ TEST(TestValidator, TestMalformedMasterParam)
     masterMap.type = DDWAF_OBJ_ARRAY;
     EXPECT_FALSE(validator.validate(masterMap));
 
-    masterMap.type = DDWAF_OBJ_MAP;
+    masterMap.type      = DDWAF_OBJ_MAP;
     masterMap.nbEntries = 0;
     EXPECT_TRUE(validator.validate(masterMap));
 

@@ -12,8 +12,8 @@
 #include <PWProcessor.hpp>
 #include <PowerWAF.hpp>
 #include <ddwaf.h>
-#include <utils.h>
 #include <optional>
+#include <utils.h>
 #include <validator.hpp>
 
 class PWAdditive

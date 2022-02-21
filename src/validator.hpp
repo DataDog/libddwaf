@@ -34,8 +34,8 @@ public:
 protected:
     bool validate_helper(ddwaf_object input, uint64_t depth = 0) const;
 
-    uint64_t max_map_depth_{DDWAF_MAX_MAP_DEPTH};
-    uint64_t max_array_length_{DDWAF_MAX_ARRAY_LENGTH};
+    uint64_t max_map_depth_ { DDWAF_MAX_MAP_DEPTH };
+    uint64_t max_array_length_ { DDWAF_MAX_ARRAY_LENGTH };
 };
 
 }

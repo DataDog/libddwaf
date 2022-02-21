@@ -10,8 +10,7 @@
 
 using namespace ddwaf;
 
-RE2Manager::RE2Manager(const std::string& regex_str, std::size_t minLength, bool caseSensitive):
-    IPWRuleProcessor(), min_length(minLength)
+RE2Manager::RE2Manager(const std::string& regex_str, std::size_t minLength, bool caseSensitive) : IPWRuleProcessor(), min_length(minLength)
 {
     re2::RE2::Options options;
     options.set_max_mem(512 * 1024);
@@ -30,7 +29,8 @@ RE2Manager::RE2Manager(const std::string& regex_str, std::size_t minLength, bool
 
 bool RE2Manager::performMatch(const char* str, size_t length, MatchGatherer& gatherer) const
 {
-    if (!regex->ok() || length < min_length) {
+    if (!regex->ok() || length < min_length)
+    {
         return false;
     }
 
