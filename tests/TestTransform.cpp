@@ -602,27 +602,27 @@ TEST(TestTransforms, TestCoverage)
 
 TEST(TestTransforms, TestRuleRunOnKey)
 {
-	//Initialize a PowerWAF rule
-	auto rule = readFile("runOnKey.yaml");
-	ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-	
-	ddwaf_handle handle = ddwaf_init(&rule, nullptr);
-	ASSERT_NE(handle, nullptr);
-	ddwaf_object_free(&rule);
-	
-	ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
-	/* // Want to hit a case where the transformer fail*/
-	
-	ddwaf_object map = DDWAF_OBJECT_MAP, tmp = DDWAF_OBJECT_MAP, tmp2;
-	ddwaf_object_map_add(&tmp, "rule1", ddwaf_object_string(&tmp2, "freefalling pony"));
-	ddwaf_object_map_add(&map, "value", &tmp);
+    //Initialize a PowerWAF rule
+    auto rule = readFile("runOnKey.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-	ddwaf_result ret;
-	EXPECT_EQ(ddwaf_run(context, &map, &ret, LONG_TIME), DDWAF_MONITOR);
-	EXPECT_FALSE(ret.timeout);
-	EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["rule1"],"value":"rule1","highlight":["rule1"]}]}]}])");
-	
-	ddwaf_result_free(&ret);
-	ddwaf_context_destroy(context);
-	ddwaf_destroy(handle);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    /* // Want to hit a case where the transformer fail*/
+
+    ddwaf_object map = DDWAF_OBJECT_MAP, tmp = DDWAF_OBJECT_MAP, tmp2;
+    ddwaf_object_map_add(&tmp, "rule1", ddwaf_object_string(&tmp2, "freefalling pony"));
+    ddwaf_object_map_add(&map, "value", &tmp);
+
+    ddwaf_result ret;
+    EXPECT_EQ(ddwaf_run(context, &map, &ret, LONG_TIME), DDWAF_MONITOR);
+    EXPECT_FALSE(ret.timeout);
+    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["rule1"],"value":"rule1","highlight":["rule1"]}]}]}])");
+
+    ddwaf_result_free(&ret);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
 }

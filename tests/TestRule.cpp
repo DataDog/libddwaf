@@ -51,8 +51,7 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
     parameter.nbEntries   = strlen(val);
     iterator.argsIterator.reset(&parameter);
 
-    std::vector<uint8_t> submatch;
-    MatchGatherer gather(submatch);
+    MatchGatherer gather;
     gather.resolvedValue = "lol";
     gather.matchedValue  = "lol2";
 

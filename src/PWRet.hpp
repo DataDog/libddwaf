@@ -24,13 +24,13 @@ class PWRetManager
     rapidjson::Document::AllocatorType& allocator;
     rapidjson::Value ruleCollector;
 
-    DDWAF_RET_CODE worstCode{DDWAF_GOOD};
-    bool timeout{false};
+    DDWAF_RET_CODE worstCode { DDWAF_GOOD };
+    bool timeout { false };
 
     // Time reporting
     const uint32_t roomInTimeStore;
-    uint32_t lowestTime{0};
-    uint32_t lowestTimeIndex{0};
+    uint32_t lowestTime { 0 };
+    uint32_t lowestTimeIndex { 0 };
     std::vector<std::pair<std::pair<const char*, size_t>, uint32_t>> timeStore;
 
     void synthetizeTimeSlots(rapidjson::Document& timeSlotCollector) const;
@@ -42,13 +42,16 @@ public:
 
     DDWAF_RET_CODE getResult() const { return worstCode; }
 
-    void recordResult(DDWAF_RET_CODE code) {
-        if (worstCode < code) {
+    void recordResult(DDWAF_RET_CODE code)
+    {
+        if (worstCode < code)
+        {
             worstCode = code;
         }
     }
 
-    void recordTimeout() {
+    void recordTimeout()
+    {
         timeout = true;
     }
 
@@ -63,10 +66,9 @@ public:
 
     rapidjson::Value fetchRuleCollector();
 
-
     void removeResultFlow(const std::string& flow);
 
-    DDWAF_RET_CODE synthetize(ddwaf_result &output) const;
+    DDWAF_RET_CODE synthetize(ddwaf_result& output) const;
 
 #ifdef TESTING
     FRIEND_TEST(TestPWProcessor, TestCache);

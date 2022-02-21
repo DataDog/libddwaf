@@ -40,10 +40,11 @@ public:
 class condition
 {
 public:
-    enum class status
+    enum class status : uint8_t
     {
         missing_arg,
         timeout,
+        invalid,
         matched,
         no_match
     };
@@ -71,13 +72,6 @@ protected:
     std::vector<PWManifest::ARG_ID> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
     std::unique_ptr<IPWRuleProcessor> processor;
-    std::vector<uint8_t> matchesToGather;
-    bool saveParamOnMatch { false };
-    struct
-    {
-        bool keepRunningOnMatch    = false;
-        bool matchInterTransformer = false;
-    } options;
 };
 
 }

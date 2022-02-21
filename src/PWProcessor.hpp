@@ -25,12 +25,11 @@ struct PWProcessor
     const ddwaf::rule_map& rules;
 
     SQPowerWAF::monotonic_clock::time_point deadline;
-    uint64_t runCount;
 
-    std::unordered_map<std::string, std::pair<bool, uint64_t>> ranCache;
+    std::unordered_map<std::string, ddwaf::condition::status> ranCache;
     std::unordered_map<std::string, rapidjson::Value> matchCache;
 
-    bool hasCacheHit(const std::string& ruleID, bool& hadNegativeMatch, bool& hitFromThisRun) const;
+    ddwaf::condition::status hasCacheHit(const std::string& ruleID) const;
     bool shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& rules) const;
 
 public:

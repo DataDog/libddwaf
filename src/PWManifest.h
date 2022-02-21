@@ -27,18 +27,16 @@ public:
 
     struct ArgDetails
     {
-        PW_TRANSFORM_ID inline_transformer{PWT_VALUES_ONLY};
+        PW_TRANSFORM_ID inline_transformer { PWT_VALUES_ONLY };
         std::string inheritFrom; // Name of the ARG_ID to report the BA we matched
         std::set<std::string> keyPaths;
         bool isAllowList { true };
 
         ArgDetails() = default;
-        ArgDetails(const std::string& addr, PW_TRANSFORM_ID transformer) :
-            inline_transformer(transformer),
-            inheritFrom(addr) {}
+        ArgDetails(const std::string& addr, PW_TRANSFORM_ID transformer) : inline_transformer(transformer),
+                                                                           inheritFrom(addr) {}
 
-        ArgDetails(const std::string& addr, const std::string& path, PW_TRANSFORM_ID transformer) :
-            inline_transformer(transformer), inheritFrom(addr), keyPaths({ path }) {}
+        ArgDetails(const std::string& addr, const std::string& path, PW_TRANSFORM_ID transformer) : inline_transformer(transformer), inheritFrom(addr), keyPaths({ path }) {}
 
         ArgDetails(ArgDetails&&)      = default;
         ArgDetails(const ArgDetails&) = delete;
@@ -49,16 +47,17 @@ public:
     };
 
 private:
-    struct hash_pair {
+    struct hash_pair
+    {
         template <class T1, class T2>
         size_t operator()(const std::pair<T1, T2>& p) const
         {
-            auto hash1 = std::hash<T1>{}(p.first);
-            auto hash2 = std::hash<T2>{}(p.second);
+            auto hash1 = std::hash<T1> {}(p.first);
+            auto hash2 = std::hash<T2> {}(p.second);
             return hash1 ^ hash2;
         }
     };
-    
+
     std::unordered_map<std::pair<std::string, PW_TRANSFORM_ID>, ARG_ID, hash_pair> argIDTable;
     std::unordered_map<ARG_ID, ArgDetails> argManifest;
     // Unique set of inheritFrom (root) addresses
@@ -84,9 +83,9 @@ public:
     const std::vector<const char*>& get_root_addresses() const { return root_addresses; };
 
     bool hasTarget(const std::string& string,
-        PW_TRANSFORM_ID transformer = PWT_VALUES_ONLY) const;
+                   PW_TRANSFORM_ID transformer = PWT_VALUES_ONLY) const;
     ARG_ID getTargetArgID(const std::string& target,
-        PW_TRANSFORM_ID transformer = PWT_VALUES_ONLY) const;
+                          PW_TRANSFORM_ID transformer = PWT_VALUES_ONLY) const;
     const ArgDetails& getDetailsForTarget(const PWManifest::ARG_ID& argID) const;
     const std::string& getTargetName(const PWManifest::ARG_ID& argID) const;
 
