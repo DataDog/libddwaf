@@ -48,7 +48,7 @@ bool validator::validate(ddwaf_object input) const
         return false;
     }
 
-    // Sanitize the parameters, and if they're all good, insert them in the array
+    // Sanitize the parameters
     const ddwaf_object* mainArray = input.array;
     for (size_t i = 0; i < input.nbEntries; ++i)
     {
