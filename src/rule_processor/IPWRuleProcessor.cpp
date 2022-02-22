@@ -6,14 +6,10 @@
 
 #include <IPWRuleProcessor.h>
 
-MatchGatherer::MatchGatherer(const std::vector<uint8_t>& matchToGather) : submatchToGather(matchToGather) {}
-
 void MatchGatherer::clear()
 {
     resolvedValue.clear();
     matchedValue.clear();
-
-    submatches.clear();
     keyPath.clear();
 }
 

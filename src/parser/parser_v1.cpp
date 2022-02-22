@@ -69,17 +69,24 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
         }
 
         int min_length = 0;
-        if (options.find("min_length") != options.end()) {
+        if (options.find("min_length") != options.end())
+        {
             std::string length_opt = options["min_length"];
-            try {
+            try
+            {
                 min_length = std::stoi(length_opt);
-            } catch (const std::out_of_range &e) {
+            }
+            catch (const std::out_of_range& e)
+            {
                 throw ddwaf::parsing_error("min_length value too large");
-            } catch (const std::invalid_argument &e) {
+            }
+            catch (const std::invalid_argument& e)
+            {
                 throw ddwaf::parsing_error("min_length not a valid number");
             }
 
-            if (min_length < 0) {
+            if (min_length < 0)
+            {
                 throw ddwaf::parsing_error("min_length is a negative number");
             }
         }

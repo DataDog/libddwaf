@@ -12,8 +12,7 @@ TEST(TestLibInjectionXSS, TestBasic)
     EXPECT_STREQ(processor.getStringRepresentation().c_str(), "(null)");
     EXPECT_STREQ(processor.operatorName().data(), "is_xss");
 
-    std::vector<uint8_t> matchestogather;
-    MatchGatherer gatherer(matchestogather);
+    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "<script>alert(1);</script>");
 

@@ -66,33 +66,6 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     bool transformFailed = false, matched = false;
     for (const PW_TRANSFORM_ID& transform : transformation)
     {
-        //
-        // Okay, this is going to look weird but it make sense:
-        //	- matchInterTransformer mean we need to run the operator on each version of the parameter through the transformer chain
-        //	- This mean to run on the original version, then each intermediary representation, and the final one
-        //	- The simplest way to do that is actually to run _before_ the transformer, and use the "normal" run at the end
-        //	- It is important to realize this run is actually the one _before_ the transformer
-        //	- Therefore, if the transformer isn't going to do anything, this run can be skipped
-        //
-
-        if (options.matchInterTransformer)
-        {
-            // Will the transformer modify the parameter? If not, skip the iteration
-            if (!PWTransformer::transform(transform, &copyInput, true))
-            {
-                continue;
-            }
-
-            // Run the operator
-            matched |= processor->doesMatch(&copyInput, gatherer);
-
-            // If it matched and that we don't want to do multiple runs
-            if (matched && !options.keepRunningOnMatch)
-            {
-                break;
-            }
-        }
-
         transformFailed = !PWTransformer::transform(transform, &copyInput);
         if (transformFailed || (copyInput.type == DDWAF_OBJ_STRING && copyInput.nbEntries == 0))
         {
@@ -100,12 +73,9 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
         }
     }
 
-    //Run the transformed input if options.matchInterTransformer didn't already matched
-    if (!matched || options.keepRunningOnMatch)
-    {
-        const ddwaf_object* paramToUse = transformFailed ? baseInput : &copyInput;
-        matched |= processor->doesMatch(paramToUse, gatherer);
-    }
+    //Run the transformed input
+    const ddwaf_object* paramToUse = transformFailed ? baseInput : &copyInput;
+    matched |= processor->doesMatch(paramToUse, gatherer);
 
     // Otherwise, the caller is in charge of freeing the pointer
     if (readOnlyArg)
@@ -128,23 +98,25 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
         if (!processor->matchIfMissing())
             return status::missing_arg;
 
-        retManager.recordRuleMatch(processor, MatchGatherer(matchesToGather));
+        retManager.recordRuleMatch(processor, MatchGatherer());
         return status::matched;
     }
 
-    bool matched             = false;
-    size_t counter           = 0;
-    const bool savingMatches = saveParamOnMatch || !matchesToGather.empty();
-    MatchGatherer gather(matchesToGather);
+    bool matched   = false;
+    size_t counter = 0;
 
     do
     {
         // Only check the time every 16 runs
         if ((++counter & 0xf) == 0 && deadline <= SQPowerWAF::monotonic_clock::now())
+        {
             return status::timeout;
+        }
 
-        bool didMatch = retriever.runIterOnLambda(iterator, saveParamOnMatch, [&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
-            if ((type & processor->expectedTypes()) == 0) {
+        MatchGatherer gather;
+        bool didMatch = retriever.runIterOnLambda(iterator, [&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
+            if ((type & processor->expectedTypes()) == 0)
+            {
                 return false;
             }
 
@@ -166,18 +138,14 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
 
             // Actually, we can only stop processing if we were not collecting matches for a further filter
             //	If we stopped, it'd open trivial bypasses of the next stage
-            if (!savingMatches && !options.keepRunningOnMatch)
-                return status::matched;
-
-            retriever.commitMatch(gather);
-            matched = true;
+            return status::matched;
         }
     } while (retriever.moveIteratorForward(iterator));
 
     // Only @exist care about this branch, it's at the end to enable a better report when there is a real value
     if (!matched && processor->matchAnyInput())
     {
-        retManager.recordRuleMatch(processor, MatchGatherer(matchesToGather));
+        retManager.recordRuleMatch(processor, MatchGatherer());
         return status::matched;
     }
 

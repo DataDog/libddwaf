@@ -26,29 +26,15 @@ class PWRetriever
 public:
     class PWArgsWrapper
     {
-        std::unordered_map<std::string, const ddwaf_object*> parameters;
-        const uint64_t maxArrayLength;
-
-        bool _validate_object(const ddwaf_object& input, uint32_t depth = 0) const;
 
     public:
-        const uint64_t maxMapDepth;
-
-        PWArgsWrapper(uint64_t _maxMapDepth, uint64_t _maxArrayLength);
-        bool addParameter(const ddwaf_object input);
+        PWArgsWrapper() = default;
+        void addParameter(const ddwaf_object input);
         const ddwaf_object* getParameter(const std::string& paramName) const;
         bool isValid() const;
 
-#ifdef TESTING
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedUnsignedInt);
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedSignedInt);
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedString);
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedMap);
-        FRIEND_TEST(TestPWArgsWrapper, TestRecursiveMap);
-        FRIEND_TEST(TestPWArgsWrapper, TestMalformedArray);
-        FRIEND_TEST(TestPWArgsWrapper, TestRecursiveArray);
-        FRIEND_TEST(TestPWArgsWrapper, TestInvalidType);
-#endif
+    protected:
+        std::unordered_map<std::string, const ddwaf_object*> parameters;
     };
 
     class ArgsIterator
@@ -123,49 +109,11 @@ public:
         bool matchIterOnPath(const std::set<std::string>& path, bool isAllowList, size_t& blockDepth) const;
     };
 
-    struct MatchHistory
-    {
-        using submatchType = std::vector<std::pair<uint8_t, std::string>>;
-
-        struct Match
-        {
-            // Full matches (MATCHED_VARS)
-            bool hasFullMatch = false;
-            const char* fullMatch;
-            size_t fullMatchLength;
-
-            // Submatches if asked. More complex but less common so trying to untie this overhead from the more comment matchSession
-            bool hasSubMatch = false;
-            submatchType subMatch;
-
-            std::string dataSource;
-            std::string manifestKey;
-            std::vector<ddwaf_object> keyPath;
-
-            void reset();
-        };
-
-        size_t currentFilter;
-        Match currentMatch;
-
-        std::vector<std::pair<size_t, Match>> matchSession;
-
-        MatchHistory();
-
-        void setActiveFilter(size_t newFilter);
-
-        void saveFullMatch(const char* value, size_t length);
-        void saveSubmatches(submatchType&& submatches);
-        void commitMatch(std::string&& dataSource, std::string&& manifestKey, std::vector<ddwaf_object>&& keyPath);
-
-        void reset();
-    };
-
 private:
     const PWManifest& manifest;
     PWArgsWrapper wrapper;
-    MatchHistory history;
-
+    uint64_t max_map_depth;
+    uint64_t max_array_length;
     Iterator internalIterator;
 
     std::unordered_set<PWManifest::ARG_ID> newestBatch;
@@ -177,22 +125,17 @@ private:
 
 public:
     PWRetriever(const PWManifest& _manifest, uint64_t _maxMapDepth, uint64_t _maxArrayLength);
-    bool addParameter(const ddwaf_object input);
+    void addParameter(const ddwaf_object input);
     bool hasNewArgs() const;
     bool isKeyInLastBatch(PWManifest::ARG_ID key) const;
 
     Iterator& getIterator(const std::vector<PWManifest::ARG_ID>& targets);
     const ddwaf_object* getParameter(const PWManifest::ARG_ID paramID);
-    const MatchHistory& getMatchHistory() const;
 
     bool moveIteratorForward(Iterator& iter, bool shouldIncrementFirst = true);
 
-    bool runIterOnLambda(const PWRetriever::Iterator& iterator, const bool saveOnMatch, const std::function<ruleCallback>& lambda);
+    bool runIterOnLambda(const PWRetriever::Iterator& iterator, const std::function<ruleCallback>& lambda);
 
-    void registerMatch(const char* value, uint64_t length);
-    void commitMatch(MatchGatherer& gather);
-
-    void setActiveFilter(size_t newFilter);
     void resetMatchSession(bool runOnNew);
 
     bool isValid() const;

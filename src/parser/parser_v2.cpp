@@ -22,7 +22,7 @@ namespace
 {
 
 ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
-    PW_TRANSFORM_ID inline_transformer, std::vector<PW_TRANSFORM_ID>& transformers)
+                                PW_TRANSFORM_ID inline_transformer, std::vector<PW_TRANSFORM_ID>& transformers)
 {
     auto operation = at<std::string_view>(rule, "operator");
     auto params    = at<parameter::map>(rule, "parameters");
@@ -69,17 +69,24 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
         }
 
         int min_length = 0;
-        if (options.find("min_length") != options.end()) {
+        if (options.find("min_length") != options.end())
+        {
             std::string length_opt = options["min_length"];
-            try {
+            try
+            {
                 min_length = std::stoi(length_opt);
-            } catch (const std::out_of_range &e) {
+            }
+            catch (const std::out_of_range& e)
+            {
                 throw ddwaf::parsing_error("min_length value too large");
-            } catch (const std::invalid_argument &e) {
+            }
+            catch (const std::invalid_argument& e)
+            {
                 throw ddwaf::parsing_error("min_length not a valid number");
             }
 
-            if (min_length < 0) {
+            if (min_length < 0)
+            {
                 throw ddwaf::parsing_error("min_length is a negative number");
             }
         }
@@ -141,7 +148,7 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
             else
             {
                 id = manifest.insert(full_address,
-                    PWManifest::ArgDetails(address, path, inline_transformer));
+                                     PWManifest::ArgDetails(address, path, inline_transformer));
             }
             targets.push_back(id);
         }
@@ -166,7 +173,7 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
 
         std::vector<PW_TRANSFORM_ID> rule_transformers;
         PW_TRANSFORM_ID inline_transformer = PWT_VALUES_ONLY;
-        auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
+        auto transformers                  = at<parameter::vector>(rule, "transformers", parameter::vector());
         for (std::string_view transformer : transformers)
         {
             PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
@@ -176,10 +183,11 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
             }
             else if (transform_id == PWT_KEYS_ONLY)
             {
-                if (!rule_transformers.empty()) {
+                if (!rule_transformers.empty())
+                {
                     DDWAF_WARN("keys_only transformer should be the first one "
-                            "in the list, all transformers will be applied to "
-                            "keys and not values");
+                               "in the list, all transformers will be applied to "
+                               "keys and not values");
                 }
                 inline_transformer = PWT_KEYS_ONLY;
             }

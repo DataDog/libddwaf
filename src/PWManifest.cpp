@@ -18,7 +18,8 @@ PWManifest::ARG_ID PWManifest::insert(std::string_view name, PWManifest::ArgDeta
     auto [it, result] = argManifest.emplace(counter, std::move(arg));
     (void) result; // unused
     argIDTable.emplace(std::pair<std::string, PW_TRANSFORM_ID>(
-        name, arg.inline_transformer), counter);
+                           name, arg.inline_transformer),
+                       counter);
 
     if (root_address_set.find(it->second.inheritFrom) == root_address_set.end())
     {
