@@ -27,7 +27,7 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
     auto rule_ = readFile("powerwaf.yaml");
     ASSERT_TRUE(rule_.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule_, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule_, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule_);
 

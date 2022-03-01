@@ -11,6 +11,7 @@
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <rule.hpp>
+#include <ruleset_info.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -157,13 +158,14 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
     return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor));
 }
 
-void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
-               PWManifest& manifest, ddwaf::flow_map& flows)
+void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
+               ddwaf::rule_map& rules, PWManifest& manifest, ddwaf::flow_map& flows)
 {
     auto id = at<std::string>(rule, "id");
     if (rules.find(id) != rules.end())
     {
         DDWAF_WARN("duplicate rule %s", id.c_str());
+        info.insert_error(id, "duplicate rule");
         return;
     }
 
@@ -215,10 +217,13 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
 
         auto& flow = flows[type];
         flow.push_back(id);
+
+        info.add_loaded();
     }
     catch (const std::exception& e)
     {
         DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
+        info.insert_error(id, e.what());
     }
 }
 
@@ -227,7 +232,7 @@ void parseRule(parameter::map& rule, ddwaf::rule_map& rules,
 namespace ddwaf::parser::v2
 {
 
-void parse(parameter::map& ruleset, ddwaf::rule_map& rules,
+void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_map& rules,
            PWManifest& manifest, ddwaf::flow_map& flows)
 {
     auto rules_array = at<parameter::vector>(ruleset, "rules");
@@ -235,11 +240,12 @@ void parse(parameter::map& ruleset, ddwaf::rule_map& rules,
     {
         try
         {
-            parseRule(rule, rules, manifest, flows);
+            parseRule(rule, info, rules, manifest, flows);
         }
         catch (const std::exception& e)
         {
             DDWAF_WARN("%s", e.what());
+            info.add_failed();
         }
     }
 

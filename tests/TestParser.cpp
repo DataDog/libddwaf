@@ -32,12 +32,12 @@ void run_test(ddwaf_handle handle)
     ddwaf_context_destroy(context);
 }
 
-TEST(TestParser, TestV1)
+TEST(TestParserV1, Basic)
 {
     auto rule = readRule(R"({version: '1.1', events: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -46,16 +46,64 @@ TEST(TestParser, TestV1)
     ddwaf_destroy(handle);
 }
 
-TEST(TestParser, TestV2)
+TEST(TestParserV2, Basic)
 {
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
     run_test(handle);
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestParserV1, TestInvalidRule)
+{
+    auto rule = readRule(R"({version: '1.1', events: [{id: 1, name: rule1, tags: {category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 1);
+
+    ddwaf::parameter::vector rules = errors.begin()->second;
+    EXPECT_EQ(rules.size(), 1);
+    EXPECT_STREQ(std::string(rules[0]).c_str(), "1");
+
+    EXPECT_EQ(info.failed, 1);
+    EXPECT_EQ(info.loaded, 0);
+
+    ddwaf_ruleset_info_free(&info);
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestParserV1, TestMultipleInvalidRules)
+{
+    auto rule = readRule(R"({version: '1.1', events: [{id: 1, name: rule1, tags: {category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]},{id: 2, name: rule2, tags: {type: flow1, category: category1}, conditions: [{operation: squash, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 2);
+
+    EXPECT_EQ(info.failed, 2);
+    EXPECT_EQ(info.loaded, 0);
+
+    ddwaf_ruleset_info_free(&info);
 
     ddwaf_destroy(handle);
 }

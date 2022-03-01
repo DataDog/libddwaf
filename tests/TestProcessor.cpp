@@ -14,7 +14,7 @@ TEST(TestPWProcessor, TestOutput)
     auto rule = readFile("processor.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -44,7 +44,7 @@ TEST(TestPWProcessor, TestKeyPaths)
     auto rule = readFile("processor5.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -101,7 +101,7 @@ TEST(TestPWProcessor, TestMissingParameter)
     auto rule = readFile("processor.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -130,7 +130,7 @@ TEST(TestPWProcessor, TestInvalidUTF8Input)
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -165,7 +165,7 @@ TEST(TestPWProcessor, TestCache)
     auto rule = readFile("processor2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -222,7 +222,7 @@ TEST(TestPWProcessor, TestCacheReport)
     auto rule = readFile("processor3.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -273,7 +273,7 @@ TEST(TestPWProcessor, TestMultiFlowCacheReport)
     auto rule = readFile("processor4.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -324,7 +324,7 @@ TEST(TestPWProcessor, TestBudget)
     auto rule = readFile("slow.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -371,7 +371,7 @@ TEST(TestPWProcessor, TestBudgetRules)
     auto rule = readFile("slow.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -400,7 +400,7 @@ TEST(TestPWProcessor, TestPerfReporting)
         auto rule = readFile("slow.yaml");
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-        ddwaf_handle handle = ddwaf_init(&rule, &config);
+        ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
         ASSERT_NE(handle, nullptr);
         ddwaf_object_free(&rule);
 
@@ -461,7 +461,7 @@ TEST(TestPWProcessor, TestPerfReportingIncomplete)
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: bla, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: pouet}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -512,7 +512,7 @@ TEST(TestPWProcessor, TestDisablePerfReporting)
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: bla, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: pouet}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config);
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 

@@ -77,7 +77,7 @@ typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_config ddwaf_config;
 typedef struct _ddwaf_result ddwaf_result;
 typedef struct _ddwaf_version ddwaf_version;
-
+typedef struct _ddwaf_ruleset_info ddwaf_ruleset_info;
 /**
  * @struct ddwaf_object
  *
@@ -93,7 +93,7 @@ struct _ddwaf_object
         const char* stringValue;
         uint64_t uintValue;
         int64_t intValue;
-        const ddwaf_object* array;
+        ddwaf_object* array;
     };
     uint64_t nbEntries;
     DDWAF_OBJ_TYPE type;
@@ -144,6 +144,21 @@ struct _ddwaf_version
 };
 
 /**
+ * @ddwaf_ruleset_info
+ *
+ * Structure containing diagnostics on the provided ruleset.
+ * */
+struct _ddwaf_ruleset_info
+{
+    /** Number of rules successfully loaded **/
+    uint16_t loaded;
+    /** Number of rules which failed to parse **/
+    uint64_t failed;
+    /** Map of rule parsing errors {error: [rules]} **/
+    ddwaf_object errors;
+};
+
+/**
  * @typedef ddwaf_object_free_fn
  *
  * Type of the function to free ddwaf::objects.
@@ -173,10 +188,12 @@ typedef void (*ddwaf_log_cb)(
  *
  * @param rule ddwaf::object containing the patterns to be used by the WAF. (nonnull)
  * @param config Optional configuration of the WAF. (nullable)
+ * @param info Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Handle to the WAF instance.
  **/
-ddwaf_handle ddwaf_init(const ddwaf_object *rule, const ddwaf_config* config);
+ddwaf_handle ddwaf_init(const ddwaf_object *rule,
+    const ddwaf_config* config, ddwaf_ruleset_info *info);
 
 /**
  * ddwaf_destroy
@@ -186,7 +203,14 @@ ddwaf_handle ddwaf_init(const ddwaf_object *rule, const ddwaf_config* config);
  * @param Handle to the WAF instance.
  */
 void ddwaf_destroy(ddwaf_handle handle);
-
+/**
+ * ddwaf_ruleset_info_free
+ *
+ * Free the memory associated with the ruleset info structure.
+ *
+ * @param info Ruleset info to free.
+ * */
+void ddwaf_ruleset_info_free(ddwaf_ruleset_info *info);
 /**
  * ddwaf_required_addresses
  *

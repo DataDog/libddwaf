@@ -106,7 +106,7 @@ TEST(TestPWRetriever, TestAccessSimplePath)
     auto rule = readFile("retriever.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
 
     // Whitelist
@@ -167,7 +167,7 @@ TEST(PWRetriever, NullErrorManagement)
     auto rule = readFile("retriever.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP, subMap = DDWAF_OBJECT_MAP, tmp;
@@ -195,7 +195,7 @@ TEST(PWRetriever, IteratorAccessNull)
     auto rule = readFile("retriever.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP, subMap = DDWAF_OBJECT_MAP, tmp;
@@ -220,7 +220,7 @@ TEST(PWRetriever, IteratorBlockList)
     auto rule = readFile("retriever.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP, subMap = DDWAF_OBJECT_MAP, subSubMap = DDWAF_OBJECT_MAP, tmp;
@@ -250,7 +250,7 @@ TEST(PWRetriever, KeyWithComplexStructure)
     auto rule = readFile("retriever.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
 
     ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);

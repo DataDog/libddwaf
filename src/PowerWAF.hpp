@@ -9,6 +9,7 @@
 
 #include <PWManifest.h>
 #include <rule.hpp>
+#include <ruleset_info.hpp>
 #include <utils.h>
 
 struct PowerWAF
@@ -26,7 +27,8 @@ struct PowerWAF
     PowerWAF(PWManifest&& manifest_, ddwaf::rule_map&& rules_,
              ddwaf::flow_map&& flows_, const ddwaf_config* config);
 
-    static PowerWAF* fromConfig(const ddwaf_object rules, const ddwaf_config* config);
+    static PowerWAF* fromConfig(const ddwaf_object rules,
+                                const ddwaf_config* config, ddwaf::ruleset_info& info);
 
     static constexpr ddwaf_version waf_version { 1, 0, 18 };
 };

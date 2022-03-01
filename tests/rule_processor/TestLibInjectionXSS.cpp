@@ -29,7 +29,7 @@ TEST(TestLibInjectionXSS, TestRuleset)
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_xss, parameters: {inputs: [{address: arg1}]}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 

@@ -13,6 +13,7 @@
 #include <PWAdditive.hpp>
 #include <PWRet.hpp>
 #include <exception.hpp>
+#include <ruleset_info.hpp>
 
 #include <log.hpp>
 
@@ -46,13 +47,15 @@ const char* log_level_to_str(DDWAF_LOG_LEVEL level)
 // explicit instantiation declaration to suppress warning
 extern "C"
 {
-    ddwaf_handle ddwaf_init(const ddwaf_object* rule, const ddwaf_config* config)
+    ddwaf_handle ddwaf_init(const ddwaf_object* rule,
+                            const ddwaf_config* config, ddwaf_ruleset_info* info)
     {
         try
         {
             if (rule != nullptr)
             {
-                PowerWAF* waf = PowerWAF::fromConfig(*rule, config);
+                ddwaf::ruleset_info ri(info);
+                PowerWAF* waf = PowerWAF::fromConfig(*rule, config, ri);
                 return reinterpret_cast<ddwaf_handle>(waf);
             }
         }
