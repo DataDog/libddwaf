@@ -62,7 +62,7 @@ int main(void)
     YAML::Node doc = YAML::Load(R"({version: '0.1', events: [{id: 1, tags: {type: flow1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2], regex: .*}}], action: record}]})");
 
     ddwaf_object rule = doc.as<ddwaf_object>();//= convert_yaml_to_args(doc);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ddwaf_object_free(&rule);
     if (handle == nullptr) {
         exit(EXIT_FAILURE);

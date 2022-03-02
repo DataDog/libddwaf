@@ -2,6 +2,7 @@ LIBRARY ddwaf
 EXPORTS
   ddwaf_init
   ddwaf_destroy
+  ddwaf_ruleset_info_free
   ddwaf_context_init
   ddwaf_run
   ddwaf_context_destroy
