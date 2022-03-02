@@ -1,0 +1,35 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg1
+          regex: .*
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg2
+              key_path:
+                - x
+          regex: .*
+  - id: 2
+    name: rule2
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: squash
+        parameters:
+          inputs:
+            - address: arg1
+          regex: .*
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg2
+          regex: .*

@@ -7,6 +7,7 @@
 #include <cinttypes>
 #include <exception.hpp>
 #include <parameter.hpp>
+
 namespace
 {
 
@@ -131,6 +132,33 @@ parameter::operator parameter::vector()
         return parameter::vector();
     }
     return std::vector<parameter>(array, array + nbEntries);
+}
+
+parameter::operator parameter::string_set()
+{
+    if (type != DDWAF_OBJ_ARRAY)
+    {
+        throw bad_cast("array", strtype(type));
+    }
+
+    if (array == nullptr || nbEntries == 0)
+    {
+        return parameter::string_set();
+    }
+
+    parameter::string_set set;
+    set.reserve(nbEntries);
+    for (unsigned i = 0; i < nbEntries; i++)
+    {
+        if (array[i].type != DDWAF_OBJ_STRING)
+        {
+            throw malformed_object("item in array not a string, can't cast to string set");
+        }
+
+        set.emplace(array[i].stringValue, array[i].nbEntries);
+    }
+
+    return set;
 }
 
 parameter::operator std::string_view()

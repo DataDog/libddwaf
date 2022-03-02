@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace ddwaf
@@ -22,6 +23,7 @@ class parameter : public ddwaf_object
 public:
     typedef std::unordered_map<std::string_view, parameter> map;
     typedef std::vector<parameter> vector;
+    typedef std::unordered_set<std::string_view> string_set;
 
     parameter() = default;
     parameter(const ddwaf_object& arg) { *((ddwaf_object*) this) = arg; }
@@ -36,6 +38,7 @@ public:
 
     operator map();
     operator vector();
+    operator string_set();
     operator std::string_view();
     operator std::string();
 
@@ -70,6 +73,12 @@ template <>
 struct parameter_traits<parameter::vector>
 {
     static const char* name() { return "parameter::vector"; }
+};
+
+template <>
+struct parameter_traits<parameter::string_set>
+{
+    static const char* name() { return "parameter::string_set"; }
 };
 
 }
