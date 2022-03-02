@@ -235,6 +235,13 @@ namespace ddwaf::parser::v2
 void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_map& rules,
            PWManifest& manifest, ddwaf::flow_map& flows)
 {
+    auto metadata      = at<parameter::map>(ruleset, "metadata", parameter::map());
+    auto rules_version = metadata.find("rules_version");
+    if (rules_version != metadata.end())
+    {
+        info.set_version(rules_version->second);
+    }
+
     auto rules_array = at<parameter::vector>(ruleset, "rules");
     for (parameter::map rule : rules_array)
     {

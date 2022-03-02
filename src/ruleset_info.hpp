@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstring>
 #include <ddwaf.h>
 #include <map>
 #include <string_view>
@@ -22,8 +23,9 @@ public:
         {
             return;
         }
-        info->loaded = 0;
-        info->failed = 0;
+        info->loaded  = 0;
+        info->failed  = 0;
+        info->version = nullptr;
         ddwaf_object_map(&info->errors);
     }
 
@@ -40,6 +42,19 @@ public:
         {
             info->loaded++;
         }
+    }
+
+    void set_version(std::string_view version)
+    {
+        if (info == nullptr || version.size() == 0 || version == "")
+        {
+            return;
+        }
+
+        char* str = new char[version.size() + 1];
+        std::memcpy(str, version.data(), version.size());
+        str[version.size()] = '\0';
+        info->version       = str;
     }
 
     void insert_error(std::string_view rule_id, std::string_view error);

@@ -82,7 +82,7 @@ class parsing_error : public std::exception
 {
 public:
     parsing_error(const std::string& what) : what_(what) {}
-    const char* what() { return what_.c_str(); }
+    const char* what() const noexcept { return what_.c_str(); }
 
 protected:
     const std::string what_;

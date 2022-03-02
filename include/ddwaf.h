@@ -153,9 +153,11 @@ struct _ddwaf_ruleset_info
     /** Number of rules successfully loaded **/
     uint16_t loaded;
     /** Number of rules which failed to parse **/
-    uint64_t failed;
+    uint16_t failed;
     /** Map of rule parsing errors {error: [rules]} **/
     ddwaf_object errors;
+    /** Ruleset version **/
+    const char *version;
 };
 
 /**

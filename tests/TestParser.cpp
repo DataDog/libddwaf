@@ -37,9 +37,18 @@ TEST(TestParserV1, Basic)
     auto rule = readRule(R"({version: '1.1', events: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_EQ(info.loaded, 1);
+    EXPECT_EQ(info.failed, 0);
+    EXPECT_EQ(info.version, nullptr);
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 0);
+    ddwaf_ruleset_info_free(&info);
 
     run_test(handle);
 
@@ -48,12 +57,21 @@ TEST(TestParserV1, Basic)
 
 TEST(TestParserV2, Basic)
 {
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
+    auto rule = readRule(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_EQ(info.loaded, 1);
+    EXPECT_EQ(info.failed, 0);
+    EXPECT_STREQ(info.version, "1.2.7");
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 0);
+    ddwaf_ruleset_info_free(&info);
 
     run_test(handle);
 

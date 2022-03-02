@@ -11,7 +11,11 @@ extern "C"
 
     void ddwaf_ruleset_info_free(ddwaf_ruleset_info* info)
     {
-        ddwaf_object_free(&info->errors);
+        if (info != nullptr)
+        {
+            ddwaf_object_free(&info->errors);
+            delete[] info->version;
+        }
     }
 }
 
