@@ -29,31 +29,33 @@ void ruleset_info::insert_error(std::string_view rule_id, std::string_view error
         return;
     }
 
-    ddwaf_object *rules, id, tmp;
+    ddwaf_object *rule_array, id_str;
 
-    auto it = errors.find(error);
-    if (it == errors.end())
+    auto it = error_obj_cache.find(error);
+    if (it == error_obj_cache.end())
     {
-        ddwaf_object_array(&tmp);
+        ddwaf_object tmp_array;
+        ddwaf_object_array(&tmp_array);
         bool res = ddwaf_object_map_addl(&info->errors,
-                                         error.data(), error.size(), &tmp);
+                                         error.data(), error.size(), &tmp_array);
         if (!res)
         {
             return;
         }
 
         // Get the map element we just added
-        rules = &info->errors.array[info->errors.nbEntries - 1];
-        std::string_view key(rules->parameterName, rules->parameterNameLength);
-        errors[key] = rules;
+        rule_array = &info->errors.array[info->errors.nbEntries - 1];
+        std::string_view key(rule_array->parameterName,
+                             rule_array->parameterNameLength);
+        error_obj_cache[key] = rule_array;
     }
     else
     {
-        rules = it->second;
+        rule_array = it->second;
     }
 
-    ddwaf_object_stringl(&id, rule_id.data(), rule_id.size());
-    ddwaf_object_array_add(rules, &id);
+    ddwaf_object_stringl(&id_str, rule_id.data(), rule_id.size());
+    ddwaf_object_array_add(rule_array, &id_str);
 
     add_failed();
 }
