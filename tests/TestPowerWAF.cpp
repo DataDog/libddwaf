@@ -11,7 +11,7 @@ TEST(TestPowerWAF, TestEmptyParameters)
     auto rule = readFile("powerwaf.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ddwaf_object_free(&rule);
     ASSERT_NE(handle, nullptr);
 
@@ -163,7 +163,7 @@ TEST(TestPowerWAF, TestConfig)
     auto rule = readFile("powerwaf.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ddwaf_object_free(&rule);
     ASSERT_NE(handle, nullptr);
 

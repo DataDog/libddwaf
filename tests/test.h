@@ -32,6 +32,8 @@ struct PowerWAF;
 #include <ddwaf.h>
 #include <exception.hpp>
 #include <log.hpp>
+#include <parameter.hpp>
+#include <ruleset_info.hpp>
 #include <utils.h>
 #include <validator.hpp>
 #include <yaml-cpp/yaml.h>

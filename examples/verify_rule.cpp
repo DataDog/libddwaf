@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
 #endif
 		YAML::Node rule = YAML::Load(read_rule_file(argv[fileIndex]));
 		ddwaf_object convertedRule = convertRuleToRuleset(rule);
-		ddwaf_handle handle = ddwaf_init(&convertedRule, nullptr);
+		ddwaf_handle handle = ddwaf_init(&convertedRule, nullptr, nullptr);
 		ddwaf_object_free(&convertedRule);
 		
 		if (handle == nullptr)

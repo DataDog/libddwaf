@@ -11,6 +11,7 @@
 #include <PWRetriever.hpp>
 #include <parameter.hpp>
 #include <rule.hpp>
+#include <ruleset_info.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -18,7 +19,7 @@
 namespace ddwaf::parser
 {
 
-void parse(parameter ruleset, rule_map& rules,
+void parse(parameter ruleset, ruleset_info& info, rule_map& rules,
            PWManifest& manifest, flow_map& flows);
 
 }

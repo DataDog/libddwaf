@@ -32,30 +32,338 @@ void run_test(ddwaf_handle handle)
     ddwaf_context_destroy(context);
 }
 
-TEST(TestParser, TestV1)
+TEST(TestParserV1, Basic)
 {
     auto rule = readRule(R"({version: '1.1', events: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_EQ(info.loaded, 1);
+    EXPECT_EQ(info.failed, 0);
+    EXPECT_EQ(info.version, nullptr);
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 0);
+    ddwaf_ruleset_info_free(&info);
 
     run_test(handle);
 
     ddwaf_destroy(handle);
 }
 
-TEST(TestParser, TestV2)
+TEST(TestParserV2, Basic)
 {
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
+    auto rule = readRule(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_EQ(info.loaded, 1);
+    EXPECT_EQ(info.failed, 0);
+    EXPECT_STREQ(info.version, "1.2.7");
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 0);
+    ddwaf_ruleset_info_free(&info);
+
     run_test(handle);
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestParserV1, TestInvalidRule)
+{
+    auto rule = readFile("invalid_single_v1.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 1);
+
+    auto it = errors.find("missing key 'type'");
+    EXPECT_NE(it, errors.end());
+
+    ddwaf::parameter::string_set rules = it->second;
+    EXPECT_EQ(rules.size(), 1);
+    EXPECT_NE(rules.find("1"), rules.end());
+
+    EXPECT_EQ(info.failed, 1);
+    EXPECT_EQ(info.loaded, 0);
+
+    ddwaf_ruleset_info_free(&info);
+}
+
+TEST(TestParserV1, TestMultipleSameInvalidRules)
+{
+    auto rule = readFile("invalid_multiple_same_v1.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 1);
+
+    auto it = errors.find("missing key 'type'");
+    EXPECT_NE(it, errors.end());
+
+    ddwaf::parameter::string_set rules = it->second;
+    EXPECT_EQ(rules.size(), 2);
+    EXPECT_NE(rules.find("1"), rules.end());
+    EXPECT_NE(rules.find("2"), rules.end());
+
+    EXPECT_EQ(info.failed, 2);
+    EXPECT_EQ(info.loaded, 0);
+
+    ddwaf_ruleset_info_free(&info);
+}
+
+TEST(TestParserV1, TestMultipleDiffInvalidRules)
+{
+    auto rule = readFile("invalid_multiple_diff_v1.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 2);
+
+    {
+        auto it = errors.find("missing key 'type'");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 1);
+        EXPECT_NE(rules.find("1"), rules.end());
+    }
+
+    {
+        auto it = errors.find("unknown processor: squash");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 1);
+        EXPECT_NE(rules.find("2"), rules.end());
+    }
+
+    EXPECT_EQ(info.failed, 2);
+    EXPECT_EQ(info.loaded, 0);
+
+    ddwaf_ruleset_info_free(&info);
+}
+
+TEST(TestParserV1, TestMultipleMixInvalidRules)
+{
+    auto rule = readFile("invalid_multiple_mix_v1.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 3);
+
+    {
+        auto it = errors.find("missing key 'type'");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 2);
+        EXPECT_NE(rules.find("1"), rules.end());
+        EXPECT_NE(rules.find("3"), rules.end());
+    }
+
+    {
+        auto it = errors.find("unknown processor: squash");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 1);
+        EXPECT_NE(rules.find("2"), rules.end());
+    }
+
+    {
+        auto it = errors.find("missing key 'inputs'");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 1);
+        EXPECT_NE(rules.find("4"), rules.end());
+    }
+
+    EXPECT_EQ(info.failed, 4);
+    EXPECT_EQ(info.loaded, 1);
+
+    ddwaf_ruleset_info_free(&info);
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestParserV2, TestInvalidRule)
+{
+    auto rule = readFile("invalid_single.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 1);
+
+    for (auto& [k, v] : errors)
+    {
+        std::cerr << k << std::endl;
+    }
+    auto it = errors.find("missing key 'type'");
+    EXPECT_NE(it, errors.end());
+
+    ddwaf::parameter::string_set rules = it->second;
+    EXPECT_EQ(rules.size(), 1);
+    EXPECT_NE(rules.find("1"), rules.end());
+
+    EXPECT_EQ(info.failed, 1);
+    EXPECT_EQ(info.loaded, 0);
+
+    ddwaf_ruleset_info_free(&info);
+}
+
+TEST(TestParserV2, TestMultipleSameInvalidRules)
+{
+    auto rule = readFile("invalid_multiple_same.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 1);
+
+    auto it = errors.find("missing key 'type'");
+    EXPECT_NE(it, errors.end());
+
+    ddwaf::parameter::string_set rules = it->second;
+    EXPECT_EQ(rules.size(), 2);
+    EXPECT_NE(rules.find("1"), rules.end());
+    EXPECT_NE(rules.find("2"), rules.end());
+
+    EXPECT_EQ(info.failed, 2);
+    EXPECT_EQ(info.loaded, 0);
+
+    ddwaf_ruleset_info_free(&info);
+}
+
+TEST(TestParserV2, TestMultipleDiffInvalidRules)
+{
+    auto rule = readFile("invalid_multiple_diff.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 2);
+
+    {
+        auto it = errors.find("missing key 'type'");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 1);
+        EXPECT_NE(rules.find("1"), rules.end());
+    }
+
+    {
+        auto it = errors.find("unknown processor: squash");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 1);
+        EXPECT_NE(rules.find("2"), rules.end());
+    }
+
+    EXPECT_EQ(info.failed, 2);
+    EXPECT_EQ(info.loaded, 0);
+
+    ddwaf_ruleset_info_free(&info);
+}
+
+TEST(TestParserV2, TestMultipleMixInvalidRules)
+{
+    auto rule = readFile("invalid_multiple_mix.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 3);
+
+    {
+        auto it = errors.find("missing key 'type'");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 2);
+        EXPECT_NE(rules.find("1"), rules.end());
+        EXPECT_NE(rules.find("3"), rules.end());
+    }
+
+    {
+        auto it = errors.find("unknown processor: squash");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 1);
+        EXPECT_NE(rules.find("2"), rules.end());
+    }
+
+    {
+        auto it = errors.find("missing key 'inputs'");
+        EXPECT_NE(it, errors.end());
+
+        ddwaf::parameter::string_set rules = it->second;
+        EXPECT_EQ(rules.size(), 1);
+        EXPECT_NE(rules.find("4"), rules.end());
+    }
+
+    EXPECT_EQ(info.failed, 4);
+    EXPECT_EQ(info.loaded, 1);
+
+    ddwaf_ruleset_info_free(&info);
 
     ddwaf_destroy(handle);
 }

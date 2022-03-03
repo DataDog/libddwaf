@@ -1,0 +1,42 @@
+version: '1.1'
+events:
+  - id: 1
+    name: rule1
+    tags:
+      category: category1
+    conditions:
+      - operation: match_regex
+        parameters:
+          inputs:
+            - arg1
+          regex: .*
+      - operation: match_regex
+        parameters:
+          inputs:
+            - arg2:x
+          regex: .*
+      - operation: match_regex
+        parameters:
+          inputs:
+            - arg2:y
+          regex: .*
+  - id: 2
+    name: rule2
+    tags:
+      category: category1
+    conditions:
+      - operation: match_regex
+        parameters:
+          inputs:
+            - arg1
+          regex: .*
+      - operation: match_regex
+        parameters:
+          inputs:
+            - arg2:x
+          regex: .*
+      - operation: match_regex
+        parameters:
+          inputs:
+            - arg2:y
+          regex: .*

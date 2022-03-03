@@ -11,14 +11,14 @@ TEST(FunctionalTests, ddwaf_run)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
     rule = readFile("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle2 = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&rule);
 
@@ -166,7 +166,7 @@ TEST(FunctionalTests, HandleGood)
     auto rule = readFile("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    const ddwaf_handle handle = ddwaf_init(&rule, NULL);
+    const ddwaf_handle handle = ddwaf_init(&rule, NULL, nullptr);
     ddwaf_object_free(&rule);
 
     ASSERT_NE(handle, nullptr);
@@ -203,7 +203,7 @@ TEST(FunctionalTests, HandleGood)
 TEST(FunctionalTests, HandleBad)
 {
     ddwaf_object tmp, object = DDWAF_OBJECT_INVALID;
-    EXPECT_EQ(ddwaf_init(&object, nullptr), nullptr);
+    EXPECT_EQ(ddwaf_init(&object, nullptr, nullptr), nullptr);
 
     EXPECT_NO_FATAL_FAILURE(ddwaf_destroy(nullptr));
 
@@ -214,7 +214,7 @@ TEST(FunctionalTests, HandleBad)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -239,14 +239,14 @@ TEST(FunctionalTests, Budget)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
     rule = readFile("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle2 = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&rule);
 
@@ -303,7 +303,7 @@ TEST(FunctionalTests, ddwaf_runNull)
 {
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -325,7 +325,7 @@ TEST(FunctionalTests, ddwaf_runNull)
     ////Add a removeNull transformer
     rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}], transformers: [removeNulls]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    handle = ddwaf_init(&rule, nullptr);
+    handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 

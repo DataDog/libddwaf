@@ -185,7 +185,7 @@ extern "C"
         //We preallocate 8 entries
         if (array->nbEntries == 0)
         {
-            array->array = (const ddwaf_object*) malloc(8 * sizeof(ddwaf_object));
+            array->array = (ddwaf_object*) malloc(8 * sizeof(ddwaf_object));
             if (array->array == NULL)
             {
                 DDWAF_DEBUG("Allocation failure when trying to initialize a map or an array");

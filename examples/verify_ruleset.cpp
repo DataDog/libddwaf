@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
     YAML::Node doc       = YAML::Load(rule_str);
 
     ddwaf_object rule   = doc.as<ddwaf_object>();
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ddwaf_object_free(&rule);
 
     if (handle == nullptr)

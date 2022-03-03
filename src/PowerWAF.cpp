@@ -49,7 +49,8 @@ PowerWAF::PowerWAF(PWManifest&& manifest_, rule_map&& rules_,
     }
 }
 
-PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset, const ddwaf_config* config)
+PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset,
+                               const ddwaf_config* config, ddwaf::ruleset_info& info)
 {
     PWManifest manifest;
     rule_map rules;
@@ -57,7 +58,7 @@ PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset, const ddwaf_config* c
 
     try
     {
-        parser::parse(ruleset, rules, manifest, flows);
+        parser::parse(ruleset, info, rules, manifest, flows);
         return new PowerWAF(std::move(manifest), std::move(rules),
                             std::move(flows), config);
     }
