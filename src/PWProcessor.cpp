@@ -134,10 +134,12 @@ void PWProcessor::runFlow(const std::string& name,
         if (status != match_status::missing_arg)
         {
             ranCache.insert_or_assign(index, status);
+            collector.record_rule(index, now - past);
         } 
+
         // Update the time measurement, and check the deadline while we're at it
         // This is actually fairly important because the inner loop will only check after 16 iterations
-        else if (status == match_status::matched)
+        if (status == match_status::matched)
         {
             collector.record_rule(index, now - past);
 
@@ -146,10 +148,6 @@ void PWProcessor::runFlow(const std::string& name,
                                    retManager.fetchRuleCollector().GetArray());
             retManager.recordResult(code);
             break;
-        }
-        else if (status == match_status::no_match)
-        {
-            collector.record_rule(index, now - past);
         }
 
         if (deadline <= now)

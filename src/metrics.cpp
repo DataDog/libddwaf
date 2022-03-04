@@ -19,9 +19,9 @@ ddwaf_metrics metrics_collector::generate_metrics()
         if (rule_runtime_[i] == 0) { continue; }
 
         // TODO this is weird
-        const std::string &rule_id = rules_.find(i)->second.name;
+        const std::string &rule_id = rules_.find(i)->second.id;
         ddwaf_object duration;
-        ddwaf_object_unsigned(&duration, rule_runtime_[i]);
+        ddwaf_object_unsigned_force(&duration, rule_runtime_[i]);
         ddwaf_object_map_addl(&final_metrics.rule_runtime, 
             rule_id.c_str(), rule_id.size(), &duration);
     }
