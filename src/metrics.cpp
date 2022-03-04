@@ -57,4 +57,12 @@ void ddwaf_metrics_collector_destroy(ddwaf_metrics_collector collector)
     delete reinterpret_cast<ddwaf::metrics_collector*>(collector);
 }
 
+void ddwaf_metrics_free(ddwaf_metrics *metrics)
+{
+    if (metrics != nullptr)
+    {
+        ddwaf_object_free(&metrics->rule_runtime);
+    }
+}
+
 }

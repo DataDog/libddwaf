@@ -341,6 +341,15 @@ void ddwaf_get_metrics(ddwaf_metrics_collector collector, ddwaf_metrics *metrics
 void ddwaf_metrics_collector_destroy(ddwaf_metrics_collector collector);
 
 /**
+ * ddwaf_metrics_free
+ *
+ * Free a ddwaf_metrics object
+ *
+ * @param metrics Object to free
+ **/
+ void ddwaf_metrics_free(ddwaf_metrics *metrics);
+
+/**
  * ddwaf_object_invalid
  *
  * Creates an invalid object.
