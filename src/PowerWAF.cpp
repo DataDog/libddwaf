@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include "Clock.hpp"
+#include "clock.hpp"
 #include <PWProcessor.hpp>
 #include <PWRet.hpp>
 #include <PWRetriever.hpp>

@@ -26,9 +26,9 @@
 using namespace std;
 
 struct PowerWAF;
-#include <Clock.hpp>
 #include <PWAdditive.hpp>
 #include <PowerWAF.hpp>
+#include <clock.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>
 #include <log.hpp>

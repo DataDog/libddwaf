@@ -163,11 +163,11 @@ void parseRule(parameter::map& rule, ddwaf::rule::index_type index,
                PWManifest& manifest, ddwaf::flow_map& flows)
 {
     auto id = at<std::string>(rule, "id");
-/*    if (rules.find(index) != rules.end())*/
+    /*    if (rules.find(index) != rules.end())*/
     //{
-        //DDWAF_WARN("duplicate rule %s", id.c_str());
-        //info.insert_error(id, "duplicate rule");
-        //return;
+    //DDWAF_WARN("duplicate rule %s", id.c_str());
+    //info.insert_error(id, "duplicate rule");
+    //return;
     /*}*/
 
     try
@@ -217,7 +217,7 @@ void parseRule(parameter::map& rule, ddwaf::rule::index_type index,
         parsed_rule.category = at<std::string>(tags, "category", "");
 
         rules.emplace(index, std::move(parsed_rule));
-    
+
         auto& flow = flows[type];
         flow.push_back(rules[index]);
 
@@ -246,7 +246,7 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_map& rules,
     }
 
     rule::index_type index = 0;
-    auto rules_array = at<parameter::vector>(ruleset, "rules");
+    auto rules_array       = at<parameter::vector>(ruleset, "rules");
     for (parameter::map rule : rules_array)
     {
         try

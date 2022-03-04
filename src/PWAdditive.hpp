@@ -9,10 +9,10 @@
 
 #include <memory>
 
-#include <metrics.hpp>
 #include <PWProcessor.hpp>
 #include <PowerWAF.hpp>
 #include <ddwaf.h>
+#include <metrics.hpp>
 #include <optional>
 #include <utils.h>
 #include <validator.hpp>
@@ -27,11 +27,9 @@ public:
 
     ~PWAdditive();
 
-    DDWAF_RET_CODE run(ddwaf_object, ddwaf::metrics_collector &collector, uint64_t);
-    DDWAF_RET_CODE run(ddwaf_object,  ddwaf::metrics_collector &collector,
-                       std::optional<std::reference_wrapper<ddwaf_result>>, uint64_t);
-
-    void flushCaches();
+    DDWAF_RET_CODE run(ddwaf_object,
+                       optional_ref<ddwaf::metrics_collector> collector,
+                       optional_ref<ddwaf_result> res, uint64_t);
 
 #ifdef TESTING
     FRIEND_TEST(TestPWProcessor, TestCache);

@@ -27,7 +27,7 @@ TEST(TestRegressions, TruncatedUTF8)
     ddwaf_object_map_add(&map, "value", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MONITOR);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_MONITOR);
     EXPECT_FALSE(out.timeout);
 
     //The emoji should be trimmed out of the result
@@ -57,7 +57,7 @@ TEST(TestRegressions, DuplicateFlowMatches)
     ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp, "Duplicate"));
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &ret, LONG_TIME), DDWAF_MONITOR);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_STREQ(ret.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow1","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]},{"operator":"match_regex","operator_value":"Duplicate","parameters":[{"address":"param2","key_path":[],"value":"Duplicate","highlight":["Duplicate"]}]}]}])");

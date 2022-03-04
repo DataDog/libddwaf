@@ -14,6 +14,7 @@
 class PWRetManager;
 
 #include <IPWRuleProcessor.h>
+#include <clock.hpp>
 #include <ddwaf.h>
 #include <memory>
 #include <utils.h>
@@ -27,18 +28,8 @@ class PWRetManager
     DDWAF_RET_CODE worstCode { DDWAF_GOOD };
     bool timeout { false };
 
-    // Time reporting
-    const uint32_t roomInTimeStore;
-    uint32_t lowestTime { 0 };
-    uint32_t lowestTimeIndex { 0 };
-    std::vector<std::pair<std::pair<const char*, size_t>, uint32_t>> timeStore;
-
-    void synthetizeTimeSlots(rapidjson::Document& timeSlotCollector) const;
-
 public:
-    PWRetManager(uint32_t slotsToSaveTimeFor, rapidjson::Document::AllocatorType& allocator);
-
-    bool shouldRecordTime() const { return roomInTimeStore != 0; }
+    PWRetManager(rapidjson::Document::AllocatorType& allocator);
 
     DDWAF_RET_CODE getResult() const { return worstCode; }
 
@@ -54,8 +45,6 @@ public:
     {
         timeout = true;
     }
-
-    void recordTime(const std::string& ruleName, ddwaf::monotonic_clock::duration duration);
 
     void startRule();
     void recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather);

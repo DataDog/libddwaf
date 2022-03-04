@@ -7,39 +7,15 @@
 #undef TESTING
 
 #include "ddwaf.h"
-#include <Clock.hpp>
 #include <PWRet.hpp>
 #include <iostream>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <string>
 
-PWRetManager::PWRetManager(uint32_t slotsToSaveTimeFor, rapidjson::Document::AllocatorType& alloc) : allocator(alloc), roomInTimeStore(slotsToSaveTimeFor)
+PWRetManager::PWRetManager(rapidjson::Document::AllocatorType& alloc) : allocator(alloc)
 {
     outputDocument.SetArray();
-    timeStore.resize(slotsToSaveTimeFor);
-}
-
-void PWRetManager::recordTime(const std::string& ruleName, ddwaf::monotonic_clock::duration _duration)
-{
-    // Check if this is a slow enough run to be worth storing
-    const uint32_t duration = (uint32_t) std::min(_duration.count() / 1000, ddwaf::monotonic_clock::duration::rep(UINT32_MAX));
-    if (duration <= lowestTime || roomInTimeStore == 0)
-        return;
-
-    // If yes, store it
-    timeStore[lowestTimeIndex] = std::make_pair(std::make_pair(ruleName.c_str(), ruleName.size()), duration);
-    lowestTime                 = duration;
-
-    // Find the next quickest rule for eviction
-    for (uint32_t i = 0; i < roomInTimeStore; ++i)
-    {
-        if (timeStore[i].second < lowestTime)
-        {
-            lowestTime      = timeStore[i].second;
-            lowestTimeIndex = i;
-        }
-    }
 }
 
 void PWRetManager::startRule()

@@ -13,11 +13,12 @@
 
 struct PWProcessor;
 
-#include <Clock.hpp>
-#include <metrics.hpp>
 #include <PWRet.hpp>
 #include <PWRetriever.hpp>
+#include <clock.hpp>
+#include <metrics.hpp>
 #include <rule.hpp>
+#include <utils.h>
 
 struct PWProcessor
 {
@@ -35,9 +36,9 @@ struct PWProcessor
 public:
     PWProcessor(PWRetriever& input, const ddwaf::rule_map& rules);
     void startNewRun(const ddwaf::monotonic_clock::time_point& _deadline);
-    void runFlow(const std::string& name, 
+    bool runFlow(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,
-                 ddwaf::metrics_collector &collector,
+                 optional_ref<ddwaf::metrics_collector> collector,
                  PWRetManager& manager);
 
     bool isFirstRun() const;

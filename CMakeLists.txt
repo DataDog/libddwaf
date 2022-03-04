@@ -60,7 +60,7 @@ add_subdirectory(third_party)
 include(CTest)
 
 set(LIBDDWAF_SOURCE
-    ${libddwaf_SOURCE_DIR}/src/Clock.cpp
+    ${libddwaf_SOURCE_DIR}/src/clock.cpp
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
     ${libddwaf_SOURCE_DIR}/src/PowerWAF.cpp
     ${libddwaf_SOURCE_DIR}/src/PowerWAFInterface.cpp

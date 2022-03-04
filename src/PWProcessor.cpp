@@ -49,9 +49,9 @@ bool PWProcessor::shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& cond
     return false;
 }
 
-void PWProcessor::runFlow(const std::string& name, 
+bool PWProcessor::runFlow(const std::string& name,
                           const ddwaf::rule_ref_vector& flow,
-                          ddwaf::metrics_collector &collector,
+                          optional_ref<ddwaf::metrics_collector> collector,
                           PWRetManager& retManager)
 {
     ddwaf::monotonic_clock::time_point past = ddwaf::monotonic_clock::now();
@@ -69,17 +69,17 @@ void PWProcessor::runFlow(const std::string& name,
     {
         DDWAF_INFO("Ran out of time while running flow %s", name.c_str());
         retManager.recordTimeout();
-        return;
+        return false;
     }
 
     match_status status = match_status::invalid;
     //Process each rule we have to run for this step of the flow
-    for (ddwaf::rule &rule : flow)
+    for (ddwaf::rule& rule : flow)
     {
         status = match_status::invalid;
 
         //Have we already ran this rule?
-        auto index = rule.index;
+        auto index              = rule.index;
         const auto cache_status = hasCacheHit(index);
         if (cache_status == match_status::matched)
         {
@@ -121,7 +121,7 @@ void PWProcessor::runFlow(const std::string& name,
             {
                 DDWAF_INFO("Ran out of time when processing %s", rule.id.c_str());
                 retManager.recordTimeout();
-                return;
+                return false;
             }
             else
             {
@@ -134,17 +134,20 @@ void PWProcessor::runFlow(const std::string& name,
         if (status != match_status::missing_arg)
         {
             ranCache.insert_or_assign(index, status);
-            collector.record_rule(index, now - past);
-        } 
+
+            if (collector)
+            {
+                ddwaf::metrics_collector& mc = *collector;
+                mc.record_rule(index, now - past);
+            }
+        }
 
         // Update the time measurement, and check the deadline while we're at it
         // This is actually fairly important because the inner loop will only check after 16 iterations
         if (status == match_status::matched)
         {
-            collector.record_rule(index, now - past);
-
             DDWAF_RET_CODE code = DDWAF_MONITOR;
-            retManager.reportMatch(rule.id, name, rule.category, rule.name, 
+            retManager.reportMatch(rule.id, name, rule.category, rule.name,
                                    retManager.fetchRuleCollector().GetArray());
             retManager.recordResult(code);
             break;
@@ -154,9 +157,11 @@ void PWProcessor::runFlow(const std::string& name,
         {
             DDWAF_INFO("Ran out of time while running flow %s and rule %s", name.c_str(), rule.id.c_str());
             retManager.recordTimeout();
-            return;
+            break;
         }
     }
+
+    return true;
 }
 
 bool PWProcessor::isFirstRun() const

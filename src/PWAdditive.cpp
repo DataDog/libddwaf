@@ -45,14 +45,9 @@ PWAdditive::~PWAdditive()
     }
 }
 
-DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, 
-                               ddwaf::metrics_collector &collector, uint64_t timeLeft)
-{
-    return run(newParameters, collector, std::nullopt, timeLeft);
-}
-
-DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, ddwaf::metrics_collector &collector,
-                               std::optional<std::reference_wrapper<ddwaf_result>> res, uint64_t timeLeft)
+DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
+                               optional_ref<ddwaf::metrics_collector> collector,
+                               optional_ref<ddwaf_result> res, uint64_t timeLeft)
 {
     if (!object_validator.validate(newParameters))
     {
@@ -92,11 +87,13 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, ddwaf::metrics_collec
 
     processor.startNewRun(deadline);
 
-    PWRetManager retManager(TIME_STORE_DEFAULT, processor.getGlobalAllocator());
+    PWRetManager retManager(processor.getGlobalAllocator());
     for (const auto& [key, flow] : wafHandle->flows)
     {
-        // TODO stop if timeout
-        processor.runFlow(key, flow, collector, retManager);
+        if (!processor.runFlow(key, flow, collector, retManager))
+        {
+            break;
+        }
     }
 
     DDWAF_RET_CODE code = retManager.getResult();
@@ -106,7 +103,11 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters, ddwaf::metrics_collec
         retManager.synthetize(output);
 
         const ddwaf::monotonic_clock::duration runtime = ddwaf::monotonic_clock::now() - now;
-        collector.record_total(runtime);
+        if (collector)
+        {
+            ddwaf::metrics_collector& mc = *collector;
+            mc.record_total(runtime);
+        }
     }
 
     return code;

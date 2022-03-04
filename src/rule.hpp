@@ -11,12 +11,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include <Clock.hpp>
 #include <IPWRuleProcessor.h>
 #include <PWManifest.h>
 #include <PWRet.hpp>
 #include <PWRetriever.hpp>
 #include <PWTransformer.h>
+#include <clock.hpp>
 
 namespace ddwaf
 {
@@ -70,8 +70,8 @@ public:
     std::vector<condition> conditions;
 };
 
-using rule_map = std::unordered_map<rule::index_type, rule>;
+using rule_map        = std::unordered_map<rule::index_type, rule>;
 using rule_ref_vector = std::vector<std::reference_wrapper<rule>>;
-using flow_map = std::unordered_map<std::string, rule_ref_vector>;
+using flow_map        = std::unordered_map<std::string, rule_ref_vector>;
 
 }

@@ -9,7 +9,7 @@
 #include <IPWRuleProcessor.h>
 #include <PowerWAF.hpp>
 
-#include "Clock.hpp"
+#include "clock.hpp"
 #include <log.hpp>
 
 namespace ddwaf
