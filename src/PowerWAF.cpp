@@ -41,11 +41,6 @@ PowerWAF::PowerWAF(PWManifest&& manifest_, rule_map&& rules_,
         {
             maxMapDepth = config->maxMapDepth;
         }
-
-        if (config->maxTimeStore >= 0)
-        {
-            maxTimeStore = (uint32_t) config->maxTimeStore;
-        }
     }
 }
 

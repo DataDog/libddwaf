@@ -158,16 +158,17 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
     return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor));
 }
 
-void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
-               ddwaf::rule_map& rules, PWManifest& manifest, ddwaf::flow_map& flows)
+void parseRule(parameter::map& rule, ddwaf::rule::index_type index,
+               ddwaf::ruleset_info& info, ddwaf::rule_map& rules,
+               PWManifest& manifest, ddwaf::flow_map& flows)
 {
     auto id = at<std::string>(rule, "id");
-    if (rules.find(id) != rules.end())
-    {
-        DDWAF_WARN("duplicate rule %s", id.c_str());
-        info.insert_error(id, "duplicate rule");
-        return;
-    }
+/*    if (rules.find(index) != rules.end())*/
+    //{
+        //DDWAF_WARN("duplicate rule %s", id.c_str());
+        //info.insert_error(id, "duplicate rule");
+        //return;
+    /*}*/
 
     try
     {
@@ -210,13 +211,15 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         auto tags = at<parameter::map>(rule, "tags");
         auto type = at<std::string>(tags, "type");
 
+        parsed_rule.index    = index;
+        parsed_rule.id       = id;
         parsed_rule.name     = at<std::string>(rule, "name");
         parsed_rule.category = at<std::string>(tags, "category", "");
 
-        rules.emplace(id, std::move(parsed_rule));
-
+        rules.emplace(index, std::move(parsed_rule));
+    
         auto& flow = flows[type];
-        flow.push_back(id);
+        flow.push_back(rules[index]);
 
         info.add_loaded();
     }
@@ -242,12 +245,14 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_map& rules,
         info.set_version(rules_version->second);
     }
 
+    rule::index_type index = 0;
     auto rules_array = at<parameter::vector>(ruleset, "rules");
     for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, info, rules, manifest, flows);
+            parseRule(rule, index, info, rules, manifest, flows);
+            index++;
         }
         catch (const std::exception& e)
         {

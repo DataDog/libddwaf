@@ -43,8 +43,8 @@ using namespace ddwaf;
 #define LONG_TIME 1000000
 #define SHORT_TIME 1
 
-#define TIME_FAR (SQPowerWAF::monotonic_clock::now() + chrono::seconds(1))
-#define TIME_NEAR (SQPowerWAF::monotonic_clock::now())
+#define TIME_FAR (ddwaf::monotonic_clock::now() + chrono::seconds(1))
+#define TIME_NEAR (ddwaf::monotonic_clock::now())
 
 extern ddwaf_object readFile(const char* filename);
 extern ddwaf_object readRule(const char* rule);

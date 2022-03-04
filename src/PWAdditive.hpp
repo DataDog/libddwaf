@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include <metrics.hpp>
 #include <PWProcessor.hpp>
 #include <PowerWAF.hpp>
 #include <ddwaf.h>
@@ -24,8 +25,11 @@ public:
 
     PWAdditive(const PWAdditive&) = delete;
 
-    DDWAF_RET_CODE run(ddwaf_object, uint64_t);
-    DDWAF_RET_CODE run(ddwaf_object, std::optional<std::reference_wrapper<ddwaf_result>>, uint64_t);
+    ~PWAdditive();
+
+    DDWAF_RET_CODE run(ddwaf_object, ddwaf::metrics_collector &collector, uint64_t);
+    DDWAF_RET_CODE run(ddwaf_object,  ddwaf::metrics_collector &collector,
+                       std::optional<std::reference_wrapper<ddwaf_result>>, uint64_t);
 
     void flushCaches();
 

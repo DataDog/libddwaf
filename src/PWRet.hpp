@@ -55,7 +55,7 @@ public:
         timeout = true;
     }
 
-    void recordTime(const std::string& ruleName, SQPowerWAF::monotonic_clock::duration duration);
+    void recordTime(const std::string& ruleName, ddwaf::monotonic_clock::duration duration);
 
     void startRule();
     void recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather);

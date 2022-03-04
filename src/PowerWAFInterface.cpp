@@ -9,7 +9,7 @@
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
-
+#include <metrics.hpp>
 #include <PWAdditive.hpp>
 #include <PWRet.hpp>
 #include <exception.hpp>
@@ -134,7 +134,9 @@ extern "C"
         return output;
     }
 
-    DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data, ddwaf_result* result, uint64_t timeout)
+    DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data, 
+                             ddwaf_metrics_collector collector,
+                             ddwaf_result* result, uint64_t timeout)
     {
         if (result != nullptr)
         {
@@ -148,8 +150,10 @@ extern "C"
         }
         try
         {
+            // TODO: make the collector optional
+            auto mc = reinterpret_cast<ddwaf::metrics_collector*>(collector);
             PWAdditive* additive = reinterpret_cast<PWAdditive*>(context);
-            return result ? additive->run(*data, *result, timeout) : additive->run(*data, timeout);
+            return result ? additive->run(*data, *mc, *result, timeout) : additive->run(*data, *mc, timeout);
         }
         catch (const std::exception& e)
         {
@@ -173,9 +177,7 @@ extern "C"
 
         try
         {
-            PWAdditive* additive = reinterpret_cast<PWAdditive*>(context);
-            additive->flushCaches();
-            delete additive;
+            delete reinterpret_cast<PWAdditive*>(context);
         }
         catch (const std::exception& e)
         {

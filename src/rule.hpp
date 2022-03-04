@@ -18,24 +18,8 @@
 #include <PWRetriever.hpp>
 #include <PWTransformer.h>
 
-// Expect `1 << (MAX_MATCH_COUNT - 1)` to fit in 16 bits
-
 namespace ddwaf
 {
-
-class rule;
-class condition;
-
-using rule_map = std::unordered_map<std::string, rule>;
-using flow_map = std::unordered_map<std::string, std::vector<std::string>>;
-
-class rule
-{
-public:
-    std::string name;
-    std::string category;
-    std::vector<condition> conditions;
-};
 
 class condition
 {
@@ -60,18 +44,34 @@ public:
 
     condition(const condition&) = delete;
     condition& operator=(const condition&) = delete;
-    status performMatching(PWRetriever& retriever, const SQPowerWAF::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
+    status performMatching(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
     bool matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer, bool onKey, bool readOnlyArg) const;
     bool doesUseNewParameters(const PWRetriever& retriever) const;
 
 protected:
-    status _matchPastMatches(PWRetriever& retriever, const SQPowerWAF::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
-    status _matchTargets(PWRetriever& retriever, const SQPowerWAF::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
+    status _matchPastMatches(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
+    status _matchTargets(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
 
     bool initialized;
     std::vector<PWManifest::ARG_ID> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
     std::unique_ptr<IPWRuleProcessor> processor;
 };
+
+class rule
+{
+public:
+    using index_type = uint32_t;
+
+    index_type index;
+    std::string id;
+    std::string name;
+    std::string category;
+    std::vector<condition> conditions;
+};
+
+using rule_map = std::unordered_map<rule::index_type, rule>;
+using rule_ref_vector = std::vector<std::reference_wrapper<rule>>;
+using flow_map = std::unordered_map<std::string, rule_ref_vector>;
 
 }
