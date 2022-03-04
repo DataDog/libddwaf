@@ -23,7 +23,7 @@ ddwaf_metrics metrics_collector::generate_metrics()
         }
 
         // TODO this is weird
-        const std::string& rule_id = rules_.find(i)->second.id;
+        const std::string& rule_id = rules_[i].id;
         ddwaf_object duration;
         ddwaf_object_unsigned_force(&duration, rule_runtime_[i]);
         ddwaf_object_map_addl(&final_metrics.rule_runtime,

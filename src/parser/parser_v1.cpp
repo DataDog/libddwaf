@@ -143,17 +143,11 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
     return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor));
 }
 
-void parseRule(parameter::map& rule, ddwaf::rule::index_type index,
-               ddwaf::ruleset_info& info, ddwaf::rule_map& rules,
-               PWManifest& manifest, ddwaf::flow_map& flows)
+void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
+               ddwaf::rule_vector& rules, PWManifest& manifest,
+               ddwaf::flow_map& flows)
 {
     auto id = at<std::string>(rule, "id");
-    /*    if (rules.find(index) != rules.end())*/
-    //{
-    //DDWAF_WARN("duplicate rule %s", id.c_str());
-    //info.insert_error(id, "duplicate rule");
-    //return;
-    /*}*/
 
     try
     {
@@ -182,12 +176,13 @@ void parseRule(parameter::map& rule, ddwaf::rule::index_type index,
         auto tags = at<parameter::map>(rule, "tags");
         auto type = at<std::string>(tags, "type");
 
+        auto index           = rules.size();
         parsed_rule.index    = index;
         parsed_rule.id       = id;
         parsed_rule.name     = at<std::string>(rule, "name");
         parsed_rule.category = at<std::string>(tags, "category", "");
 
-        rules.emplace(index, std::move(parsed_rule));
+        rules.push_back(std::move(parsed_rule));
 
         auto& flow = flows[type];
         flow.push_back(rules[index]);
@@ -206,17 +201,19 @@ void parseRule(parameter::map& rule, ddwaf::rule::index_type index,
 namespace ddwaf::parser::v1
 {
 
-void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_map& rules,
+void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rules,
            PWManifest& manifest, ddwaf::flow_map& flows)
 {
-    rule::index_type index = 0;
-    auto rules_array       = at<parameter::vector>(ruleset, "events");
+    auto rules_array = at<parameter::vector>(ruleset, "events");
+    // Note that reserving elements is required to ensure all references
+    // are valid, otherwise reallocations would invalidate them.
+    rules.reserve(rules_array.size());
+
     for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, index, info, rules, manifest, flows);
-            index++;
+            parseRule(rule, info, rules, manifest, flows);
         }
         catch (const std::exception& e)
         {

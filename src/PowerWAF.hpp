@@ -18,10 +18,10 @@ struct PowerWAF
     uint64_t maxArrayLength { DDWAF_MAX_ARRAY_LENGTH };
 
     PWManifest manifest;
-    ddwaf::rule_map rules;
+    ddwaf::rule_vector rules;
     ddwaf::flow_map flows;
 
-    PowerWAF(PWManifest&& manifest_, ddwaf::rule_map&& rules_,
+    PowerWAF(PWManifest&& manifest_, ddwaf::rule_vector&& rules_,
              ddwaf::flow_map&& flows_, const ddwaf_config* config);
 
     static PowerWAF* fromConfig(const ddwaf_object rules,

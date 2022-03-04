@@ -16,7 +16,7 @@ namespace ddwaf
 class metrics_collector
 {
 public:
-    metrics_collector(const rule_map& rules) : rules_(rules), rule_runtime_(rules.size(), 0) {}
+    metrics_collector(const rule_vector& rules) : rules_(rules), rule_runtime_(rules.size(), 0) {}
 
     void record_rule(const rule::index_type index,
                      ddwaf::monotonic_clock::duration duration)
@@ -33,7 +33,7 @@ public:
     ddwaf_metrics generate_metrics();
 
 protected:
-    const rule_map& rules_;
+    const rule_vector& rules_;
 
     uint64_t total_runtime_ { 0 };
     // Assume rules are always consecutive

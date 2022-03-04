@@ -17,16 +17,16 @@ namespace ddwaf::parser
 namespace v1
 {
     void parse(parameter::map& ruleset, ruleset_info& info,
-               rule_map& ruleManager, PWManifest& manifest, flow_map& flows);
+               rule_vector& ruleManager, PWManifest& manifest, flow_map& flows);
 }
 
 namespace v2
 {
     void parse(parameter::map& ruleset, ruleset_info& info,
-               rule_map& ruleManager, PWManifest& manifest, flow_map& flows);
+               rule_vector& ruleManager, PWManifest& manifest, flow_map& flows);
 }
 
-void parse(parameter object, ruleset_info& info, rule_map& ruleManager,
+void parse(parameter object, ruleset_info& info, rule_vector& ruleManager,
            PWManifest& manifest, flow_map& flows)
 {
     parameter::map ruleset   = parameter::map(object);

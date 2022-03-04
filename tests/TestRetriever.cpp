@@ -181,7 +181,7 @@ TEST(PWRetriever, NullErrorManagement)
     rapidjson::Document document;
     PWRetManager rManager(document.GetAllocator());
 
-    const condition& cond = ((PowerWAF*) handle)->rules.find(0)->second.conditions.front();
+    const condition& cond = ((PowerWAF*) handle)->rules[0].conditions.front();
 
     EXPECT_EQ(cond.performMatching(retriever, TIME_FAR, rManager), condition::status::missing_arg);
 

@@ -71,6 +71,7 @@ public:
 };
 
 using rule_map        = std::unordered_map<rule::index_type, rule>;
+using rule_vector     = std::vector<rule>;
 using rule_ref_vector = std::vector<std::reference_wrapper<rule>>;
 using flow_map        = std::unordered_map<std::string, rule_ref_vector>;
 

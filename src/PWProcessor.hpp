@@ -24,7 +24,7 @@ struct PWProcessor
 {
     rapidjson::Document document;
     PWRetriever& parameters;
-    const ddwaf::rule_map& rules;
+    const ddwaf::rule_vector& rules;
 
     ddwaf::monotonic_clock::time_point deadline;
 
@@ -34,7 +34,7 @@ struct PWProcessor
     bool shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& rules) const;
 
 public:
-    PWProcessor(PWRetriever& input, const ddwaf::rule_map& rules);
+    PWProcessor(PWRetriever& input, const ddwaf::rule_vector& rules);
     void startNewRun(const ddwaf::monotonic_clock::time_point& _deadline);
     bool runFlow(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,

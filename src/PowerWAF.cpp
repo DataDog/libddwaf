@@ -24,7 +24,7 @@
 using namespace ddwaf;
 using namespace std::literals;
 
-PowerWAF::PowerWAF(PWManifest&& manifest_, rule_map&& rules_,
+PowerWAF::PowerWAF(PWManifest&& manifest_, rule_vector&& rules_,
                    flow_map&& flows_, const ddwaf_config* config)
     : manifest(std::move(manifest_)),
       rules(std::move(rules_)),
@@ -48,7 +48,7 @@ PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset,
                                const ddwaf_config* config, ddwaf::ruleset_info& info)
 {
     PWManifest manifest;
-    rule_map rules;
+    rule_vector rules;
     flow_map flows;
 
     try

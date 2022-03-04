@@ -11,7 +11,7 @@
 
 using match_status = ddwaf::condition::status;
 
-PWProcessor::PWProcessor(PWRetriever& input, const ddwaf::rule_map& rules_)
+PWProcessor::PWProcessor(PWRetriever& input, const ddwaf::rule_vector& rules_)
     : parameters(input), rules(rules_)
 {
     ranCache.reserve(rules.size());
