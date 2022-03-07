@@ -33,6 +33,7 @@ struct PowerWAF;
 #include <exception.hpp>
 #include <log.hpp>
 #include <parameter.hpp>
+#include <parser/common.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
 #include <validator.hpp>

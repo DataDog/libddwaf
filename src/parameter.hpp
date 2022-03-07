@@ -41,6 +41,7 @@ public:
     operator string_set();
     operator std::string_view();
     operator std::string();
+    operator uint64_t();
 
     ~parameter() = default;
 };

@@ -81,11 +81,11 @@ int main(void)
     ddwaf_object_map_add(&param2, "arg2", ddwaf_object_string(&tmp, "string 2"));
 
     ddwaf_result ret;
-    auto code = ddwaf_run(context, &param1, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME);
     printf("Output first run: %d\n", code);
     ddwaf_result_free(&ret);
 
-    code = ddwaf_run(context, &param2, &ret, LONG_TIME);
+    code = ddwaf_run(context, &param2, nullptr, &ret, LONG_TIME);
     printf("Output second run: %d - %s\n", ret.action, ret.data);
     ddwaf_result_free(&ret);
 

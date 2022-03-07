@@ -181,4 +181,14 @@ parameter::operator std::string()
     return std::string(stringValue, nbEntries);
 }
 
+parameter::operator uint64_t()
+{
+    if (type != DDWAF_OBJ_UNSIGNED)
+    {
+        throw bad_cast("unsigned", strtype(type));
+    }
+
+    return uintValue;
+}
+
 }
