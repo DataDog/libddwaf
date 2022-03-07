@@ -29,7 +29,7 @@ namespace v2
 void parse(parameter object, ruleset_info& info, rule_vector& ruleManager,
            PWManifest& manifest, flow_map& flows)
 {
-    parameter::map ruleset   = parameter::map(object);
+    parameter::map ruleset   = object;
     std::string_view version = at<std::string_view>(ruleset, "version");
 
     uint16_t major, minor;
