@@ -21,6 +21,14 @@ EXPORTS
   ddwaf_object_map_add
   ddwaf_object_map_addl
   ddwaf_object_map_addl_nc
+  ddwaf_object_type
+  ddwaf_object_size
+  ddwaf_object_length
+  ddwaf_object_get_key
+  ddwaf_object_get_string
+  ddwaf_object_get_unsigned
+  ddwaf_object_get_signed
+  ddwaf_object_get_index
   ddwaf_object_free
   ddwaf_get_version
   ddwaf_set_log_cb
