@@ -295,8 +295,8 @@ TEST(FunctionalTests, ddwaf_get_version)
     ddwaf_get_version(&version);
 
     EXPECT_EQ(version.major, 1);
-    EXPECT_EQ(version.minor, 0);
-    EXPECT_EQ(version.patch, 18);
+    EXPECT_EQ(version.minor, 1);
+    EXPECT_EQ(version.patch, 0);
 }
 
 TEST(FunctionalTests, ddwaf_runNull)
