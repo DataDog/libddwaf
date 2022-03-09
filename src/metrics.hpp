@@ -26,8 +26,7 @@ public:
 
     void record_total(ddwaf::monotonic_clock::duration duration)
     {
-        // Duration is in nanoseconds, but total runtime is in microseconds
-        total_runtime_ += duration.count() / 1000;
+        total_runtime_ += duration.count();
     }
 
     ddwaf_metrics generate_metrics();

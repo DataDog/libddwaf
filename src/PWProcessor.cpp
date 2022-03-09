@@ -54,8 +54,6 @@ bool PWProcessor::runFlow(const std::string& name,
                           optional_ref<ddwaf::metrics_collector> collector,
                           PWRetManager& retManager)
 {
-    ddwaf::monotonic_clock::time_point past = ddwaf::monotonic_clock::now();
-    ddwaf::monotonic_clock::time_point now  = past;
     /*
 	 *	A flow is a sequence of steps
 	 *	Each step provide an array of ruleIDs to match. The rule match if any of those rules matched (1)
@@ -65,13 +63,14 @@ bool PWProcessor::runFlow(const std::string& name,
 
     //If we ran out of time, we want to generate DDWAF_ERR_TIMEOUT records for every flow we're going to skip
     //This also protect us against loops for free (the cache could avoid the inner loop's check)
-    if (deadline <= now)
+    if (deadline <= ddwaf::monotonic_clock::now())
     {
         DDWAF_INFO("Ran out of time while running flow %s", name.c_str());
         retManager.recordTimeout();
         return false;
     }
 
+    ddwaf::monotonic_clock::time_point start;
     match_status status = match_status::invalid;
     //Process each rule we have to run for this step of the flow
     for (ddwaf::rule& rule : flow)
@@ -98,7 +97,9 @@ bool PWProcessor::runFlow(const std::string& name,
             continue;
         }
 
-        past = ddwaf::monotonic_clock::now();
+        if (collector) {
+            start = ddwaf::monotonic_clock::now();
+        }
 
         // Actually execute the rule
         //	We tell the PWRetriever to skip old parameters if this is safe to do so
@@ -129,7 +130,7 @@ bool PWProcessor::runFlow(const std::string& name,
             }
         }
 
-        now = ddwaf::monotonic_clock::now();
+        auto now = ddwaf::monotonic_clock::now();
         //Store the result of the rule in the cache
         if (status != match_status::missing_arg)
         {
@@ -138,7 +139,7 @@ bool PWProcessor::runFlow(const std::string& name,
             if (collector)
             {
                 ddwaf::metrics_collector& mc = *collector;
-                mc.record_rule(index, now - past);
+                mc.record_rule(index, now - start);
             }
         }
 

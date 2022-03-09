@@ -76,8 +76,8 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
         return DDWAF_GOOD;
     }
 
-    const ddwaf::monotonic_clock::time_point now      = ddwaf::monotonic_clock::now();
-    const ddwaf::monotonic_clock::time_point deadline = now + std::chrono::microseconds(timeLeft);
+    const auto start    = ddwaf::monotonic_clock::now();
+    const auto deadline = start + std::chrono::microseconds(timeLeft);
 
     // If this is a new run but no rule care about those new params, let's skip the run
     if (!processor.isFirstRun() && !retriever.hasNewArgs())
@@ -102,11 +102,10 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
         ddwaf_result& output = *res;
         retManager.synthetize(output);
 
-        const ddwaf::monotonic_clock::duration runtime = ddwaf::monotonic_clock::now() - now;
         if (collector)
         {
             ddwaf::metrics_collector& mc = *collector;
-            mc.record_total(runtime);
+            mc.record_total(ddwaf::monotonic_clock::now() - start);
         }
     }
 
