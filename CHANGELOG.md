@@ -1,5 +1,14 @@
 # libddwaf release
 
+### v1.1.0 (unstable) - 2022/03/09
+- Add `ddwaf_object` getters.
+- Provide ruleset parsing diagnostics on `ddwaf_init`.
+- Add support for metrics collection on `ddwaf_run`.
+- Improve support for older platforms.
+- Remove indirection and reduce string operations when processing flows.
+- Refactor input verification.
+- Remove deprecated features.
+
 ### v1.0.18 (unstable) - 2022/02/16
 - Add arm64 build to nuget package.
 - Upgrade RE2 to 2022-02-01.
