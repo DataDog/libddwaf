@@ -6,6 +6,14 @@ on:
   pull_request:
     branches:
       - "**"
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Duration of the fuzzing run in seconds'
+        required: true
+        default: "60"
+        type: string
+
 
 jobs:
   fuzzing:
@@ -24,8 +32,8 @@ jobs:
       - name: Build
         run: ./fuzzing/build.sh
 
-      - name: Run fuzzer for 1 minute
-        run: ./fuzzing/run.sh 60
+      - name: Run fuzzer for ${{ github.event.inputs.duration }} minute(s)
+        run: ./fuzzing/run.sh  ${{ github.event.inputs.duration }}
 
       - name: Log
         if: ${{ always() }}
