@@ -17,14 +17,11 @@ struct PowerWAF
     uint64_t maxMapDepth { DDWAF_MAX_MAP_DEPTH };
     uint64_t maxArrayLength { DDWAF_MAX_ARRAY_LENGTH };
 
-    // Maximum number of rules to report the time for
-    uint32_t maxTimeStore { TIME_STORE_DEFAULT };
-
     PWManifest manifest;
-    ddwaf::rule_map rules;
+    ddwaf::rule_vector rules;
     ddwaf::flow_map flows;
 
-    PowerWAF(PWManifest&& manifest_, ddwaf::rule_map&& rules_,
+    PowerWAF(PWManifest&& manifest_, ddwaf::rule_vector&& rules_,
              ddwaf::flow_map&& flows_, const ddwaf_config* config);
 
     static PowerWAF* fromConfig(const ddwaf_object rules,

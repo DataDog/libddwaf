@@ -12,9 +12,11 @@
 #include <parser/common.hpp>
 #include <rule.hpp>
 #include <ruleset_info.hpp>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 using ddwaf::parameter;
 using ddwaf::parser::at;
@@ -159,10 +161,11 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
-               ddwaf::rule_map& rules, PWManifest& manifest, ddwaf::flow_map& flows)
+               ddwaf::rule_vector& rules, PWManifest& manifest,
+               ddwaf::flow_map& flows, std::set<std::string_view> &seen_rules)
 {
     auto id = at<std::string>(rule, "id");
-    if (rules.find(id) != rules.end())
+    if (seen_rules.find(id) != seen_rules.end())
     {
         DDWAF_WARN("duplicate rule %s", id.c_str());
         info.insert_error(id, "duplicate rule");
@@ -200,7 +203,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         }
 
         std::vector<ddwaf::condition> conditions;
-        parameter::vector conditions_array = rule.at("conditions");
+        auto conditions_array = at<parameter::vector>(rule, "conditions");
         for (parameter::map cond : conditions_array)
         {
             parsed_rule.conditions.push_back(
@@ -210,13 +213,21 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         auto tags = at<parameter::map>(rule, "tags");
         auto type = at<std::string>(tags, "type");
 
+        auto index           = rules.size();
+        parsed_rule.index    = index;
+        parsed_rule.id       = id;
         parsed_rule.name     = at<std::string>(rule, "name");
         parsed_rule.category = at<std::string>(tags, "category", "");
 
-        rules.emplace(id, std::move(parsed_rule));
+        rules.push_back(std::move(parsed_rule));
+
+        auto &rule_ref = rules[index];
 
         auto& flow = flows[type];
-        flow.push_back(id);
+        flow.push_back(rule_ref);
+
+        // Add this rule to the set to check for duplicates
+        seen_rules.emplace(rule_ref.id);
 
         info.add_loaded();
     }
@@ -232,7 +243,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 namespace ddwaf::parser::v2
 {
 
-void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_map& rules,
+void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rules,
            PWManifest& manifest, ddwaf::flow_map& flows)
 {
     auto metadata      = at<parameter::map>(ruleset, "metadata", parameter::map());
@@ -243,11 +254,16 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_map& rules,
     }
 
     auto rules_array = at<parameter::vector>(ruleset, "rules");
+    // Note that reserving elements is required to ensure all references
+    // are valid, otherwise reallocations would invalidate them.
+    rules.reserve(rules_array.size());
+
+    std::set<std::string_view> seen_rules;
     for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, info, rules, manifest, flows);
+            parseRule(rule, info, rules, manifest, flows, seen_rules);
         }
         catch (const std::exception& e)
         {

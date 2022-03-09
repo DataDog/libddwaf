@@ -7,39 +7,15 @@
 #undef TESTING
 
 #include "ddwaf.h"
-#include <Clock.hpp>
 #include <PWRet.hpp>
 #include <iostream>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <string>
 
-PWRetManager::PWRetManager(uint32_t slotsToSaveTimeFor, rapidjson::Document::AllocatorType& alloc) : allocator(alloc), roomInTimeStore(slotsToSaveTimeFor)
+PWRetManager::PWRetManager(rapidjson::Document::AllocatorType& alloc) : allocator(alloc)
 {
     outputDocument.SetArray();
-    timeStore.resize(slotsToSaveTimeFor);
-}
-
-void PWRetManager::recordTime(const std::string& ruleName, SQPowerWAF::monotonic_clock::duration _duration)
-{
-    // Check if this is a slow enough run to be worth storing
-    const uint32_t duration = (uint32_t) std::min(_duration.count() / 1000, SQPowerWAF::monotonic_clock::duration::rep(UINT32_MAX));
-    if (duration <= lowestTime || roomInTimeStore == 0)
-        return;
-
-    // If yes, store it
-    timeStore[lowestTimeIndex] = std::make_pair(std::make_pair(ruleName.c_str(), ruleName.size()), duration);
-    lowestTime                 = duration;
-
-    // Find the next quickest rule for eviction
-    for (uint32_t i = 0; i < roomInTimeStore; ++i)
-    {
-        if (timeStore[i].second < lowestTime)
-        {
-            lowestTime      = timeStore[i].second;
-            lowestTimeIndex = i;
-        }
-    }
 }
 
 void PWRetManager::startRule()
@@ -143,54 +119,6 @@ void PWRetManager::reportMatch(const std::string& id,
     outputDocument.PushBack(output, allocator);
 }
 
-void PWRetManager::synthetizeTimeSlots(rapidjson::Document& timeSlotDocument) const
-{
-    //
-    // Expected format is:
-    //
-    //	{
-    //		"topRuleRuntime": [
-    //		   ["rule_123456", 150],
-    //		   ["rule_789123", 140],
-    //		   ["rule_456789", 100]
-    //	   ]
-    //	}
-    //
-
-    timeSlotDocument.SetObject();
-
-    // Should we try to sort them?
-    rapidjson::Value recordCollector;
-    recordCollector.SetArray();
-
-    for (const auto& timeRecord : timeStore)
-    {
-        // We didn't fill the whole store
-        if (timeRecord.second == 0)
-            break;
-
-        // Populate the entry
-        rapidjson::Value entry;
-        entry.SetArray();
-
-        {
-            rapidjson::Value ruleName;
-            ruleName.SetString(timeRecord.first.first, rapidjson::SizeType(timeRecord.first.second));
-            entry.PushBack(ruleName, timeSlotDocument.GetAllocator());
-        }
-
-        {
-            rapidjson::Value timeSpent;
-            timeSpent.SetUint(timeRecord.second);
-            entry.PushBack(timeSpent, timeSlotDocument.GetAllocator());
-        }
-
-        recordCollector.PushBack(entry, timeSlotDocument.GetAllocator());
-    }
-
-    timeSlotDocument.AddMember("topRuleRuntime", recordCollector, timeSlotDocument.GetAllocator());
-}
-
 DDWAF_RET_CODE PWRetManager::synthetize(ddwaf_result& output) const
 {
     output = { 0 };
@@ -205,20 +133,6 @@ DDWAF_RET_CODE PWRetManager::synthetize(ddwaf_result& output) const
             output.data = strdup(buffer.GetString());
     }
 
-    // If we wrote anything, either the lowest value, or the index of the lowest value has to change (their both 0 by default)
-    if (shouldRecordTime() && (lowestTime != 0 || lowestTimeIndex != 0))
-    {
-        rapidjson::StringBuffer buffer;
-        buffer.Clear();
-
-        rapidjson::Document timeSlotCollector;
-        synthetizeTimeSlots(timeSlotCollector);
-
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        if (timeSlotCollector.Accept(writer))
-            output.perfData = strdup(buffer.GetString());
-    }
-
     return worstCode;
 }
 
@@ -227,7 +141,6 @@ extern "C"
     void ddwaf_result_free(ddwaf_result* result)
     {
         free(const_cast<char*>(result->data));
-        free(const_cast<char*>(result->perfData));
         *result = { 0 };
     }
 }

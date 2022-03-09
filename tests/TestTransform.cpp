@@ -591,7 +591,7 @@ TEST(TestTransforms, TestCoverage)
     ddwaf_object_map_add(&map, "arg", ddwaf_object_stringl(&tmp, "\0", 1));
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &map, &ret, LONG_TIME), DDWAF_MONITOR);
+    EXPECT_EQ(ddwaf_run(context, &map, nullptr, &ret, LONG_TIME), DDWAF_MONITOR);
     EXPECT_FALSE(ret.timeout);
     EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"test_coverage","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg","key_path":[],"value":"","highlight":[]}]}]}])");
 
@@ -618,7 +618,7 @@ TEST(TestTransforms, TestRuleRunOnKey)
     ddwaf_object_map_add(&map, "value", &tmp);
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &map, &ret, LONG_TIME), DDWAF_MONITOR);
+    EXPECT_EQ(ddwaf_run(context, &map, nullptr, &ret, LONG_TIME), DDWAF_MONITOR);
     EXPECT_FALSE(ret.timeout);
     EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["rule1"],"value":"rule1","highlight":["rule1"]}]}]}])");
 

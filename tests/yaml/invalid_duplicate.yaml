@@ -1,0 +1,34 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: type1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg1
+          regex: .*
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg2
+          regex: .*
+  - id: 1
+    name: rule2
+    tags:
+      type: type1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg1
+          regex: .*
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg2
+          regex: .*

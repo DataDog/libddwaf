@@ -23,7 +23,7 @@ void run_test(ddwaf_handle handle)
     ddwaf_result ret;
 
     // Run with just arg1
-    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MONITOR);
     EXPECT_FALSE(ret.timeout);
     EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":["x"],"value":"string 2","highlight":["string 2"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":["y"],"value":"string 3","highlight":["string 3"]}]}]}])");
@@ -221,6 +221,35 @@ TEST(TestParserV1, TestMultipleMixInvalidRules)
     ddwaf_destroy(handle);
 }
 
+TEST(TestParserV1, TestInvalidDuplicate)
+{
+    auto rule = readFile("invalid_duplicate_v1.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 1);
+
+    auto it = errors.find("duplicate rule");
+    EXPECT_NE(it, errors.end());
+
+    ddwaf::parameter::string_set rules = it->second;
+    EXPECT_EQ(rules.size(), 1);
+    EXPECT_NE(rules.find("1"), rules.end());
+
+    EXPECT_EQ(info.failed, 1);
+    EXPECT_EQ(info.loaded, 1);
+
+    ddwaf_ruleset_info_free(&info);
+
+    ddwaf_destroy(handle);
+}
+
 TEST(TestParserV2, TestInvalidRule)
 {
     auto rule = readFile("invalid_single.yaml");
@@ -361,6 +390,35 @@ TEST(TestParserV2, TestMultipleMixInvalidRules)
     }
 
     EXPECT_EQ(info.failed, 4);
+    EXPECT_EQ(info.loaded, 1);
+
+    ddwaf_ruleset_info_free(&info);
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestParserV2, TestInvalidDuplicate)
+{
+    auto rule = readFile("invalid_duplicate.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 1);
+
+    auto it = errors.find("duplicate rule");
+    EXPECT_NE(it, errors.end());
+
+    ddwaf::parameter::string_set rules = it->second;
+    EXPECT_EQ(rules.size(), 1);
+    EXPECT_NE(rules.find("1"), rules.end());
+
+    EXPECT_EQ(info.failed, 1);
     EXPECT_EQ(info.loaded, 1);
 
     ddwaf_ruleset_info_free(&info);

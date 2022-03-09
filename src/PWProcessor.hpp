@@ -13,29 +13,33 @@
 
 struct PWProcessor;
 
-#include <Clock.hpp>
 #include <PWRet.hpp>
 #include <PWRetriever.hpp>
+#include <clock.hpp>
+#include <metrics.hpp>
 #include <rule.hpp>
+#include <utils.h>
 
 struct PWProcessor
 {
     rapidjson::Document document;
     PWRetriever& parameters;
-    const ddwaf::rule_map& rules;
+    const ddwaf::rule_vector& rules;
 
-    SQPowerWAF::monotonic_clock::time_point deadline;
+    ddwaf::monotonic_clock::time_point deadline;
 
-    std::unordered_map<std::string, ddwaf::condition::status> ranCache;
-    std::unordered_map<std::string, rapidjson::Value> matchCache;
+    std::unordered_map<ddwaf::rule::index_type, ddwaf::condition::status> ranCache;
 
-    ddwaf::condition::status hasCacheHit(const std::string& ruleID) const;
+    ddwaf::condition::status hasCacheHit(ddwaf::rule::index_type rule_idx) const;
     bool shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& rules) const;
 
 public:
-    PWProcessor(PWRetriever& input, const ddwaf::rule_map& rules);
-    void startNewRun(const SQPowerWAF::monotonic_clock::time_point& _deadline);
-    void runFlow(const std::string& name, const std::vector<std::string>& flow, PWRetManager& manager);
+    PWProcessor(PWRetriever& input, const ddwaf::rule_vector& rules);
+    void startNewRun(const ddwaf::monotonic_clock::time_point& _deadline);
+    bool runFlow(const std::string& name,
+                 const ddwaf::rule_ref_vector& flow,
+                 optional_ref<ddwaf::metrics_collector> collector,
+                 PWRetManager& manager);
 
     bool isFirstRun() const;
     rapidjson::Document::AllocatorType& getGlobalAllocator();

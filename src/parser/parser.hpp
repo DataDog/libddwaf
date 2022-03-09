@@ -19,7 +19,7 @@
 namespace ddwaf::parser
 {
 
-void parse(parameter ruleset, ruleset_info& info, rule_map& rules,
+void parse(parameter ruleset, ruleset_info& info, rule_vector& rules,
            PWManifest& manifest, flow_map& flows);
 
 }

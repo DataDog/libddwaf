@@ -7,7 +7,11 @@
 #ifndef utils_h
 #define utils_h
 
+#include <optional>
 #include <stdint.h>
+
+template <typename T>
+using optional_ref = std::optional<std::reference_wrapper<T>>;
 
 size_t findStringCutoff(const char* str, size_t length);
 

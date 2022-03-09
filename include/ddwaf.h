@@ -71,13 +71,27 @@ typedef enum
     DDWAF_LOG_OFF,
 } DDWAF_LOG_LEVEL;
 
+#ifdef __cplusplus
+class PowerWAF;
+class PWAdditive;
+namespace ddwaf {
+    class metrics_collector;
+}
+using ddwaf_handle = PowerWAF *;
+using ddwaf_context = PWAdditive *;
+using ddwaf_metrics_collector = ddwaf::metrics_collector *;
+#else
 typedef struct _ddwaf_handle* ddwaf_handle;
 typedef struct _ddwaf_context* ddwaf_context;
+typedef struct _ddwaf_metrics_collector* ddwaf_metrics_collector;
+#endif
+
 typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_config ddwaf_config;
 typedef struct _ddwaf_result ddwaf_result;
 typedef struct _ddwaf_version ddwaf_version;
 typedef struct _ddwaf_ruleset_info ddwaf_ruleset_info;
+typedef struct _ddwaf_metrics ddwaf_metrics;
 /**
  * @struct ddwaf_object
  *
@@ -110,8 +124,6 @@ struct _ddwaf_config
     uint64_t maxArrayLength;
     /** Maximum depth of ddwaf::object maps. */
     uint64_t maxMapDepth;
-    /** Maximum size of the rule run time store. **/
-    int32_t maxTimeStore;
 };
 
 /**
@@ -123,12 +135,8 @@ struct _ddwaf_result
 {
     /** Whether there has been a timeout during the operation **/
     bool timeout;
-    /** Total run time in microseconds **/
-    uint32_t perfTotalRuntime;
     /** Run result in JSON format **/
     const char* data;
-    /** Performance data in JSON format **/
-    const char* perfData;
 };
 
 /**
@@ -159,6 +167,19 @@ struct _ddwaf_ruleset_info
     ddwaf_object errors;
     /** Ruleset version **/
     const char *version;
+};
+
+/**
+ * @ddwaf_metrics
+ *
+ * Structure containing total and per-rule runtimes
+ **/
+struct _ddwaf_metrics
+{
+    /** Total WAF runtime in nanoseconds **/
+    uint64_t total_runtime;
+    /** Map containing runtime in nanoseconds per rule **/
+    ddwaf_object rule_runtime;
 };
 
 /**
@@ -257,6 +278,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_object_free_fn
  *             function will be used to free the data provided. Note that the
  *             data passed must be valid until the destruction of the context.
  *             (nonull)
+ * @param collector Metrics collector for this run. (nullable)
  * @param result Structure containing the result of the operation. (nullable)
  * @param timeout Maximum time budget in microseconds.
  *
@@ -274,7 +296,9 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_object_free_fn
  *                           data is unknown. The result structure will not be
  *                           filled if this error occurs.
  **/
-DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *data, ddwaf_result *result, uint64_t timeout);
+DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *data, 
+                         ddwaf_metrics_collector collector,
+                         ddwaf_result *result,  uint64_t timeout);
 
 /**
  * ddwaf_context_destroy
@@ -294,6 +318,48 @@ void ddwaf_context_destroy(ddwaf_context context);
  * @param result Structure to free. (nonnull)
  **/
 void ddwaf_result_free(ddwaf_result *result);
+
+/**
+ * ddwaf_metrics_collector_init
+ *
+ * Metrics collection object.
+ *
+ * @param handle Handle of the WAF instance containing the ruleset definition. (nonnull)
+ *
+ * @return Handle to the context instance.
+ *
+ * @note The WAF instance needs to be valid for the lifetime of the context.
+ **/
+
+ddwaf_metrics_collector ddwaf_metrics_collector_init(const ddwaf_handle handle);
+
+/**
+ * ddwaf_get_metrics
+ * 
+ * Obtains the metrics collected by the metrics collector
+ *
+ * @param collector Metrics collector from which to request metrics.
+ * @param metrics Output structure containing the collected metrics.
+ **/
+void ddwaf_get_metrics(ddwaf_metrics_collector collector, ddwaf_metrics *metrics);
+
+/**
+ * ddwaf_metrics_collector_destroy
+ *
+ * Performs the destruction of the metrics_collector.
+ *
+ * @param collector Metrics collector to destroy. (nonnull)
+ **/
+void ddwaf_metrics_collector_destroy(ddwaf_metrics_collector collector);
+
+/**
+ * ddwaf_metrics_free
+ *
+ * Free a ddwaf_metrics object
+ *
+ * @param metrics Object to free
+ **/
+ void ddwaf_metrics_free(ddwaf_metrics *metrics);
 
 /**
  * ddwaf_object_invalid

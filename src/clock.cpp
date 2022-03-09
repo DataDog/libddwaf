@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "Clock.hpp"
+#include "clock.hpp"
 
 #ifdef __linux__
 
@@ -15,7 +15,7 @@
 #include <log.hpp>
 #include <time.h>
 
-namespace SQPowerWAF
+namespace ddwaf
 {
 typedef int (*clock_gettime_t)(clockid_t, timespec* ts);
 
@@ -24,7 +24,7 @@ static clock_gettime_t clock_gettime = &::clock_gettime;
 monotonic_clock::time_point monotonic_clock::now() noexcept
 {
     struct timespec ts;
-    int ret = SQPowerWAF::clock_gettime(CLOCK_MONOTONIC, &ts);
+    int ret = ddwaf::clock_gettime(CLOCK_MONOTONIC, &ts);
     if (ret < 0)
     {
 #ifndef TESTING
@@ -51,7 +51,7 @@ struct VdsoInitializer
             void* p = dlsym(handle, "__vdso_clock_gettime");
             if (p)
             {
-                SQPowerWAF::clock_gettime = reinterpret_cast<clock_gettime_t>(p);
+                ddwaf::clock_gettime = reinterpret_cast<clock_gettime_t>(p);
             }
         }
     }
@@ -60,7 +60,7 @@ struct VdsoInitializer
     {
         if (handle)
         {
-            SQPowerWAF::clock_gettime = &::clock_gettime;
+            ddwaf::clock_gettime = &::clock_gettime;
             dlclose(handle);
         }
     }

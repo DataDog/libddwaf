@@ -10,7 +10,7 @@
 #include <atomic>
 #include <chrono>
 
-namespace SQPowerWAF
+namespace ddwaf
 {
 #ifndef __linux__
 using monotonic_clock = std::chrono::steady_clock;

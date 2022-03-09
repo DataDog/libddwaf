@@ -36,7 +36,7 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
 
     //Access the rule
     PowerWAF* waf         = reinterpret_cast<PowerWAF*>(handle);
-    const condition& cond = waf->rules.find("1")->second.conditions[0];
+    const condition& cond = waf->rules[0].conditions[0];
 
     //Send garbage input
     PWRetriever retriever(waf->manifest, 256, 256);

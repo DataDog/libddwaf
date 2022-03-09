@@ -22,7 +22,7 @@ TEST(TestPowerWAF, TestEmptyParameters)
     ddwaf_object_map_add(&parameter, "value", ddwaf_object_array(&tmp));
 
     //Detect match in a substructure's key
-    EXPECT_EQ(ddwaf_run(context, &parameter, NULL, LONG_TIME), DDWAF_GOOD);
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, NULL, LONG_TIME), DDWAF_GOOD);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -174,7 +174,7 @@ TEST(TestPowerWAF, TestConfig)
     ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
     //Detect match in a substructure's key
-    EXPECT_EQ(ddwaf_run(context, &parameter, NULL, LONG_TIME), DDWAF_MONITOR);
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, NULL, LONG_TIME), DDWAF_MONITOR);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

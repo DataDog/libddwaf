@@ -60,7 +60,7 @@ add_subdirectory(third_party)
 include(CTest)
 
 set(LIBDDWAF_SOURCE
-    ${libddwaf_SOURCE_DIR}/src/Clock.cpp
+    ${libddwaf_SOURCE_DIR}/src/clock.cpp
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
     ${libddwaf_SOURCE_DIR}/src/PowerWAF.cpp
     ${libddwaf_SOURCE_DIR}/src/PowerWAFInterface.cpp
@@ -76,6 +76,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/utils.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/validator.cpp
+    ${libddwaf_SOURCE_DIR}/src/metrics.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp

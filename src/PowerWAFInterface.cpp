@@ -4,16 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <memory>
-#include <mutex>
-#include <shared_mutex>
-#include <string>
-#include <unordered_map>
-
 #include <PWAdditive.hpp>
 #include <PWRet.hpp>
 #include <exception.hpp>
+#include <memory>
+#include <metrics.hpp>
+#include <mutex>
 #include <ruleset_info.hpp>
+#include <shared_mutex>
+#include <string>
+#include <unordered_map>
 
 #include <log.hpp>
 
@@ -55,8 +55,7 @@ extern "C"
             if (rule != nullptr)
             {
                 ddwaf::ruleset_info ri(info);
-                PowerWAF* waf = PowerWAF::fromConfig(*rule, config, ri);
-                return reinterpret_cast<ddwaf_handle>(waf);
+                return PowerWAF::fromConfig(*rule, config, ri);
             }
         }
         catch (const std::exception& e)
@@ -80,7 +79,7 @@ extern "C"
 
         try
         {
-            delete reinterpret_cast<PowerWAF*>(handle);
+            delete handle;
         }
         catch (const std::exception& e)
         {
@@ -100,8 +99,7 @@ extern "C"
             return nullptr;
         }
 
-        PowerWAF* waf   = reinterpret_cast<PowerWAF*>(handle);
-        auto& addresses = waf->manifest.get_root_addresses();
+        auto& addresses = handle->manifest.get_root_addresses();
         if (addresses.empty() || addresses.size() > std::numeric_limits<uint32_t>::max())
         {
             *size = 0;
@@ -120,7 +118,7 @@ extern "C"
         {
             if (handle != nullptr)
             {
-                output = reinterpret_cast<ddwaf_context>(new PWAdditive(handle, obj_free));
+                output = new PWAdditive(handle, obj_free);
             }
         }
         catch (const std::exception& e)
@@ -134,7 +132,9 @@ extern "C"
         return output;
     }
 
-    DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data, ddwaf_result* result, uint64_t timeout)
+    DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data,
+                             ddwaf_metrics_collector collector,
+                             ddwaf_result* result, uint64_t timeout)
     {
         if (result != nullptr)
         {
@@ -148,8 +148,20 @@ extern "C"
         }
         try
         {
-            PWAdditive* additive = reinterpret_cast<PWAdditive*>(context);
-            return result ? additive->run(*data, *result, timeout) : additive->run(*data, timeout);
+            // TODO: make the collector optional
+            optional_ref<ddwaf::metrics_collector> mc { std::nullopt };
+            if (collector != nullptr)
+            {
+                mc = *collector;
+            }
+
+            optional_ref<ddwaf_result> res { std::nullopt };
+            if (result != nullptr)
+            {
+                res = *result;
+            }
+
+            return context->run(*data, mc, res, timeout);
         }
         catch (const std::exception& e)
         {
@@ -173,9 +185,7 @@ extern "C"
 
         try
         {
-            PWAdditive* additive = reinterpret_cast<PWAdditive*>(context);
-            additive->flushCaches();
-            delete additive;
+            delete context;
         }
         catch (const std::exception& e)
         {

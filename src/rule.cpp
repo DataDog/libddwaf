@@ -9,7 +9,7 @@
 #include <IPWRuleProcessor.h>
 #include <PowerWAF.hpp>
 
-#include "Clock.hpp"
+#include "clock.hpp"
 #include <log.hpp>
 
 namespace ddwaf
@@ -86,7 +86,7 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     return matched;
 }
 
-condition::status condition::_matchTargets(PWRetriever& retriever, const SQPowerWAF::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
+condition::status condition::_matchTargets(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
 {
     PWRetriever::Iterator& iterator = retriever.getIterator(targets);
     retriever.moveIteratorForward(iterator, false);
@@ -108,7 +108,7 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
     do
     {
         // Only check the time every 16 runs
-        if ((++counter & 0xf) == 0 && deadline <= SQPowerWAF::monotonic_clock::now())
+        if ((++counter & 0xf) == 0 && deadline <= ddwaf::monotonic_clock::now())
         {
             return status::timeout;
         }
@@ -153,7 +153,7 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const SQPower
     return matched ? status::matched : status::no_match;
 }
 
-condition::status condition::performMatching(PWRetriever& retriever, const SQPowerWAF::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
+condition::status condition::performMatching(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
 {
     bool matched = false;
 
