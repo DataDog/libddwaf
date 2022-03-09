@@ -71,15 +71,27 @@ typedef enum
     DDWAF_LOG_OFF,
 } DDWAF_LOG_LEVEL;
 
+#ifdef __cplusplus
+class PowerWAF;
+class PWAdditive;
+namespace ddwaf {
+    class metrics_collector;
+}
+using ddwaf_handle = PowerWAF *;
+using ddwaf_context = PWAdditive *;
+using ddwaf_metrics_collector = ddwaf::metrics_collector *;
+#else
 typedef struct _ddwaf_handle* ddwaf_handle;
 typedef struct _ddwaf_context* ddwaf_context;
+typedef struct _ddwaf_metrics_collector* ddwaf_metrics_collector;
+#endif
+
 typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_config ddwaf_config;
 typedef struct _ddwaf_result ddwaf_result;
 typedef struct _ddwaf_version ddwaf_version;
 typedef struct _ddwaf_ruleset_info ddwaf_ruleset_info;
 typedef struct _ddwaf_metrics ddwaf_metrics;
-typedef struct _ddwaf_metrics_collector* ddwaf_metrics_collector;
 /**
  * @struct ddwaf_object
  *
@@ -164,7 +176,7 @@ struct _ddwaf_ruleset_info
  **/
 struct _ddwaf_metrics
 {
-    /** Total WAF runtime in microseconds **/
+    /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
     /** Map containing runtime in nanoseconds per rule **/
     ddwaf_object rule_runtime;

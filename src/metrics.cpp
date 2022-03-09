@@ -45,9 +45,7 @@ extern "C"
             return nullptr;
         }
 
-        PowerWAF* waf = reinterpret_cast<PowerWAF*>(handle);
-        return reinterpret_cast<ddwaf_metrics_collector>(
-            new ddwaf::metrics_collector(waf->rules));
+        return new ddwaf::metrics_collector(handle->rules);
     }
 
     void ddwaf_get_metrics(ddwaf_metrics_collector collector, ddwaf_metrics* metrics)
@@ -57,12 +55,12 @@ extern "C"
             return;
         }
 
-        *metrics = reinterpret_cast<ddwaf::metrics_collector*>(collector)->generate_metrics();
+        *metrics = collector->generate_metrics();
     }
 
     void ddwaf_metrics_collector_destroy(ddwaf_metrics_collector collector)
     {
-        delete reinterpret_cast<ddwaf::metrics_collector*>(collector);
+        delete collector;
     }
 
     void ddwaf_metrics_free(ddwaf_metrics* metrics)

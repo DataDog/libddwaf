@@ -55,8 +55,7 @@ extern "C"
             if (rule != nullptr)
             {
                 ddwaf::ruleset_info ri(info);
-                PowerWAF* waf = PowerWAF::fromConfig(*rule, config, ri);
-                return reinterpret_cast<ddwaf_handle>(waf);
+                return PowerWAF::fromConfig(*rule, config, ri);
             }
         }
         catch (const std::exception& e)
@@ -80,7 +79,7 @@ extern "C"
 
         try
         {
-            delete reinterpret_cast<PowerWAF*>(handle);
+            delete handle;
         }
         catch (const std::exception& e)
         {
@@ -100,8 +99,7 @@ extern "C"
             return nullptr;
         }
 
-        PowerWAF* waf   = reinterpret_cast<PowerWAF*>(handle);
-        auto& addresses = waf->manifest.get_root_addresses();
+        auto& addresses = handle->manifest.get_root_addresses();
         if (addresses.empty() || addresses.size() > std::numeric_limits<uint32_t>::max())
         {
             *size = 0;
@@ -120,7 +118,7 @@ extern "C"
         {
             if (handle != nullptr)
             {
-                output = reinterpret_cast<ddwaf_context>(new PWAdditive(handle, obj_free));
+                output = new PWAdditive(handle, obj_free);
             }
         }
         catch (const std::exception& e)
@@ -154,7 +152,7 @@ extern "C"
             optional_ref<ddwaf::metrics_collector> mc { std::nullopt };
             if (collector != nullptr)
             {
-                mc = *reinterpret_cast<ddwaf::metrics_collector*>(collector);
+                mc = *collector;
             }
 
             optional_ref<ddwaf_result> res { std::nullopt };
@@ -163,8 +161,7 @@ extern "C"
                 res = *result;
             }
 
-            PWAdditive* additive = reinterpret_cast<PWAdditive*>(context);
-            return additive->run(*data, mc, res, timeout);
+            return context->run(*data, mc, res, timeout);
         }
         catch (const std::exception& e)
         {
@@ -188,7 +185,7 @@ extern "C"
 
         try
         {
-            delete reinterpret_cast<PWAdditive*>(context);
+            delete context;
         }
         catch (const std::exception& e)
         {
