@@ -12,9 +12,11 @@
 #include <parser/common.hpp>
 #include <rule.hpp>
 #include <ruleset_info.hpp>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 using ddwaf::parameter;
 using ddwaf::parser::at;
@@ -160,9 +162,15 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
                ddwaf::rule_vector& rules, PWManifest& manifest,
-               ddwaf::flow_map& flows)
+               ddwaf::flow_map& flows, std::set<std::string_view> &seen_rules)
 {
     auto id = at<std::string>(rule, "id");
+    if (seen_rules.find(id) != seen_rules.end())
+    {
+        DDWAF_WARN("duplicate rule %s", id.c_str());
+        info.insert_error(id, "duplicate rule");
+        return;
+    }
 
     try
     {
@@ -195,7 +203,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         }
 
         std::vector<ddwaf::condition> conditions;
-        parameter::vector conditions_array = rule.at("conditions");
+        auto conditions_array = at<parameter::vector>(rule, "conditions");
         for (parameter::map cond : conditions_array)
         {
             parsed_rule.conditions.push_back(
@@ -213,8 +221,13 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 
         rules.push_back(std::move(parsed_rule));
 
+        auto &rule_ref = rules[index];
+
         auto& flow = flows[type];
-        flow.push_back(rules[index]);
+        flow.push_back(rule_ref);
+
+        // Add this rule to the set to check for duplicates
+        seen_rules.emplace(rule_ref.id);
 
         info.add_loaded();
     }
@@ -245,11 +258,12 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rule
     // are valid, otherwise reallocations would invalidate them.
     rules.reserve(rules_array.size());
 
+    std::set<std::string_view> seen_rules;
     for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, info, rules, manifest, flows);
+            parseRule(rule, info, rules, manifest, flows, seen_rules);
         }
         catch (const std::exception& e)
         {
