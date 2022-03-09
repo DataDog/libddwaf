@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <log.hpp>
+#include <utils.h>
 
 // Convert numbers to strings
 #define STR_HELPER(x) #x
@@ -336,5 +337,90 @@ extern "C"
         }
 
         ddwaf_object_invalid(object);
+    }
+
+    DDWAF_OBJ_TYPE ddwaf_object_type(ddwaf_object* object)
+    {
+        return object ? object->type : DDWAF_OBJ_INVALID;
+    }
+
+    size_t ddwaf_object_size(ddwaf_object* object)
+    {
+        if (object == NULL || !IS_CONTAINER(object))
+        {
+            return 0;
+        }
+
+        return object->nbEntries;
+    }
+
+    size_t ddwaf_object_length(ddwaf_object* object)
+    {
+        if (object == NULL || object->type != DDWAF_OBJ_STRING)
+        {
+            return 0;
+        }
+
+        return object->nbEntries;
+    }
+
+    const char* ddwaf_object_get_key(ddwaf_object* object, size_t* length)
+    {
+        if (object == NULL || object->parameterName == NULL)
+        {
+            return NULL;
+        }
+
+        if (length)
+        {
+            *length = object->parameterNameLength;
+        }
+
+        return object->parameterName;
+    }
+
+    const char* ddwaf_object_get_string(ddwaf_object* object, size_t* length)
+    {
+        if (object == NULL || object->type != DDWAF_OBJ_STRING)
+        {
+            return NULL;
+        }
+
+        if (length)
+        {
+            *length = object->nbEntries;
+        }
+
+        return object->stringValue;
+    }
+
+    uint64_t ddwaf_object_get_unsigned(ddwaf_object* object)
+    {
+        if (object == NULL || object->type != DDWAF_OBJ_UNSIGNED)
+        {
+            return 0;
+        }
+
+        return object->uintValue;
+    }
+
+    int64_t ddwaf_object_get_signed(ddwaf_object* object)
+    {
+        if (object == NULL || object->type != DDWAF_OBJ_SIGNED)
+        {
+            return 0;
+        }
+
+        return object->intValue;
+    }
+
+    ddwaf_object* ddwaf_object_get_index(ddwaf_object* object, size_t index)
+    {
+        if (object == NULL || !IS_CONTAINER(object) || index >= object->nbEntries)
+        {
+            return NULL;
+        }
+
+        return &object->array[index];
     }
 }

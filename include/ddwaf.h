@@ -478,6 +478,101 @@ bool ddwaf_object_map_addl(ddwaf_object *map, const char *key, size_t length, dd
 bool ddwaf_object_map_addl_nc(ddwaf_object *map, const char *key, size_t length, ddwaf_object *object);
 
 /**
+ * ddwaf_object_type
+ *
+ * Returns the type of the object.
+ *
+ * @param object The object from which to get the type.
+ *
+ * @return The object type of DDWAF_OBJ_INVALID if NULL.
+ **/
+DDWAF_OBJ_TYPE ddwaf_object_type(ddwaf_object *object);
+
+/**
+ * ddwaf_object_size
+ *
+ * Returns the size of the container object.
+ *
+ * @param object The object from which to get the size.
+ *
+ * @return The object size or 0 if the object is not a container (array, map).
+ **/
+size_t ddwaf_object_size(ddwaf_object *object);
+
+/**
+ * ddwaf_object_length
+ *
+ * Returns the length of the string object.
+ *
+ * @param object The object from which to get the length.
+ *
+ * @return The string length or 0 if the object is not a string.
+ **/
+size_t ddwaf_object_length(ddwaf_object *object);
+
+/**
+ * ddwaf_object_get_key
+ *
+ * Returns the key contained within the object.
+ *
+ * @param object The object from which to get the key.
+ * @param length Output parameter on which to return the length of the key,
+ *               this parameter is optional / nullable.
+ *
+ * @return The key of the object or NULL if the object doesn't contain a key.
+ **/
+const char* ddwaf_object_get_key(ddwaf_object *object, size_t *length);
+
+/**
+ * ddwaf_object_get_string
+ *
+ * Returns the string contained within the object.
+ *
+ * @param object The object from which to get the string.
+ * @param length Output parameter on which to return the length of the string,
+ *               this parameter is optional / nullable.
+ *
+ * @return The string of the object or NULL if the object is not a string.
+ **/
+const char* ddwaf_object_get_string(ddwaf_object *object, size_t *length);
+
+/**
+ * ddwaf_object_get_unsigned
+ *
+ * Returns the uint64 contained within the object.
+ *
+ * @param object The object from which to get the integer.
+ *
+ * @return The integer or 0 if the object is not an unsigned.
+ **/
+uint64_t ddwaf_object_get_unsigned(ddwaf_object *object);
+
+/**
+ * ddwaf_object_get_signed
+ *
+ * Returns the int64 contained within the object.
+ *
+ * @param object The object from which to get the integer.
+ *
+ * @return The integer or 0 if the object is not a signed.
+ **/
+int64_t ddwaf_object_get_signed(ddwaf_object *object);
+
+/**
+ * ddwaf_object_get_index
+ *
+ * Returns the object contained in the container at the given index.
+ *
+ * @param object The container from which to extract the object.
+ * @param index The position of the required object within the container.
+ *
+ * @return The requested object or NULL if the index is out of bounds or the
+ *         object is not a container.
+ **/
+ddwaf_object* ddwaf_object_get_index(ddwaf_object *object, size_t index);
+
+
+/**
  * ddwaf_object_free
  *
  * @param object Object to free. (nonnull)

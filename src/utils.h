@@ -12,6 +12,8 @@
 size_t findStringCutoff(const char* str, size_t length);
 
 //Internals
+#define IS_CONTAINER(obj) ((obj)->type & (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP))
+
 #define OBJ_HAS_KEY(obj, key) (obj.IsObject() && obj.HasMember(key))
 #define OBJ_HAS_KEY_AS_STRING(obj, key) (OBJ_HAS_KEY(obj, key) && obj[key].IsString())
 #define OBJ_HAS_KEY_AS_BOOL(obj, key) (OBJ_HAS_KEY(obj, key) && obj[key].IsBool())
