@@ -16,7 +16,6 @@ struct PWProcessor;
 #include <PWRet.hpp>
 #include <PWRetriever.hpp>
 #include <clock.hpp>
-#include <metrics.hpp>
 #include <rule.hpp>
 #include <utils.h>
 
@@ -38,7 +37,6 @@ public:
     void startNewRun(const ddwaf::monotonic_clock::time_point& _deadline);
     bool runFlow(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,
-                 optional_ref<ddwaf::metrics_collector> collector,
                  PWRetManager& manager);
 
     bool isFirstRun() const;
