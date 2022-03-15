@@ -7,10 +7,6 @@ EXPORTS
   ddwaf_run
   ddwaf_context_destroy
   ddwaf_result_free
-  ddwaf_metrics_collector_init
-  ddwaf_get_metrics
-  ddwaf_metrics_collector_destroy
-  ddwaf_metrics_free
   ddwaf_object_invalid
   ddwaf_object_string
   ddwaf_object_stringl
