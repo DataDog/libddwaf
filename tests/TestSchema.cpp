@@ -106,7 +106,7 @@ TEST_F(TestSchemaFixture, SimpleResult)
     ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "rule1"));
 
     ddwaf_result ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_result_free(&ret);
 }
@@ -120,7 +120,7 @@ TEST_F(TestSchemaFixture, SimpleResultWithKeyPath)
     ddwaf_object_map_add(&param, "arg2", &arg2);
 
     ddwaf_result ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_result_free(&ret);
 }
@@ -137,7 +137,7 @@ TEST_F(TestSchemaFixture, SimpleResultWithMultiKeyPath)
     ddwaf_object_map_add(&param, "arg2", &arg2);
 
     ddwaf_result ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_result_free(&ret);
 }
@@ -154,7 +154,7 @@ TEST_F(TestSchemaFixture, ResultWithMultiCondition)
     ddwaf_object_map_add(&param, "arg4", &arg4);
 
     ddwaf_result ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_result_free(&ret);
 }
@@ -179,7 +179,7 @@ TEST_F(TestSchemaFixture, MultiResultWithMultiCondition)
     ddwaf_object_map_add(&param, "arg4", &arg4);
 
     ddwaf_result ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_result_free(&ret);
 }

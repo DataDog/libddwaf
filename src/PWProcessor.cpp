@@ -51,7 +51,6 @@ bool PWProcessor::shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& cond
 
 bool PWProcessor::runFlow(const std::string& name,
                           const ddwaf::rule_ref_vector& flow,
-                          optional_ref<ddwaf::metrics_collector> collector,
                           PWRetManager& retManager)
 {
     /*
@@ -70,7 +69,6 @@ bool PWProcessor::runFlow(const std::string& name,
         return false;
     }
 
-    ddwaf::monotonic_clock::time_point start;
     match_status status = match_status::invalid;
     //Process each rule we have to run for this step of the flow
     for (ddwaf::rule& rule : flow)
@@ -87,8 +85,6 @@ bool PWProcessor::runFlow(const std::string& name,
 
         DDWAF_DEBUG("Running the WAF on rule %s", rule.id.c_str());
 
-        retManager.startRule();
-
         bool cachedNegativeMatch = cache_status == match_status::no_match;
 
         // If we had a negative match in the past, let's check if we have a reason to run again
@@ -97,9 +93,7 @@ bool PWProcessor::runFlow(const std::string& name,
             continue;
         }
 
-        if (collector) {
-            start = ddwaf::monotonic_clock::now();
-        }
+        retManager.startRule();
 
         // Actually execute the rule
         //	We tell the PWRetriever to skip old parameters if this is safe to do so
@@ -130,17 +124,10 @@ bool PWProcessor::runFlow(const std::string& name,
             }
         }
 
-        auto now = ddwaf::monotonic_clock::now();
         //Store the result of the rule in the cache
         if (status != match_status::missing_arg)
         {
             ranCache.insert_or_assign(index, status);
-
-            if (collector)
-            {
-                ddwaf::metrics_collector& mc = *collector;
-                mc.record_rule(index, now - start);
-            }
         }
 
         // Update the time measurement, and check the deadline while we're at it
@@ -154,11 +141,11 @@ bool PWProcessor::runFlow(const std::string& name,
             break;
         }
 
-        if (deadline <= now)
+        if (deadline <= ddwaf::monotonic_clock::now())
         {
             DDWAF_INFO("Ran out of time while running flow %s and rule %s", name.c_str(), rule.id.c_str());
             retManager.recordTimeout();
-            break;
+            return false;
         }
     }
 

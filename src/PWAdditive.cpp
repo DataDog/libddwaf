@@ -46,7 +46,6 @@ PWAdditive::~PWAdditive()
 }
 
 DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
-                               optional_ref<ddwaf::metrics_collector> collector,
                                optional_ref<ddwaf_result> res, uint64_t timeLeft)
 {
     if (!object_validator.validate(newParameters))
@@ -90,7 +89,7 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     PWRetManager retManager(processor.getGlobalAllocator());
     for (const auto& [key, flow] : wafHandle->flows)
     {
-        if (!processor.runFlow(key, flow, collector, retManager))
+        if (!processor.runFlow(key, flow, retManager))
         {
             break;
         }
@@ -101,12 +100,7 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     {
         ddwaf_result& output = *res;
         retManager.synthetize(output);
-
-        if (collector)
-        {
-            ddwaf::metrics_collector& mc = *collector;
-            mc.record_total(ddwaf::monotonic_clock::now() - start);
-        }
+        output.total_runtime = (ddwaf::monotonic_clock::now() - start).count();
     }
 
     return code;

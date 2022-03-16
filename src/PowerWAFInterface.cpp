@@ -8,7 +8,6 @@
 #include <PWRet.hpp>
 #include <exception.hpp>
 #include <memory>
-#include <metrics.hpp>
 #include <mutex>
 #include <ruleset_info.hpp>
 #include <shared_mutex>
@@ -133,7 +132,6 @@ extern "C"
     }
 
     DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data,
-                             ddwaf_metrics_collector collector,
                              ddwaf_result* result, uint64_t timeout)
     {
         if (result != nullptr)
@@ -148,20 +146,13 @@ extern "C"
         }
         try
         {
-            // TODO: make the collector optional
-            optional_ref<ddwaf::metrics_collector> mc { std::nullopt };
-            if (collector != nullptr)
-            {
-                mc = *collector;
-            }
-
             optional_ref<ddwaf_result> res { std::nullopt };
             if (result != nullptr)
             {
                 res = *result;
             }
 
-            return context->run(*data, mc, res, timeout);
+            return context->run(*data, res, timeout);
         }
         catch (const std::exception& e)
         {
