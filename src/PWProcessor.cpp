@@ -85,8 +85,6 @@ bool PWProcessor::runFlow(const std::string& name,
 
         DDWAF_DEBUG("Running the WAF on rule %s", rule.id.c_str());
 
-        retManager.startRule();
-
         bool cachedNegativeMatch = cache_status == match_status::no_match;
 
         // If we had a negative match in the past, let's check if we have a reason to run again
@@ -94,6 +92,8 @@ bool PWProcessor::runFlow(const std::string& name,
         {
             continue;
         }
+
+        retManager.startRule();
 
         // Actually execute the rule
         //	We tell the PWRetriever to skip old parameters if this is safe to do so
@@ -145,7 +145,7 @@ bool PWProcessor::runFlow(const std::string& name,
         {
             DDWAF_INFO("Ran out of time while running flow %s and rule %s", name.c_str(), rule.id.c_str());
             retManager.recordTimeout();
-            break;
+            return false;
         }
     }
 
