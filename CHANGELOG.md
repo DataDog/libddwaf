@@ -1,5 +1,9 @@
 # libddwaf release
 
+### v1.2.0 (unstable) - 2022/03/16
+- Remove metrics collector.
+- Add `total_runtime` to `ddwaf_result`.
+
 ### v1.1.0 (unstable) - 2022/03/09
 - Add `ddwaf_object` getters.
 - Provide ruleset parsing diagnostics on `ddwaf_init`.
