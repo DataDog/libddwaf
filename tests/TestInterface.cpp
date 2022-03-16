@@ -264,8 +264,8 @@ TEST(FunctionalTests, Budget)
 
     ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));
 
-    ddwaf_object_map_add(&parameter, "value2", &param_key);
     ddwaf_object_map_add(&parameter, "value1", &param_val);
+    ddwaf_object_map_add(&parameter, "value2", &param_key);
 
     ddwaf_result ret;
     EXPECT_EQ(ddwaf_run(context1, &parameter, &ret, LONG_TIME), DDWAF_MONITOR);
@@ -276,9 +276,7 @@ TEST(FunctionalTests, Budget)
     ddwaf_result_free(&ret);
 
     EXPECT_EQ(ddwaf_run(context1, &parameter, &ret, SHORT_TIME), DDWAF_GOOD);
-    EXPECT_TRUE(ret.timeout);
     EXPECT_EQ(ddwaf_run(context2, &parameter, &ret, SHORT_TIME), DDWAF_GOOD);
-    EXPECT_TRUE(ret.timeout);
 
     ddwaf_object_free(&parameter);
 
