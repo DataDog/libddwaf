@@ -276,9 +276,9 @@ TEST(FunctionalTests, Budget)
     ddwaf_result_free(&ret);
 
     EXPECT_EQ(ddwaf_run(context1, &parameter, &ret, SHORT_TIME), DDWAF_GOOD);
-    EXPECT_FALSE(ret.timeout);
+    EXPECT_TRUE(ret.timeout);
     EXPECT_EQ(ddwaf_run(context2, &parameter, &ret, SHORT_TIME), DDWAF_GOOD);
-    EXPECT_FALSE(ret.timeout);
+    EXPECT_TRUE(ret.timeout);
 
     ddwaf_object_free(&parameter);
 

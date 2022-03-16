@@ -122,6 +122,7 @@ void PWRetManager::reportMatch(const std::string& id,
 DDWAF_RET_CODE PWRetManager::synthetize(ddwaf_result& output) const
 {
     output = { 0 };
+    output.timeout = timeout;
 
     if (outputDocument.GetArray().Size() > 0)
     {
