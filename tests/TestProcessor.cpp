@@ -382,8 +382,8 @@ TEST(TestPWProcessor, TestBudgetRules)
     ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
     ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "aaaabbbbbaaa"));
 
-    EXPECT_EQ(ddwaf_run(context, &param, &ret, 50), DDWAF_GOOD);
-    EXPECT_FALSE(ret.timeout);
+    EXPECT_EQ(ddwaf_run(context, &param, &ret, SHORT_TIME), DDWAF_GOOD);
+    EXPECT_TRUE(ret.timeout);
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);

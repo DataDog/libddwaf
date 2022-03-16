@@ -27,7 +27,7 @@ struct PowerWAF
     static PowerWAF* fromConfig(const ddwaf_object rules,
                                 const ddwaf_config* config, ddwaf::ruleset_info& info);
 
-    static constexpr ddwaf_version waf_version { 1, 1, 0 };
+    static constexpr ddwaf_version waf_version { 1, 2, 0 };
 };
 
 #endif /* pw_hpp */
