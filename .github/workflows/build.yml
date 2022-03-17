@@ -11,7 +11,7 @@ on:
     - cron:  30 0 * * *
 jobs:
   windows-builds:
-    runs-on: vs2017-win2016
+    runs-on: windows-2019
     strategy:
       matrix:
         arch:
