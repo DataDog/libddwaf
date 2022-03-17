@@ -1,5 +1,10 @@
 # libddwaf release
 
+### v1.2.1 (unstable) - 2022/03/17
+- Fix issue on ruleset error map reallocation causing cached pointer invalidation.
+- Add check for empty input map on parser.
+- Update github actions windows build VM to windows-2019.
+
 ### v1.2.0 (unstable) - 2022/03/16
 - Remove metrics collector.
 - Add `total_runtime` to `ddwaf_result`.
