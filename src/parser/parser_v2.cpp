@@ -111,6 +111,11 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
 
     std::vector<PWManifest::ARG_ID> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
+    if (inputs.empty())
+    {
+        throw ddwaf::parsing_error("empty inputs");
+    }
+
     for (parameter::map input : inputs)
     {
         auto address   = at<std::string>(input, "address");

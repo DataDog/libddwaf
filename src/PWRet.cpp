@@ -79,6 +79,8 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     }
     param.AddMember("highlight", highlight, allocator);
     parameters.PushBack(param, allocator);
+
+    // This field is required by the obfuscator and shouldn't be renamed
     output.AddMember("parameters", parameters, allocator);
 
     ruleCollector.PushBack(output, allocator);

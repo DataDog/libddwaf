@@ -62,7 +62,8 @@ ddwaf_object node_to_arg(const Node& node)
         case NodeType::Null:
         case NodeType::Undefined:
             ddwaf_object arg;
-            ddwaf_object_invalid(&arg);
+            ddwaf_object_array(&arg);
+            //ddwaf_object_invalid(&arg);
             return arg;
     }
 
