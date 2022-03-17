@@ -121,10 +121,9 @@ ddwaf_object node_to_arg(const Node& node)
             return arg;
         }
         case NodeType::Null:
-            // Perhaps this should return an invalid pwarg
-            break;
         case NodeType::Undefined:
-            break;
+            ddwaf_object arg = DDWAF_OBJECT_MAP;
+            return arg;
     }
 
     throw parsing_error("Invalid YAML node type");

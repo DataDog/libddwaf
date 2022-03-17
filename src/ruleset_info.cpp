@@ -44,14 +44,15 @@ void ruleset_info::insert_error(std::string_view rule_id, std::string_view error
         }
 
         // Get the map element we just added
-        rule_array = &info->errors.array[info->errors.nbEntries - 1];
+        uint64_t index = info->errors.nbEntries - 1;
+        rule_array = &info->errors.array[index];
         std::string_view key(rule_array->parameterName,
                              rule_array->parameterNameLength);
-        error_obj_cache[key] = rule_array;
+        error_obj_cache[key] = index;
     }
     else
     {
-        rule_array = it->second;
+        rule_array = &info->errors.array[it->second];
     }
 
     ddwaf_object_stringl(&id_str, rule_id.data(), rule_id.size());

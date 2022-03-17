@@ -425,3 +425,30 @@ TEST(TestParserV2, TestInvalidDuplicate)
 
     ddwaf_destroy(handle);
 }
+
+TEST(TestParserV2, TestInvalidRuleset)
+{
+    auto rule = readFile("invalid_ruleset.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter::map errors = parameter(info.errors);
+    EXPECT_EQ(errors.size(), 20);
+
+    EXPECT_EQ(info.failed, 400);
+    EXPECT_EQ(info.loaded, 0);
+
+    for (auto &[key, value] : errors)
+    {
+        ddwaf::parameter::vector rules = parameter(value);
+        EXPECT_EQ(rules.size(), 20);
+    }
+    ddwaf_ruleset_info_free(&info);
+
+    ddwaf_destroy(handle);
+}

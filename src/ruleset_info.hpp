@@ -60,7 +60,7 @@ public:
     void insert_error(std::string_view rule_id, std::string_view error);
 
 protected:
-    std::map<std::string_view, ddwaf_object*> error_obj_cache;
+    std::map<std::string_view, uint64_t> error_obj_cache;
     ddwaf_ruleset_info* info;
 };
 
