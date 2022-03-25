@@ -35,7 +35,7 @@ PowerWAF::PowerWAF(PWManifest&& manifest_, rule_vector&& rules_,
 	options.set_log_errors(false);
 	options.set_case_sensitive(false);
 	
-	sensitiveRegex = std::make_shared<re2::RE2>("(p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer", options);
+	sensitiveRegex = std::make_shared<re2::RE2>("(p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization", options);
 	
     if (config != nullptr)
     {
