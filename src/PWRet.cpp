@@ -13,6 +13,8 @@
 #include <rapidjson/prettywriter.h>
 #include <string>
 
+#define REDACTION_MESSAGE "<redacted by Datadog>"
+
 PWRetManager::PWRetManager(rapidjson::Document::AllocatorType& alloc, const std::shared_ptr<re2::RE2>& sensitiveRegex) : allocator(alloc), sensitiveRegex(sensitiveRegex)
 {
     outputDocument.SetArray();
@@ -26,6 +28,7 @@ void PWRetManager::startRule()
 
 void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather)
 {
+	bool shouldRedactValue = false;
     rapidjson::Value output;
     output.SetObject();
 
@@ -60,6 +63,20 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
                 // This shouldn't happen
                 continue;
             }
+			
+			// Check for sensitive key
+			if (sensitiveRegex != nullptr)
+			{
+				const size_t computedLength = findStringCutoff(key.stringValue, key.nbEntries);
+				const re2::StringPiece ref(key.stringValue, computedLength);
+				re2::StringPiece match;
+				shouldRedactValue |= sensitiveRegex->Match(ref,
+											 0,
+											 computedLength,
+											 re2::RE2::UNANCHORED,
+											 &match, 0);
+			}
+			
             jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
         }
         else
@@ -69,16 +86,18 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
         key_path.PushBack(jsonKey, allocator);
     }
     param.AddMember("key_path", key_path, allocator);
-    param.AddMember("value", gather.resolvedValue, allocator);
-    rapidjson::Value highlight, matchedValue;
-    highlight.SetArray();
-		if (!gather.matchedValue.empty())
-		{
-			matchedValue.SetString(gather.matchedValue, allocator);
-        highlight.PushBack(matchedValue, allocator);
-    }
-    param.AddMember("highlight", highlight, allocator);
-    parameters.PushBack(param, allocator);
+	param.AddMember("value", shouldRedactValue ? REDACTION_MESSAGE : gather.resolvedValue, allocator);
+	
+	rapidjson::Value highlight, matchedValue;
+	highlight.SetArray();
+	if (!gather.matchedValue.empty())
+	{
+		matchedValue.SetString(shouldRedactValue ? REDACTION_MESSAGE : gather.matchedValue, allocator);
+		highlight.PushBack(matchedValue, allocator);
+	}
+	param.AddMember("highlight", highlight, allocator);
+
+	parameters.PushBack(param, allocator);
 
     // This field is required by the obfuscator and shouldn't be renamed
     output.AddMember("parameters", parameters, allocator);
