@@ -30,6 +30,13 @@ PowerWAF::PowerWAF(PWManifest&& manifest_, rule_vector&& rules_,
       rules(std::move(rules_)),
       flows(std::move(flows_))
 {
+	re2::RE2::Options options;
+	options.set_max_mem(512 * 1024);
+	options.set_log_errors(false);
+	options.set_case_sensitive(false);
+	
+	sensitiveRegex = std::make_shared<re2::RE2>("(p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer", options);
+	
     if (config != nullptr)
     {
         if (config->maxArrayLength != 0)

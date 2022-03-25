@@ -13,7 +13,7 @@
 #include <rapidjson/prettywriter.h>
 #include <string>
 
-PWRetManager::PWRetManager(rapidjson::Document::AllocatorType& alloc) : allocator(alloc)
+PWRetManager::PWRetManager(rapidjson::Document::AllocatorType& alloc, const std::shared_ptr<re2::RE2>& sensitiveRegex) : allocator(alloc), sensitiveRegex(sensitiveRegex)
 {
     outputDocument.SetArray();
 }
@@ -72,9 +72,9 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     param.AddMember("value", gather.resolvedValue, allocator);
     rapidjson::Value highlight, matchedValue;
     highlight.SetArray();
-    if (!gather.matchedValue.empty())
-    {
-        matchedValue.SetString(gather.matchedValue, allocator);
+		if (!gather.matchedValue.empty())
+		{
+			matchedValue.SetString(gather.matchedValue, allocator);
         highlight.PushBack(matchedValue, allocator);
     }
     param.AddMember("highlight", highlight, allocator);

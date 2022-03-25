@@ -10,6 +10,7 @@
 #include <string>
 
 #include <rapidjson/document.h>
+#include <re2/re2.h>
 
 class PWRetManager;
 
@@ -21,6 +22,8 @@ class PWRetManager;
 
 class PWRetManager
 {
+	const std::shared_ptr<re2::RE2> sensitiveRegex;
+	
     rapidjson::Document outputDocument;
     rapidjson::Document::AllocatorType& allocator;
     rapidjson::Value ruleCollector;
@@ -29,7 +32,7 @@ class PWRetManager
     bool timeout { false };
 
 public:
-    PWRetManager(rapidjson::Document::AllocatorType& allocator);
+    PWRetManager(rapidjson::Document::AllocatorType& allocator, const std::shared_ptr<re2::RE2>& sensitiveRegex);
 
     DDWAF_RET_CODE getResult() const { return worstCode; }
 

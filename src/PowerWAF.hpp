@@ -21,6 +21,8 @@ struct PowerWAF
     ddwaf::rule_vector rules;
     ddwaf::flow_map flows;
 
+	std::shared_ptr<re2::RE2> sensitiveRegex;
+	
     PowerWAF(PWManifest&& manifest_, ddwaf::rule_vector&& rules_,
              ddwaf::flow_map&& flows_, const ddwaf_config* config);
 
