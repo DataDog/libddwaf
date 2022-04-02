@@ -12,11 +12,17 @@
 namespace ddwaf
 {
 
+struct object_limits {
+    uint32_t max_map_depth { DDWAF_MAX_MAP_DEPTH };
+    uint32_t max_array_size { DDWAF_MAX_ARRAY_SIZE };
+    uint32_t max_string_length { DDWAF_MAX_STRING_LENGTH };
+};
+
 class validator
 {
 public:
     validator() = default;
-    validator(uint64_t max_map_depth, uint64_t max_array_length);
+    validator(const object_limits &limits);
 
     bool validate(ddwaf_object input) const;
 
@@ -34,8 +40,7 @@ public:
 protected:
     bool validate_helper(ddwaf_object input, uint64_t depth = 0) const;
 
-    uint64_t max_map_depth_ { DDWAF_MAX_MAP_DEPTH };
-    uint64_t max_array_length_ { DDWAF_MAX_ARRAY_LENGTH };
+    object_limits limits_;
 };
 
 }

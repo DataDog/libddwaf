@@ -17,19 +17,13 @@ class PWRetManager;
 #include <clock.hpp>
 #include <ddwaf.h>
 #include <memory>
+#include <obfuscator.hpp>
 #include <utils.h>
 
 class PWRetManager
 {
-    rapidjson::Document outputDocument;
-    rapidjson::Document::AllocatorType& allocator;
-    rapidjson::Value ruleCollector;
-
-    DDWAF_RET_CODE worstCode { DDWAF_GOOD };
-    bool timeout { false };
-
 public:
-    PWRetManager(rapidjson::Document::AllocatorType& allocator);
+    PWRetManager(const ddwaf::obfuscator &eo = ddwaf::obfuscator());
 
     DDWAF_RET_CODE getResult() const { return worstCode; }
 
@@ -63,6 +57,15 @@ public:
     FRIEND_TEST(TestPWProcessor, TestCache);
     FRIEND_TEST(TestPWProcessor, TestBudget);
 #endif
+protected:
+    rapidjson::Document outputDocument;
+    rapidjson::Document::AllocatorType& allocator;
+    rapidjson::Value ruleCollector;
+    
+    const ddwaf::obfuscator &event_obfuscator;
+
+    DDWAF_RET_CODE worstCode { DDWAF_GOOD };
+    bool timeout { false };
 };
 
 #endif /* PWRet_hpp */

@@ -13,7 +13,9 @@
 #include <rapidjson/prettywriter.h>
 #include <string>
 
-PWRetManager::PWRetManager(rapidjson::Document::AllocatorType& alloc) : allocator(alloc)
+PWRetManager::PWRetManager(const ddwaf::obfuscator &eo):
+    allocator(outputDocument.GetAllocator()),
+    event_obfuscator(eo)
 {
     outputDocument.SetArray();
 }
@@ -50,6 +52,9 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     param.SetObject();
     param.AddMember("address", gather.dataSource, allocator);
     key_path.SetArray();
+    
+    bool redact = event_obfuscator.obfuscate_value(gather.resolvedValue);
+
     for (const ddwaf_object& key : gather.keyPath)
     {
         rapidjson::Value jsonKey;
@@ -60,6 +65,10 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
                 // This shouldn't happen
                 continue;
             }
+
+            if (!redact) {
+                redact = event_obfuscator.obfuscate_key({key.stringValue, key.nbEntries});
+            }
             jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
         }
         else
@@ -69,12 +78,21 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
         key_path.PushBack(jsonKey, allocator);
     }
     param.AddMember("key_path", key_path, allocator);
-    param.AddMember("value", gather.resolvedValue, allocator);
+    if (redact) {
+        param.AddMember("value", "<redacted by datadog>", allocator);
+    } else {
+        param.AddMember("value", gather.resolvedValue, allocator);
+    }
+
     rapidjson::Value highlight, matchedValue;
     highlight.SetArray();
     if (!gather.matchedValue.empty())
     {
-        matchedValue.SetString(gather.matchedValue, allocator);
+        if (redact) {
+            matchedValue.SetString("<redacted by datadog>", allocator);
+        } else {
+            matchedValue.SetString(gather.matchedValue, allocator);
+        }
         highlight.PushBack(matchedValue, allocator);
     }
     param.AddMember("highlight", highlight, allocator);

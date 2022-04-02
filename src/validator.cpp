@@ -13,21 +13,27 @@
 namespace ddwaf
 {
 
-validator::validator(uint64_t max_map_depth, uint64_t max_array_length)
-    : max_map_depth_(max_map_depth), max_array_length_(max_array_length)
+validator::validator(const object_limits &limits): limits_(limits)
 {
     //Do the limits make sense?
-    if (max_map_depth_ == 0)
+    if (limits_.max_map_depth == 0)
     {
         DDWAF_DEBUG("Illegal WAF call: sanitization constant 'max_map_depth' should be a positive value");
         throw std::invalid_argument("max_map_depth should be a positive value");
     }
 
-    if (max_array_length_ == 0)
+    if (limits_.max_array_size == 0)
     {
-        DDWAF_DEBUG("Illegal WAF call: sanitization constant 'max_array_length' should be a positive value");
-        throw std::invalid_argument("max_array_length should be a positive value");
+        DDWAF_DEBUG("Illegal WAF call: sanitization constant 'max_array_size' should be a positive value");
+        throw std::invalid_argument("max_array_size should be a positive value");
     }
+
+    if (limits_.max_string_length == 0)
+    {
+        DDWAF_DEBUG("Illegal WAF call: sanitization constant 'max_string_length' should be a positive value");
+        throw std::invalid_argument("max_string_length should be a positive value");
+    }
+
 }
 
 bool validator::validate(ddwaf_object input) const
@@ -75,7 +81,7 @@ bool validator::validate(ddwaf_object input) const
 
 bool validator::validate_helper(ddwaf_object input, uint64_t depth) const
 {
-    if (depth > max_map_depth_)
+    if (depth > limits_.max_map_depth)
     {
         DDWAF_DEBUG("Validation error: Structure depth exceed the allowed limit!");
         return false;
@@ -113,7 +119,7 @@ bool validator::validate_helper(ddwaf_object input, uint64_t depth) const
                 return false;
             }
 
-            else if (input.nbEntries > max_array_length_)
+            else if (input.nbEntries > limits_.max_array_size)
             {
                 DDWAF_DEBUG("Validation error: Array is unacceptably long");
                 return false;

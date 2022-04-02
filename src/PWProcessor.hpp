@@ -21,7 +21,6 @@ struct PWProcessor;
 
 struct PWProcessor
 {
-    rapidjson::Document document;
     PWRetriever& parameters;
     const ddwaf::rule_vector& rules;
 
@@ -40,7 +39,6 @@ public:
                  PWRetManager& manager);
 
     bool isFirstRun() const;
-    rapidjson::Document::AllocatorType& getGlobalAllocator();
 };
 
 #endif /* PWProcessor_hpp */

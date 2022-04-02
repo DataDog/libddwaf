@@ -205,9 +205,9 @@ TEST(TestValidator, TestLimits)
     param.array           = &mapItem;
     mapItem.parameterName = string;
 
-    EXPECT_THROW(validator(0, 42), std::invalid_argument);
-    EXPECT_THROW(validator(42, 0), std::invalid_argument);
-    EXPECT_TRUE(validator(1, 1).validate(param));
+    EXPECT_THROW(validator(ddwaf::object_limits{0, 42, 4096}), std::invalid_argument);
+    EXPECT_THROW(validator(ddwaf::object_limits{42, 0, 4096}), std::invalid_argument);
+    EXPECT_TRUE(validator(ddwaf::object_limits{1, 1, 4096}).validate(param));
 
     ddwaf_object array = DDWAF_OBJECT_ARRAY, tmp;
 
@@ -218,17 +218,17 @@ TEST(TestValidator, TestLimits)
 
     array.parameterName = string;
     param.array         = &array;
-    EXPECT_FALSE(validator(1, 450).validate(param));
-    EXPECT_TRUE(validator(1, 500).validate(param));
+    EXPECT_FALSE(validator(ddwaf::object_limits{1, 450, 4096}).validate(param));
+    EXPECT_TRUE(validator(ddwaf::object_limits{1, 500, 4096}).validate(param));
 
     ddwaf_object subArray = DDWAF_OBJECT_ARRAY;
     ddwaf_object_array_add(&subArray, ddwaf_object_unsigned_force(&tmp, 42));
 
     ddwaf_object_array_add(&array, &subArray);
 
-    EXPECT_FALSE(validator(10, 500).validate(param));
-    EXPECT_TRUE(validator(10, 501).validate(param));
-    EXPECT_FALSE(validator(1, 501).validate(param));
+    EXPECT_FALSE(validator(ddwaf::object_limits{10, 500, 4096}).validate(param));
+    EXPECT_TRUE(validator(ddwaf::object_limits{10, 501, 4096}).validate(param));
+    EXPECT_FALSE(validator(ddwaf::object_limits{1, 501, 4096}).validate(param));
 
     array.parameterName = 0;
     ddwaf_object_free(&array);

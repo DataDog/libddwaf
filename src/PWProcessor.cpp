@@ -15,12 +15,10 @@ PWProcessor::PWProcessor(PWRetriever& input, const ddwaf::rule_vector& rules_)
     : parameters(input), rules(rules_)
 {
     ranCache.reserve(rules.size());
-    document.SetArray();
 }
 
 void PWProcessor::startNewRun(const ddwaf::monotonic_clock::time_point& _deadline)
 {
-    document.GetArray().Clear();
     deadline = _deadline;
 }
 
@@ -155,9 +153,4 @@ bool PWProcessor::runFlow(const std::string& name,
 bool PWProcessor::isFirstRun() const
 {
     return ranCache.empty();
-}
-
-rapidjson::Document::AllocatorType& PWProcessor::getGlobalAllocator()
-{
-    return document.GetAllocator();
 }

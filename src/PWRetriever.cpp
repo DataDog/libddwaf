@@ -40,9 +40,9 @@ bool PWRetriever::PWArgsWrapper::isValid() const
     return !parameters.empty();
 }
 
-PWRetriever::ArgsIterator::State::State(const ddwaf_object* args, uint64_t maxDepth) : activeItem(args), itemIndex(0)
+PWRetriever::ArgsIterator::State::State(const ddwaf_object* args, uint32_t maxDepth) : activeItem(args), itemIndex(0)
 {
-    stack.reserve((size_t) maxDepth);
+    stack.reserve(static_cast<size_t>(maxDepth));
 }
 
 bool PWRetriever::ArgsIterator::State::isOver() const
@@ -331,14 +331,13 @@ bool PWRetriever::ArgsIterator::matchIterOnPath(const std::set<std::string>& pat
     return true;
 }
 
-PWRetriever::Iterator::State::State(uint64_t _maxDepth) : maxDepth(_maxDepth) {}
-
 bool PWRetriever::Iterator::State::isOver() const
 {
     return targetCursor == targetEnd;
 }
 
-PWRetriever::Iterator::Iterator(PWRetriever& _retriever) : retriever(_retriever), state(retriever.max_map_depth), argsIterator(nullptr, state.maxDepth) {}
+PWRetriever::Iterator::Iterator(PWRetriever& _retriever) : 
+    retriever(_retriever), argsIterator(nullptr, retriever.max_map_depth) {}
 
 void PWRetriever::Iterator::reset(const std::vector<PWManifest::ARG_ID>& targets)
 {
@@ -461,8 +460,10 @@ bool PWRetriever::Iterator::matchIterOnPath(const std::set<std::string>& path, b
     return argsIterator.matchIterOnPath(path, isAllowList, blockDepth);
 }
 
-PWRetriever::PWRetriever(const PWManifest& _manifest, uint64_t _maxMapDepth, uint64_t _maxArrayLength) : manifest(_manifest), wrapper(), max_map_depth(_maxMapDepth),
-                                                                                                         max_array_length(_maxArrayLength), internalIterator(*this) {}
+PWRetriever::PWRetriever(const PWManifest& _manifest, const ddwaf::object_limits &limits):
+    manifest(_manifest), wrapper(),
+    max_map_depth(limits.max_map_depth),
+    internalIterator(*this) {}
 
 void PWRetriever::addParameter(const ddwaf_object input)
 {
