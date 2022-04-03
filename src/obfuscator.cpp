@@ -32,11 +32,13 @@ obfuscator::obfuscator(std::string_view key_regex_str,
     options.set_case_sensitive(false);
 
     if (!key_regex_str.empty()) {
-        key_regex = std::make_unique<re2::RE2>(key_regex_str, options);
+        const re2::StringPiece sp(key_regex_str.data(), key_regex_str.size());
+        key_regex = std::make_unique<re2::RE2>(sp, options);
     }
 
     if (!value_regex_str.empty()) {
-        value_regex = std::make_unique<re2::RE2>(value_regex_str, options);
+        const re2::StringPiece sp(value_regex_str.data(), value_regex_str.size());
+        value_regex = std::make_unique<re2::RE2>(sp, options);
     }
 }
 
