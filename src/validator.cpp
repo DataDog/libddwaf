@@ -16,16 +16,16 @@ namespace ddwaf
 validator::validator(const object_limits &limits): limits_(limits)
 {
     //Do the limits make sense?
-    if (limits_.max_map_depth == 0)
+    if (limits_.max_container_depth == 0)
     {
-        DDWAF_DEBUG("Illegal WAF call: sanitization constant 'max_map_depth' should be a positive value");
-        throw std::invalid_argument("max_map_depth should be a positive value");
+        DDWAF_DEBUG("Illegal WAF call: sanitization constant 'max_container_depth' should be a positive value");
+        throw std::invalid_argument("max_container_depth should be a positive value");
     }
 
-    if (limits_.max_array_size == 0)
+    if (limits_.max_container_size == 0)
     {
-        DDWAF_DEBUG("Illegal WAF call: sanitization constant 'max_array_size' should be a positive value");
-        throw std::invalid_argument("max_array_size should be a positive value");
+        DDWAF_DEBUG("Illegal WAF call: sanitization constant 'max_container_size' should be a positive value");
+        throw std::invalid_argument("max_container_size should be a positive value");
     }
 
     if (limits_.max_string_length == 0)
@@ -81,7 +81,7 @@ bool validator::validate(ddwaf_object input) const
 
 bool validator::validate_helper(ddwaf_object input, uint64_t depth) const
 {
-    if (depth > limits_.max_map_depth)
+    if (depth > limits_.max_container_depth)
     {
         DDWAF_DEBUG("Validation error: Structure depth exceed the allowed limit!");
         return false;
@@ -119,7 +119,7 @@ bool validator::validate_helper(ddwaf_object input, uint64_t depth) const
                 return false;
             }
 
-            else if (input.nbEntries > limits_.max_array_size)
+            else if (input.nbEntries > limits_.max_container_size)
             {
                 DDWAF_DEBUG("Validation error: Array is unacceptably long");
                 return false;

@@ -61,7 +61,7 @@ protected:
     rapidjson::Document outputDocument;
     rapidjson::Document::AllocatorType& allocator;
     rapidjson::Value ruleCollector;
-    
+
     const ddwaf::obfuscator &event_obfuscator;
 
     DDWAF_RET_CODE worstCode { DDWAF_GOOD };

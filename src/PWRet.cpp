@@ -13,6 +13,14 @@
 #include <rapidjson/prettywriter.h>
 #include <string>
 
+namespace
+{
+rapidjson::GenericStringRef<char> StringRef(std::string_view s)
+{
+    return rapidjson::GenericStringRef<char>(s.data(), s.size());
+}
+}
+
 PWRetManager::PWRetManager(const ddwaf::obfuscator &eo):
     allocator(outputDocument.GetAllocator()),
     event_obfuscator(eo)
@@ -28,6 +36,8 @@ void PWRetManager::startRule()
 
 void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather)
 {
+    auto redaction_msg = StringRef(ddwaf::obfuscator::redaction_msg);
+
     rapidjson::Value output;
     output.SetObject();
 
@@ -77,9 +87,10 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
         }
         key_path.PushBack(jsonKey, allocator);
     }
+
     param.AddMember("key_path", key_path, allocator);
     if (redact) {
-        param.AddMember("value", "<redacted by datadog>", allocator);
+        param.AddMember("value", redaction_msg, allocator);
     } else {
         param.AddMember("value", gather.resolvedValue, allocator);
     }
@@ -89,7 +100,7 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     if (!gather.matchedValue.empty())
     {
         if (redact) {
-            matchedValue.SetString("<redacted by datadog>", allocator);
+            matchedValue.SetString(redaction_msg, allocator);
         } else {
             matchedValue.SetString(gather.matchedValue, allocator);
         }

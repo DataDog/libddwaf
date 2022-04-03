@@ -27,6 +27,8 @@ public:
     bool obfuscate_key(std::string_view key) const;
     bool obfuscate_value(std::string_view value) const;
 
+    static constexpr std::string_view redaction_msg{"<redacted by datadog>"};
+
 protected:
     std::unique_ptr<re2::RE2> key_regex { nullptr };
     std::unique_ptr<re2::RE2> value_regex { nullptr };

@@ -24,9 +24,6 @@ public:
 
     static constexpr ddwaf_version waf_version { 1, 2, 1 };
 
-    uint64_t maxMapDepth { DDWAF_MAX_MAP_DEPTH };
-    uint64_t maxArrayLength { DDWAF_MAX_ARRAY_SIZE };
-
     PWManifest manifest;
     ddwaf::rule_vector rules;
     ddwaf::flow_map flows;

@@ -337,7 +337,7 @@ bool PWRetriever::Iterator::State::isOver() const
 }
 
 PWRetriever::Iterator::Iterator(PWRetriever& _retriever) : 
-    retriever(_retriever), argsIterator(nullptr, retriever.max_map_depth) {}
+    retriever(_retriever), argsIterator(nullptr, retriever.max_depth) {}
 
 void PWRetriever::Iterator::reset(const std::vector<PWManifest::ARG_ID>& targets)
 {
@@ -462,7 +462,7 @@ bool PWRetriever::Iterator::matchIterOnPath(const std::set<std::string>& path, b
 
 PWRetriever::PWRetriever(const PWManifest& _manifest, const ddwaf::object_limits &limits):
     manifest(_manifest), wrapper(),
-    max_map_depth(limits.max_map_depth),
+    max_depth(limits.max_container_depth),
     internalIterator(*this) {}
 
 void PWRetriever::addParameter(const ddwaf_object input)

@@ -111,7 +111,7 @@ public:
 private:
     const PWManifest& manifest;
     PWArgsWrapper wrapper;
-    uint32_t max_map_depth;
+    uint32_t max_depth;
     Iterator internalIterator;
 
     std::unordered_set<PWManifest::ARG_ID> newestBatch;

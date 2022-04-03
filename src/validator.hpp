@@ -13,8 +13,8 @@ namespace ddwaf
 {
 
 struct object_limits {
-    uint32_t max_map_depth { DDWAF_MAX_MAP_DEPTH };
-    uint32_t max_array_size { DDWAF_MAX_ARRAY_SIZE };
+    uint32_t max_container_depth { DDWAF_MAX_CONTAINER_DEPTH };
+    uint32_t max_container_size { DDWAF_MAX_CONTAINER_SIZE };
     uint32_t max_string_length { DDWAF_MAX_STRING_LENGTH };
 };
 

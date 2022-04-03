@@ -47,14 +47,14 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
     ddwaf::object_limits limits;
 
     if (config != nullptr) {
-        if (config->limits.max_array_size != 0)
+        if (config->limits.max_container_size != 0)
         {
-            limits.max_array_size = config->limits.max_array_size;
+            limits.max_container_size = config->limits.max_container_size;
         }
 
-        if (config->limits.max_map_depth != 0)
+        if (config->limits.max_container_depth != 0)
         {
-            limits.max_map_depth = config->limits.max_map_depth;
+            limits.max_container_depth = config->limits.max_container_depth;
         }
 
 
