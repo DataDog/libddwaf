@@ -77,7 +77,8 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
             }
 
             if (!redact) {
-                redact = event_obfuscator.obfuscate_key({key.stringValue, key.nbEntries});
+                redact = event_obfuscator.obfuscate_key(
+                    {key.stringValue, static_cast<size_t>(key.nbEntries)});
             }
             jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
         }
