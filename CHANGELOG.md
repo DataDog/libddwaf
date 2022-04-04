@@ -1,5 +1,15 @@
 # libddwaf release
 
+### v1.3.0 (unstable) - 2022/04/04
+- WAF event obfuscator.
+- Add obfuscator configuration to `ddwaf_config`.
+- Changes to limits in `ddwaf_config`:
+  - Rename `maxArrayLength` to `limits.max_container_size`.
+  - Rename `maxMapDepth` to `limits.max_container_depth`.
+  - Add `limits.max_string_length`, currently unused.
+  - All limits are now `uint32`.
+  - Relevant macros renamed accordingly.
+
 ### v1.2.1 (unstable) - 2022/03/17
 - Fix issue on ruleset error map reallocation causing cached pointer invalidation.
 - Add check for empty input map on parser.
