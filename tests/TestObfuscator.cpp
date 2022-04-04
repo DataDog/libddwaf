@@ -54,7 +54,7 @@ TEST(TestObfuscator, TestEmptyObfuscator)
 
 TEST(TestObfuscator, TestConfigKeyValue)
 {
-    auto rule = readFile("powerwaf.yaml");
+    auto rule = readFile("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {"password", "rule1_obf"}};
@@ -127,7 +127,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
 TEST(TestObfuscator, TestConfigKey)
 {
-    auto rule = readFile("powerwaf.yaml");
+    auto rule = readFile("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {"password", nullptr}};
@@ -185,7 +185,7 @@ TEST(TestObfuscator, TestConfigKey)
 
 TEST(TestObfuscator, TestConfigValue)
 {
-    auto rule = readFile("powerwaf.yaml");
+    auto rule = readFile("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, "rule1_obf"}};
@@ -240,9 +240,53 @@ TEST(TestObfuscator, TestConfigValue)
     ddwaf_destroy(handle);
 }
 
+TEST(TestObfuscator, TestConfigHighlight)
+{
+    auto rule = readFile("obfuscator.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, "^badvalue$"}};
+
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_object_free(&rule);
+    ASSERT_NE(handle, nullptr);
+
+    // Highlight obfuscation
+    {
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "badvalue_something"));
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"security_scanner","category":"category2"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"value","key_path":[],"value":"<redacted by datadog>","highlight":["<redacted by datadog>"]}]}]}])");
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    // No obfuscation
+    {
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "othervalue_badvalue"));
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"security_scanner","category":"category2"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"value","key_path":[],"value":"othervalue_badvalue","highlight":["othervalue"]}]}]}])");
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+
+    ddwaf_destroy(handle);
+}
+
+
 TEST(TestObfuscator, TestConfigEmpty)
 {
-    auto rule = readFile("powerwaf.yaml");
+    auto rule = readFile("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, ""}};

@@ -62,9 +62,8 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     param.SetObject();
     param.AddMember("address", gather.dataSource, allocator);
     key_path.SetArray();
-    
-    bool redact = event_obfuscator.obfuscate_value(gather.resolvedValue);
 
+    bool redact = false;
     for (const ddwaf_object& key : gather.keyPath)
     {
         rapidjson::Value jsonKey;
@@ -76,10 +75,9 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
                 continue;
             }
 
-            if (!redact) {
-                redact = event_obfuscator.obfuscate_key(
-                    {key.stringValue, static_cast<size_t>(key.nbEntries)});
-            }
+            redact = redact || event_obfuscator.obfuscate_key(
+                {key.stringValue, static_cast<size_t>(key.nbEntries)});
+
             jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
         }
         else
@@ -88,25 +86,32 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
         }
         key_path.PushBack(jsonKey, allocator);
     }
-
     param.AddMember("key_path", key_path, allocator);
-    if (redact) {
-        param.AddMember("value", redaction_msg, allocator);
-    } else {
-        param.AddMember("value", gather.resolvedValue, allocator);
-    }
 
     rapidjson::Value highlight, matchedValue;
     highlight.SetArray();
-    if (!gather.matchedValue.empty())
-    {
-        if (redact) {
+
+    redact = redact ||
+             event_obfuscator.obfuscate_value(gather.resolvedValue) ||
+             event_obfuscator.obfuscate_value(gather.matchedValue);
+
+    if (redact) {
+        param.AddMember("value", redaction_msg, allocator);
+        if (!gather.matchedValue.empty())
+        {
             matchedValue.SetString(redaction_msg, allocator);
-        } else {
-            matchedValue.SetString(gather.matchedValue, allocator);
+            highlight.PushBack(matchedValue, allocator);
         }
-        highlight.PushBack(matchedValue, allocator);
+    } else {
+        param.AddMember("value", gather.resolvedValue, allocator);
+
+        if (!gather.matchedValue.empty())
+        {
+            matchedValue.SetString(gather.matchedValue, allocator);
+            highlight.PushBack(matchedValue, allocator);
+        }
     }
+
     param.AddMember("highlight", highlight, allocator);
     parameters.PushBack(param, allocator);
 
