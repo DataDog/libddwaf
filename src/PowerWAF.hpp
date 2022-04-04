@@ -22,7 +22,7 @@ public:
     static PowerWAF* fromConfig(const ddwaf_object rules,
                                 const ddwaf_config* config, ddwaf::ruleset_info& info);
 
-    static constexpr ddwaf_version waf_version { 1, 2, 1 };
+    static constexpr ddwaf_version waf_version { 1, 3, 0 };
 
     PWManifest manifest;
     ddwaf::rule_vector rules;
