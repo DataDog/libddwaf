@@ -8,6 +8,7 @@
   - Rename `maxMapDepth` to `limits.max_container_depth`.
   - Add `limits.max_string_length`, currently unused.
   - All limits are now `uint32`.
+  - Relevant macros renamed accordingly.
 
 ### v1.2.1 (unstable) - 2022/03/17
 - Fix issue on ruleset error map reallocation causing cached pointer invalidation.
