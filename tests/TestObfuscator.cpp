@@ -283,7 +283,6 @@ TEST(TestObfuscator, TestConfigHighlight)
     ddwaf_destroy(handle);
 }
 
-
 TEST(TestObfuscator, TestConfigEmpty)
 {
     auto rule = readFile("obfuscator.yaml");
@@ -340,5 +339,121 @@ TEST(TestObfuscator, TestConfigEmpty)
 
     ddwaf_destroy(handle);
 }
+
+TEST(TestObfuscator, TestInvalidConfigKey)
+{
+    auto rule = readFile("obfuscator.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {"[", nullptr}};
+
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_object_free(&rule);
+    ASSERT_NE(handle, nullptr);
+
+    // No Obfuscation
+    {
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":[],"value":"rule1","highlight":["rule1"]}]}]}])");
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    // Key-based obfuscation
+    {
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
+        ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object_map_add(&parameter, "value", &inter);
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"<redacted by datadog>","highlight":["<redacted by datadog>"]}]}]}])");
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    // Value-based obfuscation (?)
+    {
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":[],"value":"rule1_obf","highlight":["rule1"]}]}]}])");
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestObfuscator, TestInvalidConfigValue)
+{
+    auto rule = readFile("obfuscator.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, "]"}};
+
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_object_free(&rule);
+    ASSERT_NE(handle, nullptr);
+
+    // No Obfuscation
+    {
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":[],"value":"rule1","highlight":["rule1"]}]}]}])");
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    // Key-based obfuscation (?)
+    {
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
+        ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object_map_add(&parameter, "value", &inter);
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"rule1","highlight":["rule1"]}]}]}])");
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    // Value-based obfuscation
+    {
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":[],"value":"rule1_obf","highlight":["rule1"]}]}]}])");
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_destroy(handle);
+}
+
 
 }

@@ -30,6 +30,8 @@ public:
     static constexpr std::string_view redaction_msg{"<redacted by datadog>"};
 
 protected:
+    static constexpr std::string_view default_key_regex_str{R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)"};
+
     std::unique_ptr<re2::RE2> key_regex { nullptr };
     std::unique_ptr<re2::RE2> value_regex { nullptr };
 };

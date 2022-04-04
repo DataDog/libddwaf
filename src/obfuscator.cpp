@@ -33,13 +33,24 @@ obfuscator::obfuscator(std::string_view key_regex_str,
     options.set_case_sensitive(false);
 
     if (!key_regex_str.empty()) {
-        const re2::StringPiece sp(key_regex_str.data(), key_regex_str.size());
+        re2::StringPiece sp(key_regex_str.data(), key_regex_str.size());
         key_regex = std::make_unique<re2::RE2>(sp, options);
 
         if (!key_regex->ok())
         {
-            DDWAF_ERROR("invalid obfuscator key regex: %s",
-                value_regex->error_arg().c_str());
+            DDWAF_ERROR("invalid obfuscator key regex: %s - using default",
+                key_regex->error_arg().c_str());
+
+            sp = re2::StringPiece(default_key_regex_str.data(),
+                default_key_regex_str.size());
+            key_regex = std::make_unique<re2::RE2>(sp, options);
+
+            if (!key_regex->ok())
+            {
+                throw std::runtime_error(
+                    "invalid default obfuscator key regex: " +
+                    key_regex->error_arg());
+            }
         }
     }
 
