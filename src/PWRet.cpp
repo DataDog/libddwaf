@@ -75,7 +75,7 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
                 continue;
             }
 
-            redact = redact || event_obfuscator.obfuscate_key(
+            redact = redact || event_obfuscator.is_sensitive_key(
                 {key.stringValue, static_cast<size_t>(key.nbEntries)});
 
             jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
@@ -92,8 +92,8 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     highlight.SetArray();
 
     redact = redact ||
-             event_obfuscator.obfuscate_value(gather.resolvedValue) ||
-             event_obfuscator.obfuscate_value(gather.matchedValue);
+             event_obfuscator.is_sensitive_value(gather.resolvedValue) ||
+             event_obfuscator.is_sensitive_value(gather.matchedValue);
 
     if (redact) {
         param.AddMember("value", redaction_msg, allocator);

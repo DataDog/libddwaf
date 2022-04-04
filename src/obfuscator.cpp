@@ -6,6 +6,7 @@
 
 #include <obfuscator.hpp>
 #include <utils.h>
+#include <log.hpp>
 
 namespace ddwaf
 {
@@ -34,31 +35,36 @@ obfuscator::obfuscator(std::string_view key_regex_str,
     if (!key_regex_str.empty()) {
         const re2::StringPiece sp(key_regex_str.data(), key_regex_str.size());
         key_regex = std::make_unique<re2::RE2>(sp, options);
+
+        if (!key_regex->ok())
+        {
+            DDWAF_ERROR("invalid obfuscator key regex: %s",
+                value_regex->error_arg().c_str());
+        }
     }
 
     if (!value_regex_str.empty()) {
         const re2::StringPiece sp(value_regex_str.data(), value_regex_str.size());
         value_regex = std::make_unique<re2::RE2>(sp, options);
+
+        if (!value_regex->ok())
+        {
+            DDWAF_ERROR("invalid obfuscator value regex: %s",
+                value_regex->error_arg().c_str());
+        }
+
     }
 }
 
-bool obfuscator::obfuscate_key(std::string_view key) const
+bool obfuscator::is_sensitive_key(std::string_view key) const
 {
-    if (key_regex && match(*key_regex, key)) {
-        return true;
-    }
-
-    return false;
+    return key_regex ? match(*key_regex, key) : false;
 }
 
 
-bool obfuscator::obfuscate_value(std::string_view value) const
+bool obfuscator::is_sensitive_value(std::string_view value) const
 {
-    if (value_regex && match(*value_regex, value)) {
-        return true;
-    }
-
-    return false;
+    return value_regex ? match(*value_regex, value) : false;
 }
 
 }

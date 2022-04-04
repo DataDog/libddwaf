@@ -13,43 +13,43 @@ TEST(TestObfuscator, TestKeyValueObfuscator)
 {
     ddwaf::obfuscator event_obfuscator("^password$"sv, "value"sv);
 
-    EXPECT_TRUE(event_obfuscator.obfuscate_key("password"sv));
-    EXPECT_FALSE(event_obfuscator.obfuscate_key("passworde"sv));
-    EXPECT_FALSE(event_obfuscator.obfuscate_key("random"sv));
+    EXPECT_TRUE(event_obfuscator.is_sensitive_key("password"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_key("passworde"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_key("random"sv));
 
-    EXPECT_TRUE(event_obfuscator.obfuscate_value("random value"sv));
-    EXPECT_TRUE(event_obfuscator.obfuscate_value("value"sv));
-    EXPECT_FALSE(event_obfuscator.obfuscate_value("random"sv));
+    EXPECT_TRUE(event_obfuscator.is_sensitive_value("random value"sv));
+    EXPECT_TRUE(event_obfuscator.is_sensitive_value("value"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_value("random"sv));
 }
 
 TEST(TestObfuscator, TestKeyObfuscator)
 {
     ddwaf::obfuscator event_obfuscator("^password$"sv);
 
-    EXPECT_TRUE(event_obfuscator.obfuscate_key("password"sv));
-    EXPECT_FALSE(event_obfuscator.obfuscate_key("passworde"sv));
-    EXPECT_FALSE(event_obfuscator.obfuscate_key("random"sv));
+    EXPECT_TRUE(event_obfuscator.is_sensitive_key("password"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_key("passworde"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_key("random"sv));
 
-    EXPECT_FALSE(event_obfuscator.obfuscate_value("random value"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_value("random value"sv));
 }
 
 TEST(TestObfuscator, TestValueObfuscator)
 {
     ddwaf::obfuscator event_obfuscator({}, "value"sv);
 
-    EXPECT_FALSE(event_obfuscator.obfuscate_key("password"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_key("password"sv));
 
-    EXPECT_TRUE(event_obfuscator.obfuscate_value("random value"sv));
-    EXPECT_TRUE(event_obfuscator.obfuscate_value("value"sv));
-    EXPECT_FALSE(event_obfuscator.obfuscate_value("random"sv));
+    EXPECT_TRUE(event_obfuscator.is_sensitive_value("random value"sv));
+    EXPECT_TRUE(event_obfuscator.is_sensitive_value("value"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_value("random"sv));
 }
 
 TEST(TestObfuscator, TestEmptyObfuscator)
 {
     ddwaf::obfuscator event_obfuscator;
 
-    EXPECT_FALSE(event_obfuscator.obfuscate_key("password"sv));
-    EXPECT_FALSE(event_obfuscator.obfuscate_value("value"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_key("password"sv));
+    EXPECT_FALSE(event_obfuscator.is_sensitive_value("value"sv));
 }
 
 TEST(TestObfuscator, TestConfigKeyValue)
