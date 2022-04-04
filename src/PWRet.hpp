@@ -23,7 +23,7 @@ class PWRetManager;
 class PWRetManager
 {
 public:
-    PWRetManager(const ddwaf::obfuscator &eo = ddwaf::obfuscator());
+    PWRetManager(const ddwaf::obfuscator &eo);
 
     DDWAF_RET_CODE getResult() const { return worstCode; }
 

@@ -27,7 +27,7 @@ public:
     bool is_sensitive_key(std::string_view key) const;
     bool is_sensitive_value(std::string_view value) const;
 
-    static constexpr std::string_view redaction_msg{"<redacted by datadog>"};
+    static constexpr std::string_view redaction_msg{"<Redacted>"};
 
 protected:
     static constexpr std::string_view default_key_regex_str{R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)"};

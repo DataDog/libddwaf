@@ -349,7 +349,8 @@ TEST(TestPWProcessor, TestBudget)
     auto& rules = waf->rules;
 
     rapidjson::Document document;
-    PWRetManager rManager;
+    ddwaf::obfuscator eo;
+    PWRetManager rManager(eo);
     PWProcessor processor(wrapper, rules);
     processor.startNewRun(ddwaf::monotonic_clock::now() + chrono::microseconds(50));
 

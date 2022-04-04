@@ -87,7 +87,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
-        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"<redacted by datadog>","highlight":["<redacted by datadog>"]}]}]}])");
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"<Redacted>","highlight":["<Redacted>"]}]}]}])");
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -101,7 +101,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
-        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":[],"value":"<redacted by datadog>","highlight":["<redacted by datadog>"]}]}]}])");
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":[],"value":"<Redacted>","highlight":["<Redacted>"]}]}]}])");
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -116,7 +116,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
-        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"<redacted by datadog>","highlight":["<redacted by datadog>"]}]}]}])");
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"<Redacted>","highlight":["<Redacted>"]}]}]}])");
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -160,7 +160,7 @@ TEST(TestObfuscator, TestConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
-        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"<redacted by datadog>","highlight":["<redacted by datadog>"]}]}]}])");
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"<Redacted>","highlight":["<Redacted>"]}]}]}])");
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -232,7 +232,7 @@ TEST(TestObfuscator, TestConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
-        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":[],"value":"<redacted by datadog>","highlight":["<redacted by datadog>"]}]}]}])");
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":[],"value":"<Redacted>","highlight":["<Redacted>"]}]}]}])");
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -260,7 +260,7 @@ TEST(TestObfuscator, TestConfigHighlight)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
-        EXPECT_STREQ(out.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"security_scanner","category":"category2"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"value","key_path":[],"value":"<redacted by datadog>","highlight":["<redacted by datadog>"]}]}]}])");
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"security_scanner","category":"category2"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"value","key_path":[],"value":"<Redacted>","highlight":["<Redacted>"]}]}]}])");
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -375,7 +375,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MONITOR);
-        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"<redacted by datadog>","highlight":["<redacted by datadog>"]}]}]}])");
+        EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["passwordle"],"value":"<Redacted>","highlight":["<Redacted>"]}]}]}])");
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }

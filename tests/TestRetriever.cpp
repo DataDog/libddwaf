@@ -179,7 +179,8 @@ TEST(PWRetriever, NullErrorManagement)
     retriever.addParameter(map);
 
     rapidjson::Document document;
-    PWRetManager rManager;
+    ddwaf::obfuscator eo;
+    PWRetManager rManager(eo);
 
     const condition& cond = ((PowerWAF*) handle)->rules[0].conditions.front();
 
