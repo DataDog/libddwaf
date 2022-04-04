@@ -3,31 +3,31 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#pragma once
 
-#ifndef pw_hpp
-#define pw_hpp
-
+#include <obfuscator.hpp>
 #include <PWManifest.h>
 #include <rule.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
+#include <validator.hpp>
 
-struct PowerWAF
+class PowerWAF
 {
-    uint64_t maxMapDepth { DDWAF_MAX_MAP_DEPTH };
-    uint64_t maxArrayLength { DDWAF_MAX_ARRAY_LENGTH };
-
-    PWManifest manifest;
-    ddwaf::rule_vector rules;
-    ddwaf::flow_map flows;
-
+public:
     PowerWAF(PWManifest&& manifest_, ddwaf::rule_vector&& rules_,
-             ddwaf::flow_map&& flows_, const ddwaf_config* config);
+             ddwaf::flow_map&& flows_, ddwaf::obfuscator &&event_obfuscator_,
+             ddwaf::object_limits limits_ = ddwaf::object_limits());
 
     static PowerWAF* fromConfig(const ddwaf_object rules,
                                 const ddwaf_config* config, ddwaf::ruleset_info& info);
 
     static constexpr ddwaf_version waf_version { 1, 2, 1 };
-};
 
-#endif /* pw_hpp */
+    PWManifest manifest;
+    ddwaf::rule_vector rules;
+    ddwaf::flow_map flows;
+
+    ddwaf::obfuscator event_obfuscator;
+    ddwaf::object_limits limits;
+};

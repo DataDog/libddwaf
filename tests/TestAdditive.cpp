@@ -142,7 +142,7 @@ TEST(TestAdditive, SelectiveRerun)
     PWManifest manifest;
     populateManifest(manifest);
 
-    PWRetriever retriever(manifest, DDWAF_MAX_MAP_DEPTH, DDWAF_MAX_ARRAY_LENGTH);
+    PWRetriever retriever(manifest);
 
     // Manufacture parameters
     ddwaf_object map = DDWAF_OBJECT_MAP, tmp;

@@ -18,6 +18,7 @@
 #include <IPWRuleProcessor.h>
 #include <PWManifest.h>
 #include <utils.h>
+#include <validator.hpp>
 
 struct RuleMatchTarget;
 
@@ -45,7 +46,7 @@ public:
             const ddwaf_object* activeItem;
             size_t itemIndex;
 
-            State(const ddwaf_object* args, uint64_t maxDepth);
+            State(const ddwaf_object* args, uint32_t maxDepth);
             bool isOver() const;
             void pushStack(const ddwaf_object* newActive);
             bool popStack();
@@ -81,9 +82,7 @@ public:
         {
             std::vector<PWManifest::ARG_ID>::const_iterator targetCursor;
             std::vector<PWManifest::ARG_ID>::const_iterator targetEnd;
-            const uint64_t maxDepth;
 
-            State(uint64_t _maxDepth);
             bool isOver() const;
         };
 
@@ -112,8 +111,7 @@ public:
 private:
     const PWManifest& manifest;
     PWArgsWrapper wrapper;
-    uint64_t max_map_depth;
-    uint64_t max_array_length;
+    uint32_t max_depth;
     Iterator internalIterator;
 
     std::unordered_set<PWManifest::ARG_ID> newestBatch;
@@ -124,7 +122,8 @@ private:
     using ruleCallback = bool(const ddwaf_object*, DDWAF_OBJ_TYPE, bool, bool);
 
 public:
-    PWRetriever(const PWManifest& _manifest, uint64_t _maxMapDepth, uint64_t _maxArrayLength);
+    PWRetriever(const PWManifest& _manifest,
+        const ddwaf::object_limits &limits = ddwaf::object_limits());
     void addParameter(const ddwaf_object input);
     bool hasNewArgs() const;
     bool isKeyInLastBatch(PWManifest::ARG_ID key) const;

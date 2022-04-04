@@ -13,7 +13,17 @@
 #include <rapidjson/prettywriter.h>
 #include <string>
 
-PWRetManager::PWRetManager(rapidjson::Document::AllocatorType& alloc) : allocator(alloc)
+namespace
+{
+rapidjson::GenericStringRef<char> StringRef(std::string_view s)
+{
+    return rapidjson::GenericStringRef<char>(s.data(), s.size());
+}
+}
+
+PWRetManager::PWRetManager(const ddwaf::obfuscator &eo):
+    allocator(outputDocument.GetAllocator()),
+    event_obfuscator(eo)
 {
     outputDocument.SetArray();
 }
@@ -26,6 +36,8 @@ void PWRetManager::startRule()
 
 void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather)
 {
+    auto redaction_msg = StringRef(ddwaf::obfuscator::redaction_msg);
+
     rapidjson::Value output;
     output.SetObject();
 
@@ -50,6 +62,8 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     param.SetObject();
     param.AddMember("address", gather.dataSource, allocator);
     key_path.SetArray();
+
+    bool redact = false;
     for (const ddwaf_object& key : gather.keyPath)
     {
         rapidjson::Value jsonKey;
@@ -60,6 +74,10 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
                 // This shouldn't happen
                 continue;
             }
+
+            redact = redact || event_obfuscator.is_sensitive_key(
+                {key.stringValue, static_cast<size_t>(key.nbEntries)});
+
             jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
         }
         else
@@ -69,14 +87,31 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
         key_path.PushBack(jsonKey, allocator);
     }
     param.AddMember("key_path", key_path, allocator);
-    param.AddMember("value", gather.resolvedValue, allocator);
+
     rapidjson::Value highlight, matchedValue;
     highlight.SetArray();
-    if (!gather.matchedValue.empty())
-    {
-        matchedValue.SetString(gather.matchedValue, allocator);
-        highlight.PushBack(matchedValue, allocator);
+
+    redact = redact ||
+             event_obfuscator.is_sensitive_value(gather.resolvedValue) ||
+             event_obfuscator.is_sensitive_value(gather.matchedValue);
+
+    if (redact) {
+        param.AddMember("value", redaction_msg, allocator);
+        if (!gather.matchedValue.empty())
+        {
+            matchedValue.SetString(redaction_msg, allocator);
+            highlight.PushBack(matchedValue, allocator);
+        }
+    } else {
+        param.AddMember("value", gather.resolvedValue, allocator);
+
+        if (!gather.matchedValue.empty())
+        {
+            matchedValue.SetString(gather.matchedValue, allocator);
+            highlight.PushBack(matchedValue, allocator);
+        }
     }
+
     param.AddMember("highlight", highlight, allocator);
     parameters.PushBack(param, allocator);
 

@@ -340,7 +340,7 @@ TEST(TestPWProcessor, TestBudget)
     ddwaf_object_map_add(&param, "rx_param", &mapItem);
 
     PowerWAF* waf = reinterpret_cast<PowerWAF*>(handle);
-    PWRetriever wrapper(waf->manifest, DDWAF_MAX_MAP_DEPTH, 500);
+    PWRetriever wrapper(waf->manifest);
     wrapper.addParameter(param);
     ASSERT_TRUE(wrapper.isValid());
 
@@ -349,7 +349,8 @@ TEST(TestPWProcessor, TestBudget)
     auto& rules = waf->rules;
 
     rapidjson::Document document;
-    PWRetManager rManager(document.GetAllocator());
+    ddwaf::obfuscator eo;
+    PWRetManager rManager(eo);
     PWProcessor processor(wrapper, rules);
     processor.startNewRun(ddwaf::monotonic_clock::now() + chrono::microseconds(50));
 

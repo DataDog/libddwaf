@@ -39,7 +39,7 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
     const condition& cond = waf->rules[0].conditions[0];
 
     //Send garbage input
-    PWRetriever retriever(waf->manifest, 256, 256);
+    PWRetriever retriever(waf->manifest);
     PWRetriever::Iterator iterator(retriever);
 
     //Try to trigger a null pointer deref

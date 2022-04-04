@@ -12,6 +12,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -32,12 +33,15 @@ struct PowerWAF;
 #include <ddwaf.h>
 #include <exception.hpp>
 #include <log.hpp>
+#include <obfuscator.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
 #include <validator.hpp>
 #include <yaml-cpp/yaml.h>
+
+using namespace std::literals;
 
 using namespace ddwaf;
 // 1s and 1us

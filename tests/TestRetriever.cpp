@@ -11,7 +11,7 @@ using namespace ddwaf;
 TEST(TestPWRetriever, TestCreateNoTarget)
 {
     PWManifest manifest;
-    PWRetriever retriever(manifest, 5, 5);
+    PWRetriever retriever(manifest, ddwaf::object_limits{5, 5, 4096});
 
     PWRetriever::Iterator& iterator = retriever.getIterator({});
 
@@ -29,7 +29,7 @@ TEST(TestPWRetriever, TestCreateNoTarget)
 TEST(TestPWRetriever, TestIterateInvalidItem)
 {
     PWManifest manifest;
-    PWRetriever retriever(manifest, 5, 5);
+    PWRetriever retriever(manifest, ddwaf::object_limits{5, 5, 4096});
     vector<PWManifest::ARG_ID> targets = { 0 };
 
     PWRetriever::Iterator& iterator = retriever.getIterator({});
@@ -69,7 +69,7 @@ TEST(TestPWRetriever, TestInvalidArgConstructor)
 TEST(TestPWRetriever, TestIterateEmptyArray)
 {
     PWManifest manifest;
-    PWRetriever retriever(manifest, 5, 5);
+    PWRetriever retriever(manifest, ddwaf::object_limits{5, 5, 4096});
     vector<PWManifest::ARG_ID> targets = { 0 };
 
     PWRetriever::Iterator& iterator = retriever.getIterator({});
@@ -175,11 +175,12 @@ TEST(PWRetriever, NullErrorManagement)
     ddwaf_object_map_add(&subMap, "lol", ddwaf_object_string(&tmp, "bla"));
     ddwaf_object_map_add(&map, "blob", &subMap);
 
-    PWRetriever retriever(((PowerWAF*) handle)->manifest, 64, 1024);
+    PWRetriever retriever(((PowerWAF*) handle)->manifest);
     retriever.addParameter(map);
 
     rapidjson::Document document;
-    PWRetManager rManager(document.GetAllocator());
+    ddwaf::obfuscator eo;
+    PWRetManager rManager(eo);
 
     const condition& cond = ((PowerWAF*) handle)->rules[0].conditions.front();
 
@@ -203,7 +204,7 @@ TEST(PWRetriever, IteratorAccessNull)
     ddwaf_object_map_add(&subMap, "lol", ddwaf_object_string(&tmp, "bla"));
     ddwaf_object_map_add(&map, "blob", &subMap);
 
-    PWRetriever retriever(((PowerWAF*) handle)->manifest, 64, 1024);
+    PWRetriever retriever(((PowerWAF*) handle)->manifest);
     retriever.addParameter(map);
 
     PWRetriever::Iterator& iterator = retriever.getIterator({});
@@ -231,7 +232,7 @@ TEST(PWRetriever, IteratorBlockList)
     ddwaf_object_map_add(&subMap, "a", ddwaf_object_string(&tmp, "bla3"));
     ddwaf_object_map_add(&map, "blob1", &subMap);
 
-    PWRetriever retriever(((PowerWAF*) handle)->manifest, 64, 1024);
+    PWRetriever retriever(((PowerWAF*) handle)->manifest);
     retriever.addParameter(map);
 
     const vector<PWManifest::ARG_ID> target = { 0 };

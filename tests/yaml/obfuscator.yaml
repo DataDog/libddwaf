@@ -1,0 +1,26 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: security_scanner
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value
+          regex: rule1
+  - id: 2
+    name: rule2
+    tags:
+      type: security_scanner
+      category: category2
+    conditions:
+      - operator: phrase_match
+        parameters:
+          inputs:
+            - address: value
+          list:
+            - badvalue
+            - othervalue

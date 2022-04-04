@@ -14,8 +14,9 @@
 PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
     : wafReference(_wafReference),
       wafHandle(_wafReference.get()),
-      object_validator(wafHandle->maxMapDepth, wafHandle->maxArrayLength),
-      retriever(wafHandle->manifest, wafHandle->maxMapDepth, wafHandle->maxArrayLength),
+      object_validator(wafHandle->limits),
+      event_obfuscator(wafHandle->event_obfuscator),
+      retriever(wafHandle->manifest, wafHandle->limits),
       processor(retriever, wafHandle->rules),
       obj_free(ddwaf_object_free)
 {
@@ -24,8 +25,9 @@ PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
 
 PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
     : wafHandle((const PowerWAF*) _waf),
-      object_validator(wafHandle->maxMapDepth, wafHandle->maxArrayLength),
-      retriever(wafHandle->manifest, wafHandle->maxMapDepth, wafHandle->maxArrayLength),
+      object_validator(wafHandle->limits),
+      event_obfuscator(wafHandle->event_obfuscator),
+      retriever(wafHandle->manifest, wafHandle->limits),
       processor(retriever, wafHandle->rules),
       obj_free(free_fn)
 {
@@ -86,7 +88,7 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
 
     processor.startNewRun(deadline);
 
-    PWRetManager retManager(processor.getGlobalAllocator());
+    PWRetManager retManager(event_obfuscator);
     for (const auto& [key, flow] : wafHandle->flows)
     {
         if (!processor.runFlow(key, flow, retManager))

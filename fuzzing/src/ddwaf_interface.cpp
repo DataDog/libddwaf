@@ -119,8 +119,11 @@ ddwaf_object file_to_object(const char* filename)
 
 ddwaf_handle init_waf()
 {
+    ddwaf_config config{{0, 0, 0},
+        {R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)",
+         R"(^(?:\d[ -]*?){13,16}$)"}};
     ddwaf_object rule   = file_to_object("sample_rules.yml");
-    ddwaf_handle handle = ddwaf_init(&rule, NULL, NULL);
+    ddwaf_handle handle = ddwaf_init(&rule, &config, NULL);
     ddwaf_object_free(&rule);
     return handle;
 }
