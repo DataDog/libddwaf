@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2022 Datadog, Inc.
 
+#include <iostream>
+
 #include "object_generator.hpp"
 #include "random.hpp"
 
@@ -91,16 +93,6 @@ void object_generator::generate_object(ddwaf_object &o, std::size_t depth) const
 {
     if (depth >= limits_.container_depth.max) {
         generate_string_object(o);
-        return;
-    }
-
-    if (depth < limits_.container_depth.min) {
-        if (random::get() % 2) {
-            generate_map_object(o, depth);
-        } else {
-            generate_array_object(o, depth);
-        }
-
         return;
     }
 

@@ -4,17 +4,20 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2022 Datadog, Inc.
 
-#include "runner.hpp"
-#include <iomanip>
+#include <algorithm>
 #include <iostream>
+#include <cmath>
+
+#include "runner.hpp"
 
 namespace ddwaf::benchmark
 {
 
-void runner::run()
+std::map<std::string_view, runner::test_result> runner::run()
 {
+    std::map<std::string_view, test_result> results;
+
     for (std::size_t i = 0; i < tests_.size(); i++) {
-        double total = 0.0;
         runner_test &test = tests_[i];
         fixture_base &f = *test.f;
 
@@ -23,6 +26,8 @@ void runner::run()
             continue;
         }
 
+        double total = 0.0;
+        std::vector<double> times(test.iterations);
         for (std::size_t j = 0; j < test.iterations; j++) {
             if (!f.set_up()) {
                 std::cerr << "Failed to initialise iteration " << j
@@ -30,18 +35,38 @@ void runner::run()
                 break;
             }
 
-            total += f.test_main();
+            auto duration = f.test_main();
+            times[j] = duration;
+            total += duration;
 
             f.tear_down();
         }
 
         f.global_tear_down();
 
-        std::cout << "Test " << test.name << " = "
-                  << std::fixed << std::setprecision(3)
-                  << (total / test.iterations) / 1000.0 << "us"
-                  << std::endl;
+        std::sort(times.begin(), times.end());
+
+        double sd = 0.0;
+        auto median = times[test.iterations/2 - 1];
+        for (auto t : times) {
+            sd +=  (t - median) * (t - median);
+        }
+        sd = sqrt(sd / test.iterations);
+
+        results.emplace(test.name, test_result{
+            total / test.iterations,
+            times[0],
+            median,
+            times[(test.iterations * 75) / 100 - 1],
+            times[(test.iterations * 90) / 100 - 1],
+            times[(test.iterations * 95) / 100 - 1],
+            times[(test.iterations * 99) / 100 - 1],
+            times[test.iterations - 1],
+            sd
+        });
     }
+
+    return results;
 }
 
 }

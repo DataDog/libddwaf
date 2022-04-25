@@ -14,7 +14,7 @@
 namespace ddwaf::benchmark
 {
 
-run_fixture::run_fixture(const std::string &filename,
+run_fixture::run_fixture(std::string_view filename,
   const object_generator::limits &limits)
 {
     ddwaf_object rule = rule_parser::from_file(filename);
@@ -55,9 +55,12 @@ uint64_t run_fixture::test_main() const
     ddwaf_object data = generator_();
 
     ddwaf_result res;
-    auto code = ddwaf_run(ctx_, &data, &res, 10000);
+    auto code = ddwaf_run(ctx_, &data, &res, std::numeric_limits<uint32_t>::max());
     if (code < 0) {
         throw std::runtime_error("WAF returned " + std::to_string(code));
+    }
+    if (res.timeout) {
+        throw std::runtime_error("WAF timed-out");
     }
 
     return res.total_runtime;

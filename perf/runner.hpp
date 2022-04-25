@@ -7,6 +7,7 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -17,6 +18,10 @@ namespace ddwaf::benchmark
 class runner
 {
 public:
+    struct test_result {
+        uint64_t average, p0, p50, p75, p90, p95, p99, p100, sd;
+    };
+
     runner() = default;
 
     template <typename F, typename... Args>
@@ -25,7 +30,7 @@ public:
         tests_.push_back({name, std::make_unique<F>(args...), iterations});
     }
 
-    void run();
+    std::map<std::string_view, test_result> run();
 
 protected:
     struct runner_test {

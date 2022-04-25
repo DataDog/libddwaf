@@ -28,7 +28,6 @@ public:
         limit_type container_depth{0, 20};
         limit_type container_size{0, 256};
         limit_type string_length{0, 4096};
-        std::size_t max_nodes{4096};
     };
 
     object_generator() = default;

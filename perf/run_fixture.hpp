@@ -15,7 +15,7 @@ namespace ddwaf::benchmark
 class run_fixture : public fixture_base
 {
 public:
-    run_fixture(const std::string &filename, 
+    run_fixture(std::string_view filename,
         const object_generator::limits &limits = {});
     ~run_fixture() override;
 
