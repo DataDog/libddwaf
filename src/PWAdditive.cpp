@@ -31,7 +31,10 @@ PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
       processor(retriever, wafHandle->rules),
       obj_free(free_fn)
 {
-    argCache.reserve(ADDITIVE_BUFFER_PREALLOC);
+    if (obj_free != nullptr)
+    {
+        argCache.reserve(ADDITIVE_BUFFER_PREALLOC);
+    }
 }
 
 PWAdditive::~PWAdditive()
@@ -61,8 +64,11 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     }
 
     retriever.addParameter(newParameters);
-    // Take ownership of newParameters
-    argCache.emplace_back(newParameters);
+    if (obj_free != nullptr)
+    {
+        // Take ownership of newParameters
+        argCache.emplace_back(newParameters);
+    }
 
     // If the timeout provided is 0, we need to ensure the parameters are owned
     // by the additive to ensure that the semantics of DDWAF_ERR_TIMEOUT are
