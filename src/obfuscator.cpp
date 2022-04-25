@@ -63,7 +63,6 @@ obfuscator::obfuscator(std::string_view key_regex_str,
             DDWAF_ERROR("invalid obfuscator value regex: %s",
                 value_regex->error_arg().c_str());
         }
-
     }
 }
 

@@ -189,7 +189,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
             PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
             if (transform_id == PWT_INVALID)
             {
-                throw ddwaf::parsing_error("invalid transformer" + std::string(transformer));
+                throw ddwaf::parsing_error("invalid transformer " + std::string(transformer));
             }
             else if (transform_id == PWT_KEYS_ONLY)
             {
