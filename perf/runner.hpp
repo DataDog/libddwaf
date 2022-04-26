@@ -22,26 +22,19 @@ public:
         uint64_t average, p0, p50, p75, p90, p95, p99, p100, sd;
     };
 
-    runner() = default;
+    runner(unsigned iterations): iterations_(iterations) {}
 
     template <typename F, typename... Args>
-    void register_fixture(const std::string &name, std::size_t iterations, Args... args)
+    void register_fixture(const std::string &name, Args... args)
     {
-        tests_.push_back({name, std::make_unique<F>(args...), iterations});
+        tests_.emplace(name, std::make_unique<F>(args...));
     }
 
     std::map<std::string_view, test_result> run();
 
 protected:
-    struct runner_test {
-        std::string name;
-        std::unique_ptr<fixture_base> f;
-        unsigned iterations;
-
-        using ref = std::reference_wrapper<runner_test>;
-    };
-
-    std::vector<runner_test> tests_;
+    unsigned iterations_;
+    std::unordered_map<std::string, std::unique_ptr<fixture_base>> tests_;
 };
 
 }

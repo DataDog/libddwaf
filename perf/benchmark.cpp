@@ -15,6 +15,8 @@
 #include <vector>
 
 #include <ddwaf.h>
+#include <clock.hpp>
+
 #include "object_generator.hpp"
 #include "output_formatter.hpp"
 #include "random.hpp"
@@ -172,6 +174,11 @@ int main(int argc, char *argv[])
         if (!remaining.empty()) {
             test_list.emplace(remaining);
         }
+
+        if (test_list.empty()) {
+            std::cerr << "No matching test found" << std::endl;
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (contains(opts, "rtest")) {
@@ -188,20 +195,32 @@ int main(int argc, char *argv[])
         }
     }
 
-    benchmark::runner runner;
-
-    for (auto &[k, v] : default_tests) {
-        if (!test_list.empty() && test_list.find(k) != test_list.end()) {
-            runner.register_fixture<benchmark::run_fixture>(
-                k, iterations, rule_file, v);
-        }
+    ddwaf_object rule = benchmark::rule_parser::from_file(rule_file);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_object_free(&rule);
+    if (handle == nullptr) {
+        std::cerr << "Invalid ruleset file" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
+    benchmark::runner runner(iterations);
+    for (auto &[k, v] : default_tests) {
+        if (test_list.empty()) {
+            runner.register_fixture<benchmark::run_fixture>(k, iterations, handle, v);
+            continue;
+        }
+
+        if (test_list.find(k) != test_list.end()) {
+            runner.register_fixture<benchmark::run_fixture>(k, iterations, handle, v);
+        }
+    }
     auto results = runner.run();
 
     if (output_fn) {
         output_fn(results);
     }
+
+    ddwaf_destroy(handle);
 
     return EXIT_SUCCESS;
 }

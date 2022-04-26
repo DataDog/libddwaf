@@ -24,58 +24,50 @@ double percentile(const std::vector<double> &values, unsigned percentile)
     return values[index];
 }
 
+double standard_deviation(const std::vector<double> &values)
+{
+    double sd = 0.0;
+    auto median = percentile(values, 50);
+    for (auto v : values) {
+        sd +=  (v - median) * (v - median);
+    }
+    return sqrt(sd / values.size());
+}
+
 }
 
 std::map<std::string_view, runner::test_result> runner::run()
 {
+    std::vector<double> times(iterations_);
     std::map<std::string_view, test_result> results;
 
-    for (std::size_t i = 0; i < tests_.size(); i++) {
-        runner_test &test = tests_[i];
-        fixture_base &f = *test.f;
-
-        if (!f.global_set_up()) {
-            std::cerr << "Failed to initialise fixture: " << test.name << std::endl;
-            continue;
-        }
-
+    for (auto &[name, f] : tests_) {
         double total = 0.0;
-        std::vector<double> times(test.iterations);
-        for (std::size_t j = 0; j < test.iterations; j++) {
-            if (!f.set_up()) {
-                std::cerr << "Failed to initialise iteration " << j
-                          << " for fixture " << test.name << std::endl;
+        for (std::size_t i = 0; i < iterations_; i++) {
+            if (!f->set_up()) {
+                std::cerr << "Failed to initialise iteration " << i
+                          << " for fixture " << name << std::endl;
                 break;
             }
 
-            auto duration = f.test_main();
-            times[j] = duration;
+            auto duration = f->test_main();
+            times[i] = duration;
             total += duration;
 
-            f.tear_down();
+            f->tear_down();
         }
-
-        f.global_tear_down();
 
         std::sort(times.begin(), times.end());
-
-        double sd = 0.0;
-        auto median = percentile(times, 50);
-        for (auto t : times) {
-            sd +=  (t - median) * (t - median);
-        }
-        sd = sqrt(sd / test.iterations);
-
-        results.emplace(test.name, test_result{
-            total / test.iterations,
+        results.emplace(name, test_result{
+            total / times.size(),
             percentile(times, 0),
-            median,
+            percentile(times, 50),
             percentile(times, 75),
             percentile(times, 90),
             percentile(times, 95),
             percentile(times, 99),
             percentile(times, 100),
-            sd
+            standard_deviation(times)
         });
     }
 

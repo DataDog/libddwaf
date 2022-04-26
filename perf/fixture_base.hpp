@@ -17,13 +17,11 @@ public:
     fixture_base() = default;
     virtual ~fixture_base() = default;
 
-    virtual bool global_set_up() { return true; }
     virtual bool set_up() { return true; }
 
-    virtual uint64_t test_main() const = 0;
+    virtual uint64_t test_main() = 0;
 
     virtual void tear_down() {};
-    virtual void global_tear_down() {};
 };
 
 }

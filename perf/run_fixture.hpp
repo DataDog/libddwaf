@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <array>
+
 #include "fixture_base.hpp"
 #include "object_generator.hpp"
 
@@ -15,18 +17,21 @@ namespace ddwaf::benchmark
 class run_fixture : public fixture_base
 {
 public:
-    run_fixture(std::string_view filename,
-        const object_generator::limits &limits = {});
+    run_fixture(unsigned iterations, ddwaf_handle handle,
+        const object_generator::limits &limits);
     ~run_fixture() override;
 
     bool set_up() override;
 
-    uint64_t test_main() const override;
+    uint64_t test_main() override;
 
     void tear_down() override;
 
 protected:
-    object_generator generator_;
+    static constexpr std::size_t max_objects = 100;
+
+    std::size_t num_objects_{max_objects};
+    std::array<ddwaf_object, max_objects> objects_;
     ddwaf_handle handle_{nullptr};
     ddwaf_context ctx_{nullptr};
 };
