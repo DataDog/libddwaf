@@ -64,7 +64,8 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
               << "    --seed VALUE          Seed for the random number generator\n"
               << "    --format VALUE        Output format: csv, json, human\n"
               << "    --test                A comma-separated list of tests to run\n"
-              << "    --rtest               A regex matching the tests to run\n";
+              << "    --rtest               A regex matching the tests to run\n"
+              << "    --threads VALUE       Number of threads for concurrent testing\n";
               // "                                                                                 "
 
     if (!error.empty()) {
@@ -156,6 +157,11 @@ int main(int argc, char *argv[])
     }
     benchmark::random::seed(seed);
 
+    unsigned threads = 0;
+    if (contains(opts, "threads")) {
+        threads = atoi(opts["threads"].data());
+    }
+
     std::unordered_set<std::string_view> test_list;
     if (contains(opts, "test")) {
         auto test_str = opts["test"];
@@ -203,7 +209,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    benchmark::runner runner(iterations);
+    benchmark::runner runner(iterations, threads);
     for (auto &[k, v] : default_tests) {
         if (test_list.empty()) {
             runner.register_fixture<benchmark::run_fixture>(k, iterations, handle, v);

@@ -22,7 +22,8 @@ public:
         uint64_t average, p0, p50, p75, p90, p95, p99, p100, sd;
     };
 
-    runner(unsigned iterations): iterations_(iterations) {}
+    runner(unsigned iterations, unsigned threads):
+        iterations_(iterations), threads_(threads) {}
 
     template <typename F, typename... Args>
     void register_fixture(const std::string &name, Args... args)
@@ -33,7 +34,11 @@ public:
     std::map<std::string_view, test_result> run();
 
 protected:
+    std::map<std::string_view, test_result> run_st();
+    std::map<std::string_view, test_result> run_mt();
+
     unsigned iterations_;
+    unsigned threads_;
     std::unordered_map<std::string, std::unique_ptr<fixture_base>> tests_;
 };
 
