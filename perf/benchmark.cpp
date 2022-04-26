@@ -63,7 +63,8 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
               << "    --rule-file VALUE     Rule file to use on the tests\n"
               << "    --iterations VALUE    Number of iterations per test\n"
               << "    --seed VALUE          Seed for the random number generator\n"
-              << "    --format VALUE        Output format: csv, json, human\n"
+              << "    --format VALUE        Output format: csv, json, human, none\n"
+              << "    --list-tests          List all of the available tests\n"
               << "    --test                A comma-separated list of tests to run\n"
               << "    --rtest               A regex matching the tests to run\n"
               << "    --threads VALUE       Number of threads for concurrent testing\n";
@@ -128,6 +129,13 @@ int main(int argc, char *argv[])
         print_help_and_exit(argv[0], "Missing option --rule-file");
     } else {
         rule_file = opts["rule-file"];
+    }
+
+    if (contains(opts, "list-tests")) {
+        for (auto &[k, v] : default_tests) {
+            std::cout << k << std::endl;
+        }
+        exit(EXIT_SUCCESS);
     }
 
     benchmark::output_fn_type output_fn = benchmark::output_json;
