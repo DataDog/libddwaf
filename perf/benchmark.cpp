@@ -54,6 +54,7 @@ std::map<std::string, benchmark::object_generator::limits> default_tests = {
     {"large_depth.large_objects.small_strings", {{6, 20}, {129, 256}, {0, 32}, 512}},
     {"large_depth.large_objects.medium_strings", {{6, 20}, {129, 256}, {33, 512}, 512}},
     {"large_depth.large_objects.large_strings", {{6, 20}, {129, 256}, {513, 1024}, 512}},
+    {"mix", {{0, 20}, {0, 256}, {0, 1024}, 512}},
 };
 
 void print_help_and_exit(std::string_view name, std::string_view error = {})
@@ -129,15 +130,19 @@ int main(int argc, char *argv[])
         rule_file = opts["rule-file"];
     }
 
-    benchmark::output_fn_type output_fn = benchmark::output_human;
+    benchmark::output_fn_type output_fn = benchmark::output_json;
     if (contains(opts, "format")) {
         auto format = opts["format"];
         if (format == "csv") {
             output_fn = benchmark::output_csv;
+        } else if (format == "human") {
+            output_fn = benchmark::output_human;
         } else if (format == "json") {
             output_fn = benchmark::output_json;
         } else if (format == "none") {
             output_fn = nullptr;
+        } else {
+            print_help_and_exit(argv[0], "Unsupported value for --format");
         }
     }
 

@@ -152,7 +152,6 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
         tid[i].join();
     }
 
-
     return results;
 }
 
