@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include "output_formatter.hpp"
+#include "random.hpp"
 
 namespace ddwaf::benchmark
 {
@@ -33,7 +34,7 @@ void output_json(const std::map<std::string_view, runner::test_result> &results)
     // Lazy JSON
     bool start = false;
 
-    std::cout << "{";
+    std::cout << R"({"seed":)" << random::get_seed() << R"(,"results":{)";
     for (auto &[k, v] : results) {
         if (!start) {
             start = true;
@@ -53,12 +54,12 @@ void output_json(const std::map<std::string_view, runner::test_result> &results)
                   << R"("sd":)" << v.sd
                   << "}";
     }
-    std::cout << "}" << std::endl;
+    std::cout << "}}" << std::endl;
 }
 
 void output_human(const std::map<std::string_view, runner::test_result> &results)
 {
-
+    std::cout << "Seed : " << random::get_seed() << std::endl;
     for (auto &[k, v] : results) {
         std::cout << "---- " << k << " ----" << std::endl
                   << std::fixed << std::setprecision(3)

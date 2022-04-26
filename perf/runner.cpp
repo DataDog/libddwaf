@@ -13,6 +13,19 @@
 namespace ddwaf::benchmark
 {
 
+namespace {
+double percentile(const std::vector<double> &values, unsigned percentile)
+{
+    std::size_t size = values.size();
+    std::size_t index = ceil((size * percentile) / 100.0);
+    if (index > 0) {
+        index = index - 1;
+    }
+    return values[index];
+}
+
+}
+
 std::map<std::string_view, runner::test_result> runner::run()
 {
     std::map<std::string_view, test_result> results;
@@ -47,7 +60,7 @@ std::map<std::string_view, runner::test_result> runner::run()
         std::sort(times.begin(), times.end());
 
         double sd = 0.0;
-        auto median = times[test.iterations/2 - 1];
+        auto median = percentile(times, 50);
         for (auto t : times) {
             sd +=  (t - median) * (t - median);
         }
@@ -55,13 +68,13 @@ std::map<std::string_view, runner::test_result> runner::run()
 
         results.emplace(test.name, test_result{
             total / test.iterations,
-            times[0],
+            percentile(times, 0),
             median,
-            times[(test.iterations * 75) / 100 - 1],
-            times[(test.iterations * 90) / 100 - 1],
-            times[(test.iterations * 95) / 100 - 1],
-            times[(test.iterations * 99) / 100 - 1],
-            times[test.iterations - 1],
+            percentile(times, 75),
+            percentile(times, 90),
+            percentile(times, 95),
+            percentile(times, 99),
+            percentile(times, 100),
             sd
         });
     }

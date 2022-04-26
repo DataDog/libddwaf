@@ -36,7 +36,7 @@ protected:
     struct runner_test {
         std::string name;
         std::unique_ptr<fixture_base> f;
-        std::size_t iterations;
+        unsigned iterations;
 
         using ref = std::reference_wrapper<runner_test>;
     };

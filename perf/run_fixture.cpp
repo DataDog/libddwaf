@@ -54,6 +54,8 @@ uint64_t run_fixture::test_main() const
 {
     ddwaf_object data = generator_();
 
+    //std::cout << utils::object_to_string(data) << std::endl;
+
     ddwaf_result res;
     auto code = ddwaf_run(ctx_, &data, &res, std::numeric_limits<uint32_t>::max());
     if (code < 0) {

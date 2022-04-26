@@ -17,6 +17,7 @@ class random
 public:
     static void seed(unsigned long value)
     {
+        seed_ = value;
         rng_ = std::make_unique<std::mt19937>(value);
     }
 
@@ -32,7 +33,13 @@ public:
     {
         return *rng_;
     }
+
+    static unsigned long get_seed()
+    {
+        return seed_;
+    }
 protected:
+    static unsigned long seed_;
     static std::unique_ptr<std::mt19937> rng_;
 };
 

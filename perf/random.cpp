@@ -9,6 +9,7 @@
 namespace ddwaf::benchmark
 {
 
+unsigned long random::seed_ = 0;
 std::unique_ptr<std::mt19937> random::rng_ = std::make_unique<std::mt19937>();
 
 }
