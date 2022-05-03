@@ -9,6 +9,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "fixture_base.hpp"
@@ -26,9 +27,9 @@ public:
         iterations_(iterations), threads_(threads) {}
 
     template <typename F, typename... Args>
-    void register_fixture(const std::string &name, Args... args)
+    void register_fixture(const std::string &name, Args&&... args)
     {
-        tests_.emplace(name, std::make_unique<F>(args...));
+        tests_.emplace(name, std::make_unique<F>(std::forward<Args&&>(args)...));
     }
 
     std::map<std::string_view, test_result> run();

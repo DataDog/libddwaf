@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2022 Datadog, Inc.
 
+#include <iostream>
+#include <fstream>
 #include <string>
 
 #include "utils.hpp"
@@ -55,6 +57,7 @@ void debug_str_helper(std::string &res, const ddwaf_object &p)
         break;
     }
 }
+
 } // namespace
 
 std::string object_to_string(const ddwaf_object &o) noexcept
@@ -63,5 +66,60 @@ std::string object_to_string(const ddwaf_object &o) noexcept
     debug_str_helper(res, o);
     return res;
 }
+
+ddwaf_object object_dup(const ddwaf_object &o) noexcept
+{
+    ddwaf_object copy;
+    switch (o.type) {
+    case DDWAF_OBJ_INVALID:
+        ddwaf_object_invalid(&copy);
+        break;
+    case DDWAF_OBJ_SIGNED:
+        ddwaf_object_signed(&copy, o.intValue);
+        break;
+    case DDWAF_OBJ_UNSIGNED:
+        ddwaf_object_unsigned(&copy, o.uintValue);
+        break;
+    case DDWAF_OBJ_STRING:
+        ddwaf_object_stringl(&copy, o.stringValue, o.nbEntries);
+        break;
+    case DDWAF_OBJ_ARRAY:
+        ddwaf_object_array(&copy);
+        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) {
+            ddwaf_object child_copy = object_dup(o.array[i]);
+            ddwaf_object_array_add(&copy, &child_copy);
+        }
+        break;
+    case DDWAF_OBJ_MAP:
+        ddwaf_object_map(&copy);
+        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) {
+            ddwaf_object child_copy = object_dup(o.array[i]);
+            ddwaf_object_map_addl(&copy, o.array[i].parameterName,
+                o.array[i].parameterNameLength, &child_copy);
+        }
+        break;
+    }
+    return copy;
+}
+
+std::string read_file(const fs::path &filename)
+{
+    std::ifstream file(filename.c_str(), std::ios::in);
+    if (!file)
+    {
+        throw std::system_error(errno, std::generic_category());
+    }
+
+    // Create a buffer equal to the file size
+    std::string buffer;
+    file.seekg(0, std::ios::end);
+    buffer.resize(file.tellg());
+    file.seekg(0, std::ios::beg);
+
+    file.read(&buffer[0], buffer.size());
+    file.close();
+    return buffer;
+}
+
 
 }

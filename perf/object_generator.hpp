@@ -6,11 +6,16 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <ddwaf.h>
+
+namespace fs = std::filesystem;
 
 namespace ddwaf::benchmark
 {
@@ -18,7 +23,13 @@ namespace ddwaf::benchmark
 class object_generator
 {
 public:
-    struct limits
+    enum class generator_type : unsigned {
+        valid = 1,
+        random = 2,
+        mixed = valid | random,
+    };
+
+    struct settings
     {
         using limit_type = struct {
             std::size_t min, max;
@@ -29,10 +40,14 @@ public:
         limit_type container_size{0, 256};
         limit_type string_length{0, 4096};
         std::size_t max_elements{4096};
+        generator_type type{generator_type::random};
     };
 
     object_generator() = default;
-    object_generator(limits l, std::vector<std::string_view> &&addresses);
+    object_generator(const std::vector<std::string_view> &addresses,
+        const fs::path &rules_dir);
+
+    ~object_generator();
 
     object_generator(const object_generator&) = default;
     object_generator& operator=(const object_generator&) = default;
@@ -40,22 +55,15 @@ public:
     object_generator(object_generator&&) = default;
     object_generator& operator=(object_generator&&) = default;
 
-    ddwaf_object operator()() const;
+    std::vector<ddwaf_object> operator()(const settings &l, size_t n) const;
 
 protected:
-    char* generate_random_string(std::size_t *length) const;
-    void generate_string_object(ddwaf_object &o) const ;
-    void generate_map_object(ddwaf_object &o,
-        std::size_t &max_elements, std::size_t depth) const;
-    void generate_array_object(ddwaf_object &o,
-        std::size_t &max_elements, std::size_t depth) const;
-    void generate_object(ddwaf_object &o,
-        std::size_t &max_elements, std::size_t depth = 0) const;
+    void parse_rule(const fs::path &rule_path);
+    std::unordered_map<std::string_view, std::vector<ddwaf_object>> addresses_;
 
-protected:
-    limits limits_;
-    std::vector<std::string_view> addresses_;
+    // Objects generated from the ruleset will be stored here and freed on
+    // destruction. This ensures that addresses can have multiple copies.
+    std::vector<ddwaf_object> objects_;
 };
-
 
 }

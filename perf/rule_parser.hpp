@@ -7,10 +7,13 @@
 #pragma once
 
 #include <ddwaf.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace ddwaf::benchmark::rule_parser
 {
 
-ddwaf_object from_file(std::string_view filename);
+ddwaf_object from_file(fs::path &filename);
 
 }

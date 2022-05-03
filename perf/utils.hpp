@@ -7,10 +7,15 @@
 #pragma once
 
 #include <ddwaf.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace ddwaf::benchmark::utils
 {
 
 std::string object_to_string(const ddwaf_object &o) noexcept;
+ddwaf_object object_dup(const ddwaf_object &o) noexcept;
+std::string read_file(const fs::path &filename);
 
 }

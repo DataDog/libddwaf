@@ -6,37 +6,23 @@
 
 #include <iostream>
 #include <ddwaf.h>
+#include <vector>
 
 #include "run_fixture.hpp"
-#include "object_generator.hpp"
 #include "random.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::benchmark
 {
 
-run_fixture::run_fixture(unsigned iterations, ddwaf_handle handle,
-    const object_generator::limits &limits):
-  handle_(handle)
-{
-    uint32_t addrs_len;
-    auto addrs = ddwaf_required_addresses(handle_, &addrs_len);
-
-    std::vector<std::string_view> addresses{
-        addrs, addrs + static_cast<size_t>(addrs_len)};
-
-    object_generator generator(limits, std::move(addresses));
-
-    num_objects_ = std::min<std::size_t>(iterations, max_objects);
-    for (std::size_t i = 0; i < num_objects_; i++) {
-        objects_[i] = generator();
-    }
-}
+run_fixture::run_fixture(ddwaf_handle handle,
+    std::vector<ddwaf_object> &&objects):
+  objects_(std::move(objects)), handle_(handle) {}
 
 run_fixture::~run_fixture()
 {
-    for (std::size_t i = 0; i < num_objects_; i++) {
-        ddwaf_object_free(&objects_[i]);
+    for (auto &o : objects_) {
+        ddwaf_object_free(&o);
     }
 }
 
@@ -48,18 +34,22 @@ bool run_fixture::set_up()
 
 uint64_t run_fixture::test_main()
 {
-    ddwaf_object &data = objects_[random::get() % num_objects_];
+    ddwaf_object &data = objects_[random::get() % objects_.size()];
 
     ddwaf_result res;
     auto code = ddwaf_run(ctx_, &data, &res, std::numeric_limits<uint32_t>::max());
     if (code < 0) {
         throw std::runtime_error("WAF returned " + std::to_string(code));
     }
+
     if (res.timeout) {
         throw std::runtime_error("WAF timed-out");
     }
 
-    return res.total_runtime;
+    uint64_t total_runtime = res.total_runtime;
+    ddwaf_result_free(&res);
+
+    return total_runtime;
 }
 
 void run_fixture::tear_down()

@@ -9,7 +9,6 @@
 #include <array>
 
 #include "fixture_base.hpp"
-#include "object_generator.hpp"
 
 namespace ddwaf::benchmark
 {
@@ -17,8 +16,7 @@ namespace ddwaf::benchmark
 class run_fixture : public fixture_base
 {
 public:
-    run_fixture(unsigned iterations, ddwaf_handle handle,
-        const object_generator::limits &limits);
+    run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&objects);
     ~run_fixture() override;
 
     bool set_up() override;
@@ -28,10 +26,7 @@ public:
     void tear_down() override;
 
 protected:
-    static constexpr std::size_t max_objects = 100;
-
-    std::size_t num_objects_{max_objects};
-    std::array<ddwaf_object, max_objects> objects_;
+    std::vector<ddwaf_object> objects_;
     ddwaf_handle handle_{nullptr};
     ddwaf_context ctx_{nullptr};
 };
