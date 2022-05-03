@@ -62,4 +62,40 @@ ddwaf_object as_if<ddwaf_object, void>::operator()() const
     return node_to_arg(node);
 }
 
+YAML::Emitter& operator << (YAML::Emitter& out, const ddwaf_object& o)
+{
+    out.SetMapFormat(YAML::Flow);
+    out.SetSeqFormat(YAML::Flow);
+    out.SetStringFormat(YAML::DoubleQuoted);
+
+    switch (o.type) {
+    case DDWAF_OBJ_SIGNED:
+        out << o.intValue;
+        break;
+    case DDWAF_OBJ_UNSIGNED:
+        out << o.uintValue;
+        break;
+    case DDWAF_OBJ_STRING:
+        out << o.stringValue;
+        break;
+    case DDWAF_OBJ_ARRAY:
+        out << YAML::BeginSeq;
+        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) {
+            out << o.array[i];
+        }
+        out << YAML::EndSeq;
+        break;
+    case DDWAF_OBJ_MAP:
+        out << YAML::BeginMap;
+        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) {
+            out << YAML::Key << o.array[i].parameterName;
+            out << YAML::Value << o.array[i];
+        }
+        out << YAML::EndMap;
+        break;
+    }
+
+    return out;
+}
+
 }

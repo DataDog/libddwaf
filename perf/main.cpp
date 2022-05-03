@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <fstream>
 #include <regex>
 #include <string_view>
 #include <unordered_set>
@@ -24,6 +25,7 @@
 #include "rule_parser.hpp"
 #include "runner.hpp"
 #include "run_fixture.hpp"
+#include "yaml_helpers.hpp"
 
 using namespace ddwaf;
 
@@ -172,11 +174,6 @@ process_settings generate_process_settings(int argc, char *argv[])
 
     auto opts = parse_args(argc, argv);
 
-    std::cerr << "Settings:" << std::endl;
-    for (auto &[k, v] : opts) {
-       std::cerr << "[" << k << "] = " << v << std::endl;
-    }
-
     if (contains(opts, "help")) {
         print_help_and_exit(argv[0]);
     }
@@ -284,8 +281,8 @@ void initialise_runner(benchmark::runner &runner, ddwaf_handle handle,
             continue;
         }
 
-        runner.register_fixture<benchmark::run_fixture>(k, handle,
-            generator(v, num_objects));
+        auto objects = generator(v, num_objects);
+        runner.register_fixture<benchmark::run_fixture>(k, handle, std::move(objects));
     }
 }
 
@@ -298,6 +295,7 @@ int main(int argc, char *argv[])
     fs::path rule_file = s.rule_repo / "build/recommended.json";
 
     ddwaf_object rule = benchmark::rule_parser::from_file(rule_file);
+
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ddwaf_object_free(&rule);
     if (handle == nullptr) {
@@ -307,6 +305,7 @@ int main(int argc, char *argv[])
 
     benchmark::runner runner(s.iterations, s.threads);
     initialise_runner(runner, handle, s);
+
     auto results = runner.run();
 
     if (s.output_fn) {

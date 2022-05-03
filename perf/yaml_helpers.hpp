@@ -29,6 +29,8 @@ struct as_if<ddwaf_object, void>
     const Node& node;
 };
 
+YAML::Emitter& operator << (YAML::Emitter& out, const ddwaf_object& o);
+
 }
 
 

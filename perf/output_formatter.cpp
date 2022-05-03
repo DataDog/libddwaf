@@ -34,7 +34,9 @@ void output_json(const std::map<std::string_view, runner::test_result> &results)
     // Lazy JSON
     bool start = false;
 
-    std::cout << R"({"seed":)" << random::get_seed() << R"(,"results":{)";
+    std::cout << R"({"seed":)" << random::get_seed()
+              << R"(,"last_random_value":)" << random::get()
+              << R"(,"results":{)";
     for (auto &[k, v] : results) {
         if (!start) {
             start = true;
@@ -60,6 +62,7 @@ void output_json(const std::map<std::string_view, runner::test_result> &results)
 void output_human(const std::map<std::string_view, runner::test_result> &results)
 {
     std::cout << "Seed : " << random::get_seed() << std::endl;
+    std::cout << "Last Random Value : " << random::get() << std::endl;
     for (auto &[k, v] : results) {
         std::cout << "---- " << k << " ----" << std::endl
                   << std::fixed << std::setprecision(3)
