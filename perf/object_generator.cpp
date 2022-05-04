@@ -1,8 +1,8 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2022 Datadog, Inc.
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include <iostream>
 #include <yaml-cpp/yaml.h>
@@ -12,28 +12,27 @@
 #include "utils.hpp"
 #include "yaml_helpers.hpp"
 
-namespace ddwaf::benchmark
-{
+namespace ddwaf::benchmark {
 
 namespace {
 
 using settings = object_generator::settings;
 
 void generate_object(ddwaf_object &o, const settings &l,
-        std::size_t &max_elements, std::size_t depth = 0);
+    std::size_t &max_elements, std::size_t depth = 0);
 
-char* generate_random_string(const settings &l, std::size_t *length)
+char *generate_random_string(const settings &l, std::size_t *length)
 {
-    static auto& charset = 
+    static auto &charset =
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        //"`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"!";
+    //"`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"!";
 
-    std::size_t numchars = l.string_length.min +
-        random::get() % l.string_length.range();
+    std::size_t numchars =
+        l.string_length.min + random::get() % l.string_length.range();
 
     char *str = (char *)malloc(numchars + 1);
     for (std::size_t i = 0; i < numchars; i++) {
-        str[i] =  charset[random::get() % (sizeof(charset) - 2)];
+        str[i] = charset[random::get() % (sizeof(charset) - 2)];
     }
     str[numchars] = '\0';
     *length = numchars;
@@ -44,18 +43,18 @@ char* generate_random_string(const settings &l, std::size_t *length)
 void generate_string_object(ddwaf_object &o, const settings &l)
 {
     std::size_t length = 0;
-    char * str = generate_random_string(l, &length);
+    char *str = generate_random_string(l, &length);
     ddwaf_object_stringl_nc(&o, str, length);
 }
 
 void generate_map_object(ddwaf_object &o, const settings &l,
-        std::size_t &max_elements, std::size_t depth)
+    std::size_t &max_elements, std::size_t depth)
 
 {
     ddwaf_object_map(&o);
 
-    std::size_t n = l.container_size.min +
-        random::get() % l.container_size.range();
+    std::size_t n =
+        l.container_size.min + random::get() % l.container_size.range();
 
     n = std::min(n, max_elements);
 
@@ -70,12 +69,12 @@ void generate_map_object(ddwaf_object &o, const settings &l,
 }
 
 void generate_array_object(ddwaf_object &o, const settings &l,
-        std::size_t &max_elements, std::size_t depth)
+    std::size_t &max_elements, std::size_t depth)
 {
     ddwaf_object_array(&o);
 
-    std::size_t n = l.container_size.min +
-        random::get() % l.container_size.range();
+    std::size_t n =
+        l.container_size.min + random::get() % l.container_size.range();
 
     n = std::min(n, max_elements);
 
@@ -87,9 +86,11 @@ void generate_array_object(ddwaf_object &o, const settings &l,
 }
 
 void generate_object(ddwaf_object &o, const settings &l,
-        std::size_t &max_elements, std::size_t depth)
+    std::size_t &max_elements, std::size_t depth)
 {
-    if (max_elements > 0) { max_elements--; }
+    if (max_elements > 0) {
+        max_elements--;
+    }
 
     if (depth >= l.container_depth.max) {
         generate_string_object(o, l);
@@ -119,12 +120,12 @@ void generate_object(ddwaf_object &o, const settings &l,
     }
 }
 
-}
+} // namespace
 
 void object_generator::parse_rule(const fs::path &rule_path)
 {
     std::string rule_str = utils::read_file(rule_path);
-    YAML::Node doc       = YAML::Load(rule_str);
+    YAML::Node doc = YAML::Load(rule_str);
 
     const YAML::Node &conditions = doc["conditions"];
     for (auto it = conditions.begin(); it != conditions.end(); ++it) {
@@ -136,7 +137,8 @@ void object_generator::parse_rule(const fs::path &rule_path)
         if (op.as<std::string>() == "phrase_match") {
             const YAML::Node &list = parameters["list"];
             cond_values = list.as<std::vector<ddwaf_object>>();
-            objects_.insert(objects_.end(), cond_values.begin(), cond_values.end());
+            objects_.insert(
+                objects_.end(), cond_values.begin(), cond_values.end());
         } else {
             continue;
         }
@@ -145,16 +147,20 @@ void object_generator::parse_rule(const fs::path &rule_path)
         for (auto addr = inputs.begin(); addr != inputs.end(); ++addr) {
             auto key = (*addr)["address"].as<std::string>();
             auto &current_values = addresses_[key];
-            current_values.insert(current_values.end(),
-                cond_values.begin(), cond_values.end());
+            current_values.insert(
+                current_values.end(), cond_values.begin(), cond_values.end());
         }
     }
 
     const YAML::Node &test_vectors = doc["test_vectors"];
-    if (!test_vectors) { return; }
+    if (!test_vectors) {
+        return;
+    }
 
-    const YAML::Node &matches  = test_vectors["matches"];
-    if (!matches) { return; }
+    const YAML::Node &matches = test_vectors["matches"];
+    if (!matches) {
+        return;
+    }
 
     for (auto it = matches.begin(); it != matches.end(); ++it) {
         auto first_entry = it->begin();
@@ -172,15 +178,13 @@ object_generator::object_generator(
     const std::vector<std::string_view> &addresses, const fs::path &rules_dir)
 {
     if (!fs::is_directory(rules_dir)) {
-        throw std::invalid_argument(std::string(rules_dir) +
-            " should be a directory");
+        throw std::invalid_argument(
+            std::string(rules_dir) + " should be a directory");
     }
 
-    for (auto addr : addresses) {
-        addresses_[addr] = {};
-    }
+    for (auto addr : addresses) { addresses_[addr] = {}; }
 
-    for (auto const& entry : fs::directory_iterator{rules_dir}) {
+    for (auto const &entry : fs::directory_iterator{rules_dir}) {
         if (!entry.is_regular_file()) {
             continue;
         }
@@ -192,7 +196,7 @@ object_generator::object_generator(
 
         try {
             parse_rule(entry_path);
-        } catch(const std::exception &e) {
+        } catch (const std::exception &e) {
             std::cerr << entry_path << std::endl;
             std::cerr << e.what() << std::endl;
             break;
@@ -202,9 +206,7 @@ object_generator::object_generator(
 
 object_generator::~object_generator()
 {
-    for (auto &obj: objects_) {
-        ddwaf_object_free(&obj);
-    }
+    for (auto &obj : objects_) { ddwaf_object_free(&obj); }
 }
 
 std::vector<ddwaf_object> object_generator::operator()(
@@ -212,7 +214,7 @@ std::vector<ddwaf_object> object_generator::operator()(
 {
     std::vector<ddwaf_object> output(n);
 
-    while(n--) {
+    while (n--) {
         ddwaf_object &root = output[n];
         ddwaf_object_map(&root);
 
@@ -247,4 +249,4 @@ std::vector<ddwaf_object> object_generator::operator()(
     return output;
 }
 
-}
+} // namespace ddwaf::benchmark

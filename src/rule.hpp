@@ -52,7 +52,6 @@ protected:
     status _matchPastMatches(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
     status _matchTargets(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
 
-    bool initialized;
     std::vector<PWManifest::ARG_ID> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
     std::unique_ptr<IPWRuleProcessor> processor;

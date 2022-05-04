@@ -1,8 +1,8 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2022 Datadog, Inc.
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
 
@@ -17,11 +17,9 @@
 
 namespace fs = std::filesystem;
 
-namespace ddwaf::benchmark
-{
+namespace ddwaf::benchmark {
 
-class object_generator
-{
+class object_generator {
 public:
     enum class generator_type : unsigned {
         valid = 1,
@@ -29,8 +27,7 @@ public:
         mixed = valid | random,
     };
 
-    struct settings
-    {
+    struct settings {
         using limit_type = struct {
             std::size_t min, max;
             std::size_t range() const { return max - min; }
@@ -49,11 +46,11 @@ public:
 
     ~object_generator();
 
-    object_generator(const object_generator&) = default;
-    object_generator& operator=(const object_generator&) = default;
+    object_generator(const object_generator &) = default;
+    object_generator &operator=(const object_generator &) = default;
 
-    object_generator(object_generator&&) = default;
-    object_generator& operator=(object_generator&&) = default;
+    object_generator(object_generator &&) = default;
+    object_generator &operator=(object_generator &&) = default;
 
     std::vector<ddwaf_object> operator()(const settings &l, size_t n) const;
 
@@ -66,4 +63,4 @@ protected:
     std::vector<ddwaf_object> objects_;
 };
 
-}
+} // namespace ddwaf::benchmark

@@ -1,17 +1,16 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2022 Datadog, Inc.
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
 
 #include "utils.hpp"
 
-namespace ddwaf::benchmark::utils
-{
+namespace ddwaf::benchmark::utils {
 
 namespace {
 void debug_str_helper(std::string &res, const ddwaf_object &p)
@@ -105,8 +104,7 @@ ddwaf_object object_dup(const ddwaf_object &o) noexcept
 std::string read_file(const fs::path &filename)
 {
     std::ifstream file(filename.c_str(), std::ios::in);
-    if (!file)
-    {
+    if (!file) {
         throw std::system_error(errno, std::generic_category());
     }
 
@@ -121,5 +119,4 @@ std::string read_file(const fs::path &filename)
     return buffer;
 }
 
-
-}
+} // namespace ddwaf::benchmark::utils

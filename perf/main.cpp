@@ -1,30 +1,30 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2022 Datadog, Inc.
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
-#include <fstream>
 #include <regex>
 #include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include <ddwaf.h>
 #include <clock.hpp>
+#include <ddwaf.h>
 
 #include "object_generator.hpp"
 #include "output_formatter.hpp"
 #include "random.hpp"
 #include "rule_parser.hpp"
-#include "runner.hpp"
 #include "run_fixture.hpp"
+#include "runner.hpp"
 #include "yaml_helpers.hpp"
 
 using namespace ddwaf;
@@ -34,63 +34,9 @@ namespace fs = std::filesystem;
 using generator_type = benchmark::object_generator::generator_type;
 
 std::map<std::string, benchmark::object_generator::settings> default_tests = {
-    {"run.random.depth_s.object_s.string_s", {{0, 1}, {0, 32}, {0, 32}, 32, generator_type::random}},
-    {"run.random.depth_s.object_s.string_m", {{0, 1}, {0, 32}, {33, 512}, 32, generator_type::random}},
-    {"run.random.depth_s.object_s.string_l", {{0, 1}, {0, 32}, {513, 1024}, 32, generator_type::random}},
-    {"run.random.depth_s.object_m.string_s", {{0, 1}, {33, 128}, {0, 32}, 128, generator_type::random}},
-    {"run.random.depth_s.object_m.string_m", {{0, 1}, {33, 128}, {33, 512}, 128, generator_type::random}},
-    {"run.random.depth_s.object_m.string_l", {{0, 1}, {33, 128}, {513, 1024}, 128, generator_type::random}},
-    {"run.random.depth_s.object_l.string_s", {{0, 1}, {129, 256}, {0, 32}, 512, generator_type::random}},
-    {"run.random.depth_s.object_l.string_m", {{0, 1}, {129, 256}, {33, 512}, 512, generator_type::random}},
-    {"run.random.depth_s.object_l.string_l", {{0, 1}, {129, 256}, {513, 1024}, 512, generator_type::random}},
-    {"run.random.depth_m.object_s.string_s", {{2, 5}, {0, 32}, {0, 32}, 32, generator_type::random}},
-    {"run.random.depth_m.object_s.string_m", {{2, 5}, {0, 32}, {33, 512}, 32, generator_type::random}},
-    {"run.random.depth_m.object_s.string_l", {{2, 5}, {0, 32}, {513, 1024}, 32, generator_type::random}},
-    {"run.random.depth_m.object_m.string_s", {{2, 5}, {33, 128}, {0, 32}, 128, generator_type::random}},
-    {"run.random.depth_m.object_m.string_m", {{2, 5}, {33, 128}, {33, 512}, 128, generator_type::random}},
-    {"run.random.depth_m.object_m.string_l", {{2, 5}, {33, 128}, {513, 1024}, 128, generator_type::random}},
-    {"run.random.depth_m.object_l.string_s", {{2, 5}, {129, 256}, {0, 32}, 512, generator_type::random}},
-    {"run.random.depth_m.object_l.string_m", {{2, 5}, {129, 256}, {33, 512}, 512, generator_type::random}},
-    {"run.random.depth_m.object_l.string_l", {{2, 5}, {129, 256}, {513, 1024}, 512, generator_type::random}},
-    {"run.random.depth_l.object_s.string_s", {{6, 20}, {0, 32}, {0, 32}, 32, generator_type::random}},
-    {"run.random.depth_l.object_s.string_m", {{6, 20}, {0, 32}, {33, 512}, 32, generator_type::random}},
-    {"run.random.depth_l.object_s.string_l", {{6, 20}, {0, 32}, {513, 1024}, 32, generator_type::random}},
-    {"run.random.depth_l.object_m.string_s", {{6, 20}, {33, 128}, {0, 32}, 128, generator_type::random}},
-    {"run.random.depth_l.object_m.string_m", {{6, 20}, {33, 128}, {33, 512}, 128, generator_type::random}},
-    {"run.random.depth_l.object_m.string_l", {{6, 20}, {33, 128}, {513, 1024}, 128, generator_type::random}},
-    {"run.random.depth_l.object_l.string_s", {{6, 20}, {129, 256}, {0, 32}, 512, generator_type::random}},
-    {"run.random.depth_l.object_l.string_m", {{6, 20}, {129, 256}, {33, 512}, 512, generator_type::random}},
-    {"run.random.depth_l.object_l.string_l", {{6, 20}, {129, 256}, {513, 1024}, 512, generator_type::random}},
-    {"run.random.depth_any.object_any.string_any", {{0, 20}, {0, 256}, {0, 1024}, 512, generator_type::random}},
+    {"run.random", {{0, 20}, {0, 256}, {0, 1024}, 512, generator_type::random}},
     {"run.valid", {{0, 20}, {0, 256}, {0, 1024}, 512, generator_type::valid}},
-    {"run.mixed.depth_s.object_s.string_s", {{0, 1}, {0, 32}, {0, 32}, 32, generator_type::mixed}},
-    {"run.mixed.depth_s.object_s.string_m", {{0, 1}, {0, 32}, {33, 512}, 32, generator_type::mixed}},
-    {"run.mixed.depth_s.object_s.string_l", {{0, 1}, {0, 32}, {513, 1024}, 32, generator_type::mixed}},
-    {"run.mixed.depth_s.object_m.string_s", {{0, 1}, {33, 128}, {0, 32}, 128, generator_type::mixed}},
-    {"run.mixed.depth_s.object_m.string_m", {{0, 1}, {33, 128}, {33, 512}, 128, generator_type::mixed}},
-    {"run.mixed.depth_s.object_m.string_l", {{0, 1}, {33, 128}, {513, 1024}, 128, generator_type::mixed}},
-    {"run.mixed.depth_s.object_l.string_s", {{0, 1}, {129, 256}, {0, 32}, 512, generator_type::mixed}},
-    {"run.mixed.depth_s.object_l.string_m", {{0, 1}, {129, 256}, {33, 512}, 512, generator_type::mixed}},
-    {"run.mixed.depth_s.object_l.string_l", {{0, 1}, {129, 256}, {513, 1024}, 512, generator_type::mixed}},
-    {"run.mixed.depth_m.object_s.string_s", {{2, 5}, {0, 32}, {0, 32}, 32, generator_type::mixed}},
-    {"run.mixed.depth_m.object_s.string_m", {{2, 5}, {0, 32}, {33, 512}, 32, generator_type::mixed}},
-    {"run.mixed.depth_m.object_s.string_l", {{2, 5}, {0, 32}, {513, 1024}, 32, generator_type::mixed}},
-    {"run.mixed.depth_m.object_m.string_s", {{2, 5}, {33, 128}, {0, 32}, 128, generator_type::mixed}},
-    {"run.mixed.depth_m.object_m.string_m", {{2, 5}, {33, 128}, {33, 512}, 128, generator_type::mixed}},
-    {"run.mixed.depth_m.object_m.string_l", {{2, 5}, {33, 128}, {513, 1024}, 128, generator_type::mixed}},
-    {"run.mixed.depth_m.object_l.string_s", {{2, 5}, {129, 256}, {0, 32}, 512, generator_type::mixed}},
-    {"run.mixed.depth_m.object_l.string_m", {{2, 5}, {129, 256}, {33, 512}, 512, generator_type::mixed}},
-    {"run.mixed.depth_m.object_l.string_l", {{2, 5}, {129, 256}, {513, 1024}, 512, generator_type::mixed}},
-    {"run.mixed.depth_l.object_s.string_s", {{6, 20}, {0, 32}, {0, 32}, 32, generator_type::mixed}},
-    {"run.mixed.depth_l.object_s.string_m", {{6, 20}, {0, 32}, {33, 512}, 32, generator_type::mixed}},
-    {"run.mixed.depth_l.object_s.string_l", {{6, 20}, {0, 32}, {513, 1024}, 32, generator_type::mixed}},
-    {"run.mixed.depth_l.object_m.string_s", {{6, 20}, {33, 128}, {0, 32}, 128, generator_type::mixed}},
-    {"run.mixed.depth_l.object_m.string_m", {{6, 20}, {33, 128}, {33, 512}, 128, generator_type::mixed}},
-    {"run.mixed.depth_l.object_m.string_l", {{6, 20}, {33, 128}, {513, 1024}, 128, generator_type::mixed}},
-    {"run.mixed.depth_l.object_l.string_s", {{6, 20}, {129, 256}, {0, 32}, 512, generator_type::mixed}},
-    {"run.mixed.depth_l.object_l.string_m", {{6, 20}, {129, 256}, {33, 512}, 512, generator_type::mixed}},
-    {"run.mixed.depth_l.object_l.string_l", {{6, 20}, {129, 256}, {513, 1024}, 512, generator_type::mixed}},
-    {"run.mixed.depth_any.object_any.string_any", {{0, 20}, {0, 256}, {0, 1024}, 512, generator_type::mixed}},
+    {"run.mixed", {{0, 20}, {0, 256}, {0, 1024}, 512, generator_type::mixed}},
 };
 
 struct process_settings {
@@ -106,17 +52,20 @@ struct process_settings {
 
 void print_help_and_exit(std::string_view name, std::string_view error = {})
 {
-    std::cerr << "Usage: " << name << " [OPTION]...\n"
-              << "    --rule-repo VALUE     AppSec rules repository path\n"
-              << "    --iterations VALUE    Number of iterations per test\n"
-              << "    --seed VALUE          Seed for the random number generator\n"
-              << "    --format VALUE        Output format: csv, json, human, none\n"
-              << "    --list-tests          List all of the available tests\n"
-              << "    --test                A comma-separated list of tests to run\n"
-              << "    --rtest               A regex matching the tests to run\n"
-              << "    --threads VALUE       Number of threads for concurrent testing\n"
-              << "    --max-objects VALUE   Maximum number of objects to cache per test\n";
-              // "                                                                                 "
+    std::cerr
+        << "Usage: " << name << " [OPTION]...\n"
+        << "    --rule-repo VALUE     AppSec rules repository path\n"
+        << "    --iterations VALUE    Number of iterations per test\n"
+        << "    --seed VALUE          Seed for the random number generator\n"
+        << "    --format VALUE        Output format: csv, json, human, none\n"
+        << "    --list-tests          List all of the available tests\n"
+        << "    --test                A comma-separated list of tests to run\n"
+        << "    --rtest               A regex matching the tests to run\n"
+        << "    --threads VALUE       Number of threads for concurrent "
+           "testing\n"
+        << "    --max-objects VALUE   Maximum number of objects to cache per "
+           "test\n";
+    // " "
 
     if (!error.empty()) {
         std::cerr << "\nError: " << error << "\n";
@@ -127,9 +76,7 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
 
 void print_tests_and_exit()
 {
-    for (auto &[k, v] : default_tests) {
-        std::cerr << k << std::endl;
-    }
+    for (auto &[k, v] : default_tests) { std::cerr << k << std::endl; }
     exit(EXIT_SUCCESS);
 }
 
@@ -163,7 +110,8 @@ std::map<std::string_view, std::string_view> parse_args(int argc, char *argv[])
     return parsed_args;
 }
 
-bool contains(std::map<std::string_view, std::string_view> &opts, std::string_view name)
+bool contains(
+    std::map<std::string_view, std::string_view> &opts, std::string_view name)
 {
     return opts.find(name) != opts.end();
 }
@@ -210,7 +158,8 @@ process_settings generate_process_settings(int argc, char *argv[])
     if (contains(opts, "iterations")) {
         s.iterations = atoi(opts["iterations"].data());
         if (s.iterations == 0) {
-            print_help_and_exit(argv[0], "Iterations should be a positive number");
+            print_help_and_exit(
+                argv[0], "Iterations should be a positive number");
         }
     }
 
@@ -227,7 +176,8 @@ process_settings generate_process_settings(int argc, char *argv[])
     if (contains(opts, "max-objects")) {
         s.max_objects = atoi(opts["max-objects"].data());
         if (s.max_objects == 0) {
-            print_help_and_exit(argv[0], "Max objects should be a positive number");
+            print_help_and_exit(
+                argv[0], "Max objects should be a positive number");
         }
     }
 
@@ -263,8 +213,8 @@ process_settings generate_process_settings(int argc, char *argv[])
     return s;
 }
 
-void initialise_runner(benchmark::runner &runner, ddwaf_handle handle,
-    process_settings &s)
+void initialise_runner(
+    benchmark::runner &runner, ddwaf_handle handle, process_settings &s)
 {
     uint32_t addrs_len;
     auto addrs = ddwaf_required_addresses(handle, &addrs_len);
@@ -272,8 +222,8 @@ void initialise_runner(benchmark::runner &runner, ddwaf_handle handle,
     std::vector<std::string_view> addresses{
         addrs, addrs + static_cast<size_t>(addrs_len)};
 
-    benchmark::object_generator generator(addresses,
-        s.rule_repo / "rules/recommended/");
+    benchmark::object_generator generator(
+        addresses, s.rule_repo / "rules/recommended/");
 
     unsigned num_objects = std::min(s.max_objects, s.iterations);
     for (auto &[k, v] : default_tests) {
@@ -282,7 +232,8 @@ void initialise_runner(benchmark::runner &runner, ddwaf_handle handle,
         }
 
         auto objects = generator(v, num_objects);
-        runner.register_fixture<benchmark::run_fixture>(k, handle, std::move(objects));
+        runner.register_fixture<benchmark::run_fixture>(
+            k, handle, std::move(objects));
     }
 }
 

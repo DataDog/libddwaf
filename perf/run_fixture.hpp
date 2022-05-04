@@ -1,8 +1,8 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2022 Datadog, Inc.
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
 
@@ -10,11 +10,9 @@
 
 #include "fixture_base.hpp"
 
-namespace ddwaf::benchmark
-{
+namespace ddwaf::benchmark {
 
-class run_fixture : public fixture_base
-{
+class run_fixture : public fixture_base {
 public:
     run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&objects);
     ~run_fixture() override;
@@ -31,4 +29,4 @@ protected:
     ddwaf_context ctx_{nullptr};
 };
 
-}
+} // namespace ddwaf::benchmark
