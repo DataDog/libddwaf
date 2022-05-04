@@ -11,10 +11,13 @@
 
 namespace ddwaf::benchmark {
 
+static constexpr double MILLI = 1e3;
+static constexpr double MICRO = 1e6;
+
 void output_csv(const std::map<std::string_view, runner::test_result> &results)
 {
     std::cout << "name,average,p0,p75,p90,p95,p99,p100,sd" << std::endl;
-    for (auto &[k, v] : results) {
+    for (const auto &[k, v] : results) {
         std::cout << k << ", " << v.average << "," << v.p0 << "," << v.p50
                   << "," << v.p75 << "," << v.p90 << "," << v.p95 << ","
                   << v.p99 << "," << v.p100 << "," << v.sd << std::endl;
@@ -29,7 +32,7 @@ void output_json(const std::map<std::string_view, runner::test_result> &results)
     std::cout << R"({"seed":)" << random::get_seed()
               << R"(,"last_random_value":)" << random::get()
               << R"(,"results":{)";
-    for (auto &[k, v] : results) {
+    for (const auto &[k, v] : results) {
         if (!start) {
             start = true;
         } else {
@@ -50,25 +53,27 @@ void output_json(const std::map<std::string_view, runner::test_result> &results)
     std::cout << "}}" << std::endl;
 }
 
+// NOLINTBEGIN(*-narrowing-conversions)
 void output_human(
     const std::map<std::string_view, runner::test_result> &results)
 {
     std::cout << "Seed : " << random::get_seed() << std::endl;
     std::cout << "Last Random Value : " << random::get() << std::endl;
-    for (auto &[k, v] : results) {
+    for (const auto &[k, v] : results) {
         std::cout << "---- " << k << " ----" << std::endl
                   << std::fixed << std::setprecision(3)
-                  << "  average      : " << v.average / 1e6 << " ms"
+                  << "  average      : " << v.average / MICRO << " ms"
                   << std::endl
-                  << "  p0           : " << v.p0 / 1e6 << " ms" << std::endl
-                  << "  p50          : " << v.p50 / 1e6 << " ms" << std::endl
-                  << "  p75          : " << v.p75 / 1e6 << " ms" << std::endl
-                  << "  p90          : " << v.p90 / 1e6 << " ms" << std::endl
-                  << "  p95          : " << v.p95 / 1e6 << " ms" << std::endl
-                  << "  p99          : " << v.p99 / 1e6 << " ms" << std::endl
-                  << "  p100         : " << v.p100 / 1e6 << " ms" << std::endl
-                  << "  s. deviation : " << v.sd / 1e3 << " us" << std::endl;
+                  << "  p0           : " << v.p0 / MICRO << " ms" << std::endl
+                  << "  p50          : " << v.p50 / MICRO << " ms" << std::endl
+                  << "  p75          : " << v.p75 / MICRO << " ms" << std::endl
+                  << "  p90          : " << v.p90 / MICRO << " ms" << std::endl
+                  << "  p95          : " << v.p95 / MICRO << " ms" << std::endl
+                  << "  p99          : " << v.p99 / MICRO << " ms" << std::endl
+                  << "  p100         : " << v.p100 / MICRO << " ms" << std::endl
+                  << "  s. deviation : " << v.sd / MILLI << " us" << std::endl;
     }
 }
+// NOLINTEND(*-narrowing-conversions)
 
 } // namespace ddwaf::benchmark

@@ -21,6 +21,7 @@ public:
         uint64_t average, p0, p50, p75, p90, p95, p99, p100, sd;
     };
 
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     runner(unsigned iterations, unsigned threads)
         : iterations_(iterations), threads_(threads)
     {}

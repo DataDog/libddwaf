@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <array>
+#include <ddwaf.h>
+#include <vector>
 
 #include "fixture_base.hpp"
 
@@ -16,6 +17,12 @@ class run_fixture : public fixture_base {
 public:
     run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&objects);
     ~run_fixture() override;
+
+    run_fixture(const run_fixture &) = delete;
+    run_fixture &operator=(const run_fixture &) = delete;
+
+    run_fixture(run_fixture &&) = delete;
+    run_fixture &operator=(run_fixture &&) = delete;
 
     bool set_up() override;
 

@@ -27,16 +27,15 @@
 #include "runner.hpp"
 #include "yaml_helpers.hpp"
 
-using namespace ddwaf;
-
+namespace benchmark = ddwaf::benchmark;
 namespace fs = std::filesystem;
 
 using generator_type = benchmark::object_generator::generator_type;
 
 std::map<std::string, benchmark::object_generator::settings> default_tests = {
-    {"run.random", {{0, 20}, {0, 256}, {0, 1024}, 512, generator_type::random}},
-    {"run.valid", {{0, 20}, {0, 256}, {0, 1024}, 512, generator_type::valid}},
-    {"run.mixed", {{0, 20}, {0, 256}, {0, 1024}, 512, generator_type::mixed}},
+    {"run.random", {.type = generator_type::random}},
+    {"run.valid", {.type = generator_type::valid}},
+    {"run.mixed", {.type = generator_type::mixed}},
 };
 
 struct process_settings {
@@ -44,10 +43,10 @@ struct process_settings {
     std::unordered_set<std::string_view> test_list;
     benchmark::output_fn_type output_fn{benchmark::output_json};
     unsigned iterations{100};
-    unsigned long seed;
+    unsigned long seed{20};
     unsigned threads{0};
     unsigned max_objects{100};
-    ddwaf_handle handle;
+    ddwaf_handle handle{nullptr};
 };
 
 void print_help_and_exit(std::string_view name, std::string_view error = {})
@@ -217,7 +216,7 @@ void initialise_runner(
     benchmark::runner &runner, ddwaf_handle handle, process_settings &s)
 {
     uint32_t addrs_len;
-    auto addrs = ddwaf_required_addresses(handle, &addrs_len);
+    const auto *const addrs = ddwaf_required_addresses(handle, &addrs_len);
 
     std::vector<std::string_view> addresses{
         addrs, addrs + static_cast<size_t>(addrs_len)};
@@ -259,7 +258,7 @@ int main(int argc, char *argv[])
 
     auto results = runner.run();
 
-    if (s.output_fn) {
+    if (s.output_fn != nullptr) {
         s.output_fn(results);
     }
 

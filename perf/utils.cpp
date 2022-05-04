@@ -13,6 +13,7 @@
 namespace ddwaf::benchmark::utils {
 
 namespace {
+// NOLINTNEXTLINE(misc-no-recursion)
 void debug_str_helper(std::string &res, const ddwaf_object &p)
 {
     if (p.parameterNameLength != 0U) {
@@ -66,6 +67,7 @@ std::string object_to_string(const ddwaf_object &o) noexcept
     return res;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object object_dup(const ddwaf_object &o) noexcept
 {
     ddwaf_object copy;
@@ -114,7 +116,7 @@ std::string read_file(const fs::path &filename)
     buffer.resize(file.tellg());
     file.seekg(0, std::ios::beg);
 
-    file.read(&buffer[0], buffer.size());
+    file.read(&buffer[0], static_cast<int64_t>(buffer.size()));
     file.close();
     return buffer;
 }

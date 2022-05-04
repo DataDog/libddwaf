@@ -23,13 +23,14 @@ void generate_object(ddwaf_object &o, const settings &l,
 
 char *generate_random_string(const settings &l, std::size_t *length)
 {
-    static auto &charset =
-        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    //"`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"!";
+    static const auto &charset =
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"!";
 
     std::size_t numchars =
         l.string_length.min + random::get() % l.string_length.range();
 
+    // NOLINTNEXTLINE
     char *str = (char *)malloc(numchars + 1);
     for (std::size_t i = 0; i < numchars; i++) {
         str[i] = charset[random::get() % (sizeof(charset) - 2)];
@@ -47,6 +48,7 @@ void generate_string_object(ddwaf_object &o, const settings &l)
     ddwaf_object_stringl_nc(&o, str, length);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void generate_map_object(ddwaf_object &o, const settings &l,
     std::size_t &max_elements, std::size_t depth)
 
@@ -68,6 +70,7 @@ void generate_map_object(ddwaf_object &o, const settings &l,
     }
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void generate_array_object(ddwaf_object &o, const settings &l,
     std::size_t &max_elements, std::size_t depth)
 {
@@ -85,6 +88,7 @@ void generate_array_object(ddwaf_object &o, const settings &l,
     }
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void generate_object(ddwaf_object &o, const settings &l,
     std::size_t &max_elements, std::size_t depth)
 {
@@ -98,7 +102,7 @@ void generate_object(ddwaf_object &o, const settings &l,
     }
 
     if (depth < l.container_depth.min) {
-        if (random::get() % 2) {
+        if (random::get_bool()) {
             generate_map_object(o, l, max_elements, depth);
         } else {
             generate_array_object(o, l, max_elements, depth);
@@ -214,14 +218,14 @@ std::vector<ddwaf_object> object_generator::operator()(
 {
     std::vector<ddwaf_object> output(n);
 
-    while (n--) {
+    while (n-- > 0) {
         ddwaf_object &root = output[n];
         ddwaf_object_map(&root);
 
-        for (auto &[addr, valid_values] : addresses_) {
+        for (const auto &[addr, valid_values] : addresses_) {
             ddwaf_object value;
 
-            std::size_t max_elements = l.max_elements / addresses_.size();
+            std::size_t max_elements = l.elements.max / addresses_.size();
             if (max_elements == 0) {
                 max_elements = 1;
             }

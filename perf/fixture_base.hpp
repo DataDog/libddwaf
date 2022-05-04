@@ -15,6 +15,12 @@ public:
     fixture_base() = default;
     virtual ~fixture_base() = default;
 
+    fixture_base(const fixture_base &) = delete;
+    fixture_base &operator=(const fixture_base &) = delete;
+
+    fixture_base(fixture_base &&) = delete;
+    fixture_base &operator=(fixture_base &&) = delete;
+
     virtual bool set_up() { return true; }
 
     virtual uint64_t test_main() = 0;

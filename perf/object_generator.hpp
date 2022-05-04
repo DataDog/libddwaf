@@ -28,15 +28,20 @@ public:
     };
 
     struct settings {
-        using limit_type = struct {
+        struct limit_type {
             std::size_t min, max;
-            std::size_t range() const { return max - min; }
+            [[nodiscard]] std::size_t range() const { return max - min; }
         };
 
-        limit_type container_depth{0, 20};
-        limit_type container_size{0, 256};
-        limit_type string_length{0, 4096};
-        std::size_t max_elements{4096};
+        static constexpr std::size_t max_depth = 20;
+        static constexpr std::size_t max_size = 256;
+        static constexpr std::size_t max_length = 1024;
+        static constexpr std::size_t max_elements = 512;
+
+        limit_type container_depth{0, max_depth};
+        limit_type container_size{0, max_size};
+        limit_type string_length{0, max_length};
+        limit_type elements{0, max_elements};
         generator_type type{generator_type::random};
     };
 

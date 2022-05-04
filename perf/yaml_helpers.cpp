@@ -9,6 +9,8 @@
 namespace YAML {
 
 namespace {
+
+// NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object node_to_arg(const Node &node)
 {
     switch (node.Type()) {
@@ -25,7 +27,7 @@ ddwaf_object node_to_arg(const Node &node)
         ddwaf_object arg;
         ddwaf_object_map(&arg);
         for (auto it = node.begin(); it != node.end(); ++it) {
-            std::string key = it->first.as<std::string>();
+            auto key = it->first.as<std::string>();
             ddwaf_object child = node_to_arg(it->second);
             ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
         }
@@ -54,6 +56,7 @@ ddwaf_object as_if<ddwaf_object, void>::operator()() const
     return node_to_arg(node);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
 {
     out.SetMapFormat(YAML::Flow);

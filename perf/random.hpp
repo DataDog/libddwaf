@@ -13,13 +13,13 @@ namespace ddwaf::benchmark {
 
 class random {
 public:
-    static void seed(unsigned long value)
+    static void seed(uint64_t value)
     {
         seed_ = value;
         rng_ = std::make_unique<std::mt19937>(value);
     }
 
-    static unsigned long get()
+    static uint64_t get()
     {
         if (!rng_) {
             rng_ = std::make_unique<std::mt19937>();
@@ -27,12 +27,20 @@ public:
         return (*rng_)();
     }
 
+    static bool get_bool()
+    {
+        if (!rng_) {
+            rng_ = std::make_unique<std::mt19937>();
+        }
+        return ((*rng_)() % 2) == 1;
+    }
+
     static std::mt19937 &get_rng() { return *rng_; }
 
-    static unsigned long get_seed() { return seed_; }
+    static uint64_t get_seed() { return seed_; }
 
 protected:
-    static unsigned long seed_;
+    static uint64_t seed_;
     static std::unique_ptr<std::mt19937> rng_;
 };
 

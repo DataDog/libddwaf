@@ -15,4 +15,4 @@ namespace ddwaf::benchmark::rule_parser {
 
 ddwaf_object from_file(fs::path &filename);
 
-}
+} // namespace ddwaf::benchmark::rule_parser

@@ -15,6 +15,7 @@
 
 namespace ddwaf::benchmark {
 
+// NOLINTBEGIN(*-narrowing-conversions,*-magic-numbers)
 namespace {
 double percentile(const std::vector<double> &values, unsigned percentile)
 {
@@ -79,10 +80,11 @@ std::map<std::string_view, runner::test_result> runner::run_st()
 
 std::map<std::string_view, runner::test_result> runner::run_mt()
 {
-    std::mutex test_mtx, result_mtx;
+    std::mutex test_mtx;
+    std::mutex result_mtx;
     std::map<std::string_view, test_result> results;
     auto test_it = tests_.begin();
-    std::thread tid[threads_];
+    std::vector<std::thread> tid(threads_);
 
     auto fn = [&]() {
         std::vector<double> times(iterations_);
@@ -138,5 +140,5 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
 
     return results;
 }
-
+// NOLINTEND(*-narrowing-conversions,*-magic-numbers)
 } // namespace ddwaf::benchmark

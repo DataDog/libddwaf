@@ -8,7 +8,9 @@
 
 namespace ddwaf::benchmark {
 
-unsigned long random::seed_ = 0;
+uint64_t random::seed_ = 0;
+
+// NOLINTNEXTLINE(cert-err58-cpp)
 std::unique_ptr<std::mt19937> random::rng_ = std::make_unique<std::mt19937>();
 
 } // namespace ddwaf::benchmark
