@@ -26,7 +26,7 @@
 #include <rapidjson/prettywriter.h>
 using namespace std;
 
-struct PowerWAF;
+class PowerWAF;
 #include <PWAdditive.hpp>
 #include <PowerWAF.hpp>
 #include <clock.hpp>
