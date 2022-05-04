@@ -141,6 +141,7 @@ target_include_directories(lib_yamlcpp INTERFACE ${INSTALL_DIR}/include)
 add_dependencies(lib_yamlcpp proj_yamlcpp)
 set_target_properties(lib_yamlcpp proj_yamlcpp PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
+# Appsec event rules
 ExternalProject_Add(proj_event_rules
     GIT_REPOSITORY git@github.com:DataDog/appsec-event-rules.git
     GIT_TAG 1.3.1
@@ -148,4 +149,6 @@ ExternalProject_Add(proj_event_rules
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND "")
+
+set_target_properties(proj_event_rules PROPERTIES EXCLUDE_FROM_ALL TRUE)
 # vim: et

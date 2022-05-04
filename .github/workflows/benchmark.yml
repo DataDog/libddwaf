@@ -1,4 +1,4 @@
-name: Fuzz
+name: Benchmark
 
 on:
   push:
