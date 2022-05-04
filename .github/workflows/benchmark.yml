@@ -40,10 +40,12 @@ jobs:
           workflow_conclusion: success
           name: benchmark-data
           path: previous
+        continue-on-error: true
 
       - name: Compare performance
         run: |
             ./build/perf/benchcmp previous/benchmark_results.json benchmark_results.json
+        continue-on-error: true
 
       - name: Artifact
         uses: actions/upload-artifact@v2
