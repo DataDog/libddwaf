@@ -25,6 +25,7 @@
 #include "rule_parser.hpp"
 #include "run_fixture.hpp"
 #include "runner.hpp"
+#include "settings.hpp"
 #include "yaml_helpers.hpp"
 
 namespace benchmark = ddwaf::benchmark;
@@ -36,17 +37,6 @@ std::map<std::string, benchmark::object_generator::settings> default_tests = {
     {"run.random", {.type = generator_type::random}},
     {"run.valid", {.type = generator_type::valid}},
     {"run.mixed", {.type = generator_type::mixed}},
-};
-
-struct process_settings {
-    fs::path rule_repo;
-    std::unordered_set<std::string_view> test_list;
-    benchmark::output_fn_type output_fn{benchmark::output_json};
-    unsigned iterations{100};
-    unsigned long seed{20};
-    unsigned threads{0};
-    unsigned max_objects{100};
-    ddwaf_handle handle{nullptr};
 };
 
 void print_help_and_exit(std::string_view name, std::string_view error = {})
@@ -62,6 +52,7 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
         << "    --rtest               A regex matching the tests to run\n"
         << "    --threads VALUE       Number of threads for concurrent "
            "testing\n"
+        << "    --output VALUE        Results output file\n"
         << "    --max-objects VALUE   Maximum number of objects to cache per "
            "test\n";
     // " "
@@ -115,9 +106,9 @@ bool contains(
     return opts.find(name) != opts.end();
 }
 
-process_settings generate_process_settings(int argc, char *argv[])
+benchmark::settings generate_settings(int argc, char *argv[])
 {
-    process_settings s;
+    benchmark::settings s;
 
     auto opts = parse_args(argc, argv);
 
@@ -142,16 +133,20 @@ process_settings generate_process_settings(int argc, char *argv[])
     if (contains(opts, "format")) {
         auto format = opts["format"];
         if (format == "csv") {
-            s.output_fn = benchmark::output_csv;
+            s.format = benchmark::output_fmt::csv;
         } else if (format == "human") {
-            s.output_fn = benchmark::output_human;
+            s.format = benchmark::output_fmt::human;
         } else if (format == "json") {
-            s.output_fn = benchmark::output_json;
+            s.format = benchmark::output_fmt::json;
         } else if (format == "none") {
-            s.output_fn = nullptr;
+            s.format = benchmark::output_fmt::none;
         } else {
             print_help_and_exit(argv[0], "Unsupported value for --format");
         }
+    }
+
+    if (s.format != benchmark::output_fmt::none && contains(opts, "output")) {
+        s.output_file = opts["output"];
     }
 
     if (contains(opts, "iterations")) {
@@ -213,7 +208,7 @@ process_settings generate_process_settings(int argc, char *argv[])
 }
 
 void initialise_runner(
-    benchmark::runner &runner, ddwaf_handle handle, process_settings &s)
+    benchmark::runner &runner, ddwaf_handle handle, benchmark::settings &s)
 {
     uint32_t addrs_len;
     const auto *const addrs = ddwaf_required_addresses(handle, &addrs_len);
@@ -238,7 +233,7 @@ void initialise_runner(
 
 int main(int argc, char *argv[])
 {
-    auto s = generate_process_settings(argc, argv);
+    auto s = generate_settings(argc, argv);
 
     benchmark::random::seed(s.seed);
 
@@ -258,9 +253,7 @@ int main(int argc, char *argv[])
 
     auto results = runner.run();
 
-    if (s.output_fn != nullptr) {
-        s.output_fn(results);
-    }
+    benchmark::output_results(s, results);
 
     ddwaf_destroy(handle);
 

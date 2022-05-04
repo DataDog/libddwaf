@@ -11,16 +11,11 @@
 #include <string_view>
 
 #include "runner.hpp"
+#include "settings.hpp"
 
 namespace ddwaf::benchmark {
 
-using output_fn_type = void (*)(
-    const std::map<std::string_view, runner::test_result> &results);
-
-void output_csv(const std::map<std::string_view, runner::test_result> &results);
-void output_json(
-    const std::map<std::string_view, runner::test_result> &results);
-void output_human(
+void output_results(const benchmark::settings &s,
     const std::map<std::string_view, runner::test_result> &results);
 
 } // namespace ddwaf::benchmark
