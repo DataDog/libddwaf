@@ -3,8 +3,6 @@ name: Benchmark
 on:
   push:
     branches: [ master ]
-    tags:
-      - "*"
   workflow_dispatch:
 jobs:
   benchmark:
@@ -39,6 +37,7 @@ jobs:
           workflow_conclusion: success
           name: benchmark-data
           path: previous
+          branch: master
         continue-on-error: true
 
       - name: Compare performance
