@@ -99,23 +99,24 @@ int main(int argc, char *argv[])
     auto base_results = baseline["results"];
     auto latest_results = latest["results"];
     for (auto it = base_results.begin(); it != base_results.end(); ++it) {
-        auto b_res = it->second;
         try {
+            auto b_res = it->second;
             auto l_res = latest_results[it->first.as<std::string>()];
+
+            auto b_average = b_res["average"].as<double>();
+            auto l_average = l_res["average"].as<double>();
+
+            double avg_pct = 100.0 - ((l_average * 100.0) / b_average);
+
+            total_pct += avg_pct;
+
+            std::cout << it->first << ": " << std::fixed << std::setprecision(2)
+                      << avg_pct << "%\n";
         } catch (...) {
             continue;
         }
-
-        auto b_average = b_res["average"].as<double>();
-        auto l_average = l_res["average"].as<double>();
-
-        double avg_pct = 100.0 - ((l_average * 100.0) / b_average);
-
-        total_pct += avg_pct;
-
-        std::cout << it->first << ": " << std::fixed << std::setprecision(2)
-                  << avg_pct << "%\n";
     }
+
     std::cout << "total: " << std::fixed << std::setprecision(2)
               << total_pct / base_results.size() << "%\n";
 
