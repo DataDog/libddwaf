@@ -100,7 +100,11 @@ int main(int argc, char *argv[])
     auto latest_results = latest["results"];
     for (auto it = base_results.begin(); it != base_results.end(); ++it) {
         auto b_res = it->second;
-        auto l_res = latest_results[it->first.as<std::string>()];
+        try {
+            auto l_res = latest_results[it->first.as<std::string>()];
+        } catch (...) {
+            continue;
+        }
 
         auto b_average = b_res["average"].as<double>();
         auto l_average = l_res["average"].as<double>();

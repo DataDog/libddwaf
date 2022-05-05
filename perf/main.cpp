@@ -34,7 +34,11 @@ namespace fs = std::filesystem;
 using generator_type = benchmark::object_generator::generator_type;
 
 std::map<std::string, benchmark::object_generator::settings> default_tests = {
-    {"run.random", {.type = generator_type::random}},
+    {"run.random.any", {.type = generator_type::random}},
+    {"run.random.long_strings",
+        {.string_length = {1024, 4096}, .type = generator_type::random}},
+    {"run.random.deep_containers",
+        {.container_depth = {5, 20}, .type = generator_type::random}},
     {"run.valid", {.type = generator_type::valid}},
     {"run.mixed", {.type = generator_type::mixed}},
 };
