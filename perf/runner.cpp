@@ -17,7 +17,7 @@ namespace ddwaf::benchmark {
 
 // NOLINTBEGIN(*-narrowing-conversions,*-magic-numbers)
 namespace {
-double percentile(const std::vector<double> &values, unsigned percentile)
+double percentile(const std::vector<uint64_t> &values, unsigned percentile)
 {
     std::size_t size = values.size();
     std::size_t index = ceil((size * percentile) / 100.0);
@@ -27,7 +27,7 @@ double percentile(const std::vector<double> &values, unsigned percentile)
     return values[index];
 }
 
-double standard_deviation(const std::vector<double> &values)
+double standard_deviation(const std::vector<uint64_t> &values)
 {
     double sd = 0.0;
     auto median = percentile(values, 50);
@@ -47,11 +47,12 @@ std::map<std::string_view, runner::test_result> runner::run()
 
 std::map<std::string_view, runner::test_result> runner::run_st()
 {
-    std::vector<double> times(iterations_);
     std::map<std::string_view, test_result> results;
 
     for (auto &[name, f] : tests_) {
         double total = 0.0;
+        std::vector<uint64_t> times(iterations_);
+
         for (std::size_t i = 0; i < iterations_; i++) {
             if (!f->set_up()) {
                 std::cerr << "Failed to initialise iteration " << i
@@ -67,12 +68,21 @@ std::map<std::string_view, runner::test_result> runner::run_st()
         }
 
         std::sort(times.begin(), times.end());
-        results.emplace(
-            name, test_result{total / times.size(), percentile(times, 0),
-                      percentile(times, 50), percentile(times, 75),
-                      percentile(times, 90), percentile(times, 95),
-                      percentile(times, 99), percentile(times, 100),
-                      standard_deviation(times)});
+        if (!store_samples) {
+            results.emplace(
+                name, test_result{total / times.size(), percentile(times, 0),
+                          percentile(times, 50), percentile(times, 75),
+                          percentile(times, 90), percentile(times, 95),
+                          percentile(times, 99), percentile(times, 100),
+                          standard_deviation(times), {}});
+        } else {
+            results.emplace(
+                name, test_result{total / times.size(), percentile(times, 0),
+                          percentile(times, 50), percentile(times, 75),
+                          percentile(times, 90), percentile(times, 95),
+                          percentile(times, 99), percentile(times, 100),
+                          standard_deviation(times), std::move(times)});
+        }
     }
 
     return results;
@@ -87,8 +97,6 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
     std::vector<std::thread> tid(threads_);
 
     auto fn = [&]() {
-        std::vector<double> times(iterations_);
-
         while (true) {
             std::string_view name;
             fixture_base *f;
@@ -106,6 +114,7 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
 
             // Do work
             double total = 0.0;
+            std::vector<uint64_t> times(iterations_);
             for (std::size_t i = 0; i < iterations_; i++) {
                 if (!f->set_up()) {
                     std::cerr << "Failed to initialise iteration " << i
@@ -125,7 +134,10 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
                 percentile(times, 50), percentile(times, 75),
                 percentile(times, 90), percentile(times, 95),
                 percentile(times, 99), percentile(times, 100),
-                standard_deviation(times)};
+                standard_deviation(times), {}};
+            if (store_samples) {
+                tr.samples = std::move(times);
+            }
 
             {
                 std::lock_guard<std::mutex> lg(result_mtx);

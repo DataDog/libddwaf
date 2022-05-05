@@ -54,7 +54,9 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
            "testing\n"
         << "    --output VALUE        Results output file\n"
         << "    --max-objects VALUE   Maximum number of objects to cache per "
-           "test\n";
+           "test\n"
+        << "    --raw                 Include all samples in output (only "
+           "works with --format=json\n";
     // " "
 
     if (!error.empty()) {
@@ -175,6 +177,13 @@ benchmark::settings generate_settings(int argc, char *argv[])
         }
     }
 
+    if (contains(opts, "raw")) {
+        if (s.format != benchmark::output_fmt::json) {
+            print_help_and_exit(argv[0], "Raw only works with json format");
+        }
+        s.store_samples = true;
+    }
+
     if (contains(opts, "test")) {
         auto test_str = opts["test"];
 
@@ -248,7 +257,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    benchmark::runner runner(s.iterations, s.threads);
+    benchmark::runner runner(s);
     initialise_runner(runner, handle, s);
 
     auto results = runner.run();

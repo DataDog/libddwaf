@@ -47,11 +47,11 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
     exit(EXIT_SUCCESS);
 }
 
-bool validate(const YAML::Node &baseline, const YAML::Node &latest)
+void validate(const YAML::Node &baseline, const YAML::Node &latest)
 {
     if (baseline["seed"].as<uint64_t>() != latest["seed"].as<uint64_t>()) {
         std::cerr << "Test seed does not match\n";
-        return false;
+        return;
     }
 
     auto base_last = baseline["last_random_value"].as<uint64_t>();
@@ -67,10 +67,7 @@ bool validate(const YAML::Node &baseline, const YAML::Node &latest)
         } else {
             std::cerr << "inconsistent mt19937 implementations\n";
         }
-
-        return false;
     }
-    return true;
 }
 
 } // namespace
@@ -95,9 +92,9 @@ int main(int argc, char *argv[])
     auto baseline = read_yaml(base_file);
     auto latest = read_yaml(latest_file);
 
-    if (!validate(baseline, latest)) {
-        return EXIT_FAILURE;
-    }
+    validate(baseline, latest);
+
+    double total_pct = 0.0;
 
     auto base_results = baseline["results"];
     auto latest_results = latest["results"];
@@ -105,15 +102,18 @@ int main(int argc, char *argv[])
         auto b_res = it->second;
         auto l_res = latest_results[it->first.as<std::string>()];
 
-        auto b_average = b_res["average"].as<uint64_t>();
-        auto l_average = l_res["average"].as<uint64_t>();
+        auto b_average = b_res["average"].as<double>();
+        auto l_average = l_res["average"].as<double>();
 
         double avg_pct = 100.0 - ((l_average * 100.0) / b_average);
 
+        total_pct += avg_pct;
+
         std::cout << it->first << ": " << std::fixed << std::setprecision(2)
-                  << avg_pct << "% " << (avg_pct < 0.0 ? "slower" : "faster")
-                  << " than baseline\n";
+                  << avg_pct << "%\n";
     }
+    std::cout << "total: " << std::fixed << std::setprecision(2)
+              << total_pct / base_results.size() << "%\n";
 
     return EXIT_SUCCESS;
 }
