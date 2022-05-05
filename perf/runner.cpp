@@ -47,10 +47,9 @@ std::map<std::string_view, runner::test_result> runner::run()
 std::map<std::string_view, runner::test_result> runner::run_st()
 {
     std::map<std::string_view, test_result> results;
-
+    std::vector<uint64_t> times(iterations_);
     for (auto &[name, f] : tests_) {
         double average = 0.0;
-        std::vector<uint64_t> times(iterations_);
 
         for (std::size_t i = 0; i < iterations_; i++) {
             if (!f->set_up()) {
@@ -67,23 +66,14 @@ std::map<std::string_view, runner::test_result> runner::run_st()
         }
 
         average /= times.size();
+        auto samples = store_samples ? times : std::vector<uint64_t>();
+
         std::sort(times.begin(), times.end());
-        if (!store_samples) {
-            results.emplace(
-                name, test_result{average, percentile(times, 0),
-                          percentile(times, 50), percentile(times, 75),
-                          percentile(times, 90), percentile(times, 95),
-                          percentile(times, 99), percentile(times, 100),
-                          standard_deviation(times, average), {}});
-        } else {
-            results.emplace(
-                name, test_result{average, percentile(times, 0),
-                          percentile(times, 50), percentile(times, 75),
-                          percentile(times, 90), percentile(times, 95),
-                          percentile(times, 99), percentile(times, 100),
-                          standard_deviation(times, average),
-                          std::move(times)});
-        }
+        results.emplace(name, test_result{average, percentile(times, 0),
+                        percentile(times, 50), percentile(times, 75),
+                        percentile(times, 90), percentile(times, 95),
+                        percentile(times, 99), percentile(times, 100),
+                        standard_deviation(times, average), samples});
     }
 
     return results;
@@ -98,6 +88,7 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
     std::vector<std::thread> tid(threads_);
 
     auto fn = [&]() {
+        std::vector<uint64_t> times(iterations_);
         while (true) {
             std::string_view name;
             fixture_base *f;
@@ -115,7 +106,6 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
 
             // Do work
             double average = 0.0;
-            std::vector<uint64_t> times(iterations_);
             for (std::size_t i = 0; i < iterations_; i++) {
                 if (!f->set_up()) {
                     std::cerr << "Failed to initialise iteration " << i
@@ -131,19 +121,17 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
             }
 
             average /= times.size();
+            auto samples = store_samples ? times : std::vector<uint64_t>();
             std::sort(times.begin(), times.end());
             test_result tr = {average, percentile(times, 0),
                 percentile(times, 50), percentile(times, 75),
                 percentile(times, 90), percentile(times, 95),
                 percentile(times, 99), percentile(times, 100),
-                standard_deviation(times, average), {}};
-            if (store_samples) {
-                tr.samples = std::move(times);
-            }
+                standard_deviation(times, average), samples};
 
             {
                 std::lock_guard<std::mutex> lg(result_mtx);
-                results.emplace(name, tr);
+                results.emplace(name, std::move(tr));
             }
         }
     };
