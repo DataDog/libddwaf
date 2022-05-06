@@ -34,7 +34,11 @@ namespace fs = std::filesystem;
 using generator_type = benchmark::object_generator::generator_type;
 
 std::map<std::string, benchmark::object_generator::settings> default_tests = {
-    {"run.random", {.type = generator_type::random}},
+    {"run.random.any", {.type = generator_type::random}},
+    {"run.random.long_strings",
+        {.string_length = {1024, 4096}, .type = generator_type::random}},
+    {"run.random.deep_containers",
+        {.container_depth = {5, 20}, .type = generator_type::random}},
     {"run.valid", {.type = generator_type::valid}},
     {"run.mixed", {.type = generator_type::mixed}},
 };
@@ -54,7 +58,9 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
            "testing\n"
         << "    --output VALUE        Results output file\n"
         << "    --max-objects VALUE   Maximum number of objects to cache per "
-           "test\n";
+           "test\n"
+        << "    --raw                 Include all samples in output (only "
+           "works with --format=json\n";
     // " "
 
     if (!error.empty()) {
@@ -175,6 +181,13 @@ benchmark::settings generate_settings(int argc, char *argv[])
         }
     }
 
+    if (contains(opts, "raw")) {
+        if (s.format != benchmark::output_fmt::json) {
+            print_help_and_exit(argv[0], "Raw only works with json format");
+        }
+        s.store_samples = true;
+    }
+
     if (contains(opts, "test")) {
         auto test_str = opts["test"];
 
@@ -248,7 +261,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    benchmark::runner runner(s.iterations, s.threads);
+    benchmark::runner runner(s);
     initialise_runner(runner, handle, s);
 
     auto results = runner.run();

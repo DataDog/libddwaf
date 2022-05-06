@@ -40,10 +40,10 @@ void output_json(std::ostream &o, const settings &s,
     o << R"({"seed":)" << s.seed << R"(,"last_random_value":)" << random::get()
       << R"(,"iterations":)" << s.iterations << R"(,"results":{)";
     for (const auto &[k, v] : results) {
-        if (!start) {
-            start = true;
-        } else {
+        if (start) {
             o << ",";
+        } else {
+            start = true;
         }
 
         o << R"(")" << k << R"(":{)"
@@ -55,7 +55,22 @@ void output_json(std::ostream &o, const settings &s,
           << R"("p95":)" << v.p95 << ","
           << R"("p99":)" << v.p99 << ","
           << R"("p100":)" << v.p100 << ","
-          << R"("sd":)" << v.sd << "}";
+          << R"("sd":)" << v.sd;
+
+        if (!v.samples.empty()) {
+            bool sample_start = false;
+            o << R"(,"samples":[)";
+            for (const auto &sample : v.samples) {
+                if (sample_start) {
+                    o << ",";
+                } else {
+                    sample_start = true;
+                }
+                o << sample;
+            }
+            o << "]";
+        }
+        o << "}";
     }
     o << "}}" << std::endl;
 }

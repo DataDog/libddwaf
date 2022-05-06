@@ -20,12 +20,13 @@ enum class output_fmt { none, human, csv, json };
 struct settings {
     fs::path rule_repo;
     std::unordered_set<std::string_view> test_list;
-    output_fmt format;
+    output_fmt format{output_fmt::json};
     fs::path output_file;
     unsigned iterations{100};
     unsigned long seed{20};
     unsigned threads{0};
     unsigned max_objects{100};
+    bool store_samples{false};
 };
 
 } // namespace ddwaf::benchmark

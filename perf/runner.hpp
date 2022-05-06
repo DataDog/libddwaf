@@ -13,17 +13,20 @@
 #include <vector>
 
 #include "fixture_base.hpp"
+#include "settings.hpp"
 
 namespace ddwaf::benchmark {
 class runner {
 public:
     struct test_result {
         uint64_t average, p0, p50, p75, p90, p95, p99, p100, sd;
+        std::vector<uint64_t> samples;
     };
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    runner(unsigned iterations, unsigned threads)
-        : iterations_(iterations), threads_(threads)
+    runner(settings &s)
+        : iterations_(s.iterations), threads_(s.threads),
+          store_samples(s.store_samples)
     {}
 
     template <typename F, typename... Args>
@@ -41,6 +44,7 @@ protected:
 
     unsigned iterations_;
     unsigned threads_;
+    bool store_samples;
     std::unordered_map<std::string, std::unique_ptr<fixture_base>> tests_;
 };
 

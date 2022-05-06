@@ -8,9 +8,50 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <yaml-cpp/yaml.h>
 
 namespace fs = std::filesystem;
+
+struct benchmark {
+    struct result {
+        double average, sd;
+    };
+
+    std::map<std::string, result> tests;
+    double iterations;
+};
+
+namespace YAML
+{
+
+template <> struct as_if<benchmark::result, void> {
+    explicit as_if(const Node &node_) : node(node_) {}
+    benchmark::result operator()() const
+    {
+        return {
+            node["average"].as<double>(),
+            node["sd"].as<double>(),
+        };
+    }
+
+    const Node &node;
+};
+
+template <> struct as_if<benchmark, void> {
+    explicit as_if(const Node &node_) : node(node_) {}
+    benchmark operator()() const
+    {
+        return {
+            node["results"].as<decltype(benchmark::tests)>(),
+            node["iterations"].as<double>(),
+        };
+    }
+
+    const Node &node;
+};
+
+}
 
 namespace {
 std::string read_file(const fs::path &filename)
@@ -47,32 +88,6 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
     exit(EXIT_SUCCESS);
 }
 
-bool validate(const YAML::Node &baseline, const YAML::Node &latest)
-{
-    if (baseline["seed"].as<uint64_t>() != latest["seed"].as<uint64_t>()) {
-        std::cerr << "Test seed does not match\n";
-        return false;
-    }
-
-    auto base_last = baseline["last_random_value"].as<uint64_t>();
-    auto latest_last = latest["last_random_value"].as<uint64_t>();
-    if (base_last != latest_last) {
-        auto base_iterations = baseline["iterations"].as<uint64_t>();
-        auto latest_iterations = latest["iterations"].as<uint64_t>();
-
-        std::cerr << "Tests might not be comparable: ";
-
-        if (base_iterations != latest_iterations) {
-            std::cerr << "different number of iterations\n";
-        } else {
-            std::cerr << "inconsistent mt19937 implementations\n";
-        }
-
-        return false;
-    }
-    return true;
-}
-
 } // namespace
 
 int main(int argc, char *argv[])
@@ -92,27 +107,37 @@ int main(int argc, char *argv[])
         print_help_and_exit(argv[0], "'latest' is not a regular file\n");
     }
 
-    auto baseline = read_yaml(base_file);
-    auto latest = read_yaml(latest_file);
+    auto baseline = read_yaml(base_file).as<benchmark>();
+    auto latest = read_yaml(latest_file).as<benchmark>();
 
-    if (!validate(baseline, latest)) {
-        return EXIT_FAILURE;
+    std::size_t max_length = 0;
+    for (auto &[test, b] : baseline.tests) {
+        max_length = std::max(test.size(), max_length);
     }
+    ++max_length;
 
-    auto base_results = baseline["results"];
-    auto latest_results = latest["results"];
-    for (auto it = base_results.begin(); it != base_results.end(); ++it) {
-        auto b_res = it->second;
-        auto l_res = latest_results[it->first.as<std::string>()];
+    for (auto &[test, b] : baseline.tests) {
+        auto it = latest.tests.find(test);
+        if (it == latest.tests.end()) {
+            continue;
+        }
+        auto &l = it->second;
 
-        auto b_average = b_res["average"].as<uint64_t>();
-        auto l_average = l_res["average"].as<uint64_t>();
+        double avg_pct = 100.0 - ((l.average * 100.0) / b.average);
 
-        double avg_pct = 100.0 - ((l_average * 100.0) / b_average);
+        double ztest = (l.average - b.average) /
+            sqrt(b.sd * b.sd / baseline.iterations +
+                 l.sd * l.sd / latest.iterations);
 
-        std::cout << it->first << ": " << std::fixed << std::setprecision(2)
-                  << avg_pct << "% " << (avg_pct < 0.0 ? "slower" : "faster")
-                  << " than baseline\n";
+        std::cout << std::setw(max_length) << std::setfill(' ') << std::left
+                  << test << ": "
+                  << std::fixed << std::setprecision(2)
+                  << avg_pct << "% " << (avg_pct < 0 ? "slower" : "faster")
+                  << " than baseline, ";
+        if (abs(ztest) < 2.0) {
+            std::cout << "NOT statistically significant ";
+        }
+        std::cout << "(z-test: " << ztest << ")\n";
     }
 
     return EXIT_SUCCESS;
