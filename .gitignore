@@ -26,3 +26,4 @@ perf/test_files/breakdown.numbers
 /fuzzing/results/crash-*
 
 *.trace
+.vscode
