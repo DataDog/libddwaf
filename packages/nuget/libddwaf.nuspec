@@ -7,7 +7,7 @@
     <authors>datadog</authors>
     <owners>datadog</owners>
     <license type="expression">Apache-2.0 OR BSD-3-Clause</license>
-    <projectUrl>https://github.com/dataDog/dd-trace-dotnet</projectUrl>
+    <projectUrl>https://github.com/datadog/libddwaf</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>The Datadog libddwaf native bindings for .NET</description>
     <summary>The Datadog libddwaf native bindings for .NET</summary>
