@@ -7,7 +7,7 @@ target_link_libraries(benchmark PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjs
 target_include_directories(benchmark PRIVATE ${libddwaf_SOURCE_DIR}/src)
 
 add_executable(benchcmp benchcmp.cpp)
-target_link_libraries(benchcmp PRIVATE lib_yamlcpp lib_rapidjson m)
+target_link_libraries(benchcmp PRIVATE lib_yamlcpp m)
 
 ExternalProject_Get_property(proj_event_rules SOURCE_DIR)
 set(EVENT_RULES_SOURCE_DIR ${SOURCE_DIR})
