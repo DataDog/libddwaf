@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <vector>
 #include <yaml-cpp/yaml.h>
 
 namespace fs = std::filesystem;
@@ -16,6 +17,7 @@ namespace fs = std::filesystem;
 struct benchmark {
     struct result {
         double average, sd;
+        std::vector<double> samples;
     };
 
     std::map<std::string, result> tests;
@@ -32,6 +34,7 @@ template <> struct as_if<benchmark::result, void> {
         return {
             node["average"].as<double>(),
             node["sd"].as<double>(),
+            node["samples"].as<std::vector<double>>(),
         };
     }
 
@@ -125,6 +128,19 @@ int main(int argc, char *argv[])
 
         double avg_pct = 100.0 - ((l.average * 100.0) / b.average);
 
+        double total_sample_diff = 0;
+        double total_l_sample = 0;
+        double total_b_sample = 0;
+        for (std::size_t i = 0; i < b.samples.size(); i++) {
+            auto bsample = b.samples[i];
+            auto lsample = l.samples[i];
+
+            total_b_sample += bsample;
+            total_l_sample += lsample;
+
+            total_sample_diff += (bsample - lsample);
+        }
+
         double ztest = (l.average - b.average) /
             sqrt(b.sd * b.sd / baseline.iterations +
                  l.sd * l.sd / latest.iterations);
@@ -133,8 +149,11 @@ int main(int argc, char *argv[])
                   << test << ": "
                   << std::fixed << std::setprecision(2)
                   << avg_pct << "% " << (avg_pct < 0 ? "slower" : "faster")
-                  << " than baseline, ";
-        if (abs(ztest) < 2.0) {
+                  << " than baseline, "
+                  << "baselinetotal: " << total_b_sample << ", "
+                  << "latest total: " << total_l_sample << ", "
+                  << "sample diff: " << total_sample_diff << ", ";
+        if (std::abs(ztest) < 2.0) {
             std::cout << "NOT statistically significant ";
         }
         std::cout << "(z-test: " << ztest << ")\n";
