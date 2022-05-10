@@ -352,9 +352,9 @@ TEST(TestPWProcessor, TestBudget)
     ddwaf::obfuscator eo;
     PWRetManager rManager(eo);
     PWProcessor processor(wrapper, rules);
-    processor.startNewRun(ddwaf::monotonic_clock::now() + chrono::microseconds(50));
 
-    processor.runFlow("flow1", flows["flow1"], rManager);
+    auto deadline = ddwaf::monotonic_clock::now() + chrono::microseconds(50);
+    processor.runFlow("flow1", flows["flow1"], rManager, deadline);
     ddwaf_result ret;
     rManager.synthetize(ret);
     EXPECT_EQ(ret.data, nullptr);

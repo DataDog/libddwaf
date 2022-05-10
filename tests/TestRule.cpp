@@ -40,7 +40,7 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
 
     //Send garbage input
     PWRetriever retriever(waf->manifest);
-    PWRetriever::Iterator iterator(retriever);
+    Iterator iterator(retriever);
 
     //Try to trigger a null pointer deref
     ddwaf_object parameter = DDWAF_OBJECT_INVALID;

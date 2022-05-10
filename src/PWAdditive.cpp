@@ -92,12 +92,10 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
         return DDWAF_GOOD;
     }
 
-    processor.startNewRun(deadline);
-
     PWRetManager retManager(event_obfuscator);
     for (const auto& [key, flow] : wafHandle->flows)
     {
-        if (!processor.runFlow(key, flow, retManager))
+        if (!processor.runFlow(key, flow, retManager, deadline))
         {
             break;
         }

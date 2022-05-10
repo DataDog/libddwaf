@@ -17,11 +17,6 @@ PWProcessor::PWProcessor(PWRetriever& input, const ddwaf::rule_vector& rules_)
     ranCache.reserve(rules.size());
 }
 
-void PWProcessor::startNewRun(const ddwaf::monotonic_clock::time_point& _deadline)
-{
-    deadline = _deadline;
-}
-
 match_status PWProcessor::hasCacheHit(ddwaf::rule::index_type rule_idx) const
 {
     const auto cacheHit = ranCache.find(rule_idx);
@@ -49,7 +44,8 @@ bool PWProcessor::shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& cond
 
 bool PWProcessor::runFlow(const std::string& name,
                           const ddwaf::rule_ref_vector& flow,
-                          PWRetManager& retManager)
+                          PWRetManager& retManager,
+                          const ddwaf::monotonic_clock::time_point& deadline)
 {
     /*
 	 *	A flow is a sequence of steps

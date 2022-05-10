@@ -88,8 +88,8 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
 
 condition::status condition::_matchTargets(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
 {
-    PWRetriever::Iterator& iterator = retriever.getIterator(targets);
-    retriever.moveIteratorForward(iterator, false);
+    Iterator& iterator = retriever.getIterator(targets);
+    iterator.moveIteratorForward(false);
 
     if (iterator.isOver())
     {
@@ -114,7 +114,7 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const ddwaf::
         }
 
         MatchGatherer gather;
-        bool didMatch = retriever.runIterOnLambda(iterator, [&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
+        bool didMatch = iterator.runIterOnLambda([&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
             if ((type & processor->expectedTypes()) == 0)
             {
                 return false;
@@ -140,7 +140,7 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const ddwaf::
             //	If we stopped, it'd open trivial bypasses of the next stage
             return status::matched;
         }
-    } while (retriever.moveIteratorForward(iterator));
+    } while (iterator.moveIteratorForward());
 
     // Only @exist care about this branch, it's at the end to enable a better report when there is a real value
     if (!matched && processor->matchAnyInput())

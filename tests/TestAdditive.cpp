@@ -167,7 +167,7 @@ TEST(TestAdditive, SelectiveRerun)
 
     EXPECT_EQ(iter.getActiveTarget(), manifest.getTargetArgID("mixed"));
 
-    retriever.moveIteratorForward(iter);
+    iter.moveIteratorForward();
 
     EXPECT_TRUE(iter.isOver());
 

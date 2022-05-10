@@ -13,7 +13,7 @@ TEST(TestPWRetriever, TestCreateNoTarget)
     PWManifest manifest;
     PWRetriever retriever(manifest, ddwaf::object_limits{5, 5, 4096});
 
-    PWRetriever::Iterator& iterator = retriever.getIterator({});
+    Iterator& iterator = retriever.getIterator({});
 
     EXPECT_TRUE(iterator.isOver());
     EXPECT_EQ(iterator.argsIterator.state.activeItem, nullptr);
@@ -32,7 +32,7 @@ TEST(TestPWRetriever, TestIterateInvalidItem)
     PWRetriever retriever(manifest, ddwaf::object_limits{5, 5, 4096});
     vector<PWManifest::ARG_ID> targets = { 0 };
 
-    PWRetriever::Iterator& iterator = retriever.getIterator({});
+    Iterator& iterator = retriever.getIterator({});
     EXPECT_TRUE(iterator.isOver());
 
     ddwaf_object array = DDWAF_OBJECT_ARRAY, tmp;
@@ -43,8 +43,8 @@ TEST(TestPWRetriever, TestIterateInvalidItem)
     ((ddwaf_object*) array.array)[1].type = DDWAF_OBJ_INVALID;
 
     iterator.argsIterator.state.reset(&array);
-    iterator.state.targetCursor = targets.cbegin();
-    iterator.state.targetEnd    = targets.cend();
+    iterator.targetCursor = targets.cbegin();
+    iterator.targetEnd    = targets.cend();
 
     ASSERT_NE(*iterator, nullptr);
     EXPECT_EQ((*iterator)->intValue, 42);
@@ -62,7 +62,7 @@ TEST(TestPWRetriever, TestIterateInvalidItem)
 TEST(TestPWRetriever, TestInvalidArgConstructor)
 {
     ddwaf_object arg = DDWAF_OBJECT_INVALID;
-    PWRetriever::ArgsIterator argIter(&arg, 32);
+    ArgsIterator argIter(&arg, 32);
     EXPECT_EQ(argIter.state.activeItem, nullptr);
 }
 
@@ -72,7 +72,7 @@ TEST(TestPWRetriever, TestIterateEmptyArray)
     PWRetriever retriever(manifest, ddwaf::object_limits{5, 5, 4096});
     vector<PWManifest::ARG_ID> targets = { 0 };
 
-    PWRetriever::Iterator& iterator = retriever.getIterator({});
+    Iterator& iterator = retriever.getIterator({});
     EXPECT_TRUE(iterator.isOver());
 
     ddwaf_object array = DDWAF_OBJECT_ARRAY, tmp;
@@ -85,8 +85,8 @@ TEST(TestPWRetriever, TestIterateEmptyArray)
     ((ddwaf_object*) array.array)[1].array     = NULL;
 
     iterator.argsIterator.state.reset(&array);
-    iterator.state.targetCursor = targets.cbegin();
-    iterator.state.targetEnd    = targets.cend();
+    iterator.targetCursor = targets.cbegin();
+    iterator.targetEnd    = targets.cend();
 
     ASSERT_NE(*iterator, nullptr);
     EXPECT_EQ((*iterator)->intValue, 42);
@@ -207,7 +207,7 @@ TEST(PWRetriever, IteratorAccessNull)
     PWRetriever retriever(((PowerWAF*) handle)->manifest);
     retriever.addParameter(map);
 
-    PWRetriever::Iterator& iterator = retriever.getIterator({});
+    Iterator& iterator = retriever.getIterator({});
 
     EXPECT_EQ(*iterator, nullptr);
 
@@ -236,9 +236,9 @@ TEST(PWRetriever, IteratorBlockList)
     retriever.addParameter(map);
 
     const vector<PWManifest::ARG_ID> target = { 0 };
-    PWRetriever::Iterator& iterator         = retriever.getIterator(target);
+    Iterator& iterator         = retriever.getIterator(target);
 
-    EXPECT_TRUE(retriever.moveIteratorForward(iterator, false));
+    EXPECT_TRUE(iterator.moveIteratorForward(false));
     EXPECT_STREQ((*iterator)->stringValue, "bla3");
 
     ddwaf_object_free(&rule);

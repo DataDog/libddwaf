@@ -24,8 +24,6 @@ struct PWProcessor
     PWRetriever& parameters;
     const ddwaf::rule_vector& rules;
 
-    ddwaf::monotonic_clock::time_point deadline;
-
     std::unordered_map<ddwaf::rule::index_type, ddwaf::condition::status> ranCache;
 
     ddwaf::condition::status hasCacheHit(ddwaf::rule::index_type rule_idx) const;
@@ -33,10 +31,10 @@ struct PWProcessor
 
 public:
     PWProcessor(PWRetriever& input, const ddwaf::rule_vector& rules);
-    void startNewRun(const ddwaf::monotonic_clock::time_point& _deadline);
     bool runFlow(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,
-                 PWRetManager& manager);
+                 PWRetManager& manager,
+                 const ddwaf::monotonic_clock::time_point& deadline);
 
     bool isFirstRun() const;
 };
