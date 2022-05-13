@@ -1,0 +1,10 @@
+{
+  runs: [
+    {
+      input: {
+        rule1-input: garbage
+      },
+      code: good
+    }
+  ]
+}

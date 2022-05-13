@@ -317,6 +317,7 @@ include(CPack)
 
 if(BUILD_TESTING)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
+    add_subdirectory(validator EXCLUDE_FROM_ALL)
 endif()
 
 add_subdirectory(perf EXCLUDE_FROM_ALL)

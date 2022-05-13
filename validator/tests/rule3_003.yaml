@@ -1,0 +1,10 @@
+{
+  runs: [
+    {
+      input: {
+        rule3-input: rule3
+      },
+      code: good
+    }
+  ]
+}

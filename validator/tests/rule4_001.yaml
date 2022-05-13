@@ -1,0 +1,12 @@
+{
+  runs: [
+    {
+      input: {
+        rule4-input1: {
+          random: rule4
+        }
+      },
+      code: good
+    }
+  ]
+}

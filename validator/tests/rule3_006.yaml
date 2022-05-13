@@ -1,0 +1,16 @@
+{
+  runs: [
+    {
+      input: {
+        rule3-input: {
+          keypath: {
+            other: garbage,
+            another: value,
+            something: value
+          }
+        }
+      },
+      code: good
+    }
+  ]
+}

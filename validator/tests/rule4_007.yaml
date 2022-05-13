@@ -1,0 +1,14 @@
+{
+  runs: [
+    {
+      input: {
+        rule4-input1: {
+          keypath: {
+            other: garbage
+          }
+        }
+      },
+      code: good
+    }
+  ]
+}

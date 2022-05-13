@@ -1,0 +1,18 @@
+{
+  runs: [
+    {
+      input: {
+        rule1-input: {
+          first: {
+            second: [
+              garbage,
+              value,
+              value
+            ]
+          }
+        }
+      },
+      code: good
+    }
+  ]
+}

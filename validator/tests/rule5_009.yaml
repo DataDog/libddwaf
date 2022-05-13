@@ -1,0 +1,14 @@
+{
+  runs: [
+    {
+      input: {
+        rule5-input: {
+          keypath2: {
+            other: garbage
+          }
+        }
+      },
+      code: good
+    }
+  ]
+}

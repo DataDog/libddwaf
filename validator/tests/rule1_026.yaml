@@ -1,0 +1,33 @@
+{
+  runs: [
+    {
+      input: {
+        rule1-input: {
+          first: {
+            second: [
+              value,
+              value,
+              rule1
+            ]
+          }
+        }
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              key_path: [
+                first,
+                second,
+                2
+              ],
+              value: rule1
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ]
+}

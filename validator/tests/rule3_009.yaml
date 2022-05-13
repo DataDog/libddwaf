@@ -1,0 +1,29 @@
+{
+  runs: [
+    {
+      input: {
+        rule3-input: {
+            keypath: {
+                another: value,
+                other: rule3,
+                something: value
+            }
+        }
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              key_path: [
+                keypath, other
+              ],
+              value: rule3
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ]
+}

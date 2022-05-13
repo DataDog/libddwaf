@@ -1,0 +1,17 @@
+{
+  input: {
+    rule2-input1: rule2,
+    rule2-input2: rule2
+  },
+  rules: [
+    {
+      2: [
+        {
+          key_path: [],
+          value: rule2
+        }
+      ]
+    }
+  ],
+  code: monitor
+}

@@ -1,0 +1,33 @@
+{
+  runs: [
+    {
+      input: {
+          rule6-input1: rule6,
+      },
+      code: good
+    },
+    {
+      input: {
+          rule6-input2: rule6
+      },
+      rules: [
+        {
+          6: [
+            {
+              address: rule6-input1,
+              key_path: [],
+              value: rule6
+            },
+            {
+              address: rule6-input2,
+              key_path: [],
+              value: rule6
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  input: {
+    rule2-input1: {
+      first: garbage
+    },
+    rule2-input2: {
+      first: rule2
+    }
+  },
+  rules: [
+    {
+      2: [
+        {
+          address: rule2-input2,
+          key_path: [
+            first
+          ],
+          value: rule2
+        }
+      ],
+    }
+  ],
+  code: monitor
+}
