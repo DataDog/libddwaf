@@ -130,7 +130,7 @@ void validate(std::map<std::string, YAML::Node> &rules, const YAML::Node &expect
 }
 
 void run_sample(ddwaf_handle handle, std::map<std::string, YAML::Node> &rules,
-    YAML::Node &sample)
+    YAML::Node &sample, std::stringstream &ss)
 {
     ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
 
@@ -153,7 +153,11 @@ void run_sample(ddwaf_handle handle, std::map<std::string, YAML::Node> &rules,
             }
         } catch (...) {
             if (res.data != nullptr) {
-                std::cout << YAML::Load(res.data) << std::endl;
+                YAML::Emitter out(ss);
+                out.SetIndent(2);
+                out.SetMapFormat(YAML::Block);
+                out.SetSeqFormat(YAML::Block);
+                out << YAML::Load(res.data);
             }
 
             ddwaf_result_free(&res);
@@ -229,14 +233,20 @@ int main(int argc, char *argv[])
     std::sort(files.begin(), files.end());
 
     for (const auto &file: files) {
+        std::stringstream ss;
         try {
-            std::cout << "Running " << std::string{file} << std::endl;
             std::string sample_str = read_rule_file(file.c_str());
             YAML::Node sample = YAML::Load(sample_str);
-            run_sample(handle, rule_map, sample);
-            std::cout << "Result => Passed\n";
+            run_sample(handle, rule_map, sample, ss);
+            std::cout << std::string{file} << " => "
+                      << term::color::green << "Passed\n"
+                      << term::color::off;
         } catch (const std::exception &e) {
-            std::cout << "Result => Failed: " << e.what() << "\n";
+            std::cout << std::string{file} << " => "
+                      << term::color::red
+                      << "Failed: " << e.what() << "\n"
+                      << term::color::off
+                      << ss.str() << "\n";
         }
     }
 

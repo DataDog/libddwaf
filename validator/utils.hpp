@@ -8,6 +8,7 @@
 
 #include "ddwaf.h"
 #include <fstream>
+#include <string>
 #include <yaml-cpp/yaml.h>
 
 namespace YAML
@@ -34,3 +35,22 @@ struct as_if<ddwaf_object, void>
 }
 
 std::string read_rule_file(const std::string_view& filename);
+
+namespace term
+{
+
+enum class color : unsigned
+{
+    red      = 31,
+    green    = 32,
+    yellow   = 33,
+    blue     = 34,
+    magenta  = 35,
+    cyan     = 36,
+    white    = 37,
+    off      = 39,
+};
+
+}
+
+std::ostream& operator<<(std::ostream& os, const term::color c);

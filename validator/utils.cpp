@@ -78,4 +78,8 @@ std::string read_rule_file(const std::string_view& filename)
     return buffer;
 }
 
+std::ostream& operator<<(std::ostream& os, const term::color c) {
+    os << "\033[" << static_cast<std::underlying_type<term::color>::type>(c) << "m";
+    return os;
+}
 
