@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <iostream>
+#include <unistd.h>
 #include "utils.hpp"
 
 namespace YAML
@@ -78,8 +80,20 @@ std::string read_rule_file(const std::string_view& filename)
     return buffer;
 }
 
-std::ostream& operator<<(std::ostream& os, const term::color c) {
-    os << "\033[" << static_cast<std::underlying_type<term::color>::type>(c) << "m";
+namespace term
+{
+
+bool has_colour()
+{
+    return isatty(fileno(stdout));
+}
+
+}
+
+std::ostream& operator<<(std::ostream& os, const term::colour c) {
+    os << "\033["
+       << static_cast<std::underlying_type<term::colour>::type>(c)
+       << "m";
     return os;
 }
 

@@ -39,7 +39,7 @@ std::string read_rule_file(const std::string_view& filename);
 namespace term
 {
 
-enum class color : unsigned
+enum class colour : unsigned
 {
     red      = 31,
     green    = 32,
@@ -51,6 +51,7 @@ enum class color : unsigned
     off      = 39,
 };
 
+bool has_colour();
 }
 
-std::ostream& operator<<(std::ostream& os, const term::color c);
+std::ostream& operator<<(std::ostream& os, const term::colour c);

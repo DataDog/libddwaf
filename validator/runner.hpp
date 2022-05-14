@@ -1,0 +1,38 @@
+// Unless explicitly stated otherwise all files in this repository are
+// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
+//
+// This product includes software developed at Datadog (https://www.datadoghq.com/).
+// Copyright 2021 Datadog, Inc.
+
+#pragma once
+
+#include <filesystem>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+class test_runner
+{
+public:
+    test_runner(const std::string &rule_file);
+    ~test_runner();
+
+    std::tuple<bool, std::string, std::string> run(const fs::path &sample_file);
+
+protected:
+    void validate(const YAML::Node &expected, const YAML::Node &obtained);
+    void validate_rule(const YAML::Node &expected, const YAML::Node &obtained);
+    void validate_conditions(const YAML::Node &expected, const YAML::Node &obtained);
+    void validate_matches(const YAML::Node &expected, const YAML::Node &obtained);
+
+protected:
+    static constexpr unsigned timeout = 1000000;
+    ddwaf_handle handle_;
+    std::map<std::string, YAML::Node> rules_;
+    std::stringstream output_;
+};
