@@ -133,3 +133,23 @@ rules:
           regex: rule10
     transformers:
       - keys_only
+  - id: 11
+    name: rule11-multicondition-multiple-input
+    tags:
+      type: flow11
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule11-input1
+            - address: rule11-input2
+          regex: rule11_1
+      - operator: phrase_match
+        parameters:
+          inputs:
+            - address: rule11-input1
+            - address: rule11-input2
+          list:
+            - rule11_2
+
