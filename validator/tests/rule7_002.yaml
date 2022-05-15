@@ -2,7 +2,7 @@
   runs: [
     {
       input: {
-        rule8-input: rule8,
+        rule8-input: rule8
       },
       rules: [
         {
@@ -17,5 +17,6 @@
       ],
       code: monitor
     }
-  ]
+  ],
+  name: tbd
 }

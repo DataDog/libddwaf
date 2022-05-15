@@ -12,29 +12,12 @@
       },
       code: good
     },
-
     {
       input: {
-        rule11-input1: rule11_1,
+        rule11-input1: rule11_1
       },
-      rules: [
-        {
-          11: [
-            {
-              address: rule11-input1,
-              key_path: [],
-              value: rule11_1
-            },
-            {
-              address: rule11-input2,
-              key_path: [],
-              value: rule11_2
-            }
-          ]
-        }
-      ],
-      code: monitor
+      code: good
     }
-
-  ]
+  ],
+  name: tbd
 }

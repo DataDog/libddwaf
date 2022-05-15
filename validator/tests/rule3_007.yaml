@@ -3,11 +3,11 @@
     {
       input: {
         rule3-input: {
-            keypath: {
-                other: rule3,
-                another: value,
-                something: value
-            }
+          keypath: {
+            other: rule3,
+            another: value,
+            something: value
+          }
         }
       },
       rules: [
@@ -16,7 +16,8 @@
             {
               address: rule3-input,
               key_path: [
-                keypath, other
+                keypath,
+                other
               ],
               value: rule3
             }
@@ -25,5 +26,6 @@
       ],
       code: monitor
     }
-  ]
+  ],
+  name: tbd
 }

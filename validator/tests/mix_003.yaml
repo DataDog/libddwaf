@@ -4,7 +4,7 @@
       input: {
         rule3-input: {
           keypath: rule3
-        },
+        }
       },
       rules: [
         {
@@ -17,7 +17,7 @@
               value: rule3
             }
           ]
-        },
+        }
       ],
       code: monitor
     },
@@ -42,6 +42,6 @@
       ],
       code: monitor
     }
-
-  ]
+  ],
+  name: tbd
 }

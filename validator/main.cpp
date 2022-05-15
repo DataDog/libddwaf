@@ -90,31 +90,38 @@ int main(int argc, char *argv[])
 
     std::sort(files.begin(), files.end());
 
+    int exit_val = 0;
     test_runner runner("ruleset.yaml");
     for (const auto &file: files) {
-        auto [res, error, output] = runner.run(file);
+        auto [res, expected_fail, error, output] = runner.run(file);
         if (res) {
-            if (term::has_colour()) {
+            if (!expected_fail) {
                 std::cout << std::string{file} << " => "
                           << term::colour::green << "Passed\n"
                           << term::colour::off;
             } else {
-                std::cout << std::string{file} << " => Passed\n";
+                std::cout << std::string{file} << " => "
+                          << term::colour::yellow 
+                          << "Expected to fail but passed\n"
+                          << term::colour::off;
+                exit_val = 1;
             }
         } else {
-            if (term::has_colour()) {
+            if (!expected_fail) {
                 std::cout << std::string{file} << " => "
                           << term::colour::red
                           << "Failed: " << error << "\n"
                           << term::colour::off
                           << output << "\n";
+                exit_val = 1;
             } else {
-                std::cout << std::string{file} << " => Failed: "
-                          << error << "\n"
-                          << output << "\n";
+                std::cout << std::string{file} << " => "
+                          << term::colour::yellow
+                          << "Failed (expected): " << error << "\n"
+                          << term::colour::off;
             }
         }
     }
 
-    return 0;
+    return exit_val;
 }

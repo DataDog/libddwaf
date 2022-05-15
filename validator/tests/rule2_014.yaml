@@ -16,8 +16,9 @@
           ],
           value: rule2
         }
-      ],
+      ]
     }
   ],
-  code: monitor
+  code: monitor,
+  name: tbd
 }

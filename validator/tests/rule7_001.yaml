@@ -3,7 +3,7 @@
     {
       input: {
         rule8-input: rule8,
-        rule7-input: rule7,
+        rule7-input: rule7
       },
       rules: [
         {
@@ -25,5 +25,6 @@
       ],
       code: monitor
     }
-  ]
+  ],
+  name: tbd
 }

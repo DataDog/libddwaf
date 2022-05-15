@@ -19,12 +19,17 @@ namespace fs = std::filesystem;
 class test_runner
 {
 public:
+    using result = std::tuple<bool, bool, std::string, std::string>;
     test_runner(const std::string &rule_file);
     ~test_runner();
 
-    std::tuple<bool, std::string, std::string> run(const fs::path &sample_file);
+    result run(const fs::path &sample_file);
 
 protected:
+
+    bool run_test(const YAML::Node &runs);
+    bool run_unit(const YAML::Node &runs);
+
     void validate(const YAML::Node &expected, const YAML::Node &obtained);
     void validate_rule(const YAML::Node &expected, const YAML::Node &obtained);
     void validate_conditions(const YAML::Node &expected, const YAML::Node &obtained);
@@ -35,4 +40,5 @@ protected:
     ddwaf_handle handle_;
     std::map<std::string, YAML::Node> rules_;
     std::stringstream output_;
+    std::stringstream error_;
 };

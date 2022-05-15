@@ -2,20 +2,28 @@
   runs: [
     {
       input: {
-          rule6-input1: {key: rule6},
-          rule6-input2: {key: rule6}
+        rule6-input1: {
+          key: rule6
+        },
+        rule6-input2: {
+          key: rule6
+        }
       },
       rules: [
         {
           6: [
             {
               address: rule6-input1,
-              key_path: [key],
+              key_path: [
+                key
+              ],
               value: rule6
             },
             {
               address: rule6-input2,
-              key_path: [key],
+              key_path: [
+                key
+              ],
               value: rule6
             }
           ]
@@ -23,5 +31,6 @@
       ],
       code: monitor
     }
-  ]
+  ],
+  name: tbd
 }

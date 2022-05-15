@@ -2,13 +2,13 @@
   runs: [
     {
       input: {
-          rule6-input1: rule6,
+        rule6-input1: rule6
       },
       code: good
     },
     {
       input: {
-          rule6-input2: rule6
+        rule6-input2: rule6
       },
       rules: [
         {
@@ -28,6 +28,6 @@
       ],
       code: monitor
     }
-
-  ]
+  ],
+  name: tbd
 }

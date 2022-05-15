@@ -8,7 +8,6 @@
         rule4-input2: {
           keypath: rule4
         }
-
       },
       rules: [
         {
@@ -24,5 +23,6 @@
       ],
       code: monitor
     }
-  ]
+  ],
+  name: tbd
 }

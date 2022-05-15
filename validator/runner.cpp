@@ -31,11 +31,28 @@ test_runner::~test_runner()
     ddwaf_destroy(handle_);
 }
 
-std::tuple<bool, std::string, std::string> test_runner::run(const fs::path &file)
-{
-    output_ = std::stringstream();
 
-    std::string error;
+bool test_runner::run_unit(const YAML::Node &runs)
+{
+    bool passed = false;
+
+    try {
+        for (auto it = runs.begin(); it != runs.end(); ++it) {
+            YAML::Node run = *it;
+            validate(run["rules"], run["output"]);
+        }
+        passed = true;
+    } catch (const std::exception &e) {
+        error_ << e.what();
+    } catch (...) {
+        error_ << "unknown exception";
+    }
+
+    return passed;
+}
+
+bool test_runner::run_test(const YAML::Node &runs)
+{
     bool passed = false;
     std::unique_ptr<std::remove_pointer<ddwaf_context>::type,
       decltype(&ddwaf_context_destroy)> ctx (
@@ -47,9 +64,6 @@ std::tuple<bool, std::string, std::string> test_runner::run(const fs::path &file
         new ddwaf_result{false, nullptr, 0}, ddwaf_result_free};
 
     try {
-        YAML::Node sample = YAML::Load(read_rule_file(file.c_str()));
-
-        auto runs = sample["runs"];
         for (auto it = runs.begin(); it != runs.end(); ++it) {
             YAML::Node run = *it;
             DDWAF_RET_CODE code = DDWAF_GOOD;
@@ -62,15 +76,14 @@ std::tuple<bool, std::string, std::string> test_runner::run(const fs::path &file
 
             expect(retval, code);
             if (code == DDWAF_MONITOR) {
-                YAML::Node result = YAML::Load(res->data);
-                validate(run["rules"], result);
+                validate(run["rules"], YAML::Load(res->data));
             }
         }
         passed = true;
     } catch (const std::exception &e) {
-        error = e.what();
+        error_ << e.what();
     } catch (...) {
-        error = "unknown exception";
+        error_ << "unknown exception";
     }
 
     if (!passed && res->data != nullptr) {
@@ -81,7 +94,45 @@ std::tuple<bool, std::string, std::string> test_runner::run(const fs::path &file
         out << YAML::Load(res->data);
     }
 
-    return {passed, error, output_.str()};
+    return passed;
+}
+
+test_runner::result test_runner::run(const fs::path &file)
+{
+    output_ = {};
+    error_ = {};
+
+    bool passed = false;
+    bool expected_fail = false;
+
+    std::unique_ptr<std::remove_pointer<ddwaf_context>::type,
+      decltype(&ddwaf_context_destroy)> ctx (
+        ddwaf_context_init(handle_, ddwaf_object_free),
+        ddwaf_context_destroy
+    );
+
+    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res {
+        new ddwaf_result{false, nullptr, 0}, ddwaf_result_free};
+
+    try {
+        YAML::Node sample = YAML::Load(read_rule_file(file.c_str()));
+
+        if (sample["expected-fail"].IsDefined()) {
+            expected_fail = sample["expected-fail"].as<bool>();
+        }
+
+        if (sample["unit"].IsDefined() && sample["unit"].as<bool>()) {
+            passed = run_unit(sample["runs"]);
+        } else {
+            passed = run_test(sample["runs"]);
+        }
+    } catch (const std::exception &e) {
+        error_ << e.what();
+    } catch (...) {
+        error_ << "unknown exception";
+    }
+
+    return {passed, expected_fail, error_.str(), output_.str()};
 }
 
 void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtained)

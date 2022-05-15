@@ -91,6 +91,9 @@ bool has_colour()
 }
 
 std::ostream& operator<<(std::ostream& os, const term::colour c) {
+    // Attempt to verify if ostream is cout
+    if (os.rdbuf() != std::cout.rdbuf() || !term::has_colour()) { return os; }
+
     os << "\033["
        << static_cast<std::underlying_type<term::colour>::type>(c)
        << "m";
