@@ -29,8 +29,9 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
             -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address,leak,undefined"
           VERBOSE=1 make -j waf_validator
+      - name: Test Validator
+        run: make test_validator
+        working-directory: Debug
       - name: Run Validator
-        run: |
-          set -ex
-          cd Debug
-          make validate
+        run: make validate
+        working-directory: Debug
