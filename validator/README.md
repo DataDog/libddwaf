@@ -23,7 +23,6 @@ Once CMake has finished, build the validator:
 ```
 make waf_validator
 ```
-```
 
 ### Testing the validator
 
