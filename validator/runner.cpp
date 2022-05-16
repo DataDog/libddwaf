@@ -28,7 +28,7 @@ test_runner::test_runner(const std::string &rule_file)
 
 test_runner::~test_runner() { ddwaf_destroy(handle_); }
 
-bool test_runner::run_unit(const YAML::Node &runs)
+bool test_runner::run_self_test(const YAML::Node &runs)
 {
     bool passed = false;
 
@@ -117,8 +117,8 @@ test_runner::result test_runner::run(const fs::path &file)
             expected_fail = sample["expected-fail"].as<bool>();
         }
 
-        if (sample["unit"].IsDefined() && sample["unit"].as<bool>()) {
-            passed = run_unit(sample["runs"]);
+        if (sample["self-test"].IsDefined() && sample["self-test"].as<bool>()) {
+            passed = run_self_test(sample["runs"]);
         } else {
             passed = run_test(sample["runs"]);
         }

@@ -1,6 +1,6 @@
 {
-  name: tbd,
-  unit: true,
+  name: "Inconsistent rule match value",
+  self-test: true,
   expected-fail: true,
   runs: [
     {
@@ -16,7 +16,7 @@
           },
           rule_matches: [
           {
-            operator: match_regex,
+            operator: phrase_match,
             operator_value: rule1,
             parameters: [
               {
@@ -31,32 +31,6 @@
             }
           ]
         },
-        {
-          rule: {
-            id: 2,
-            name: rule2-basic-multiple-inputs,
-            tags: {
-              type: flow2,
-              category: category
-            }
-          },
-          rule_matches: [
-          {
-            operator: match_regex,
-            operator_value: rule2,
-            parameters: [
-              {
-                address: rule2-input1,
-                key_path: [],
-                value: rule2,
-                  highlight: [
-                    rule2
-                  ]
-                }
-              ]
-            }
-          ]
-        }
       ],
       rules: [
         {

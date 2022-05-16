@@ -1,6 +1,7 @@
 {
-  name: tbd,
-  unit: true,
+  name: "Inconsistent rule match value",
+  self-test: true,
+  expected-fail: true,
   runs: [
     {
       output: [
@@ -8,10 +9,6 @@
           rule: {
             id: 1,
             name: rule1-basic-single-input,
-            tags: {
-              type: flow1,
-              category: category
-            }
           },
           rule_matches: [
           {
@@ -29,7 +26,7 @@
               ]
             }
           ]
-        }
+        },
       ],
       rules: [
         {

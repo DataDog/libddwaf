@@ -29,7 +29,7 @@ public:
 
 protected:
     bool run_test(const YAML::Node &runs);
-    bool run_unit(const YAML::Node &runs);
+    bool run_self_test(const YAML::Node &runs);
 
     void validate(const YAML::Node &expected, const YAML::Node &obtained);
     void validate_rule(const YAML::Node &expected, const YAML::Node &obtained);

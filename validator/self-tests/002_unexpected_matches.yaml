@@ -1,0 +1,74 @@
+{
+  name: "Unexpected matches in WAF result",
+  self-test: true,
+  expected-fail: true,
+  runs: [
+    {
+      output: [
+        {
+          rule: {
+            id: 1,
+            name: rule1-basic-single-input,
+            tags: {
+              type: flow1,
+              category: category
+            }
+          },
+          rule_matches: [
+          {
+            operator: match_regex,
+            operator_value: rule1,
+            parameters: [
+              {
+                address: rule1-input,
+                key_path: [],
+                value: rule1,
+                  highlight: [
+                    rule1
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          rule: {
+            id: 2,
+            name: rule2-basic-multiple-inputs,
+            tags: {
+              type: flow2,
+              category: category
+            }
+          },
+          rule_matches: [
+          {
+            operator: match_regex,
+            operator_value: rule2,
+            parameters: [
+              {
+                address: rule2-input1,
+                key_path: [],
+                value: rule2,
+                  highlight: [
+                    rule2
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              key_path: [],
+              value: rule1
+            }
+          ]
+        }
+      ],
+    }
+  ]
+}

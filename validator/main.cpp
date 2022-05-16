@@ -107,8 +107,10 @@ int main(int argc, char *argv[])
         } else {
             if (!expected_fail) {
                 std::cout << std::string{file} << " => " << term::colour::red
-                          << "Failed: " << error << "\n"
-                          << term::colour::off << output << "\n";
+                          << "Failed: " << error << "\n";
+                if (!output.empty()) {
+                    std::cout << term::colour::off << output << "\n";
+                }
                 exit_val = 1;
             } else {
                 std::cout << std::string{file} << " => " << term::colour::yellow

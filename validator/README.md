@@ -56,7 +56,7 @@ make test_validator
 Alternatively, the self-tests can also be executed from the validator directory as follows:
 
 ```
-../build/validator/waf_validator unit/*.yaml
+../build/validator/waf_validator self-tests/*.yaml
 ```
 
 This also allows executing individual tests as required.
