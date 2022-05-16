@@ -1,8 +1,8 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2021 Datadog, Inc.
 
 #include <algorithm>
 #include <filesystem>
@@ -20,32 +20,31 @@ namespace fs = std::filesystem;
 
 #define LONG_TIME 1000000
 
-const char* level_to_str(DDWAF_LOG_LEVEL level)
+const char *level_to_str(DDWAF_LOG_LEVEL level)
 {
-    switch (level)
-    {
-        case DDWAF_LOG_TRACE:
-            return "trace";
-        case DDWAF_LOG_DEBUG:
-            return "debug";
-        case DDWAF_LOG_ERROR:
-            return "error";
-        case DDWAF_LOG_WARN:
-            return "warn";
-        case DDWAF_LOG_INFO:
-            return "info";
-        case DDWAF_LOG_OFF:
-            break;
+    switch (level) {
+    case DDWAF_LOG_TRACE:
+        return "trace";
+    case DDWAF_LOG_DEBUG:
+        return "debug";
+    case DDWAF_LOG_ERROR:
+        return "error";
+    case DDWAF_LOG_WARN:
+        return "warn";
+    case DDWAF_LOG_INFO:
+        return "info";
+    case DDWAF_LOG_OFF:
+        break;
     }
 
     return "off";
 }
 
-void log_cb(DDWAF_LOG_LEVEL level,
-            const char* function, const char* file, unsigned line,
-            const char* message, uint64_t)
+void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file,
+    unsigned line, const char *message, uint64_t)
 {
-    printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line, message);
+    printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line,
+        message);
 }
 
 int main(int argc, char *argv[])
@@ -79,10 +78,14 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-        for (auto const& dir_entry : fs::directory_iterator{samples}) {
+        for (auto const &dir_entry : fs::directory_iterator{samples}) {
             fs::path sample_path = dir_entry;
-            if (!is_regular_file(sample_path)) { continue; }
-            if (sample_path.extension() != ".yaml") { continue; }
+            if (!is_regular_file(sample_path)) {
+                continue;
+            }
+            if (sample_path.extension() != ".yaml") {
+                continue;
+            }
 
             files.push_back(dir_entry);
         }
@@ -92,31 +95,27 @@ int main(int argc, char *argv[])
 
     int exit_val = 0;
     test_runner runner("ruleset.yaml");
-    for (const auto &file: files) {
+    for (const auto &file : files) {
         auto [res, expected_fail, error, output] = runner.run(file);
         if (res) {
             if (!expected_fail) {
-                std::cout << std::string{file} << " => "
-                          << term::colour::green << "Passed\n"
+                std::cout << std::string{file} << " => " << term::colour::green
+                          << "Passed\n"
                           << term::colour::off;
             } else {
-                std::cout << std::string{file} << " => "
-                          << term::colour::yellow 
+                std::cout << std::string{file} << " => " << term::colour::yellow
                           << "Expected to fail but passed\n"
                           << term::colour::off;
                 exit_val = 1;
             }
         } else {
             if (!expected_fail) {
-                std::cout << std::string{file} << " => "
-                          << term::colour::red
+                std::cout << std::string{file} << " => " << term::colour::red
                           << "Failed: " << error << "\n"
-                          << term::colour::off
-                          << output << "\n";
+                          << term::colour::off << output << "\n";
                 exit_val = 1;
             } else {
-                std::cout << std::string{file} << " => "
-                          << term::colour::yellow
+                std::cout << std::string{file} << " => " << term::colour::yellow
                           << "Failed (expected): " << error << "\n"
                           << term::colour::off;
             }

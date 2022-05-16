@@ -1,17 +1,17 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2021 Datadog, Inc.
 
-#include "assert.hpp"
 #include "runner.hpp"
+#include "assert.hpp"
 #include "utils.hpp"
 
 test_runner::test_runner(const std::string &rule_file)
 {
     YAML::Node doc = YAML::Load(read_rule_file(rule_file));
-    ddwaf_object rule_obj   = doc.as<ddwaf_object>();
+    ddwaf_object rule_obj = doc.as<ddwaf_object>();
     handle_ = ddwaf_init(&rule_obj, nullptr, nullptr);
     ddwaf_object_free(&rule_obj);
     if (handle_ == nullptr) {
@@ -26,11 +26,7 @@ test_runner::test_runner(const std::string &rule_file)
     }
 }
 
-test_runner::~test_runner()
-{
-    ddwaf_destroy(handle_);
-}
-
+test_runner::~test_runner() { ddwaf_destroy(handle_); }
 
 bool test_runner::run_unit(const YAML::Node &runs)
 {
@@ -55,12 +51,11 @@ bool test_runner::run_test(const YAML::Node &runs)
 {
     bool passed = false;
     std::unique_ptr<std::remove_pointer<ddwaf_context>::type,
-      decltype(&ddwaf_context_destroy)> ctx (
-        ddwaf_context_init(handle_, ddwaf_object_free),
-        ddwaf_context_destroy
-    );
+        decltype(&ddwaf_context_destroy)>
+        ctx(ddwaf_context_init(handle_, ddwaf_object_free),
+            ddwaf_context_destroy);
 
-    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res {
+    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res{
         new ddwaf_result{false, nullptr, 0}, ddwaf_result_free};
 
     try {
@@ -106,12 +101,11 @@ test_runner::result test_runner::run(const fs::path &file)
     bool expected_fail = false;
 
     std::unique_ptr<std::remove_pointer<ddwaf_context>::type,
-      decltype(&ddwaf_context_destroy)> ctx (
-        ddwaf_context_init(handle_, ddwaf_object_free),
-        ddwaf_context_destroy
-    );
+        decltype(&ddwaf_context_destroy)>
+        ctx(ddwaf_context_init(handle_, ddwaf_object_free),
+            ddwaf_context_destroy);
 
-    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res {
+    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res{
         new ddwaf_result{false, nullptr, 0}, ddwaf_result_free};
 
     try {
@@ -135,7 +129,8 @@ test_runner::result test_runner::run(const fs::path &file)
     return {passed, expected_fail, error_.str(), output_.str()};
 }
 
-void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtained)
+void test_runner::validate(
+    const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected.size(), obtained.size());
 
@@ -148,7 +143,7 @@ void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtaine
         for (std::size_t j = 0; j < obtained.size(); j++) {
             auto obtained_rule_match = obtained[j];
             auto id = obtained_rule_match["rule"]["id"].as<std::string>();
- 
+
             auto expected_rule_match = expected_rule_matches[id];
             if (!expected_rule_match.IsDefined()) {
                 continue;
@@ -161,8 +156,10 @@ void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtaine
 
             auto rule = rules_[id];
             validate_rule(rule, obtained_rule_match["rule"]);
-            validate_conditions(rule["conditions"], obtained_rule_match["rule_matches"]);
-            validate_matches(expected_rule_match, obtained_rule_match["rule_matches"]);
+            validate_conditions(
+                rule["conditions"], obtained_rule_match["rule_matches"]);
+            validate_matches(
+                expected_rule_match, obtained_rule_match["rule_matches"]);
         }
 
         expect(true, found_expected);
@@ -171,7 +168,8 @@ void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtaine
     for (bool v : seen) { expect(true, v); }
 }
 
-void test_runner::validate_rule(const YAML::Node &expected, const YAML::Node &obtained)
+void test_runner::validate_rule(
+    const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected["id"], obtained["id"]);
     expect(expected["name"], obtained["name"]);
@@ -183,7 +181,8 @@ void test_runner::validate_rule(const YAML::Node &expected, const YAML::Node &ob
     expect(expected_tags["category"], obtained_tags["category"]);
 }
 
-void test_runner::validate_conditions(const YAML::Node &expected, const YAML::Node &obtained)
+void test_runner::validate_conditions(
+    const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected.size(), obtained.size());
 
@@ -198,12 +197,13 @@ void test_runner::validate_conditions(const YAML::Node &expected, const YAML::No
         auto op = expected_cond["operator"].as<std::string>();
         if (op == "match_regex") {
             expect(expected_cond["parameters"]["regex"].as<std::string>(),
-                   obtained_cond["operator_value"].as<std::string>());
+                obtained_cond["operator_value"].as<std::string>());
         }
     }
 }
 
-void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node &obtained)
+void test_runner::validate_matches(
+    const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected.size(), obtained.size());
 
