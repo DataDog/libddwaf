@@ -128,6 +128,7 @@ ExternalProject_Add(proj_yamlcpp
                 -DYAML_CPP_BUILD_TESTS=OFF
                 -DYAML_CPP_BUILD_CONTRIB=OFF
                 -DYAML_CPP_BUILD_TOOLS=OFF
+                -DYAML_BUILD_SHARED_LIBS=ON
                 -DYAML_CPP_INSTALL=ON
                 -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
                 -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
