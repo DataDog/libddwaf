@@ -47,6 +47,14 @@ bool test_runner::run_unit(const YAML::Node &runs)
     return passed;
 }
 
+namespace {
+void ddwaf_result_destroy(ddwaf_result *res)
+{
+    ddwaf_result_free(res);
+    delete res;
+}
+}
+
 bool test_runner::run_test(const YAML::Node &runs)
 {
     bool passed = false;
@@ -55,8 +63,8 @@ bool test_runner::run_test(const YAML::Node &runs)
         ctx(ddwaf_context_init(handle_, ddwaf_object_free),
             ddwaf_context_destroy);
 
-    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res{
-        new ddwaf_result{false, nullptr, 0}, ddwaf_result_free};
+    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_destroy)> res{
+        new ddwaf_result{false, nullptr, 0}, ddwaf_result_destroy};
 
     try {
         for (auto it = runs.begin(); it != runs.end(); ++it) {
@@ -73,6 +81,8 @@ bool test_runner::run_test(const YAML::Node &runs)
             if (code == DDWAF_MONITOR) {
                 validate(run["rules"], YAML::Load(res->data));
             }
+
+            ddwaf_result_free(res.get());
         }
         passed = true;
     } catch (const std::exception &e) {
@@ -99,14 +109,6 @@ test_runner::result test_runner::run(const fs::path &file)
 
     bool passed = false;
     bool expected_fail = false;
-
-    std::unique_ptr<std::remove_pointer<ddwaf_context>::type,
-        decltype(&ddwaf_context_destroy)>
-        ctx(ddwaf_context_init(handle_, ddwaf_object_free),
-            ddwaf_context_destroy);
-
-    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res{
-        new ddwaf_result{false, nullptr, 0}, ddwaf_result_free};
 
     try {
         YAML::Node sample = YAML::Load(read_file(file.c_str()));
