@@ -1,5 +1,5 @@
 {
-  name: "Unexpected matches in WAF result",
+  name: Unexpected matches in WAF result,
   self-test: true,
   expected-fail: true,
   runs: [

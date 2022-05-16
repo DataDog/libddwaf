@@ -1,5 +1,5 @@
 {
-  name: "Inconsistent rule match value",
+  name: Inconsistent rule name,
   self-test: true,
   expected-fail: true,
   runs: [
