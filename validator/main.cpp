@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
                           << "Passed\n"
                           << term::colour::off;
             } else {
-                std::cout << std::string{file} << " => " << term::colour::yellow
+                std::cout << std::string{file} << " => " << term::colour::red
                           << "Expected to fail but passed\n"
                           << term::colour::off;
                 exit_val = 1;
