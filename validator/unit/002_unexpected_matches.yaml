@@ -1,6 +1,7 @@
 {
   name: tbd,
   unit: true,
+  expected-fail: true,
   runs: [
     {
       output: [
