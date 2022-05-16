@@ -22,7 +22,7 @@ namespace fs = std::filesystem;
 class test_runner {
 public:
     using result = std::tuple<bool, bool, std::string, std::string>;
-    test_runner(const std::string &rule_file);
+    explicit test_runner(const std::string &rule_file);
     ~test_runner();
 
     result run(const fs::path &sample_file);
@@ -38,7 +38,6 @@ protected:
     void validate_matches(
         const YAML::Node &expected, const YAML::Node &obtained);
 
-protected:
     static constexpr unsigned timeout = 1000000;
     ddwaf_handle handle_;
     std::map<std::string, YAML::Node> rules_;

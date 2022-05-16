@@ -10,8 +10,8 @@
 
 test_runner::test_runner(const std::string &rule_file)
 {
-    YAML::Node doc = YAML::Load(read_rule_file(rule_file));
-    ddwaf_object rule_obj = doc.as<ddwaf_object>();
+    YAML::Node doc = YAML::Load(read_file(rule_file));
+    auto rule_obj = doc.as<ddwaf_object>();
     handle_ = ddwaf_init(&rule_obj, nullptr, nullptr);
     ddwaf_object_free(&rule_obj);
     if (handle_ == nullptr) {
@@ -109,7 +109,7 @@ test_runner::result test_runner::run(const fs::path &file)
         new ddwaf_result{false, nullptr, 0}, ddwaf_result_free};
 
     try {
-        YAML::Node sample = YAML::Load(read_rule_file(file.c_str()));
+        YAML::Node sample = YAML::Load(read_file(file.c_str()));
 
         if (sample["expected-fail"].IsDefined()) {
             expected_fail = sample["expected-fail"].as<bool>();
@@ -137,9 +137,7 @@ void test_runner::validate(
     std::vector<bool> seen(obtained.size(), false);
 
     bool found_expected = false;
-    for (std::size_t i = 0; i < expected.size(); i++) {
-        auto expected_rule_matches = expected[i];
-
+    for (const auto &expected_rule_matches: expected) {
         for (std::size_t j = 0; j < obtained.size(); j++) {
             auto obtained_rule_match = obtained[j];
             auto id = obtained_rule_match["rule"]["id"].as<std::string>();

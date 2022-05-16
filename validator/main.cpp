@@ -12,13 +12,9 @@
 #include <string_view>
 #include <vector>
 
-namespace fs = std::filesystem;
-
 #include "assert.hpp"
 #include "runner.hpp"
 #include "utils.hpp"
-
-#define LONG_TIME 1000000
 
 const char *level_to_str(DDWAF_LOG_LEVEL level)
 {
@@ -41,7 +37,7 @@ const char *level_to_str(DDWAF_LOG_LEVEL level)
 }
 
 void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file,
-    unsigned line, const char *message, uint64_t)
+    unsigned line, const char *message, [[maybe_unused]] uint64_t len)
 {
     printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line,
         message);
@@ -68,7 +64,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        files.push_back(arg);
+        files.emplace_back(arg);
     }
 
     if (files.empty()) {

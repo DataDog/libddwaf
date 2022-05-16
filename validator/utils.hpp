@@ -9,14 +9,17 @@
 #include "ddwaf.h"
 #include <fstream>
 #include <string>
+#include <string_view>
 #include <yaml-cpp/yaml.h>
 
 namespace YAML {
 
 class parsing_error : public std::exception {
 public:
-    parsing_error(const std::string &what) : what_(what) {}
-    const char *what() { return what_.c_str(); }
+    explicit parsing_error(std::string_view what) : what_(what) {}
+    [[nodiscard]] const char *what() const noexcept override {
+        return what_.c_str();
+    }
 
 protected:
     const std::string what_;
@@ -30,7 +33,7 @@ template <> struct as_if<ddwaf_object, void> {
 
 } // namespace YAML
 
-std::string read_rule_file(const std::string_view &filename);
+std::string read_file(std::string_view filename);
 
 namespace term {
 
@@ -48,4 +51,4 @@ enum class colour : unsigned {
 bool has_colour();
 } // namespace term
 
-std::ostream &operator<<(std::ostream &os, const term::colour c);
+std::ostream &operator<<(std::ostream &os, term::colour c);

@@ -29,7 +29,7 @@ public:
     {
         std::stringstream ss;
         ss << fn << "(" << loc << "): " << what;
-        what_ = std::move(ss.str());
+        what_ = ss.str();
     }
 
     template <typename T>
@@ -37,9 +37,11 @@ public:
     {
         std::stringstream ss;
         ss << fn << "(" << loc << "): " << lhs << " != " << rhs;
-        what_ = std::move(ss.str());
+        what_ = ss.str();
     }
-    const char *what() const noexcept override { return what_.c_str(); }
+    [[nodiscard]] const char *what() const noexcept override {
+        return what_.c_str();
+    }
 
 protected:
     std::string what_;

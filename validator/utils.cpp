@@ -26,7 +26,7 @@ ddwaf_object node_to_arg(const Node &node)
         ddwaf_object arg;
         ddwaf_object_map(&arg);
         for (auto it = node.begin(); it != node.end(); ++it) {
-            std::string key = it->first.as<std::string>();
+            auto key = it->first.as<std::string>();
             ddwaf_object child = node_to_arg(it->second);
             ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
         }
@@ -55,31 +55,31 @@ ddwaf_object as_if<ddwaf_object, void>::operator()() const
 
 } // namespace YAML
 
-std::string read_rule_file(const std::string_view &filename)
+std::string read_file(std::string_view filename)
 {
-    std::ifstream rule_file(filename.data(), std::ios::in);
-    if (!rule_file) {
+    std::ifstream file(filename.data(), std::ios::in);
+    if (!file) {
         throw std::system_error(errno, std::generic_category());
     }
 
     // Create a buffer equal to the file size
     std::string buffer;
-    rule_file.seekg(0, std::ios::end);
-    buffer.resize(rule_file.tellg());
-    rule_file.seekg(0, std::ios::beg);
+    file.seekg(0, std::ios::end);
+    buffer.resize(file.tellg());
+    file.seekg(0, std::ios::beg);
 
-    rule_file.read(&buffer[0], buffer.size());
-    rule_file.close();
+    file.read(&buffer[0], buffer.size());
+    file.close();
     return buffer;
 }
 
 namespace term {
 
-bool has_colour() { return isatty(fileno(stdout)); }
+bool has_colour() { return isatty(fileno(stdout)) != 0; }
 
 } // namespace term
 
-std::ostream &operator<<(std::ostream &os, const term::colour c)
+std::ostream &operator<<(std::ostream &os, term::colour c)
 {
     // Attempt to verify if ostream is cout
     if (os.rdbuf() != std::cout.rdbuf() || !term::has_colour()) {
