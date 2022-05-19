@@ -20,6 +20,40 @@
 #include <utils.h>
 #include <validator.hpp>
 
+namespace ddwaf
+{
+
+class object_iterator
+{
+public:
+    explicit object_iterator(const ddwaf_object *obj,
+        const std::vector<std::string> &path = {},
+        const object_limits &limits = object_limits());
+
+    operator bool() { return current_ != nullptr; }
+    [[nodiscard]] bool is_valid() const { return current_ != nullptr; }
+    bool operator++();
+
+    // TODO add const, nodiscard, etc
+    const ddwaf_object* operator*() { return current_; }
+    std::vector<std::string> get_current_path();
+
+protected:
+    void initialise_cursor(const ddwaf_object *obj);
+    void initialise_cursor_with_path(const ddwaf_object *obj,
+        const std::vector<std::string> &path);
+    void set_cursor_to_next_scalar();
+
+    static constexpr std::size_t initial_stack_size = 32;
+
+    const object_limits limits_;
+    std::size_t path_size_{0};
+    std::vector<std::pair<const ddwaf_object *, std::size_t>> stack_;
+    const ddwaf_object *current_{nullptr};
+};
+
+}
+
 using ruleCallback = bool(const ddwaf_object*, DDWAF_OBJ_TYPE, bool, bool);
 
 class ArgsIterator
