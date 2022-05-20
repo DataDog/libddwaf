@@ -1,4 +1,5 @@
 {
+  name: "Nested map, multiple keys, no match",
   runs: [
     {
       input: {
@@ -12,6 +13,5 @@
       },
       code: good
     }
-  ],
-  name: tbd
+  ]
 }

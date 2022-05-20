@@ -1,4 +1,5 @@
 {
+  name: "Nested map with match",
   runs: [
     {
       input: {
@@ -24,6 +25,5 @@
       ],
       code: monitor
     }
-  ],
-  name: tbd
+  ]
 }

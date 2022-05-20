@@ -1,24 +1,28 @@
 {
-  input: {
-    rule2-input2: {
-      first: rule2
-    },
-    rule2-input1: {
-      first: rule2
-    }
-  },
-  rules: [
+  name: "",
+  runs: [
     {
-      2: [
-        {
-          key_path: [
-            first
-          ],
-          value: rule2
+      input: {
+        rule2-input2: {
+          first: rule2
+        },
+        rule2-input1: {
+          first: rule2
         }
-      ]
+      },
+      rules: [
+        {
+          2: [
+            {
+              key_path: [
+                first
+              ],
+              value: rule2
+            }
+          ]
+        }
+      ],
+      code: monitor,
     }
-  ],
-  code: monitor,
-  name: tbd
+  ]
 }

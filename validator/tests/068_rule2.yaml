@@ -1,25 +1,29 @@
 {
-  input: {
-    rule2-input1: [
-      garbage
-    ],
-    rule2-input2: [
-      rule2
-    ]
-  },
-  rules: [
+  name: "",
+  runs: [
     {
-      2: [
+      input: {
+        rule2-input1: [
+          garbage
+        ],
+        rule2-input2: [
+          rule2
+        ]
+      },
+      rules: [
         {
-          address: rule2-input2,
-          key_path: [
-            0
-          ],
-          value: rule2
+          2: [
+            {
+              address: rule2-input2,
+              key_path: [
+                0
+              ],
+              value: rule2
+            }
+          ]
         }
-      ]
+      ],
+      code: monitor,
     }
-  ],
-  code: monitor,
-  name: tbd
+  ]
 }

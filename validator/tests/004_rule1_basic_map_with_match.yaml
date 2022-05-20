@@ -1,5 +1,5 @@
 {
-  name: Basic map with match,
+  name: "Basic map with match",
   runs: [
     {
       input: {

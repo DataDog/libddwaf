@@ -1,5 +1,5 @@
 {
-  name: Basic run with match,
+  name: "Basic run with match",
   runs: [
     {
       input: {

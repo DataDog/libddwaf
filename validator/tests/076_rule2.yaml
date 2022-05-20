@@ -1,4 +1,7 @@
 {
+  name: "",
+  runs: [
+    {
   input: {
     rule2-input1: {
       first: garbage
@@ -27,5 +30,5 @@
     }
   ],
   code: monitor,
-  name: tbd
+    }]
 }

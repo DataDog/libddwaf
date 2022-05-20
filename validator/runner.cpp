@@ -67,6 +67,8 @@ bool test_runner::run_test(const YAML::Node &runs)
         new ddwaf_result{false, nullptr, 0}, ddwaf_result_destroy};
 
     try {
+        expect(true, runs.IsDefined());
+        expect(true, runs.size() > 0);
         for (auto it = runs.begin(); it != runs.end(); ++it) {
             YAML::Node run = *it;
             DDWAF_RET_CODE code = DDWAF_GOOD;

@@ -1,4 +1,5 @@
 {
+  name: "",
   runs: [
     {
       input: {
@@ -11,5 +12,4 @@
       code: good
     }
   ],
-  name: tbd
 }

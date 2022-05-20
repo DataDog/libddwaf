@@ -1,4 +1,5 @@
 {
+  name: "",
   runs: [
     {
       input: {
@@ -24,6 +25,5 @@
       code: good
     }
   ],
-  name: tbd,
   expected-fail: true
 }

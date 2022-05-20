@@ -1,5 +1,5 @@
 {
-  name: Match key below key path,
+  name: "Match key below key path",
   runs: [
     {
       input: {
@@ -10,4 +10,5 @@
       code: good
     }
   ],
+  expected-fail: true
 }

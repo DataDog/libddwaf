@@ -1,4 +1,5 @@
 {
+  name: "",
   runs: [
     {
       input: {
@@ -27,5 +28,4 @@
       code: monitor
     }
   ],
-  name: tbd
 }

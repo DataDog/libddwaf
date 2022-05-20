@@ -1,5 +1,5 @@
 {
-  name: Map with multiple keys, first key is a match,
+  name: "Map with multiple keys, first key is a match",
   runs: [
     {
       input: {
