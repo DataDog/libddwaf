@@ -64,26 +64,12 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     key_path.SetArray();
 
     bool redact = false;
-    for (const ddwaf_object& key : gather.keyPath)
+    for (auto key: gather.keyPath)
     {
+        redact = redact || event_obfuscator.is_sensitive_key(key);
+
         rapidjson::Value jsonKey;
-        if (key.type == DDWAF_OBJ_STRING)
-        {
-            if (key.stringValue == nullptr || key.nbEntries == 0)
-            {
-                // This shouldn't happen
-                continue;
-            }
-
-            redact = redact || event_obfuscator.is_sensitive_key(
-                {key.stringValue, static_cast<size_t>(key.nbEntries)});
-
-            jsonKey.SetString(key.stringValue, static_cast<rapidjson::SizeType>(key.nbEntries), allocator);
-        }
-        else
-        {
-            jsonKey.SetUint64(key.uintValue);
-        }
+        jsonKey.SetString(key.c_str(), static_cast<rapidjson::SizeType>(key.size()), allocator);
         key_path.PushBack(jsonKey, allocator);
     }
     param.AddMember("key_path", key_path, allocator);

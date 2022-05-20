@@ -92,11 +92,10 @@ condition::status condition::performMatching(PWRetriever& retriever,
         const auto& details = manifest.getDetailsForTarget(target);
         ddwaf::object_iterator it(retriever.getParameter(target), details.keyPaths);
 
-        bool matched   = false;
         size_t counter = 0;
 
         bool runOnKey = details.inline_transformer & PWT_KEYS_ONLY;
-        while (it.is_valid()) {
+        for (; it.is_valid(); ++it) {
             // Only check the time every 16 runs
             // TODO abstract away deadline checks into custom object
             if ((++counter & 0xf) == 0 && deadline <= ddwaf::monotonic_clock::now())
@@ -114,6 +113,7 @@ condition::status condition::performMatching(PWRetriever& retriever,
                         gather.matchedValue.c_str(),
                         gather.resolvedValue.c_str());
             //iterator.argsIterator.getKeyPath(gather.keyPath);
+            gather.keyPath = it.get_current_path();
             gather.dataSource  = details.inheritFrom;
             gather.manifestKey = manifest.getTargetName(target);
 

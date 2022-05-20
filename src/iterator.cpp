@@ -190,6 +190,7 @@ bool object_iterator::operator++()
     return current_ != nullptr;
 }
 
+// TODO: return string_view as this will be immediately copied after
 std::vector<std::string> object_iterator::get_current_path()
 {
     if (stack_.empty() || current_ == nullptr) {

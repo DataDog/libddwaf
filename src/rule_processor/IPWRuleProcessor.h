@@ -25,7 +25,7 @@ struct MatchGatherer
 {
     std::string resolvedValue;
     std::string matchedValue;
-    std::vector<ddwaf_object> keyPath;
+    std::vector<std::string> keyPath;
     std::string dataSource;
     std::string manifestKey;
 
