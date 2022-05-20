@@ -1,15 +1,15 @@
 {
+  name: Map with multiple keys, no match,
   runs: [
     {
       input: {
         rule1-input: {
           other: value,
-          another: value,
-          first: garbage
+          first: garbage,
+          another: value
         }
       },
       code: good
     }
-  ],
-  name: tbd
+  ]
 }

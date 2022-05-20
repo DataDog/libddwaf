@@ -1,11 +1,12 @@
 {
+  name: Map with multiple keys, second key is a match,
   runs: [
     {
       input: {
         rule1-input: {
           other: value,
-          another: value,
-          first: rule1
+          first: rule1,
+          another: value
         }
       },
       rules: [
@@ -23,6 +24,5 @@
       ],
       code: monitor
     }
-  ],
-  name: tbd
+  ]
 }

@@ -1,4 +1,5 @@
 {
+  name: Basic map with match,
   runs: [
     {
       input: {
@@ -21,6 +22,5 @@
       ],
       code: monitor
     }
-  ],
-  name: tbd
+  ]
 }

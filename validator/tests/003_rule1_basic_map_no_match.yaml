@@ -1,4 +1,5 @@
 {
+  name: Basic map no match,
   runs: [
     {
       input: {
@@ -9,5 +10,4 @@
       code: good
     }
   ],
-  name: tbd
 }
