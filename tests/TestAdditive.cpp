@@ -137,39 +137,39 @@ TEST(TestAdditive, TestParameterOverride)
     ddwaf_destroy(handle);
 }
 
-TEST(TestAdditive, SelectiveRerun)
-{
-    PWManifest manifest;
-    populateManifest(manifest);
+//TEST(TestAdditive, SelectiveRerun)
+//{
+    //PWManifest manifest;
+    //populateManifest(manifest);
 
-    PWRetriever retriever(manifest);
+    //PWRetriever retriever(manifest);
 
-    // Manufacture parameters
-    ddwaf_object map = DDWAF_OBJECT_MAP, tmp;
-    ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "valueA"));
-    ddwaf_object_map_add(&map, "mixed", ddwaf_object_string(&tmp, "valueB"));
-    ddwaf_object_map_add(&map, "mixed2", ddwaf_object_string(&tmp, "valueC"));
+    //// Manufacture parameters
+    //ddwaf_object map = DDWAF_OBJECT_MAP, tmp;
+    //ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "valueA"));
+    //ddwaf_object_map_add(&map, "mixed", ddwaf_object_string(&tmp, "valueB"));
+    //ddwaf_object_map_add(&map, "mixed2", ddwaf_object_string(&tmp, "valueC"));
 
-    // Let the fun start
-    retriever.addParameter(map);
-    retriever.newestBatch.clear();
-    retriever.newestBatch.insert(manifest.getTargetArgID("mixed"));
-    retriever.runOnNewOnly = true;
+    //// Let the fun start
+    //retriever.addParameter(map);
+    //retriever.newestBatch.clear();
+    //retriever.newestBatch.insert(manifest.getTargetArgID("mixed"));
+    //retriever.runOnNewOnly = true;
 
-    // We're expecting to skip the first and last parameters
-    std::vector<PWManifest::ARG_ID> targets = {
-        manifest.getTargetArgID("value"),
-        manifest.getTargetArgID("mixed"),
-        manifest.getTargetArgID("mixed2")
-    };
+    //// We're expecting to skip the first and last parameters
+    //std::vector<PWManifest::ARG_ID> targets = {
+        //manifest.getTargetArgID("value"),
+        //manifest.getTargetArgID("mixed"),
+        //manifest.getTargetArgID("mixed2")
+    //};
 
-    auto& iter = retriever.getIterator(targets);
+    //auto& iter = retriever.getIterator(targets);
 
-    EXPECT_EQ(iter.getActiveTarget(), manifest.getTargetArgID("mixed"));
+    //EXPECT_EQ(iter.getActiveTarget(), manifest.getTargetArgID("mixed"));
 
-    iter.moveIteratorForward();
+    //iter.moveIteratorForward();
 
-    EXPECT_TRUE(iter.isOver());
+    //EXPECT_TRUE(iter.isOver());
 
-    ddwaf_object_free(&map);
-}
+    //ddwaf_object_free(&map);
+/*}*/

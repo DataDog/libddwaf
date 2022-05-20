@@ -15,45 +15,28 @@
 namespace ddwaf
 {
 
-bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer, bool onKey) const
+bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer) const
 {
     const bool hasTransformation        = !transformation.empty();
-    const bool canRunTransformation     = onKey || (baseInput->type == DDWAF_OBJ_STRING);
+    const bool canRunTransformation     = baseInput->type == DDWAF_OBJ_STRING;
     bool transformationWillChangeString = false;
 
     if (hasTransformation && canRunTransformation)
     {
         // This codepath is shared with the mutable path. The structure can't be const :/
-        if (onKey && baseInput != NULL)
-        {
-            ddwaf_object fakeArg;
-            ddwaf_object_stringl_nc(&fakeArg, baseInput->parameterName, baseInput->parameterNameLength);
-            transformationWillChangeString = PWTransformer::doesNeedTransform(transformation, &fakeArg);
-        }
-        else
-        {
-            transformationWillChangeString = PWTransformer::doesNeedTransform(transformation, (ddwaf_object*) baseInput);
-        }
+        transformationWillChangeString = PWTransformer::doesNeedTransform(transformation,
+            const_cast<ddwaf_object *>(baseInput));
     }
 
     //If we don't have transformation to perform, or if they're irrelevant, no need to waste time copying and allocating data
     if (!hasTransformation || !canRunTransformation || !transformationWillChangeString)
     {
-        if (onKey)
-            return processor->doesMatchKey(baseInput, gatherer);
         return processor->doesMatch(baseInput, gatherer);
     }
 
     ddwaf_object copyInput;
     // Copy the input. If we're running on the key, we copy it in the value as it's functionnaly equivalent
-    if (onKey)
-    {
-        ddwaf_object_stringl(&copyInput, (const char*) baseInput->parameterName, baseInput->parameterNameLength);
-    }
-    else
-    {
-        ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, baseInput->nbEntries);
-    }
+    ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, baseInput->nbEntries);
 
     //Transform it and pick the pointer to process
     bool transformFailed = false, matched = false;
@@ -76,6 +59,46 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     return matched;
 }
 
+condition::status condition::match_target(PWManifest::ARG_ID target,
+    ddwaf::object::iterator_base &it,
+    const PWManifest &manifest, const PWManifest::ArgDetails &details,
+    const ddwaf::monotonic_clock::time_point& deadline,
+    PWRetManager& retManager) const
+{
+    size_t counter = 0;
+
+    for (; it.is_valid(); ++it) {
+        
+        DDWAF_TRACE("VALUE %s", (*it)->stringValue);
+        // Only check the time every 16 runs
+        // TODO abstract away deadline checks into custom object
+        if ((++counter & 0xf) == 0 && deadline <= ddwaf::monotonic_clock::now())
+        {
+            return status::timeout;
+        }
+
+        MatchGatherer gather;
+        if ((it.type() & processor->expectedTypes()) == 0) { continue; }
+        if (!matchWithTransformer(*it, gather)) { continue; }
+
+        gather.keyPath = it.get_current_path();
+        gather.dataSource  = details.inheritFrom;
+        gather.manifestKey = manifest.getTargetName(target);
+
+        DDWAF_TRACE("Target %s matched %s out of parameter value %s",
+                    gather.manifestKey.c_str(),
+                    gather.matchedValue.c_str(),
+                    gather.resolvedValue.c_str());
+
+        retManager.recordRuleMatch(processor, gather);
+
+        //If this target matched, we can stop processing
+        return status::matched;
+    }
+
+    return status::no_match;
+}
+
 condition::status condition::performMatching(PWRetriever& retriever,
     const PWManifest &manifest, bool run_on_new,
     const ddwaf::monotonic_clock::time_point& deadline,
@@ -90,39 +113,18 @@ condition::status condition::performMatching(PWRetriever& retriever,
         }
 
         const auto& details = manifest.getDetailsForTarget(target);
-        ddwaf::object_iterator it(retriever.getParameter(target), details.keyPaths);
 
-        size_t counter = 0;
-
-        bool runOnKey = details.inline_transformer & PWT_KEYS_ONLY;
-        for (; it.is_valid(); ++it) {
-            // Only check the time every 16 runs
-            // TODO abstract away deadline checks into custom object
-            if ((++counter & 0xf) == 0 && deadline <= ddwaf::monotonic_clock::now())
-            {
-                return status::timeout;
-            }
-
-            MatchGatherer gather;
-            if ((it.type() & processor->expectedTypes()) == 0) { continue; }
-            if (!matchWithTransformer(*it, gather, runOnKey)) { continue; }
-
-            //If this BA matched, we can stop processing
-            // TODO Trace target name?
-            DDWAF_TRACE("Target matched %s out of parameter value %s",
-                        gather.matchedValue.c_str(),
-                        gather.resolvedValue.c_str());
-            //iterator.argsIterator.getKeyPath(gather.keyPath);
-            gather.keyPath = it.get_current_path();
-            gather.dataSource  = details.inheritFrom;
-            gather.manifestKey = manifest.getTargetName(target);
-
-            retManager.recordRuleMatch(processor, gather);
-
-            // Actually, we can only stop processing if we were not collecting matches for a further filter
-            //	If we stopped, it'd open trivial bypasses of the next stage
-            return status::matched;
+        condition::status res = status::no_match;
+        auto object = retriever.getParameter(target);
+        if ((details.inline_transformer & PWT_KEYS_ONLY) != 0) {
+            ddwaf::object::key_iterator it(object, details.keyPaths);
+            res = match_target(target, it, manifest, details, deadline, retManager);
+        } else {
+            ddwaf::object::value_iterator it(object, details.keyPaths);
+            res = match_target(target, it, manifest, details, deadline, retManager);
         }
+
+        if (res == status::matched) { return status::matched; }
     }
 
     // Only @exist care about this branch, it's at the end to enable a better report when there is a real value

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <IPWRuleProcessor.h>
+#include <iterator.hpp>
 #include <PWManifest.h>
 #include <PWRet.hpp>
 #include <PWRetriever.hpp>
@@ -52,7 +53,12 @@ public:
     bool doesUseNewParameters(const PWRetriever& retriever) const;
 
 protected:
-    bool matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer, bool onKey) const;
+    bool matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer) const;
+    status match_target(PWManifest::ARG_ID target,
+        ddwaf::object::iterator_base &it,
+        const PWManifest &manifest, const PWManifest::ArgDetails &details,
+        const ddwaf::monotonic_clock::time_point& deadline,
+        PWRetManager& retManager) const;
 
     std::vector<PWManifest::ARG_ID> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
