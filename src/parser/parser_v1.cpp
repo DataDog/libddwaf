@@ -133,7 +133,7 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
             else
             {
                 details.inheritFrom = input.substr(0, pos);
-                details.keyPaths.emplace(input.substr(pos + 1, input.size()));
+                details.keyPaths.push_back(input.substr(pos + 1, input.size()));
             }
 
             id = manifest.insert(input, std::move(details));

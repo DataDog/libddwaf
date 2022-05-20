@@ -36,6 +36,10 @@ public:
 
     // TODO add const, nodiscard, etc
     const ddwaf_object* operator*() { return current_; }
+    DDWAF_OBJ_TYPE type() { 
+        return current_ != nullptr ? current_->type : DDWAF_OBJ_INVALID;
+    }
+
     std::vector<std::string> get_current_path();
 
 protected:
@@ -82,7 +86,7 @@ public:
     void getKeyPath(std::vector<ddwaf_object>& keyPath) const;
     bool isOver() const;
 
-    bool matchIterOnPath(const std::set<std::string>& path) const;
+    bool matchIterOnPath(const std::vector<std::string>& path) const;
 
     friend PWRetriever;
     friend class Iterator;
@@ -118,7 +122,7 @@ public:
     bool shouldMatchKey() const;
     bool shouldMatchValue() const;
 
-    bool matchIterOnPath(const std::set<std::string>& path) const;
+    bool matchIterOnPath(const std::vector<std::string>& path) const;
     bool moveIteratorForward(bool shouldIncrementFirst = true);
 
     bool operator++();

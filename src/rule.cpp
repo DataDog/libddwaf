@@ -15,7 +15,7 @@
 namespace ddwaf
 {
 
-bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer, bool onKey, bool readOnlyArg) const
+bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer, bool onKey) const
 {
     const bool hasTransformation        = !transformation.empty();
     const bool canRunTransformation     = onKey || (baseInput->type == DDWAF_OBJ_STRING);
@@ -45,21 +45,14 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     }
 
     ddwaf_object copyInput;
-    if (readOnlyArg)
+    // Copy the input. If we're running on the key, we copy it in the value as it's functionnaly equivalent
+    if (onKey)
     {
-        // Copy the input. If we're running on the key, we copy it in the value as it's functionnaly equivalent
-        if (onKey)
-        {
-            ddwaf_object_stringl(&copyInput, (const char*) baseInput->parameterName, baseInput->parameterNameLength);
-        }
-        else
-        {
-            ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, baseInput->nbEntries);
-        }
+        ddwaf_object_stringl(&copyInput, (const char*) baseInput->parameterName, baseInput->parameterNameLength);
     }
     else
     {
-        copyInput = *baseInput;
+        ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, baseInput->nbEntries);
     }
 
     //Transform it and pick the pointer to process
@@ -78,61 +71,51 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     matched |= processor->doesMatch(paramToUse, gatherer);
 
     // Otherwise, the caller is in charge of freeing the pointer
-    if (readOnlyArg)
-    {
-        ddwaf_object_free(&copyInput);
-    }
+    ddwaf_object_free(&copyInput);
 
     return matched;
 }
 
-condition::status condition::_matchTargets(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
+condition::status condition::performMatching(PWRetriever& retriever,
+    const PWManifest &manifest, bool run_on_new,
+    const ddwaf::monotonic_clock::time_point& deadline,
+    PWRetManager& retManager) const
 {
-    Iterator& iterator = retriever.getIterator(targets);
-    iterator.moveIteratorForward(false);
+    for (const auto &target : targets) {
 
-    if (iterator.isOver())
-    {
-        //If no BAs for this rule have resolved, we return MISSING_ARG
-        //	(that is, unless the processor "match" in this case)
-        if (!processor->matchIfMissing())
-            return status::missing_arg;
-
-        retManager.recordRuleMatch(processor, MatchGatherer());
-        return status::matched;
-    }
-
-    bool matched   = false;
-    size_t counter = 0;
-
-    do
-    {
-        // Only check the time every 16 runs
-        if ((++counter & 0xf) == 0 && deadline <= ddwaf::monotonic_clock::now())
-        {
-            return status::timeout;
+        // TODO: the conditions should keep track of the targets already
+        // checked.
+        if (run_on_new && !retriever.isKeyInLastBatch(target)) {
+            continue;
         }
 
-        MatchGatherer gather;
-        bool didMatch = iterator.runIterOnLambda([&gather, this](const ddwaf_object* input, DDWAF_OBJ_TYPE type, bool runOnKey, bool isReadOnlyArg) -> bool {
-            if ((type & processor->expectedTypes()) == 0)
+        const auto& details = manifest.getDetailsForTarget(target);
+        ddwaf::object_iterator it(retriever.getParameter(target), details.keyPaths);
+
+        bool matched   = false;
+        size_t counter = 0;
+
+        bool runOnKey = details.inline_transformer & PWT_KEYS_ONLY;
+        while (it.is_valid()) {
+            // Only check the time every 16 runs
+            // TODO abstract away deadline checks into custom object
+            if ((++counter & 0xf) == 0 && deadline <= ddwaf::monotonic_clock::now())
             {
-                return false;
+                return status::timeout;
             }
 
-            return matchWithTransformer(input, gather, runOnKey, isReadOnlyArg);
-        });
+            MatchGatherer gather;
+            if ((it.type() & processor->expectedTypes()) == 0) { continue; }
+            if (!matchWithTransformer(*it, gather, runOnKey)) { continue; }
 
-        //If this BA matched, we can stop processing
-        if (didMatch)
-        {
-            DDWAF_TRACE("BA %d did match %s out of parameter value %s",
-                        iterator.getActiveTarget(),
+            //If this BA matched, we can stop processing
+            // TODO Trace target name?
+            DDWAF_TRACE("Target matched %s out of parameter value %s",
                         gather.matchedValue.c_str(),
                         gather.resolvedValue.c_str());
-            iterator.argsIterator.getKeyPath(gather.keyPath);
-            gather.dataSource  = iterator.getDataSource();
-            gather.manifestKey = iterator.getManifestKey();
+            //iterator.argsIterator.getKeyPath(gather.keyPath);
+            gather.dataSource  = details.inheritFrom;
+            gather.manifestKey = manifest.getTargetName(target);
 
             retManager.recordRuleMatch(processor, gather);
 
@@ -140,29 +123,17 @@ condition::status condition::_matchTargets(PWRetriever& retriever, const ddwaf::
             //	If we stopped, it'd open trivial bypasses of the next stage
             return status::matched;
         }
-    } while (iterator.moveIteratorForward());
+    }
 
     // Only @exist care about this branch, it's at the end to enable a better report when there is a real value
-    if (!matched && processor->matchAnyInput())
+    if (processor->matchAnyInput())
     {
         retManager.recordRuleMatch(processor, MatchGatherer());
         return status::matched;
     }
 
     //	If at least one resolved, but didn't matched, we return NO_MATCH
-    return matched ? status::matched : status::no_match;
-}
-
-condition::status condition::performMatching(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const
-{
-    bool matched = false;
-
-    condition::status output = _matchTargets(retriever, deadline, retManager);
-
-    if (matched && (output == status::no_match || output == status::missing_arg))
-        return status::matched;
-
-    return output;
+    return status::no_match;
 }
 
 bool condition::doesUseNewParameters(const PWRetriever& retriever) const

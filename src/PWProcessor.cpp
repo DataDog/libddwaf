@@ -11,8 +11,9 @@
 
 using match_status = ddwaf::condition::status;
 
-PWProcessor::PWProcessor(PWRetriever& input, const ddwaf::rule_vector& rules_)
-    : parameters(input), rules(rules_)
+PWProcessor::PWProcessor(PWRetriever& input, 
+    const PWManifest& manifest, const ddwaf::rule_vector& rules_)
+    : parameters(input), manifest_(manifest), rules(rules_)
 {
     ranCache.reserve(rules.size());
 }
@@ -91,11 +92,10 @@ bool PWProcessor::runFlow(const std::string& name,
 
         // Actually execute the rule
         //	We tell the PWRetriever to skip old parameters if this is safe to do so
-        parameters.resetMatchSession(cachedNegativeMatch && rule.conditions.size() == 1);
-
+        bool run_on_new =cachedNegativeMatch && rule.conditions.size() == 1;
         for (const ddwaf::condition& cond : rule.conditions)
         {
-            status = cond.performMatching(parameters, deadline, retManager);
+            status = cond.performMatching(parameters, manifest_, run_on_new, deadline, retManager);
             //Stop if we didn't matched any of the parameters (2) or that the parameter couldn't be found
             if (status == match_status::no_match)
             {

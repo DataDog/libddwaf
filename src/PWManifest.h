@@ -29,7 +29,7 @@ public:
     {
         PW_TRANSFORM_ID inline_transformer { PWT_VALUES_ONLY };
         std::string inheritFrom; // Name of the ARG_ID to report the BA we matched
-        std::set<std::string> keyPaths;
+        std::vector<std::string> keyPaths;
         bool isAllowList { true };
 
         ArgDetails() = default;

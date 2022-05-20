@@ -44,13 +44,15 @@ public:
 
     condition(const condition&) = delete;
     condition& operator=(const condition&) = delete;
-    status performMatching(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
-    bool matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer, bool onKey, bool readOnlyArg) const;
+    status performMatching(PWRetriever& retriever,
+        const PWManifest &manifest, bool run_on_new,
+        const ddwaf::monotonic_clock::time_point& deadline,
+        PWRetManager& retManager) const;
+
     bool doesUseNewParameters(const PWRetriever& retriever) const;
 
 protected:
-    status _matchPastMatches(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
-    status _matchTargets(PWRetriever& retriever, const ddwaf::monotonic_clock::time_point& deadline, PWRetManager& retManager) const;
+    bool matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer, bool onKey) const;
 
     std::vector<PWManifest::ARG_ID> targets;
     std::vector<PW_TRANSFORM_ID> transformation;

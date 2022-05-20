@@ -32,10 +32,13 @@ public:
     bool hasNewArgs() const;
     bool isKeyInLastBatch(PWManifest::ARG_ID key) const;
 
+    const ddwaf_object* getParameter(const PWManifest::ARG_ID paramID);
     Iterator& getIterator(const std::vector<PWManifest::ARG_ID>& targets);
 
     void resetMatchSession(bool runOnNew);
-
+    // TODO remove this completely, the conditions should know what they have
+    // already run or not.
+    bool run_on_new() { return runOnNewOnly; }
     bool isValid() const;
 
     friend class ArgsIterator;
@@ -50,7 +53,6 @@ protected:
         std::unordered_map<std::string, const ddwaf_object*> parameters;
     bool runOnNewOnly = false;
 
-    const ddwaf_object* getParameter(const PWManifest::ARG_ID paramID);
 
 #ifdef TESTING
     FRIEND_TEST(TestAdditive, SelectiveRerun);

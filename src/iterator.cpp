@@ -472,7 +472,7 @@ bool ArgsIterator::isOver() const
     return state.isOver();
 }
 
-bool ArgsIterator::matchIterOnPath(const std::set<std::string>& path) const
+bool ArgsIterator::matchIterOnPath(const std::vector<std::string>& path) const
 {
     size_t stackPos          = 1;
     const auto& currentStack = state.stack;
@@ -631,7 +631,7 @@ bool Iterator::shouldMatchValue() const
     return (argsIterator.getActiveItem()->type & PWI_CONTAINER_TYPES) == 0;
 }
 
-bool Iterator::matchIterOnPath(const std::set<std::string>& path) const
+bool Iterator::matchIterOnPath(const std::vector<std::string>& path) const
 {
     return argsIterator.matchIterOnPath(path);
 }

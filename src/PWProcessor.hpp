@@ -11,32 +11,32 @@
 #include <string>
 #include <unordered_map>
 
-struct PWProcessor;
-
 #include <PWRet.hpp>
 #include <PWRetriever.hpp>
 #include <clock.hpp>
 #include <rule.hpp>
 #include <utils.h>
 
-struct PWProcessor
+class PWProcessor
 {
-    PWRetriever& parameters;
-    const ddwaf::rule_vector& rules;
-
-    std::unordered_map<ddwaf::rule::index_type, ddwaf::condition::status> ranCache;
-
-    ddwaf::condition::status hasCacheHit(ddwaf::rule::index_type rule_idx) const;
-    bool shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& rules) const;
-
 public:
-    PWProcessor(PWRetriever& input, const ddwaf::rule_vector& rules);
+    PWProcessor(PWRetriever& input,
+        const PWManifest &manifest, const ddwaf::rule_vector& rules);
     bool runFlow(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,
                  PWRetManager& manager,
                  const ddwaf::monotonic_clock::time_point& deadline);
 
     bool isFirstRun() const;
+protected:
+    PWRetriever& parameters;
+    const PWManifest& manifest_;
+    const ddwaf::rule_vector& rules;
+
+    std::unordered_map<ddwaf::rule::index_type, ddwaf::condition::status> ranCache;
+
+    ddwaf::condition::status hasCacheHit(ddwaf::rule::index_type rule_idx) const;
+    bool shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& rules) const;
 };
 
 #endif /* PWProcessor_hpp */
