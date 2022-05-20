@@ -1,0 +1,13 @@
+{
+  name: Match key below key path,
+  runs: [
+    {
+      input: {
+        rule12-input: {
+            rule12: value
+        }
+      },
+      code: good
+    }
+  ],
+}

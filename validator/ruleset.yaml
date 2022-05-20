@@ -152,4 +152,19 @@ rules:
             - address: rule11-input2
           list:
             - rule11_2
+  - id: 12
+    name: rule12-keys-only-with-key-path
+    tags:
+      type: flow12
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule12-input
+              key_path:
+                - rule12
+          regex: rule12
+    transformers:
+      - keys_only
 

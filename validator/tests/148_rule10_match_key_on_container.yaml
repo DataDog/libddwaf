@@ -1,0 +1,26 @@
+{
+  name: Match key on container,
+  runs: [
+    {
+      input: {
+        rule10-input: {
+            rule10: {
+                other: value
+            }
+        }
+      },
+      rules: [
+        {
+          10: [
+            {
+              address: rule10-input,
+              key_path: [rule10],
+              value: rule10
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}
