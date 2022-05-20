@@ -30,17 +30,17 @@ public:
         const std::vector<std::string> &path = {},
         const object_limits &limits = object_limits());
 
-    operator bool() { return current_ != nullptr; }
+    [[nodiscard]] operator bool() const { return current_ != nullptr; }
     [[nodiscard]] bool is_valid() const { return current_ != nullptr; }
     bool operator++();
 
     // TODO add const, nodiscard, etc
-    const ddwaf_object* operator*() { return current_; }
-    DDWAF_OBJ_TYPE type() { 
+    [[nodiscard]] const ddwaf_object* operator*() const { return current_; }
+    [[nodiscard]] DDWAF_OBJ_TYPE type() const { 
         return current_ != nullptr ? current_->type : DDWAF_OBJ_INVALID;
     }
 
-    std::vector<std::string> get_current_path();
+    [[nodiscard]] std::vector<std::string> get_current_path() const;
 
 protected:
     void initialise_cursor(const ddwaf_object *obj);
@@ -57,74 +57,3 @@ protected:
 };
 
 }
-
-using ruleCallback = bool(const ddwaf_object*, DDWAF_OBJ_TYPE, bool, bool);
-
-class ArgsIterator
-{
-    struct State
-    {
-        std::vector<std::pair<const ddwaf_object*, size_t>> stack;
-        const ddwaf_object* activeItem;
-        size_t itemIndex;
-
-        State(const ddwaf_object* args, uint32_t maxDepth);
-        bool isOver() const;
-        void pushStack(const ddwaf_object* newActive);
-        bool popStack();
-        void reset(const ddwaf_object* args);
-        uint64_t getDepth() const;
-    };
-
-    State state;
-
-public:
-    ArgsIterator(ddwaf_object* args, uint64_t maxMapDepth);
-    void gotoNext(bool skipIncrement = false);
-    void reset(const ddwaf_object* args);
-    const ddwaf_object* getActiveItem() const;
-    void getKeyPath(std::vector<ddwaf_object>& keyPath) const;
-    bool isOver() const;
-
-    bool matchIterOnPath(const std::vector<std::string>& path) const;
-
-    friend PWRetriever;
-    friend class Iterator;
-#ifdef TESTING
-    FRIEND_TEST(TestPWRetriever, TestCreateNoTarget);
-    FRIEND_TEST(TestPWRetriever, TestIterateInvalidItem);
-    FRIEND_TEST(TestPWRetriever, TestIterateEmptyArray);
-    FRIEND_TEST(TestPWRetriever, TestInvalidArgConstructor);
-#endif
-};
-
-class Iterator
-{
-public:
-    std::vector<PWManifest::ARG_ID>::const_iterator targetCursor;
-    std::vector<PWManifest::ARG_ID>::const_iterator targetEnd;
-
-    PWRetriever& retriever;
-    bool currentTargetRunOnKey;
-    bool currentTargetRunOnValue;
-    ArgsIterator argsIterator;
-
-    Iterator(PWRetriever& _retriever);
-    void reset(const std::vector<PWManifest::ARG_ID>& targets);
-
-    void gotoNext();
-    void updateTargetMetadata();
-    bool isOver() const;
-    PWManifest::ARG_ID getActiveTarget() const;
-    const std::string& getDataSource() const;
-    const std::string& getManifestKey() const;
-    const ddwaf_object* operator*() const;
-    bool shouldMatchKey() const;
-    bool shouldMatchValue() const;
-
-    bool matchIterOnPath(const std::vector<std::string>& path) const;
-    bool moveIteratorForward(bool shouldIncrementFirst = true);
-
-    bool operator++();
-    bool runIterOnLambda(const std::function<ruleCallback>& lambda);
-};

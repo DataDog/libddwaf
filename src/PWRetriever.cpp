@@ -12,10 +12,7 @@
 #include <log.hpp>
 #include <rule.hpp>
 
-PWRetriever::PWRetriever(const PWManifest& _manifest, const ddwaf::object_limits &limits):
-    manifest(_manifest),
-    max_depth(limits.max_container_depth),
-    internalIterator(*this) {}
+PWRetriever::PWRetriever(const PWManifest& _manifest): manifest(_manifest) {}
 
 void PWRetriever::addParameter(const ddwaf_object input)
 {
@@ -52,12 +49,6 @@ bool PWRetriever::hasNewArgs() const
 bool PWRetriever::isKeyInLastBatch(PWManifest::ARG_ID key) const
 {
     return newestBatch.find(key) != newestBatch.cend();
-}
-
-Iterator& PWRetriever::getIterator(const std::vector<PWManifest::ARG_ID>& targets)
-{
-    internalIterator.reset(targets);
-    return internalIterator;
 }
 
 const ddwaf_object* PWRetriever::getParameter(const PWManifest::ARG_ID paramID)

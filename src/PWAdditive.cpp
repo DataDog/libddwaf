@@ -16,7 +16,7 @@ PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
       wafHandle(_wafReference.get()),
       object_validator(wafHandle->limits),
       event_obfuscator(wafHandle->event_obfuscator),
-      retriever(wafHandle->manifest, wafHandle->limits),
+      retriever(wafHandle->manifest),
       processor(retriever, wafHandle->manifest, wafHandle->rules),
       obj_free(ddwaf_object_free)
 {
@@ -27,7 +27,7 @@ PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
     : wafHandle((const PowerWAF*) _waf),
       object_validator(wafHandle->limits),
       event_obfuscator(wafHandle->event_obfuscator),
-      retriever(wafHandle->manifest, wafHandle->limits),
+      retriever(wafHandle->manifest),
       processor(retriever, wafHandle->manifest, wafHandle->rules),
       obj_free(free_fn)
 {

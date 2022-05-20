@@ -26,14 +26,12 @@ struct RuleMatchTarget;
 class PWRetriever
 {
 public:
-    PWRetriever(const PWManifest& _manifest,
-        const ddwaf::object_limits &limits = ddwaf::object_limits());
+    explicit PWRetriever(const PWManifest& _manifest);
     void addParameter(const ddwaf_object input);
     bool hasNewArgs() const;
     bool isKeyInLastBatch(PWManifest::ARG_ID key) const;
 
     const ddwaf_object* getParameter(const PWManifest::ARG_ID paramID);
-    Iterator& getIterator(const std::vector<PWManifest::ARG_ID>& targets);
 
     void resetMatchSession(bool runOnNew);
     // TODO remove this completely, the conditions should know what they have
@@ -41,13 +39,8 @@ public:
     bool run_on_new() { return runOnNewOnly; }
     bool isValid() const;
 
-    friend class ArgsIterator;
-    friend class Iterator;
-
 protected:
     const PWManifest& manifest;
-    uint32_t max_depth;
-    Iterator internalIterator;
 
     std::unordered_set<PWManifest::ARG_ID> newestBatch;
         std::unordered_map<std::string, const ddwaf_object*> parameters;
