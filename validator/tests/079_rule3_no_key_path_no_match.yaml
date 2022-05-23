@@ -1,0 +1,12 @@
+{
+  name: "No key-path, no match",
+  runs: [
+    {
+      input: {
+        rule3-input: rule3
+      },
+      code: good
+    }
+  ],
+  expected-fail: true
+}

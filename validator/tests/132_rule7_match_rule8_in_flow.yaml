@@ -1,0 +1,22 @@
+{
+  name: "Match on rule8 in flow",
+  runs: [
+    {
+      input: {
+        rule8-input: rule8
+      },
+      rules: [
+        {
+          8: [
+            {
+              address: rule8-input,
+              key_path: [],
+              value: rule8
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

@@ -1,0 +1,13 @@
+{
+  name: "Invalid key-path",
+  runs: [
+    {
+      input: {
+        rule5-input: {
+          random: rule5
+        }
+      },
+      code: good
+    }
+  ],
+}

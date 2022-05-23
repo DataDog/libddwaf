@@ -1,0 +1,19 @@
+{
+  name: "Map with array in key-path, multiple items, no match",
+  runs: [
+    {
+      input: {
+        rule3-input: {
+          keypath: {
+            other: [
+              value,
+              garbage,
+              value
+            ]
+          }
+        }
+      },
+      code: good
+    }
+  ],
+}

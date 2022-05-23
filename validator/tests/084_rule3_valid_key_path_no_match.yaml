@@ -1,0 +1,17 @@
+{
+  name: "Valid key-path, no match",
+  runs: [
+    {
+      input: {
+        rule3-input: {
+          keypath: {
+            another: value,
+            other: garbage,
+            something: value
+          }
+        }
+      },
+      code: good
+    }
+  ],
+}

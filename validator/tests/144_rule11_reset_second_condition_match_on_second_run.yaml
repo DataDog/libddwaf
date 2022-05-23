@@ -1,0 +1,23 @@
+{
+  name: "Reset second condition match on second run",
+  runs: [
+    {
+      input: {
+        rule11-input2: rule11_2
+      },
+      code: good
+    },
+    {
+      input: {
+        rule11-input2: garbage
+      },
+      code: good
+    },
+    {
+      input: {
+        rule11-input1: rule11_1
+      },
+      code: good
+    }
+  ],
+}

@@ -33,6 +33,8 @@ bool test_runner::run_self_test(const YAML::Node &runs)
     bool passed = false;
 
     try {
+        expect(true, runs.IsDefined());
+        expect(true, runs.size() > 0);
         for (auto it = runs.begin(); it != runs.end(); ++it) {
             YAML::Node run = *it;
             validate(run["rules"], run["output"]);

@@ -1,0 +1,15 @@
+{
+  name: "Second input, map in key-path, no match",
+  runs: [
+    {
+      input: {
+        rule4-input2: {
+          keypath: {
+            other: garbage
+          }
+        }
+      },
+      code: good
+    }
+  ],
+}

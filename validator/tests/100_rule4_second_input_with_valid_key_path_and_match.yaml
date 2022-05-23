@@ -1,0 +1,26 @@
+{
+  name: "Second input with valid key-path and match",
+  runs: [
+    {
+      input: {
+        rule4-input2: {
+          keypath: rule4
+        }
+      },
+      rules: [
+        {
+          4: [
+            {
+              address: rule4-input2,
+              key_path: [
+                keypath
+              ],
+              value: rule4
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

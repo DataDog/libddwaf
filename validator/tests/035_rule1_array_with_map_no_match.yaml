@@ -1,0 +1,15 @@
+{
+  name: "Array with map, no match",
+  runs: [
+    {
+      input: {
+        rule1-input: [
+          {
+            second: garbage
+          }
+        ]
+      },
+      code: good
+    }
+  ],
+}

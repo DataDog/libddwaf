@@ -1,0 +1,28 @@
+{
+  name: "Match on either input, both are maps, flipped input order",
+  runs: [
+    {
+      input: {
+        rule2-input2: {
+          first: rule2
+        },
+        rule2-input1: {
+          first: rule2
+        }
+      },
+      rules: [
+        {
+          2: [
+            {
+              key_path: [
+                first
+              ],
+              value: rule2
+            }
+          ]
+        }
+      ],
+      code: monitor,
+    }
+  ]
+}

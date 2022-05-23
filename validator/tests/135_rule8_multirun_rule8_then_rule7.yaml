@@ -1,0 +1,29 @@
+{
+  name: "Match on rule8 on first run and rule7 on second run",
+  runs: [
+    {
+      input: {
+        rule8-input: rule8
+      },
+      rules: [
+        {
+          8: [
+            {
+              address: rule8-input,
+              key_path: [],
+              value: rule8
+            }
+          ]
+        }
+      ],
+      code: monitor
+    },
+    {
+      input: {
+        rule7-input: rule7
+      },
+      code: good
+    }
+  ],
+  expected-fail: true
+}

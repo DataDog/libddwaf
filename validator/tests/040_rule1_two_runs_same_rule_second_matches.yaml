@@ -1,0 +1,28 @@
+{
+  name: "Two runs of same rule, second matches",
+  runs: [
+    {
+      input: {
+        rule1-input: garbage
+      },
+      code: good
+    },
+    {
+      input: {
+        rule1-input: rule1
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              key_path: [],
+              value: rule1
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

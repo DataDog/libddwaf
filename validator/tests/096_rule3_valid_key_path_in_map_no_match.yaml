@@ -1,0 +1,15 @@
+{
+  name: "Valid key-path inside map, no match",
+  runs: [
+    {
+      input: {
+        rule3-input: {
+          other: {
+            keypath: rule3
+          }
+        }
+      },
+      code: good
+    }
+  ],
+}

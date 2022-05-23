@@ -1,0 +1,11 @@
+{
+  name: "No match on key",
+  runs: [
+    {
+      input: {
+        rule10-input: rule10
+      },
+      code: good
+    }
+  ],
+}

@@ -1,0 +1,16 @@
+{
+  name: "Both inputs with valid key-path, no match",
+  runs: [
+    {
+      input: {
+        rule4-input1: {
+          keypath: garbage
+        },
+        rule4-input2: {
+          keypath: garbage
+        }
+      },
+      code: good
+    }
+  ],
+}

@@ -1,0 +1,14 @@
+{
+  name: "No match on either key-path",
+  runs: [
+    {
+      input: {
+        rule5-input: {
+          keypath1: garbage,
+          keypath2: garbage
+        }
+      },
+      code: good
+    }
+  ],
+}

@@ -1,0 +1,15 @@
+{
+  name: "First key-path is map, no match",
+  runs: [
+    {
+      input: {
+        rule5-input: {
+          keypath1: {
+            other: garbage
+          }
+        }
+      },
+      code: good
+    }
+  ],
+}

@@ -1,0 +1,29 @@
+{
+  name: "First input, map in key-path and match",
+  runs: [
+    {
+      input: {
+        rule4-input1: {
+          keypath: {
+            other: rule4
+          }
+        }
+      },
+      rules: [
+        {
+          4: [
+            {
+              address: rule4-input1,
+              key_path: [
+                keypath,
+                other
+              ],
+              value: rule4
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

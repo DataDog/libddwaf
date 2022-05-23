@@ -1,0 +1,28 @@
+{
+  name: "Array with multiple items, second is match",
+  runs: [
+    {
+      input: {
+        rule1-input: [
+          value,
+          rule1,
+          value
+        ]
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              key_path: [
+                1
+              ],
+              value: rule1
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

@@ -1,0 +1,29 @@
+{
+  name: "Valid key-path with map and match",
+  runs: [
+    {
+      input: {
+        rule3-input: {
+          keypath: {
+            other: rule3
+          }
+        }
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              key_path: [
+                keypath,
+                other
+              ],
+              value: rule3
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

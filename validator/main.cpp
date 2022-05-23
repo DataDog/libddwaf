@@ -43,34 +43,73 @@ void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file,
         message);
 }
 
+void print_help_and_exit(std::string_view name, std::string_view error = {})
+{
+    std::cerr
+        << "Usage: " << name << " [OPTION]...\n"
+        << "    --tests <FILE>...     Space separated list of test files (default: tests/*.yaml)\n"
+        << "    --ruleset VALUE       Test ruleset (default: ruleset.yaml)\n"
+        << "    --verbose             Set WAF logging to trace\n"
+        << "    --help                Shows this help\n";
+
+    if (!error.empty()) {
+        std::cerr << "\nError: " << error << "\n";
+        exit(EXIT_FAILURE);
+    }
+    exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char *argv[])
 {
+    std::string ruleset = "ruleset.yaml";
     std::vector<fs::path> files;
     for (int i = 1; i < argc; i++) {
         std::string_view arg = argv[i];
         if (arg == "--verbose") {
             ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
-            continue;
-        }
+        } else if (arg == "--tests") {
+            while (++i < argc) {
+                std::string_view file = argv[i];
+                if (file.substr(0, 2) == "--") {
+                    --i; break;
+                }
 
-        fs::path sample_path = arg;
-        if (!is_regular_file(sample_path)) {
-            std::cout << arg << " not a regular file\n";
-            continue;
-        }
+                fs::path sample_path = file;
+                if (!is_regular_file(sample_path)) {
+                    continue;
+                }
 
-        if (sample_path.extension() != ".yaml") {
-            std::cout << arg << " not a YAML file (?)\n";
-            continue;
-        }
+                if (sample_path.extension() != ".yaml") {
+                    continue;
+                }
 
-        files.emplace_back(arg);
+                files.emplace_back(file);
+            }
+
+            if (files.empty()) {
+                print_help_and_exit(argv[0],
+                    "No valid tests provided with --tests");
+            }
+        } else if (arg == "--ruleset") {
+            if (++i < argc) {
+                ruleset = argv[i];
+                if (ruleset.substr(0, 2) == "--") {
+                    print_help_and_exit(argv[0],
+                        "No valid ruleset provided with --ruleset");
+                }
+            } else {
+                print_help_and_exit(argv[0],
+                    "No valid ruleset provided with --ruleset");
+            }
+        } else {
+            print_help_and_exit(argv[0]);
+        }
     }
 
     if (files.empty()) {
         auto samples = fs::path("tests");
         if (!fs::is_directory(samples)) {
-            std::cerr << samples << " not a directory\n";
+            print_help_and_exit(argv[0], "tests/ not a directory");
             return 0;
         }
 
@@ -89,8 +128,8 @@ int main(int argc, char *argv[])
 
     std::sort(files.begin(), files.end());
 
-    int exit_val = 0;
-    test_runner runner("ruleset.yaml");
+    int exit_val = EXIT_SUCCESS;
+    test_runner runner(ruleset);
     for (const auto &file : files) {
         auto [res, expected_fail, error, output] = runner.run(file);
         if (res) {
@@ -102,7 +141,7 @@ int main(int argc, char *argv[])
                 std::cout << std::string{file} << " => " << term::colour::red
                           << "Expected to fail but passed\n"
                           << term::colour::off;
-                exit_val = 1;
+                exit_val = EXIT_FAILURE;
             }
         } else {
             if (!expected_fail) {
@@ -112,7 +151,7 @@ int main(int argc, char *argv[])
                 if (!output.empty()) {
                     std::cout << output << "\n";
                 }
-                exit_val = 1;
+                exit_val = EXIT_FAILURE;
             } else {
                 std::cout << std::string{file} << " => " << term::colour::yellow
                           << "Failed (expected): " << error << "\n"
