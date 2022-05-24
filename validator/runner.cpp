@@ -49,14 +49,6 @@ bool test_runner::run_self_test(const YAML::Node &runs)
     return passed;
 }
 
-namespace {
-void ddwaf_result_destroy(ddwaf_result *res)
-{
-    ddwaf_result_free(res);
-    delete res;
-}
-}
-
 bool test_runner::run_test(const YAML::Node &runs)
 {
     bool passed = false;
@@ -65,8 +57,9 @@ bool test_runner::run_test(const YAML::Node &runs)
         ctx(ddwaf_context_init(handle_, ddwaf_object_free),
             ddwaf_context_destroy);
 
-    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_destroy)> res{
-        new ddwaf_result{false, nullptr, 0}, ddwaf_result_destroy};
+    ddwaf_result res_mem{false, nullptr, 0};
+    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res{
+        &res_mem, ddwaf_result_free};
 
     try {
         expect(true, runs.IsDefined());
