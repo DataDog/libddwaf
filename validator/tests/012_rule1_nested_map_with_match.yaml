@@ -1,0 +1,29 @@
+{
+  name: "Nested map with match",
+  runs: [
+    {
+      input: {
+        rule1-input: {
+          first: {
+            second: rule1
+          }
+        }
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              key_path: [
+                first,
+                second
+              ],
+              value: rule1
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ]
+}

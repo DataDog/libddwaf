@@ -1,0 +1,32 @@
+{
+  name: "Match with key-path on second condition",
+  runs: [
+    {
+      input: {
+        rule6-input1: rule6,
+        rule6-input2: {
+          key: rule6
+        }
+      },
+      rules: [
+        {
+          6: [
+            {
+              address: rule6-input1,
+              key_path: [],
+              value: rule6
+            },
+            {
+              address: rule6-input2,
+              key_path: [
+                key
+              ],
+              value: rule6
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

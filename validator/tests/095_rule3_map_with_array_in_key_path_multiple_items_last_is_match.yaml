@@ -1,0 +1,34 @@
+{
+  name: "Map with array in key-path, multiple items, last is a match",
+  runs: [
+    {
+      input: {
+        rule3-input: {
+          keypath: {
+            other: [
+              value,
+              value,
+              rule3
+            ]
+          }
+        }
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              key_path: [
+                keypath,
+                other,
+                2
+              ],
+              value: rule3
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

@@ -1,0 +1,27 @@
+{
+  name: "Match key below key path",
+  runs: [
+    {
+      input: {
+        rule12-input: {
+            rule12: {
+                rule12: value
+            }
+        }
+      },
+      rules: [
+        {
+          12: [
+            {
+              address: rule12-input,
+              key_path: [rule12, rule12],
+              value: rule12
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+  expected-fail: true
+}

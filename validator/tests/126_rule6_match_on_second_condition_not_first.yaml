@@ -1,0 +1,12 @@
+{
+  name: "Match on second condition, but not the first",
+  runs: [
+    {
+      input: {
+        rule6-input1: garbage,
+        rule6-input2: rule6
+      },
+      code: good
+    }
+  ],
+}

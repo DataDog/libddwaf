@@ -1,0 +1,13 @@
+{
+  name: "First input with invalid key-path",
+  runs: [
+    {
+      input: {
+        rule4-input1: {
+          random: rule4
+        }
+      },
+      code: good
+    }
+  ],
+}

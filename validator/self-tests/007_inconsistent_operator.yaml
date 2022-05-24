@@ -1,0 +1,48 @@
+{
+  name: Inconsistent rule operator,
+  self-test: true,
+  expected-fail: true,
+  runs: [
+    {
+      output: [
+        {
+          rule: {
+            id: 1,
+            name: rule1-basic-single-input,
+            tags: {
+              type: flow1,
+              category: category
+            }
+          },
+          rule_matches: [
+          {
+            operator: phrase_match,
+            operator_value: rule1,
+            parameters: [
+              {
+                address: rule1-input,
+                key_path: [],
+                value: rule1,
+                  highlight: [
+                    rule1
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+      ],
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              key_path: [],
+              value: rule1
+            }
+          ]
+        }
+      ],
+    }
+  ]
+}

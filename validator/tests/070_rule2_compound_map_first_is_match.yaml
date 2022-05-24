@@ -1,0 +1,32 @@
+{
+  name: "Both inputs are compound maps, match on first",
+  runs: [
+    {
+      input: {
+        rule2-input1: {
+          first: {
+            second: rule2
+          }
+        },
+        rule2-input2: {
+          first: garbage
+        }
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input1,
+              key_path: [
+                first,
+                second
+              ],
+              value: rule2
+            }
+          ]
+        }
+      ],
+      code: monitor,
+    }
+  ]
+}

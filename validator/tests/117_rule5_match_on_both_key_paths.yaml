@@ -1,0 +1,24 @@
+{
+  name: "Match on both key-paths",
+  runs: [
+    {
+      input: {
+        rule5-input: {
+          keypath1: rule5,
+          keypath2: rule5
+        }
+      },
+      rules: [
+        {
+          5: [
+            {
+              address: rule5-input,
+              value: rule5
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

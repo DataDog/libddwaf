@@ -1,0 +1,5 @@
+{
+  name: No WAF output,
+  self-test: true,
+  expected-fail: true,
+}

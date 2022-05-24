@@ -1,0 +1,17 @@
+{
+  name: "Nested map, multiple keys, no match",
+  runs: [
+    {
+      input: {
+        rule1-input: {
+          first: {
+            second: garbage,
+            other: value,
+            another: value
+          }
+        }
+      },
+      code: good
+    }
+  ]
+}

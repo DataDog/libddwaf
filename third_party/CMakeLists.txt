@@ -113,7 +113,7 @@ set_target_properties(lib_ac PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 # yaml-cpp
 ExternalProject_Add(proj_yamlcpp
-    URL               https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.6.3.zip
+    URL https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.zip
     INSTALL_DIR       ${INSTALL_DIR}
     CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
                 -DCMAKE_INSTALL_LIBDIR=lib
@@ -127,15 +127,22 @@ ExternalProject_Add(proj_yamlcpp
                 -DYAML_CPP_BUILD_CONTRIB=OFF
                 -DYAML_CPP_BUILD_TOOLS=OFF
                 -DYAML_CPP_INSTALL=ON
+                -DYAML_BUILD_SHARED_LIBS=OFF
+                -DYAML_MSVC_SHARED_RT=OFF
                 -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
                 -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
 )
 add_library(lib_yamlcpp STATIC IMPORTED GLOBAL)
 if (NOT MSVC)
-    set(LIBYAML_FILENAME libyaml-cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
+    if(CMAKE_BUILD_TYPE MATCHES Debug)
+        set(LIBYAML_FILENAME libyaml-cppd${CMAKE_STATIC_LIBRARY_SUFFIX})
+    else()
+        set(LIBYAML_FILENAME libyaml-cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
+    endif()
 else()
-    set(LIBYAML_FILENAME libyaml-cppmd${CMAKE_STATIC_LIBRARY_SUFFIX})
+    set(LIBYAML_FILENAME yaml-cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
+
 set_target_properties(lib_yamlcpp PROPERTIES  IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBYAML_FILENAME})
 target_include_directories(lib_yamlcpp INTERFACE ${INSTALL_DIR}/include)
 add_dependencies(lib_yamlcpp proj_yamlcpp)
