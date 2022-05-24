@@ -65,7 +65,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/PWManifest.cpp
     ${libddwaf_SOURCE_DIR}/src/PWProcessor.cpp
     ${libddwaf_SOURCE_DIR}/src/PWRet.cpp
-    ${libddwaf_SOURCE_DIR}/src/PWRetriever.cpp
+    ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp
     ${libddwaf_SOURCE_DIR}/src/iterator.cpp

@@ -10,7 +10,6 @@
 #include "clock.hpp"
 #include <PWProcessor.hpp>
 #include <PWRet.hpp>
-#include <PWRetriever.hpp>
 #include <PowerWAF.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>

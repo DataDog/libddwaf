@@ -16,8 +16,8 @@ PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
       wafHandle(_wafReference.get()),
       object_validator(wafHandle->limits),
       event_obfuscator(wafHandle->event_obfuscator),
-      retriever(wafHandle->manifest),
-      processor(retriever, wafHandle->manifest, wafHandle->rules),
+      store(wafHandle->manifest),
+      processor(store, wafHandle->manifest, wafHandle->rules),
       obj_free(ddwaf_object_free)
 {
     argCache.reserve(ADDITIVE_BUFFER_PREALLOC);
@@ -27,8 +27,8 @@ PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
     : wafHandle((const PowerWAF*) _waf),
       object_validator(wafHandle->limits),
       event_obfuscator(wafHandle->event_obfuscator),
-      retriever(wafHandle->manifest),
-      processor(retriever, wafHandle->manifest, wafHandle->rules),
+      store(wafHandle->manifest),
+      processor(store, wafHandle->manifest, wafHandle->rules),
       obj_free(free_fn)
 {
     if (obj_free != nullptr)
@@ -63,7 +63,7 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
         return DDWAF_ERR_INVALID_OBJECT;
     }
 
-    retriever.addParameter(newParameters);
+    store.insert_object(newParameters);
     if (obj_free != nullptr)
     {
         // Take ownership of newParameters
@@ -87,7 +87,7 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     const auto deadline = start + std::chrono::microseconds(timeLeft);
 
     // If this is a new run but no rule care about those new params, let's skip the run
-    if (!processor.isFirstRun() && !retriever.hasNewArgs())
+    if (!processor.isFirstRun() && !store.has_new_targets())
     {
         return DDWAF_GOOD;
     }

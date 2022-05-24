@@ -60,9 +60,9 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
 }
 
 condition::status condition::match_target(PWManifest::ARG_ID target,
-    ddwaf::object::iterator_base &it,
+    object::iterator_base &it,
     const PWManifest &manifest, const PWManifest::ArgDetails &details,
-    const ddwaf::monotonic_clock::time_point& deadline,
+    const monotonic_clock::time_point& deadline,
     PWRetManager& retManager) const
 {
     size_t counter = 0;
@@ -70,7 +70,7 @@ condition::status condition::match_target(PWManifest::ARG_ID target,
     for (; it.is_valid(); ++it) {
         // Only check the time every 16 runs
         // TODO abstract away deadline checks into custom object
-        if ((++counter & 0xf) == 0 && deadline <= ddwaf::monotonic_clock::now())
+        if ((++counter & 0xf) == 0 && deadline <= monotonic_clock::now())
         {
             return status::timeout;
         }
@@ -97,16 +97,16 @@ condition::status condition::match_target(PWManifest::ARG_ID target,
     return status::no_match;
 }
 
-condition::status condition::performMatching(PWRetriever& retriever,
+condition::status condition::performMatching(object_store& store,
     const PWManifest &manifest, bool run_on_new,
-    const ddwaf::monotonic_clock::time_point& deadline,
+    const monotonic_clock::time_point& deadline,
     PWRetManager& retManager) const
 {
     for (const auto &target : targets) {
 
         // TODO: the conditions should keep track of the targets already
         // checked.
-        if (run_on_new && !retriever.isKeyInLastBatch(target)) {
+        if (run_on_new && !store.is_new_target(target)) {
             continue;
         }
 
@@ -115,12 +115,12 @@ condition::status condition::performMatching(PWRetriever& retriever,
         // TODO: iterators could be cached to avoid reinitialisation
 
         condition::status res = status::no_match;
-        auto object = retriever.getParameter(target);
+        auto object = store.get_object(target);
         if ((details.inline_transformer & PWT_KEYS_ONLY) != 0) {
-            ddwaf::object::key_iterator it(object, details.keyPaths);
+            object::key_iterator it(object, details.keyPaths);
             res = match_target(target, it, manifest, details, deadline, retManager);
         } else {
-            ddwaf::object::value_iterator it(object, details.keyPaths);
+            object::value_iterator it(object, details.keyPaths);
             res = match_target(target, it, manifest, details, deadline, retManager);
         }
 
@@ -138,11 +138,11 @@ condition::status condition::performMatching(PWRetriever& retriever,
     return status::no_match;
 }
 
-bool condition::doesUseNewParameters(const PWRetriever& retriever) const
+bool condition::doesUseNewParameters(const object_store& store) const
 {
     for (const PWManifest::ARG_ID& target : targets)
     {
-        if (retriever.isKeyInLastBatch(target))
+        if (store.is_new_target(target))
             return true;
     }
 

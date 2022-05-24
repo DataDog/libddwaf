@@ -12,7 +12,7 @@
 #include <unordered_map>
 
 #include <PWRet.hpp>
-#include <PWRetriever.hpp>
+#include <object_store.hpp>
 #include <clock.hpp>
 #include <rule.hpp>
 #include <utils.h>
@@ -20,7 +20,7 @@
 class PWProcessor
 {
 public:
-    PWProcessor(PWRetriever& input,
+    PWProcessor(ddwaf::object_store& input,
         const PWManifest &manifest, const ddwaf::rule_vector& rules);
     bool runFlow(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,
@@ -29,7 +29,7 @@ public:
 
     bool isFirstRun() const;
 protected:
-    PWRetriever& parameters;
+    ddwaf::object_store& parameters;
     const PWManifest& manifest_;
     const ddwaf::rule_vector& rules;
 
@@ -37,6 +37,13 @@ protected:
 
     ddwaf::condition::status hasCacheHit(ddwaf::rule::index_type rule_idx) const;
     bool shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& rules) const;
+
+#ifdef TESTING
+    FRIEND_TEST(TestPWProcessor, TestCache);
+    FRIEND_TEST(TestPWProcessor, TestMultiFlowCacheReport);
+    FRIEND_TEST(TestPWProcessor, TestCacheReport);
+#endif
+
 };
 
 #endif /* PWProcessor_hpp */

@@ -15,7 +15,7 @@
 #include <iterator.hpp>
 #include <PWManifest.h>
 #include <PWRet.hpp>
-#include <PWRetriever.hpp>
+#include <object_store.hpp>
 #include <PWTransformer.h>
 #include <clock.hpp>
 
@@ -45,19 +45,19 @@ public:
 
     condition(const condition&) = delete;
     condition& operator=(const condition&) = delete;
-    status performMatching(PWRetriever& retriever,
+    status performMatching(object_store& store,
         const PWManifest &manifest, bool run_on_new,
-        const ddwaf::monotonic_clock::time_point& deadline,
+        const monotonic_clock::time_point& deadline,
         PWRetManager& retManager) const;
 
-    bool doesUseNewParameters(const PWRetriever& retriever) const;
+    bool matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer) const;
+    bool doesUseNewParameters(const object_store& store) const;
 
 protected:
-    bool matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer) const;
     status match_target(PWManifest::ARG_ID target,
-        ddwaf::object::iterator_base &it,
+        object::iterator_base &it,
         const PWManifest &manifest, const PWManifest::ArgDetails &details,
-        const ddwaf::monotonic_clock::time_point& deadline,
+        const monotonic_clock::time_point& deadline,
         PWRetManager& retManager) const;
 
     std::vector<PWManifest::ARG_ID> targets;

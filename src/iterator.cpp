@@ -4,14 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <vector>
-
-#include <PWRetriever.hpp>
-#include <PWTransformer.h>
-#include <PowerWAF.hpp>
+#include <ddwaf.h>
+#include <iterator.hpp>
 #include <log.hpp>
-#include <rule.hpp>
-#include <iostream>
+#include <utils.h>
+#include <vector>
 
 namespace ddwaf::object
 {

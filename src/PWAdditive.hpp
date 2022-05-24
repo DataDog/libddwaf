@@ -41,7 +41,7 @@ protected:
 
     ddwaf::validator object_validator;
     const ddwaf::obfuscator &event_obfuscator;
-    PWRetriever retriever;
+    ddwaf::object_store store;
     PWProcessor processor;
     ddwaf_object_free_fn obj_free;
 };

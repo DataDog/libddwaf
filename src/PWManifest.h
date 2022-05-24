@@ -18,8 +18,6 @@
 #include <PWTransformer.h>
 #include <ddwaf.h>
 
-class PWRetriever;
-
 class PWManifest
 {
 public:

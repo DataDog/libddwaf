@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <PWManifest.h>
-#include <PWRetriever.hpp>
 #include <exception.hpp>
 #include <log.hpp>
 #include <parameter.hpp>
