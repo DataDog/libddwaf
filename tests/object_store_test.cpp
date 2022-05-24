@@ -7,3 +7,30 @@
 #include "test.h"
 
 using namespace ddwaf;
+
+TEST(TestObjectStore, InsertAndGetObject)
+{
+    PWManifest manifest;
+    manifest.insert("query", PWManifest::ArgDetails("query", PWT_VALUES_ONLY));
+    manifest.insert("query++", PWManifest::ArgDetails("query", PWT_VALUES_ONLY));
+    manifest.insert("url", PWManifest::ArgDetails("url", PWT_VALUES_ONLY));
+    manifest.insert("url++", PWManifest::ArgDetails("url", PWT_VALUES_ONLY));
+
+    object_store store(manifest);
+
+    ddwaf_object root, object, tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "hello"));
+
+    store.insert_object(root);
+
+    EXPECT_TRUE((bool)store);
+    EXPECT_TRUE(store.has_new_targets());
+    EXPECT_TRUE(store.is_new_target(manifest.getTargetArgID("query")));
+    EXPECT_NE(store.get_object(manifest.getTargetArgID("query")), nullptr);
+    EXPECT_NE(store.get_object(manifest.getTargetArgID("query++")), nullptr);
+    EXPECT_EQ(store.get_object(manifest.getTargetArgID("url")), nullptr);
+    EXPECT_EQ(store.get_object(manifest.getTargetArgID("url++")), nullptr);
+
+    ddwaf_object_free(&root);
+}
