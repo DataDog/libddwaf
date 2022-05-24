@@ -68,8 +68,6 @@ condition::status condition::match_target(PWManifest::ARG_ID target,
     size_t counter = 0;
 
     for (; it.is_valid(); ++it) {
-        
-        DDWAF_TRACE("VALUE %s", (*it)->stringValue);
         // Only check the time every 16 runs
         // TODO abstract away deadline checks into custom object
         if ((++counter & 0xf) == 0 && deadline <= ddwaf::monotonic_clock::now())
@@ -113,6 +111,8 @@ condition::status condition::performMatching(PWRetriever& retriever,
         }
 
         const auto& details = manifest.getDetailsForTarget(target);
+
+        // TODO: iterators could be cached to avoid reinitialisation
 
         condition::status res = status::no_match;
         auto object = retriever.getParameter(target);

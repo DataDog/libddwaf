@@ -348,9 +348,6 @@ void key_iterator::set_cursor_to_next_object()
         }
 
         ddwaf_object *child = &parent->array[index];
-        std::cerr << parent->parameterName << std::endl;
-        std::cerr << child->parameterName << std::endl;
-        std::cerr << std::boolalpha << is_root()<< std::endl;
         if (is_container(child)) {
             if (previous != child && !is_root() && child->parameterName != nullptr) {
                 current_ = child;

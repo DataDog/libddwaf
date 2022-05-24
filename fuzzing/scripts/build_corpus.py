@@ -183,6 +183,7 @@ class InitPayloadGenerator:
         "phrase_match",
         "is_xss",
         "is_sqli"
+        "keys_only",
     ]
 
     def __init__(self):

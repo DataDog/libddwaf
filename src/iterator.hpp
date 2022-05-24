@@ -33,8 +33,8 @@ public:
     iterator_base(const iterator_base&) = default;
     iterator_base(iterator_base&&) = default;
 
-    iterator_base &operator=(const iterator_base&) = default;
-    iterator_base &operator=(iterator_base&&) = default;
+    iterator_base &operator=(const iterator_base&) = delete;
+    iterator_base &operator=(iterator_base&&) = delete;
 
     [[nodiscard]] operator bool() const { return current_ != nullptr; }
     [[nodiscard]] bool is_valid() const { return current_ != nullptr; }
@@ -78,8 +78,8 @@ public:
     value_iterator(const value_iterator&) = default;
     value_iterator(value_iterator&&) = default;
 
-    value_iterator &operator=(const value_iterator&) = default;
-    value_iterator &operator=(value_iterator&&) = default;
+    value_iterator &operator=(const value_iterator&) = delete;
+    value_iterator &operator=(value_iterator&&) = delete;
 
 protected:
     void initialise_cursor(const ddwaf_object *obj,
@@ -102,8 +102,8 @@ public:
     key_iterator(const key_iterator&) = default;
     key_iterator(key_iterator&&) = default;
 
-    key_iterator &operator=(const key_iterator&) = default;
-    key_iterator &operator=(key_iterator&&) = default;
+    key_iterator &operator=(const key_iterator&) = delete;
+    key_iterator &operator=(key_iterator&&) = delete;
 
     [[nodiscard]] DDWAF_OBJ_TYPE type() const override {
         if (current_->parameterName != nullptr) {
