@@ -55,10 +55,6 @@ include(GNUInstallDirs)
 
 add_subdirectory(third_party)
 
-# This adds the option BUILD_TESTING, which we can use to determine if tests
-# should or shouldn't be built
-include(CTest)
-
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
@@ -316,10 +312,8 @@ set(CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION TRUE)
 
 include(CPack)
 
-if(BUILD_TESTING)
-    add_subdirectory(tests EXCLUDE_FROM_ALL)
-endif()
-
+add_subdirectory(tests EXCLUDE_FROM_ALL)
+add_subdirectory(validator EXCLUDE_FROM_ALL)
 add_subdirectory(perf EXCLUDE_FROM_ALL)
 add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
 add_subdirectory(examples EXCLUDE_FROM_ALL)
