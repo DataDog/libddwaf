@@ -20,7 +20,12 @@ namespace
 {
 bool is_container(const ddwaf_object *obj)
 {
-    return obj != nullptr  && (obj->type & PWI_CONTAINER_TYPES) != 0;
+    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0;
+}
+
+bool is_map(const ddwaf_object *obj)
+{
+    return obj != nullptr && obj->type == DDWAF_OBJ_MAP;
 }
 
 bool is_scalar(const ddwaf_object *obj)
@@ -31,19 +36,6 @@ bool is_scalar(const ddwaf_object *obj)
 bool is_null(const ddwaf_object *obj)
 {
     return obj == nullptr || obj->type == DDWAF_OBJ_INVALID;
-}
-
-std::pair<unsigned, bool> to_unsigned(std::string_view str)
-{
-    try {
-        std::size_t pos;
-        auto converted = std::stol(str.data(), &pos);
-        if (pos == str.size() && converted >= 0) {
-            return {converted, true};
-        }
-    } catch (...) { }
-
-    return {0, false};
 }
 
 }
@@ -64,12 +56,14 @@ bool iterator_base::operator++()
 // TODO: return string_view as this will be immediately copied after
 std::vector<std::string> iterator_base::get_current_path() const
 {
-    if (stack_.empty() || current_ == nullptr) {
-        return {};
+    if (current_ == nullptr) { return {}; }
+    if (stack_.empty()) {
+        if (path_.empty()) { return {}; }
+        else { return path_; }
     }
 
-    std::vector<std::string> keys;
-    keys.reserve(stack_.size());
+    std::vector<std::string> keys = path_;
+    keys.reserve(path_.size() + stack_.size());
 
     auto [parent, parent_index] = stack_.front();
     for (unsigned i = 1; i < stack_.size(); i++) {
@@ -104,7 +98,6 @@ void value_iterator::initialise_cursor(const ddwaf_object *obj,
     const std::vector<std::string> &path)
 {
     if (path.empty()) {
-        if (is_null(obj)) { return; }
         if (is_scalar(obj)) { current_ = obj; return; }
 
         // Uninitialised object...? We should throw an exception at some point
@@ -116,7 +109,6 @@ void value_iterator::initialise_cursor(const ddwaf_object *obj,
             set_cursor_to_next_object();
         }
     } else {
-        path_size_ = path.size();
         initialise_cursor_with_path(obj, path);
     }
 }
@@ -129,9 +121,6 @@ void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
 
     if ((limits_.max_container_depth - 1) <= 0) { return; }
 
-    // TODO: path shouldn't be longer than max_depth, although this can
-    // be enforced during initialisation / parsing.
-
     // Add container to stack and find next scalar within the given path
     stack_.push_back({obj, 0});
 
@@ -142,7 +131,7 @@ void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
         auto &[parent, index] = stack_.back();
 
         ddwaf_object *child = nullptr;
-        if (parent->type == DDWAF_OBJ_MAP) {
+        if (is_map(parent)) {
             for (std::size_t j = 0; j < parent->nbEntries; j++) {
                 auto possible_child = &parent->array[j];
                 std::string_view child_key(possible_child->parameterName,
@@ -154,38 +143,32 @@ void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
                     break;
                 }
             }
-        } else if (parent->type == DDWAF_OBJ_ARRAY) {
-            // TODO somehow cache this to avoid doing it over and over
-            auto [key_idx, res] = to_unsigned(key);
+        } 
 
-            // The key is not an integer or larger than the number of entries
-            // we fail.
-            if (!res || key_idx >= parent->nbEntries) { break; }
+        // If we find a scalar and it's the last element,
+        // we found a valid element within the path.
+        if (is_scalar(child) && (i + 1) == path.size()) {
+            current_ = child;
+            // We want to keep the stack pointing to the container
+            // in the last key of the key path, since the last element
+            // of the key path is a scalar, we clear the stack.
+            stack_.clear();
+        } else if (is_container(child)) {
+            // Replace the stack top
+            stack_.back() = {child, 0};
 
-            child = &parent->array[key_idx];
-            index = key_idx + 1;
+            if ((i + 1) < path.size()) { continue; }
+            // If it's the last element in the path, we get the next
+            // scalar and exit
+            set_cursor_to_next_object();
         }
 
-        // We matched a key in the path but the item is null, so we
-        // break as there won't be anything else to look for. The
-        // iterator is effectively invalid.
-        if (!is_null(child)) {
-            // If we find a scalar and it's the last element,
-            // we found a valid element within the path.
-            if (is_scalar(child) && (i + 1) == path.size()) {
-                current_ = child;
-            } else if (is_container(child)) {
-                stack_.push_back({child, 0});
-
-                if ((i + 1) < path.size()) { continue; }
-                // If it's the last element in the path, we get the next
-                // scalar and exit
-                set_cursor_to_next_object();
-            }
-        }
-
-        // If we reach this point
         break;
+    }
+
+    // Once we reach this point, if current_is valid, we found the key path
+    if (current_ != nullptr) {
+        path_ = path;
     }
 }
 
@@ -193,19 +176,10 @@ void value_iterator::set_cursor_to_next_object()
 {
     current_ = nullptr;
 
-    // The stack is the same size as the path, which means the current was
-    // within the path, so we can't continue;
-    if (path_size_ > 0 && stack_.size() == path_size_) { return; }
-
     while (!stack_.empty() && current_ == nullptr) {
         auto &[parent, index] = stack_.back();
 
         if (index >= parent->nbEntries || index >= limits_.max_container_size) {
-            // We are at the end of the container, but if the container is the
-            // last element in the path, we can't remove it.
-            if (path_size_ > 0 && stack_.size() == (path_size_ + 1)) {
-                break;
-            }
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
@@ -252,7 +226,6 @@ void key_iterator::initialise_cursor(const ddwaf_object *obj,
             set_cursor_to_next_object();
         }
     } else {
-        path_size_ = path.size();
         initialise_cursor_with_path(obj, path);
     }
 }
@@ -264,9 +237,6 @@ void key_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
     if (!is_container(obj)) { return; }
 
     if ((limits_.max_container_depth - 1) <= 0) { return; }
-
-    // TODO: path shouldn't be longer than max_depth, although this can
-    // be enforced during initialisation / parsing.
 
     // Add container to stack and find next scalar within the given path
     stack_.push_back({obj, 0});
@@ -290,36 +260,24 @@ void key_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
                     break;
                 }
             }
-        } else if (parent->type == DDWAF_OBJ_ARRAY) {
-            // TODO somehow cache this to avoid doing it over and over
-            auto [key_idx, res] = to_unsigned(key);
-
-            // The key is not an integer or larger than the number of entries
-            // we fail.
-            if (!res || key_idx >= parent->nbEntries) { break; }
-
-            child = &parent->array[key_idx];
-            index = key_idx;
         }
 
-        // We matched a key in the path but the item is null, so we
-        // break as there won't be anything else to look for. The
-        // iterator is effectively invalid.
-        if (!is_null(child)) {
-            // If we find a scalar and it's the last element,
-            // we found a valid element within the path.
-            if (is_container(child)) {
-                stack_.push_back({child, 0});
+        // If we find a scalar and it's the last element,
+        // we found a valid element within the path.
+        if (is_container(child)) {
+            stack_.back() = {child, 0};
 
-                if ((i + 1) < path.size()) { continue; }
-                // If it's the last element in the path, we get the next
-                // scalar and exit
-                set_cursor_to_next_object();
-            }
+            if ((i + 1) < path.size()) { continue; }
+
+            set_cursor_to_next_object();
         }
 
-        // If we reach this point
         break;
+    }
+
+    // Once we reach this point, if current_is valid, we found the key path
+    if (current_ != nullptr) {
+        path_ = path;
     }
 }
 
@@ -328,19 +286,10 @@ void key_iterator::set_cursor_to_next_object()
     const ddwaf_object *previous = current_;
     current_ = nullptr;
 
-    // The stack is the same size as the path, which means the current was
-    // within the path, so we can't continue;
-    if (path_size_ > 0 && stack_.size() == path_size_) { return; }
-
     while (!stack_.empty() && current_ == nullptr) {
         auto &[parent, index] = stack_.back();
 
         if (index >= parent->nbEntries || index >= limits_.max_container_size) {
-            // We are at the end of the container, but if the container is the
-            // last element in the path, we can't remove it.
-            if (path_size_ > 0 && stack_.size() == (path_size_ + 1)) {
-                break;
-            }
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
@@ -349,7 +298,7 @@ void key_iterator::set_cursor_to_next_object()
 
         ddwaf_object *child = &parent->array[index];
         if (is_container(child)) {
-            if (previous != child && !is_root() && child->parameterName != nullptr) {
+            if (previous != child && child->parameterName != nullptr) {
                 current_ = child;
                 // Break to ensure the index isn't increased and this container
                 // is fully iterated.
@@ -364,7 +313,7 @@ void key_iterator::set_cursor_to_next_object()
                 stack_.push_back({child, 0});
                 continue;
             }
-        } else if (!is_root() && child->parameterName != nullptr) {
+        } else if (child->parameterName != nullptr) {
             current_ = child;
         }
 

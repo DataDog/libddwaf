@@ -49,10 +49,6 @@ public:
         return current_ != nullptr ? current_->type : DDWAF_OBJ_INVALID;
     }
 
-    [[nodiscard]] bool is_root() const {
-        return path_size_ > 0 && stack_.size() == path_size_;
-    }
-
     [[nodiscard]] std::vector<std::string> get_current_path() const;
 
 protected:
@@ -61,7 +57,7 @@ protected:
     static constexpr std::size_t initial_stack_size = 32;
 
     const object_limits limits_;
-    std::size_t path_size_{0};
+    std::vector<std::string> path_;
     std::vector<std::pair<const ddwaf_object *, std::size_t>> stack_;
     const ddwaf_object *current_{nullptr};
 };
