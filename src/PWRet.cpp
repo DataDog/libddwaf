@@ -64,7 +64,7 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
     key_path.SetArray();
 
     bool redact = false;
-    for (auto key: gather.keyPath)
+    for (const auto &key: gather.keyPath)
     {
         redact = redact || event_obfuscator.is_sensitive_key(key);
 
@@ -144,7 +144,7 @@ void PWRetManager::reportMatch(const std::string& id,
 
 DDWAF_RET_CODE PWRetManager::synthetize(ddwaf_result& output) const
 {
-    output = { 0 };
+    output = {false, nullptr, 0};
     output.timeout = timeout;
 
     if (outputDocument.GetArray().Size() > 0)
@@ -165,6 +165,6 @@ extern "C"
     void ddwaf_result_free(ddwaf_result* result)
     {
         free(const_cast<char*>(result->data));
-        *result = { 0 };
+        *result = {false, nullptr, 0};
     }
 }
