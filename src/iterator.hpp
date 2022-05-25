@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-
 #pragma once
 
 #include <functional>
@@ -40,7 +39,6 @@ public:
     [[nodiscard]] bool is_valid() const { return current_ != nullptr; }
     bool operator++();
 
-    // TODO add const, nodiscard, etc
     [[nodiscard]] virtual const ddwaf_object* operator*() {
         return current_;
     }

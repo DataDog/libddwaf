@@ -63,7 +63,7 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
         return DDWAF_ERR_INVALID_OBJECT;
     }
 
-    store.insert_object(newParameters);
+    store.insert(newParameters);
     if (obj_free != nullptr)
     {
         // Take ownership of newParameters

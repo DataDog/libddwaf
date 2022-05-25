@@ -20,19 +20,27 @@ class object_store
 public:
     explicit object_store(const PWManifest& manifest): manifest_(manifest) {}
 
-    void insert_object(const ddwaf_object &input);
-    const ddwaf_object *get_object(const PWManifest::ARG_ID target) const;
+    void insert(const ddwaf_object &input);
 
-    bool has_new_targets() const {
-        return !latest_batch_.empty();
-    }
+    const ddwaf_object *get_target(const PWManifest::ARG_ID target) const;
 
     bool is_new_target(const PWManifest::ARG_ID target) const {
         return latest_batch_.find(target) != latest_batch_.cend();
     }
 
+    bool has_new_targets() const {
+        return !latest_batch_.empty();
+    }
+
     operator bool() const {
         return !objects_.empty();
+    }
+
+    // Convenience functions, only used for testing
+    const ddwaf_object *get_target(const std::string &target) const;
+
+    bool is_new_target(const std::string &target) const {
+        return is_new_target(manifest_.getTargetArgID(target));
     }
 
 protected:

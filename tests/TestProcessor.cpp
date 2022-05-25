@@ -341,7 +341,7 @@ TEST(TestPWProcessor, TestBudget)
 
     PowerWAF* waf = reinterpret_cast<PowerWAF*>(handle);
     ddwaf::object_store store(waf->manifest);
-    store.insert_object(param);
+    store.insert(param);
     ASSERT_TRUE((bool)store);
 
     //Fetch the rule and flow managers

@@ -115,7 +115,7 @@ condition::status condition::performMatching(object_store& store,
         // TODO: iterators could be cached to avoid reinitialisation
 
         condition::status res = status::no_match;
-        auto object = store.get_object(target);
+        auto object = store.get_target(target);
         if ((details.inline_transformer & PWT_KEYS_ONLY) != 0) {
             object::key_iterator it(object, details.keyPaths);
             res = match_target(target, it, manifest, details, deadline, retManager);

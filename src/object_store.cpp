@@ -11,11 +11,11 @@
 namespace ddwaf
 {
 
-void object_store::insert_object(const ddwaf_object &input)
+void object_store::insert(const ddwaf_object &input)
 {
     latest_batch_.clear();
 
-    if (input.nbEntries == 0) {
+    if (input.type != DDWAF_OBJ_MAP || input.nbEntries == 0) {
         return;
     }
 
@@ -38,7 +38,7 @@ void object_store::insert_object(const ddwaf_object &input)
     manifest_.findImpactedArgs(keys, latest_batch_);
 }
 
-const ddwaf_object* object_store::get_object(const PWManifest::ARG_ID target) const
+const ddwaf_object* object_store::get_target(const PWManifest::ARG_ID target) const
 {
     const auto& details = manifest_.getDetailsForTarget(target);
 
@@ -49,6 +49,11 @@ const ddwaf_object* object_store::get_object(const PWManifest::ARG_ID target) co
     }
 
     return param->second;
+}
+
+const ddwaf_object *object_store::get_target(const std::string & target) const
+{
+    return get_target(manifest_.getTargetArgID(target));
 }
 
 }
