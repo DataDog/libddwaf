@@ -41,6 +41,7 @@ public:
 
     bool contains(const std::string& name) const;
     target_type get_target(const std::string& name) const;
+    std::string get_target_name(target_type target) const;
     const target_info get_target_info(target_type target) const;
 
     void find_derived_targets(const target_set& root_targets,
@@ -49,6 +50,7 @@ public:
 protected:
 
     std::unordered_map<std::string, target_type> targets_{};
+    std::unordered_map<target_type, std::string> names_{};
     std::unordered_map<target_type, std::unordered_set<target_type>> derived_{};
     std::unordered_map<target_type, target_info> info_{};
 

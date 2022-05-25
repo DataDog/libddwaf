@@ -20,8 +20,9 @@ manifest::target_type manifest::insert(const std::string &name,
 
         targets_.emplace(root, root_target);
         info_.emplace(root_target, target_info{root_target, {}});
-        derived_.emplace(root_target, target_set{});
+        derived_.emplace(root_target, target_set{root_target});
         root_address_set_.emplace(root);
+        names_.emplace(root_target, root);
     } else {
         root_target = root_it->second;
     }
@@ -38,6 +39,7 @@ manifest::target_type manifest::insert(const std::string &name,
     targets_.emplace(name, current_target);
     info_.emplace(current_target, target_info{root_target, key_path});
     derived_[root_target].emplace(current_target);
+    names_.emplace(current_target, name);
 
     return current_target;
 }
@@ -51,6 +53,15 @@ manifest::target_type manifest::get_target(const std::string& name) const
 {
     auto it = targets_.find(name);
     if (it == targets_.end()) {
+        return {};
+    }
+    return it->second;
+}
+
+std::string manifest::get_target_name(manifest::target_type target) const
+{
+    auto it = names_.find(target);
+    if (it == names_.end()) {
         return {};
     }
     return it->second;
