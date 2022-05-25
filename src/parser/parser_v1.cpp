@@ -18,11 +18,12 @@
 
 using ddwaf::parameter;
 using ddwaf::parser::at;
+using ddwaf::manifest;
 
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
+ddwaf::condition parseCondition(parameter::map& rule, manifest& manifest,
                                 std::vector<PW_TRANSFORM_ID>& transformers)
 {
     auto operation = at<std::string_view>(rule, "operation");
@@ -107,7 +108,7 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
     }
 
-    std::vector<PWManifest::ARG_ID> targets;
+    std::vector<manifest::target_type> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
     for (std::string input : inputs)
     {
@@ -116,35 +117,35 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
             throw ddwaf::parsing_error("empty address");
         }
 
-        PWManifest::ARG_ID id;
-        if (manifest.hasTarget(input))
+        manifest::target_type target;
+        if (manifest.contains(input))
         {
-            id = manifest.getTargetArgID(input);
+            target = manifest.get_target(input);
         }
         else
         {
-            PWManifest::ArgDetails details;
+            std::string root, key_path;
             size_t pos = input.find(':', 0);
             if (pos == std::string::npos || pos + 1 >= input.size())
             {
-                details.inheritFrom = input;
+                root = input;
             }
             else
             {
-                details.inheritFrom = input.substr(0, pos);
-                details.keyPaths.push_back(input.substr(pos + 1, input.size()));
+                root = input.substr(0, pos);
+                key_path = input.substr(pos + 1, input.size());
             }
 
-            id = manifest.insert(input, std::move(details));
+            target = manifest.insert(input, root, key_path);
         }
-        targets.push_back(id);
+        targets.push_back(target);
     }
 
     return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor));
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
-               ddwaf::rule_vector& rules, PWManifest& manifest,
+               ddwaf::rule_vector& rules, manifest& manifest,
                ddwaf::flow_map& flows, std::set<std::string_view> &seen_rules)
 {
     auto id = at<std::string>(rule, "id");
@@ -213,7 +214,7 @@ namespace ddwaf::parser::v1
 {
 
 void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rules,
-           PWManifest& manifest, ddwaf::flow_map& flows)
+           manifest& manifest, ddwaf::flow_map& flows)
 {
     auto rules_array = at<parameter::vector>(ruleset, "events");
     // Note that reserving elements is required to ensure all references

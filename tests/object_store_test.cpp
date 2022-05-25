@@ -8,13 +8,13 @@
 
 using namespace ddwaf;
 
-PWManifest get_manifest()
+ddwaf::manifest get_manifest()
 {
-    PWManifest manifest;
-    manifest.insert("query", PWManifest::ArgDetails("query", PWT_VALUES_ONLY));
-    manifest.insert("query++", PWManifest::ArgDetails("query", PWT_VALUES_ONLY));
-    manifest.insert("url", PWManifest::ArgDetails("url", PWT_VALUES_ONLY));
-    manifest.insert("url++", PWManifest::ArgDetails("url", PWT_VALUES_ONLY));
+    ddwaf::manifest manifest;
+    manifest.insert("query", "query");
+    manifest.insert("query++", "query");
+    manifest.insert("url", "url");
+    manifest.insert("url++", "url");
     return manifest;
 }
 

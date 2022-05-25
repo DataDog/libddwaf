@@ -27,7 +27,6 @@ struct MatchGatherer
     std::string matchedValue;
     std::vector<std::string> keyPath;
     std::string dataSource;
-    std::string manifestKey;
 
     MatchGatherer() = default;
 

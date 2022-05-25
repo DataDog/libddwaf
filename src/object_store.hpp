@@ -18,13 +18,13 @@ namespace ddwaf
 class object_store
 {
 public:
-    explicit object_store(const PWManifest& manifest): manifest_(manifest) {}
+    explicit object_store(const manifest& m): manifest_(m) {}
 
     void insert(const ddwaf_object &input);
 
-    const ddwaf_object *get_target(const PWManifest::ARG_ID target) const;
+    const ddwaf_object *get_target(const manifest::target_type target) const;
 
-    bool is_new_target(const PWManifest::ARG_ID target) const {
+    bool is_new_target(const manifest::target_type target) const {
         return latest_batch_.find(target) != latest_batch_.cend();
     }
 
@@ -37,17 +37,20 @@ public:
     }
 
     // Convenience functions, only used for testing
-    const ddwaf_object *get_target(const std::string &target) const;
+    const ddwaf_object *get_target(const std::string &name) const
+    {
+        return get_target(manifest_.get_target(name));
+    }
 
-    bool is_new_target(const std::string &target) const {
-        return is_new_target(manifest_.getTargetArgID(target));
+    bool is_new_target(const std::string &name) const {
+        return is_new_target(manifest_.get_target(name));
     }
 
 protected:
-    const PWManifest& manifest_;
+    const ddwaf::manifest& manifest_;
 
-    std::unordered_set<PWManifest::ARG_ID> latest_batch_;
-    std::unordered_map<std::string, const ddwaf_object*> objects_;
+    std::unordered_set<manifest::target_type> latest_batch_;
+    std::unordered_map<manifest::target_type, const ddwaf_object*> objects_;
 };
 
 }

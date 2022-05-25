@@ -16,18 +16,18 @@ namespace ddwaf::parser
 
 namespace v1
 {
-    void parse(parameter::map& ruleset, ruleset_info& info,
-               rule_vector& ruleManager, PWManifest& manifest, flow_map& flows);
+void parse(parameter::map& ruleset, ruleset_info& info,
+    rule_vector& ruleManager, ddwaf::manifest& manifest, flow_map& flows);
 }
 
 namespace v2
 {
-    void parse(parameter::map& ruleset, ruleset_info& info,
-               rule_vector& ruleManager, PWManifest& manifest, flow_map& flows);
+void parse(parameter::map& ruleset, ruleset_info& info,
+    rule_vector& ruleManager, ddwaf::manifest& manifest, flow_map& flows);
 }
 
 void parse(parameter object, ruleset_info& info, rule_vector& ruleManager,
-           PWManifest& manifest, flow_map& flows)
+           ddwaf::manifest& manifest, flow_map& flows)
 {
     parameter::map ruleset   = object;
     std::string_view version = at<std::string_view>(ruleset, "version");

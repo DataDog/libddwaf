@@ -60,7 +60,7 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
 
 template <typename T>
 condition::status condition::match_target(PWManifest::ARG_ID target, T &it,
-    const PWManifest &manifest, const PWManifest::ArgDetails &details,
+    const ddwaf::manifest &manifest, const ddwaf::manifest::target_info &info,
     const monotonic_clock::time_point& deadline,
     PWRetManager& retManager) const
 {
@@ -79,11 +79,10 @@ condition::status condition::match_target(PWManifest::ARG_ID target, T &it,
         if (!matchWithTransformer(*it, gather)) { continue; }
 
         gather.keyPath = it.get_current_path();
-        gather.dataSource  = details.inheritFrom;
-        gather.manifestKey = manifest.getTargetName(target);
+        //gather.dataSource  = details.inheritFrom;
 
         DDWAF_TRACE("Target %s matched %s out of parameter value %s",
-                    gather.manifestKey.c_str(),
+                    gather.dataSource.c_str(),
                     gather.matchedValue.c_str(),
                     gather.resolvedValue.c_str());
 
@@ -97,7 +96,7 @@ condition::status condition::match_target(PWManifest::ARG_ID target, T &it,
 }
 
 condition::status condition::performMatching(object_store& store,
-    const PWManifest &manifest, bool run_on_new,
+    const ddwaf::manifest &manifest, bool run_on_new,
     const monotonic_clock::time_point& deadline,
     PWRetManager& retManager) const
 {
@@ -109,18 +108,18 @@ condition::status condition::performMatching(object_store& store,
             continue;
         }
 
-        const auto& details = manifest.getDetailsForTarget(target);
+        const auto& info = manifest.get_target_info(target);
 
         // TODO: iterators could be cached to avoid reinitialisation
 
         condition::status res = status::no_match;
         auto object = store.get_target(target);
-        if ((details.inline_transformer & PWT_KEYS_ONLY) != 0) {
-            object::key_iterator it(object, details.keyPaths);
-            res = match_target(target, it, manifest, details, deadline, retManager);
+        if (source_ == data_source::keys) {
+            object::key_iterator it(object, {info.second});
+            res = match_target(it, manifest, info, deadline, retManager);
         } else {
-            object::value_iterator it(object, details.keyPaths);
-            res = match_target(target, it, manifest, details, deadline, retManager);
+            object::value_iterator it(object, {info.second});
+            res = match_target(it, manifest, info, deadline, retManager);
         }
 
         if (res == status::matched) { return status::matched; }
@@ -139,7 +138,7 @@ condition::status condition::performMatching(object_store& store,
 
 bool condition::doesUseNewParameters(const object_store& store) const
 {
-    for (const PWManifest::ARG_ID& target : targets)
+    for (const ddwaf::manifest::target_type& target : targets)
     {
         if (store.is_new_target(target))
             return true;

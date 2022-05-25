@@ -12,10 +12,9 @@ TEST(TestPWManifest, TestBasic)
     EXPECT_FALSE(manifest.hasTarget("path"));
     EXPECT_TRUE(manifest.empty());
 
-    manifest.insert("path", PWManifest::ArgDetails("path", PWT_VALUES_ONLY));
+    manifest.insert("path", PWManifest::ArgDetails("path"));
 
-    EXPECT_TRUE(manifest.hasTarget("path", PWT_VALUES_ONLY));
-    EXPECT_FALSE(manifest.hasTarget("path", PWT_KEYS_ONLY));
+    EXPECT_TRUE(manifest.hasTarget("path"));
     EXPECT_FALSE(manifest.empty());
 
     auto id  = manifest.getTargetArgID("path");
@@ -24,8 +23,6 @@ TEST(TestPWManifest, TestBasic)
     EXPECT_STREQ(str.c_str(), "path");
 
     auto& details = manifest.getDetailsForTarget(id);
-    EXPECT_TRUE(details.inline_transformer & PWT_VALUES_ONLY);
-    EXPECT_FALSE(details.inline_transformer & PWT_KEYS_ONLY);
     EXPECT_TRUE(details.keyPaths.empty());
     EXPECT_STREQ(details.inheritFrom.c_str(), "path");
 
@@ -47,14 +44,12 @@ TEST(TestPWManifest, TestMultipleAddrs)
 
     for (auto str : { "path0", "path1", "path2", "path3" })
     {
-        manifest.insert(str, PWManifest::ArgDetails(str, PWT_VALUES_ONLY));
+        manifest.insert(str, PWManifest::ArgDetails(str));
         EXPECT_TRUE(manifest.hasTarget(str));
 
         auto id = manifest.getTargetArgID(str);
 
         auto& details = manifest.getDetailsForTarget(id);
-        EXPECT_TRUE(details.inline_transformer & PWT_VALUES_ONLY);
-        EXPECT_FALSE(details.inline_transformer & PWT_KEYS_ONLY);
         EXPECT_TRUE(details.keyPaths.empty());
         EXPECT_STREQ(details.inheritFrom.c_str(), str);
 
@@ -80,14 +75,12 @@ TEST(TestPWManifest, TestMultipleAddrsKeyPath)
 
     for (auto str : { "path0", "path1", "path2", "path3" })
     {
-        manifest.insert(str, PWManifest::ArgDetails(str, "key_path", PWT_VALUES_ONLY));
+        manifest.insert(str, PWManifest::ArgDetails(str, "key_path"));
         EXPECT_TRUE(manifest.hasTarget(str));
 
         auto id = manifest.getTargetArgID(str);
 
         auto& details = manifest.getDetailsForTarget(id);
-        EXPECT_TRUE(details.inline_transformer & PWT_VALUES_ONLY);
-        EXPECT_FALSE(details.inline_transformer & PWT_KEYS_ONLY);
         EXPECT_EQ(details.keyPaths.size(), 1);
         EXPECT_STREQ(details.inheritFrom.c_str(), str);
 

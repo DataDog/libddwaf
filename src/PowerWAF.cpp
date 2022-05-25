@@ -68,7 +68,7 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
 
 }
 
-PowerWAF::PowerWAF(PWManifest&& manifest_, rule_vector&& rules_,
+PowerWAF::PowerWAF(ddwaf::manifest&& manifest_, rule_vector&& rules_,
                    flow_map&& flows_, ddwaf::obfuscator &&event_obfuscator_,
                    object_limits limits_)
     : manifest(std::move(manifest_)),
@@ -81,7 +81,7 @@ PowerWAF::PowerWAF(PWManifest&& manifest_, rule_vector&& rules_,
 PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset,
                                const ddwaf_config* config, ddwaf::ruleset_info& info)
 {
-    PWManifest manifest;
+    ddwaf::manifest manifest;
     rule_vector rules;
     flow_map flows;
     obfuscator obf = obfuscator_from_config(config);
