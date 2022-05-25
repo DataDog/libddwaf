@@ -183,7 +183,6 @@ class InitPayloadGenerator:
         "phrase_match",
         "is_xss",
         "is_sqli"
-        "keys_only",
     ]
 
     def __init__(self):
@@ -304,6 +303,7 @@ class InitPayloadGenerator:
                     "_sqr_querystring",
                     "removeComments",
                     "numerize",
+                    "keys_only",
                 ],
                 0,
                 self.transformation_max_count,
