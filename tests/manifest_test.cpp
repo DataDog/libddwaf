@@ -23,9 +23,9 @@ TEST(TestManifest, TestBasic)
     EXPECT_STREQ(str.c_str(), "path");
 
     auto info = manifest.get_target_info(id);
-    EXPECT_TRUE(info.second.empty());
+    EXPECT_TRUE(info.key_path.empty());
     // This is it's own root address
-    EXPECT_EQ(info.first, id);
+    EXPECT_EQ(info.root, id);
 
     ddwaf::manifest::target_set new_targets = {id};
     ddwaf::manifest::target_set derived_targets;
@@ -51,9 +51,9 @@ TEST(TestManifest, TestMultipleAddrs)
         auto id = manifest.get_target(str);
 
         auto info = manifest.get_target_info(id);
-        EXPECT_TRUE(info.second.empty());
+        EXPECT_TRUE(info.key_path.empty());
         // This is it's own root address
-        EXPECT_EQ(info.first, id);
+        EXPECT_EQ(info.root, id);
 
         ddwaf::manifest::target_set new_targets = {id};
         ddwaf::manifest::target_set derived_targets;
@@ -85,8 +85,8 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
         EXPECT_TRUE(manifest.contains(str));
 
         auto info = manifest.get_target_info(id);
-        EXPECT_EQ(info.second.size(), 1);
-        EXPECT_EQ(info.first, root_id);
+        EXPECT_EQ(info.key_path.size(), 1);
+        EXPECT_EQ(info.root, root_id);
 
         ddwaf::manifest::target_set new_targets = {root_id};
         ddwaf::manifest::target_set derived_targets;

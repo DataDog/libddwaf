@@ -42,14 +42,8 @@ void object_store::insert(const ddwaf_object &input)
 const ddwaf_object* object_store::get_target(manifest::target_type target) const
 {
     const auto& info = manifest_.get_target_info(target);
-
-    auto param = objects_.find(info.first);
-    if (param == objects_.end())
-    {
-        return nullptr;
-    }
-
-    return param->second;
+    auto it = objects_.find(info.root);
+    return it != objects_.end() ? it->second : nullptr;
 }
 
 }

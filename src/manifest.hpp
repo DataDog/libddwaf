@@ -22,8 +22,12 @@ class manifest
 {
 public:
     using target_type = uint32_t;
-    using target_info = std::pair<target_type, std::vector<std::string>>;
     using target_set = std::unordered_set<target_type>;
+    struct target_info {
+        std::string name;
+        target_type root;
+        std::vector<std::string> key_path;
+    };
 
     manifest() = default;
     manifest(manifest&&)      = default;
@@ -49,9 +53,8 @@ public:
 protected:
 
     std::unordered_map<std::string, target_type> targets_{};
-    std::unordered_map<target_type, std::string> names_{};
-    std::unordered_map<target_type, std::unordered_set<target_type>> derived_{};
     std::unordered_map<target_type, target_info> info_{};
+    std::unordered_map<target_type, std::unordered_set<target_type>> derived_{};
 
     // Unique set of root addresses
     std::unordered_set<std::string> root_address_set_{};

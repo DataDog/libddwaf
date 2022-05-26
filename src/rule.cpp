@@ -79,7 +79,7 @@ condition::status condition::match_target(PWManifest::ARG_ID target, T &it,
         if (!matchWithTransformer(*it, gather)) { continue; }
 
         gather.keyPath = it.get_current_path();
-        gather.dataSource  = manifest.get_target_name(info.first);
+        gather.dataSource  = manifest.get_target_name(info.root);
 
         DDWAF_TRACE("Target %s matched %s out of parameter value %s",
                     gather.dataSource.c_str(),
@@ -117,10 +117,10 @@ condition::status condition::performMatching(object_store& store,
         if (object == nullptr) { continue; }
 
         if (source_ == data_source::keys) {
-            object::key_iterator it(object, info.second);
+            object::key_iterator it(object, info.key_path);
             res = match_target(it, manifest, info, deadline, retManager);
         } else {
-            object::value_iterator it(object, info.second);
+            object::value_iterator it(object, info.key_path);
             res = match_target(it, manifest, info, deadline, retManager);
         }
 
