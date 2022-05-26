@@ -34,10 +34,15 @@ manifest::target_type manifest::insert(const std::string &name,
     auto current_it = targets_.find(name);
     if (current_it != targets_.end()) { return current_it->second; }
 
+    target_info info;
+    info.first = root_target;
+    if (!key_path.empty()) {
+        info.second.push_back(key_path);
+    }
     // Not already in the manifest
     target_type current_target = target_counter_++;
     targets_.emplace(name, current_target);
-    info_.emplace(current_target, target_info{root_target, key_path});
+    info_.emplace(current_target, info);
     derived_[root_target].emplace(current_target);
     names_.emplace(current_target, name);
 

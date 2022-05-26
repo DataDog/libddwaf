@@ -114,11 +114,13 @@ condition::status condition::performMatching(object_store& store,
 
         condition::status res = status::no_match;
         auto object = store.get_target(target);
+        if (object == nullptr) { continue; }
+
         if (source_ == data_source::keys) {
-            object::key_iterator it(object, {info.second});
+            object::key_iterator it(object, info.second);
             res = match_target(it, manifest, info, deadline, retManager);
         } else {
-            object::value_iterator it(object, {info.second});
+            object::value_iterator it(object, info.second);
             res = match_target(it, manifest, info, deadline, retManager);
         }
 

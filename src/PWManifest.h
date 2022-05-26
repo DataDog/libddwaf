@@ -21,7 +21,7 @@ class manifest
 {
 public:
     using target_type = uint32_t;
-    using target_info = std::pair<target_type, std::string>;
+    using target_info = std::pair<target_type, std::vector<std::string>>;
     using target_set = std::unordered_set<target_type>;
 
     manifest() = default;
