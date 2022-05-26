@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <PWManifest.h>
+#include <manifest.hpp>
 #include <parameter.hpp>
 #include <rule.hpp>
 #include <ruleset_info.hpp>

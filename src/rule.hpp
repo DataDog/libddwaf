@@ -13,7 +13,7 @@
 
 #include <IPWRuleProcessor.h>
 #include <iterator.hpp>
-#include <PWManifest.h>
+#include <manifest.hpp>
 #include <PWRet.hpp>
 #include <object_store.hpp>
 #include <PWTransformer.h>

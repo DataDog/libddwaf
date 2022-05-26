@@ -15,7 +15,7 @@
 #include <vector>
 
 #include <IPWRuleProcessor.h>
-#include <PWManifest.h>
+#include <manifest.hpp>
 #include <utils.h>
 #include <validator.hpp>
 

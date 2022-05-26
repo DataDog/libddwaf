@@ -6,7 +6,7 @@
 
 #include "test.h"
 
-TEST(TestPWManifest, TestBasic)
+TEST(TestManifest, TestBasic)
 {
     ddwaf::manifest manifest;
     EXPECT_FALSE(manifest.contains("path"));
@@ -39,7 +39,7 @@ TEST(TestPWManifest, TestBasic)
     EXPECT_STREQ(addresses[0], "path");
 }
 
-TEST(TestPWManifest, TestMultipleAddrs)
+TEST(TestManifest, TestMultipleAddrs)
 {
     ddwaf::manifest manifest;
 
@@ -71,7 +71,7 @@ TEST(TestPWManifest, TestMultipleAddrs)
     EXPECT_STREQ(addresses[3], "path0");
 }
 
-TEST(TestPWManifest, TestMultipleAddrsKeyPath)
+TEST(TestManifest, TestMultipleAddrsKeyPath)
 {
     ddwaf::manifest manifest;
 
@@ -104,7 +104,7 @@ TEST(TestPWManifest, TestMultipleAddrsKeyPath)
     EXPECT_STREQ(addresses[3], "path0");
 }
 
-TEST(TestPWManifest, TestUnknownArgID)
+TEST(TestManifest, TestUnknownArgID)
 {
     ddwaf::manifest manifest;
     EXPECT_TRUE(manifest.get_target_name(1729).empty());

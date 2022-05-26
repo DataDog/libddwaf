@@ -10,7 +10,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <PWManifest.h>
+#include <manifest.hpp>
 
 namespace ddwaf
 {

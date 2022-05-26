@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <iostream>
-#include <PWManifest.h>
+#include <manifest.hpp>
 
 namespace ddwaf
 {

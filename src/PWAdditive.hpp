@@ -31,7 +31,7 @@ public:
 
 #ifdef TESTING
     FRIEND_TEST(TestPWProcessor, TestCache);
-    FRIEND_TEST(TestPWManifest, TestUnknownArgID);
+    FRIEND_TEST(TestManifest, TestUnknownArgID);
 #endif
 protected:
     std::shared_ptr<PowerWAF> wafReference;

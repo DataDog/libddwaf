@@ -6,7 +6,7 @@
 #pragma once
 
 #include <obfuscator.hpp>
-#include <PWManifest.h>
+#include <manifest.hpp>
 #include <rule.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
