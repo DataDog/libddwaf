@@ -43,7 +43,7 @@ public:
     bool contains(const std::string& name) const;
     target_type get_target(const std::string& name) const;
     std::string get_target_name(target_type target) const;
-    const target_info get_target_info(target_type target) const;
+    const target_info& get_target_info(target_type target) const;
 
     void find_derived_targets(const target_set& root_targets,
             target_set& derived_targets) const;

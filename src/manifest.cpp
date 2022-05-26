@@ -72,11 +72,13 @@ std::string manifest::get_target_name(manifest::target_type target) const
     return it->second.name;
 }
 
-const manifest::target_info manifest::get_target_info(manifest::target_type target) const
+const manifest::target_info& manifest::get_target_info(manifest::target_type target) const
 {
+    // TODO throw instead of returning default?
+    static target_info empty_info = {};
     auto it = info_.find(target);
     if (it == info_.end()) {
-        return {};
+        return empty_info;
     }
     return it->second;
 }
