@@ -6,11 +6,11 @@
 
 #include "test.h"
 
-void populateManifest(PWManifest& manifest)
+void populateManifest(ddwaf::manifest& manifest)
 {
     for (auto key : { "value", "key", "mixed", "mixed2" })
     {
-        manifest.insert(key, PWManifest::ArgDetails(key));
+        manifest.insert(key, key);
     }
 }
 

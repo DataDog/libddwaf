@@ -8,30 +8,31 @@
 
 TEST(TestPWManifest, TestBasic)
 {
-    PWManifest manifest;
-    EXPECT_FALSE(manifest.hasTarget("path"));
+    ddwaf::manifest manifest;
+    EXPECT_FALSE(manifest.contains("path"));
     EXPECT_TRUE(manifest.empty());
 
-    manifest.insert("path", PWManifest::ArgDetails("path"));
+    manifest.insert("path", "path");
 
-    EXPECT_TRUE(manifest.hasTarget("path"));
+    EXPECT_TRUE(manifest.contains("path"));
     EXPECT_FALSE(manifest.empty());
 
-    auto id  = manifest.getTargetArgID("path");
-    auto str = manifest.getTargetName(id);
+    auto id  = manifest.get_target("path");
+    auto str = manifest.get_target_name(id);
 
     EXPECT_STREQ(str.c_str(), "path");
 
-    auto& details = manifest.getDetailsForTarget(id);
-    EXPECT_TRUE(details.keyPaths.empty());
-    EXPECT_STREQ(details.inheritFrom.c_str(), "path");
+    auto info = manifest.get_target_info(id);
+    EXPECT_TRUE(info.second.empty());
+    // This is it's own root address
+    EXPECT_EQ(info.first, id);
 
-    std::unordered_set<std::string> newFields { "path" };
-    std::unordered_set<PWManifest::ARG_ID> argsImpacted;
+    ddwaf::manifest::target_set new_targets = {id};
+    ddwaf::manifest::target_set derived_targets;
 
-    manifest.findImpactedArgs(newFields, argsImpacted);
-    EXPECT_EQ(argsImpacted.size(), 1);
-    EXPECT_NE(argsImpacted.find(id), argsImpacted.end());
+    manifest.find_derived_targets(new_targets, derived_targets);
+    EXPECT_EQ(derived_targets.size(), 1);
+    EXPECT_NE(derived_targets.find(id), derived_targets.end());
 
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 1);
@@ -40,68 +41,71 @@ TEST(TestPWManifest, TestBasic)
 
 TEST(TestPWManifest, TestMultipleAddrs)
 {
-    PWManifest manifest;
+    ddwaf::manifest manifest;
 
     for (auto str : { "path0", "path1", "path2", "path3" })
     {
-        manifest.insert(str, PWManifest::ArgDetails(str));
-        EXPECT_TRUE(manifest.hasTarget(str));
+        manifest.insert(str, str);
+        EXPECT_TRUE(manifest.contains(str));
 
-        auto id = manifest.getTargetArgID(str);
+        auto id = manifest.get_target(str);
 
-        auto& details = manifest.getDetailsForTarget(id);
-        EXPECT_TRUE(details.keyPaths.empty());
-        EXPECT_STREQ(details.inheritFrom.c_str(), str);
+        auto info = manifest.get_target_info(id);
+        EXPECT_TRUE(info.second.empty());
+        // This is it's own root address
+        EXPECT_EQ(info.first, id);
 
-        std::unordered_set<std::string> newFields { str };
-        std::unordered_set<PWManifest::ARG_ID> argsImpacted;
+        ddwaf::manifest::target_set new_targets = {id};
+        ddwaf::manifest::target_set derived_targets;
 
-        manifest.findImpactedArgs(newFields, argsImpacted);
-        EXPECT_EQ(argsImpacted.size(), 1);
-        EXPECT_NE(argsImpacted.find(id), argsImpacted.end());
+        manifest.find_derived_targets(new_targets, derived_targets);
+        EXPECT_EQ(derived_targets.size(), 1);
+        EXPECT_NE(derived_targets.find(id), derived_targets.end());
     }
 
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
-    EXPECT_STREQ(addresses[0], "path0");
-    EXPECT_STREQ(addresses[1], "path1");
-    EXPECT_STREQ(addresses[2], "path2");
-    EXPECT_STREQ(addresses[3], "path3");
+    EXPECT_STREQ(addresses[0], "path3");
+    EXPECT_STREQ(addresses[1], "path2");
+    EXPECT_STREQ(addresses[2], "path1");
+    EXPECT_STREQ(addresses[3], "path0");
 }
 
 TEST(TestPWManifest, TestMultipleAddrsKeyPath)
 {
-    PWManifest manifest;
+    ddwaf::manifest manifest;
 
-    for (auto str : { "path0", "path1", "path2", "path3" })
+    for (const std::string &str : {"path0", "path1", "path2", "path3"})
     {
-        manifest.insert(str, PWManifest::ArgDetails(str, "key_path"));
-        EXPECT_TRUE(manifest.hasTarget(str));
+        std::string new_str = str + ":key_path";
+        auto id = manifest.insert(new_str, str, "key_path");
+        auto root_id = manifest.get_target(str);
 
-        auto id = manifest.getTargetArgID(str);
+        EXPECT_TRUE(manifest.contains(new_str));
+        EXPECT_TRUE(manifest.contains(str));
 
-        auto& details = manifest.getDetailsForTarget(id);
-        EXPECT_EQ(details.keyPaths.size(), 1);
-        EXPECT_STREQ(details.inheritFrom.c_str(), str);
+        auto info = manifest.get_target_info(id);
+        EXPECT_EQ(info.second.size(), 1);
+        EXPECT_EQ(info.first, root_id);
 
-        std::unordered_set<std::string> newFields { str };
-        std::unordered_set<PWManifest::ARG_ID> argsImpacted;
+        ddwaf::manifest::target_set new_targets = {root_id};
+        ddwaf::manifest::target_set derived_targets;
 
-        manifest.findImpactedArgs(newFields, argsImpacted);
-        EXPECT_EQ(argsImpacted.size(), 1);
-        EXPECT_NE(argsImpacted.find(id), argsImpacted.end());
+        manifest.find_derived_targets(new_targets, derived_targets);
+        EXPECT_EQ(derived_targets.size(), 1);
+        EXPECT_NE(derived_targets.find(id), derived_targets.end());
     }
 
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
-    EXPECT_STREQ(addresses[0], "path0");
-    EXPECT_STREQ(addresses[1], "path1");
-    EXPECT_STREQ(addresses[2], "path2");
-    EXPECT_STREQ(addresses[3], "path3");
+    EXPECT_STREQ(addresses[0], "path3");
+    EXPECT_STREQ(addresses[1], "path2");
+    EXPECT_STREQ(addresses[2], "path1");
+    EXPECT_STREQ(addresses[3], "path0");
 }
 
 TEST(TestPWManifest, TestUnknownArgID)
 {
-    PWManifest manifest;
-    EXPECT_STREQ(manifest.getTargetName(1729).c_str(), "<invalid>");
+    ddwaf::manifest manifest;
+    EXPECT_TRUE(manifest.get_target_name(1729).empty());
 }

@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <iostream>
 #include <PWManifest.h>
-#include <utils.h>
 
 namespace ddwaf
 {
@@ -20,7 +20,7 @@ manifest::target_type manifest::insert(const std::string &name,
 
         targets_.emplace(root, root_target);
         info_.emplace(root_target, target_info{root_target, {}});
-        derived_.emplace(root_target, target_set{root_target});
+        derived_.emplace(root_target, target_set{});
         root_address_set_.emplace(root);
         names_.emplace(root_target, root);
     } else {
@@ -28,7 +28,10 @@ manifest::target_type manifest::insert(const std::string &name,
     }
 
     // Targets with key path should have a different name than the root
-    if (name == root) { return root_target; }
+    if (name == root) {
+        derived_[root_target].emplace(root_target);
+        return root_target;
+    }
 
     // The target already exists, return that target
     auto current_it = targets_.find(name);
@@ -42,7 +45,7 @@ manifest::target_type manifest::insert(const std::string &name,
     // Not already in the manifest
     target_type current_target = target_counter_++;
     targets_.emplace(name, current_target);
-    info_.emplace(current_target, info);
+    info_.emplace(current_target, std::move(info));
     derived_[root_target].emplace(current_target);
     names_.emplace(current_target, name);
 
@@ -79,7 +82,6 @@ const manifest::target_info manifest::get_target_info(manifest::target_type targ
         return {};
     }
     return it->second;
-
 }
 
 void manifest::find_derived_targets(const target_set& root_targets,
@@ -93,63 +95,15 @@ void manifest::find_derived_targets(const target_set& root_targets,
     }
 }
 
-}
 
-PWManifest::ARG_ID PWManifest::insert(std::string_view name, PWManifest::ArgDetails&& arg)
+const std::vector<const char*>& manifest::get_root_addresses()
 {
-    auto [it, result] = argManifest.emplace(counter, std::move(arg));
-    (void) result; // unused
-    argIDTable.emplace(name, counter);
-
-    if (root_address_set.find(it->second.inheritFrom) == root_address_set.end())
-    {
-        root_address_set.emplace(it->second.inheritFrom);
-        root_addresses.push_back(it->second.inheritFrom.c_str());
-    }
-
-    return counter++;
-}
-
-bool PWManifest::hasTarget(const std::string& string) const
-{
-    return argIDTable.find(string) != argIDTable.cend();
-}
-
-PWManifest::ARG_ID PWManifest::getTargetArgID(const std::string& target) const
-{
-    return argIDTable.find(target)->second;
-}
-
-const PWManifest::ArgDetails& PWManifest::getDetailsForTarget(const PWManifest::ARG_ID& argID) const
-{
-    // We can't really return a dummy object when the key doesn't exist so the caller need to call `hasTarget` first.
-    return argManifest.find(argID)->second;
-}
-
-const std::string& PWManifest::getTargetName(const PWManifest::ARG_ID& target) const
-{
-    static const std::string& dummyTargetName("<invalid>");
-
-    for (const auto& argIDDefinition : argIDTable)
-    {
-        if (argIDDefinition.second == target)
-        {
-            return argIDDefinition.first;
+    if (root_addresses_.empty()) {
+        root_addresses_.reserve(root_address_set_.size());
+        for (const auto &address : root_address_set_) {
+            root_addresses_.push_back(address.c_str());
         }
     }
-
-    return dummyTargetName;
+    return root_addresses_;
 }
-
-void PWManifest::findImpactedArgs(const std::unordered_set<std::string>& newFields, std::unordered_set<PWManifest::ARG_ID>& argsImpacted) const
-{
-    argsImpacted.reserve(argManifest.size());
-
-    for (const auto& param : argManifest)
-    {
-        if (newFields.find(param.second.inheritFrom) != newFields.cend())
-        {
-            argsImpacted.insert(param.first);
-        }
-    }
 }
