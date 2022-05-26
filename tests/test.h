@@ -7,6 +7,7 @@
 #ifndef test_h
 #define test_h
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <limits>

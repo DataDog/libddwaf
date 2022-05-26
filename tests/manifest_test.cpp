@@ -65,10 +65,10 @@ TEST(TestManifest, TestMultipleAddrs)
 
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
-    EXPECT_STREQ(addresses[0], "path3");
-    EXPECT_STREQ(addresses[1], "path2");
-    EXPECT_STREQ(addresses[2], "path1");
-    EXPECT_STREQ(addresses[3], "path0");
+
+    for (const std::string &str : {"path0", "path1", "path2", "path3"}) {
+        EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
+    }
 }
 
 TEST(TestManifest, TestMultipleAddrsKeyPath)
@@ -98,10 +98,9 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
 
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
-    EXPECT_STREQ(addresses[0], "path3");
-    EXPECT_STREQ(addresses[1], "path2");
-    EXPECT_STREQ(addresses[2], "path1");
-    EXPECT_STREQ(addresses[3], "path0");
+    for (const std::string &str : {"path0", "path1", "path2", "path3"}) {
+        EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
+    }
 }
 
 TEST(TestManifest, TestUnknownArgID)
