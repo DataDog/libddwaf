@@ -79,7 +79,7 @@ condition::status condition::match_target(PWManifest::ARG_ID target, T &it,
         if (!matchWithTransformer(*it, gather)) { continue; }
 
         gather.keyPath = it.get_current_path();
-        gather.dataSource  = manifest.get_target_name(info.root);
+        gather.dataSource = manifest.get_target_name(info.root);
 
         DDWAF_TRACE("Target %s matched %s out of parameter value %s",
                     gather.dataSource.c_str(),
