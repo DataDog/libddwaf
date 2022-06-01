@@ -1,7 +1,7 @@
 
 struct Match {
-	__int32 Index;
-	__int32 Length;
+	uint32_t Index;
+	uint32_t Length;
 };
 
 void re2_current_regex_build(const char *regex);
