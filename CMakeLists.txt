@@ -84,6 +84,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule_processor/perf_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/re2.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/libinjection.cpp
+    ${libddwaf_SOURCE_DIR}/src/re2c/re2native.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})
 
@@ -97,7 +98,7 @@ target_include_directories(libddwaf_objects PUBLIC ${libddwaf_SOURCE_DIR}/includ
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src)
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/rule_processor)
 
-install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h ${libddwaf_SOURCE_DIR}/include/re2c.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
