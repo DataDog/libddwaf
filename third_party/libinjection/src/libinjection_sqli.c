@@ -89,6 +89,8 @@ static char flag2delim(int flag)
         return CHAR_SINGLE;
     } else if (flag & FLAG_QUOTE_DOUBLE) {
         return CHAR_DOUBLE;
+    } else if (flag & FLAG_QUOTE_TICK) {
+        return CHAR_TICK;
     } else {
         return CHAR_NULL;
     }
@@ -725,11 +727,11 @@ static size_t parse_ustring(struct libinjection_sqli_state * sf)
     size_t slen = sf->slen;
     size_t pos = sf->pos;
 
-    if (pos + 2 < slen && cs[pos+1] == '&' && cs[pos+2] == '\'') {
+    if (pos + 2 < slen && cs[pos+1] == '&' && cs[pos+2] == CHAR_SINGLE) {
         sf->pos += 2;
         pos = parse_string(sf);
         sf->current->str_open = 'u';
-        if (sf->current->str_close == '\'') {
+        if (sf->current->str_close == CHAR_SINGLE) {
             sf->current->str_close = 'u';
         }
         return pos;
@@ -755,7 +757,7 @@ static size_t parse_qstring_core(struct libinjection_sqli_state * sf, size_t off
     if (pos >= slen ||
         (cs[pos] != 'q' && cs[pos] != 'Q') ||
         pos + 2 >= slen ||
-        cs[pos + 1] != '\'') {
+        cs[pos + 1] != CHAR_SINGLE) {
         return parse_word(sf);
     }
 
@@ -774,7 +776,7 @@ static size_t parse_qstring_core(struct libinjection_sqli_state * sf, size_t off
     case '<' : ch = '>'; break;
     }
 
-    strend = memchr2(cs + pos + 3, slen - pos - 3, ch, '\'');
+    strend = memchr2(cs + pos + 3, slen - pos - 3, ch, CHAR_SINGLE);
     if (strend == NULL) {
         st_assign(sf->current, TYPE_STRING, pos + 3, slen - pos - 3, cs + pos + 3);
         sf->current->str_open = 'q';
@@ -825,12 +827,12 @@ static size_t parse_bstring(struct libinjection_sqli_state *sf)
      * if next char isn't a single quote, then
      * continue as normal word
      */
-    if (pos + 2 >= slen || cs[pos+1] !=  '\'') {
+    if (pos + 2 >= slen || cs[pos+1] !=  CHAR_SINGLE) {
         return parse_word(sf);
     }
 
     wlen = strlenspn(cs + pos + 2, sf->slen - pos - 2, "01");
-    if (pos + 2 + wlen  >= slen || cs[pos + 2 + wlen] != '\'') {
+    if (pos + 2 + wlen  >= slen || cs[pos + 2 + wlen] != CHAR_SINGLE) {
         return parse_word(sf);
     }
     st_assign(sf->current, TYPE_NUMBER, pos, wlen + 3, cs + pos);
@@ -854,12 +856,12 @@ static size_t parse_xstring(struct libinjection_sqli_state *sf)
      * if next char isn't a single quote, then
      * continue as normal word
      */
-    if (pos + 2 >= slen || cs[pos+1] !=  '\'') {
+    if (pos + 2 >= slen || cs[pos+1] !=  CHAR_SINGLE) {
         return parse_word(sf);
     }
 
     wlen = strlenspn(cs + pos + 2, sf->slen - pos - 2, "0123456789ABCDEFabcdef");
-    if (pos + 2 + wlen  >= slen || cs[pos + 2 + wlen] != '\'') {
+    if (pos + 2 + wlen  >= slen || cs[pos + 2 + wlen] != CHAR_SINGLE) {
         return parse_word(sf);
     }
     st_assign(sf->current, TYPE_NUMBER, pos, wlen + 3, cs + pos);
@@ -993,7 +995,7 @@ static size_t parse_var(struct libinjection_sqli_state * sf)
             pos = parse_tick(sf);
             sf->current->type = TYPE_VARIABLE;
             return pos;
-        } else if (cs[pos] == CHAR_SINGLE || cs[pos] == CHAR_DOUBLE) {
+        } else if (cs[pos] == CHAR_SINGLE || cs[pos] == CHAR_DOUBLE || cs[pos] == CHAR_TICK) {
             sf->pos = pos;
             pos = parse_string(sf);
             sf->current->type = TYPE_VARIABLE;
@@ -1220,10 +1222,10 @@ int libinjection_sqli_tokenize(struct libinjection_sqli_state * sf)
 
     /*
      * if we are at beginning of string
-     *  and in single-quote or double quote mode
+     *  and in single-quote or double quote or backtick mode
      *  then pretend the input starts with a quote
      */
-    if (*pos == 0 && (sf->flags & (FLAG_QUOTE_SINGLE | FLAG_QUOTE_DOUBLE))) {
+    if (*pos == 0 && (sf->flags & (FLAG_QUOTE_SINGLE | FLAG_QUOTE_DOUBLE | FLAG_QUOTE_TICK))) {
         *pos = parse_string_core(s, slen, 0, current, flag2delim(sf->flags), 0);
         sf->stats_tokens += 1;
         return TRUE;
@@ -1897,6 +1899,8 @@ int libinjection_sqli_fold(struct libinjection_sqli_state * sf)
  *          single quote.
  *   *  CHAR_DOUBLE ("), process pretending input started with a
  *          double quote.
+ *   *  CHAR_TICK (`), process pretending input started with a
+ *          backtick.
  *
  */
 const char* libinjection_sqli_fingerprint(struct libinjection_sqli_state * sql_state, int flags)
@@ -2298,6 +2302,17 @@ int libinjection_is_sqli(struct libinjection_sqli_state * sql_state)
      */
     if (memchr(s, CHAR_DOUBLE, slen)) {
         libinjection_sqli_fingerprint(sql_state, FLAG_QUOTE_DOUBLE | FLAG_SQL_MYSQL);
+        if (sql_state->lookup(sql_state, LOOKUP_FINGERPRINT,
+                              sql_state->fingerprint, strlen(sql_state->fingerprint))) {
+            return TRUE;
+        }
+    }
+
+    /*
+     * same as above but with a backtick `
+     */
+    if (memchr(s, CHAR_TICK, slen)) {
+        libinjection_sqli_fingerprint(sql_state, FLAG_QUOTE_TICK | FLAG_SQL_MYSQL);
         if (sql_state->lookup(sql_state, LOOKUP_FINGERPRINT,
                               sql_state->fingerprint, strlen(sql_state->fingerprint))) {
             return TRUE;
