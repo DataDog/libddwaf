@@ -138,7 +138,7 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 	bool success = true;
 	std::string ruleID = rule["id"].as<std::string>();
 	YAML::Node matches = rule["test_vectors"][runPositiveMatches ? "matches" : "no_matches"];
-	if (matches != nullptr)
+	if (matches)
 	{
 		size_t counter = 0;
 		for (YAML::const_iterator vector = matches.begin(); vector != matches.end(); ++vector, ++counter) {
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		
-		if(rule["test_vectors"] != nullptr)
+		if(rule["test_vectors"])
 		{
 			// Run positive test vectors (patterns the rule should match)
 			success &= runVectors(rule, handle, true);
