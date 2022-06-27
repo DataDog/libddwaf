@@ -1175,6 +1175,11 @@ bool PWTransformer::transformNumerize(ddwaf_object* parameter, bool readOnly)
     return true;
 }
 
+bool PWTransformer::transformUnicodeNormalize(ddwaf_object* parameter, bool readOnly)
+{
+	return false;
+}
+
 //
 // Those three utils are only used when computing targets from an agent target
 // We can skip the read-only phase for them, as we don't ever want to use the raw input
@@ -1372,6 +1377,9 @@ bool PWTransformer::transform(PW_TRANSFORM_ID transformID, ddwaf_object* paramet
 
         case PWT_NUMERIZE:
             return transformNumerize(parameter, readOnly);
+			
+		case PWT_UNICODE_NORMALIZE:
+			return transformUnicodeNormalize(parameter, readOnly);
 
         default:
             return false;
@@ -1424,6 +1432,8 @@ PW_TRANSFORM_ID PWTransformer::getIDForString(std::string_view str)
         return PWT_KEYS_ONLY;
     else if (str == "values_only")
         return PWT_KEYS_ONLY;
+	else if (str == "unicode_normalize")
+		return PWT_UNICODE_NORMALIZE;
 
     return PWT_INVALID;
 }

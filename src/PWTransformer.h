@@ -35,7 +35,8 @@ enum PW_TRANSFORM_ID
     PWT_NUMERIZE          = 1 << 19,
     PWT_KEYS_ONLY         = 1 << 20,
     PWT_VALUES_ONLY       = 1 << 21,
-    PWT_INVALID           = 1 << 22
+	PWT_UNICODE_NORMALIZE = 1 << 22,
+    PWT_INVALID           = 1 << 23
 };
 
 /*
@@ -65,6 +66,7 @@ class PWTransformer
     static bool transformCmdLine(ddwaf_object* parameter, bool readOnly);
     static bool transformRemoveComments(ddwaf_object* parameter, bool readOnly);
     static bool transformNumerize(ddwaf_object* parameter, bool readOnly);
+	static bool transformUnicodeNormalize(ddwaf_object* parameter, bool readOnly);
 
     static bool transformURLBaseName(ddwaf_object* parameter, bool readOnly);
     static bool transformURLFilename(ddwaf_object* parameter, bool readOnly);
