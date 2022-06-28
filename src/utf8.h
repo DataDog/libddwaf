@@ -7,7 +7,7 @@
 #ifndef utf8_h
 #define utf8_h
 
-uint8_t codepointToUTF8(uint32_t codepoint, char* utf8_buffer);
-uint8_t writeCodePoint(uint32_t codepoint, char* utf8_buffer, uint64_t lengthLeft);
+uint8_t codepointToUTF8(uint32_t codepoint, char* utf8Buffer);
+uint8_t writeCodePoint(uint32_t codepoint, char* utf8Buffer, uint64_t lengthLeft);
 
 #endif /* utf8_h */

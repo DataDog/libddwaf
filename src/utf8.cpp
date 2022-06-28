@@ -13,13 +13,12 @@
 
 #include <utils.h>
 
-
-uint8_t codepointToUTF8(uint32_t codepoint, char* utf8_buffer)
+uint8_t codepointToUTF8(uint32_t codepoint, char* utf8Buffer)
 {
     //Handle the easy case of ASCII
     if (codepoint <= 0x7F)
     {
-        *utf8_buffer = (char) codepoint;
+        *utf8Buffer = (char) codepoint;
         return 1;
     }
 
@@ -40,30 +39,30 @@ uint8_t codepointToUTF8(uint32_t codepoint, char* utf8_buffer)
     //4 bytes representation
     if (codepoint > 0xFFFF)
     {
-        *utf8_buffer++ = (char) (0xF0 | ((codepoint >> 18) & 0x08));
-        *utf8_buffer++ = (char) (0x80 | ((codepoint >> 12) & 0x3F));
-        *utf8_buffer++ = (char) (0x80 | ((codepoint >> 06) & 0x3F));
-        *utf8_buffer++ = (char) (0x80 | (codepoint & 0x3F));
+        *utf8Buffer++ = (char) (0xF0 | ((codepoint >> 18) & 0x08));
+        *utf8Buffer++ = (char) (0x80 | ((codepoint >> 12) & 0x3F));
+        *utf8Buffer++ = (char) (0x80 | ((codepoint >> 06) & 0x3F));
+        *utf8Buffer++ = (char) (0x80 | (codepoint & 0x3F));
         return 4;
     }
     // Three bytes
     else if (codepoint > 0x7FF)
     {
-        *utf8_buffer++ = (char) (0xE0 | ((codepoint >> 12) & 0x0F));
-        *utf8_buffer++ = (char) (0x80 | ((codepoint >> 06) & 0x3F));
-        *utf8_buffer++ = (char) (0x80 | (codepoint & 0x3F));
+        *utf8Buffer++ = (char) (0xE0 | ((codepoint >> 12) & 0x0F));
+        *utf8Buffer++ = (char) (0x80 | ((codepoint >> 06) & 0x3F));
+        *utf8Buffer++ = (char) (0x80 | (codepoint & 0x3F));
         return 3;
     }
     // Two bytes
     else
     {
-        *utf8_buffer++ = (char) (0xC0 | ((codepoint >> 06) & 0x0F));
-        *utf8_buffer++ = (char) (0x80 | (codepoint & 0x3F));
+        *utf8Buffer++ = (char) (0xC0 | ((codepoint >> 06) & 0x0F));
+        *utf8Buffer++ = (char) (0x80 | (codepoint & 0x3F));
         return 2;
     }
 }
 
-uint8_t writeCodePoint(uint32_t codepoint, char* utf8_buffer, uint64_t lengthLeft)
+uint8_t writeCodePoint(uint32_t codepoint, char* utf8Buffer, uint64_t lengthLeft)
 {
     //  If null, a surrogate or larger than the allowed range, buzz off
     if (codepoint == 0 || (codepoint >= 0xd800 && codepoint <= 0xdfff) || codepoint > 0x10ffff)
@@ -73,9 +72,9 @@ uint8_t writeCodePoint(uint32_t codepoint, char* utf8_buffer, uint64_t lengthLef
         //  A fully correct implementation would make room for the error bytes if there isn't enough room but we won't bother with that
         if (lengthLeft > 2)
         {
-            *((uint8_t*) utf8_buffer++) = 0xEFu;
-            *((uint8_t*) utf8_buffer++) = 0xBFu;
-            *((uint8_t*) utf8_buffer++) = 0xBDu;
+            *((uint8_t*) utf8Buffer++) = 0xEFu;
+            *((uint8_t*) utf8Buffer++) = 0xBFu;
+            *((uint8_t*) utf8Buffer++) = 0xBDu;
             return 3;
         }
 
@@ -85,5 +84,5 @@ uint8_t writeCodePoint(uint32_t codepoint, char* utf8_buffer, uint64_t lengthLef
     //TODO: Perform normalization
 
     // Insert the bytes
-    return codepointToUTF8(codepoint, utf8_buffer);
+    return codepointToUTF8(codepoint, utf8Buffer);
 }
