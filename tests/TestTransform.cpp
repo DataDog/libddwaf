@@ -6,7 +6,10 @@
 
 #include "test.h"
 
-uint8_t codepointToUTF8(uint32_t codepoint, char* utf8_buffer);
+namespace ddwaf::utf8
+{
+	uint8_t codepointToBytes(uint32_t codepoint, char* utf8_buffer);
+}
 
 void doesTransform(vector<PW_TRANSFORM_ID> ids, const char* sourceString, const char* transformedString, bool postCheck = true)
 {
@@ -285,7 +288,7 @@ TEST(TestTransforms, TestJSDecode)
     doesTransform({ PWT_DECODE_JS }, "\\x41\\x20\\x4aS\\x20transf\\x6Frmations", "A JS transformations");
     doesTransform({ PWT_DECODE_JS }, "\\u0041 JS \\ud83e\\udd14 transformations\\uff01", "A JS \xf0\x9f\xa4\x94 transformations\xEF\xBC\x81");
 
-    doesTransform({ PWT_DECODE_JS }, "Test \\udbff\\udfff", "Test \xF0\x8F\xBF\xBF");
+    doesTransform({ PWT_DECODE_JS }, "Test \\udbff\\udfff", "Test \xF4\x8F\xBF\xBF");
     doesTransform({ PWT_DECODE_JS }, "Test\\x20\\", "Test \\");
     doesTransform({ PWT_DECODE_JS }, "Test\\x20\\ ", "Test  ");
     doesTransform({ PWT_DECODE_JS }, "Test\\x20\\x", "Test ");
@@ -294,7 +297,7 @@ TEST(TestTransforms, TestJSDecode)
 
     {
         char fakeBuffer[16] = { 0 };
-        EXPECT_EQ(codepointToUTF8(0x200000, fakeBuffer), 0);
+        EXPECT_EQ(utf8::codepointToBytes(0x200000, fakeBuffer), 0);
     }
 }
 
@@ -605,6 +608,7 @@ TEST(TestTransforms, TestUnicodeNormalization)
 	EXPECT_EQ(PWTransformer::getIDForString("unicode_normalize"), PWT_UNICODE_NORMALIZE);
 
 	EXPECT_FALSE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "a"));
+	EXPECT_FALSE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "`"));
 	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ß"));
 	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "é"));
 	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ı"));
@@ -617,6 +621,7 @@ TEST(TestTransforms, TestUnicodeNormalization)
 	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "Å👨‍👩‍👧‍👦"));
 	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "👨‍👩‍👧‍👦Å"));
 	
+	doesTransform({ PWT_UNICODE_NORMALIZE }, "⃝", "");
 	doesTransform({ PWT_UNICODE_NORMALIZE }, "ß", "ss");
 	doesTransform({ PWT_UNICODE_NORMALIZE }, "é", "e");
 	doesTransform({ PWT_UNICODE_NORMALIZE }, "ı", "i");
@@ -632,6 +637,7 @@ TEST(TestTransforms, TestUnicodeNormalization)
 	doesTransform({ PWT_UNICODE_NORMALIZE }, "Aa𝑎éßıﬁ2⁵—⅖", "Aaaessifi25-2/5");
 	doesTransform({ PWT_UNICODE_NORMALIZE }, "Aẞé", "ASSe");
 	doesTransform({ PWT_UNICODE_NORMALIZE }, "Àße", "Asse");
+	doesTransform({ PWT_UNICODE_NORMALIZE }, "${${::-j}nd${upper:ı}:gopher//127.0.0.1:1389}", "${${::-j}nd${upper:i}:gopher//127.0.0.1:1389}");
 }
 
 TEST(TestTransforms, TestRuleRunOnKey)
