@@ -1,5 +1,13 @@
 # libddwaf release
 
+### v1.4.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/06/29
+- Correct nuget url ([#68](https://github.com/DataDog/libddwaf/pull/68))
+- Only take params ownership when needed ([#69](https://github.com/DataDog/libddwaf/pull/69))
+- WAF Benchmark Utility ([#70](https://github.com/DataDog/libddwaf/pull/70))
+- WAF Validator ([#74](https://github.com/DataDog/libddwaf/pull/74))
+- Make libinjection look for backticks ([#80](https://github.com/DataDog/libddwaf/pull/80))
+- Add version semantic and unstable release information  ([#81](https://github.com/DataDog/libddwaf/pull/81))
+
 ### v1.3.0 (unstable) - 2022/04/04
 - WAF event obfuscator.
 - Add obfuscator configuration to `ddwaf_config`.
