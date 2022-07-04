@@ -1176,36 +1176,36 @@ bool PWTransformer::transformNumerize(ddwaf_object* parameter, bool readOnly)
 
 bool PWTransformer::transformUnicodeNormalize(ddwaf_object* parameter, bool readOnly)
 {
-	if (parameter->type != DDWAF_OBJ_STRING)
-		return false;
-	
-	if (parameter->stringValue == NULL || parameter->nbEntries == 0)
-		return false;
-	
-	uint32_t codepoint;
-	uint64_t position = 0;
-	if (readOnly)
-	{
-		while ((codepoint = ddwaf::utf8::fetch_next_codepoint(parameter->stringValue, position, parameter->nbEntries)) != UTF8_EOF) {
-			// Ignore invalid glyphs or Zero-Width joiners (which we allow for emojis)
-			if (codepoint == UTF8_INVALID)
-			{
-				continue;
-			}
-			
-			int32_t decomposedCodepoint = 0;
-			size_t decomposedLength = ddwaf::utf8::normalize_codepoint(codepoint, &decomposedCodepoint, 1);
-			
-			// If the glyph needed decomposition, we flag the string
-			if (decomposedLength != 1 || codepoint != (uint32_t) decomposedCodepoint)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
+    if (parameter->type != DDWAF_OBJ_STRING)
+        return false;
+    
+    if (parameter->stringValue == NULL || parameter->nbEntries == 0)
+        return false;
+    
+    uint32_t codepoint;
+    uint64_t position = 0;
+    if (readOnly)
+    {
+        while ((codepoint = ddwaf::utf8::fetch_next_codepoint(parameter->stringValue, position, parameter->nbEntries)) != UTF8_EOF) {
+            // Ignore invalid glyphs or Zero-Width joiners (which we allow for emojis)
+            if (codepoint == UTF8_INVALID)
+            {
+                continue;
+            }
+            
+            int32_t decomposedCodepoint = 0;
+            size_t decomposedLength = ddwaf::utf8::normalize_codepoint(codepoint, &decomposedCodepoint, 1);
+            
+            // If the glyph needed decomposition, we flag the string
+            if (decomposedLength != 1 || codepoint != (uint32_t) decomposedCodepoint)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	return ddwaf::utf8::normalize_string((char**) &parameter->stringValue, parameter->nbEntries);
+    return ddwaf::utf8::normalize_string((char**) &parameter->stringValue, parameter->nbEntries);
 }
 
 //
@@ -1405,9 +1405,9 @@ bool PWTransformer::transform(PW_TRANSFORM_ID transformID, ddwaf_object* paramet
 
         case PWT_NUMERIZE:
             return transformNumerize(parameter, readOnly);
-			
-		case PWT_UNICODE_NORMALIZE:
-			return transformUnicodeNormalize(parameter, readOnly);
+            
+        case PWT_UNICODE_NORMALIZE:
+            return transformUnicodeNormalize(parameter, readOnly);
 
         default:
             return false;
@@ -1460,8 +1460,8 @@ PW_TRANSFORM_ID PWTransformer::getIDForString(std::string_view str)
         return PWT_KEYS_ONLY;
     else if (str == "values_only")
         return PWT_KEYS_ONLY;
-	else if (str == "unicode_normalize")
-		return PWT_UNICODE_NORMALIZE;
+    else if (str == "unicode_normalize")
+        return PWT_UNICODE_NORMALIZE;
 
     return PWT_INVALID;
 }

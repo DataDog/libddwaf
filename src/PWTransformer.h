@@ -35,15 +35,15 @@ enum PW_TRANSFORM_ID
     PWT_NUMERIZE          = 1 << 19,
     PWT_KEYS_ONLY         = 1 << 20,
     PWT_VALUES_ONLY       = 1 << 21,
-	PWT_UNICODE_NORMALIZE = 1 << 22,
+    PWT_UNICODE_NORMALIZE = 1 << 22,
     PWT_INVALID           = 1 << 23
 };
 
 /*
-	Constraints on transformers:
-	Transformers can be chained and will undergo a fake call (readOnly=true) as an optimisation
-	If the transformer's transformation could be affected by another transformer, (conditionnally modifying the string), the transformer should always return that it'll modify the string as it won't be able to confirm that during the fake call.
-	Otherwise, we're risking a bypass.
+    Constraints on transformers:
+    Transformers can be chained and will undergo a fake call (readOnly=true) as an optimisation
+    If the transformer's transformation could be affected by another transformer, (conditionnally modifying the string), the transformer should always return that it'll modify the string as it won't be able to confirm that during the fake call.
+    Otherwise, we're risking a bypass.
  */
 
 class PWTransformer
@@ -66,7 +66,7 @@ class PWTransformer
     static bool transformCmdLine(ddwaf_object* parameter, bool readOnly);
     static bool transformRemoveComments(ddwaf_object* parameter, bool readOnly);
     static bool transformNumerize(ddwaf_object* parameter, bool readOnly);
-	static bool transformUnicodeNormalize(ddwaf_object* parameter, bool readOnly);
+    static bool transformUnicodeNormalize(ddwaf_object* parameter, bool readOnly);
 
     static bool transformURLBaseName(ddwaf_object* parameter, bool readOnly);
     static bool transformURLFilename(ddwaf_object* parameter, bool readOnly);

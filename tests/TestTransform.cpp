@@ -8,7 +8,7 @@
 
 namespace ddwaf::utf8
 {
-	uint8_t codepoint_to_bytes(uint32_t codepoint, char* utf8_buffer);
+    uint8_t codepoint_to_bytes(uint32_t codepoint, char* utf8_buffer);
 }
 
 void doesTransform(vector<PW_TRANSFORM_ID> ids, const char* sourceString, const char* transformedString, bool postCheck = true)
@@ -494,7 +494,7 @@ TEST(TestTransforms, TestRemoveComments)
 
     // Test full-string comment
     // Note: some ofthese tests cannot be performed as runTransform doesn't
-    //	   support a legitimate return value of 0.
+    //     support a legitimate return value of 0.
     EXPECT_TRUE(shouldTransform({ PWT_REMOVE_COMMENTS }, "/*foo*/"));
     EXPECT_TRUE(shouldTransform({ PWT_REMOVE_COMMENTS }, "<!--foo-->"));
     EXPECT_TRUE(shouldTransform({ PWT_REMOVE_COMMENTS }, "#foo"));
@@ -605,39 +605,39 @@ TEST(TestTransforms, TestCoverage)
 
 TEST(TestTransforms, TestUnicodeNormalization)
 {
-	EXPECT_EQ(PWTransformer::getIDForString("unicode_normalize"), PWT_UNICODE_NORMALIZE);
+    EXPECT_EQ(PWTransformer::getIDForString("unicode_normalize"), PWT_UNICODE_NORMALIZE);
 
-	EXPECT_FALSE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "a"));
-	EXPECT_FALSE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "`"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ß"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "é"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ı"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "–"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "—"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "⁵"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "⅖"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ﬁ"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "𝑎"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "Å👨‍👩‍👧‍👦"));
-	EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "👨‍👩‍👧‍👦Å"));
-	
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "⃝", "");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "ß", "ss");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "é", "e");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "ı", "i");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "–", "-");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "—", "-");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "⁵", "5");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "⅖", "2/5");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "ﬁ", "fi");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "𝑎", "a");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "Å👨‍👩‍👧‍👦", "A👨‍👩‍👧‍👦");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "👨‍👩‍👧‍👦Å", "👨‍👩‍👧‍👦A");
-	
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "Aa𝑎éßıﬁ2⁵—⅖", "Aaaessifi25-2/5");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "Aẞé", "ASSe");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "Àße", "Asse");
-	doesTransform({ PWT_UNICODE_NORMALIZE }, "${${::-j}nd${upper:ı}:gopher//127.0.0.1:1389}", "${${::-j}nd${upper:i}:gopher//127.0.0.1:1389}");
+    EXPECT_FALSE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "a"));
+    EXPECT_FALSE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "`"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ß"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "é"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ı"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "–"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "—"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "⁵"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "⅖"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ﬁ"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "𝑎"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "Å👨‍👩‍👧‍👦"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "👨‍👩‍👧‍👦Å"));
+    
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "⃝", "");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "ß", "ss");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "é", "e");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "ı", "i");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "–", "-");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "—", "-");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "⁵", "5");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "⅖", "2/5");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "ﬁ", "fi");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "𝑎", "a");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "Å👨‍👩‍👧‍👦", "A👨‍👩‍👧‍👦");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "👨‍👩‍👧‍👦Å", "👨‍👩‍👧‍👦A");
+    
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "Aa𝑎éßıﬁ2⁵—⅖", "Aaaessifi25-2/5");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "Aẞé", "ASSe");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "Àße", "Asse");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "${${::-j}nd${upper:ı}:gopher//127.0.0.1:1389}", "${${::-j}nd${upper:i}:gopher//127.0.0.1:1389}");
 }
 
 TEST(TestTransforms, TestRuleRunOnKey)
