@@ -22,7 +22,7 @@ extern "C" {
 
 namespace ddwaf::utf8 {
 
-uint8_t codepointToBytes(uint32_t codepoint, char* utf8Buffer)
+uint8_t codepoint_to_bytes(uint32_t codepoint, char* utf8Buffer)
 {
     //Handle the easy case of ASCII
     if (codepoint <= 0x7F)
@@ -71,7 +71,7 @@ uint8_t codepointToBytes(uint32_t codepoint, char* utf8Buffer)
     }
 }
 
-uint8_t writeCodePoint(uint32_t codepoint, char* utf8Buffer, uint64_t lengthLeft)
+uint8_t write_codepoint(uint32_t codepoint, char* utf8Buffer, uint64_t lengthLeft)
 {
     //  If null, a surrogate or larger than the allowed range, buzz off
     if (codepoint == 0 || (codepoint >= 0xd800 && codepoint <= 0xdfff) || codepoint > 0x10ffff)
@@ -93,7 +93,7 @@ uint8_t writeCodePoint(uint32_t codepoint, char* utf8Buffer, uint64_t lengthLeft
     //TODO: Perform normalization
 
     // Insert the bytes
-    return codepointToBytes(codepoint, utf8Buffer);
+    return codepoint_to_bytes(codepoint, utf8Buffer);
 }
 
 int8_t findNextGlyphLength(const char* utf8Buffer, uint64_t lengthLeft)
@@ -162,7 +162,7 @@ int8_t findNextGlyphLength(const char* utf8Buffer, uint64_t lengthLeft)
 	return  expectedSequenceLength;
 }
 
-uint32_t fetchNextCodepoint(const char * utf8Buffer, uint64_t& position, uint64_t length)
+uint32_t fetch_next_codepoint(const char * utf8Buffer, uint64_t& position, uint64_t length)
 {
 	if (position > length)
 	{
@@ -233,7 +233,7 @@ struct ScratchpadChunck
 	}
 };
 
-size_t normalizeCodepoint(uint32_t codepoint, int32_t* wbBuffer, size_t wbBufferLength)
+size_t normalize_codepoint(uint32_t codepoint, int32_t* wbBuffer, size_t wbBufferLength)
 {
 	// Out of Bound
 	if (codepoint >= UTF8_MAX_CODEPOINT)
@@ -308,7 +308,7 @@ size_t normalizeCodepoint(uint32_t codepoint, int32_t* wbBuffer, size_t wbBuffer
 	return decomposedLength;
 }
 
-bool normalizeString(char ** _utf8Buffer, uint64_t & bufferLength)
+bool normalize_string(char ** _utf8Buffer, uint64_t & bufferLength)
 {
 	const char * utf8Buffer = *_utf8Buffer;
 	int32_t defaultInFlightBuffer[128], *inFlightBuffer = defaultInFlightBuffer;
@@ -323,7 +323,7 @@ bool normalizeString(char ** _utf8Buffer, uint64_t & bufferLength)
 	
 	uint32_t codepoint;
 	uint64_t position = 0;
-	while ((codepoint = fetchNextCodepoint(utf8Buffer, position, bufferLength)) != UTF8_EOF)
+	while ((codepoint = fetch_next_codepoint(utf8Buffer, position, bufferLength)) != UTF8_EOF)
 	{
 		// Ignore invalid glyphs
 		if (codepoint == UTF8_INVALID)
@@ -331,7 +331,7 @@ bool normalizeString(char ** _utf8Buffer, uint64_t & bufferLength)
 			continue;
 		}
 		
-		size_t decomposedLength = normalizeCodepoint(codepoint, inFlightBuffer, inFlightBufferLength);
+		size_t decomposedLength = normalize_codepoint(codepoint, inFlightBuffer, inFlightBufferLength);
 		
 		if (decomposedLength > inFlightBufferLength)
 		{
@@ -348,14 +348,14 @@ bool normalizeString(char ** _utf8Buffer, uint64_t & bufferLength)
 			}
 			
 			// Run the decomposition again with the larger buffer.
-			decomposedLength = normalizeCodepoint(codepoint, inFlightBuffer, inFlightBufferLength);
+			decomposedLength = normalize_codepoint(codepoint, inFlightBuffer, inFlightBufferLength);
 		}
 
 		// Write the codepoints to the scratchpad
 		for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength; ++inflightBufferIndex)
 		{
 			char utf8Write[4];
-			uint8_t lengthWritten = writeCodePoint((uint32_t) inFlightBuffer[inflightBufferIndex], utf8Write, 4);
+			uint8_t lengthWritten = write_codepoint((uint32_t) inFlightBuffer[inflightBufferIndex], utf8Write, 4);
 
 			if (scratchPad.back().used + lengthWritten >= scratchPad.back().length)
 			{

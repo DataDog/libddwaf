@@ -322,7 +322,7 @@ bool PWTransformer::transformDecodeURL(ddwaf_object* parameter, bool readOnly, b
                         }
                         else
                         {
-                            write += ddwaf::utf8::writeCodePoint(codepoint, &array[write], read - write);
+                            write += ddwaf::utf8::write_codepoint(codepoint, &array[write], read - write);
                         }
                     }
                     // Fallback
@@ -392,7 +392,7 @@ bool PWTransformer::transformDecodeCSS(ddwaf_object* parameter, bool readOnly)
                     }
 
                     // Process the codepoint: https://drafts.csswg.org/css-syntax/#consume-escaped-code-point
-                    write += ddwaf::utf8::writeCodePoint(assembledValue, &array[write], read - write);
+                    write += ddwaf::utf8::write_codepoint(assembledValue, &array[write], read - write);
 
                     // If a whitespace follow an escape, it's swallowed
                     if (read < length && isspace(array[read]))
@@ -477,7 +477,7 @@ bool PWTransformer::transformDecodeJS(ddwaf_object* parameter, bool readOnly)
                         // The word is a codepoint
                         if (word < 0xd800 || word > 0xdbff)
                         {
-                            write += ddwaf::utf8::codepointToBytes(word, &array[write]);
+                            write += ddwaf::utf8::codepoint_to_bytes(word, &array[write]);
                         }
                         // The word is a surrogate, lets see if the other half is there
                         else if (read + 5 < length && array[read] == '\\' && array[read + 1] == 'u' && isxdigit(array[read + 2])
@@ -491,7 +491,7 @@ bool PWTransformer::transformDecodeJS(ddwaf_object* parameter, bool readOnly)
                                 // Good, now let's rebuild the codepoint
                                 // Implementing the algorithm from https://en.wikipedia.org/wiki/UTF-16#Examples
                                 uint32_t codepoint = 0x10000u + ((word - 0xd800u) << 10u) + (lowSurrogate - 0xdc00u);
-                                write += ddwaf::utf8::codepointToBytes(codepoint, &array[write]);
+                                write += ddwaf::utf8::codepoint_to_bytes(codepoint, &array[write]);
                                 read += 6;
                             }
 
@@ -500,7 +500,7 @@ bool PWTransformer::transformDecodeJS(ddwaf_object* parameter, bool readOnly)
                         else
                         {
                             // Tried to make us write a half surrogate, write the error bytes
-                            write += ddwaf::utf8::writeCodePoint(word, &array[write], read - write);
+                            write += ddwaf::utf8::write_codepoint(word, &array[write], read - write);
                         }
                     }
                 }
@@ -664,7 +664,7 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object* parameter, bool readOnly)
                     }
 
                     //We extracted the codepoint (or bailed out). Now, we can transcribe it
-                    write += ddwaf::utf8::writeCodePoint(codePoint, &array[write], read - write);
+                    write += ddwaf::utf8::write_codepoint(codePoint, &array[write], read - write);
 
                     if (read < length && array[read] == ';')
                         read += 1;
@@ -1186,7 +1186,7 @@ bool PWTransformer::transformUnicodeNormalize(ddwaf_object* parameter, bool read
 	uint64_t position = 0;
 	if (readOnly)
 	{
-		while ((codepoint = ddwaf::utf8::fetchNextCodepoint(parameter->stringValue, position, parameter->nbEntries)) != UTF8_EOF) {
+		while ((codepoint = ddwaf::utf8::fetch_next_codepoint(parameter->stringValue, position, parameter->nbEntries)) != UTF8_EOF) {
 			// Ignore invalid glyphs or Zero-Width joiners (which we allow for emojis)
 			if (codepoint == UTF8_INVALID)
 			{
@@ -1194,7 +1194,7 @@ bool PWTransformer::transformUnicodeNormalize(ddwaf_object* parameter, bool read
 			}
 			
 			int32_t decomposedCodepoint = 0;
-			size_t decomposedLength = ddwaf::utf8::normalizeCodepoint(codepoint, &decomposedCodepoint, 1);
+			size_t decomposedLength = ddwaf::utf8::normalize_codepoint(codepoint, &decomposedCodepoint, 1);
 			
 			// If the glyph needed decomposition, we flag the string
 			if (decomposedLength != 1 || codepoint != (uint32_t) decomposedCodepoint)
@@ -1205,7 +1205,7 @@ bool PWTransformer::transformUnicodeNormalize(ddwaf_object* parameter, bool read
 		return false;
 	}
 
-	return ddwaf::utf8::normalizeString((char**) &parameter->stringValue, parameter->nbEntries);
+	return ddwaf::utf8::normalize_string((char**) &parameter->stringValue, parameter->nbEntries);
 }
 
 //

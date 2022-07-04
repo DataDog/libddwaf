@@ -8,7 +8,7 @@
 
 namespace ddwaf::utf8
 {
-	uint8_t codepointToBytes(uint32_t codepoint, char* utf8_buffer);
+	uint8_t codepoint_to_bytes(uint32_t codepoint, char* utf8_buffer);
 }
 
 void doesTransform(vector<PW_TRANSFORM_ID> ids, const char* sourceString, const char* transformedString, bool postCheck = true)
@@ -297,7 +297,7 @@ TEST(TestTransforms, TestJSDecode)
 
     {
         char fakeBuffer[16] = { 0 };
-        EXPECT_EQ(utf8::codepointToBytes(0x200000, fakeBuffer), 0);
+        EXPECT_EQ(utf8::codepoint_to_bytes(0x200000, fakeBuffer), 0);
     }
 }
 
