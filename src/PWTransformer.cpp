@@ -14,7 +14,7 @@
 #include <PWTransformer.h>
 
 #include <utils.h>
-#include <utf8.h>
+#include <utf8.hpp>
 
 static uint8_t fromHex(char c);
 static bool replaceIfMatch(char* array, uint64_t& readHead, uint64_t& writeHead, uint64_t readLengthLeft, const char* token, uint32_t tokenLength, char decodedToken);
