@@ -313,21 +313,36 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
         }
     }
 
-    // Compile the scratch pads into the final normalized string
-    uint64_t outputLength = 0;
-    for (ScratchpadChunck &chunck : scratchPad) { outputLength += chunck.used; }
+    if (scratchPad.size() == 1) {
+        // We have a single scratchpad, we can simply swap the pointers :D
+        free(*_utf8Buffer);
+        *_utf8Buffer = scratchPad.front().scratchpad;
+        bufferLength = scratchPad.front().used;
+        
+        // Prevent the destructor from freeing the pointer we're now using.
+        scratchPad.front().scratchpad = nullptr;
+    } else {
+        // Compile the scratch pads into the final normalized string
+        uint64_t outputLength = 0;
+        for (ScratchpadChunck &chunck : scratchPad) { outputLength += chunck.used; }
+        
+        if (outputLength > bufferLength) {
+            void* newUTF8Buffer = realloc((void *)*_utf8Buffer, outputLength);
+            if(newUTF8Buffer == NULL) {
+                return false;
+            }
+            *_utf8Buffer = (char*) newUTF8Buffer;
+        }
 
-    if (outputLength > bufferLength) {
-        *_utf8Buffer = (char *)realloc((void *)*_utf8Buffer, outputLength);
+        uint64_t writeIndex = 0;
+        for (ScratchpadChunck &chunck : scratchPad) {
+            memcpy(&(*_utf8Buffer)[writeIndex], chunck.scratchpad, chunck.used);
+            writeIndex += chunck.used;
+        }
+
+        bufferLength = writeIndex;
     }
 
-    uint64_t writeIndex = 0;
-    for (ScratchpadChunck &chunck : scratchPad) {
-        memcpy(&(*_utf8Buffer)[writeIndex], chunck.scratchpad, chunck.used);
-        writeIndex += chunck.used;
-    }
-
-    bufferLength = writeIndex;
     return true;
 }
 
