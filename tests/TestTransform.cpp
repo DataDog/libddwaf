@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test.h"
+#include <utf8.hpp>
 
 namespace ddwaf::utf8
 {
@@ -605,6 +606,14 @@ TEST(TestTransforms, TestCoverage)
 
 TEST(TestTransforms, TestUnicodeNormalization)
 {
+    int bla[128];
+    for(uint32_t i = 1; i <= UTF8_MAX_CODEPOINT; ++i)
+    {
+        // We're assuming that no codepoint decomposes to more than 18 codepoints.
+        // If one does so, you may need to update INFLIGHT_BUFFER_SIZE
+        EXPECT_LE(ddwaf::utf8::normalize_codepoint(i, bla, 128), 18);
+    }
+    
     EXPECT_EQ(PWTransformer::getIDForString("unicode_normalize"), PWT_UNICODE_NORMALIZE);
 
     EXPECT_FALSE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "a"));

@@ -100,10 +100,10 @@ int8_t findNextGlyphLength(const char *utf8Buffer, uint64_t lengthLeft)
     // We're going to assume the caller provided us with the beginning of a UTF-8 sequence.
 
     // Valid UTF8 has a specific binary format.
-    //	If it's a single byte UTF8 character, then it is always of form '0xxxxxxx', where 'x' is any binary digit.
-    //	If it's a two byte UTF8 character, then it's always of form '110xxxxx 10xxxxxx'.
-    //	Similarly for three and four byte UTF8 characters it starts with '1110xxxx' and '11110xxx' followed
-    //		by '10xxxxxx' one less times as there are bytes.
+    //  If it's a single byte UTF8 character, then it is always of form '0xxxxxxx', where 'x' is any binary digit.
+    //  If it's a two byte UTF8 character, then it's always of form '110xxxxx 10xxxxxx'.
+    //  Similarly for three and four byte UTF8 characters it starts with '1110xxxx' and '11110xxx' followed
+    //      by '10xxxxxx' one less times as there are bytes.
 
     uint8_t firstByte = (uint8_t)utf8Buffer[0];
     int8_t expectedSequenceLength = -1;
@@ -228,8 +228,8 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
             NULL);
 
     // This decomposition is unfortunately not complete. It leaves behind a few chars like ı (i)
-    //	Moreover, some conversions like ß (ss) require casefolding, which changes the case of characters
-    //	We're trying to address what's left
+    //  Moreover, some conversions like ß (ss) require casefolding, which changes the case of characters
+    //  We're trying to address what's left
     if (decomposedLength > 0 && decomposedLength <= wbBufferLength) {
         // If casefolding happened, we check what was the case of the original codepoint and move it back there
         // This is a no-op if the case is already correct
@@ -266,11 +266,13 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
     return decomposedLength;
 }
 
+// We empirically measured that no codepoint decomposition exceeded 18 codepoints.
+#define INFLIGHT_BUFFER_SIZE 24
+
 bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
 {
     const char *utf8Buffer = *_utf8Buffer;
-    int32_t defaultInFlightBuffer[128], *inFlightBuffer = defaultInFlightBuffer;
-    size_t inFlightBufferLength = 128;
+    int32_t inFlightBuffer[INFLIGHT_BUFFER_SIZE];
     std::vector<ScratchpadChunck> scratchPad;
 
     // A tricky part of this conversion is that the output size is totally unknown, but we want to be efficient with our
@@ -288,21 +290,12 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
             continue;
         }
 
-        size_t decomposedLength = normalize_codepoint(codepoint, inFlightBuffer, inFlightBufferLength);
+        size_t decomposedLength = normalize_codepoint(codepoint, inFlightBuffer, INFLIGHT_BUFFER_SIZE);
 
-        if (decomposedLength > inFlightBufferLength) {
-            // We have to increase the size of the in-flight buffer :(
-            if (inFlightBuffer != defaultInFlightBuffer) {
-                free(inFlightBuffer);
-            }
-            inFlightBufferLength = decomposedLength + 64;
-            inFlightBuffer = (int32_t *)malloc((size_t)inFlightBufferLength * sizeof(int32_t));
-            if (inFlightBuffer == nullptr) {
-                return false;
-            }
-
-            // Run the decomposition again with the larger buffer.
-            decomposedLength = normalize_codepoint(codepoint, inFlightBuffer, inFlightBufferLength);
+        // No codepoint can generate more than 18 codepoints, that's extremely odd
+        //  Let's drop this codepoint
+        if (decomposedLength > INFLIGHT_BUFFER_SIZE) {
+            continue;
         }
 
         // Write the codepoints to the scratchpad
@@ -318,11 +311,6 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
             memcpy(&last.scratchpad[last.used], utf8Write, lengthWritten);
             last.used += lengthWritten;
         }
-    }
-
-    // If we had to create a dynamic in-flight buffer, free it on the way out
-    if (inFlightBuffer != defaultInFlightBuffer) {
-        free(inFlightBuffer);
     }
 
     // Compile the scratch pads into the final normalized string
