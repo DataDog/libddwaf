@@ -111,6 +111,29 @@ add_library(lib_ac STATIC
 target_include_directories(lib_ac INTERFACE ${PROJECT_SOURCE_DIR}/lua-aho-corasick)
 set_target_properties(lib_ac PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
+set(UTF8PROC_VERSION v2.7.0)
+ExternalProject_Add(proj_utf8proc
+    URL         https://github.com/JuliaStrings/utf8proc/archive/refs/tags/${UTF8PROC_VERSION}.tar.gz
+    INSTALL_DIR ${INSTALL_DIR}
+    CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+    -DCMAKE_INSTALL_LIBDIR=lib
+    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}
+    -DCMAKE_C_FLAGS_RELWITHDEBINFO=${CMAKE_C_FLAGS_RELWITHDEBINFO}
+    -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}
+    -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+)
+
+add_library(lib_utf8proc STATIC IMPORTED GLOBAL)
+if (MSVC)
+    set_property(TARGET lib_utf8proc PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc_static${CMAKE_STATIC_LIBRARY_SUFFIX})
+else ()
+    set_property(TARGET lib_utf8proc PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+target_include_directories(lib_utf8proc INTERFACE ${INSTALL_DIR}/include)
+add_dependencies(lib_utf8proc proj_utf8proc)
+
 # yaml-cpp
 ExternalProject_Add(proj_yamlcpp
     URL https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.zip

@@ -14,10 +14,9 @@
 #include <PWTransformer.h>
 
 #include <utils.h>
+#include <utf8.hpp>
 
 static uint8_t fromHex(char c);
-PROD_STATIC uint8_t codepointToUTF8(uint32_t codepoint, char* utf8_buffer);
-static uint8_t writeCodePoint(uint32_t codepoint, char* utf8_buffer, uint64_t lengthLeft);
 static bool replaceIfMatch(char* array, uint64_t& readHead, uint64_t& writeHead, uint64_t readLengthLeft, const char* token, uint32_t tokenLength, char decodedToken);
 static bool decodeBase64(char* array, uint64_t& length);
 
@@ -323,7 +322,7 @@ bool PWTransformer::transformDecodeURL(ddwaf_object* parameter, bool readOnly, b
                         }
                         else
                         {
-                            write += writeCodePoint(codepoint, &array[write], read - write);
+                            write += ddwaf::utf8::write_codepoint(codepoint, &array[write], read - write);
                         }
                     }
                     // Fallback
@@ -393,7 +392,7 @@ bool PWTransformer::transformDecodeCSS(ddwaf_object* parameter, bool readOnly)
                     }
 
                     // Process the codepoint: https://drafts.csswg.org/css-syntax/#consume-escaped-code-point
-                    write += writeCodePoint(assembledValue, &array[write], read - write);
+                    write += ddwaf::utf8::write_codepoint(assembledValue, &array[write], read - write);
 
                     // If a whitespace follow an escape, it's swallowed
                     if (read < length && isspace(array[read]))
@@ -478,7 +477,7 @@ bool PWTransformer::transformDecodeJS(ddwaf_object* parameter, bool readOnly)
                         // The word is a codepoint
                         if (word < 0xd800 || word > 0xdbff)
                         {
-                            write += codepointToUTF8(word, &array[write]);
+                            write += ddwaf::utf8::codepoint_to_bytes(word, &array[write]);
                         }
                         // The word is a surrogate, lets see if the other half is there
                         else if (read + 5 < length && array[read] == '\\' && array[read + 1] == 'u' && isxdigit(array[read + 2])
@@ -492,7 +491,7 @@ bool PWTransformer::transformDecodeJS(ddwaf_object* parameter, bool readOnly)
                                 // Good, now let's rebuild the codepoint
                                 // Implementing the algorithm from https://en.wikipedia.org/wiki/UTF-16#Examples
                                 uint32_t codepoint = 0x10000u + ((word - 0xd800u) << 10u) + (lowSurrogate - 0xdc00u);
-                                write += codepointToUTF8(codepoint, &array[write]);
+                                write += ddwaf::utf8::codepoint_to_bytes(codepoint, &array[write]);
                                 read += 6;
                             }
 
@@ -501,7 +500,7 @@ bool PWTransformer::transformDecodeJS(ddwaf_object* parameter, bool readOnly)
                         else
                         {
                             // Tried to make us write a half surrogate, write the error bytes
-                            write += writeCodePoint(word, &array[write], read - write);
+                            write += ddwaf::utf8::write_codepoint(word, &array[write], read - write);
                         }
                     }
                 }
@@ -665,7 +664,7 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object* parameter, bool readOnly)
                     }
 
                     //We extracted the codepoint (or bailed out). Now, we can transcribe it
-                    write += writeCodePoint(codePoint, &array[write], read - write);
+                    write += ddwaf::utf8::write_codepoint(codePoint, &array[write], read - write);
 
                     if (read < length && array[read] == ';')
                         read += 1;
@@ -1175,6 +1174,40 @@ bool PWTransformer::transformNumerize(ddwaf_object* parameter, bool readOnly)
     return true;
 }
 
+bool PWTransformer::transformUnicodeNormalize(ddwaf_object* parameter, bool readOnly)
+{
+    if (parameter->type != DDWAF_OBJ_STRING)
+        return false;
+    
+    if (parameter->stringValue == NULL || parameter->nbEntries == 0)
+        return false;
+    
+    uint32_t codepoint;
+    uint64_t position = 0;
+    if (readOnly)
+    {
+        while ((codepoint = ddwaf::utf8::fetch_next_codepoint(parameter->stringValue, position, parameter->nbEntries)) != UTF8_EOF) {
+            // Ignore invalid glyphs or Zero-Width joiners (which we allow for emojis)
+            if (codepoint == UTF8_INVALID)
+            {
+                continue;
+            }
+            
+            int32_t decomposedCodepoint = 0;
+            size_t decomposedLength = ddwaf::utf8::normalize_codepoint(codepoint, &decomposedCodepoint, 1);
+            
+            // If the glyph needed decomposition, we flag the string
+            if (decomposedLength != 1 || codepoint != (uint32_t) decomposedCodepoint)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    return ddwaf::utf8::normalize_string((char**) &parameter->stringValue, parameter->nbEntries);
+}
+
 //
 // Those three utils are only used when computing targets from an agent target
 // We can skip the read-only phase for them, as we don't ever want to use the raw input
@@ -1372,6 +1405,9 @@ bool PWTransformer::transform(PW_TRANSFORM_ID transformID, ddwaf_object* paramet
 
         case PWT_NUMERIZE:
             return transformNumerize(parameter, readOnly);
+            
+        case PWT_UNICODE_NORMALIZE:
+            return transformUnicodeNormalize(parameter, readOnly);
 
         default:
             return false;
@@ -1424,6 +1460,8 @@ PW_TRANSFORM_ID PWTransformer::getIDForString(std::string_view str)
         return PWT_KEYS_ONLY;
     else if (str == "values_only")
         return PWT_KEYS_ONLY;
+    else if (str == "unicode_normalize")
+        return PWT_UNICODE_NORMALIZE;
 
     return PWT_INVALID;
 }
@@ -1448,80 +1486,6 @@ static uint8_t fromHex(char c)
         return (uint8_t) c - '0';
 
     return (uint8_t)(c | 0x20) - 'a' + 0xa;
-}
-
-PROD_STATIC uint8_t codepointToUTF8(uint32_t codepoint, char* utf8_buffer)
-{
-    //Handle the easy case of ASCII
-    if (codepoint <= 0x7F)
-    {
-        *utf8_buffer = (char) codepoint;
-        return 1;
-    }
-
-    /*
-     You're reading the UTF-8 encoding code, I'm sorry.
-     There are multiple representations depending of the codepoint:
-     0x000000-0x00007F: 0xxxxxxx
-     0x000080-0x0007FF: 110xxxxx 10xxxxxx
-     0x000800-0x00FFFF: 1110xxxx 10xxxxxx 10xxxxxx
-     0x010000-0x10FFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-     This code could be made a bit denser but let's not look for trouble
-     */
-
-    // Out of range codepoint
-    if (codepoint > 0x001FFFFF)
-        return 0;
-
-    //4 bytes representation
-    if (codepoint > 0xFFFF)
-    {
-        *utf8_buffer++ = (char) (0xF0 | ((codepoint >> 18) & 0x08));
-        *utf8_buffer++ = (char) (0x80 | ((codepoint >> 12) & 0x3F));
-        *utf8_buffer++ = (char) (0x80 | ((codepoint >> 06) & 0x3F));
-        *utf8_buffer++ = (char) (0x80 | (codepoint & 0x3F));
-        return 4;
-    }
-    // Three bytes
-    else if (codepoint > 0x7FF)
-    {
-        *utf8_buffer++ = (char) (0xE0 | ((codepoint >> 12) & 0x0F));
-        *utf8_buffer++ = (char) (0x80 | ((codepoint >> 06) & 0x3F));
-        *utf8_buffer++ = (char) (0x80 | (codepoint & 0x3F));
-        return 3;
-    }
-    // Two bytes
-    else
-    {
-        *utf8_buffer++ = (char) (0xC0 | ((codepoint >> 06) & 0x0F));
-        *utf8_buffer++ = (char) (0x80 | (codepoint & 0x3F));
-        return 2;
-    }
-}
-
-static uint8_t writeCodePoint(uint32_t codepoint, char* utf8_buffer, uint64_t lengthLeft)
-{
-    //  If null, a surrogate or larger than the allowed range, buzz off
-    if (codepoint == 0 || (codepoint >= 0xd800 && codepoint <= 0xdfff) || codepoint > 0x10ffff)
-    {
-        // Insert U+FFFD as an error character per-spec
-        //  We need three bytes to encode it, which may be a problem as `\0` only takes two
-        //  A fully correct implementation would make room for the error bytes if there isn't enough room but we won't bother with that
-        if (lengthLeft > 2)
-        {
-            *((uint8_t*) utf8_buffer++) = 0xEFu;
-            *((uint8_t*) utf8_buffer++) = 0xBFu;
-            *((uint8_t*) utf8_buffer++) = 0xBDu;
-            return 3;
-        }
-
-        return 0;
-    }
-
-    //TODO: Perform normalization
-
-    // Insert the bytes
-    return codepointToUTF8(codepoint, utf8_buffer);
 }
 
 static bool replaceIfMatch(char* array, uint64_t& readHead, uint64_t& writeHead, uint64_t readLengthLeft, const char* token, uint32_t tokenLength, char decodedToken)

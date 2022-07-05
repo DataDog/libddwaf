@@ -5,8 +5,12 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test.h"
+#include <utf8.hpp>
 
-uint8_t codepointToUTF8(uint32_t codepoint, char* utf8_buffer);
+namespace ddwaf::utf8
+{
+    uint8_t codepoint_to_bytes(uint32_t codepoint, char* utf8_buffer);
+}
 
 void doesTransform(vector<PW_TRANSFORM_ID> ids, const char* sourceString, const char* transformedString, bool postCheck = true)
 {
@@ -33,7 +37,7 @@ void doesTransform(vector<PW_TRANSFORM_ID> ids, const char* sourceString, const 
         EXPECT_EQ(string.nbEntries, strlen(transformedString));
 
         // strcmp will usually overrun by one byte. That's not okay here
-        if (string.nbEntries == strlen(sourceString))
+        if (string.nbEntries == strlen(transformedString))
             EXPECT_EQ(memcmp(string.stringValue, transformedString, string.nbEntries), 0);
         else
             EXPECT_STREQ(string.stringValue, transformedString);
@@ -285,7 +289,7 @@ TEST(TestTransforms, TestJSDecode)
     doesTransform({ PWT_DECODE_JS }, "\\x41\\x20\\x4aS\\x20transf\\x6Frmations", "A JS transformations");
     doesTransform({ PWT_DECODE_JS }, "\\u0041 JS \\ud83e\\udd14 transformations\\uff01", "A JS \xf0\x9f\xa4\x94 transformations\xEF\xBC\x81");
 
-    doesTransform({ PWT_DECODE_JS }, "Test \\udbff\\udfff", "Test \xF0\x8F\xBF\xBF");
+    doesTransform({ PWT_DECODE_JS }, "Test \\udbff\\udfff", "Test \xF4\x8F\xBF\xBF");
     doesTransform({ PWT_DECODE_JS }, "Test\\x20\\", "Test \\");
     doesTransform({ PWT_DECODE_JS }, "Test\\x20\\ ", "Test  ");
     doesTransform({ PWT_DECODE_JS }, "Test\\x20\\x", "Test ");
@@ -294,7 +298,7 @@ TEST(TestTransforms, TestJSDecode)
 
     {
         char fakeBuffer[16] = { 0 };
-        EXPECT_EQ(codepointToUTF8(0x200000, fakeBuffer), 0);
+        EXPECT_EQ(utf8::codepoint_to_bytes(0x200000, fakeBuffer), 0);
     }
 }
 
@@ -491,7 +495,7 @@ TEST(TestTransforms, TestRemoveComments)
 
     // Test full-string comment
     // Note: some ofthese tests cannot be performed as runTransform doesn't
-    //	   support a legitimate return value of 0.
+    //     support a legitimate return value of 0.
     EXPECT_TRUE(shouldTransform({ PWT_REMOVE_COMMENTS }, "/*foo*/"));
     EXPECT_TRUE(shouldTransform({ PWT_REMOVE_COMMENTS }, "<!--foo-->"));
     EXPECT_TRUE(shouldTransform({ PWT_REMOVE_COMMENTS }, "#foo"));
@@ -598,6 +602,51 @@ TEST(TestTransforms, TestCoverage)
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
+}
+
+TEST(TestTransforms, TestUnicodeNormalization)
+{
+    int bla[128];
+    for(uint32_t i = 1; i <= UTF8_MAX_CODEPOINT; ++i)
+    {
+        // We're assuming that no codepoint decomposes to more than 18 codepoints.
+        // If one does so, you may need to update INFLIGHT_BUFFER_SIZE
+        EXPECT_LE(ddwaf::utf8::normalize_codepoint(i, bla, 128), 18);
+    }
+    
+    EXPECT_EQ(PWTransformer::getIDForString("unicode_normalize"), PWT_UNICODE_NORMALIZE);
+
+    EXPECT_FALSE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "a"));
+    EXPECT_FALSE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "`"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ß"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "é"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ı"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "–"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "—"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "⁵"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "⅖"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "ﬁ"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "𝑎"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "Å👨‍👩‍👧‍👦"));
+    EXPECT_TRUE(shouldTransform({ PWT_UNICODE_NORMALIZE }, "👨‍👩‍👧‍👦Å"));
+    
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "⃝", "");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "ß", "ss");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "é", "e");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "ı", "i");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "–", "-");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "—", "-");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "⁵", "5");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "⅖", "2/5");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "ﬁ", "fi");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "𝑎", "a");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "Å👨‍👩‍👧‍👦", "A👨‍👩‍👧‍👦");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "👨‍👩‍👧‍👦Å", "👨‍👩‍👧‍👦A");
+    
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "Aa𝑎éßıﬁ2⁵—⅖", "Aaaessifi25-2/5");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "Aẞé", "ASSe");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "Àße", "Asse");
+    doesTransform({ PWT_UNICODE_NORMALIZE }, "${${::-j}nd${upper:ı}:gopher//127.0.0.1:1389}", "${${::-j}nd${upper:i}:gopher//127.0.0.1:1389}");
 }
 
 TEST(TestTransforms, TestRuleRunOnKey)
