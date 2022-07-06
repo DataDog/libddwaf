@@ -90,7 +90,15 @@ bool PWProcessor::runFlow(const std::string& name,
 
         retManager.startRule();
 
-        bool run_on_new =cachedNegativeMatch && rule.conditions.size() == 1;
+        // Currently we are not keeping track of which conditions were executed
+        // against the available data, so if a rule has more than one condition
+        // we can't know which one caused the negative match and consequently
+        // we don't know which ones have been executed.
+        //
+        // However if the rule only has one condition and there is a negative
+        // match in the cache, we can safely assume it has already been executed
+        // with existing data.
+        bool run_on_new = cachedNegativeMatch && rule.conditions.size() == 1;
         for (const ddwaf::condition& cond : rule.conditions)
         {
             status = cond.performMatching(parameters, manifest_, run_on_new, deadline, retManager);

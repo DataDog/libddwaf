@@ -54,8 +54,8 @@ public:
     bool doesUseNewParameters(const object_store& store) const;
 
 protected:
-    status match_target(PWManifest::ARG_ID target,
-        object::iterator_base &it,
+    template <typename T>
+    status match_target(PWManifest::ARG_ID target, T &it,
         const PWManifest &manifest, const PWManifest::ArgDetails &details,
         const monotonic_clock::time_point& deadline,
         PWRetManager& retManager) const;

@@ -712,5 +712,52 @@ TEST(TestKeyIterator, TestContainerMixInvalidPath)
     ddwaf_object_free(&object);
 }
 
+TEST(TestKeyIterator, TestMapDepthLimitPath)
+{
+    ddwaf::object_limits limits;
 
+    ddwaf_object object = readRule(R"(
+        {
+            root: {
+                child: {
+                    grandchild: {
+                        unknown: {
+                            key: value
+                        },
+                        another: value
+                    }
+                }
+            }
+        }
+    )");
 
+    {
+        limits.max_container_depth = 3;
+        ddwaf::object::key_iterator it(&object, {"root", "child", "grandchild"}, limits);
+
+        EXPECT_FALSE(it);
+    }
+
+    {
+        limits.max_container_depth = 4;
+        ddwaf::object::key_iterator it(&object, {"root", "child", "grandchild"}, limits);
+
+        EXPECT_TRUE(it);
+        {
+            auto it_path = it.get_current_path();
+            std::vector<std::string> path = {"root", "child", "grandchild", "unknown"};
+            EXPECT_EQ(it_path, path);
+        }
+
+        EXPECT_TRUE(++it);
+        {
+            auto it_path = it.get_current_path();
+            std::vector<std::string> path = {"root", "child", "grandchild", "another"};
+            EXPECT_EQ(it_path, path);
+        }
+
+        EXPECT_FALSE(++it);
+    }
+
+    ddwaf_object_free(&object);
+}

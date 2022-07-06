@@ -35,7 +35,6 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     }
 
     ddwaf_object copyInput;
-    // Copy the input. If we're running on the key, we copy it in the value as it's functionnaly equivalent
     ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, baseInput->nbEntries);
 
     //Transform it and pick the pointer to process
@@ -59,15 +58,15 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     return matched;
 }
 
-condition::status condition::match_target(PWManifest::ARG_ID target,
-    object::iterator_base &it,
+template <typename T>
+condition::status condition::match_target(PWManifest::ARG_ID target, T &it,
     const PWManifest &manifest, const PWManifest::ArgDetails &details,
     const monotonic_clock::time_point& deadline,
     PWRetManager& retManager) const
 {
     size_t counter = 0;
 
-    for (; it.is_valid(); ++it) {
+    for (; it; ++it) {
         // Only check the time every 16 runs
         // TODO abstract away deadline checks into custom object
         if ((++counter & 0xf) == 0 && deadline <= monotonic_clock::now())

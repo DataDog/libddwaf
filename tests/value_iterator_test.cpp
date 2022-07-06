@@ -12,7 +12,7 @@ TEST(TestValueIterator, TestInvalidIterator)
     ddwaf_object_invalid(&object);
 
     ddwaf::object::value_iterator it(&object);
-    EXPECT_FALSE((bool)it);
+    EXPECT_FALSE(it);
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
@@ -26,7 +26,7 @@ TEST(TestValueIterator, TestStringScalar)
     ddwaf_object_string(&object, "value");
 
     ddwaf::object::value_iterator it(&object);
-    EXPECT_TRUE((bool)it);
+    EXPECT_TRUE(it);
     EXPECT_EQ(*it, &object);
 
     auto path = it.get_current_path();
@@ -43,7 +43,7 @@ TEST(TestValueIterator, TestUnsignedScalar)
     ddwaf_object_unsigned_force(&object, 22);
 
     ddwaf::object::value_iterator it(&object);
-    EXPECT_TRUE((bool)it);
+    EXPECT_TRUE(it);
     EXPECT_EQ(*it, &object);
 
     auto path = it.get_current_path();
@@ -58,7 +58,7 @@ TEST(TestValueIterator, TestSignedScalar)
     ddwaf_object_signed_force(&object, 22);
 
     ddwaf::object::value_iterator it(&object);
-    EXPECT_TRUE((bool)it);
+    EXPECT_TRUE(it);
     EXPECT_EQ(*it, &object);
 
     auto path = it.get_current_path();
@@ -74,7 +74,7 @@ TEST(TestValueIterator, TestArraySingleItem)
     ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, "string"));
 
     ddwaf::object::value_iterator it(&object);
-    EXPECT_TRUE((bool)it);
+    EXPECT_TRUE(it);
     EXPECT_STREQ((*it)->stringValue, "string");
 
     auto path = it.get_current_path();
@@ -100,7 +100,7 @@ TEST(TestValueIterator, TestArrayMultipleItems)
     unsigned index = 0;
     do {
         auto index_str = std::to_string(index);
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
         EXPECT_STREQ((*it)->stringValue, index_str.c_str());
 
         auto path = it.get_current_path();
@@ -129,7 +129,7 @@ TEST(TestValueIterator, TestArrayPastSizeLimit)
 
     for (unsigned i = 0; i < limits.max_container_size; i++) {
         auto index_str = std::to_string(i);
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
         EXPECT_STREQ((*it)->stringValue, index_str.c_str());
 
         auto path = it.get_current_path();
@@ -139,7 +139,7 @@ TEST(TestValueIterator, TestArrayPastSizeLimit)
         ++it;
     }
 
-    EXPECT_FALSE(++it);
+    EXPECT_FALSE(it);
 
     ddwaf_object_free(&object);
 }
@@ -179,7 +179,7 @@ TEST(TestValueIterator, TestDeepArray)
         ++it;
     }
 
-    EXPECT_FALSE(++it);
+    EXPECT_FALSE(it);
 
     ddwaf_object_free(&object);
 }
@@ -220,7 +220,7 @@ TEST(TestValueIterator, TestDeepArrayPastLimit)
         ++it;
     }
 
-    EXPECT_FALSE(++it);
+    EXPECT_FALSE(it);
 
     ddwaf_object_free(&object);
 }
@@ -235,7 +235,7 @@ TEST(TestValueIterator, TestArrayNoScalars)
 
     ddwaf::object::value_iterator it(&object);
 
-    EXPECT_FALSE((bool)it);
+    EXPECT_FALSE(it);
     EXPECT_FALSE(++it);
 
     ddwaf_object_free(&object);
@@ -249,7 +249,7 @@ TEST(TestValueIterator, TestMapSingleItem)
 
     ddwaf::object::value_iterator it(&object);
 
-    EXPECT_TRUE((bool)it);
+    EXPECT_TRUE(it);
     EXPECT_STREQ((*it)->stringValue, "value");
     EXPECT_STREQ((*it)->parameterName, "key");
 
@@ -282,7 +282,7 @@ TEST(TestValueIterator, TestMapMultipleItems)
         std::string key = "key" + index;
         std::string value = "value" + index;
 
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
         EXPECT_STREQ((*it)->stringValue, value.c_str());
         EXPECT_STREQ((*it)->parameterName, key.c_str());
 
@@ -292,7 +292,7 @@ TEST(TestValueIterator, TestMapMultipleItems)
         ++it;
     }
 
-    EXPECT_FALSE(++it);
+    EXPECT_FALSE(it);
 
     ddwaf_object_free(&object);
 }
@@ -318,7 +318,7 @@ TEST(TestValueIterator, TestMapPastSizeLimit)
         std::string key = "key" + index;
         std::string value = "value" + index;
 
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
         EXPECT_STREQ((*it)->stringValue, value.c_str());
         EXPECT_STREQ((*it)->parameterName, key.c_str());
 
@@ -328,7 +328,7 @@ TEST(TestValueIterator, TestMapPastSizeLimit)
         ++it;
     }
 
-    EXPECT_FALSE(++it);
+    EXPECT_FALSE(it);
 
     ddwaf_object_free(&object);
 }
@@ -370,7 +370,7 @@ TEST(TestValueIterator, TestDeepMap)
         ++it;
     }
 
-    EXPECT_FALSE(++it);
+    EXPECT_FALSE(it);
 
     ddwaf_object_free(&object);
 }
@@ -413,7 +413,7 @@ TEST(TestValueIterator, TestMapPastDepthLimit)
         ++it;
     }
 
-    EXPECT_FALSE(++it);
+    EXPECT_FALSE(it);
 
     ddwaf_object_free(&object);
 }
@@ -428,7 +428,7 @@ TEST(TestValueIterator, TestMapNoScalars)
 
     ddwaf::object::value_iterator it(&object);
 
-    EXPECT_FALSE((bool)it);
+    EXPECT_FALSE(it);
     EXPECT_FALSE(++it);
 
     ddwaf_object_free(&object);
@@ -475,7 +475,7 @@ TEST(TestValueIterator, TestContainerMix)
             ++it;
         }
 
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
     }
 
     ddwaf_object_free(&object);
@@ -488,7 +488,7 @@ TEST(TestValueIterator, TestInvalidObjectPath)
 
     {
         ddwaf::object::value_iterator it(&object, {"key"});
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 0);
@@ -498,7 +498,7 @@ TEST(TestValueIterator, TestInvalidObjectPath)
 
     {
         ddwaf::object::value_iterator it(&object, {"key", "0"});
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 0);
@@ -508,7 +508,7 @@ TEST(TestValueIterator, TestInvalidObjectPath)
 
     {
         ddwaf::object::value_iterator it(&object, {"key", "0", "value"});
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 0);
@@ -528,7 +528,7 @@ TEST(TestValueIterator, TestSimplePath)
 
     {
         ddwaf::object::value_iterator it(&object, {"key"});
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
 
         std::vector<std::string> expected_path = {"key"};
         auto path = it.get_current_path();
@@ -540,7 +540,7 @@ TEST(TestValueIterator, TestSimplePath)
 
     {
         ddwaf::object::value_iterator it(&object, {"key", "0"});
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 0);
@@ -550,7 +550,7 @@ TEST(TestValueIterator, TestSimplePath)
 
     {
         ddwaf::object::value_iterator it(&object, {"key", "0", "value"});
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 0);
@@ -578,7 +578,7 @@ TEST(TestValueIterator, TestMultiPath)
 
     {
         ddwaf::object::value_iterator it(&object, {"first"});
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
 
         EXPECT_STREQ((*it)->stringValue, "final");
 
@@ -588,7 +588,7 @@ TEST(TestValueIterator, TestMultiPath)
         EXPECT_EQ(path, expected_path);
 
         EXPECT_TRUE(++it);
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
 
         EXPECT_STREQ((*it)->stringValue, "value_third");
 
@@ -598,7 +598,7 @@ TEST(TestValueIterator, TestMultiPath)
         EXPECT_EQ(path, expected_path);
 
         EXPECT_TRUE(++it);
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
 
         EXPECT_STREQ((*it)->stringValue, "value_second");
 
@@ -612,7 +612,7 @@ TEST(TestValueIterator, TestMultiPath)
 
     {
         ddwaf::object::value_iterator it(&object, {"first", "second"});
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
 
         EXPECT_STREQ((*it)->stringValue, "final");
 
@@ -622,7 +622,7 @@ TEST(TestValueIterator, TestMultiPath)
         EXPECT_EQ(path, expected_path);
 
         EXPECT_TRUE(++it);
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
 
         EXPECT_STREQ((*it)->stringValue, "value_third");
 
@@ -636,7 +636,7 @@ TEST(TestValueIterator, TestMultiPath)
 
     {
         ddwaf::object::value_iterator it(&object, {"first", "second", "third"});
-        EXPECT_TRUE((bool)it);
+        EXPECT_TRUE(it);
 
         EXPECT_STREQ((*it)->stringValue, "final");
 
@@ -688,7 +688,7 @@ TEST(TestValueIterator, TestContainerMixPath)
             ++it;
         }
 
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
     }
 
     {
@@ -719,7 +719,7 @@ TEST(TestValueIterator, TestContainerMixPath)
             ++it;
         }
 
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
     }
 
     ddwaf_object_free(&object);
@@ -745,18 +745,57 @@ TEST(TestValueIterator, TestContainerMixInvalidPath)
 
     {
         ddwaf::object::value_iterator it(&object, {"rat"});
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
     }
 
     {
         ddwaf::object::value_iterator it(&object, {"root", "cat"});
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
     }
 
     {
         ddwaf::object::value_iterator it(&object, {"root", "key2", "key2_2", "0", "1", "2", "3"});
-        EXPECT_FALSE((bool)it);
+        EXPECT_FALSE(it);
     }
 
     ddwaf_object_free(&object);
 }
+
+TEST(TestValueIterator, TestMapDepthLimitPath)
+{
+    ddwaf::object_limits limits;
+
+    ddwaf_object object = readRule(R"(
+        {
+            root: {
+                child: {
+                    grandchild: {
+                        key: value
+                    }
+                }
+            }
+        }
+    )");
+
+    {
+        limits.max_container_depth = 3;
+        ddwaf::object::value_iterator it(&object, {"root", "child", "grandchild"}, limits);
+
+        EXPECT_FALSE(it);
+    }
+
+    {
+        limits.max_container_depth = 4;
+        ddwaf::object::value_iterator it(&object, {"root", "child", "grandchild"}, limits);
+
+        auto it_path = it.get_current_path();
+        std::vector<std::string> path = {"root", "child", "grandchild", "key"};
+        EXPECT_EQ(it_path, path);
+
+        EXPECT_TRUE(it);
+    }
+
+    ddwaf_object_free(&object);
+}
+
+
