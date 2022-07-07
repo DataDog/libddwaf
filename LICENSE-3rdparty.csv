@@ -7,4 +7,5 @@ core,radixlib,BSD-4-Clause,"Copyright (c) 1999-2000 The Regents of the Universit
 core,https://github.com/llvm/llvm-project/libcxx,Apache-2.0,"Copyright (c) 2009-2019 by the contributors listed in CREDITS.TXT"
 core,https://github.com/llvm/llvm-project/libcxxabi,Apache-2.0,"Copyright (c) 2009-2019 by the contributors listed in CREDITS.TXT"
 core,https://github.com/llvm/llvm-project/libunwind,Apache-2.0,"Copyright (c) 2009-2019 by the contributors listed in CREDITS.TXT"
+core,https://github.com/JuliaStrings/utf8proc,MIT,"Copyright (c) 2014-2021 by Steven G. Johnson, Jiahao Chen, Tony Kelman, Jonas Fonseca, and other contributors listed in the git history"
 dev,https://github.com/jbeder/yaml-cpp,MIT,Copyright (c) 2008-2015 Jesse Beder
