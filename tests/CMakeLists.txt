@@ -37,4 +37,7 @@ target_link_libraries(testPowerWAF
     ${LIBDDWAF_PRIVATE_LIBRARIES} ${LIBDDWAF_INTERFACE_LIBRARIES}
     ${LIBDDWAF_EXE_LINKER_FLAGS} lib_yamlcpp)
 
-gtest_discover_tests(testPowerWAF WORKING_DIRECTORY ${libddwaf_SOURCE_DIR}/tests)
+add_custom_target(test
+    COMMAND ${CMAKE_BINARY_DIR}/tests/testPowerWAF
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
+add_dependencies(test testPowerWAF)

@@ -25,7 +25,7 @@ struct MatchGatherer
 {
     std::string resolvedValue;
     std::string matchedValue;
-    std::vector<ddwaf_object> keyPath;
+    std::vector<std::string> keyPath;
     std::string dataSource;
     std::string manifestKey;
 
@@ -59,21 +59,6 @@ public:
      * with a literal. */
     virtual std::string_view operatorName() const = 0;
 };
-
-#define OP_REGEX "@rx"
-#define OP_EQ "@eq"
-#define OP_GT "@gt"
-#define OP_GE "@ge"
-#define OP_LT "@lt"
-#define OP_LE "@le"
-#define OP_SQL "@detectSQLi"
-#define OP_XSS "@detectXSS"
-#define OP_BEGIN "@beginsWith"
-#define OP_CONT "@contains"
-#define OP_END "@endsWith"
-#define OP_PM "@pm"
-#define OP_EXIST "@exist"
-#define OP_IPM "@ipMatch"
 
 #include "libinjection.hpp"
 #include "perf_match.hpp"

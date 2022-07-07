@@ -340,9 +340,9 @@ TEST(TestPWProcessor, TestBudget)
     ddwaf_object_map_add(&param, "rx_param", &mapItem);
 
     PowerWAF* waf = reinterpret_cast<PowerWAF*>(handle);
-    PWRetriever wrapper(waf->manifest);
-    wrapper.addParameter(param);
-    ASSERT_TRUE(wrapper.isValid());
+    ddwaf::object_store store(waf->manifest);
+    store.insert(param);
+    ASSERT_TRUE((bool)store);
 
     //Fetch the rule and flow managers
     auto& flows = waf->flows;
@@ -351,10 +351,10 @@ TEST(TestPWProcessor, TestBudget)
     rapidjson::Document document;
     ddwaf::obfuscator eo;
     PWRetManager rManager(eo);
-    PWProcessor processor(wrapper, rules);
-    processor.startNewRun(ddwaf::monotonic_clock::now() + chrono::microseconds(50));
+    PWProcessor processor(store, waf->manifest, rules);
 
-    processor.runFlow("flow1", flows["flow1"], rManager);
+    auto deadline = ddwaf::monotonic_clock::now() + chrono::microseconds(50);
+    processor.runFlow("flow1", flows["flow1"], rManager, deadline);
     ddwaf_result ret;
     rManager.synthetize(ret);
     EXPECT_EQ(ret.data, nullptr);

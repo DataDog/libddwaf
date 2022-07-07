@@ -11,15 +11,11 @@
 
 using match_status = ddwaf::condition::status;
 
-PWProcessor::PWProcessor(PWRetriever& input, const ddwaf::rule_vector& rules_)
-    : parameters(input), rules(rules_)
+PWProcessor::PWProcessor(ddwaf::object_store& input,
+    const PWManifest& manifest, const ddwaf::rule_vector& rules_)
+    : parameters(input), manifest_(manifest), rules(rules_)
 {
     ranCache.reserve(rules.size());
-}
-
-void PWProcessor::startNewRun(const ddwaf::monotonic_clock::time_point& _deadline)
-{
-    deadline = _deadline;
 }
 
 match_status PWProcessor::hasCacheHit(ddwaf::rule::index_type rule_idx) const
@@ -49,7 +45,8 @@ bool PWProcessor::shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& cond
 
 bool PWProcessor::runFlow(const std::string& name,
                           const ddwaf::rule_ref_vector& flow,
-                          PWRetManager& retManager)
+                          PWRetManager& retManager,
+                          const ddwaf::monotonic_clock::time_point& deadline)
 {
     /*
 	 *	A flow is a sequence of steps
@@ -93,13 +90,18 @@ bool PWProcessor::runFlow(const std::string& name,
 
         retManager.startRule();
 
-        // Actually execute the rule
-        //	We tell the PWRetriever to skip old parameters if this is safe to do so
-        parameters.resetMatchSession(cachedNegativeMatch && rule.conditions.size() == 1);
-
+        // Currently we are not keeping track of which conditions were executed
+        // against the available data, so if a rule has more than one condition
+        // we can't know which one caused the negative match and consequently
+        // we don't know which ones have been executed.
+        //
+        // However if the rule only has one condition and there is a negative
+        // match in the cache, we can safely assume it has already been executed
+        // with existing data.
+        bool run_on_new = cachedNegativeMatch && rule.conditions.size() == 1;
         for (const ddwaf::condition& cond : rule.conditions)
         {
-            status = cond.performMatching(parameters, deadline, retManager);
+            status = cond.performMatching(parameters, manifest_, run_on_new, deadline, retManager);
             //Stop if we didn't matched any of the parameters (2) or that the parameter couldn't be found
             if (status == match_status::no_match)
             {

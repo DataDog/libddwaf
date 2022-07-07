@@ -23,5 +23,4 @@
       code: monitor
     }
   ],
-  expected-fail: true
 }

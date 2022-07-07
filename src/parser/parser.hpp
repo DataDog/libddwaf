@@ -8,7 +8,6 @@
 #define PARSER_HPP
 
 #include <PWManifest.h>
-#include <PWRetriever.hpp>
 #include <parameter.hpp>
 #include <rule.hpp>
 #include <ruleset_info.hpp>

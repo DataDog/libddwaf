@@ -303,6 +303,7 @@ class InitPayloadGenerator:
                     "_sqr_querystring",
                     "removeComments",
                     "numerize",
+                    "keys_only",
                 ],
                 0,
                 self.transformation_max_count,

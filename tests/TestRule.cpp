@@ -38,10 +38,6 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
     PowerWAF* waf         = reinterpret_cast<PowerWAF*>(handle);
     const condition& cond = waf->rules[0].conditions[0];
 
-    //Send garbage input
-    PWRetriever retriever(waf->manifest);
-    PWRetriever::Iterator iterator(retriever);
-
     //Try to trigger a null pointer deref
     ddwaf_object parameter = DDWAF_OBJECT_INVALID;
     const char* val        = "randomString";
@@ -49,18 +45,17 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
     parameter.type        = DDWAF_OBJ_STRING;
     parameter.stringValue = val;
     parameter.nbEntries   = strlen(val);
-    iterator.argsIterator.reset(&parameter);
 
     MatchGatherer gather;
     gather.resolvedValue = "lol";
     gather.matchedValue  = "lol2";
 
-    EXPECT_FALSE(cond.matchWithTransformer(*iterator, gather, false, true));
+    EXPECT_FALSE(cond.matchWithTransformer(&parameter, gather));
     EXPECT_EQ(gather.resolvedValue, "lol");
     EXPECT_EQ(gather.matchedValue, "lol2");
 
     parameter.parameterName = "";
-    EXPECT_FALSE(cond.matchWithTransformer(*iterator, gather, false, true));
+    EXPECT_FALSE(cond.matchWithTransformer(&parameter, gather));
     EXPECT_EQ(gather.resolvedValue, "lol");
     EXPECT_EQ(gather.matchedValue, "lol2");
 

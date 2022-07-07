@@ -136,7 +136,7 @@ extern "C"
     {
         if (result != nullptr)
         {
-            *result = { 0 };
+            *result = {false, nullptr, 0};
         }
 
         if (context == nullptr || data == nullptr)

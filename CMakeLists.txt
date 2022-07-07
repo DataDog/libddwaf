@@ -55,10 +55,6 @@ include(GNUInstallDirs)
 
 add_subdirectory(third_party)
 
-# This adds the option BUILD_TESTING, which we can use to determine if tests
-# should or shouldn't be built
-include(CTest)
-
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
@@ -69,9 +65,10 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/PWManifest.cpp
     ${libddwaf_SOURCE_DIR}/src/PWProcessor.cpp
     ${libddwaf_SOURCE_DIR}/src/PWRet.cpp
-    ${libddwaf_SOURCE_DIR}/src/PWRetriever.cpp
+    ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp
+    ${libddwaf_SOURCE_DIR}/src/iterator.cpp
     ${libddwaf_SOURCE_DIR}/src/PWTransformer.cpp
     ${libddwaf_SOURCE_DIR}/src/utils.cpp
     ${libddwaf_SOURCE_DIR}/src/utf8.cpp
@@ -318,11 +315,8 @@ set(CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION TRUE)
 
 include(CPack)
 
-if(BUILD_TESTING)
-    add_subdirectory(tests EXCLUDE_FROM_ALL)
-    add_subdirectory(validator EXCLUDE_FROM_ALL)
-endif()
-
+add_subdirectory(tests EXCLUDE_FROM_ALL)
+add_subdirectory(validator EXCLUDE_FROM_ALL)
 add_subdirectory(perf EXCLUDE_FROM_ALL)
 add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
 add_subdirectory(examples EXCLUDE_FROM_ALL)

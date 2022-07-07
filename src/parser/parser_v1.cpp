@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <PWManifest.h>
-#include <PWRetriever.hpp>
 #include <exception.hpp>
 #include <log.hpp>
 #include <parameter.hpp>
@@ -133,7 +132,7 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
             else
             {
                 details.inheritFrom = input.substr(0, pos);
-                details.keyPaths.emplace(input.substr(pos + 1, input.size()));
+                details.keyPaths.push_back(input.substr(pos + 1, input.size()));
             }
 
             id = manifest.insert(input, std::move(details));
