@@ -65,8 +65,8 @@ public:
 
 protected:
     template <typename T>
-    status match_target(PWManifest::ARG_ID target, T &it,
-        const ddwaf::manifest &manifest, 
+    status match_target(T &it,
+        const ddwaf::manifest &manifest,
         const ddwaf::manifest::target_info &info,
         const monotonic_clock::time_point& deadline,
         PWRetManager& retManager) const;
