@@ -8,7 +8,7 @@
 
 TEST(TestManifest, TestEmpty)
 {
-    auto manifest = ddwaf::manifest_builder().generate_manifest();
+    auto manifest = ddwaf::manifest_builder().build_manifest();
     EXPECT_FALSE(manifest.contains("path"));
     EXPECT_TRUE(manifest.empty());
 }
@@ -18,7 +18,7 @@ TEST(TestManifest, TestBasic)
     ddwaf::manifest_builder mb;
     mb.insert("path", {});
 
-    auto manifest = mb.generate_manifest();
+    auto manifest = mb.build_manifest();
 
     EXPECT_TRUE(manifest.contains("path"));
     EXPECT_FALSE(manifest.empty());
@@ -45,7 +45,7 @@ TEST(TestManifest, TestMultipleAddrs)
         mb.insert(str, {});
     }
 
-    auto manifest = mb.generate_manifest();
+    auto manifest = mb.build_manifest();
 
     for (auto str : { "path0", "path1", "path2", "path3" })
     {
@@ -75,7 +75,7 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
         targets.emplace(str, mb.insert(str, {"key_path"}));
     }
 
-    auto manifest = mb.generate_manifest();
+    auto manifest = mb.build_manifest();
 
     for (auto &[name, id] : targets)
     {

@@ -90,7 +90,7 @@ PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset,
     try
     {
         parser::parse(ruleset, info, rules, mb, flows);
-        return new PowerWAF(mb.generate_manifest(), std::move(rules),
+        return new PowerWAF(mb.build_manifest(), std::move(rules),
                             std::move(flows), std::move(obf), limits);
     }
     catch (const std::exception& e)

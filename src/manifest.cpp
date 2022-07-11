@@ -36,7 +36,7 @@ manifest::target_type manifest_builder::insert(const std::string& root,
     return {root_id, derived_it->second};
 }
 
-manifest manifest_builder::generate_manifest() {
+manifest manifest_builder::build_manifest() {
     std::unordered_map<std::string, manifest::target_type> targets;
     manifest::target_type::map<manifest::target_info> info;
 

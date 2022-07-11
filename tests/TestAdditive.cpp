@@ -13,7 +13,7 @@ void populateManifest(ddwaf::manifest& manifest)
     {
         mb.insert(key, {});
     }
-    manifest = mb.generate_manifest();
+    manifest = mb.build_manifest();
 }
 
 TEST(TestAdditive, TestMultiCall)

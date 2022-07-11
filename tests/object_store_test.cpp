@@ -15,7 +15,7 @@ TEST(TestObjectStore, InsertInvalidObject)
     auto query_key= mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.generate_manifest();
+    auto manifest = mb.build_manifest();
     object_store store(manifest);
 
     ddwaf_object root = DDWAF_OBJECT_INVALID;
@@ -43,7 +43,7 @@ TEST(TestObjectStore, InsertStringObject)
     auto query_key= mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.generate_manifest();
+    auto manifest = mb.build_manifest();
 
     object_store store(manifest);
 
@@ -73,7 +73,7 @@ TEST(TestObjectStore, InsertAndGetObject)
     auto query_key= mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.generate_manifest();
+    auto manifest = mb.build_manifest();
 
     object_store store(manifest);
 
@@ -104,7 +104,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     auto query_key= mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.generate_manifest();
+    auto manifest = mb.build_manifest();
 
     object_store store(manifest);
 
@@ -165,7 +165,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     auto query_key= mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.generate_manifest();
+    auto manifest = mb.build_manifest();
 
     object_store store(manifest);
 

@@ -124,7 +124,7 @@ public:
     manifest::target_type insert(const std::string& root,
         const std::vector<std::string>& key_path);
 
-    manifest generate_manifest();
+    manifest build_manifest();
 
 protected:
     struct target_spec {
