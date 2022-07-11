@@ -20,11 +20,12 @@
 using ddwaf::parameter;
 using ddwaf::parser::at;
 using ddwaf::manifest;
+using ddwaf::manifest_builder;
 
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule, manifest& manifest,
+ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
     ddwaf::condition::data_source source, std::vector<PW_TRANSFORM_ID>& transformers)
 {
     auto operation = at<std::string_view>(rule, "operator");
@@ -127,16 +128,11 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest& manifest,
         }
 
         manifest::target_type target;
+        // TODO compress all of this into one operation by converting key_path
+        // into a string vector.
         if (key_paths.empty())
         {
-            if (manifest.contains(address))
-            {
-                target = manifest.get_target(address);
-            }
-            else
-            {
-                target = manifest.insert(address, address);
-            }
+            target = mb.insert(address, {});
             targets.push_back(target);
             continue;
         }
@@ -148,15 +144,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest& manifest,
                 throw ddwaf::parsing_error("empty key_path");
             }
 
-            std::string full_address = address + ":" + path;
-            if (manifest.contains(full_address))
-            {
-                target = manifest.get_target(full_address);
-            }
-            else
-            {
-                target = manifest.insert(full_address, address, path);
-            }
+            target = mb.insert(address, {path});
             targets.push_back(target);
         }
     }
@@ -166,7 +154,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest& manifest,
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
-               ddwaf::rule_vector& rules, manifest& manifest,
+               ddwaf::rule_vector& rules, manifest_builder& mb,
                ddwaf::flow_map& flows, std::set<std::string_view> &seen_rules)
 {
     auto id = at<std::string>(rule, "id");
@@ -212,7 +200,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         for (parameter::map cond : conditions_array)
         {
             parsed_rule.conditions.push_back(
-                parseCondition(cond, manifest, source, rule_transformers));
+                parseCondition(cond, mb, source, rule_transformers));
         }
 
         auto tags = at<parameter::map>(rule, "tags");
@@ -249,7 +237,7 @@ namespace ddwaf::parser::v2
 {
 
 void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rules,
-           manifest& manifest, ddwaf::flow_map& flows)
+           manifest_builder& mb, ddwaf::flow_map& flows)
 {
     auto metadata      = at<parameter::map>(ruleset, "metadata", parameter::map());
     auto rules_version = metadata.find("rules_version");
@@ -268,7 +256,7 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rule
     {
         try
         {
-            parseRule(rule, info, rules, manifest, flows, seen_rules);
+            parseRule(rule, info, rules, mb, flows, seen_rules);
         }
         catch (const std::exception& e)
         {

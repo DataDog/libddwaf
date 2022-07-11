@@ -23,8 +23,7 @@ void object_store::insert(const ddwaf_object &input)
     const ddwaf_object* array = input.array;
     objects_.reserve(objects_.size() + entries);
 
-    std::unordered_set<manifest::target_type> new_targets;
-    new_targets.reserve(entries);
+    latest_batch_.reserve(entries);
 
     for (std::size_t i = 0; i < entries; ++i)
     {
@@ -33,16 +32,13 @@ void object_store::insert(const ddwaf_object &input)
         auto target = manifest_.get_target(key);
 
         objects_[target] = &array[i];
-        new_targets.emplace(target);
+        latest_batch_.emplace(target);
     }
-
-    manifest_.find_derived_targets(new_targets, latest_batch_);
 }
 
 const ddwaf_object* object_store::get_target(manifest::target_type target) const
 {
-    const auto& info = manifest_.get_target_info(target);
-    auto it = objects_.find(info.root);
+    auto it = objects_.find(target.root());
     return it != objects_.end() ? it->second : nullptr;
 }
 

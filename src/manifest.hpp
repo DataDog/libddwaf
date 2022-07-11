@@ -16,52 +16,125 @@
 
 #include <ddwaf.h>
 
+namespace std {
+template <>
+struct hash<std::vector<std::string>>
+{
+    std::size_t operator()(const std::vector<std::string>& k) const {
+        std::size_t hash = 0;
+        for (auto &str : k) {
+            hash ^= std::hash<std::string>{}(str);
+        }
+        return hash;
+    }
+};
+}
+
 namespace ddwaf
 {
-class manifest
-{
+class manifest {
 public:
-    using target_type = uint32_t;
-    using target_set = std::unordered_set<target_type>;
     struct target_info {
         std::string name;
-        target_type root;
         std::vector<std::string> key_path;
     };
 
-    manifest() = default;
+    class target_type {
+    public:
+        struct hash {
+            std::size_t operator()(const target_type& k) const {
+                return std::hash<uint32_t>{}(k.id.u32);
+            }
+        };
+
+        template <typename T>
+        using map = std::unordered_map<target_type, T, hash>;
+        using set = std::unordered_set<target_type, hash>;
+
+        target_type() = default;
+        target_type(uint16_t root, uint16_t derived): id({root, derived}){}
+        target_type root() const { return {id.root, 0}; }
+
+        bool operator==(const target_type &o) const { return id.u32 == o.id.u32; }
+        uint32_t value() const { return id.u32; }
+
+        bool is_root() const { return id.derived == 0; }
+
+    protected:
+        union {
+            struct {
+                uint16_t root;
+                uint16_t derived;
+            };
+            uint32_t u32;
+        } id {0, 0};
+    };
+
+    manifest(std::unordered_map<std::string, target_type> &&targets,
+        target_type::map<target_info> &&info):
+        targets_(std::move(targets)), info_(std::move(info))
+    {
+        root_addresses_.reserve(targets_.size());
+        for (auto &[k, v] : targets_) {
+            root_addresses_.push_back(k.c_str());
+        }
+    }
+
     manifest(manifest&&)      = default;
     manifest(const manifest&) = delete;
     manifest& operator=(manifest&&) = default;
     manifest& operator=(const manifest&) = delete;
 
-    target_type insert(const std::string &name, const std::string &root,
-            const std::string &key_path = {});
-
     bool empty() { return targets_.empty(); }
+    bool contains(const std::string& name) {
+        return targets_.find(name) != targets_.end();
+    }
 
-    bool contains(const std::string& name) const;
-    target_type get_target(const std::string& name) const;
-    std::string get_target_name(target_type target) const;
-    const target_info& get_target_info(target_type target) const;
+    target_type get_target(const std::string& name) const {
+        auto it = targets_.find(name);
+        if (it == targets_.end()) {
+            return {};
+        }
+        return it->second;
+    }
 
-    void find_derived_targets(const target_set& root_targets,
-            target_set& derived_targets) const;
+    const target_info& get_target_info(target_type target) const {
+        static target_info empty_info = {};
+        auto it = info_.find(target);
+        if (it == info_.end()) {
+            return empty_info;
+        }
+        return it->second;
+    }
 
-    const std::vector<const char*>& get_root_addresses();
+    const std::vector<const char*>& get_root_addresses() const {
+        return root_addresses_;
+    }
 
 protected:
-
     std::unordered_map<std::string, target_type> targets_{};
-    std::unordered_map<target_type, target_info> info_{};
-    std::unordered_map<target_type, std::unordered_set<target_type>> derived_{};
+    target_type::map<target_info> info_{};
 
-    // Unique set of root addresses
-    std::unordered_set<std::string> root_address_set_{};
     // Root address memory to be returned to the API caller
     std::vector<const char*> root_addresses_;
+};
 
-    target_type target_counter_{1};
+class manifest_builder {
+public:
+    manifest::target_type insert(const std::string& root,
+        const std::vector<std::string>& key_path);
+
+    manifest generate_manifest();
+
+protected:
+    struct target_spec {
+        uint16_t root_id;
+        uint16_t derived_id{0};
+        std::unordered_map<std::vector<std::string>, uint16_t> derived;
+    };
+
+    std::unordered_map<std::string, target_spec> targets_;
+    uint16_t index_{0};
 };
 
 }

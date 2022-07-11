@@ -81,7 +81,7 @@ PowerWAF::PowerWAF(ddwaf::manifest&& manifest_, rule_vector&& rules_,
 PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset,
                                const ddwaf_config* config, ddwaf::ruleset_info& info)
 {
-    ddwaf::manifest manifest;
+    ddwaf::manifest_builder mb;
     rule_vector rules;
     flow_map flows;
     obfuscator obf = obfuscator_from_config(config);
@@ -89,8 +89,8 @@ PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset,
 
     try
     {
-        parser::parse(ruleset, info, rules, manifest, flows);
-        return new PowerWAF(std::move(manifest), std::move(rules),
+        parser::parse(ruleset, info, rules, mb, flows);
+        return new PowerWAF(mb.generate_manifest(), std::move(rules),
                             std::move(flows), std::move(obf), limits);
     }
     catch (const std::exception& e)

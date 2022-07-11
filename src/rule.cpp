@@ -60,8 +60,7 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
 
 template <typename T>
 condition::status condition::match_target(T &it,
-    const ddwaf::manifest &manifest,
-    const ddwaf::manifest::target_info &info,
+    const std::string &name,
     const monotonic_clock::time_point& deadline,
     PWRetManager& retManager) const
 {
@@ -80,7 +79,7 @@ condition::status condition::match_target(T &it,
         if (!matchWithTransformer(*it, gather)) { continue; }
 
         gather.keyPath = it.get_current_path();
-        gather.dataSource = manifest.get_target_name(info.root);
+        gather.dataSource = name;
 
         DDWAF_TRACE("Target %s matched %s out of parameter value %s",
                     gather.dataSource.c_str(),
@@ -119,10 +118,10 @@ condition::status condition::performMatching(object_store& store,
 
         if (source_ == data_source::keys) {
             object::key_iterator it(object, info.key_path);
-            res = match_target(it, manifest, info, deadline, retManager);
+            res = match_target(it, info.name, deadline, retManager);
         } else {
             object::value_iterator it(object, info.key_path);
-            res = match_target(it, manifest, info, deadline, retManager);
+            res = match_target(it, info.name, deadline, retManager);
         }
 
         if (res == status::matched) { return status::matched; }

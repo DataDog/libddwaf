@@ -66,8 +66,7 @@ public:
 protected:
     template <typename T>
     status match_target(T &it,
-        const ddwaf::manifest &manifest,
-        const ddwaf::manifest::target_info &info,
+        const std::string &name,
         const monotonic_clock::time_point& deadline,
         PWRetManager& retManager) const;
 

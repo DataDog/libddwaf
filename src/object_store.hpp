@@ -25,7 +25,7 @@ public:
     const ddwaf_object *get_target(const manifest::target_type target) const;
 
     bool is_new_target(const manifest::target_type target) const {
-        return latest_batch_.find(target) != latest_batch_.cend();
+        return latest_batch_.find(target.root()) != latest_batch_.cend();
     }
 
     bool has_new_targets() const {
@@ -36,21 +36,11 @@ public:
         return !objects_.empty();
     }
 
-    // Convenience functions, only used for testing
-    const ddwaf_object *get_target(const std::string &name) const
-    {
-        return get_target(manifest_.get_target(name));
-    }
-
-    bool is_new_target(const std::string &name) const {
-        return is_new_target(manifest_.get_target(name));
-    }
-
 protected:
     const ddwaf::manifest& manifest_;
 
-    std::unordered_set<manifest::target_type> latest_batch_;
-    std::unordered_map<manifest::target_type, const ddwaf_object*> objects_;
+    manifest::target_type::set latest_batch_;
+    manifest::target_type::map<const ddwaf_object *> objects_;
 };
 
 }

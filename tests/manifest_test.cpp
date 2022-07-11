@@ -6,33 +6,30 @@
 
 #include "test.h"
 
-TEST(TestManifest, TestBasic)
+TEST(TestManifest, TestEmpty)
 {
-    ddwaf::manifest manifest;
+    auto manifest = ddwaf::manifest_builder().generate_manifest();
     EXPECT_FALSE(manifest.contains("path"));
     EXPECT_TRUE(manifest.empty());
+}
 
-    manifest.insert("path", "path");
+TEST(TestManifest, TestBasic)
+{
+    ddwaf::manifest_builder mb;
+    mb.insert("path", {});
+
+    auto manifest = mb.generate_manifest();
 
     EXPECT_TRUE(manifest.contains("path"));
     EXPECT_FALSE(manifest.empty());
 
     auto id  = manifest.get_target("path");
-    auto str = manifest.get_target_name(id);
-
-    EXPECT_STREQ(str.c_str(), "path");
-
     auto info = manifest.get_target_info(id);
     EXPECT_TRUE(info.key_path.empty());
+    EXPECT_STREQ(info.name.c_str(), "path");
+
     // This is it's own root address
-    EXPECT_EQ(info.root, id);
-
-    ddwaf::manifest::target_set new_targets = {id};
-    ddwaf::manifest::target_set derived_targets;
-
-    manifest.find_derived_targets(new_targets, derived_targets);
-    EXPECT_EQ(derived_targets.size(), 1);
-    EXPECT_NE(derived_targets.find(id), derived_targets.end());
+    EXPECT_EQ(id.root(), id);
 
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 1);
@@ -41,26 +38,24 @@ TEST(TestManifest, TestBasic)
 
 TEST(TestManifest, TestMultipleAddrs)
 {
-    ddwaf::manifest manifest;
+    ddwaf::manifest_builder mb;
 
     for (auto str : { "path0", "path1", "path2", "path3" })
     {
-        manifest.insert(str, str);
+        mb.insert(str, {});
+    }
+
+    auto manifest = mb.generate_manifest();
+
+    for (auto str : { "path0", "path1", "path2", "path3" })
+    {
         EXPECT_TRUE(manifest.contains(str));
 
         auto id = manifest.get_target(str);
-
         auto info = manifest.get_target_info(id);
         EXPECT_TRUE(info.key_path.empty());
         // This is it's own root address
-        EXPECT_EQ(info.root, id);
-
-        ddwaf::manifest::target_set new_targets = {id};
-        ddwaf::manifest::target_set derived_targets;
-
-        manifest.find_derived_targets(new_targets, derived_targets);
-        EXPECT_EQ(derived_targets.size(), 1);
-        EXPECT_NE(derived_targets.find(id), derived_targets.end());
+        EXPECT_EQ(id.root(), id);
     }
 
     auto& addresses = manifest.get_root_addresses();
@@ -73,27 +68,22 @@ TEST(TestManifest, TestMultipleAddrs)
 
 TEST(TestManifest, TestMultipleAddrsKeyPath)
 {
-    ddwaf::manifest manifest;
-
-    for (const std::string &str : {"path0", "path1", "path2", "path3"})
+    ddwaf::manifest_builder mb;
+    std::map<std::string, manifest::target_type> targets;
+    for (auto str : { "path0", "path1", "path2", "path3" })
     {
-        std::string new_str = str + ":key_path";
-        auto id = manifest.insert(new_str, str, "key_path");
-        auto root_id = manifest.get_target(str);
+        targets.emplace(str, mb.insert(str, {"key_path"}));
+    }
 
-        EXPECT_TRUE(manifest.contains(new_str));
-        EXPECT_TRUE(manifest.contains(str));
+    auto manifest = mb.generate_manifest();
 
+    for (auto &[name, id] : targets)
+    {
+        auto root_id = manifest.get_target(name);
         auto info = manifest.get_target_info(id);
         EXPECT_EQ(info.key_path.size(), 1);
-        EXPECT_EQ(info.root, root_id);
-
-        ddwaf::manifest::target_set new_targets = {root_id};
-        ddwaf::manifest::target_set derived_targets;
-
-        manifest.find_derived_targets(new_targets, derived_targets);
-        EXPECT_EQ(derived_targets.size(), 1);
-        EXPECT_NE(derived_targets.find(id), derived_targets.end());
+        EXPECT_EQ(id.root(), root_id);
+        EXPECT_STREQ(info.name.c_str(), name.c_str());
     }
 
     auto& addresses = manifest.get_root_addresses();
@@ -105,6 +95,6 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
 
 TEST(TestManifest, TestUnknownArgID)
 {
-    ddwaf::manifest manifest;
-    EXPECT_TRUE(manifest.get_target_name(1729).empty());
+    ddwaf::manifest manifest({}, {});
+    EXPECT_FALSE(manifest.contains({12378, 1238}));
 }

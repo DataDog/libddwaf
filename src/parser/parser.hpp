@@ -18,6 +18,6 @@ namespace ddwaf::parser
 {
 
 void parse(parameter ruleset, ruleset_info& info, rule_vector& rules,
-           ddwaf::manifest& manifest, flow_map& flows);
+           ddwaf::manifest_builder& mb, flow_map& flows);
 
 }
