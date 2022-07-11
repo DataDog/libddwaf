@@ -96,5 +96,5 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
 TEST(TestManifest, TestUnknownArgID)
 {
     ddwaf::manifest manifest({}, {});
-    EXPECT_FALSE(manifest.contains({12378, 1238}));
+    EXPECT_FALSE(manifest.contains({}));
 }
