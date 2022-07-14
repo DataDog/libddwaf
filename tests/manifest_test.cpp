@@ -29,7 +29,7 @@ TEST(TestManifest, TestBasic)
     EXPECT_STREQ(info.name.c_str(), "path");
 
     // This is it's own root address
-    EXPECT_EQ(id.root(), id);
+    EXPECT_EQ(manifest::get_root(id), id);
 
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 1);
@@ -55,7 +55,7 @@ TEST(TestManifest, TestMultipleAddrs)
         auto info = manifest.get_target_info(id);
         EXPECT_TRUE(info.key_path.empty());
         // This is it's own root address
-        EXPECT_EQ(id.root(), id);
+        EXPECT_EQ(manifest::get_root(id), id);
     }
 
     auto& addresses = manifest.get_root_addresses();
@@ -82,7 +82,7 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
         auto root_id = manifest.get_target(name);
         auto info = manifest.get_target_info(id);
         EXPECT_EQ(info.key_path.size(), 1);
-        EXPECT_EQ(id.root(), root_id);
+        EXPECT_EQ(manifest::get_root(id), root_id);
         EXPECT_STREQ(info.name.c_str(), name.c_str());
     }
 

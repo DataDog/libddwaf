@@ -24,7 +24,7 @@ manifest::target_type manifest_builder::insert(const std::string& root,
     auto &[root_id, derived_id, derived_map] = it->second;
 
     if (key_path.empty()) {
-        return {root_id, 0};
+        return generate_target(root_id, 0);
     }
 
     auto derived_it = derived_map.find(key_path);
@@ -33,21 +33,21 @@ manifest::target_type manifest_builder::insert(const std::string& root,
         derived_it = new_it;
     }
 
-    return {root_id, derived_it->second};
+    return generate_target(root_id, derived_it->second);
 }
 
 manifest manifest_builder::build_manifest() {
     std::unordered_map<std::string, manifest::target_type> targets;
-    manifest::target_type::map<manifest::target_info> info;
+    std::unordered_map<manifest::target_type, manifest::target_info> info;
 
     for (auto &[key, spec] : targets_) {
-        manifest::target_type root(spec.root_id, 0);
+        auto root = generate_target(spec.root_id, 0);
 
         targets.emplace(key, root);
         info.emplace(root, manifest::target_info{key, {}});
 
         for (auto &[key_path, derived_id] : spec.derived) {
-            manifest::target_type derived(spec.root_id, derived_id);
+            auto derived = generate_target(spec.root_id, derived_id);
             info.emplace(derived, manifest::target_info{key, key_path});
         }
     }

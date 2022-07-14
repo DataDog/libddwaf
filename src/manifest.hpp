@@ -34,44 +34,14 @@ namespace ddwaf
 {
 class manifest {
 public:
+    using target_type = uint32_t;
     struct target_info {
         std::string name;
         std::vector<std::string> key_path;
     };
 
-    class target_type {
-    public:
-        struct hash {
-            std::size_t operator()(const target_type& k) const {
-                return std::hash<uint32_t>{}(k.id.u32);
-            }
-        };
-
-        template <typename T>
-        using map = std::unordered_map<target_type, T, hash>;
-        using set = std::unordered_set<target_type, hash>;
-
-        target_type() = default;
-        target_type(uint16_t root, uint16_t derived): id({root, derived}){}
-        target_type root() const { return {id.root, 0}; }
-
-        bool operator==(const target_type &o) const { return id.u32 == o.id.u32; }
-        uint32_t value() const { return id.u32; }
-
-        bool is_root() const { return id.derived == 0; }
-
-    protected:
-        union {
-            struct {
-                uint16_t root;
-                uint16_t derived;
-            };
-            uint32_t u32;
-        } id {0, 0};
-    };
-
     manifest(std::unordered_map<std::string, target_type> &&targets,
-        target_type::map<target_info> &&info):
+        std::unordered_map<target_type, target_info> &&info):
         targets_(std::move(targets)), info_(std::move(info))
     {
         root_addresses_.reserve(targets_.size());
@@ -111,9 +81,13 @@ public:
         return root_addresses_;
     }
 
+    static target_type get_root(target_type target) {
+        return target & 0xFFFF0000;
+    }
+
 protected:
     std::unordered_map<std::string, target_type> targets_{};
-    target_type::map<target_info> info_{};
+    std::unordered_map<target_type, target_info> info_{};
 
     // Root address memory to be returned to the API caller
     std::vector<const char*> root_addresses_;
@@ -132,6 +106,11 @@ protected:
         uint16_t derived_id{0};
         std::unordered_map<std::vector<std::string>, uint16_t> derived;
     };
+
+    static constexpr manifest::target_type generate_target(
+        uint16_t root, uint16_t id) {
+        return root << 16 | id;
+    }
 
     std::unordered_map<std::string, target_spec> targets_;
     uint16_t index_{0};

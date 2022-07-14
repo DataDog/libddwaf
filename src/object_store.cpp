@@ -38,7 +38,7 @@ void object_store::insert(const ddwaf_object &input)
 
 const ddwaf_object* object_store::get_target(manifest::target_type target) const
 {
-    auto it = objects_.find(target.root());
+    auto it = objects_.find(manifest::get_root(target));
     return it != objects_.end() ? it->second : nullptr;
 }
 
