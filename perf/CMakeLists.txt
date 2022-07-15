@@ -1,6 +1,7 @@
 file(GLOB_RECURSE LIBDDWAF_BENCHMARK_SOURCE *.cpp)
 
 list(REMOVE_ITEM LIBDDWAF_BENCHMARK_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/benchcmp.cpp)
+list(REMOVE_ITEM LIBDDWAF_BENCHMARK_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/benchmerge.cpp)
 
 add_executable(benchmark ${LIBDDWAF_BENCHMARK_SOURCE})
 target_link_libraries(benchmark PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson m)
