@@ -10,7 +10,7 @@
 #include <rule.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
-#include <validator.hpp>
+#include <limits.hpp>
 
 class PowerWAF
 {

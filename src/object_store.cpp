@@ -11,12 +11,17 @@
 namespace ddwaf
 {
 
-void object_store::insert(const ddwaf_object &input)
+bool object_store::insert(const ddwaf_object &input)
 {
     latest_batch_.clear();
 
-    if (input.type != DDWAF_OBJ_MAP || input.nbEntries == 0) {
-        return;
+    if (input.type != DDWAF_OBJ_MAP) {
+        return false;
+    }
+
+    // Objects with no addresses are considered valid as they are harmless
+    if (input.nbEntries == 0) {
+        return true;
     }
 
     std::size_t entries = static_cast<std::size_t>(input.nbEntries);
@@ -28,12 +33,18 @@ void object_store::insert(const ddwaf_object &input)
     for (std::size_t i = 0; i < entries; ++i)
     {
         auto length = static_cast<std::size_t>(array[i].parameterNameLength);
+        if (array[i].parameterName == NULL || length == 0) {
+            continue;
+        }
+
         std::string key(array[i].parameterName, length);
         auto target = manifest_.get_target(key);
 
         objects_[target] = &array[i];
         latest_batch_.emplace(target);
     }
+
+    return true;
 }
 
 const ddwaf_object* object_store::get_target(manifest::target_type target) const

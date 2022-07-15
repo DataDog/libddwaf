@@ -14,7 +14,6 @@
 PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
     : wafReference(_wafReference),
       wafHandle(_wafReference.get()),
-      object_validator(wafHandle->limits),
       event_obfuscator(wafHandle->event_obfuscator),
       store(wafHandle->manifest),
       processor(store, wafHandle->manifest, wafHandle->rules),
@@ -25,7 +24,6 @@ PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
 
 PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
     : wafHandle((const PowerWAF*) _waf),
-      object_validator(wafHandle->limits),
       event_obfuscator(wafHandle->event_obfuscator),
       store(wafHandle->manifest),
       processor(store, wafHandle->manifest, wafHandle->rules),
@@ -53,8 +51,7 @@ PWAdditive::~PWAdditive()
 DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
                                optional_ref<ddwaf_result> res, uint64_t timeLeft)
 {
-    if (!object_validator.validate(newParameters))
-    {
+    if (!store.insert(newParameters)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         if (obj_free != nullptr)
         {
@@ -63,7 +60,6 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
         return DDWAF_ERR_INVALID_OBJECT;
     }
 
-    store.insert(newParameters);
     if (obj_free != nullptr)
     {
         // Take ownership of newParameters

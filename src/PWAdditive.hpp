@@ -14,7 +14,6 @@
 #include <ddwaf.h>
 #include <optional>
 #include <utils.h>
-#include <validator.hpp>
 #include <obfuscator.hpp>
 
 class PWAdditive
@@ -38,7 +37,6 @@ protected:
 
     std::vector<ddwaf_object> argCache;
 
-    ddwaf::validator object_validator;
     const ddwaf::obfuscator &event_obfuscator;
     ddwaf::object_store store;
     PWProcessor processor;

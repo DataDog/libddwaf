@@ -17,7 +17,7 @@
 #include <IPWRuleProcessor.h>
 #include <manifest.hpp>
 #include <utils.h>
-#include <validator.hpp>
+#include <limits.hpp>
 
 // Eventually object will be a class rather than a namespace
 namespace ddwaf::object
