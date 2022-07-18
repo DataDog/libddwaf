@@ -1,0 +1,19 @@
+{
+  name: "No match within second key path",
+  runs: [
+    {
+      input: {
+        rule14-input: {
+            first: {
+                second: {
+                    rule14: {
+                        other: value
+                    }
+                }
+            }
+        }
+      },
+      code: good
+    }
+  ],
+}

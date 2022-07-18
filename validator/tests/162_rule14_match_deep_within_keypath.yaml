@@ -1,0 +1,34 @@
+{
+  name: "Match deep within key path",
+  runs: [
+    {
+      input: {
+        rule14-input: {
+            first: {
+                second: {
+                    last: {
+                        other: {
+                            whatever: {
+                                rule14: value
+                            }
+                        }
+                    }
+                }
+            }
+        }
+      },
+      rules: [
+        {
+          14: [
+            {
+              address: rule14-input,
+              key_path: [first, second, last, other, whatever, rule14],
+              value: rule14
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

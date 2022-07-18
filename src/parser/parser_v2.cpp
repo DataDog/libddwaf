@@ -127,16 +127,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
             throw ddwaf::parsing_error("empty address");
         }
 
-        manifest::target_type target;
-        // TODO compress all of this into one operation by converting key_path
-        // into a string vector.
-        if (key_paths.empty())
-        {
-            target = mb.insert(address, {});
-            targets.push_back(target);
-            continue;
-        }
-
+        std::vector<std::string> kp;
         for (std::string path : key_paths)
         {
             if (path.empty())
@@ -144,9 +135,11 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
                 throw ddwaf::parsing_error("empty key_path");
             }
 
-            target = mb.insert(address, {path});
-            targets.push_back(target);
+            kp.push_back(std::move(path));
         }
+
+        auto target = mb.insert(address, std::move(kp));
+        targets.push_back(target);
     }
 
     return ddwaf::condition(std::move(targets), std::move(transformers),

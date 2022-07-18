@@ -1,0 +1,17 @@
+{
+  name: "No match within first key path",
+  runs: [
+    {
+      input: {
+        rule14-input: {
+            first: {
+                rule14: {
+                    other: value
+                }
+            }
+        }
+      },
+      code: good
+    }
+  ],
+}
