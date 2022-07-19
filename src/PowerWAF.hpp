@@ -6,7 +6,7 @@
 #pragma once
 
 #include <obfuscator.hpp>
-#include <PWManifest.h>
+#include <manifest.hpp>
 #include <rule.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
@@ -15,7 +15,7 @@
 class PowerWAF
 {
 public:
-    PowerWAF(PWManifest&& manifest_, ddwaf::rule_vector&& rules_,
+    PowerWAF(ddwaf::manifest&& manifest_, ddwaf::rule_vector&& rules_,
              ddwaf::flow_map&& flows_, ddwaf::obfuscator &&event_obfuscator_,
              ddwaf::object_limits limits_ = ddwaf::object_limits());
 
@@ -24,7 +24,7 @@ public:
 
     static constexpr ddwaf_version waf_version { 1, 4, 0 };
 
-    PWManifest manifest;
+    ddwaf::manifest manifest;
     ddwaf::rule_vector rules;
     ddwaf::flow_map flows;
 

@@ -13,7 +13,7 @@
 
 #include <IPWRuleProcessor.h>
 #include <iterator.hpp>
-#include <PWManifest.h>
+#include <manifest.hpp>
 #include <PWRet.hpp>
 #include <object_store.hpp>
 #include <PWTransformer.h>
@@ -34,19 +34,29 @@ public:
         no_match
     };
 
-public:
-    condition(std::vector<PWManifest::ARG_ID>&& targets_,
+    enum class data_source : uint8_t
+    {
+        values,
+        keys
+    };
+
+    condition(std::vector<ddwaf::manifest::target_type>&& targets_,
               std::vector<PW_TRANSFORM_ID>&& transformers,
-              std::unique_ptr<IPWRuleProcessor>&& processor_) : targets(std::move(targets_)),
-                                                                transformation(std::move(transformers)),
-                                                                processor(std::move(processor_)) {}
+              std::unique_ptr<IPWRuleProcessor>&& processor_,
+              data_source source = data_source::values):
+        targets(std::move(targets_)),
+        transformation(std::move(transformers)),
+        processor(std::move(processor_)),
+        source_(source) {}
+
     condition(condition&&) = default;
     condition& operator=(condition&&) = default;
 
     condition(const condition&) = delete;
     condition& operator=(const condition&) = delete;
+
     status performMatching(object_store& store,
-        const PWManifest &manifest, bool run_on_new,
+        const ddwaf::manifest &manifest, bool run_on_new,
         const monotonic_clock::time_point& deadline,
         PWRetManager& retManager) const;
 
@@ -55,14 +65,15 @@ public:
 
 protected:
     template <typename T>
-    status match_target(PWManifest::ARG_ID target, T &it,
-        const PWManifest &manifest, const PWManifest::ArgDetails &details,
+    status match_target(T &it,
+        const std::string &name,
         const monotonic_clock::time_point& deadline,
         PWRetManager& retManager) const;
 
-    std::vector<PWManifest::ARG_ID> targets;
+    std::vector<ddwaf::manifest::target_type> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
     std::unique_ptr<IPWRuleProcessor> processor;
+    data_source source_;
 };
 
 class rule

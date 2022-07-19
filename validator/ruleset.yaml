@@ -153,7 +153,7 @@ rules:
           list:
             - rule11_2
   - id: 12
-    name: rule12-keys-only-with-key-path
+    name: rule12-keys-only-with-keypath
     tags:
       type: flow12
       category: category
@@ -165,6 +165,38 @@ rules:
               key_path:
                 - rule12
           regex: rule12
+    transformers:
+      - keys_only
+  - id: 13
+    name: rule3-basic-single-input-single-multi-keypath
+    tags:
+      type: flow13
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule13-input
+              key_path:
+                - first
+                - second
+                - last
+          regex: rule13
+  - id: 14
+    name: rule14-keys-only-with-multi-keypath
+    tags:
+      type: flow14
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule14-input
+              key_path:
+                - first
+                - second
+                - last
+          regex: rule14
     transformers:
       - keys_only
 

@@ -21,7 +21,7 @@ class PWProcessor
 {
 public:
     PWProcessor(ddwaf::object_store& input,
-        const PWManifest &manifest, const ddwaf::rule_vector& rules);
+        const ddwaf::manifest &manifest, const ddwaf::rule_vector& rules);
     bool runFlow(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,
                  PWRetManager& manager,
@@ -30,7 +30,7 @@ public:
     bool isFirstRun() const;
 protected:
     ddwaf::object_store& parameters;
-    const PWManifest& manifest_;
+    const ddwaf::manifest& manifest_;
     const ddwaf::rule_vector& rules;
 
     std::unordered_map<ddwaf::rule::index_type, ddwaf::condition::status> ranCache;

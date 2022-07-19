@@ -6,12 +6,14 @@
 
 #include "test.h"
 
-void populateManifest(PWManifest& manifest)
+void populateManifest(ddwaf::manifest& manifest)
 {
+    ddwaf::manifest_builder mb;
     for (auto key : { "value", "key", "mixed", "mixed2" })
     {
-        manifest.insert(key, PWManifest::ArgDetails(key, PWT_VALUES_ONLY));
+        mb.insert(key, {});
     }
+    manifest = mb.build_manifest();
 }
 
 TEST(TestAdditive, TestMultiCall)

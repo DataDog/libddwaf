@@ -62,7 +62,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/PowerWAFInterface.cpp
     ${libddwaf_SOURCE_DIR}/src/PWAdditive.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
-    ${libddwaf_SOURCE_DIR}/src/PWManifest.cpp
+    ${libddwaf_SOURCE_DIR}/src/manifest.cpp
     ${libddwaf_SOURCE_DIR}/src/PWProcessor.cpp
     ${libddwaf_SOURCE_DIR}/src/PWRet.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp

@@ -12,7 +12,7 @@
 using match_status = ddwaf::condition::status;
 
 PWProcessor::PWProcessor(ddwaf::object_store& input,
-    const PWManifest& manifest, const ddwaf::rule_vector& rules_)
+    const ddwaf::manifest& manifest, const ddwaf::rule_vector& rules_)
     : parameters(input), manifest_(manifest), rules(rules_)
 {
     ranCache.reserve(rules.size());

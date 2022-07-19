@@ -8,7 +8,9 @@
 
 using namespace ddwaf;
 
-void compareArraysOfTargets(const PWManifest& manifest, const rapidjson::Value& _array1, const vector<PWManifest::ARG_ID>& array2)
+void compareArraysOfTargets(const ddwaf::manifest& manifest,
+    const rapidjson::Value& _array1,
+    const std::vector<ddwaf::manifest::target_type>& array2)
 {
     const auto& array1 = _array1.GetArray();
 
@@ -16,7 +18,7 @@ void compareArraysOfTargets(const PWManifest& manifest, const rapidjson::Value& 
 
     for (uint32_t i = 0, length = array1.Size(); i < length; ++i)
     {
-        EXPECT_EQ(manifest.getTargetArgID(array1[i].GetString()), array2[i]);
+        EXPECT_EQ(manifest.get_target(array1[i].GetString()), array2[i]);
     }
 }
 

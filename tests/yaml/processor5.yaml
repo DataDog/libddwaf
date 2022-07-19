@@ -12,6 +12,8 @@ rules:
             - address: param
               key_path:
                 - x
+            - address: param
+              key_path:
                 - y
           regex: Sqreen
   - id: 2

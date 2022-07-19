@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <PWManifest.h>
+#include <manifest.hpp>
 #include <exception.hpp>
 #include <log.hpp>
 #include <parameter.hpp>
@@ -19,12 +19,14 @@
 
 using ddwaf::parameter;
 using ddwaf::parser::at;
+using ddwaf::manifest;
+using ddwaf::manifest_builder;
 
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
-                                PW_TRANSFORM_ID inline_transformer, std::vector<PW_TRANSFORM_ID>& transformers)
+ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
+    ddwaf::condition::data_source source, std::vector<PW_TRANSFORM_ID>& transformers)
 {
     auto operation = at<std::string_view>(rule, "operator");
     auto params    = at<parameter::map>(rule, "parameters");
@@ -108,7 +110,7 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
     }
 
-    std::vector<PWManifest::ARG_ID> targets;
+    std::vector<manifest::target_type> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
     if (inputs.empty())
     {
@@ -125,21 +127,7 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
             throw ddwaf::parsing_error("empty address");
         }
 
-        PWManifest::ARG_ID id;
-        if (key_paths.empty())
-        {
-            if (manifest.hasTarget(address, inline_transformer))
-            {
-                id = manifest.getTargetArgID(address, inline_transformer);
-            }
-            else
-            {
-                id = manifest.insert(address, PWManifest::ArgDetails(address, inline_transformer));
-            }
-            targets.push_back(id);
-            continue;
-        }
-
+        std::vector<std::string> kp;
         for (std::string path : key_paths)
         {
             if (path.empty())
@@ -147,25 +135,19 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
                 throw ddwaf::parsing_error("empty key_path");
             }
 
-            std::string full_address = address + ":" + path;
-            if (manifest.hasTarget(full_address, inline_transformer))
-            {
-                id = manifest.getTargetArgID(full_address, inline_transformer);
-            }
-            else
-            {
-                id = manifest.insert(full_address,
-                                     PWManifest::ArgDetails(address, path, inline_transformer));
-            }
-            targets.push_back(id);
+            kp.push_back(std::move(path));
         }
+
+        auto target = mb.insert(address, std::move(kp));
+        targets.push_back(target);
     }
 
-    return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor));
+    return ddwaf::condition(std::move(targets), std::move(transformers),
+                std::move(processor), source);
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
-               ddwaf::rule_vector& rules, PWManifest& manifest,
+               ddwaf::rule_vector& rules, manifest_builder& mb,
                ddwaf::flow_map& flows, std::set<std::string_view> &seen_rules)
 {
     auto id = at<std::string>(rule, "id");
@@ -181,7 +163,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         ddwaf::rule parsed_rule;
 
         std::vector<PW_TRANSFORM_ID> rule_transformers;
-        PW_TRANSFORM_ID inline_transformer = PWT_VALUES_ONLY;
+        auto source = ddwaf::condition::data_source::values;
         auto transformers                  = at<parameter::vector>(rule, "transformers", parameter::vector());
         for (std::string_view transformer : transformers)
         {
@@ -198,7 +180,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
                                "in the list, all transformers will be applied to "
                                "keys and not values");
                 }
-                inline_transformer = PWT_KEYS_ONLY;
+                source = ddwaf::condition::data_source::keys;
             }
             else
             {
@@ -211,7 +193,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         for (parameter::map cond : conditions_array)
         {
             parsed_rule.conditions.push_back(
-                parseCondition(cond, manifest, inline_transformer, rule_transformers));
+                parseCondition(cond, mb, source, rule_transformers));
         }
 
         auto tags = at<parameter::map>(rule, "tags");
@@ -248,7 +230,7 @@ namespace ddwaf::parser::v2
 {
 
 void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rules,
-           PWManifest& manifest, ddwaf::flow_map& flows)
+           manifest_builder& mb, ddwaf::flow_map& flows)
 {
     auto metadata      = at<parameter::map>(ruleset, "metadata", parameter::map());
     auto rules_version = metadata.find("rules_version");
@@ -267,7 +249,7 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rule
     {
         try
         {
-            parseRule(rule, info, rules, manifest, flows, seen_rules);
+            parseRule(rule, info, rules, mb, flows, seen_rules);
         }
         catch (const std::exception& e)
         {

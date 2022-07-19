@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef PARSER_COMMON_H
-#define PARSER_COMMON_H
+#pragma once
 
 #include <exception.hpp>
 #include <parameter.hpp>
@@ -45,4 +44,3 @@ T at(parameter::map& map, const std::string& key, const T& default_)
 }
 
 }
-#endif

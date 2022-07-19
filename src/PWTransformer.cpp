@@ -1309,7 +1309,7 @@ bool PWTransformer::transformURLQueryString(ddwaf_object* parameter, bool readOn
 
             // If we had a query string, skip past the `?`
             // Otherwise, we want the copy loop to abort immediately
-            if (array[read] == '?')
+            if (read < length && array[read] == '?')
             {
                 read += 1;
             }

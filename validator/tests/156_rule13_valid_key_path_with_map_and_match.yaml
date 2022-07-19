@@ -1,0 +1,35 @@
+{
+  name: "Valid key-path and match",
+  runs: [
+    {
+      input: {
+        rule13-input: {
+          first: {
+            second: {
+                last: {
+                    other: rule13
+                }
+            }
+          }
+        }
+      },
+      rules: [
+        {
+          13: [
+            {
+              address: rule13-input,
+              key_path: [
+                first,
+                second,
+                last,
+                other
+              ],
+              value: rule13
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ],
+}

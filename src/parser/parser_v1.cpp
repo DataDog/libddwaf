@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <PWManifest.h>
+#include <manifest.hpp>
 #include <exception.hpp>
 #include <log.hpp>
 #include <parameter.hpp>
@@ -18,11 +18,13 @@
 
 using ddwaf::parameter;
 using ddwaf::parser::at;
+using ddwaf::manifest;
+using ddwaf::manifest_builder;
 
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
+ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
                                 std::vector<PW_TRANSFORM_ID>& transformers)
 {
     auto operation = at<std::string_view>(rule, "operation");
@@ -107,7 +109,7 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
     }
 
-    std::vector<PWManifest::ARG_ID> targets;
+    std::vector<manifest::target_type> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
     for (std::string input : inputs)
     {
@@ -116,35 +118,32 @@ ddwaf::condition parseCondition(parameter::map& rule, PWManifest& manifest,
             throw ddwaf::parsing_error("empty address");
         }
 
-        PWManifest::ARG_ID id;
-        if (manifest.hasTarget(input))
+        std::string root, key_path;
+        size_t pos = input.find(':', 0);
+        if (pos == std::string::npos || pos + 1 >= input.size())
         {
-            id = manifest.getTargetArgID(input);
+            root = input;
         }
         else
         {
-            PWManifest::ArgDetails details;
-            size_t pos = input.find(':', 0);
-            if (pos == std::string::npos || pos + 1 >= input.size())
-            {
-                details.inheritFrom = input;
-            }
-            else
-            {
-                details.inheritFrom = input.substr(0, pos);
-                details.keyPaths.push_back(input.substr(pos + 1, input.size()));
-            }
-
-            id = manifest.insert(input, std::move(details));
+            root = input.substr(0, pos);
+            key_path = input.substr(pos + 1, input.size());
         }
-        targets.push_back(id);
+
+        manifest::target_type target;
+        if (key_path.empty()) {
+            target = mb.insert(root, {});
+        } else {
+            target = mb.insert(root, {key_path});
+        }
+        targets.push_back(target);
     }
 
     return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor));
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
-               ddwaf::rule_vector& rules, PWManifest& manifest,
+               ddwaf::rule_vector& rules, manifest_builder& mb,
                ddwaf::flow_map& flows, std::set<std::string_view> &seen_rules)
 {
     auto id = at<std::string>(rule, "id");
@@ -176,7 +175,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         for (parameter::map cond : conditions_array)
         {
             parsed_rule.conditions.push_back(
-                parseCondition(cond, manifest, rule_transformers));
+                parseCondition(cond, mb, rule_transformers));
         }
 
         auto tags = at<parameter::map>(rule, "tags");
@@ -213,7 +212,7 @@ namespace ddwaf::parser::v1
 {
 
 void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rules,
-           PWManifest& manifest, ddwaf::flow_map& flows)
+           manifest_builder& mb, ddwaf::flow_map& flows)
 {
     auto rules_array = at<parameter::vector>(ruleset, "events");
     // Note that reserving elements is required to ensure all references
@@ -225,7 +224,7 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rule
     {
         try
         {
-            parseRule(rule, info, rules, manifest, flows, seen_rules);
+            parseRule(rule, info, rules, mb, flows, seen_rules);
         }
         catch (const std::exception& e)
         {

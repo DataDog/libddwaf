@@ -23,37 +23,23 @@ void object_store::insert(const ddwaf_object &input)
     const ddwaf_object* array = input.array;
     objects_.reserve(objects_.size() + entries);
 
-    std::unordered_set<std::string> keys;
-    keys.reserve(entries);
+    latest_batch_.reserve(entries);
 
     for (std::size_t i = 0; i < entries; ++i)
     {
         auto length = static_cast<std::size_t>(array[i].parameterNameLength);
         std::string key(array[i].parameterName, length);
+        auto target = manifest_.get_target(key);
 
-        objects_[key] = &array[i];
-        keys.emplace(std::move(key));
+        objects_[target] = &array[i];
+        latest_batch_.emplace(target);
     }
-
-    manifest_.findImpactedArgs(keys, latest_batch_);
 }
 
-const ddwaf_object* object_store::get_target(const PWManifest::ARG_ID target) const
+const ddwaf_object* object_store::get_target(manifest::target_type target) const
 {
-    const auto& details = manifest_.getDetailsForTarget(target);
-
-    auto param = objects_.find(details.inheritFrom);
-    if (param == objects_.end())
-    {
-        return nullptr;
-    }
-
-    return param->second;
-}
-
-const ddwaf_object *object_store::get_target(const std::string & target) const
-{
-    return get_target(manifest_.getTargetArgID(target));
+    auto it = objects_.find(manifest::get_root(target));
+    return it != objects_.end() ? it->second : nullptr;
 }
 
 }

@@ -1,10 +1,12 @@
 {
-  name: "Match key below key path",
+  name: "No match within key path",
   runs: [
     {
       input: {
         rule12-input: {
-            rule12: value
+            rule12: {
+                other: value
+            }
         }
       },
       code: good
