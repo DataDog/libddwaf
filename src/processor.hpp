@@ -4,10 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef PWProcessor_hpp
-#define PWProcessor_hpp
+#pragma once
 
-#include <rapidjson/document.h>
 #include <string>
 #include <unordered_map>
 
@@ -17,11 +15,13 @@
 #include <rule.hpp>
 #include <utils.h>
 
-class PWProcessor
+namespace ddwaf
+{
+
+class processor
 {
 public:
-    PWProcessor(ddwaf::object_store& input,
-        const ddwaf::manifest &manifest, const ddwaf::rule_vector& rules);
+    processor(ddwaf::object_store& input, const ddwaf::manifest &manifest);
     bool runFlow(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,
                  PWRetManager& manager,
@@ -31,7 +31,6 @@ public:
 protected:
     ddwaf::object_store& parameters;
     const ddwaf::manifest& manifest_;
-    const ddwaf::rule_vector& rules;
 
     std::unordered_map<ddwaf::rule::index_type, ddwaf::condition::status> ranCache;
 
@@ -46,4 +45,4 @@ protected:
 
 };
 
-#endif /* PWProcessor_hpp */
+}

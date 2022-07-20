@@ -33,7 +33,6 @@ size_t findStringCutoff(const char* str, size_t length);
 
 // Rule constants
 #define MAX_MATCH_COUNT 16 // Match the type size of RuleMatchTarget::matchGroup, don't increase past 16 without carefully updating the code
-#define ADDITIVE_BUFFER_PREALLOC 8
 #define TIME_STORE_DEFAULT 5
 
 // Flow steps

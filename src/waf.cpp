@@ -8,9 +8,9 @@
 #include <unordered_map>
 
 #include "clock.hpp"
-#include <PWProcessor.hpp>
+#include <processor.hpp>
 #include <PWRet.hpp>
-#include <PowerWAF.hpp>
+#include <waf.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>
 #include <iostream>
@@ -20,8 +20,10 @@
 #include <stdexcept>
 #include <utils.h>
 
-using namespace ddwaf;
 using namespace std::literals;
+
+namespace ddwaf
+{
 
 namespace {
 obfuscator obfuscator_from_config(const ddwaf_config* config)
@@ -68,30 +70,31 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
 
 }
 
-PowerWAF::PowerWAF(ddwaf::manifest&& manifest_, rule_vector&& rules_,
-                   flow_map&& flows_, ddwaf::obfuscator &&event_obfuscator_,
-                   object_limits limits_)
+waf::waf(ddwaf::manifest&& manifest_, rule_vector&& rules_,
+        flow_map&& flows_, ddwaf_object_free_fn free_fn,
+        ddwaf::obfuscator &&event_obfuscator_, object_limits limits_)
     : manifest(std::move(manifest_)),
       rules(std::move(rules_)),
       flows(std::move(flows_)),
+      obj_free(free_fn),
       event_obfuscator(std::move(event_obfuscator_)),
       limits(limits_)
 {}
 
-PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset,
-                               const ddwaf_config* config, ddwaf::ruleset_info& info)
+waf* waf::fromConfig(const ddwaf_object ruleset,
+    const ddwaf_config* config, ddwaf::ruleset_info& info)
 {
     ddwaf::manifest_builder mb;
     rule_vector rules;
     flow_map flows;
     obfuscator obf = obfuscator_from_config(config);
     object_limits limits = limits_from_config(config);
-
+    ddwaf_object_free_fn free_fn = config ? config->free_fn : ddwaf_object_free;
     try
     {
         parser::parse(ruleset, info, rules, mb, flows);
-        return new PowerWAF(mb.build_manifest(), std::move(rules),
-                            std::move(flows), std::move(obf), limits);
+        return new waf(mb.build_manifest(), std::move(rules),
+                     std::move(flows), free_fn, std::move(obf), limits);
     }
     catch (const std::exception& e)
     {
@@ -99,4 +102,9 @@ PowerWAF* PowerWAF::fromConfig(const ddwaf_object ruleset,
     }
 
     return nullptr;
+}
+
+ddwaf::context waf::get_context() {
+    return ddwaf::context(manifest, flows, event_obfuscator, limits, obj_free);
+}
 }

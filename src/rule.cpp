@@ -7,7 +7,7 @@
 #include <rule.hpp>
 
 #include <IPWRuleProcessor.h>
-#include <PowerWAF.hpp>
+#include <waf.hpp>
 
 #include "clock.hpp"
 #include <log.hpp>

@@ -4,21 +4,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <PWProcessor.hpp>
+#include <processor.hpp>
 #include <PWRet.hpp>
 #include <ddwaf.h>
 #include <log.hpp>
 
 using match_status = ddwaf::condition::status;
 
-PWProcessor::PWProcessor(ddwaf::object_store& input,
-    const ddwaf::manifest& manifest, const ddwaf::rule_vector& rules_)
-    : parameters(input), manifest_(manifest), rules(rules_)
-{
-    ranCache.reserve(rules.size());
-}
+namespace ddwaf {
+processor::processor(ddwaf::object_store& input, const ddwaf::manifest& manifest)
+: parameters(input), manifest_(manifest) {}
 
-match_status PWProcessor::hasCacheHit(ddwaf::rule::index_type rule_idx) const
+match_status processor::hasCacheHit(ddwaf::rule::index_type rule_idx) const
 {
     const auto cacheHit = ranCache.find(rule_idx);
     if (cacheHit != ranCache.end())
@@ -29,7 +26,7 @@ match_status PWProcessor::hasCacheHit(ddwaf::rule::index_type rule_idx) const
     return match_status::invalid;
 }
 
-bool PWProcessor::shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& conditions) const
+bool processor::shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& conditions) const
 {
     for (const ddwaf::condition& cond : conditions)
     {
@@ -43,7 +40,7 @@ bool PWProcessor::shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& cond
     return false;
 }
 
-bool PWProcessor::runFlow(const std::string& name,
+bool processor::runFlow(const std::string& name,
                           const ddwaf::rule_ref_vector& flow,
                           PWRetManager& retManager,
                           const ddwaf::monotonic_clock::time_point& deadline)
@@ -152,7 +149,9 @@ bool PWProcessor::runFlow(const std::string& name,
     return true;
 }
 
-bool PWProcessor::isFirstRun() const
+bool processor::isFirstRun() const
 {
     return ranCache.empty();
+}
+
 }

@@ -5,29 +5,38 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <context.hpp>
 #include <obfuscator.hpp>
+#include <limits.hpp>
 #include <manifest.hpp>
 #include <rule.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
-#include <limits.hpp>
+#include <version.hpp>
 
-class PowerWAF
+namespace ddwaf
+{
+
+class waf
 {
 public:
-    PowerWAF(ddwaf::manifest&& manifest_, ddwaf::rule_vector&& rules_,
-             ddwaf::flow_map&& flows_, ddwaf::obfuscator &&event_obfuscator_,
+    waf(ddwaf::manifest&& manifest_, ddwaf::rule_vector&& rules_,
+             ddwaf::flow_map&& flows_, ddwaf_object_free_fn free_fn,
+             ddwaf::obfuscator &&event_obfuscator_,
              ddwaf::object_limits limits_ = ddwaf::object_limits());
 
-    static PowerWAF* fromConfig(const ddwaf_object rules,
-                                const ddwaf_config* config, ddwaf::ruleset_info& info);
+    static waf* fromConfig(const ddwaf_object rules,
+        const ddwaf_config* config, ddwaf::ruleset_info& info);
 
-    static constexpr ddwaf_version waf_version { 1, 4, 0 };
+    ddwaf::context get_context();
 
     ddwaf::manifest manifest;
     ddwaf::rule_vector rules;
     ddwaf::flow_map flows;
+    ddwaf_object_free_fn obj_free;
 
-    ddwaf::obfuscator event_obfuscator;
-    ddwaf::object_limits limits;
+    const ddwaf::obfuscator event_obfuscator;
+    const ddwaf::object_limits limits;
 };
+
+}

@@ -6,64 +6,32 @@
 
 #include <log.hpp>
 
-#include <PWAdditive.hpp>
+#include <context.hpp>
 #include <PWRet.hpp>
 #include <tuple>
 #include <utils.h>
 
-PWAdditive::PWAdditive(std::shared_ptr<PowerWAF> _wafReference)
-    : wafReference(_wafReference),
-      wafHandle(_wafReference.get()),
-      event_obfuscator(wafHandle->event_obfuscator),
-      store(wafHandle->manifest),
-      processor(store, wafHandle->manifest, wafHandle->rules),
-      obj_free(ddwaf_object_free)
+namespace ddwaf
 {
-    argCache.reserve(ADDITIVE_BUFFER_PREALLOC);
+
+context::context(ddwaf::manifest &manifest, ddwaf::flow_map &flows,
+  const ddwaf::obfuscator &obfuscator, const ddwaf::object_limits &limits,
+  ddwaf_object_free_fn free_fn):
+    manifest_(manifest),
+    flows_(flows),
+    event_obfuscator_(obfuscator),
+    limits_(limits),
+    store_(manifest_, free_fn),
+    processor_(store_, manifest_)
+{
 }
 
-PWAdditive::PWAdditive(const ddwaf_handle _waf, ddwaf_object_free_fn free_fn)
-    : wafHandle((const PowerWAF*) _waf),
-      event_obfuscator(wafHandle->event_obfuscator),
-      store(wafHandle->manifest),
-      processor(store, wafHandle->manifest, wafHandle->rules),
-      obj_free(free_fn)
-{
-    if (obj_free != nullptr)
-    {
-        argCache.reserve(ADDITIVE_BUFFER_PREALLOC);
-    }
-}
-
-PWAdditive::~PWAdditive()
-{
-    if (obj_free == nullptr)
-    {
-        return;
-    }
-
-    for (ddwaf_object& arg : argCache)
-    {
-        obj_free(&arg);
-    }
-}
-
-DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
+DDWAF_RET_CODE context::run(ddwaf_object newParameters,
                                optional_ref<ddwaf_result> res, uint64_t timeLeft)
 {
-    if (!store.insert(newParameters)) {
+    if (!store_.insert(newParameters)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        if (obj_free != nullptr)
-        {
-            obj_free(&newParameters);
-        }
         return DDWAF_ERR_INVALID_OBJECT;
-    }
-
-    if (obj_free != nullptr)
-    {
-        // Take ownership of newParameters
-        argCache.emplace_back(newParameters);
     }
 
     // If the timeout provided is 0, we need to ensure the parameters are owned
@@ -83,15 +51,15 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     const auto deadline = start + std::chrono::microseconds(timeLeft);
 
     // If this is a new run but no rule care about those new params, let's skip the run
-    if (!processor.isFirstRun() && !store.has_new_targets())
+    if (!processor_.isFirstRun() && !store_.has_new_targets())
     {
         return DDWAF_GOOD;
     }
 
-    PWRetManager retManager(event_obfuscator);
-    for (const auto& [key, flow] : wafHandle->flows)
+    PWRetManager retManager(event_obfuscator_);
+    for (const auto& [key, flow] : flows_)
     {
-        if (!processor.runFlow(key, flow, retManager, deadline))
+        if (!processor_.runFlow(key, flow, retManager, deadline))
         {
             break;
         }
@@ -106,4 +74,6 @@ DDWAF_RET_CODE PWAdditive::run(ddwaf_object newParameters,
     }
 
     return code;
+}
+
 }

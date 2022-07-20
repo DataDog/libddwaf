@@ -25,5 +25,7 @@ perf/test_files/breakdown.numbers
 /fuzzing/fuzz-*.log
 /fuzzing/results/crash-*
 
+/src/version.hpp
+
 *.trace
 .vscode

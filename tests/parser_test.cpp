@@ -8,7 +8,7 @@
 
 void run_test(ddwaf_handle handle)
 {
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object param, arg2, tmp;

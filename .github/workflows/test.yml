@@ -61,7 +61,7 @@ jobs:
           CC: gcc-9
           CXX: g++-9
         run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug
+          cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
         working-directory: Debug
 
       - name: Build

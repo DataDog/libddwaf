@@ -3,7 +3,8 @@ include(GoogleTest)
 file(GLOB_RECURSE LIBDDWAF_TEST_SOURCE *.cpp)
 add_executable(testPowerWAF ${LIBDDWAF_SOURCE} ${LIBDDWAF_TEST_SOURCE})
 
-option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" ON)
+option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
+
 set_target_properties(testPowerWAF PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED YES

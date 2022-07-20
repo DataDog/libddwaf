@@ -32,8 +32,6 @@ TEST(TestObjectStore, InsertInvalidObject)
     EXPECT_EQ(store.get_target(query_key), nullptr);
     EXPECT_EQ(store.get_target(url), nullptr);
     EXPECT_EQ(store.get_target(url_key), nullptr);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectStore, InsertMalformedMap)
@@ -49,8 +47,6 @@ TEST(TestObjectStore, InsertMalformedMap)
     EXPECT_FALSE(store.insert(root));
 
     EXPECT_FALSE((bool)store);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectStore, InsertMalformedMapKey)
@@ -69,8 +65,6 @@ TEST(TestObjectStore, InsertMalformedMapKey)
 
     EXPECT_TRUE(store.insert(root));
     EXPECT_FALSE((bool)store);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectStore, InsertStringObject)
@@ -99,8 +93,6 @@ TEST(TestObjectStore, InsertStringObject)
     EXPECT_EQ(store.get_target(query_key), nullptr);
     EXPECT_EQ(store.get_target(url), nullptr);
     EXPECT_EQ(store.get_target(url_key), nullptr);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectStore, InsertAndGetObject)
@@ -130,8 +122,6 @@ TEST(TestObjectStore, InsertAndGetObject)
     EXPECT_NE(store.get_target(query_key), nullptr);
     EXPECT_EQ(store.get_target(url), nullptr);
     EXPECT_EQ(store.get_target(url_key), nullptr);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectStore, InsertMultipleUniqueObjects)
@@ -190,9 +180,6 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_NE(store.get_target(query_key), nullptr);
     EXPECT_NE(store.get_target(url), nullptr);
     EXPECT_NE(store.get_target(url_key), nullptr);
-
-    ddwaf_object_free(&first);
-    ddwaf_object_free(&second);
 }
 
 TEST(TestObjectStore, InsertMultipleOverlappingObjects)
@@ -304,8 +291,4 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "bye");
     }
-
-    ddwaf_object_free(&first);
-    ddwaf_object_free(&second);
-    ddwaf_object_free(&third);
 }

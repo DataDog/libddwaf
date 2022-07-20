@@ -54,7 +54,7 @@ bool test_runner::run_test(const YAML::Node &runs)
     bool passed = false;
     std::unique_ptr<std::remove_pointer<ddwaf_context>::type,
         decltype(&ddwaf_context_destroy)>
-        ctx(ddwaf_context_init(handle_, ddwaf_object_free),
+        ctx(ddwaf_context_init(handle_),
             ddwaf_context_destroy);
 
     ddwaf_result res_mem{false, nullptr, 0};

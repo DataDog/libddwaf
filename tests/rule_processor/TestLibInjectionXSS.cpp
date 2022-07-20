@@ -33,7 +33,7 @@ TEST(TestLibInjectionXSS, TestRuleset)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object param, tmp;

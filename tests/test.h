@@ -27,9 +27,8 @@
 #include <rapidjson/prettywriter.h>
 using namespace std;
 
-class PowerWAF;
-#include <PWAdditive.hpp>
-#include <PowerWAF.hpp>
+#include <waf.hpp>
+#include <context.hpp>
 #include <clock.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>
@@ -55,7 +54,6 @@ using namespace ddwaf;
 extern ddwaf_object readFile(const char* filename);
 extern ddwaf_object readRule(const char* rule);
 extern void compareData(const char* rulename, ddwaf_object input, size_t time, const char* expectedOutput);
-extern std::unordered_map<std::string, std::shared_ptr<PowerWAF>>& exportInternalRuleCollection();
 
 namespace YAML
 {

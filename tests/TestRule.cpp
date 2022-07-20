@@ -35,11 +35,11 @@ TEST(TestRule, TestRuleDoMatchInvalidParameters)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule_);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     //Access the rule
-    PowerWAF* waf         = reinterpret_cast<PowerWAF*>(handle);
+    ddwaf::waf* waf         = reinterpret_cast<ddwaf::waf*>(handle);
     const condition& cond = waf->rules[0].conditions[0];
 
     //Try to trigger a null pointer deref

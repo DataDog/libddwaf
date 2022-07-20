@@ -144,7 +144,7 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 		for (YAML::const_iterator vector = matches.begin(); vector != matches.end(); ++vector, ++counter) {
 			ddwaf_object root = vector->as<ddwaf_object>();
 			if(root.type != DDWAF_OBJ_INVALID) {
-				ddwaf_context ctx = ddwaf_context_init(handle, ddwaf_object_free);
+				ddwaf_context ctx = ddwaf_context_init(handle);
 				DDWAF_RET_CODE ret = ddwaf_run(ctx, &root, nullptr, LONG_TIME);
 				
 				bool hadError = ret < DDWAF_GOOD;

@@ -14,7 +14,7 @@ TEST(TestRegressions, TruncatedUTF8)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     char buffer[DDWAF_MAX_STRING_LENGTH + 4] = { 0 };
@@ -48,7 +48,7 @@ TEST(TestRegressions, DuplicateFlowMatches)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     //Setup the parameter structure
