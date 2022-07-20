@@ -36,13 +36,6 @@ protected:
 
     ddwaf::condition::status hasCacheHit(ddwaf::rule::index_type rule_idx) const;
     bool shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& rules) const;
-
-#ifdef TESTING
-    FRIEND_TEST(TestPWProcessor, TestCache);
-    FRIEND_TEST(TestPWProcessor, TestMultiFlowCacheReport);
-    FRIEND_TEST(TestPWProcessor, TestCacheReport);
-#endif
-
 };
 
 }

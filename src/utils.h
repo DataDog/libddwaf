@@ -55,18 +55,6 @@ size_t findStringCutoff(const char* str, size_t length);
 // - exit_report_signal (report the request through a signal format defined in the rule)
 // - exit_pentest (pentest: Sqreen should monitor but don't block the request)
 
-#if defined(TESTING) && !defined(FRIEND_TEST)
-// The build system to get gtest is more trouble than it's worth for a single define used only for testing
-//#include <gtest/gtest_prod.h>
-#define FRIEND_TEST(test_case_name, test_name) friend class test_case_name##_##test_name##_Test
-#endif
-
-#ifdef TESTING
-#define PROD_STATIC
-#else
-#define PROD_STATIC static
-#endif
-
 // IP Utils
 typedef struct
 {

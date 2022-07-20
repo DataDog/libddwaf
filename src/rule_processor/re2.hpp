@@ -21,9 +21,6 @@ public:
     bool hasStringRepresentation() const override;
     const std::string getStringRepresentation() const override;
     std::string_view operatorName() const override { return name; }
-#ifdef TESTING
-    FRIEND_TEST(TestOptions, TestInit);
-#endif
 protected:
     bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const override;
 

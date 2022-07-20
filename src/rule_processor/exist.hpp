@@ -19,10 +19,6 @@ public:
     bool doesMatchKey(const ddwaf_object* pattern, MatchGatherer& gatherer) const override;
 
     uint64_t expectedTypes() const override;
-
-#ifdef TESTING
-    FRIEND_TEST(TestRuleProcessor, TestExistCoverage);
-#endif
 };
 
 #endif /* exist_hpp */

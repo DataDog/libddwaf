@@ -212,10 +212,8 @@ static void log_cb(
 }
 
 int main() {
-    ddwaf_version version;
-    ddwaf_get_version(&version);
-    printf("ddwaf version: %d.%d.%d\n", version.major, version.minor,
-           version.patch);
+    const char * version = ddwaf_get_version();
+    printf("ddwaf version: %s\n", version);
 
     ddwaf_set_log_cb(log_cb, DDWAF_LOG_DEBUG);
 
