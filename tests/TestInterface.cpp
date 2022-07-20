@@ -165,7 +165,7 @@ TEST(FunctionalTests, ddwaf_run)
 
 TEST(FunctionalTests, HandleGood)
 {
-    ddwaf_config config{0};
+    ddwaf_config config{{0},{0}, ddwaf_object_free};
 
     auto rule = readFile("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -206,7 +206,7 @@ TEST(FunctionalTests, HandleGood)
 
 TEST(FunctionalTests, HandleBad)
 {
-    ddwaf_config config{0};
+    ddwaf_config config{{0},{0}, ddwaf_object_free};
 
     ddwaf_object tmp, object = DDWAF_OBJECT_INVALID;
     EXPECT_EQ(ddwaf_init(&object, &config, nullptr), nullptr);

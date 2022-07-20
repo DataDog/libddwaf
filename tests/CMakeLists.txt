@@ -38,3 +38,10 @@ add_custom_target(test
     COMMAND ${CMAKE_BINARY_DIR}/tests/testPowerWAF
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
 add_dependencies(test testPowerWAF)
+
+add_custom_target(test_valgrind
+    COMMAND valgrind --leak-check=full --show-reachable=yes --suppressions=re2.supp  ${CMAKE_BINARY_DIR}/tests/testPowerWAF
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
+add_dependencies(test_valgrind testPowerWAF)
+
+

@@ -228,7 +228,7 @@ int main() {
         return 1;
     }
 
-    ddwaf_context ctx = ddwaf_context_init(handle, NULL);
+    ddwaf_context ctx = ddwaf_context_init(handle);
     if (!ctx) {
         puts("ctx is null");
         return 1;
