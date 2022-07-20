@@ -1,0 +1,119 @@
+name: Test
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - "*"
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron:  30 0 * * *
+jobs:
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Create directories
+        run: mkdir Debug
+
+      - name: CMake
+        env:
+          CC: gcc-9
+          CXX: g++-9
+        run: |
+          cmake .. -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
+            -DCMAKE_C_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
+            -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address,leak,undefined"
+        working-directory: Debug
+
+      - name: Build
+        run: VERBOSE=1 make -j testPowerWAF
+        working-directory: Debug
+
+      - name: Test
+        run: |
+          ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" \
+            LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5 \
+            make test
+        working-directory: Debug
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: apt update ; apt install -y gcovr
+
+      - name: Create directories
+        run: mkdir Debug
+
+      - name: CMake
+        env:
+          CC: gcc-9
+          CXX: g++-9
+        run: |
+          cmake .. -DCMAKE_BUILD_TYPE=Debug
+        working-directory: Debug
+
+      - name: Build
+        run: VERBOSE=1 make -j testPowerWAF
+        working-directory: Debug
+
+      - name: Test
+        run: make test
+        working-directory: Debug
+
+      - name: Generate coverage
+        run: gcovr -f '.*src.*' -x -d -o coverage.xml
+        working-directory: Debug
+
+      - name: Submit coverage
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: waf_test
+          verbose: true
+          files: coverage.xml
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Create directories
+        run: mkdir Debug
+
+      - name: CMake
+        env:
+          CC: gcc-9
+          CXX: g++-9
+        run: |
+          cmake .. -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
+            -DCMAKE_C_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
+            -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address,leak,undefined"
+        working-directory: Debug
+
+      - name: Build
+        run: VERBOSE=1 make -j waf_validator
+        working-directory: Debug
+
+      - name: Test Validator
+        run: make test_validator
+        working-directory: Debug
+
+      - name: Test WAF
+        run: make validate
+        working-directory: Debug
