@@ -11,6 +11,10 @@ TEST(TestManifest, TestEmpty)
     auto manifest = ddwaf::manifest_builder().build_manifest();
     EXPECT_FALSE(manifest.contains("path"));
     EXPECT_TRUE(manifest.empty());
+
+    auto [res, id] = manifest.get_target("path");
+    EXPECT_FALSE(res);
+    EXPECT_EQ(id, 0);
 }
 
 TEST(TestManifest, TestBasic)
@@ -26,7 +30,7 @@ TEST(TestManifest, TestBasic)
     EXPECT_TRUE(manifest.contains("path"));
     EXPECT_FALSE(manifest.empty());
 
-    auto id  = manifest.get_target("path");
+    auto [res, id]  = manifest.get_target("path");
     auto info = manifest.get_target_info(id);
     EXPECT_TRUE(info.key_path.empty());
     EXPECT_STREQ(info.name.c_str(), "path");
@@ -60,7 +64,7 @@ TEST(TestManifest, TestMultipleAddrs)
     {
         EXPECT_TRUE(manifest.contains(str));
 
-        auto id = manifest.get_target(str);
+        auto [res, id] = manifest.get_target(str);
         auto info = manifest.get_target_info(id);
         EXPECT_TRUE(info.key_path.empty());
         EXPECT_EQ(targets[str], id);
@@ -96,7 +100,7 @@ TEST(TestManifest, TestBasicKeyPath)
     EXPECT_TRUE(info.key_path == key_path);
     EXPECT_STREQ(info.name.c_str(), "path");
 
-    auto root_id  = manifest.get_target("path");
+    auto [res, root_id]  = manifest.get_target("path");
     EXPECT_EQ(manifest::get_root(target), root_id);
 
     auto& addresses = manifest.get_root_addresses();
@@ -123,7 +127,7 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
 
     for (auto &[name, id] : targets)
     {
-        auto root_id = manifest.get_target(name);
+        auto [res, root_id] = manifest.get_target(name);
         auto info = manifest.get_target_info(id);
         EXPECT_TRUE(info.key_path == key_path);
         EXPECT_EQ(manifest::get_root(id), root_id);
@@ -156,7 +160,7 @@ TEST(TestManifest, TestBasicMultiKeyPath)
     EXPECT_TRUE(info.key_path == key_path);
     EXPECT_STREQ(info.name.c_str(), "path");
 
-    auto root_id  = manifest.get_target("path");
+    auto [res, root_id]  = manifest.get_target("path");
     EXPECT_EQ(manifest::get_root(target), root_id);
 
     auto& addresses = manifest.get_root_addresses();
@@ -183,7 +187,7 @@ TEST(TestManifest, TestMultipleAddrsMultiKeyPath)
 
     for (auto &[name, id] : targets)
     {
-        auto root_id = manifest.get_target(name);
+        auto [res, root_id] = manifest.get_target(name);
         auto info = manifest.get_target_info(id);
         EXPECT_TRUE(info.key_path == key_path);
         EXPECT_EQ(manifest::get_root(id), root_id);

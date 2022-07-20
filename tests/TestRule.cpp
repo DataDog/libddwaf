@@ -18,7 +18,9 @@ void compareArraysOfTargets(const ddwaf::manifest& manifest,
 
     for (uint32_t i = 0, length = array1.Size(); i < length; ++i)
     {
-        EXPECT_EQ(manifest.get_target(array1[i].GetString()), array2[i]);
+        auto [res, id] = manifest.get_target(array1[i].GetString());
+        EXPECT_TRUE(res);
+        EXPECT_EQ(id, array2[i]);
     }
 }
 

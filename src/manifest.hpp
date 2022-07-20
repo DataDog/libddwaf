@@ -60,12 +60,12 @@ public:
         return targets_.find(name) != targets_.end();
     }
 
-    target_type get_target(const std::string& name) const {
+    std::pair<bool, target_type> get_target(const std::string& name) const {
         auto it = targets_.find(name);
         if (it == targets_.end()) {
-            return {};
+            return {false, 0};
         }
-        return it->second;
+        return {true, it->second};
     }
 
     const target_info& get_target_info(target_type target) const {
