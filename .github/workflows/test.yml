@@ -51,7 +51,7 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
-        run: apt update ; apt install -y gcovr
+        run: sudo apt update ; sudo apt install -y gcovr
 
       - name: Create directories
         run: mkdir Debug
