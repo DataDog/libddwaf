@@ -17,12 +17,14 @@ namespace
 {
 bool is_container(const ddwaf_object *obj)
 {
-    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0;
+    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 &&
+        obj->array != nullptr;
 }
 
 bool is_map(const ddwaf_object *obj)
 {
-    return obj != nullptr && obj->type == DDWAF_OBJ_MAP;
+    return obj != nullptr && obj->type == DDWAF_OBJ_MAP &&
+        obj->array != nullptr;
 }
 
 bool is_scalar(const ddwaf_object *obj)
@@ -128,6 +130,10 @@ void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
         if (is_map(parent)) {
             for (std::size_t j = 0; j < parent->nbEntries; j++) {
                 auto possible_child = &parent->array[j];
+                if (possible_child->parameterName == nullptr) {
+                    continue;
+                }
+
                 std::string_view child_key(possible_child->parameterName,
                     possible_child->parameterNameLength);
 
@@ -237,6 +243,10 @@ void key_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
         if (parent->type == DDWAF_OBJ_MAP) {
             for (std::size_t j = 0; j < parent->nbEntries; j++) {
                 auto possible_child = &parent->array[j];
+                if (possible_child->parameterName == nullptr) {
+                    continue;
+                }
+
                 std::string_view child_key(possible_child->parameterName,
                     possible_child->parameterNameLength);
 

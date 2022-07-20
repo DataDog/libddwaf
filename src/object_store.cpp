@@ -19,13 +19,17 @@ bool object_store::insert(const ddwaf_object &input)
         return false;
     }
 
-    // Objects with no addresses are considered valid as they are harmless
-    if (input.nbEntries == 0) {
+    std::size_t entries = static_cast<std::size_t>(input.nbEntries);
+    if (entries == 0) {
+        // Objects with no addresses are considered valid as they are harmless
         return true;
     }
 
-    std::size_t entries = static_cast<std::size_t>(input.nbEntries);
     const ddwaf_object* array = input.array;
+    if (array == nullptr) {
+        return false;
+    }
+
     objects_.reserve(objects_.size() + entries);
 
     latest_batch_.reserve(entries);
@@ -33,7 +37,7 @@ bool object_store::insert(const ddwaf_object &input)
     for (std::size_t i = 0; i < entries; ++i)
     {
         auto length = static_cast<std::size_t>(array[i].parameterNameLength);
-        if (array[i].parameterName == NULL || length == 0) {
+        if (array[i].parameterName == nullptr || length == 0) {
             continue;
         }
 
@@ -42,6 +46,10 @@ bool object_store::insert(const ddwaf_object &input)
 
         objects_[target] = &array[i];
         latest_batch_.emplace(target);
+    }
+
+    if (keys.empty()) {
+        return false;
     }
 
     return true;
