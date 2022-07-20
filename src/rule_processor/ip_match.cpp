@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "IPWRuleProcessor.h"
+#include "ip_match.hpp"
 #include <utils.h>
 
 #if defined(_WIN32) || defined(__MINGW32__)
@@ -21,7 +22,7 @@
 #include <arpa/inet.h>
 #endif
 
-PROD_STATIC bool parseIP(const char* ipString, parsed_ip& parsed)
+bool parseIP(const char* ipString, parsed_ip& parsed)
 {
     int ret = inet_pton(AF_INET, ipString, &parsed.ip);
     if (ret != 1)
@@ -43,7 +44,7 @@ PROD_STATIC bool parseIP(const char* ipString, parsed_ip& parsed)
     return true;
 }
 
-static void ipv4ToIpv6(parsed_ip& parsed)
+void ipv4ToIpv6(parsed_ip& parsed)
 {
     if (!parsed.isIPv6)
     {
@@ -63,7 +64,7 @@ static void ipv4ToIpv6(parsed_ip& parsed)
     }
 }
 
-PROD_STATIC bool parseCIDR(const char* ipString, size_t stringLength, prefix_t& prefix)
+bool parseCIDR(const char* ipString, size_t stringLength, prefix_t& prefix)
 {
     // Find the position of the slash in order to hide it from the PoV of parseIP
     parsed_ip parsedIP;
@@ -135,7 +136,7 @@ PROD_STATIC bool parseCIDR(const char* ipString, size_t stringLength, prefix_t& 
     return true;
 }
 
-bool IPMatch::performMatch(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const
+bool ip_match::performMatch(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const
 {
     // The maximum IPv6 length is of 39 characters. We add one for shenanigans around 0-terminated in the input
     if (patternValue == NULL || patternLength == 0 || patternLength > 40 || radixTree == nullptr)
@@ -176,41 +177,29 @@ bool IPMatch::performMatch(const char* patternValue, size_t patternLength, Match
     return didSucceed;
 }
 
-IPMatch::~IPMatch()
+ip_match::ip_match(const std::vector<std::string> &ip_list)
 {
-    if (radixTree)
-        radix_free(radixTree);
-}
-
-bool IPMatch::buildProcessor(const rapidjson::Value& value, bool)
-{
-    if (!value.IsArray() || radixTree != NULL)
-    {
-        return false;
-    }
-
     // Allocate the radix tree in IPv6 mode
     radixTree = radix_new(128);
 
-    if (radixTree != NULL)
-    {
-        for (const auto& item : value.GetArray())
-        {
-            if (!item.IsString())
-            {
-                radix_free(radixTree);
-                radixTree = NULL;
-                break;
-            }
+    if (radixTree == nullptr) {
+        // TODO throw something useful
+        throw;
+    }
 
-            // Parse and populate each IP/network
-            prefix_t prefix;
-            if (parseCIDR(item.GetString(), item.GetStringLength(), prefix))
-            {
-                radix_put_if_absent(radixTree, &prefix);
-            }
+    for (const auto &ip : ip_list) {
+        // Parse and populate each IP/network
+        prefix_t prefix;
+        if (parseCIDR(ip.c_str(), ip.size(), prefix))
+        {
+            radix_put_if_absent(radixTree, &prefix);
         }
     }
 
-    return radixTree != NULL;
+}
+
+ip_match::~ip_match()
+{
+    if (radixTree)
+        radix_free(radixTree);
 }

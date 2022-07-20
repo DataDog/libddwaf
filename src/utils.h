@@ -62,12 +62,6 @@ size_t findStringCutoff(const char* str, size_t length);
 #define FRIEND_TEST(test_case_name, test_name) friend class test_case_name##_##test_name##_Test
 #endif
 
-#ifdef TESTING
-#define PROD_STATIC
-#else
-#define PROD_STATIC static
-#endif
-
 // IP Utils
 typedef struct
 {

@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef IPWRuleProcessor_h
-#define IPWRuleProcessor_h
+#pragma once
 
 #include <string>
 #include <vector>
@@ -13,13 +12,6 @@
 #include <ddwaf.h>
 #include <string_view>
 #include <utils.h>
-
-typedef enum
-{
-    NONE           = 0,
-    NEGATE         = 1 << 0,
-    RUN_ON_NO_DATA = 1 << 1
-} OperatorCommand;
 
 struct MatchGatherer
 {
@@ -35,13 +27,6 @@ struct MatchGatherer
 
 class IPWRuleProcessor
 {
-protected:
-    bool wantMatch { true };
-    bool runOnMissing { false };
-    bool matchAny { false };
-
-    virtual bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const = 0;
-
 public:
     IPWRuleProcessor()          = default;
     virtual ~IPWRuleProcessor() = default;
@@ -57,10 +42,17 @@ public:
      * for example, through a constexpr class static string_view initialised
      * with a literal. */
     virtual std::string_view operatorName() const = 0;
+
+protected:
+    bool wantMatch { true };
+    bool runOnMissing { false };
+    bool matchAny { false };
+
+    virtual bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const = 0;
+
+
 };
 
 #include "libinjection.hpp"
 #include "perf_match.hpp"
 #include "re2.hpp"
-
-#endif /* IPWRuleProcessor_h */

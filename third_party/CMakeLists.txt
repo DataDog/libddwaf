@@ -111,6 +111,11 @@ add_library(lib_ac STATIC
 target_include_directories(lib_ac INTERFACE ${PROJECT_SOURCE_DIR}/lua-aho-corasick)
 set_target_properties(lib_ac PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
+add_library(lib_radix STATIC
+    radixlib/radixlib.c)
+target_include_directories(lib_radix INTERFACE ${PROJECT_SOURCE_DIR}/radixlib)
+set_target_properties(lib_radix PROPERTIES POSITION_INDEPENDENT_CODE 1)
+
 set(UTF8PROC_VERSION v2.7.0)
 ExternalProject_Add(proj_utf8proc
     URL         https://github.com/JuliaStrings/utf8proc/archive/refs/tags/${UTF8PROC_VERSION}.tar.gz

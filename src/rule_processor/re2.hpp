@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef re2_hpp
-#define re2_hpp
+#pragma once
 
 #include <memory>
 #include <re2/re2.h>
@@ -33,5 +32,3 @@ protected:
     std::unique_ptr<re2::RE2> regex { nullptr };
     std::size_t min_length;
 };
-
-#endif /* re2_hpp */

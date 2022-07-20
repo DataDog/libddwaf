@@ -4,20 +4,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef ip_match_hpp
-#define ip_match_hpp
+#pragma once
 
 #include <radixlib.h>
 
-class IPMatch : public IPWRuleProcessor
+class ip_match : public IPWRuleProcessor
 {
-    radix_tree_t* radixTree = nullptr;
-    bool performMatch(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const override;
-
 public:
-    using IPWRuleProcessor::IPWRuleProcessor;
-    ~IPMatch();
-    bool buildProcessor(const rapidjson::Value& value, bool) override;
-};
+    explicit ip_match(const std::vector<std::string> &ip_list);
+    ~ip_match() override;
 
-#endif /* ip_match_hpp */
+protected:
+    bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const override;
+    radix_tree_t* radixTree = nullptr;
+};
