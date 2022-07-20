@@ -38,7 +38,8 @@ TEST(TestObjectStore, InsertInvalidObject)
 
 TEST(TestObjectStore, InsertMalformedMap)
 {
-    auto manifest = get_manifest();
+    ddwaf::manifest_builder mb;
+    auto manifest = mb.build_manifest();
 
     object_store store(manifest);
 
@@ -54,7 +55,9 @@ TEST(TestObjectStore, InsertMalformedMap)
 
 TEST(TestObjectStore, InsertMalformedMapKey)
 {
-    auto manifest = get_manifest();
+    ddwaf::manifest_builder mb;
+    mb.insert("key", {});
+    auto manifest = mb.build_manifest();
 
     object_store store(manifest);
 
@@ -64,7 +67,7 @@ TEST(TestObjectStore, InsertMalformedMapKey)
     free((void*)root.array[0].parameterName);
     root.array[0].parameterName = nullptr;
 
-    EXPECT_FALSE(store.insert(root));
+    EXPECT_TRUE(store.insert(root));
     EXPECT_FALSE((bool)store);
 
     ddwaf_object_free(&root);

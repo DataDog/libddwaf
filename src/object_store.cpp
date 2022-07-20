@@ -27,6 +27,8 @@ bool object_store::insert(const ddwaf_object &input)
 
     const ddwaf_object* array = input.array;
     if (array == nullptr) {
+        // Since we have established that the size of the map is not 0, a null
+        // array constitutes a malformed map.
         return false;
     }
 
@@ -46,10 +48,6 @@ bool object_store::insert(const ddwaf_object &input)
 
         objects_[target] = &array[i];
         latest_batch_.emplace(target);
-    }
-
-    if (keys.empty()) {
-        return false;
     }
 
     return true;

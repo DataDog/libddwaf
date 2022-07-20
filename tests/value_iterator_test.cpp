@@ -822,7 +822,8 @@ TEST(TestValueIterator, TestInvalidMap)
     root.array[1].nbEntries = 30;
     {
         ddwaf::object::value_iterator it(&root);
-        EXPECT_FALSE(it);
+        EXPECT_TRUE(it);
+        EXPECT_FALSE(++it);
     }
 
     ddwaf_object_free(&root);
@@ -848,7 +849,6 @@ TEST(TestValueIterator, TestInvalidMapKey)
         ddwaf::object::value_iterator it(&root);
         EXPECT_TRUE(it);
     }
-
 
     ddwaf_object_free(&root);
 }

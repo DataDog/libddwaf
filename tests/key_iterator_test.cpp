@@ -761,3 +761,100 @@ TEST(TestKeyIterator, TestMapDepthLimitPath)
 
     ddwaf_object_free(&object);
 }
+
+TEST(TestKeyIterator, TestInvalidMap)
+{
+    ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
+
+    root.nbEntries = 30;
+    {
+        ddwaf::object::key_iterator it(&root);
+        EXPECT_FALSE(it);
+    }
+
+    root.nbEntries = 0;
+    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
+    root.nbEntries = 0;
+
+    {
+        ddwaf::object::key_iterator it(&root);
+        EXPECT_FALSE(it);
+    }
+    root.nbEntries = 1;
+
+    ddwaf_object_map_add(&root, "other", ddwaf_object_map(&tmp));
+    root.array[1].nbEntries = 30;
+    {
+        ddwaf::object::key_iterator it(&root);
+        EXPECT_TRUE(it);
+        EXPECT_TRUE(++it);
+        EXPECT_FALSE(++it);
+    }
+
+    ddwaf_object_free(&root);
+}
+
+TEST(TestKeyeIterator, TestInvalidMapKey)
+{
+    ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
+
+    free((void*)root.array[0].parameterName);
+    root.array[0].parameterName = nullptr;
+
+    {
+        ddwaf::object::key_iterator it(&root);
+        EXPECT_FALSE(it);
+    }
+
+    ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));
+    {
+        ddwaf::object::key_iterator it(&root);
+        EXPECT_TRUE(it);
+        EXPECT_FALSE(++it);
+    }
+
+    ddwaf_object_free(&root);
+}
+
+TEST(TestKeyIterator, TestInvalidMapKeyWithPath)
+{
+    ddwaf_object tmp, other, root = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
+
+    free((void*)root.array[0].parameterName);
+    root.array[0].parameterName = nullptr;
+
+    {
+        ddwaf::object::key_iterator it(&root, {"key"});
+        EXPECT_FALSE(it);
+    }
+
+    ddwaf_object_map(&other);
+    ddwaf_object_map_add(&other, "key", ddwaf_object_string(&tmp, "value"));
+    ddwaf_object_map_add(&root, "other", &other);
+
+    {
+        ddwaf::object::key_iterator it(&root, {"other"});
+        EXPECT_TRUE(it);
+        EXPECT_FALSE(++it);
+    }
+
+    ddwaf_object_free(&root);
+}
+
+TEST(TestKeyIterator, TestRecursiveMap)
+{
+    ddwaf::object_limits limits;
+
+    ddwaf_object root;
+    root.nbEntries     = 1;
+    root.parameterName = "Sqreen";
+    root.parameterNameLength = sizeof("Sqreen") - 1;
+    root.type          = DDWAF_OBJ_MAP;
+    root.array         = &root;
+
+    ddwaf::object::key_iterator it(&root);
+    EXPECT_TRUE(it);
+    EXPECT_FALSE(++it);
+}
