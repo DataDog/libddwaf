@@ -39,7 +39,7 @@ class PowerWAF;
 #include <parser/common.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
-#include <validator.hpp>
+#include <limits.hpp>
 #include <yaml-cpp/yaml.h>
 
 using namespace std::literals;

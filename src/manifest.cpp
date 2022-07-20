@@ -15,8 +15,7 @@ manifest::target_type manifest_builder::insert(const std::string& root,
 {
     auto it = targets_.find(root);
     if (it == targets_.end()) {
-        index_++;
-        auto [new_it, res] = targets_.emplace(root, target_spec{index_, 0, {}});
+        auto [new_it, res] = targets_.emplace(root, target_spec{++index_, 0, {}});
         // assume res = true
         it = new_it;
     }

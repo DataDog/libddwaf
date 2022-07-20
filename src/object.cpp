@@ -319,12 +319,14 @@ extern "C"
             case DDWAF_OBJ_ARRAY:
             {
                 ddwaf_object* value = (ddwaf_object*) object->array;
-                for (uint64_t i = 0; i < object->nbEntries; ++i)
-                {
-                    ddwaf_object_free(&value[i]);
-                }
+                if (value != nullptr) {
+                    for (uint64_t i = 0; i < object->nbEntries; ++i)
+                    {
+                        ddwaf_object_free(&value[i]);
+                    }
 
-                free(value);
+                    free(value);
+                }
                 break;
             }
 

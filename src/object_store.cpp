@@ -11,16 +11,27 @@
 namespace ddwaf
 {
 
-void object_store::insert(const ddwaf_object &input)
+bool object_store::insert(const ddwaf_object &input)
 {
     latest_batch_.clear();
 
-    if (input.type != DDWAF_OBJ_MAP || input.nbEntries == 0) {
-        return;
+    if (input.type != DDWAF_OBJ_MAP) {
+        return false;
     }
 
     std::size_t entries = static_cast<std::size_t>(input.nbEntries);
+    if (entries == 0) {
+        // Objects with no addresses are considered valid as they are harmless
+        return true;
+    }
+
     const ddwaf_object* array = input.array;
+    if (array == nullptr) {
+        // Since we have established that the size of the map is not 0, a null
+        // array constitutes a malformed map.
+        return false;
+    }
+
     objects_.reserve(objects_.size() + entries);
 
     latest_batch_.reserve(entries);
@@ -28,12 +39,19 @@ void object_store::insert(const ddwaf_object &input)
     for (std::size_t i = 0; i < entries; ++i)
     {
         auto length = static_cast<std::size_t>(array[i].parameterNameLength);
+        if (array[i].parameterName == nullptr || length == 0) {
+            continue;
+        }
+
         std::string key(array[i].parameterName, length);
-        auto target = manifest_.get_target(key);
+        auto [res, target] = manifest_.get_target(key);
+        if (!res) { continue; }
 
         objects_[target] = &array[i];
         latest_batch_.emplace(target);
     }
+
+    return true;
 }
 
 const ddwaf_object* object_store::get_target(manifest::target_type target) const

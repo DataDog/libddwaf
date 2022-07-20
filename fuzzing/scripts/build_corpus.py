@@ -304,6 +304,7 @@ class InitPayloadGenerator:
                     "removeComments",
                     "numerize",
                     "keys_only",
+                    "unicode_normalize",
                 ],
                 0,
                 self.transformation_max_count,

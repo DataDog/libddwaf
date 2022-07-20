@@ -20,7 +20,7 @@ class object_store
 public:
     explicit object_store(const manifest& m): manifest_(m) {}
 
-    void insert(const ddwaf_object &input);
+    bool insert(const ddwaf_object &input);
 
     const ddwaf_object *get_target(const manifest::target_type target) const;
 
