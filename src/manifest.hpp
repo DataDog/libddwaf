@@ -101,6 +101,10 @@ public:
     manifest build_manifest();
 
 protected:
+    // The spec allows keeping track of targets which share the same root
+    // address, but a different key_path. The root target ID is always
+    // the same for all of them, but the derived ID is specific to
+    // each key_path.
     struct target_spec {
         uint16_t root_id;
         uint16_t derived_id{0};
@@ -109,7 +113,7 @@ protected:
 
     static constexpr manifest::target_type generate_target(
         uint16_t root, uint16_t id) {
-        return root << 16 | id;
+        return static_cast<uint32_t>(root) << 16 | id;
     }
 
     std::unordered_map<std::string, target_spec> targets_;
