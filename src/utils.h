@@ -4,56 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef utils_h
-#define utils_h
+#pragma once
 
+#include <ddwaf.h>
 #include <optional>
 #include <stdint.h>
-
-template <typename T>
-using optional_ref = std::optional<std::reference_wrapper<T>>;
-
-size_t findStringCutoff(const char* str, size_t length);
-
-//Internals
-#define IS_CONTAINER(obj) ((obj)->type & (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP))
-
-#define OBJ_HAS_KEY(obj, key) (obj.IsObject() && obj.HasMember(key))
-#define OBJ_HAS_KEY_AS_STRING(obj, key) (OBJ_HAS_KEY(obj, key) && obj[key].IsString())
-#define OBJ_HAS_KEY_AS_BOOL(obj, key) (OBJ_HAS_KEY(obj, key) && obj[key].IsBool())
-#define OBJ_HAS_KEY_AS_INT(obj, key) (OBJ_HAS_KEY(obj, key) && obj[key].IsInt64())
-#define OBJ_HAS_KEY_AS_UINT OBJ_HAS_KEY_AS_UINT64
-#define OBJ_HAS_KEY_AS_UINT32(obj, key) (OBJ_HAS_KEY(obj, key) && obj[key].IsUint())
-#define OBJ_HAS_KEY_AS_UINT64(obj, key) (OBJ_HAS_KEY(obj, key) && obj[key].IsUint64())
-#define OBJ_HAS_KEY_AS_ARRAY(obj, key) (OBJ_HAS_KEY(obj, key) && obj[key].IsArray())
-#define OBJ_HAS_KEY_AS_OBJECT(obj, key) (OBJ_HAS_KEY(obj, key) && obj[key].IsObject())
-
-#define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
-#define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
-
-// Rule constants
-#define MAX_MATCH_COUNT 16 // Match the type size of RuleMatchTarget::matchGroup, don't increase past 16 without carefully updating the code
-#define TIME_STORE_DEFAULT 5
-
-// Flow steps
-#define EXIT_PREFIX "exit_"
-#define EXIT_FLOW_OK "exit_flow"
-#define EXIT_FLOW_MONITOR "exit_monitor"
-#define EXIT_FLOW_BLOCK "exit_block"
-
-// Steps we want to add:
-// - exit_denylist
-// - exit_allowlist
-// - exit_needrasp
-// - exit_norasp
-// - exit_needwaf
-// - exit_nowaf
-// - exit_needrasp_nowaf
-// - exit_needrasp_needwaf
-// - exit_norasp_nowaf
-// - exit_flagreq_{0-9} (write {0-9} to a standard key in the store)
-// - exit_report_signal (report the request through a signal format defined in the rule)
-// - exit_pentest (pentest: Sqreen should monitor but don't block the request)
 
 // IP Utils
 typedef struct
@@ -62,9 +17,16 @@ typedef struct
     bool isIPv6;
 } parsed_ip;
 
-// Need the ddwaf_object declaration
-#if !defined(pw_h)
-#include <ddwaf.h>
-#endif
+template <typename T>
+using optional_ref = std::optional<std::reference_wrapper<T>>;
 
-#endif /* utils_h */
+size_t find_string_cutoff(const char *str, size_t length,
+        uint32_t max_string_length = DDWAF_MAX_STRING_LENGTH);
+
+//Internals
+#define IS_CONTAINER(obj) ((obj)->type & (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP))
+
+#define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
+#define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
+
+

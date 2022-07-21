@@ -27,14 +27,12 @@ monotonic_clock::time_point monotonic_clock::now() noexcept
     int ret = ddwaf::clock_gettime(CLOCK_MONOTONIC, &ts);
     if (ret < 0)
     {
-#ifndef TESTING
         bool expected = false;
         if (warning_issued.compare_exchange_strong(expected, true))
         {
             DDWAF_ERROR("clock_gettime failed. Errno %d}", errno);
         }
         return time_point(std::chrono::seconds(0));
-#endif
     }
     return time_point(std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
 }

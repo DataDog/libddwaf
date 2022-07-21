@@ -13,13 +13,12 @@ bool LibInjectionSQL::performMatch(const char* pattern, size_t length, MatchGath
 {
     //The mandated length is 8
     char fingerprint[16]        = { 0 };
-    const size_t computedLength = findStringCutoff(pattern, length);
-    bool didMatch               = libinjection_sqli(pattern, computedLength, fingerprint) == 1;
+    bool didMatch               = libinjection_sqli(pattern, length, fingerprint) == 1;
     bool output                 = didMatch == wantMatch;
 
     if (output)
     {
-        gatherer.resolvedValue = std::string(pattern, computedLength);
+        gatherer.resolvedValue = std::string(pattern, length);
         if (didMatch)
         {
             gatherer.matchedValue = std::string(fingerprint);
@@ -31,12 +30,11 @@ bool LibInjectionSQL::performMatch(const char* pattern, size_t length, MatchGath
 
 bool LibInjectionXSS::performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const
 {
-    const size_t computedLength = findStringCutoff(pattern, length);
-    bool didMatch               = libinjection_xss(pattern, computedLength) == 1;
+    bool didMatch               = libinjection_xss(pattern, length) == 1;
     bool output                 = didMatch == wantMatch;
 
     if (output)
-        gatherer.resolvedValue = std::string(pattern, computedLength);
+        gatherer.resolvedValue = std::string(pattern, length);
 
     return output;
 }

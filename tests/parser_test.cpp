@@ -264,10 +264,6 @@ TEST(TestParserV2, TestInvalidRule)
     ddwaf::parameter::map errors = parameter(info.errors);
     EXPECT_EQ(errors.size(), 1);
 
-    for (auto& [k, v] : errors)
-    {
-        std::cerr << k << std::endl;
-    }
     auto it = errors.find("missing key 'type'");
     EXPECT_NE(it, errors.end());
 

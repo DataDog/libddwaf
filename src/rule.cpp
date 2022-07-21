@@ -12,30 +12,42 @@
 #include "clock.hpp"
 #include <log.hpp>
 
+#include <iostream>
+
 namespace ddwaf
 {
 
-bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer) const
+bool condition::matchWithTransformer(const ddwaf_object* baseInput, 
+  MatchGatherer& gatherer) const
 {
     const bool hasTransformation        = !transformation.empty();
-    const bool canRunTransformation     = baseInput->type == DDWAF_OBJ_STRING;
     bool transformationWillChangeString = false;
 
-    if (hasTransformation && canRunTransformation)
+    if (baseInput->type != DDWAF_OBJ_STRING) {
+        return processor->doesMatch(baseInput, gatherer);
+    }
+
+    if (hasTransformation)
     {
         // This codepath is shared with the mutable path. The structure can't be const :/
         transformationWillChangeString = PWTransformer::doesNeedTransform(transformation,
             const_cast<ddwaf_object *>(baseInput));
     }
 
+    size_t length = find_string_cutoff(baseInput->stringValue,
+            baseInput->nbEntries, limits_.max_string_length);
+
     //If we don't have transformation to perform, or if they're irrelevant, no need to waste time copying and allocating data
-    if (!hasTransformation || !canRunTransformation || !transformationWillChangeString)
+    if (!hasTransformation || !transformationWillChangeString)
     {
-        return processor->doesMatch(baseInput, gatherer);
+        ddwaf_object input;
+        ddwaf_object_stringl_nc(&input, baseInput->stringValue, length);
+
+        return processor->doesMatch(&input, gatherer);
     }
 
     ddwaf_object copyInput;
-    ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, baseInput->nbEntries);
+    ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, length);
 
     //Transform it and pick the pointer to process
     bool transformFailed = false, matched = false;
@@ -49,8 +61,14 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     }
 
     //Run the transformed input
-    const ddwaf_object* paramToUse = transformFailed ? baseInput : &copyInput;
-    matched |= processor->doesMatch(paramToUse, gatherer);
+    if (transformFailed) {
+        ddwaf_object input;
+        ddwaf_object_stringl_nc(&input, baseInput->stringValue, length);
+
+        matched |= processor->doesMatch(&input, gatherer);
+    } else {
+        matched |= processor->doesMatch(&copyInput, gatherer);
+    }
 
     // Otherwise, the caller is in charge of freeing the pointer
     ddwaf_object_free(&copyInput);
@@ -117,10 +135,10 @@ condition::status condition::performMatching(object_store& store,
         if (object == nullptr) { continue; }
 
         if (source_ == data_source::keys) {
-            object::key_iterator it(object, info.key_path);
+            object::key_iterator it(object, info.key_path, limits_);
             res = match_target(it, info.name, deadline, retManager);
         } else {
-            object::value_iterator it(object, info.key_path);
+            object::value_iterator it(object, info.key_path, limits_);
             res = match_target(it, info.name, deadline, retManager);
         }
 
@@ -138,12 +156,25 @@ condition::status condition::performMatching(object_store& store,
     return status::no_match;
 }
 
-bool condition::doesUseNewParameters(const object_store& store) const
+bool condition::has_new_targets(const object_store& store) const
 {
-    for (const ddwaf::manifest::target_type& target : targets)
+    for (const auto& target : targets)
     {
-        if (store.is_new_target(target))
+        if (store.is_new_target(target)) {
             return true;
+        }
+    }
+
+    return false;
+}
+
+bool rule::has_new_targets(const object_store &store) const
+{
+    for (const auto& cond : conditions)
+    {
+        if (cond.has_new_targets(store)) {
+            return true;
+        }
     }
 
     return false;

@@ -8,11 +8,11 @@
 
 #include <memory>
 
-#include <processor.hpp>
-#include <waf.hpp>
 #include <ddwaf.h>
-#include <limits.hpp>
 #include <optional>
+#include <rule.hpp>
+#include <ruleset.hpp>
+#include <config.hpp>
 #include <utils.h>
 #include <obfuscator.hpp>
 
@@ -22,9 +22,9 @@ namespace ddwaf
 class context
 {
 public:
-    context(ddwaf::manifest &manifest, ddwaf::flow_map &flows,
-        const ddwaf::obfuscator &obfuscator, const ddwaf::object_limits &limits,
-        ddwaf_object_free_fn free_fn);
+    context(ddwaf::ruleset &ruleset, ddwaf::config &config):
+        ruleset_(ruleset), config_(config),
+        store_(ruleset_.manifest, config_.free_fn){}
 
     context(const context&) = delete;
     context& operator=(const context&) = delete;
@@ -34,15 +34,22 @@ public:
 
     DDWAF_RET_CODE run(ddwaf_object, optional_ref<ddwaf_result> res, uint64_t);
 
+    bool run_collection(const std::string& name,
+                 const ddwaf::rule_ref_vector& flow,
+                 PWRetManager& manager,
+                 const ddwaf::monotonic_clock::time_point& deadline);
+
+
 protected:
-    ddwaf::manifest &manifest_;
-    ddwaf::flow_map &flows_;
+    bool is_first_run() const { return status_cache_.empty(); }
+    condition::status get_cached_status(ddwaf::rule::index_type rule_idx) const;
+    bool has_new_targets(const std::vector<ddwaf::condition>& rules) const;
 
-    const ddwaf::obfuscator &event_obfuscator_;
-    const ddwaf::object_limits &limits_;
-
+    ddwaf::ruleset &ruleset_;
+    ddwaf::config &config_;
     ddwaf::object_store store_;
-    ddwaf::processor processor_;
+
+    std::unordered_map<rule::index_type, condition::status> status_cache_;
 };
 
 }

@@ -5,11 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <config.hpp>
 #include <context.hpp>
-#include <obfuscator.hpp>
-#include <limits.hpp>
-#include <manifest.hpp>
-#include <rule.hpp>
+#include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
 #include <version.hpp>
@@ -20,23 +18,20 @@ namespace ddwaf
 class waf
 {
 public:
-    waf(ddwaf::manifest&& manifest_, ddwaf::rule_vector&& rules_,
-             ddwaf::flow_map&& flows_, ddwaf_object_free_fn free_fn,
-             ddwaf::obfuscator &&event_obfuscator_,
-             ddwaf::object_limits limits_ = ddwaf::object_limits());
+    waf(ddwaf::ruleset &&ruleset, ddwaf::config &&config):
+        ruleset_(std::move(ruleset)), config_(std::move(config)) {}
 
-    static waf* fromConfig(const ddwaf_object rules,
+    static waf* from_config(const ddwaf_object rules,
         const ddwaf_config* config, ddwaf::ruleset_info& info);
 
     ddwaf::context get_context();
 
-    ddwaf::manifest manifest;
-    ddwaf::rule_vector rules;
-    ddwaf::flow_map flows;
-    ddwaf_object_free_fn obj_free;
-
-    const ddwaf::obfuscator event_obfuscator;
-    const ddwaf::object_limits limits;
+    const std::vector<const char*>& get_root_addresses() const {
+        return ruleset_.manifest.get_root_addresses();
+    }
+protected:
+    ddwaf::ruleset ruleset_;
+    ddwaf::config config_;
 };
 
 }

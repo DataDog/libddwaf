@@ -13,6 +13,7 @@
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
+#include <waf.hpp>
 
 #include <log.hpp>
 
@@ -54,7 +55,7 @@ extern "C"
             if (rule != nullptr)
             {
                 ddwaf::ruleset_info ri(info);
-                return waf::fromConfig(*rule, config, ri);
+                return waf::from_config(*rule, config, ri);
             }
         }
         catch (const std::exception& e)
@@ -98,7 +99,7 @@ extern "C"
             return nullptr;
         }
 
-        auto& addresses = handle->manifest.get_root_addresses();
+        auto& addresses = handle->get_root_addresses();
         if (addresses.empty() || addresses.size() > std::numeric_limits<uint32_t>::max())
         {
             *size = 0;

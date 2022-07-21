@@ -318,51 +318,51 @@ TEST(TestPWProcessor, TestMultiFlowCacheReport)
     ddwaf_destroy(handle);
 }
 
-TEST(TestPWProcessor, TestBudget)
-{
-    //Initialize a PowerWAF rule
-    auto rule = readFile("slow.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+//TEST(TestPWProcessor, TestBudget)
+//{
+    ////Initialize a PowerWAF rule
+    //auto rule = readFile("slow.yaml");
+    //ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    //ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    //ASSERT_NE(handle, nullptr);
+    //ddwaf_object_free(&rule);
 
-    //Generate a wrapper
-    ddwaf_object param = DDWAF_OBJECT_MAP, mapItem = DDWAF_OBJECT_ARRAY, array = DDWAF_OBJECT_ARRAY, tmp;
+    ////Generate a wrapper
+    //ddwaf_object param = DDWAF_OBJECT_MAP, mapItem = DDWAF_OBJECT_ARRAY, array = DDWAF_OBJECT_ARRAY, tmp;
 
-    for (int i = 0; i < 500; ++i)
-    {
-        ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "abbbbbbbbbabababababababaaaaaaaaaaaaaad"));
-    }
+    //for (int i = 0; i < 500; ++i)
+    //{
+        //ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "abbbbbbbbbabababababababaaaaaaaaaaaaaad"));
+    //}
 
-    ddwaf_object_array_add(&mapItem, &array);
-    ddwaf_object_map_add(&param, "rx_param", &mapItem);
+    //ddwaf_object_array_add(&mapItem, &array);
+    //ddwaf_object_map_add(&param, "rx_param", &mapItem);
 
-    ddwaf::waf* waf = reinterpret_cast<ddwaf::waf*>(handle);
-    ddwaf::object_store store(waf->manifest);
-    store.insert(param);
-    ASSERT_TRUE((bool)store);
+    //ddwaf::waf* waf = reinterpret_cast<ddwaf::waf*>(handle);
+    //ddwaf::object_store store(waf->manifest);
+    //store.insert(param);
+    //ASSERT_TRUE((bool)store);
 
-    //Fetch the rule and flow managers
-    auto& flows = waf->flows;
+    ////Fetch the rule and flow managers
+    //auto& flows = waf->flows;
 
-    rapidjson::Document document;
-    ddwaf::obfuscator eo;
-    PWRetManager rManager(eo);
-    ddwaf::processor processor(store, waf->manifest);
+    //rapidjson::Document document;
+    //ddwaf::obfuscator eo;
+    //PWRetManager rManager(eo);
+    //ddwaf::processor processor(store, waf->manifest);
 
-    auto deadline = ddwaf::monotonic_clock::now() + chrono::microseconds(50);
-    processor.runFlow("flow1", flows["flow1"], rManager, deadline);
-    ddwaf_result ret;
-    rManager.synthetize(ret);
-    EXPECT_EQ(ret.data, nullptr);
+    //auto deadline = ddwaf::monotonic_clock::now() + chrono::microseconds(50);
+    //processor.runFlow("flow1", flows["flow1"], rManager, deadline);
+    //ddwaf_result ret;
+    //rManager.synthetize(ret);
+    //EXPECT_EQ(ret.data, nullptr);
 
-    mapItem.parameterName = NULL;
+    //mapItem.parameterName = NULL;
 
-    ddwaf_result_free(&ret);
-    ddwaf_destroy(handle);
-}
+    //ddwaf_result_free(&ret);
+    //ddwaf_destroy(handle);
+/*}*/
 
 TEST(TestPWProcessor, TestBudgetRules)
 {
