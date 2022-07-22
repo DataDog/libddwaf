@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#undef TESTING
 
 #include "ddwaf.h"
 #include <PWRet.hpp>

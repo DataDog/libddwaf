@@ -26,7 +26,7 @@ TEST(TestAdditive, TestMultiCall)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object param1, param2, tmp;
@@ -58,7 +58,7 @@ TEST(TestAdditive, TestMultiCall)
 TEST(TestAdditive, TestBad)
 {
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_context_init(nullptr, nullptr), nullptr);
+    EXPECT_EQ(ddwaf_context_init(nullptr), nullptr);
 
     ddwaf_object object, tmp;
     ddwaf_object_string(&object, "stringvalue");
@@ -76,7 +76,7 @@ TEST(TestAdditive, TestBad)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     // In case of an invalid object, the parameters will be freed on the spot
@@ -106,7 +106,7 @@ TEST(TestAdditive, TestParameterOverride)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object param1 = DDWAF_OBJECT_MAP, param2 = DDWAF_OBJECT_MAP, tmp;

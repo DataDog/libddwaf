@@ -26,7 +26,7 @@ run_fixture::~run_fixture()
 
 bool run_fixture::set_up()
 {
-    ctx_ = ddwaf_context_init(handle_, nullptr);
+    ctx_ = ddwaf_context_init(handle_);
     return ctx_ != nullptr;
 }
 

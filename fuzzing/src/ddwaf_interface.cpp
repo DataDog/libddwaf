@@ -121,7 +121,7 @@ ddwaf_handle init_waf()
 {
     ddwaf_config config{{0, 0, 0},
         {R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)",
-         R"(^(?:\d[ -]*?){13,16}$)"}};
+         R"(^(?:\d[ -]*?){13,16}$)"}, ddwaf_object_free};
     ddwaf_object rule   = file_to_object("sample_rules.yml");
     ddwaf_handle handle = ddwaf_init(&rule, &config, NULL);
     ddwaf_object_free(&rule);
@@ -130,7 +130,7 @@ ddwaf_handle init_waf()
 
 void run_waf(ddwaf_handle handle, ddwaf_object args, size_t timeLeftInUs)
 {
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     if (context == NULL)
     {
         __builtin_trap();

@@ -72,10 +72,12 @@ typedef enum
 } DDWAF_LOG_LEVEL;
 
 #ifdef __cplusplus
-class PowerWAF;
-class PWAdditive;
-using ddwaf_handle = PowerWAF *;
-using ddwaf_context = PWAdditive *;
+namespace ddwaf{
+class waf;
+class context;
+}
+using ddwaf_handle = ddwaf::waf *;
+using ddwaf_context = ddwaf::context *;
 #else
 typedef struct _ddwaf_handle* ddwaf_handle;
 typedef struct _ddwaf_context* ddwaf_context;
@@ -84,7 +86,6 @@ typedef struct _ddwaf_context* ddwaf_context;
 typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_config ddwaf_config;
 typedef struct _ddwaf_result ddwaf_result;
-typedef struct _ddwaf_version ddwaf_version;
 typedef struct _ddwaf_ruleset_info ddwaf_ruleset_info;
 /**
  * @struct ddwaf_object
@@ -106,6 +107,13 @@ struct _ddwaf_object
     uint64_t nbEntries;
     DDWAF_OBJ_TYPE type;
 };
+
+/**
+ * @typedef ddwaf_object_free_fn
+ *
+ * Type of the function to free ddwaf::objects.
+ **/
+typedef void (*ddwaf_object_free_fn)(ddwaf_object *object);
 
 /**
  * @struct ddwaf_config
@@ -130,6 +138,11 @@ struct _ddwaf_config
         /** Regular expression for value-based obfuscation */
         const char *value_regex;
     } obfuscator;
+
+    /** Function to free the ddwaf::object provided to the context during calls
+     *  to ddwaf_run. If the value of this function is NULL, the objects will
+     *  not be freed. The default value should be ddwaf_object_free. */
+    ddwaf_object_free_fn free_fn; 
 };
 
 /**
@@ -145,18 +158,6 @@ struct _ddwaf_result
     const char* data;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
-};
-
-/**
- * @ddwaf_version
- *
- * Structure containing the version of the WAF following semver.
- **/
-struct _ddwaf_version
-{
-    uint16_t major;
-    uint16_t minor;
-    uint16_t patch;
 };
 
 /**
@@ -176,13 +177,6 @@ struct _ddwaf_ruleset_info
     /** Ruleset version **/
     const char *version;
 };
-
-/**
- * @typedef ddwaf_object_free_fn
- *
- * Type of the function to free ddwaf::objects.
- **/
-typedef void (*ddwaf_object_free_fn)(ddwaf_object *object);
 
 /**
  * @typedef ddwaf_log_cb
@@ -248,16 +242,12 @@ const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t 
  * Context object to perform matching using the provided WAF instance.
  *
  * @param handle Handle of the WAF instance containing the ruleset definition. (nonnull)
- * @param obj_free Function to free the ddwaf::object provided to the context
- *                 during calls to ddwaf_run. If the value of this function is
- *                 NULL, the objects will not be freed. By default the value of
- *                 this parameter should be ddwaf_object_free.
- *
+ 
  * @return Handle to the context instance.
  *
  * @note The WAF instance needs to be valid for the lifetime of the context.
  **/
-ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_object_free_fn obj_free);
+ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
 
 /**
  * ddwaf_run
@@ -601,9 +591,9 @@ void ddwaf_object_free(ddwaf_object *object);
  *
  * Return the version of the library
  *
- * @param version Version structure following semver
+ * @return version Version string
  **/
-void ddwaf_get_version(ddwaf_version *version);
+const char *ddwaf_get_version();
 
 /**
  * ddwaf_set_log_cb

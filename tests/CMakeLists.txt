@@ -3,7 +3,8 @@ include(GoogleTest)
 file(GLOB_RECURSE LIBDDWAF_TEST_SOURCE *.cpp)
 add_executable(testPowerWAF ${LIBDDWAF_SOURCE} ${LIBDDWAF_TEST_SOURCE})
 
-option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" ON)
+option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
+
 set_target_properties(testPowerWAF PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED YES
@@ -37,3 +38,10 @@ add_custom_target(test
     COMMAND ${CMAKE_BINARY_DIR}/tests/testPowerWAF
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
 add_dependencies(test testPowerWAF)
+
+add_custom_target(test_valgrind
+    COMMAND valgrind --leak-check=full --show-reachable=yes --suppressions=re2.supp  ${CMAKE_BINARY_DIR}/tests/testPowerWAF
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
+add_dependencies(test_valgrind testPowerWAF)
+
+

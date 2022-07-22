@@ -24,7 +24,7 @@ RE2Manager::RE2Manager(const std::string& regex_str, std::size_t minLength, bool
         throw parsing_error("invalid regular expression: " + regex->error_arg());
     }
 
-    groupsToCatch = (uint8_t) std::min(regex->NumberOfCapturingGroups() + 1, MAX_MATCH_COUNT);
+    groupsToCatch = (uint8_t) std::min(regex->NumberOfCapturingGroups() + 1, max_match_count);
 }
 
 bool RE2Manager::performMatch(const char* str, size_t length, MatchGatherer& gatherer) const
@@ -34,12 +34,11 @@ bool RE2Manager::performMatch(const char* str, size_t length, MatchGatherer& gat
         return false;
     }
 
-    const size_t computedLength = findStringCutoff(str, length);
-    const re2::StringPiece ref(str, computedLength);
-    re2::StringPiece match[MAX_MATCH_COUNT];
+    const re2::StringPiece ref(str, length);
+    re2::StringPiece match[max_match_count];
     bool didMatch = regex->Match(ref,
                                  0,
-                                 computedLength,
+                                 length,
                                  re2::RE2::UNANCHORED,
                                  match, 1);
 
@@ -48,7 +47,7 @@ bool RE2Manager::performMatch(const char* str, size_t length, MatchGatherer& gat
 
     if (output)
     {
-        gatherer.resolvedValue = std::string(str, computedLength);
+        gatherer.resolvedValue = std::string(str, length);
         if (didMatch)
         {
             gatherer.matchedValue = match[0].as_string();

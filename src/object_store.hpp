@@ -18,9 +18,11 @@ namespace ddwaf
 class object_store
 {
 public:
-    explicit object_store(const manifest& m): manifest_(m) {}
+    explicit object_store(const manifest& m,
+        ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    ~object_store();
 
-    bool insert(const ddwaf_object &input);
+    bool insert(ddwaf_object &input);
 
     const ddwaf_object *get_target(const manifest::target_type target) const;
 
@@ -41,6 +43,9 @@ protected:
 
     std::unordered_set<manifest::target_type> latest_batch_;
     std::unordered_map<manifest::target_type, const ddwaf_object *> objects_;
+
+    std::vector<ddwaf_object> cache_;
+    ddwaf_object_free_fn obj_free_;
 };
 
 }

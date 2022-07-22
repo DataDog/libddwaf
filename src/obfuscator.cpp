@@ -16,10 +16,8 @@ namespace
 
 bool match(re2::RE2 &regex, std::string_view value)
 {
-    size_t length = findStringCutoff(value.data(), value.size());
-    const re2::StringPiece key_ref(value.data(), length);
-
-    return regex.Match(key_ref, 0, length, re2::RE2::UNANCHORED, nullptr, 0);
+    const re2::StringPiece key_ref(value.data(), value.size());
+    return regex.Match(key_ref, 0, value.size(), re2::RE2::UNANCHORED, nullptr, 0);
 }
 
 }

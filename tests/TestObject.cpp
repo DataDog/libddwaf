@@ -311,24 +311,24 @@ TEST(TestUTF8, TestLongUTF8)
 
     //Only ASCII/single-byte characters
     memset(buffer, 'A', sizeof(buffer));
-    EXPECT_EQ(findStringCutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
 
     //New sequence starting just after the cut-off point
     memcpy(&buffer[DDWAF_MAX_STRING_LENGTH], emoji, sizeof(emoji));
-    EXPECT_EQ(findStringCutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
     memset(&buffer[DDWAF_MAX_STRING_LENGTH], 'A', sizeof(emoji));
 
     //We need to step back once
     memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 1], emoji, sizeof(emoji));
-    EXPECT_EQ(findStringCutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 1);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 1);
     memset(&buffer[DDWAF_MAX_STRING_LENGTH - 1], 'A', sizeof(emoji));
 
     //We need to step back twice
     memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 2], emoji, sizeof(emoji));
-    EXPECT_EQ(findStringCutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 2);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 2);
     memset(&buffer[DDWAF_MAX_STRING_LENGTH - 2], 'A', sizeof(emoji));
 
     //No need to step back, the sequence finishes just before the cutoff
     memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 3], emoji, sizeof(emoji));
-    EXPECT_EQ(findStringCutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
 }

@@ -212,10 +212,8 @@ static void log_cb(
 }
 
 int main() {
-    ddwaf_version version;
-    ddwaf_get_version(&version);
-    printf("ddwaf version: %d.%d.%d\n", version.major, version.minor,
-           version.patch);
+    const char * version = ddwaf_get_version();
+    printf("ddwaf version: %s\n", version);
 
     ddwaf_set_log_cb(log_cb, DDWAF_LOG_DEBUG);
 
@@ -228,7 +226,7 @@ int main() {
         return 1;
     }
 
-    ddwaf_context ctx = ddwaf_context_init(handle, NULL);
+    ddwaf_context ctx = ddwaf_context_init(handle);
     if (!ctx) {
         puts("ctx is null");
         return 1;

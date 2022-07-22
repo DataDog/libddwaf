@@ -43,10 +43,12 @@ public:
     condition(std::vector<ddwaf::manifest::target_type>&& targets_,
               std::vector<PW_TRANSFORM_ID>&& transformers,
               std::unique_ptr<IPWRuleProcessor>&& processor_,
+              ddwaf::object_limits &limits,
               data_source source = data_source::values):
         targets(std::move(targets_)),
         transformation(std::move(transformers)),
         processor(std::move(processor_)),
+        limits_(limits),
         source_(source) {}
 
     condition(condition&&) = default;
@@ -61,7 +63,7 @@ public:
         PWRetManager& retManager) const;
 
     bool matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer) const;
-    bool doesUseNewParameters(const object_store& store) const;
+    bool has_new_targets(const object_store& store) const;
 
 protected:
     template <typename T>
@@ -73,6 +75,7 @@ protected:
     std::vector<ddwaf::manifest::target_type> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
     std::unique_ptr<IPWRuleProcessor> processor;
+    ddwaf::object_limits limits_;
     data_source source_;
 };
 
@@ -80,6 +83,8 @@ class rule
 {
 public:
     using index_type = uint32_t;
+
+    bool has_new_targets(const object_store &store) const;
 
     index_type index;
     std::string id;
@@ -91,6 +96,6 @@ public:
 using rule_map        = std::unordered_map<rule::index_type, rule>;
 using rule_vector     = std::vector<rule>;
 using rule_ref_vector = std::vector<std::reference_wrapper<rule>>;
-using flow_map        = std::unordered_map<std::string, rule_ref_vector>;
+using collection_map  = std::unordered_map<std::string, rule_ref_vector>;
 
 }

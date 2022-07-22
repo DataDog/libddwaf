@@ -7,10 +7,10 @@
 #include <cstddef>
 #include <utils.h>
 
-size_t findStringCutoff(const char* str, size_t length)
+size_t find_string_cutoff(const char *str, size_t length, uint32_t max_string_length)
 {
     //If the string is shorter than our cap, then fine
-    if (length <= DDWAF_MAX_STRING_LENGTH)
+    if (length <= max_string_length)
         return length;
 
     //If it's longer, we need to truncate it. However, we don't want to cut a UTF-8 byte sequence in the middle of it!
@@ -26,7 +26,7 @@ size_t findStringCutoff(const char* str, size_t length)
     // - 10: Middle of multi byte sequence, we need to step back
     // We therefore loop as long as we see the '10' sequence
 
-    size_t pos = DDWAF_MAX_STRING_LENGTH;
+    size_t pos = max_string_length;
     while (pos != 0 && (str[pos] & 0xC0) == 0x80)
     {
         pos -= 1;

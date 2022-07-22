@@ -17,7 +17,7 @@
 #include <IPWRuleProcessor.h>
 #include <manifest.hpp>
 #include <utils.h>
-#include <limits.hpp>
+#include <config.hpp>
 
 // Eventually object will be a class rather than a namespace
 namespace ddwaf::object
@@ -45,7 +45,7 @@ public:
 protected:
     static constexpr std::size_t initial_stack_size = 32;
 
-    const object_limits limits_;
+    object_limits limits_;
     // This is only used when the iterator is initialised with a key path,
     // since the iterator doesn't keep track of the root object provided,
     // but only the beginning of the key path, we keep this here so that we

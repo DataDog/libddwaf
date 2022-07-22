@@ -57,7 +57,7 @@ public:
     {
         validator->Reset();
 
-        context = ddwaf_context_init(handle, ddwaf_object_free);
+        context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
     }
 

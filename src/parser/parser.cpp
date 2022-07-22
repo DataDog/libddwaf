@@ -16,18 +16,15 @@ namespace ddwaf::parser
 
 namespace v1
 {
-void parse(parameter::map& ruleset, ruleset_info& info,
-    rule_vector& ruleManager, ddwaf::manifest_builder& mb, flow_map& flows);
+void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg);
 }
 
 namespace v2
 {
-void parse(parameter::map& ruleset, ruleset_info& info,
-    rule_vector& ruleManager, ddwaf::manifest_builder& mb, flow_map& flows);
+void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg);
 }
 
-void parse(parameter object, ruleset_info& info, rule_vector& ruleManager,
-           ddwaf::manifest_builder& mb, flow_map& flows)
+void parse(parameter object, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg)
 {
     parameter::map ruleset   = object;
     std::string_view version = at<std::string_view>(ruleset, "version");
@@ -41,9 +38,9 @@ void parse(parameter object, ruleset_info& info, rule_vector& ruleManager,
     switch (major)
     {
         case 1:
-            return v1::parse(ruleset, info, ruleManager, mb, flows);
+            return v1::parse(ruleset, info, rs, cfg);
         case 2:
-            return v2::parse(ruleset, info, ruleManager, mb, flows);
+            return v2::parse(ruleset, info, rs, cfg);
         default:
             DDWAF_ERROR("incompatible ruleset version %u.%u", major, minor);
             throw unsupported_version();

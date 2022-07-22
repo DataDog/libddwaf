@@ -11,8 +11,28 @@
 namespace ddwaf
 {
 
-bool object_store::insert(const ddwaf_object &input)
+object_store::object_store(const manifest& m, ddwaf_object_free_fn free_fn):
+  manifest_(m), obj_free_(free_fn)
 {
+    if (obj_free_ != nullptr) {
+        cache_.reserve(8);
+    }
+}
+
+object_store::~object_store()
+{
+    if (obj_free_ == nullptr) { return; }
+    for (auto &obj : cache_) {
+        obj_free_(&obj);
+    }
+}
+
+bool object_store::insert(ddwaf_object &input)
+{
+    if (obj_free_ != nullptr) {
+        cache_.emplace_back(input);
+    }
+
     latest_batch_.clear();
 
     if (input.type != DDWAF_OBJ_MAP) {
