@@ -76,7 +76,7 @@ waf* waf::from_config(const ddwaf_object ruleset,
     {
         ddwaf::config cfg{
             limits_from_config(config),
-            std::move(obfuscator_from_config(config)),
+            obfuscator_from_config(config),
             config ? config->free_fn : ddwaf_object_free,
         };
 

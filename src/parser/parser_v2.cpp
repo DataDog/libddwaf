@@ -268,7 +268,7 @@ void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddw
         throw ddwaf::parsing_error("no valid rules found");
     }
 
-    rs.manifest = std::move(mb.build_manifest());
+    rs.manifest = mb.build_manifest();
 
     DDWAF_DEBUG("Loaded %zu rules out of %zu available in the ruleset",
                 rs.rules.size(), rules_array.size());

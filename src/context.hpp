@@ -24,12 +24,15 @@ class context
 public:
     context(ddwaf::ruleset &ruleset, ddwaf::config &config):
         ruleset_(ruleset), config_(config),
-        store_(ruleset_.manifest, config_.free_fn){}
+        store_(ruleset_.manifest, config_.free_fn)
+    {
+        status_cache_.reserve(ruleset_.rules.size());
+    }
 
     context(const context&) = delete;
     context& operator=(const context&) = delete;
     context(context&&) = default;
-    context& operator=(context&&) = default;
+    context& operator=(context&&) = delete;
     ~context() = default;
 
     DDWAF_RET_CODE run(ddwaf_object, optional_ref<ddwaf_result> res, uint64_t);
