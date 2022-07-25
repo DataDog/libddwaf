@@ -174,8 +174,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         for (parameter::map cond : conditions_array)
         {
-            conditions.emplace_back(
-                parseCondition(cond, mb, rule_transformers, cfg));
+            conditions.push_back(parseCondition(cond, mb, rule_transformers, cfg));
         }
 
         auto tags = at<parameter::map>(rule, "tags");

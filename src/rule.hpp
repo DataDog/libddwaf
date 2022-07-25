@@ -91,6 +91,14 @@ public:
     rule(index_type index_, std::string &&id_, std::string &&name_,
       std::string &&category_, std::vector<condition> &&conditions_);
 
+    rule(const rule&) = delete;
+    rule& operator=(const rule&) = delete;
+
+    rule(rule&&) = default;
+    rule& operator=(rule&&) = default;
+
+    ~rule() = default;
+
     bool has_new_targets(const object_store &store) const;
 
     index_type index;
