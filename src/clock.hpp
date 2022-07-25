@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef CLOCK_HPP
-#define CLOCK_HPP
+#pragma once
 
 #include <atomic>
 #include <chrono>
@@ -29,6 +28,7 @@ struct monotonic_clock
 private:
     static std::atomic<bool> warning_issued;
 };
+#endif // __linux__
 
 class timer
 {
@@ -54,6 +54,4 @@ protected:
     const uint32_t syscall_frequency_{16};
     uint32_t calls_{1};
 };
-#endif // __linux__
 }
-#endif
