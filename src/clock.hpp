@@ -29,6 +29,31 @@ struct monotonic_clock
 private:
     static std::atomic<bool> warning_issued;
 };
+
+class timer
+{
+public:
+    // Syscall frequency refers to the number of times clock_gettime is called,
+    // the frequency is measured in number of calls to expired. E.g. if the
+    // frequency is 16, every 16 calls to expired, the current time will be
+    // updated by calling clock_gettime.
+    timer(monotonic_clock::time_point exp, uint32_t syscall_frequency = 16):
+      expiration_(exp), syscall_frequency_(syscall_frequency)  {}
+
+    bool expired() {
+        if (--calls_ == 0) {
+            if (expiration_ <= monotonic_clock::now()) {
+                return true;
+            }
+            calls_ = syscall_frequency_;
+        }
+        return false;
+    }
+protected:
+    monotonic_clock::time_point expiration_;
+    const uint32_t syscall_frequency_{16};
+    uint32_t calls_{1};
+};
 #endif // __linux__
 }
 #endif

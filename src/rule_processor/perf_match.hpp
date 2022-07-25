@@ -18,9 +18,7 @@ class PerfMatch : public IPWRuleProcessor
 public:
     PerfMatch(std::vector<const char*> pattern, std::vector<uint32_t> lengths);
     std::string_view operatorName() const override { return name; }
-
-protected:
-    bool performMatch(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const override;
+    bool match(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const override;
 
 protected:
     static constexpr std::string_view name { "phrase_match" };

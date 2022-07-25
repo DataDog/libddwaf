@@ -17,7 +17,7 @@ target_compile_definitions(testPowerWAF PRIVATE TESTING=1 SPDLOG_ACTIVE_LEVEL=0)
 
 if(NOT MSVC)
     if(LIBDDWAF_TEST_COVERAGE)
-        set_target_properties(testPowerWAF PROPERTIES COMPILE_FLAGS "-O0 -g --coverage")
+        set_target_properties(testPowerWAF PROPERTIES COMPILE_FLAGS "-g --coverage")
         set(COVERAGE_LINK_FLAGS "--coverage")
     endif()
 else()

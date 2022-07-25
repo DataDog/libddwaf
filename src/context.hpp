@@ -39,9 +39,7 @@ public:
 
     bool run_collection(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,
-                 PWRetManager& manager,
-                 const ddwaf::monotonic_clock::time_point& deadline);
-
+                 PWRetManager& manager, ddwaf::timer& deadline);
 
 protected:
     bool is_first_run() const { return status_cache_.empty(); }

@@ -39,7 +39,7 @@ DDWAF_RET_CODE context::run(ddwaf_object newParameters,
     }
 
     const auto start    = ddwaf::monotonic_clock::now();
-    const auto deadline = start + std::chrono::microseconds(timeLeft);
+    ddwaf::timer deadline(start + std::chrono::microseconds(timeLeft));
 
     // If this is a new run but no rule care about those new params, let's skip the run
     if (!is_first_run() && !store_.has_new_targets())
@@ -68,8 +68,8 @@ DDWAF_RET_CODE context::run(ddwaf_object newParameters,
 }
 
 bool context::run_collection(const std::string& name,
-  const ddwaf::rule_ref_vector& collection, PWRetManager& retManager,
-  const ddwaf::monotonic_clock::time_point& deadline)
+  const ddwaf::rule_ref_vector& collection,
+  PWRetManager& retManager, ddwaf::timer& deadline)
 {
     /*
 	 *	A collection is a sequence of steps
@@ -80,7 +80,7 @@ bool context::run_collection(const std::string& name,
 
     //If we ran out of time, we want to generate DDWAF_ERR_TIMEOUT records for every collection we're going to skip
     //This also protect us against loops for free (the cache could avoid the inner loop's check)
-    if (deadline <= ddwaf::monotonic_clock::now())
+    if (deadline.expired())
     {
         DDWAF_INFO("Ran out of time while running collection %s", name.c_str());
         retManager.recordTimeout();
@@ -124,7 +124,7 @@ bool context::run_collection(const std::string& name,
         bool run_on_new = cachedNegativeMatch && rule.conditions.size() == 1;
         for (const ddwaf::condition& cond : rule.conditions)
         {
-            status = cond.performMatching(store_, ruleset_.manifest, run_on_new, deadline, retManager);
+            status = cond.match(store_, ruleset_.manifest, run_on_new, deadline, retManager);
             //Stop if we didn't matched any of the parameters (2) or that the parameter couldn't be found
             if (status == match_status::no_match)
             {
@@ -164,7 +164,7 @@ bool context::run_collection(const std::string& name,
             break;
         }
 
-        if (deadline <= ddwaf::monotonic_clock::now())
+        if (deadline.expired())
         {
             DDWAF_INFO("Ran out of time while running collection %s and rule %s", name.c_str(), rule.id.c_str());
             retManager.recordTimeout();

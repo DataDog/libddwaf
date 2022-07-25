@@ -17,15 +17,11 @@
 namespace ddwaf
 {
 
-bool condition::matchWithTransformer(const ddwaf_object* baseInput, 
+bool condition::match_object(const ddwaf_object* baseInput,
   MatchGatherer& gatherer) const
 {
     const bool hasTransformation        = !transformation.empty();
     bool transformationWillChangeString = false;
-
-    if (baseInput->type != DDWAF_OBJ_STRING) {
-        return processor->doesMatch(baseInput, gatherer);
-    }
 
     if (hasTransformation)
     {
@@ -38,12 +34,8 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput,
             baseInput->nbEntries, limits_.max_string_length);
 
     //If we don't have transformation to perform, or if they're irrelevant, no need to waste time copying and allocating data
-    if (!hasTransformation || !transformationWillChangeString)
-    {
-        ddwaf_object input;
-        ddwaf_object_stringl_nc(&input, baseInput->stringValue, length);
-
-        return processor->doesMatch(&input, gatherer);
+    if (!hasTransformation || !transformationWillChangeString) {
+        return processor->match(baseInput->stringValue, length, gatherer);
     }
 
     ddwaf_object copyInput;
@@ -62,12 +54,9 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput,
 
     //Run the transformed input
     if (transformFailed) {
-        ddwaf_object input;
-        ddwaf_object_stringl_nc(&input, baseInput->stringValue, length);
-
-        matched |= processor->doesMatch(&input, gatherer);
+        matched |= processor->match(baseInput->stringValue, length, gatherer);
     } else {
-        matched |= processor->doesMatch(&copyInput, gatherer);
+        matched |= processor->match_object(&copyInput, gatherer);
     }
 
     // Otherwise, the caller is in charge of freeing the pointer
@@ -79,22 +68,17 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput,
 template <typename T>
 condition::status condition::match_target(T &it,
     const std::string &name,
-    const monotonic_clock::time_point& deadline,
+    ddwaf::timer& deadline,
     PWRetManager& retManager) const
 {
-    size_t counter = 0;
-
     for (; it; ++it) {
-        // Only check the time every 16 runs
-        // TODO abstract away deadline checks into custom object
-        if ((++counter & 0xf) == 0 && deadline <= monotonic_clock::now())
-        {
+        if (deadline.expired()) {
             return status::timeout;
         }
 
         MatchGatherer gather;
-        if ((it.type() & processor->expectedTypes()) == 0) { continue; }
-        if (!matchWithTransformer(*it, gather)) { continue; }
+        if (it.type() != DDWAF_OBJ_STRING) { continue; }
+        if (!match_object(*it, gather)) { continue; }
 
         gather.keyPath = it.get_current_path();
         gather.dataSource = name;
@@ -113,10 +97,9 @@ condition::status condition::match_target(T &it,
     return status::no_match;
 }
 
-condition::status condition::performMatching(object_store& store,
+condition::status condition::match(object_store& store,
     const ddwaf::manifest &manifest, bool run_on_new,
-    const monotonic_clock::time_point& deadline,
-    PWRetManager& retManager) const
+    ddwaf::timer& deadline, PWRetManager& retManager) const
 {
     for (const auto &target : targets) {
 
@@ -142,37 +125,29 @@ condition::status condition::performMatching(object_store& store,
             res = match_target(it, info.name, deadline, retManager);
         }
 
-        if (res == status::matched) { return status::matched; }
-    }
-
-    // Only @exist care about this branch, it's at the end to enable a better report when there is a real value
-    if (processor->matchAnyInput())
-    {
-        retManager.recordRuleMatch(processor, MatchGatherer());
-        return status::matched;
-    }
-
-    //	If at least one resolved, but didn't matched, we return NO_MATCH
-    return status::no_match;
-}
-
-bool condition::has_new_targets(const object_store& store) const
-{
-    for (const auto& target : targets)
-    {
-        if (store.is_new_target(target)) {
-            return true;
+        if (res == status::matched || res == status::timeout) {
+            return res;
         }
     }
 
-    return false;
+    return status::no_match;
+}
+
+rule::rule(index_type index_, std::string &&id_, std::string &&name_,
+  std::string &&category_, std::vector<condition> &&conditions_):
+  index(index_), id(std::move(id_)), name(std::move(name_)),
+  category(std::move(category_)), conditions(std::move(conditions_))
+{
+    for (auto &cond : conditions) {
+        targets.insert(cond.targets.begin(), cond.targets.end());
+    }
 }
 
 bool rule::has_new_targets(const object_store &store) const
 {
-    for (const auto& cond : conditions)
+    for (const auto& target : targets)
     {
-        if (cond.has_new_targets(store)) {
+        if (store.is_new_target(target)) {
             return true;
         }
     }

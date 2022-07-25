@@ -27,7 +27,7 @@ RE2Manager::RE2Manager(const std::string& regex_str, std::size_t minLength, bool
     groupsToCatch = (uint8_t) std::min(regex->NumberOfCapturingGroups() + 1, max_match_count);
 }
 
-bool RE2Manager::performMatch(const char* str, size_t length, MatchGatherer& gatherer) const
+bool RE2Manager::match(const char* str, size_t length, MatchGatherer& gatherer) const
 {
     if (!regex->ok() || length < min_length)
     {
@@ -42,27 +42,10 @@ bool RE2Manager::performMatch(const char* str, size_t length, MatchGatherer& gat
                                  re2::RE2::UNANCHORED,
                                  match, 1);
 
-    //Copy on match
-    bool output = didMatch == wantMatch;
+    if (!didMatch) { return false; }
 
-    if (output)
-    {
-        gatherer.resolvedValue = std::string(str, length);
-        if (didMatch)
-        {
-            gatherer.matchedValue = match[0].as_string();
-        }
-    }
+    gatherer.resolvedValue = std::string(str, length);
+    gatherer.matchedValue = match[0].as_string();
 
-    return output;
-}
-
-bool RE2Manager::hasStringRepresentation() const
-{
     return true;
-}
-
-const std::string RE2Manager::getStringRepresentation() const
-{
-    return regex->pattern();
 }

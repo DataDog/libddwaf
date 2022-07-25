@@ -199,4 +199,17 @@ rules:
           regex: rule14
     transformers:
       - keys_only
+  - id: 15
+    name: rule15-remove-nulls-transformer
+    tags:
+      type: flow15
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule15-input
+          regex: rule15
+    transformers:
+      - removeNulls
 

@@ -9,14 +9,14 @@
 TEST(TestLibInjectionXSS, TestBasic)
 {
     LibInjectionXSS processor;
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "(null)");
+    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "");
     EXPECT_STREQ(processor.operatorName().data(), "is_xss");
 
     MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "<script>alert(1);</script>");
 
-    EXPECT_TRUE(processor.doesMatch(&param, gatherer));
+    EXPECT_TRUE(processor.match_object(&param, gatherer));
 
     EXPECT_STREQ(gatherer.resolvedValue.c_str(), "<script>alert(1);</script>");
 

@@ -9,14 +9,14 @@
 TEST(TestLibInjectionSQL, TestBasic)
 {
     LibInjectionSQL processor;
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "(null)");
+    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "");
     EXPECT_STREQ(processor.operatorName().data(), "is_sqli");
 
     MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "'OR 1=1/*");
 
-    EXPECT_TRUE(processor.doesMatch(&param, gatherer));
+    EXPECT_TRUE(processor.match_object(&param, gatherer));
 
     EXPECT_STREQ(gatherer.resolvedValue.c_str(), "'OR 1=1/*");
 

@@ -79,7 +79,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
-    ${libddwaf_SOURCE_DIR}/src/rule_processor/IPWRuleProcessor.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/perf_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/re2.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/libinjection.cpp

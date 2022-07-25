@@ -1,0 +1,22 @@
+{
+  name: "Basic run with match and nulls removed",
+  runs: [
+    {
+      input: {
+        rule15-input: "rule15\u0000"
+      },
+      rules: [
+        {
+          15: [
+            {
+              address: rule15-input,
+              key_path: [],
+              value: rule15
+            }
+          ]
+        }
+      ],
+      code: monitor
+    }
+  ]
+}

@@ -9,32 +9,28 @@
 #include <libinjection.h>
 #include <utils.h>
 
-bool LibInjectionSQL::performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const
+bool LibInjectionSQL::match(const char* pattern, size_t length, MatchGatherer& gatherer) const
 {
     //The mandated length is 8
     char fingerprint[16]        = { 0 };
-    bool didMatch               = libinjection_sqli(pattern, length, fingerprint) == 1;
-    bool output                 = didMatch == wantMatch;
 
-    if (output)
-    {
-        gatherer.resolvedValue = std::string(pattern, length);
-        if (didMatch)
-        {
-            gatherer.matchedValue = std::string(fingerprint);
-        }
+    if (!libinjection_sqli(pattern, length, fingerprint)) {
+        return false;
     }
 
-    return output;
+    gatherer.resolvedValue = std::string(pattern, length);
+    gatherer.matchedValue = std::string(fingerprint);
+
+    return true;
 }
 
-bool LibInjectionXSS::performMatch(const char* pattern, size_t length, MatchGatherer& gatherer) const
+bool LibInjectionXSS::match(const char* pattern, size_t length, MatchGatherer& gatherer) const
 {
-    bool didMatch               = libinjection_xss(pattern, length) == 1;
-    bool output                 = didMatch == wantMatch;
+    if (!libinjection_xss(pattern, length)) {
+        return false;
+    }
 
-    if (output)
-        gatherer.resolvedValue = std::string(pattern, length);
+    gatherer.resolvedValue = std::string(pattern, length);
 
-    return output;
+    return true;
 }

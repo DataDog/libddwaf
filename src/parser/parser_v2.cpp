@@ -150,8 +150,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
-               ddwaf::rule_vector& rules, manifest_builder& mb,
-               ddwaf::collection_map& collections, 
+               manifest_builder& mb, ddwaf::ruleset& rs,
                std::set<std::string_view> &seen_rules,
                ddwaf::config& cfg)
 {
@@ -165,8 +164,6 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 
     try
     {
-        ddwaf::rule parsed_rule;
-
         std::vector<PW_TRANSFORM_ID> rule_transformers;
         auto source = ddwaf::condition::data_source::values;
         auto transformers                  = at<parameter::vector>(rule, "transformers", parameter::vector());
@@ -197,24 +194,22 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         for (parameter::map cond : conditions_array)
         {
-            parsed_rule.conditions.push_back(
+            conditions.push_back(
                 parseCondition(cond, mb, source, rule_transformers, cfg));
         }
 
         auto tags = at<parameter::map>(rule, "tags");
         auto type = at<std::string>(tags, "type");
 
-        auto index           = rules.size();
-        parsed_rule.index    = index;
-        parsed_rule.id       = id;
-        parsed_rule.name     = at<std::string>(rule, "name");
-        parsed_rule.category = at<std::string>(tags, "category", "");
+        auto index           = rs.rules.size();
+        rs.rules.emplace_back(index, std::string(id),
+            at<std::string>(rule, "name"),
+            at<std::string>(tags, "category", ""),
+            std::move(conditions));
 
-        rules.push_back(std::move(parsed_rule));
+        auto &rule_ref = rs.rules[index];
 
-        auto &rule_ref = rules[index];
-
-        auto& collection = collections[type];
+        auto& collection = rs.collections[type];
         collection.push_back(rule_ref);
 
         // Add this rule to the set to check for duplicates
@@ -254,7 +249,7 @@ void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddw
     {
         try
         {
-            parseRule(rule, info, rs.rules, mb, rs.collections, seen_rules, cfg);
+            parseRule(rule, info, mb, rs, seen_rules, cfg);
         }
         catch (const std::exception& e)
         {
