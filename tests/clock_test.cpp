@@ -11,19 +11,21 @@ TEST(TestTimer, Basic)
     ddwaf::timer deadline{2ms, 1};
     EXPECT_FALSE(deadline.expired());
 
-    std::this_thread::sleep_for(500us);
+    std::this_thread::sleep_for(5us);
     EXPECT_FALSE(deadline.expired());
 
-    std::this_thread::sleep_for(1000us);
+    std::this_thread::sleep_for(5us);
     EXPECT_FALSE(deadline.expired());
 
-    std::this_thread::sleep_for(1000us);
+    std::this_thread::sleep_for(2ms);
+    EXPECT_TRUE(deadline.expired());
     EXPECT_TRUE(deadline.expired());
 }
 
 TEST(TestTimer, ExpiredFromConstruction)
 {
     ddwaf::timer deadline{0us};
+    EXPECT_TRUE(deadline.expired());
     EXPECT_TRUE(deadline.expired());
 }
 
@@ -32,10 +34,11 @@ TEST(TestTimer, ValidatePeriod)
     ddwaf::timer deadline{1ms, 5};
     EXPECT_FALSE(deadline.expired());
 
-    std::this_thread::sleep_for(1000us);
+    std::this_thread::sleep_for(1ms);
     EXPECT_FALSE(deadline.expired());
     EXPECT_FALSE(deadline.expired());
     EXPECT_FALSE(deadline.expired());
     EXPECT_FALSE(deadline.expired());
+    EXPECT_TRUE(deadline.expired());
     EXPECT_TRUE(deadline.expired());
 }

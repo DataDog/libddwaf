@@ -42,17 +42,19 @@ public:
     {}
 
     bool expired() {
-        if (--calls_ == 0) {
+        if (!expired_ && --calls_ == 0) {
             if (expiration_ <= monotonic_clock::now()) {
-                return true;
+                expired_ = true;
+            } else {
+                calls_ = syscall_period_;
             }
-            calls_ = syscall_period_;
         }
-        return false;
+        return expired_;
     }
 protected:
     monotonic_clock::time_point expiration_;
     const uint32_t syscall_period_{16};
     uint32_t calls_{1};
+    bool expired_{false};
 };
 }
