@@ -39,6 +39,9 @@ monotonic_clock::time_point monotonic_clock::now() noexcept
 
 std::atomic_bool monotonic_clock::warning_issued {};
 
+// TODO: potentially check on initialisation if CLOCK_MONOTONIC_COARSE is
+//       available, as well as it's resolution, so that timer can decide
+//       the best clock to use.
 struct VdsoInitializer
 {
     VdsoInitializer()

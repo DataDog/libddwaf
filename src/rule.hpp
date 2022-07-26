@@ -106,7 +106,7 @@ public:
     std::string name;
     std::string category;
     std::vector<condition> conditions;
-    std::set<ddwaf::manifest::target_type> targets;
+    std::unordered_set<ddwaf::manifest::target_type> targets;
 };
 
 using rule_map        = std::unordered_map<rule::index_type, rule>;

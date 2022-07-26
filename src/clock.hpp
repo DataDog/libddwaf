@@ -33,25 +33,25 @@ private:
 class timer
 {
 public:
-    // Syscall frequency refers to the number of times clock_gettime is called,
-    // the frequency is measured in number of calls to expired. E.g. if the
-    // frequency is 16, every 16 calls to expired, the current time will be
-    // updated by calling clock_gettime.
-    timer(monotonic_clock::time_point exp, uint32_t syscall_frequency = 16):
-      expiration_(exp), syscall_frequency_(syscall_frequency)  {}
+    // Syscall period refers to the number of calls to expired() before
+    // clock_gettime is called. This approach is only feasible because the 
+    // WAF calls expired() quite often, otherwise another solution would be
+    // required to minimise syscalls.
+    timer(monotonic_clock::time_point exp, uint32_t syscall_period = 16):
+      expiration_(exp), syscall_period_(syscall_period)  {}
 
     bool expired() {
         if (--calls_ == 0) {
             if (expiration_ <= monotonic_clock::now()) {
                 return true;
             }
-            calls_ = syscall_frequency_;
+            calls_ = syscall_period_;
         }
         return false;
     }
 protected:
     monotonic_clock::time_point expiration_;
-    const uint32_t syscall_frequency_{16};
+    const uint32_t syscall_period_{16};
     uint32_t calls_{1};
 };
 }
