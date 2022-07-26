@@ -33,11 +33,21 @@ endif()
 
 set(LIBDDWAF_MSVC_RUNTIME_LIBRARY "/MT" CACHE STRING "MSVC RuntimeLibrary")
 
-if(NOT MSVC)
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing -flto -fno-fat-lto-objects -ffunction-sections -fdata-sections -Wl,--gc-sections")
     set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELEASE} -ggdb")
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wextra -Wno-narrowing -ggdb")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing -flto -fno-fat-lto-objects -ffunction-sections -fdata-sections -Wl,--gc-sections")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -ggdb")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wno-narrowing -ggdb")
+
+    add_definitions(-D__STDC_FORMAT_MACROS)
+elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing")
+    set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELEASE} -ggdb")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wextra -Wno-narrowing -ggdb")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -ggdb")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wno-narrowing -ggdb")
 
