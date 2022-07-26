@@ -34,11 +34,11 @@ endif()
 set(LIBDDWAF_MSVC_RUNTIME_LIBRARY "/MT" CACHE STRING "MSVC RuntimeLibrary")
 
 if(NOT MSVC)
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing")
-    set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing -ggdb")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing -flto -fno-fat-lto-objects -ffunction-sections -fdata-sections -Wl,--gc-sections")
+    set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELEASE} -ggdb")
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wextra -Wno-narrowing -ggdb")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing -ggdb")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing -flto -fno-fat-lto-objects -ffunction-sections -fdata-sections -Wl,--gc-sections")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -ggdb")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wno-narrowing -ggdb")
 
     add_definitions(-D__STDC_FORMAT_MACROS)
@@ -256,7 +256,7 @@ if (LIBDDWAF_BUILD_SHARED)
                 add_custom_command(TARGET libddwaf_shared POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:libddwaf_shared> ${SYMBOL_FILE}
                     COMMAND ${CMAKE_STRIP} --only-keep-debug ${SYMBOL_FILE}
-                    COMMAND ${CMAKE_STRIP} $<TARGET_FILE:libddwaf_shared>)
+                    COMMAND ${CMAKE_STRIP} --strip-unneeded $<TARGET_FILE:libddwaf_shared>)
             else()
                 add_custom_command(TARGET libddwaf_shared POST_BUILD
                     COMMAND ${CMAKE_STRIP} $<TARGET_FILE:libddwaf_shared>)
