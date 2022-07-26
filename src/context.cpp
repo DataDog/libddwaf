@@ -39,7 +39,7 @@ DDWAF_RET_CODE context::run(ddwaf_object newParameters,
     }
 
     const auto start    = ddwaf::monotonic_clock::now();
-    ddwaf::timer deadline(start + std::chrono::microseconds(timeLeft));
+    ddwaf::timer deadline{std::chrono::microseconds(timeLeft)};
 
     // If this is a new run but no rule care about those new params, let's skip the run
     if (!is_first_run() && !store_.has_new_targets())
