@@ -11,12 +11,6 @@ TEST(TestTimer, Basic)
     ddwaf::timer deadline{2ms, 1};
     EXPECT_FALSE(deadline.expired());
 
-    std::this_thread::sleep_for(5us);
-    EXPECT_FALSE(deadline.expired());
-
-    std::this_thread::sleep_for(5us);
-    EXPECT_FALSE(deadline.expired());
-
     std::this_thread::sleep_for(2ms);
     EXPECT_TRUE(deadline.expired());
     EXPECT_TRUE(deadline.expired());
