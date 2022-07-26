@@ -43,7 +43,7 @@ public:
     condition(std::vector<ddwaf::manifest::target_type>&& targets_,
               std::vector<PW_TRANSFORM_ID>&& transformers,
               std::unique_ptr<IPWRuleProcessor>&& processor_,
-              ddwaf::object_limits &limits,
+              ddwaf::object_limits limits = ddwaf::object_limits(),
               data_source source = data_source::values):
         targets(std::move(targets_)),
         transformation(std::move(transformers)),
@@ -113,5 +113,12 @@ using rule_map        = std::unordered_map<rule::index_type, rule>;
 using rule_vector     = std::vector<rule>;
 using rule_ref_vector = std::vector<std::reference_wrapper<rule>>;
 using collection_map  = std::unordered_map<std::string, rule_ref_vector>;
+
+struct ruleset
+{
+    ddwaf::manifest manifest;
+    ddwaf::rule_vector rules;
+    ddwaf::collection_map collections;
+};
 
 }

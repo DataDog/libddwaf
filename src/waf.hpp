@@ -7,7 +7,6 @@
 
 #include <config.hpp>
 #include <context.hpp>
-#include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
 #include <version.hpp>

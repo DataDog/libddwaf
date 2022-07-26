@@ -37,7 +37,6 @@ using namespace std;
 #include <obfuscator.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
-#include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
 #include <yaml-cpp/yaml.h>

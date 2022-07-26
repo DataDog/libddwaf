@@ -16,7 +16,6 @@
 #include <unordered_map>
 #include <vector>
 #include <iostream>
-#include <ruleset.hpp>
 
 using ddwaf::parameter;
 using ddwaf::parser::at;

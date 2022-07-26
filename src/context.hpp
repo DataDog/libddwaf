@@ -11,7 +11,6 @@
 #include <ddwaf.h>
 #include <optional>
 #include <rule.hpp>
-#include <ruleset.hpp>
 #include <config.hpp>
 #include <utils.h>
 #include <obfuscator.hpp>
@@ -37,11 +36,11 @@ public:
 
     DDWAF_RET_CODE run(ddwaf_object, optional_ref<ddwaf_result> res, uint64_t);
 
+protected:
     bool run_collection(const std::string& name,
                  const ddwaf::rule_ref_vector& flow,
                  PWRetManager& manager, ddwaf::timer& deadline);
 
-protected:
     bool is_first_run() const { return status_cache_.empty(); }
     condition::status get_cached_status(ddwaf::rule::index_type rule_idx) const;
     bool has_new_targets(const std::vector<ddwaf::condition>& rules) const;

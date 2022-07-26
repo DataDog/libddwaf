@@ -66,3 +66,30 @@ void compareArraysOfTargets(const ddwaf::manifest& manifest,
     //ddwaf_context_destroy(context);
     //ddwaf_destroy(handle);
 /*}*/
+
+TEST(TestCondition, TestMatch)
+{
+    std::vector<ddwaf::manifest::target_type> targets;
+
+    ddwaf::manifest_builder mb;
+    targets.push_back(mb.insert("server.request.query", {}));
+
+    auto manifest = mb.build_manifest();
+
+    condition cond(std::move(targets), {}, std::make_unique<RE2Manager>(".*", 0, true));
+
+    ddwaf_object root, tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
+
+
+    ddwaf::object_store store(manifest);
+    store.insert(root);
+
+    ddwaf::timer deadline(monotonic_clock::now() + std::chrono::seconds(2));
+    ddwaf::obfuscator obfuscator;
+    PWRetManager manager(obfuscator);
+    manager.startRule();
+
+    EXPECT_EQ(cond.match(store, manifest, true, deadline, manager), condition::status::matched);
+}

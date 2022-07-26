@@ -9,12 +9,10 @@
 #include <manifest.hpp>
 #include <parameter.hpp>
 #include <rule.hpp>
-#include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <ruleset.hpp>
 
 namespace ddwaf::parser
 {
