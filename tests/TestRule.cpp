@@ -27,7 +27,7 @@ TEST(TestCondition, TestMatch)
     ddwaf::object_store store(manifest);
     store.insert(root);
 
-    ddwaf::timer deadline{std::chrono::seconds(2)};
+    ddwaf::timer deadline{2s};
     ddwaf::obfuscator obfuscator;
     PWRetManager manager(obfuscator);
     manager.startRule();
