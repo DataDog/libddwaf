@@ -132,7 +132,7 @@ extern "C"
         return output;
     }
 
-    DDWAF_RET_CODE ddwaf_run(ddwaf_context context, const ddwaf_object* data,
+    DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data,
                              ddwaf_result* result, uint64_t timeout)
     {
         if (result != nullptr)
