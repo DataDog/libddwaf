@@ -254,7 +254,8 @@ int main(int argc, char *argv[])
 
     ddwaf_object rule = benchmark::rule_parser::from_file(rule_file);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_config cfg{{0, 0, 0},{nullptr, nullptr}, nullptr};
+    ddwaf_handle handle = ddwaf_init(&rule, &cfg, nullptr);
     ddwaf_object_free(&rule);
     if (handle == nullptr) {
         std::cerr << "Invalid ruleset file" << std::endl;

@@ -40,6 +40,7 @@ public:
         std::vector<std::string> key_path;
     };
 
+    manifest() = default;
     manifest(std::unordered_map<std::string, target_type> &&targets,
         std::unordered_map<target_type, target_info> &&info):
         targets_(std::move(targets)), info_(std::move(info))

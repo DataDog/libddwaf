@@ -1,0 +1,3 @@
+#pragma once
+
+#define LIBDDWAF_VERSION "${CMAKE_PROJECT_VERSION}"

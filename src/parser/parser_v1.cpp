@@ -25,7 +25,7 @@ namespace
 {
 
 ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
-                                std::vector<PW_TRANSFORM_ID>& transformers)
+  std::vector<PW_TRANSFORM_ID>& transformers, ddwaf::config& cfg)
 {
     auto operation = at<std::string_view>(rule, "operation");
     auto params    = at<parameter::map>(rule, "parameters");
@@ -139,12 +139,13 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
         targets.push_back(target);
     }
 
-    return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor));
+    return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor), cfg.limits);
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
-               ddwaf::rule_vector& rules, manifest_builder& mb,
-               ddwaf::flow_map& flows, std::set<std::string_view> &seen_rules)
+                manifest_builder& mb, ddwaf::ruleset& rs,
+               std::set<std::string_view> &seen_rules,
+               ddwaf::config& cfg)
 {
     auto id = at<std::string>(rule, "id");
     if (seen_rules.find(id) != seen_rules.end())
@@ -156,8 +157,6 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 
     try
     {
-        ddwaf::rule parsed_rule;
-
         std::vector<PW_TRANSFORM_ID> rule_transformers;
         auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
         for (std::string_view transformer : transformers)
@@ -174,25 +173,22 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         for (parameter::map cond : conditions_array)
         {
-            parsed_rule.conditions.push_back(
-                parseCondition(cond, mb, rule_transformers));
+            conditions.push_back(parseCondition(cond, mb, rule_transformers, cfg));
         }
 
         auto tags = at<parameter::map>(rule, "tags");
         auto type = at<std::string>(tags, "type");
 
-        auto index           = rules.size();
-        parsed_rule.index    = index;
-        parsed_rule.id       = id;
-        parsed_rule.name     = at<std::string>(rule, "name");
-        parsed_rule.category = at<std::string>(tags, "category", "");
+        auto index = rs.rules.size();
+        rs.rules.emplace_back(index, std::string(id),
+            at<std::string>(rule, "name"),
+            at<std::string>(tags, "category", ""),
+            std::move(conditions));
 
-        rules.push_back(std::move(parsed_rule));
+        auto &rule_ref = rs.rules[index];
 
-        auto &rule_ref = rules[index];
-
-        auto& flow = flows[type];
-        flow.push_back(rule_ref);
+        auto& collection = rs.collections[type];
+        collection.push_back(rule_ref);
 
         // Add this rule to the set to check for duplicates
         seen_rules.emplace(rule_ref.id);
@@ -211,20 +207,20 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 namespace ddwaf::parser::v1
 {
 
-void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rules,
-           manifest_builder& mb, ddwaf::flow_map& flows)
+void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg)
 {
     auto rules_array = at<parameter::vector>(ruleset, "events");
     // Note that reserving elements is required to ensure all references
     // are valid, otherwise reallocations would invalidate them.
-    rules.reserve(rules_array.size());
+    rs.rules.reserve(rules_array.size());
 
+    ddwaf::manifest_builder mb;
     std::set<std::string_view> seen_rules;
     for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, info, rules, mb, flows, seen_rules);
+            parseRule(rule, info, mb, rs, seen_rules, cfg);
         }
         catch (const std::exception& e)
         {
@@ -233,13 +229,15 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::rule_vector& rule
         }
     }
 
-    if (rules.empty() || flows.empty())
+    if (rs.rules.empty() || rs.collections.empty())
     {
         throw ddwaf::parsing_error("no valid rules found");
     }
 
+    rs.manifest = mb.build_manifest();
+
     DDWAF_DEBUG("Loaded %zu rules out of %zu available in the ruleset",
-                rules.size(), rules_array.size());
+                rs.rules.size(), rules_array.size());
 }
 
 }

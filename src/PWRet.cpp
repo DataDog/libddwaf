@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#undef TESTING
 
 #include "ddwaf.h"
 #include <PWRet.hpp>
@@ -47,14 +46,7 @@ void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& proc
                                                        static_cast<rapidjson::SizeType>(op.size())),
                      allocator);
 
-    if (processor->hasStringRepresentation())
-    {
-        output.AddMember("operator_value", processor->getStringRepresentation(), allocator);
-    }
-    else
-    {
-        output.AddMember("operator_value", "", allocator);
-    }
+    output.AddMember("operator_value", processor->getStringRepresentation(), allocator);
 
     rapidjson::Value parameters, param, key_path;
     parameters.SetArray();

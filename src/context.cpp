@@ -4,75 +4,100 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <PWProcessor.hpp>
-#include <PWRet.hpp>
-#include <ddwaf.h>
 #include <log.hpp>
+
+#include <context.hpp>
+#include <PWRet.hpp>
+#include <tuple>
+#include <utils.h>
+#include <waf.hpp>
 
 using match_status = ddwaf::condition::status;
 
-PWProcessor::PWProcessor(ddwaf::object_store& input,
-    const ddwaf::manifest& manifest, const ddwaf::rule_vector& rules_)
-    : parameters(input), manifest_(manifest), rules(rules_)
+namespace ddwaf
 {
-    ranCache.reserve(rules.size());
-}
 
-match_status PWProcessor::hasCacheHit(ddwaf::rule::index_type rule_idx) const
+DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
+    optional_ref<ddwaf_result> res, uint64_t timeLeft)
 {
-    const auto cacheHit = ranCache.find(rule_idx);
-    if (cacheHit != ranCache.end())
-    {
-        return cacheHit->second;
+    if (res.has_value()) {
+        ddwaf_result& output = *res;
+        output = {false, nullptr, 0};
     }
 
-    return match_status::invalid;
-}
+    if (!store_.insert(newParameters)) {
+        DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+        return DDWAF_ERR_INVALID_OBJECT;
+    }
 
-bool PWProcessor::shouldIgnoreCacheHit(const std::vector<ddwaf::condition>& conditions) const
-{
-    for (const ddwaf::condition& cond : conditions)
+    // If the timeout provided is 0, we need to ensure the parameters are owned
+    // by the additive to ensure that the semantics of DDWAF_ERR_TIMEOUT are
+    // consistent across all possible timeout scenarios.
+    if (timeLeft == 0) {
+        if (res.has_value()) {
+            ddwaf_result& output = *res;
+            output.timeout       = true;
+        }
+        return DDWAF_GOOD;
+    }
+
+    ddwaf::timer deadline{std::chrono::microseconds(timeLeft)};
+
+    // If this is a new run but no rule care about those new params, let's skip the run
+    if (!is_first_run() && !store_.has_new_targets())
     {
-        if (cond.doesUseNewParameters(parameters))
+        return DDWAF_GOOD;
+    }
+
+    PWRetManager retManager(config_.event_obfuscator);
+    for (const auto& [key, collection] : ruleset_.collections)
+    {
+        if (!run_collection(key, collection, retManager, deadline))
         {
-            // Yep, let's ignore the previous negative match
-            return true;
+            break;
         }
     }
 
-    return false;
+    DDWAF_RET_CODE code = retManager.getResult();
+    if (res.has_value())
+    {
+        ddwaf_result& output = *res;
+        retManager.synthetize(output);
+        output.total_runtime = deadline.elapsed().count();
+    }
+
+    return code;
 }
 
-bool PWProcessor::runFlow(const std::string& name,
-                          const ddwaf::rule_ref_vector& flow,
-                          PWRetManager& retManager,
-                          const ddwaf::monotonic_clock::time_point& deadline)
+bool context::run_collection(const std::string& name,
+  const ddwaf::rule_ref_vector& collection,
+  PWRetManager& retManager, ddwaf::timer& deadline)
 {
     /*
-	 *	A flow is a sequence of steps
+	 *	A collection is a sequence of steps
 	 *	Each step provide an array of ruleIDs to match. The rule match if any of those rules matched (1)
 	 *	Each ruleID provide an array of filters (condition) and must all be matched for the rule to be matched (2)
 	 */
-    DDWAF_DEBUG("Running flow %s", name.c_str());
+    DDWAF_DEBUG("Running collection %s", name.c_str());
 
-    //If we ran out of time, we want to generate DDWAF_ERR_TIMEOUT records for every flow we're going to skip
+    //If we ran out of time, we want to generate DDWAF_ERR_TIMEOUT records for every collection we're going to skip
     //This also protect us against loops for free (the cache could avoid the inner loop's check)
-    if (deadline <= ddwaf::monotonic_clock::now())
+    if (deadline.expired())
     {
-        DDWAF_INFO("Ran out of time while running flow %s", name.c_str());
+        DDWAF_INFO("Ran out of time while running collection %s", name.c_str());
         retManager.recordTimeout();
         return false;
     }
 
     match_status status = match_status::invalid;
-    //Process each rule we have to run for this step of the flow
-    for (ddwaf::rule& rule : flow)
+    //Process each rule we have to run for this step of the collection
+    for (ddwaf::rule& rule : collection)
     {
         status = match_status::invalid;
 
         //Have we already ran this rule?
         auto index              = rule.index;
-        const auto cache_status = hasCacheHit(index);
+        const auto cache_status = get_cached_status(index);
         if (cache_status == match_status::matched)
         {
             break;
@@ -83,7 +108,7 @@ bool PWProcessor::runFlow(const std::string& name,
         bool cachedNegativeMatch = cache_status == match_status::no_match;
 
         // If we had a negative match in the past, let's check if we have a reason to run again
-        if (cachedNegativeMatch && !shouldIgnoreCacheHit(rule.conditions))
+        if (cachedNegativeMatch && !rule.has_new_targets(store_))
         {
             continue;
         }
@@ -101,7 +126,7 @@ bool PWProcessor::runFlow(const std::string& name,
         bool run_on_new = cachedNegativeMatch && rule.conditions.size() == 1;
         for (const ddwaf::condition& cond : rule.conditions)
         {
-            status = cond.performMatching(parameters, manifest_, run_on_new, deadline, retManager);
+            status = cond.match(store_, ruleset_.manifest, run_on_new, deadline, retManager);
             //Stop if we didn't matched any of the parameters (2) or that the parameter couldn't be found
             if (status == match_status::no_match)
             {
@@ -127,7 +152,7 @@ bool PWProcessor::runFlow(const std::string& name,
         //Store the result of the rule in the cache
         if (status != match_status::missing_arg)
         {
-            ranCache.insert_or_assign(index, status);
+            status_cache_.insert_or_assign(index, status);
         }
 
         // Update the time measurement, and check the deadline while we're at it
@@ -141,9 +166,9 @@ bool PWProcessor::runFlow(const std::string& name,
             break;
         }
 
-        if (deadline <= ddwaf::monotonic_clock::now())
+        if (deadline.expired())
         {
-            DDWAF_INFO("Ran out of time while running flow %s and rule %s", name.c_str(), rule.id.c_str());
+            DDWAF_INFO("Ran out of time while running collection %s and rule %s", name.c_str(), rule.id.c_str());
             retManager.recordTimeout();
             return false;
         }
@@ -152,7 +177,17 @@ bool PWProcessor::runFlow(const std::string& name,
     return true;
 }
 
-bool PWProcessor::isFirstRun() const
+
+condition::status context::get_cached_status(ddwaf::rule::index_type rule_idx) const
 {
-    return ranCache.empty();
+    const auto hit = status_cache_.find(rule_idx);
+    if (hit != status_cache_.end())
+    {
+        return hit->second;
+    }
+
+    return match_status::invalid;
+
+}
+
 }

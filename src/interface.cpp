@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <PWAdditive.hpp>
+#include <context.hpp>
 #include <PWRet.hpp>
 #include <exception.hpp>
 #include <memory>
@@ -13,6 +13,7 @@
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
+#include <waf.hpp>
 
 #include <log.hpp>
 
@@ -54,7 +55,7 @@ extern "C"
             if (rule != nullptr)
             {
                 ddwaf::ruleset_info ri(info);
-                return PowerWAF::fromConfig(*rule, config, ri);
+                return waf::from_config(*rule, config, ri);
             }
         }
         catch (const std::exception& e)
@@ -98,7 +99,7 @@ extern "C"
             return nullptr;
         }
 
-        auto& addresses = handle->manifest.get_root_addresses();
+        auto& addresses = handle->get_root_addresses();
         if (addresses.empty() || addresses.size() > std::numeric_limits<uint32_t>::max())
         {
             *size = 0;
@@ -109,7 +110,7 @@ extern "C"
         return addresses.data();
     }
 
-    ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_object_free_fn obj_free)
+    ddwaf_context ddwaf_context_init(const ddwaf_handle handle)
     {
         ddwaf_context output = nullptr;
 
@@ -117,7 +118,7 @@ extern "C"
         {
             if (handle != nullptr)
             {
-                output = new PWAdditive(handle, obj_free);
+                output = new ddwaf::context(handle->create_context());
             }
         }
         catch (const std::exception& e)
@@ -147,8 +148,7 @@ extern "C"
         try
         {
             optional_ref<ddwaf_result> res { std::nullopt };
-            if (result != nullptr)
-            {
+            if (result != nullptr) {
                 res = *result;
             }
 
@@ -189,12 +189,9 @@ extern "C"
         }
     }
 
-    void ddwaf_get_version(ddwaf_version* version)
+    const char * ddwaf_get_version()
     {
-        if (version != nullptr)
-        {
-            *version = PowerWAF::waf_version;
-        }
+        return LIBDDWAF_VERSION;
     }
 
     bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)

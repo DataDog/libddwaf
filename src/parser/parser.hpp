@@ -17,7 +17,6 @@
 namespace ddwaf::parser
 {
 
-void parse(parameter ruleset, ruleset_info& info, rule_vector& rules,
-           ddwaf::manifest_builder& mb, flow_map& flows);
+void parse(parameter input, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg);
 
 }

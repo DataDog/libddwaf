@@ -588,7 +588,7 @@ TEST(TestTransforms, TestCoverage)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     /* // Want to hit a case where the transformer fail*/
 
     ddwaf_object map = DDWAF_OBJECT_MAP, tmp;
@@ -659,7 +659,7 @@ TEST(TestTransforms, TestRuleRunOnKey)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     /* // Want to hit a case where the transformer fail*/
 
     ddwaf_object map = DDWAF_OBJECT_MAP, tmp = DDWAF_OBJECT_MAP, tmp2;

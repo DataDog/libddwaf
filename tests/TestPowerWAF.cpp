@@ -15,7 +15,7 @@ TEST(TestPowerWAF, TestEmptyParameters)
     ddwaf_object_free(&rule);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
 
     //Setup the parameter structure
     ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
@@ -167,7 +167,7 @@ TEST(TestPowerWAF, TestConfig)
     ddwaf_object_free(&rule);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
 
     //Setup the parameter structure
     ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;

@@ -16,7 +16,7 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    EXPECT_TRUE(processor.doesMatch(&param, gatherer));
+    EXPECT_TRUE(processor.match_object(&param, gatherer));
 
     EXPECT_STREQ(gatherer.resolvedValue.c_str(), "regex");
     EXPECT_STREQ(gatherer.matchedValue.c_str(), "regex");
@@ -34,12 +34,12 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    EXPECT_FALSE(processor.doesMatch(&param, gatherer));
+    EXPECT_FALSE(processor.match_object(&param, gatherer));
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "rEgEx");
 
-    EXPECT_TRUE(processor.doesMatch(&param2, gatherer));
+    EXPECT_TRUE(processor.match_object(&param2, gatherer));
     EXPECT_STREQ(gatherer.resolvedValue.c_str(), "rEgEx");
     EXPECT_STREQ(gatherer.matchedValue.c_str(), "rEgEx");
 
@@ -58,8 +58,8 @@ TEST(TestRegexMatch, TestMinLength)
     ddwaf_object_string(&param, "rEgEx");
     ddwaf_object_string(&param2, "rEgExe");
 
-    EXPECT_FALSE(processor.doesMatch(&param, gatherer));
-    EXPECT_TRUE(processor.doesMatch(&param2, gatherer));
+    EXPECT_FALSE(processor.match_object(&param, gatherer));
+    EXPECT_TRUE(processor.match_object(&param2, gatherer));
     EXPECT_STREQ(gatherer.resolvedValue.c_str(), "rEgExe");
     EXPECT_STREQ(gatherer.matchedValue.c_str(), "rEgExe");
 

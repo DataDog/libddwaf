@@ -11,23 +11,25 @@ TEST(FunctionalTests, ddwaf_run)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_config config{0};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
     rule = readFile("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle2 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&rule);
 
     // Should block due to flow1 in rule1, not in rule2
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1, NULL);
+        ddwaf_context context1 = ddwaf_context_init(handle1);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2, NULL);
+        ddwaf_context context2 = ddwaf_context_init(handle2);
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
@@ -51,10 +53,10 @@ TEST(FunctionalTests, ddwaf_run)
 
     // Shouldn't block
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1, NULL);
+        ddwaf_context context1 = ddwaf_context_init(handle1);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2, NULL);
+        ddwaf_context context2 = ddwaf_context_init(handle2);
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
@@ -78,10 +80,10 @@ TEST(FunctionalTests, ddwaf_run)
 
     // Should monitor due to flow 2
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1, NULL);
+        ddwaf_context context1 = ddwaf_context_init(handle1);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2, NULL);
+        ddwaf_context context2 = ddwaf_context_init(handle2);
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
@@ -105,10 +107,10 @@ TEST(FunctionalTests, ddwaf_run)
 
     // Should monitor due to both conditions of flow 2 being met, thus also triggering rule2
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1, NULL);
+        ddwaf_context context1 = ddwaf_context_init(handle1);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2, NULL);
+        ddwaf_context context2 = ddwaf_context_init(handle2);
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
@@ -132,10 +134,10 @@ TEST(FunctionalTests, ddwaf_run)
 
     // Should monitor due to the second condition flow 2
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1, NULL);
+        ddwaf_context context1 = ddwaf_context_init(handle1);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2, NULL);
+        ddwaf_context context2 = ddwaf_context_init(handle2);
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
@@ -163,17 +165,19 @@ TEST(FunctionalTests, ddwaf_run)
 
 TEST(FunctionalTests, HandleGood)
 {
+    ddwaf_config config{{0},{0}, ddwaf_object_free};
+
     auto rule = readFile("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    const ddwaf_handle handle = ddwaf_init(&rule, NULL, nullptr);
+    const ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
 
     ASSERT_NE(handle, nullptr);
 
     // Should monitor due to both conditions of flow 2 being met, thus also triggering rule2
     {
-        ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+        ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
@@ -202,8 +206,10 @@ TEST(FunctionalTests, HandleGood)
 
 TEST(FunctionalTests, HandleBad)
 {
+    ddwaf_config config{{0},{0}, ddwaf_object_free};
+
     ddwaf_object tmp, object = DDWAF_OBJECT_INVALID;
-    EXPECT_EQ(ddwaf_init(&object, nullptr, nullptr), nullptr);
+    EXPECT_EQ(ddwaf_init(&object, &config, nullptr), nullptr);
 
     EXPECT_NO_FATAL_FAILURE(ddwaf_destroy(nullptr));
 
@@ -214,11 +220,11 @@ TEST(FunctionalTests, HandleBad)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object_string(&object, "value");
@@ -236,24 +242,26 @@ TEST(FunctionalTests, HandleBad)
 
 TEST(FunctionalTests, Budget)
 {
+    ddwaf_config config{0};
+
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
     rule = readFile("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle2 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1, NULL);
+    ddwaf_context context1 = ddwaf_context_init(handle1);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2, NULL);
+    ddwaf_context context2 = ddwaf_context_init(handle2);
     ASSERT_NE(context2, nullptr);
 
     ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
@@ -289,19 +297,16 @@ TEST(FunctionalTests, Budget)
 
 TEST(FunctionalTests, ddwaf_get_version)
 {
-    ddwaf_version version;
-    ddwaf_get_version(&version);
-
-    EXPECT_EQ(version.major, 1);
-    EXPECT_EQ(version.minor, 4);
-    EXPECT_EQ(version.patch, 0);
+    EXPECT_STREQ(ddwaf_get_version(), "1.4.0");
 }
 
 TEST(FunctionalTests, ddwaf_runNull)
 {
+    ddwaf_config config{0};
+
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -309,7 +314,7 @@ TEST(FunctionalTests, ddwaf_runNull)
     ddwaf_object map = DDWAF_OBJECT_MAP, string;
     ddwaf_object_map_add(&map, "bla", ddwaf_object_stringl(&string, lol, sizeof(lol) - 1));
 
-    ddwaf_context context = ddwaf_context_init(handle, NULL);
+    ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     ddwaf_result out;
@@ -323,11 +328,11 @@ TEST(FunctionalTests, ddwaf_runNull)
     ////Add a removeNull transformer
     rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}], transformers: [removeNulls]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    handle = ddwaf_init(&rule, nullptr, nullptr);
+    handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    context = ddwaf_context_init(handle, NULL);
+    context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
     EXPECT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MONITOR);
