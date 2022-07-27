@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef re2_hpp
-#define re2_hpp
+#pragma once
 
 #include <memory>
 #include <re2/re2.h>
@@ -18,20 +17,14 @@ public:
     RE2Manager(const std::string& regex_str, std::size_t minLength, bool caseSensitive);
     ~RE2Manager() = default;
 
-    bool hasStringRepresentation() const override;
-    const std::string getStringRepresentation() const override;
+    const std::string getStringRepresentation() const override { return regex->pattern(); }
     std::string_view operatorName() const override { return name; }
-#ifdef TESTING
-    FRIEND_TEST(TestOptions, TestInit);
-#endif
-protected:
-    bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const override;
+    bool match(const char* str, size_t length, MatchGatherer& gatherer) const override;
 
 protected:
+    static constexpr int max_match_count = 16;
     static constexpr std::string_view name { "match_regex" };
     uint8_t groupsToCatch { 0 };
     std::unique_ptr<re2::RE2> regex { nullptr };
     std::size_t min_length;
 };
-
-#endif /* re2_hpp */

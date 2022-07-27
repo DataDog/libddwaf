@@ -22,11 +22,12 @@
 namespace ddwaf
 {
 
+class rule;
+
 class condition
 {
 public:
-    enum class status : uint8_t
-    {
+    enum class status : uint8_t {
         missing_arg,
         timeout,
         invalid,
@@ -34,8 +35,7 @@ public:
         no_match
     };
 
-    enum class data_source : uint8_t
-    {
+    enum class data_source : uint8_t {
         values,
         keys
     };
@@ -43,10 +43,12 @@ public:
     condition(std::vector<ddwaf::manifest::target_type>&& targets_,
               std::vector<PW_TRANSFORM_ID>&& transformers,
               std::unique_ptr<IPWRuleProcessor>&& processor_,
+              ddwaf::object_limits limits = ddwaf::object_limits(),
               data_source source = data_source::values):
         targets(std::move(targets_)),
         transformation(std::move(transformers)),
         processor(std::move(processor_)),
+        limits_(limits),
         source_(source) {}
 
     condition(condition&&) = default;
@@ -55,24 +57,27 @@ public:
     condition(const condition&) = delete;
     condition& operator=(const condition&) = delete;
 
-    status performMatching(object_store& store,
+    status match(const object_store& store,
         const ddwaf::manifest &manifest, bool run_on_new,
-        const monotonic_clock::time_point& deadline,
+        ddwaf::timer& deadline,
         PWRetManager& retManager) const;
 
-    bool matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer) const;
-    bool doesUseNewParameters(const object_store& store) const;
-
 protected:
+    bool match_object(const ddwaf_object* baseInput,
+        MatchGatherer& gatherer) const;
+
     template <typename T>
     status match_target(T &it,
         const std::string &name,
-        const monotonic_clock::time_point& deadline,
+        ddwaf::timer& deadline,
         PWRetManager& retManager) const;
+
+    friend class rule;
 
     std::vector<ddwaf::manifest::target_type> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
     std::unique_ptr<IPWRuleProcessor> processor;
+    ddwaf::object_limits limits_;
     data_source source_;
 };
 
@@ -81,16 +86,39 @@ class rule
 public:
     using index_type = uint32_t;
 
+    // TODO: make fields protected, add getters, follow conventions, add cache
+    //       move condition matching from context.
+    rule(index_type index_, std::string &&id_, std::string &&name_,
+      std::string &&category_, std::vector<condition> &&conditions_);
+
+    rule(const rule&) = delete;
+    rule& operator=(const rule&) = delete;
+
+    rule(rule&&) = default;
+    rule& operator=(rule&&) = default;
+
+    ~rule() = default;
+
+    bool has_new_targets(const object_store &store) const;
+
     index_type index;
     std::string id;
     std::string name;
     std::string category;
     std::vector<condition> conditions;
+    std::unordered_set<ddwaf::manifest::target_type> targets;
 };
 
 using rule_map        = std::unordered_map<rule::index_type, rule>;
 using rule_vector     = std::vector<rule>;
 using rule_ref_vector = std::vector<std::reference_wrapper<rule>>;
-using flow_map        = std::unordered_map<std::string, rule_ref_vector>;
+using collection_map  = std::unordered_map<std::string, rule_ref_vector>;
+
+struct ruleset
+{
+    ddwaf::manifest manifest;
+    ddwaf::rule_vector rules;
+    ddwaf::collection_map collections;
+};
 
 }

@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef CLOCK_HPP
-#define CLOCK_HPP
+#pragma once
 
 #include <atomic>
 #include <chrono>
@@ -30,5 +29,37 @@ private:
     static std::atomic<bool> warning_issued;
 };
 #endif // __linux__
+
+class timer
+{
+public:
+    // Syscall period refers to the number of calls to expired() before
+    // clock_gettime is called. This approach is only feasible because the 
+    // WAF calls expired() quite often, otherwise another solution would be
+    // required to minimise syscalls.
+    explicit timer(std::chrono::microseconds exp, uint32_t syscall_period = 16):
+      start_(monotonic_clock::now()), end_(start_ + exp),
+      syscall_period_(syscall_period) {}
+
+    bool expired() {
+        if (!expired_ && --calls_ == 0) {
+            if (end_ <= monotonic_clock::now()) {
+                expired_ = true;
+            } else {
+                calls_ = syscall_period_;
+            }
+        }
+        return expired_;
+    }
+
+    monotonic_clock::duration elapsed() const {
+        return monotonic_clock::now() - start_;
+    }
+protected:
+    monotonic_clock::time_point start_;
+    monotonic_clock::time_point end_;
+    const uint32_t syscall_period_{16};
+    uint32_t calls_{1};
+    bool expired_{false};
+};
 }
-#endif

@@ -27,7 +27,7 @@ PerfMatch::PerfMatch(std::vector<const char*> pattern, std::vector<uint32_t> len
     ac = std::unique_ptr<ac_t, void (*)(void*)>(ac_, ac_free);
 }
 
-bool PerfMatch::performMatch(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const
+bool PerfMatch::match(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const
 {
     ac_t* acStructure = ac.get();
     if (patternValue == NULL || patternLength == 0 || acStructure == nullptr)
@@ -36,16 +36,12 @@ bool PerfMatch::performMatch(const char* patternValue, size_t patternLength, Mat
     ac_result_t result = ac_match(acStructure, patternValue, (uint32_t) patternLength);
 
     bool didMatch   = result.match_begin >= 0 && result.match_end >= 0 && result.match_begin < result.match_end;
-    bool didSucceed = didMatch == wantMatch;
-
-    if (didSucceed)
+    if (!didMatch) { return false; }
+    gatherer.resolvedValue = std::string(patternValue, patternLength);
+    if (patternLength > (uint32_t) result.match_end)
     {
-        gatherer.resolvedValue = std::string(patternValue, patternLength);
-        if (didMatch && patternLength > (uint32_t) result.match_end)
-        {
-            gatherer.matchedValue = std::string(&patternValue[result.match_begin], (uint32_t)(result.match_end - result.match_begin + 1));
-        }
+        gatherer.matchedValue = std::string(&patternValue[result.match_begin], (uint32_t)(result.match_end - result.match_begin + 1));
     }
 
-    return didSucceed;
+    return true;
 }

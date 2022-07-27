@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 file(READ "version" version)
 project(libddwaf VERSION ${version})
 
+configure_file(src/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.hpp)
+
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
 if(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR
   CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
@@ -58,12 +60,12 @@ add_subdirectory(third_party)
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
-    ${libddwaf_SOURCE_DIR}/src/PowerWAF.cpp
-    ${libddwaf_SOURCE_DIR}/src/PowerWAFInterface.cpp
-    ${libddwaf_SOURCE_DIR}/src/PWAdditive.cpp
+    ${libddwaf_SOURCE_DIR}/src/waf.cpp
+    ${libddwaf_SOURCE_DIR}/src/interface.cpp
+    ${libddwaf_SOURCE_DIR}/src/context.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
     ${libddwaf_SOURCE_DIR}/src/manifest.cpp
-    ${libddwaf_SOURCE_DIR}/src/PWProcessor.cpp
+    #${libddwaf_SOURCE_DIR}/src/processor.cpp
     ${libddwaf_SOURCE_DIR}/src/PWRet.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
@@ -77,7 +79,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
-    ${libddwaf_SOURCE_DIR}/src/rule_processor/IPWRuleProcessor.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/perf_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/re2.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/libinjection.cpp

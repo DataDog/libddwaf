@@ -14,13 +14,6 @@
 #include <string_view>
 #include <utils.h>
 
-typedef enum
-{
-    NONE           = 0,
-    NEGATE         = 1 << 0,
-    RUN_ON_NO_DATA = 1 << 1
-} OperatorCommand;
-
 struct MatchGatherer
 {
     std::string resolvedValue;
@@ -30,29 +23,28 @@ struct MatchGatherer
 
     MatchGatherer() = default;
 
-    void clear();
+    void clear() {
+        resolvedValue.clear();
+        matchedValue.clear();
+        keyPath.clear();
+        dataSource.clear();
+    }
 };
 
 class IPWRuleProcessor
 {
-protected:
-    bool wantMatch { true };
-    bool runOnMissing { false };
-    bool matchAny { false };
-
-    virtual bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const = 0;
-
 public:
     IPWRuleProcessor()          = default;
     virtual ~IPWRuleProcessor() = default;
 
-    virtual bool doesMatch(const ddwaf_object* pattern, MatchGatherer& gatherer) const;
-    virtual bool doesMatchKey(const ddwaf_object* pattern, MatchGatherer& gatherer) const;
-    bool matchIfMissing() const;
-    bool matchAnyInput() const;
-    virtual uint64_t expectedTypes() const;
-    virtual bool hasStringRepresentation() const;
-    virtual const std::string getStringRepresentation() const;
+    virtual bool match(const char* str, size_t length, MatchGatherer& gatherer) const = 0;
+
+    virtual bool match_object(const ddwaf_object *obj, MatchGatherer &gatherer) const {
+        return match(obj->stringValue, obj->nbEntries, gatherer);
+    }
+
+    virtual const std::string getStringRepresentation() const { return {}; }
+
     /* The return value of this function should outlive the function scope,
      * for example, through a constexpr class static string_view initialised
      * with a literal. */

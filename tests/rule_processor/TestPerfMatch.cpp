@@ -15,12 +15,13 @@ TEST(TestPhraseMatch, TestBasic)
     PerfMatch processor(strings, lengths);
 
     EXPECT_STREQ(processor.operatorName().data(), "phrase_match");
+    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "");
 
     MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    EXPECT_TRUE(processor.doesMatch(&param, gatherer));
+    EXPECT_TRUE(processor.match_object(&param, gatherer));
 
     EXPECT_STREQ(gatherer.resolvedValue.c_str(), "bbbb");
     EXPECT_STREQ(gatherer.matchedValue.c_str(), "bbbb");
@@ -28,7 +29,7 @@ TEST(TestPhraseMatch, TestBasic)
     ddwaf_object param2;
     ddwaf_object_string(&param2, "dddd");
 
-    EXPECT_FALSE(processor.doesMatch(&param2, gatherer));
+    EXPECT_FALSE(processor.match_object(&param2, gatherer));
 
     ddwaf_object_free(&param2);
     ddwaf_object_free(&param);
@@ -46,7 +47,7 @@ TEST(TestPhraseMatch, TestEmptyArrays)
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    EXPECT_FALSE(processor.doesMatch(&param, gatherer));
+    EXPECT_FALSE(processor.match_object(&param, gatherer));
 
     ddwaf_object_free(&param);
 }
@@ -73,13 +74,13 @@ TEST(TestPhraseMatch, TestComplex)
         ddwaf_object_string(&param, str);
         if (expect)
         {
-            EXPECT_TRUE(processor.doesMatch(&param, gatherer));
+            EXPECT_TRUE(processor.match_object(&param, gatherer));
             EXPECT_STREQ(gatherer.resolvedValue.c_str(), str);
             EXPECT_STREQ(gatherer.matchedValue.c_str(), expect);
         }
         else
         {
-            EXPECT_FALSE(processor.doesMatch(&param, gatherer));
+            EXPECT_FALSE(processor.match_object(&param, gatherer));
         }
         ddwaf_object_free(&param);
     };

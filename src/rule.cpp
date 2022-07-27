@@ -7,35 +7,39 @@
 #include <rule.hpp>
 
 #include <IPWRuleProcessor.h>
-#include <PowerWAF.hpp>
+#include <waf.hpp>
 
 #include "clock.hpp"
 #include <log.hpp>
 
+#include <iostream>
+
 namespace ddwaf
 {
 
-bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGatherer& gatherer) const
+bool condition::match_object(const ddwaf_object* baseInput,
+  MatchGatherer& gatherer) const
 {
     const bool hasTransformation        = !transformation.empty();
-    const bool canRunTransformation     = baseInput->type == DDWAF_OBJ_STRING;
     bool transformationWillChangeString = false;
 
-    if (hasTransformation && canRunTransformation)
+    if (hasTransformation)
     {
         // This codepath is shared with the mutable path. The structure can't be const :/
         transformationWillChangeString = PWTransformer::doesNeedTransform(transformation,
             const_cast<ddwaf_object *>(baseInput));
     }
 
+    size_t length = find_string_cutoff(baseInput->stringValue,
+            baseInput->nbEntries, limits_.max_string_length);
+
     //If we don't have transformation to perform, or if they're irrelevant, no need to waste time copying and allocating data
-    if (!hasTransformation || !canRunTransformation || !transformationWillChangeString)
-    {
-        return processor->doesMatch(baseInput, gatherer);
+    if (!hasTransformation || !transformationWillChangeString) {
+        return processor->match(baseInput->stringValue, length, gatherer);
     }
 
     ddwaf_object copyInput;
-    ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, baseInput->nbEntries);
+    ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, length);
 
     //Transform it and pick the pointer to process
     bool transformFailed = false, matched = false;
@@ -49,8 +53,11 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
     }
 
     //Run the transformed input
-    const ddwaf_object* paramToUse = transformFailed ? baseInput : &copyInput;
-    matched |= processor->doesMatch(paramToUse, gatherer);
+    if (transformFailed) {
+        matched |= processor->match(baseInput->stringValue, length, gatherer);
+    } else {
+        matched |= processor->match_object(&copyInput, gatherer);
+    }
 
     // Otherwise, the caller is in charge of freeing the pointer
     ddwaf_object_free(&copyInput);
@@ -61,22 +68,17 @@ bool condition::matchWithTransformer(const ddwaf_object* baseInput, MatchGathere
 template <typename T>
 condition::status condition::match_target(T &it,
     const std::string &name,
-    const monotonic_clock::time_point& deadline,
+    ddwaf::timer& deadline,
     PWRetManager& retManager) const
 {
-    size_t counter = 0;
-
     for (; it; ++it) {
-        // Only check the time every 16 runs
-        // TODO abstract away deadline checks into custom object
-        if ((++counter & 0xf) == 0 && deadline <= monotonic_clock::now())
-        {
+        if (deadline.expired()) {
             return status::timeout;
         }
 
         MatchGatherer gather;
-        if ((it.type() & processor->expectedTypes()) == 0) { continue; }
-        if (!matchWithTransformer(*it, gather)) { continue; }
+        if (it.type() != DDWAF_OBJ_STRING) { continue; }
+        if (!match_object(*it, gather)) { continue; }
 
         gather.keyPath = it.get_current_path();
         gather.dataSource = name;
@@ -95,10 +97,9 @@ condition::status condition::match_target(T &it,
     return status::no_match;
 }
 
-condition::status condition::performMatching(object_store& store,
+condition::status condition::match(const object_store& store,
     const ddwaf::manifest &manifest, bool run_on_new,
-    const monotonic_clock::time_point& deadline,
-    PWRetManager& retManager) const
+    ddwaf::timer& deadline, PWRetManager& retManager) const
 {
     for (const auto &target : targets) {
 
@@ -117,33 +118,38 @@ condition::status condition::performMatching(object_store& store,
         if (object == nullptr) { continue; }
 
         if (source_ == data_source::keys) {
-            object::key_iterator it(object, info.key_path);
+            object::key_iterator it(object, info.key_path, limits_);
             res = match_target(it, info.name, deadline, retManager);
         } else {
-            object::value_iterator it(object, info.key_path);
+            object::value_iterator it(object, info.key_path, limits_);
             res = match_target(it, info.name, deadline, retManager);
         }
 
-        if (res == status::matched) { return status::matched; }
+        if (res == status::matched || res == status::timeout) {
+            return res;
+        }
     }
 
-    // Only @exist care about this branch, it's at the end to enable a better report when there is a real value
-    if (processor->matchAnyInput())
-    {
-        retManager.recordRuleMatch(processor, MatchGatherer());
-        return status::matched;
-    }
-
-    //	If at least one resolved, but didn't matched, we return NO_MATCH
     return status::no_match;
 }
 
-bool condition::doesUseNewParameters(const object_store& store) const
+rule::rule(index_type index_, std::string &&id_, std::string &&name_,
+  std::string &&category_, std::vector<condition> &&conditions_):
+  index(index_), id(std::move(id_)), name(std::move(name_)),
+  category(std::move(category_)), conditions(std::move(conditions_))
 {
-    for (const ddwaf::manifest::target_type& target : targets)
+    for (auto &cond : conditions) {
+        targets.insert(cond.targets.begin(), cond.targets.end());
+    }
+}
+
+bool rule::has_new_targets(const object_store &store) const
+{
+    for (const auto& target : targets)
     {
-        if (store.is_new_target(target))
+        if (store.is_new_target(target)) {
             return true;
+        }
     }
 
     return false;

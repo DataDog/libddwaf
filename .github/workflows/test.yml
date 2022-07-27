@@ -43,6 +43,35 @@ jobs:
             make test
         working-directory: Debug
 
+  valgrind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: sudo apt update ; sudo apt install -y valgrind
+
+      - name: Create directories
+        run: mkdir Debug
+
+      - name: CMake
+        env:
+          CC: gcc-9
+          CXX: g++-9
+        run: |
+          cmake .. -DCMAKE_BUILD_TYPE=Debug
+        working-directory: Debug
+
+      - name: Build
+        run: VERBOSE=1 make -j testPowerWAF
+        working-directory: Debug
+
+      - name: Test
+        run: make test_valgrind
+        working-directory: Debug
+
   coverage:
     runs-on: ubuntu-latest
     steps:
@@ -61,7 +90,7 @@ jobs:
           CC: gcc-9
           CXX: g++-9
         run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug
+          cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
         working-directory: Debug
 
       - name: Build

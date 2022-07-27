@@ -53,10 +53,6 @@ public:
 
     DDWAF_RET_CODE synthetize(ddwaf_result& output) const;
 
-#ifdef TESTING
-    FRIEND_TEST(TestPWProcessor, TestCache);
-    FRIEND_TEST(TestPWProcessor, TestBudget);
-#endif
 protected:
     rapidjson::Document outputDocument;
     rapidjson::Document::AllocatorType& allocator;
