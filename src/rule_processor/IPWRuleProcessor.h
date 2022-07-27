@@ -48,17 +48,9 @@ public:
      * for example, through a constexpr class static string_view initialised
      * with a literal. */
     virtual std::string_view operatorName() const = 0;
-
-protected:
-    bool wantMatch { true };
-    bool runOnMissing { false };
-    bool matchAny { false };
-
-    virtual bool performMatch(const char* str, size_t length, MatchGatherer& gatherer) const = 0;
-
-
 };
 
 #include "libinjection.hpp"
 #include "perf_match.hpp"
 #include "re2.hpp"
+#include "ip_match.hpp"

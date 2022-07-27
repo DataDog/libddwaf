@@ -212,4 +212,30 @@ rules:
           regex: rule15
     transformers:
       - removeNulls
-
+  - id: 16
+    name: rule16-ip-match
+    tags:
+      type: flow16
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: rule16-input
+          list:
+            - "192.168.0.1"
+            - "1.2.3.4"
+            - "5.6.7.254"
+            - "::ffff:0102:0304"
+            - "1234:0:0:0:0:0:0:5678"
+            - "::1"
+            - "abcd::1234:5678:1234:5678"
+            - "abcd::1234:0:0:0"
+            - "abcd::1234:ffff:ffff:ffff"
+            - "1.2.3.5"
+            - "5.6.8.0"
+            - "::ffff:0102:0305"
+            - "5.6.8.0"
+            - "::2"
+            - "0:1234::5678"
+            - "abcd:0:1233::"

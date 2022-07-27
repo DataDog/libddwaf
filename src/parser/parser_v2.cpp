@@ -107,6 +107,19 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
     {
         processor = std::make_unique<LibInjectionSQL>();
     }
+    else if (operation == "ip_match")
+    {
+        auto list = at<parameter::vector>(params, "list");
+
+        std::vector<std::string> ips;
+        ips.reserve(list.size());
+
+        for (auto& ip : list) {
+            ips.push_back(std::move(ip));
+        }
+
+        processor = std::make_unique<ip_match>(std::move(ips));
+    }
     else
     {
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
