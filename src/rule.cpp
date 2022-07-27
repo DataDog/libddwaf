@@ -97,7 +97,7 @@ condition::status condition::match_target(T &it,
     return status::no_match;
 }
 
-condition::status condition::match(object_store& store,
+condition::status condition::match(const object_store& store,
     const ddwaf::manifest &manifest, bool run_on_new,
     ddwaf::timer& deadline, PWRetManager& retManager) const
 {

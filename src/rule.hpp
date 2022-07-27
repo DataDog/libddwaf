@@ -57,7 +57,7 @@ public:
     condition(const condition&) = delete;
     condition& operator=(const condition&) = delete;
 
-    status match(object_store& store,
+    status match(const object_store& store,
         const ddwaf::manifest &manifest, bool run_on_new,
         ddwaf::timer& deadline,
         PWRetManager& retManager) const;

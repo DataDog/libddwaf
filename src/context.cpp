@@ -17,9 +17,14 @@ using match_status = ddwaf::condition::status;
 namespace ddwaf
 {
 
-DDWAF_RET_CODE context::run(ddwaf_object newParameters,
-                               optional_ref<ddwaf_result> res, uint64_t timeLeft)
+DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
+    optional_ref<ddwaf_result> res, uint64_t timeLeft)
 {
+    if (res.has_value()) {
+        ddwaf_result& output = *res;
+        output = {false, nullptr, 0};
+    }
+
     if (!store_.insert(newParameters)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
@@ -28,10 +33,8 @@ DDWAF_RET_CODE context::run(ddwaf_object newParameters,
     // If the timeout provided is 0, we need to ensure the parameters are owned
     // by the additive to ensure that the semantics of DDWAF_ERR_TIMEOUT are
     // consistent across all possible timeout scenarios.
-    if (timeLeft == 0)
-    {
-        if (res.has_value())
-        {
+    if (timeLeft == 0) {
+        if (res.has_value()) {
             ddwaf_result& output = *res;
             output.timeout       = true;
         }

@@ -118,7 +118,7 @@ extern "C"
         {
             if (handle != nullptr)
             {
-                output = new ddwaf::context(handle->get_context());
+                output = new ddwaf::context(handle->create_context());
             }
         }
         catch (const std::exception& e)
@@ -132,7 +132,7 @@ extern "C"
         return output;
     }
 
-    DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object* data,
+    DDWAF_RET_CODE ddwaf_run(ddwaf_context context, const ddwaf_object* data,
                              ddwaf_result* result, uint64_t timeout)
     {
         if (result != nullptr)
@@ -148,8 +148,7 @@ extern "C"
         try
         {
             optional_ref<ddwaf_result> res { std::nullopt };
-            if (result != nullptr)
-            {
+            if (result != nullptr) {
                 res = *result;
             }
 

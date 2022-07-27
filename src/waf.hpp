@@ -23,7 +23,9 @@ public:
     static waf* from_config(const ddwaf_object rules,
         const ddwaf_config* config, ddwaf::ruleset_info& info);
 
-    ddwaf::context get_context();
+    ddwaf::context create_context() const {
+        return ddwaf::context(ruleset_, config_);
+    }
 
     const std::vector<const char*>& get_root_addresses() const {
         return ruleset_.manifest.get_root_addresses();

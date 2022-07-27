@@ -21,7 +21,7 @@ namespace ddwaf
 class context
 {
 public:
-    context(ddwaf::ruleset &ruleset, ddwaf::config &config):
+    context(const ddwaf::ruleset &ruleset, const ddwaf::config &config):
         ruleset_(ruleset), config_(config),
         store_(ruleset_.manifest, config_.free_fn)
     {
@@ -34,7 +34,7 @@ public:
     context& operator=(context&&) = delete;
     ~context() = default;
 
-    DDWAF_RET_CODE run(ddwaf_object, optional_ref<ddwaf_result> res, uint64_t);
+    DDWAF_RET_CODE run(const ddwaf_object&, optional_ref<ddwaf_result> res, uint64_t);
 
 protected:
     bool run_collection(const std::string& name,
@@ -45,8 +45,8 @@ protected:
     condition::status get_cached_status(ddwaf::rule::index_type rule_idx) const;
     bool has_new_targets(const std::vector<ddwaf::condition>& rules) const;
 
-    ddwaf::ruleset &ruleset_;
-    ddwaf::config &config_;
+    const ddwaf::ruleset &ruleset_;
+    const ddwaf::config &config_;
     ddwaf::object_store store_;
 
     std::unordered_map<rule::index_type, condition::status> status_cache_;

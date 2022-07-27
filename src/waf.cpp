@@ -92,7 +92,4 @@ waf* waf::from_config(const ddwaf_object ruleset,
     return nullptr;
 }
 
-ddwaf::context waf::get_context() {
-    return ddwaf::context(ruleset_, config_);
-}
 }
