@@ -38,7 +38,6 @@ DDWAF_RET_CODE context::run(ddwaf_object newParameters,
         return DDWAF_GOOD;
     }
 
-    const auto start    = ddwaf::monotonic_clock::now();
     ddwaf::timer deadline{std::chrono::microseconds(timeLeft)};
 
     // If this is a new run but no rule care about those new params, let's skip the run
@@ -61,7 +60,7 @@ DDWAF_RET_CODE context::run(ddwaf_object newParameters,
     {
         ddwaf_result& output = *res;
         retManager.synthetize(output);
-        output.total_runtime = (ddwaf::monotonic_clock::now() - start).count();
+        output.total_runtime = deadline.elapsed().count();
     }
 
     return code;
