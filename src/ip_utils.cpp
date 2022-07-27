@@ -6,6 +6,7 @@
 
 #include <ip_utils.hpp>
 #include <cstring>
+#include <cctype>
 
 #if defined(_WIN32) || defined(__MINGW32__)
 
