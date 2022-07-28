@@ -1,0 +1,11 @@
+{
+  name: "ip_match operator, no match on IPv6 CIDR",
+  runs: [
+    {
+      input: {
+        rule18-input: "abcd::1234:1:0:1"
+      },
+      code: good
+    }
+  ]
+}
