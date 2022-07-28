@@ -7,6 +7,7 @@
 #include <rule_processor/ip_match.hpp>
 #include <ip_utils.hpp>
 #include <cstring>
+#include <stdexcept>
 
 namespace ddwaf::rule_processor
 {
