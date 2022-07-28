@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import ipaddress
 import json
 import yaml
 import os
@@ -167,6 +168,22 @@ def _get_random_array(builder, min_length=0, max_length=2, allow_none=True, **kw
     return [builder(i=i, **kwargs) for i in range(length)]
 
 
+def _get_random_ipv4():
+    return  ipaddress.IPv4Address._string_from_ip_int(
+        randint(0, ipaddress.IPv4Address._ALL_ONES)
+    )
+
+
+def _get_random_ipv6():
+    return ipaddress.IPv6Address._string_from_ip_int(
+        randint(0, ipaddress.IPv6Address._ALL_ONES)
+    )
+
+
+def get_random_ip():
+    return choice([_get_random_ipv6, _get_random_ipv4])()
+
+
 class InitPayloadGenerator:
     event_id_max_length = 32
     address_name_length = 4
@@ -178,11 +195,15 @@ class InitPayloadGenerator:
     address_max_count = 4
     transformation_max_count = 10
 
+    ip_max_count = 100
+
     operators = [
         "match_regex",
         "phrase_match",
         "is_xss",
-        "is_sqli"
+        "is_sqli",
+        "exact_match",
+        "ip_match"
     ]
 
     def __init__(self):
@@ -193,7 +214,7 @@ class InitPayloadGenerator:
 
         self.possible_values = choices(data.blns, k=20)
 
-        self.possible_values += [get_random_unicode(10, 100) for _ in range(2)]
+        self.possible_values += [get_random_unicode(10, 100) for _ in range(20)]
 
         self.possible_values += [
             "",
@@ -210,6 +231,8 @@ class InitPayloadGenerator:
             -(2**63),
             # " " * 1000000,
         ]
+
+        self.possible_values += [get_random_ip() for _ in range(100)]
 
         self.used_operators = None
 
@@ -350,7 +373,13 @@ class InitPayloadGenerator:
             elif operator == "is_sqli":
                 # TODO: get interesting SQLI patterns
                 result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
-                
+
+            elif operator == "exact_match":
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
+
+            elif operator == "ip_match":
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
+
             return result
 
         def get_random_rules():
