@@ -1,0 +1,11 @@
+{
+  name: "Basic run with exact_match operator and no match",
+  runs: [
+    {
+      input: {
+        rule17-input: "something"
+      },
+      code: good
+    }
+  ]
+}

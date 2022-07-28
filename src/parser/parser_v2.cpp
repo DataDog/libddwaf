@@ -21,6 +21,7 @@
 #include <rule_processor/phrase_match.hpp>
 #include <rule_processor/regex_match.hpp>
 #include <rule_processor/ip_match.hpp>
+#include <rule_processor/exact_match.hpp>
 
 using ddwaf::parameter;
 using ddwaf::parser::at;
@@ -124,11 +125,24 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
         std::vector<std::string> ips;
         ips.reserve(list.size());
 
-        for (auto& ip : list) {
+        for (std::string ip : list) {
             ips.push_back(std::move(ip));
         }
 
         processor = std::make_unique<rule_processor::ip_match>(std::move(ips));
+    }
+    else if (operation == "exact_match")
+    {
+        auto list = at<parameter::vector>(params, "list");
+
+        std::unordered_set<std::string> str_set;
+        str_set.reserve(list.size());
+
+        for (std::string str : list) {
+            str_set.emplace(std::move(str));
+        }
+
+        processor = std::make_unique<rule_processor::exact_match>(std::move(str_set));
     }
     else
     {

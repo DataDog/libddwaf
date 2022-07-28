@@ -1,5 +1,5 @@
 {
-  name: "Basic run with ip_match operator",
+  name: "Basic run with ip_match operator and ipv4",
   runs: [
     {
       input: {

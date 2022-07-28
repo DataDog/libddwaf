@@ -239,3 +239,17 @@ rules:
             - "::2"
             - "0:1234::5678"
             - "abcd:0:1233::"
+  - id: 17
+    name: rule17-ip-match
+    tags:
+      type: flow17
+      category: category
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule17-input
+          list:
+            - "string"
+            - "other"
+            - "something else"

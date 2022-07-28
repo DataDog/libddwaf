@@ -47,6 +47,7 @@ using namespace std;
 #include <rule_processor/phrase_match.hpp>
 #include <rule_processor/regex_match.hpp>
 #include <rule_processor/ip_match.hpp>
+#include <rule_processor/exact_match.hpp>
 
 using namespace std::literals;
 

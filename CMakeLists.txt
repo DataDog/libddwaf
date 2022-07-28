@@ -84,6 +84,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule_processor/is_sqli.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/ip_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/rule_processor/exact_match.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})
 
