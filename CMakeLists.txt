@@ -65,7 +65,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/context.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
     ${libddwaf_SOURCE_DIR}/src/manifest.cpp
-    #${libddwaf_SOURCE_DIR}/src/processor.cpp
     ${libddwaf_SOURCE_DIR}/src/PWRet.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
@@ -82,7 +81,8 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/phrase_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/regex_match.cpp
-    ${libddwaf_SOURCE_DIR}/src/rule_processor/libinjection.cpp
+    ${libddwaf_SOURCE_DIR}/src/rule_processor/is_sqli.cpp
+    ${libddwaf_SOURCE_DIR}/src/rule_processor/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/ip_match.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})

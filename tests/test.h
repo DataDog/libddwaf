@@ -42,7 +42,8 @@ using namespace std;
 #include <utils.h>
 #include <yaml-cpp/yaml.h>
 
-#include <rule_processor/libinjection.hpp>
+#include <rule_processor/is_sqli.hpp>
+#include <rule_processor/is_xss.hpp>
 #include <rule_processor/phrase_match.hpp>
 #include <rule_processor/regex_match.hpp>
 #include <rule_processor/ip_match.hpp>

@@ -25,7 +25,7 @@ TEST(TestIsSQLi, TestBasic)
     ddwaf_object_free(&param);
 }
 
-TEST(TestLibInjectionSQL, TestRuleset)
+TEST(TestIsSQLi, TestRuleset)
 {
     //Initialize a PowerWAF rule
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_sqli, parameters: {inputs: [{address: arg1}]}}]}]})");

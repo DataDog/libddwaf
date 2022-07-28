@@ -8,7 +8,7 @@
 
 using namespace ddwaf::rule_processor;
 
-TEST(TestLibInjectionXSS, TestBasic)
+TEST(TestIsXSS, TestBasic)
 {
     is_xss processor;
     EXPECT_STREQ(processor.to_string().c_str(), "");
@@ -25,7 +25,7 @@ TEST(TestLibInjectionXSS, TestBasic)
     ddwaf_object_free(&param);
 }
 
-TEST(TestLibInjectionXSS, TestRuleset)
+TEST(TestIsXSS, TestRuleset)
 {
     //Initialize a PowerWAF rule
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_xss, parameters: {inputs: [{address: arg1}]}}]}]})");
