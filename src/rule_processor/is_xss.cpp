@@ -13,6 +13,10 @@ namespace ddwaf::rule_processor
 
 bool is_xss::match(const char* pattern, size_t length, MatchGatherer& gatherer) const
 {
+    if (pattern == nullptr || length == 0) {
+        return false;
+    }
+
     if (!libinjection_xss(pattern, length)) {
         return false;
     }

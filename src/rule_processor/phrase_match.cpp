@@ -32,8 +32,9 @@ phrase_match::phrase_match(std::vector<const char*> pattern, std::vector<uint32_
 bool phrase_match::match(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const
 {
     ac_t* acStructure = ac.get();
-    if (patternValue == NULL || patternLength == 0 || acStructure == nullptr)
+    if (patternValue == nullptr || patternLength == 0 || acStructure == nullptr) {
         return false;
+    }
 
     ac_result_t result = ac_match(acStructure, patternValue, (uint32_t) patternLength);
 

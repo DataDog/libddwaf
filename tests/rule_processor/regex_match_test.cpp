@@ -68,3 +68,13 @@ TEST(TestRegexMatch, TestMinLength)
     ddwaf_object_free(&param);
     ddwaf_object_free(&param2);
 }
+
+TEST(TestRegexMatch, TestInvalidInput)
+{
+    regex_match processor("^rEgEx.*$", 6, true);
+
+    MatchGatherer gatherer;
+    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
+    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
+    EXPECT_FALSE(processor.match("*", 0,  gatherer));
+}

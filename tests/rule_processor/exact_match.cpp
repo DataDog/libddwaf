@@ -53,3 +53,13 @@ TEST(TestExactMatch, Basic)
         EXPECT_FALSE(processor.match(match.data(), match.size(), gatherer));
     }
 }
+
+TEST(TestExactMatch, InvalidMatchInput)
+{
+    exact_match processor({"aaaa", "bbbb", "cccc"});
+
+    MatchGatherer gatherer;
+    EXPECT_FALSE(processor.match(nullptr, 30, gatherer));
+    EXPECT_FALSE(processor.match(nullptr, 0, gatherer));
+    EXPECT_FALSE(processor.match("aaaa", 0, gatherer));
+}

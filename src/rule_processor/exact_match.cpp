@@ -12,6 +12,10 @@ namespace ddwaf::rule_processor
 
 bool exact_match::match(const char* str, size_t length, MatchGatherer& gatherer) const
 {
+    if (str == nullptr || length == 0) {
+        return false;
+    }
+
     std::string value{str, length};
 
     auto it = data_.find(value);

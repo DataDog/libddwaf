@@ -28,8 +28,7 @@ regex_match::regex_match(const std::string& regex_str, std::size_t minLength, bo
 
 bool regex_match::match(const char* str, size_t length, MatchGatherer& gatherer) const
 {
-    if (!regex->ok() || length < min_length)
-    {
+    if (str == nullptr || !regex->ok() || length < min_length) {
         return false;
     }
 

@@ -25,6 +25,33 @@ TEST(TestIsSQLi, TestBasic)
     ddwaf_object_free(&param);
 }
 
+TEST(TestIsSQLi, TestNoMatch)
+{
+    is_sqli processor;
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "is_sqli");
+
+    MatchGatherer gatherer;
+    ddwaf_object param;
+    ddwaf_object_string(&param, "*");
+
+    EXPECT_FALSE(processor.match_object(&param, gatherer));
+
+    ddwaf_object_free(&param);
+}
+
+TEST(TestIsSQLi, TestInvalidInput)
+{
+    is_sqli processor;
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "is_sqli");
+
+    MatchGatherer gatherer;
+    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
+    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
+    EXPECT_FALSE(processor.match("*", 0,  gatherer));
+}
+
 TEST(TestIsSQLi, TestRuleset)
 {
     //Initialize a PowerWAF rule

@@ -25,6 +25,33 @@ TEST(TestIsXSS, TestBasic)
     ddwaf_object_free(&param);
 }
 
+TEST(TestIsXSS, TestNoMatch)
+{
+    is_xss processor;
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "is_xss");
+
+    MatchGatherer gatherer;
+    ddwaf_object param;
+    ddwaf_object_string(&param, "non-xss");
+
+    EXPECT_FALSE(processor.match_object(&param, gatherer));
+
+    ddwaf_object_free(&param);
+}
+
+TEST(TestIsXSS, TestInvalidInput)
+{
+    is_xss processor;
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "is_xss");
+
+    MatchGatherer gatherer;
+    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
+    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
+    EXPECT_FALSE(processor.match("non-xss", 0,  gatherer));
+}
+
 TEST(TestIsXSS, TestRuleset)
 {
     //Initialize a PowerWAF rule

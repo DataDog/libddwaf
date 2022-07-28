@@ -13,6 +13,10 @@ namespace ddwaf::rule_processor
 
 bool is_sqli::match(const char* pattern, size_t length, MatchGatherer& gatherer) const
 {
+    if (pattern == nullptr || length == 0) {
+        return false;
+    }
+
     //The mandated length is 8
     char fingerprint[16]        = { 0 };
 

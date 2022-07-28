@@ -58,3 +58,38 @@ TEST(TestIPMatch, Basic)
     EXPECT_FALSE(match(processor, "bad ip"));
     EXPECT_FALSE(match(processor, "other"));
 }
+
+TEST(TestIPMatch, TestCIDR)
+{
+    ip_match processor({
+        "1.2.0.0/16",
+        "1234:abdc::0/112",
+    });
+
+    MatchGatherer gatherer;
+
+    EXPECT_FALSE(match(processor, "1.1.0.0"));
+    EXPECT_TRUE(match(processor, "1.2.0.0"));
+    EXPECT_TRUE(match(processor, "1.2.255.255"));
+    EXPECT_FALSE(match(processor, "1.3.0.0"));
+
+    EXPECT_FALSE(match(processor, "1234:abdb::0"));
+    EXPECT_TRUE(match(processor, "1234:abdc::0"));
+    EXPECT_TRUE(match(processor, "1234:abdc::ffff"));
+    EXPECT_FALSE(match(processor, "1234:abdc::1:0"));
+}
+
+TEST(TestIPMatch, TestInvalidInput)
+{
+    ip_match processor({
+        "1.2.3.4",
+        "5.6.7.254",
+        "::ffff:0102:0304",
+        "1234:0:0:0:0:0:0:5678",
+    });
+
+    MatchGatherer gatherer;
+    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
+    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
+    EXPECT_FALSE(processor.match("*", 0,  gatherer));
+}

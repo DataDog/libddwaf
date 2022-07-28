@@ -99,3 +99,16 @@ TEST(TestPhraseMatch, TestComplex)
     run("String21", NULL);
     run("nonsense", NULL);
 }
+
+TEST(TestPhraseMatch, TestInvalidInput)
+{
+    std::vector<const char*> strings { "aaaa", "bbbb", "cccc" };
+    std::vector<uint32_t> lengths { 4, 4, 4 };
+
+    phrase_match processor(strings, lengths);
+
+    MatchGatherer gatherer;
+    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
+    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
+    EXPECT_FALSE(processor.match("*", 0,  gatherer));
+}
