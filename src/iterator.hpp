@@ -14,7 +14,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <IPWRuleProcessor.h>
 #include <manifest.hpp>
 #include <utils.h>
 #include <config.hpp>

@@ -6,11 +6,13 @@
 
 #include "../test.h"
 
-TEST(TestLibInjectionSQL, TestBasic)
+using namespace ddwaf::rule_processor;
+
+TEST(TestIsSQLi, TestBasic)
 {
-    LibInjectionSQL processor;
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "");
-    EXPECT_STREQ(processor.operatorName().data(), "is_sqli");
+    is_sqli processor;
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "is_sqli");
 
     MatchGatherer gatherer;
     ddwaf_object param;

@@ -30,11 +30,13 @@ struct MatchGatherer
     }
 };
 
-class IPWRuleProcessor
+namespace ddwaf::rule_processor {
+
+class rule_processor_base
 {
 public:
-    IPWRuleProcessor()          = default;
-    virtual ~IPWRuleProcessor() = default;
+    rule_processor_base()          = default;
+    virtual ~rule_processor_base() = default;
 
     virtual bool match(const char* str, size_t length, MatchGatherer& gatherer) const = 0;
 
@@ -42,15 +44,13 @@ public:
         return match(obj->stringValue, obj->nbEntries, gatherer);
     }
 
-    virtual const std::string getStringRepresentation() const { return {}; }
+    virtual const std::string to_string() const { return {}; }
 
     /* The return value of this function should outlive the function scope,
      * for example, through a constexpr class static string_view initialised
      * with a literal. */
-    virtual std::string_view operatorName() const = 0;
+    virtual std::string_view name() const = 0;
 };
 
-#include "libinjection.hpp"
-#include "perf_match.hpp"
-#include "re2.hpp"
-#include "ip_match.hpp"
+}
+

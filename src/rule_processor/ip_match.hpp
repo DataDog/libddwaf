@@ -6,18 +6,21 @@
 
 #pragma once
 
+#include <rule_processor/base.hpp>
 #include <ip_utils.hpp>
+#include <memory>
 
-class ip_match : public IPWRuleProcessor
+namespace ddwaf::rule_processor
+{
+
+class ip_match : public rule_processor_base
 {
 public:
     explicit ip_match(const std::vector<std::string> &ip_list);
-    ~ip_match() override;
-
-    std::string_view operatorName() const override { return name; }
     bool match(const char* str, size_t length, MatchGatherer& gatherer) const override;
-
+    std::string_view name() const override { return "ip_match"; }
 protected:
-    static constexpr std::string_view name { "ip_match" };
-    radix_tree_t* radixTree = nullptr;
+    std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_;
 };
+
+}

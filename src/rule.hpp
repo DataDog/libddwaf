@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <IPWRuleProcessor.h>
+#include <rule_processor/base.hpp>
 #include <iterator.hpp>
 #include <manifest.hpp>
 #include <PWRet.hpp>
@@ -42,7 +42,7 @@ public:
 
     condition(std::vector<ddwaf::manifest::target_type>&& targets_,
               std::vector<PW_TRANSFORM_ID>&& transformers,
-              std::unique_ptr<IPWRuleProcessor>&& processor_,
+              std::unique_ptr<rule_processor::rule_processor_base>&& processor_,
               ddwaf::object_limits limits = ddwaf::object_limits(),
               data_source source = data_source::values):
         targets(std::move(targets_)),
@@ -76,7 +76,7 @@ protected:
 
     std::vector<ddwaf::manifest::target_type> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
-    std::unique_ptr<IPWRuleProcessor> processor;
+    std::unique_ptr<rule_processor_base> processor;
     ddwaf::object_limits limits_;
     data_source source_;
 };

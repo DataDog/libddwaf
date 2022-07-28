@@ -7,15 +7,17 @@
 #include "../test.h"
 #include <algorithm>
 
+using namespace ddwaf::rule_processor;
+
 TEST(TestPhraseMatch, TestBasic)
 {
     std::vector<const char*> strings { "aaaa", "bbbb", "cccc" };
     std::vector<uint32_t> lengths { 4, 4, 4 };
 
-    PerfMatch processor(strings, lengths);
+    phrase_match processor(strings, lengths);
 
-    EXPECT_STREQ(processor.operatorName().data(), "phrase_match");
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "phrase_match");
+    EXPECT_STREQ(processor.to_string().c_str(), "");
 
     MatchGatherer gatherer;
     ddwaf_object param;
@@ -39,9 +41,9 @@ TEST(TestPhraseMatch, TestEmptyArrays)
 {
     std::vector<const char*> strings;
     std::vector<uint32_t> lengths;
-    PerfMatch processor(strings, lengths);
+    phrase_match processor(strings, lengths);
 
-    EXPECT_STREQ(processor.operatorName().data(), "phrase_match");
+    EXPECT_STREQ(processor.name().data(), "phrase_match");
 
     MatchGatherer gatherer;
     ddwaf_object param;
@@ -56,7 +58,7 @@ TEST(TestPhraseMatch, TestInconsistentArrays)
 {
     std::vector<const char*> strings { "aaaa" };
     std::vector<uint32_t> lengths;
-    EXPECT_THROW(PerfMatch(strings, lengths), std::invalid_argument);
+    EXPECT_THROW(phrase_match(strings, lengths), std::invalid_argument);
 }
 
 TEST(TestPhraseMatch, TestComplex)
@@ -66,7 +68,7 @@ TEST(TestPhraseMatch, TestComplex)
     std::generate(lengths.begin(), lengths.end(),
                   [i = 0, &strings]() mutable { return strlen(strings[i++]); });
 
-    PerfMatch processor(strings, lengths);
+    phrase_match processor(strings, lengths);
 
     auto run = [&processor](const char* str, const char* expect) {
         MatchGatherer gatherer;

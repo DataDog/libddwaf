@@ -4,15 +4,35 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "IPWRuleProcessor.h"
-#include "ip_match.hpp"
+#include <rule_processor/ip_match.hpp>
 #include <ip_utils.hpp>
+#include <cstring>
+
+namespace ddwaf::rule_processor
+{
+
+ip_match::ip_match(const std::vector<std::string> &ip_list):
+    rtree_(radix_new(128), radix_free) // Allocate the radix tree in IPv6 mode
+{
+    if (!rtree_) {
+        // TODO throw something useful
+        throw;
+    }
+
+    for (const auto &ip : ip_list) {
+        // Parse and populate each IP/network
+        prefix_t prefix;
+        if (ddwaf::parse_cidr(ip.c_str(), ip.size(), prefix)) {
+            radix_put_if_absent(rtree_.get(), &prefix);
+        }
+    }
+
+}
 
 bool ip_match::match(const char* str, size_t length, MatchGatherer& gatherer) const
 {
     // The maximum IPv6 length is of 39 characters. We add one for shenanigans around 0-terminated in the input
-    if (str == NULL || length == 0 || length > 40 || radixTree == nullptr)
-    {
+    if (str == NULL || length == 0 || length > 40) {
         return false;
     }
 
@@ -33,7 +53,7 @@ bool ip_match::match(const char* str, size_t length, MatchGatherer& gatherer) co
     radix_prefix_init(FAMILY_IPv6, structuredIP.data, 128, &radixIP);
 
     // Run the check
-    if (!radix_matching_do(radixTree, &radixIP)) {
+    if (!radix_matching_do(rtree_.get(), &radixIP)) {
         return false;
     }
 
@@ -43,30 +63,4 @@ bool ip_match::match(const char* str, size_t length, MatchGatherer& gatherer) co
     return true;
 }
 
-ip_match::ip_match(const std::vector<std::string> &ip_list)
-{
-    // Allocate the radix tree in IPv6 mode
-    radixTree = radix_new(128);
-
-    if (radixTree == nullptr) {
-        // TODO throw something useful
-        throw;
-    }
-
-    for (const auto &ip : ip_list) {
-        // Parse and populate each IP/network
-        prefix_t prefix;
-        if (ddwaf::parse_cidr(ip.c_str(), ip.size(), prefix))
-        {
-            radix_put_if_absent(radixTree, &prefix);
-        }
-    }
-
-}
-
-ip_match::~ip_match()
-{
-    if (radixTree) {
-        radix_free(radixTree);
-    }
 }

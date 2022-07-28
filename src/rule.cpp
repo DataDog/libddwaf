@@ -6,7 +6,6 @@
 
 #include <rule.hpp>
 
-#include <IPWRuleProcessor.h>
 #include <waf.hpp>
 
 #include "clock.hpp"

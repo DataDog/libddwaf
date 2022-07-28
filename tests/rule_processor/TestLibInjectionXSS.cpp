@@ -6,11 +6,13 @@
 
 #include "../test.h"
 
+using namespace ddwaf::rule_processor;
+
 TEST(TestLibInjectionXSS, TestBasic)
 {
-    LibInjectionXSS processor;
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "");
-    EXPECT_STREQ(processor.operatorName().data(), "is_xss");
+    is_xss processor;
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "is_xss");
 
     MatchGatherer gatherer;
     ddwaf_object param;

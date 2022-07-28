@@ -7,6 +7,8 @@
 #include "../test.h"
 #include <algorithm>
 
+using namespace ddwaf::rule_processor;
+
 bool match(ip_match &processor, std::string_view ip) {
     MatchGatherer mg;
     return processor.match(ip.data(), ip.size(), mg);
@@ -28,8 +30,8 @@ TEST(TestIPMatch, Basic)
         "other"
     });
 
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "");
-    EXPECT_STREQ(processor.operatorName().data(), "ip_match");
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "ip_match");
 
     EXPECT_TRUE(match(processor, "1.2.3.4"));
     EXPECT_TRUE(match(processor, "5.6.7.254"));

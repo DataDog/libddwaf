@@ -4,25 +4,24 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef perf_match_h
-#define perf_match_h
+#pragma once
 
+#include <ac.h>
 #include <memory>
+#include <rule_processor/base.hpp>
 
-#ifndef AC_H
-struct ac_t;
-#endif
+namespace ddwaf::rule_processor
+{
 
-class PerfMatch : public IPWRuleProcessor
+class phrase_match : public rule_processor_base
 {
 public:
-    PerfMatch(std::vector<const char*> pattern, std::vector<uint32_t> lengths);
-    std::string_view operatorName() const override { return name; }
+    phrase_match(std::vector<const char*> pattern, std::vector<uint32_t> lengths);
+    std::string_view name() const override { return "phrase_match"; }
     bool match(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const override;
 
 protected:
-    static constexpr std::string_view name { "phrase_match" };
     std::unique_ptr<ac_t, void (*)(void*)> ac { nullptr, nullptr };
 };
 
-#endif /* perf_match_h */
+}

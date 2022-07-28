@@ -4,34 +4,29 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef libinjection_h
-#define libinjection_h
+#pragma once
 
+#include <rule_processor/base.hpp>
 #include <libinjection.h>
 
-class LibInjectionSQL : public IPWRuleProcessor
+namespace ddwaf::rule_processor
+{
+
+class is_sqli : public rule_processor_base
 {
 public:
-    using IPWRuleProcessor::IPWRuleProcessor;
-    LibInjectionSQL() = default;
-    std::string_view operatorName() const override { return name; }
+    is_sqli() = default;
+    std::string_view name() const override { return "is_sqli"; }
     bool match(const char* pattern, size_t length, MatchGatherer& gatherer) const override;
-
-protected:
-    static constexpr std::string_view name { "is_sqli" };
 };
 
-class LibInjectionXSS : public IPWRuleProcessor
+class is_xss : public rule_processor_base
 {
 public:
-    using IPWRuleProcessor::IPWRuleProcessor;
-    LibInjectionXSS() = default;
-    std::string_view operatorName() const override { return name; }
+    is_xss() = default;
+    std::string_view name() const override { return "is_xss"; }
 
     bool match(const char* pattern, size_t length, MatchGatherer& gatherer) const override;
-
-protected:
-    static constexpr std::string_view name { "is_xss" };
 };
 
-#endif /* libinjection_h */
+}
