@@ -253,3 +253,16 @@ rules:
             - "string"
             - "other"
             - "something else"
+  - id: 18
+    name: rule18-ip-match-with-cidr
+    tags:
+      type: flow18
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: rule18-input
+          list:
+            - "192.188.0.0/16"
+            - "abcd::1234:0:0:0/96"

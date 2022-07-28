@@ -15,8 +15,7 @@ ip_match::ip_match(const std::vector<std::string> &ip_list):
     rtree_(radix_new(128), radix_free) // Allocate the radix tree in IPv6 mode
 {
     if (!rtree_) {
-        // TODO throw something useful
-        throw;
+        throw std::runtime_error("failed to instantiate radix tree");
     }
 
     for (const auto &ip : ip_list) {
