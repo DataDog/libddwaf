@@ -1,0 +1,196 @@
+FROM debian:11 AS toolchain
+
+RUN true 1 && apt-get update && apt-get install -y build-essential git
+RUN apt-get install -y binutils-x86-64-linux-gnu gcc-x86-64-linux-gnu g++-x86-64-linux-gnu
+
+RUN mkdir -p /src
+WORKDIR /src
+
+RUN apt-get install -y curl
+
+RUN curl -O -Lf https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/compiler-rt-11.1.0.src.tar.xz \
+ && echo '9b0b259cc43d5e4d20200676be153de81b485b3fdf065623ff71c7e1894ec5c8ed9d99c1416f70246ab0f417cbba6d1d4af9f3769e2e6577400681a791346231  compiler-rt-11.1.0.src.tar.xz' \
+    | sha512sum --check
+RUN curl -O -Lf https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/libcxx-11.1.0.src.tar.xz \
+ && echo 'af5333da5b90f4a46a5184532164f4c6522e3c03a580131627c0f167ab98fb3e71b3e15518d6e22414141484ec5ab0d184294ae7f10034ebfed28e7072836b28  libcxx-11.1.0.src.tar.xz' \
+    | sha512sum --check
+RUN curl -O -Lf https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/libcxxabi-11.1.0.src.tar.xz \
+ && echo '0bf3806fd9382ca6790ca2a8e991424caf64e81415386875243565034243f2ac7442c596e3c55ece80932c2ec59b71801e3e415dedc9db4dd4c3f66b6a893558  libcxxabi-11.1.0.src.tar.xz' \
+    | sha512sum --check
+RUN curl -O -Lf https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/libunwind-11.1.0.src.tar.xz \
+ && echo '507f29cf1a318d9761fe6306b2e9b57c02a342f138b47ec5420dce527132a33f7affcd386913792c472ceeb9fb1c1b105bba3234a1575aae0f68024e94c8d596  libunwind-11.1.0.src.tar.xz' \
+    | sha512sum --check
+RUN curl -O -Lf https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/llvm-11.1.0.src.tar.xz \
+ && echo '07bf9973384151a18d5cc2892103e5f28a88c632e8e49662fde56d123632f2ed1b3710fa7a87b6b821955d0ec44160ff36f2aa4f233e389e14d628e9bf8dc764  llvm-11.1.0.src.tar.xz' \
+    | sha512sum --check
+RUN curl -O -Lf https://musl.libc.org/releases/musl-1.2.2.tar.gz \
+ && echo '5344b581bd6463d71af8c13e91792fa51f25a96a1ecbea81e42664b63d90b325aeb421dfbc8c22e187397ca08e84d9296a0c0c299ba04fa2b751d6864914bd82  musl-1.2.2.tar.gz' \
+    | sha512sum --check
+
+RUN mkdir -p musl && tar -xzf musl-1.2.2.tar.gz --strip-components=1 -C musl
+RUN mkdir -p compiler-rt && tar -xJf compiler-rt-11.1.0.src.tar.xz --strip-components=1 -C compiler-rt
+RUN mkdir -p libcxx      && tar -xJf libcxx-11.1.0.src.tar.xz      --strip-components=1 -C libcxx
+RUN mkdir -p libcxxabi   && tar -xJf libcxxabi-11.1.0.src.tar.xz   --strip-components=1 -C libcxxabi
+RUN mkdir -p libunwind   && tar -xJf libunwind-11.1.0.src.tar.xz   --strip-components=1 -C libunwind
+RUN mkdir -p llvm        && tar -xJf llvm-11.1.0.src.tar.xz        --strip-components=1 -C llvm
+
+RUN mkdir -p /build
+WORKDIR /build
+
+RUN mkdir musl && cd musl \
+ && CC=x86_64-linux-gnu-gcc-10 AR=x86_64-linux-gnu-gcc-ar-10 RANLIB=x86_64-linux-gnu-gcc-ranlib-10 /src/musl/configure --prefix=/sysroot/musl && make -j && make install
+
+RUN cd /usr/include \
+    && cp -av linux asm-generic $(gcc -print-multiarch)/asm /sysroot/musl/include
+RUN cd $(dirname $(gcc -print-libgcc-file-name)) \
+    && cp -v crtbegin.o crtbeginS.o crtbeginT.o crtend.o crtendS.o /sysroot/musl/lib
+
+RUN apt-get install -y cmake clang lld
+
+RUN mkdir compiler-rt && cd compiler-rt \
+ && cmake \
+        -DCMAKE_CXX_FLAGS="-resource-dir /sysroot/musl" \
+        \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_INSTALL_PREFIX=/sysroot/musl \
+        -DCMAKE_SYSROOT=/sysroot/musl \
+        -DCMAKE_AR=/usr/bin/llvm-ar-11 \
+        -DCMAKE_ASM_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_C_COMPILER=/usr/bin/clang-11 \
+        -DCMAKE_C_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN=/usr \
+        -DCMAKE_C_FLAGS="-resource-dir /sysroot/musl" \
+        -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+        -DCMAKE_CXX_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN=/usr \
+        -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
+        -DCMAKE_SHARED_LINKER_FLAGS="-v -fuse-ld=lld" \
+        -DCMAKE_NM=/usr/bin/llvm-nm-11 \
+        -DCMAKE_RANLIB=/usr/bin/llvm-ranlib-11 \
+        \
+        -DCOMPILER_RT_BUILD_BUILTINS=ON \
+        -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
+        -DCOMPILER_RT_BUILD_MEMPROF=OFF \
+        -DCOMPILER_RT_BUILD_PROFILE=ON \
+        -DCOMPILER_RT_BUILD_SANITIZERS=OFF \
+        -DCOMPILER_RT_BUILD_XRAY=OFF \
+        -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
+        -DCOMPILER_RT_BUILD_CRT=ON \
+        \
+        -DLLVM_CONFIG_PATH=/usr/bin/llvm-config-11 \
+        \
+        ../../src/compiler-rt \
+ && make -j \
+ && make install
+
+RUN mkdir libunwind && cd libunwind \
+ && cmake \
+        -DCMAKE_CXX_FLAGS="-resource-dir /sysroot/musl -nostdinc++ -isystem /src/libcxx/include/" \
+        \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_INSTALL_PREFIX=/sysroot/musl \
+        -DCMAKE_SYSROOT=/sysroot/musl \
+        -DCMAKE_AR=/usr/bin/llvm-ar-11 \
+        -DCMAKE_ASM_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_C_COMPILER=/usr/bin/clang-11 \
+        -DCMAKE_C_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN=/usr \
+        -DCMAKE_C_FLAGS="-resource-dir /sysroot/musl" \
+        -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+        -DCMAKE_CXX_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN=/usr \
+        -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
+        -DCMAKE_SHARED_LINKER_FLAGS="-v -fuse-ld=lld" \
+        -DCMAKE_NM=/usr/bin/llvm-nm-11 \
+        -DCMAKE_RANLIB=/usr/bin/llvm-ranlib-11 \
+        \
+        -DLLVM_PATH=../../src/llvm \
+        -DLIBUNWIND_USE_COMPILER_RT=ON \
+        \
+        ../../src/libunwind \
+     && make -j \
+     && make install
+
+RUN mkdir libcxxabi && cd libcxxabi \
+ && cmake \
+        -DCMAKE_CXX_FLAGS="-resource-dir /sysroot/musl" \
+        \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_INSTALL_PREFIX=/sysroot/musl \
+        -DCMAKE_SYSROOT=/sysroot/musl \
+        -DCMAKE_AR=/usr/bin/llvm-ar-11 \
+        -DCMAKE_ASM_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_C_COMPILER=/usr/bin/clang-11 \
+        -DCMAKE_C_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN=/usr \
+        -DCMAKE_C_FLAGS="-resource-dir /sysroot/musl" \
+        -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+        -DCMAKE_CXX_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN=/usr \
+        -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
+        -DCMAKE_SHARED_LINKER_FLAGS="-v -fuse-ld=lld" \
+        -DCMAKE_NM=/usr/bin/llvm-nm-11 \
+        -DCMAKE_RANLIB=/usr/bin/llvm-ranlib-11 \
+        \
+        -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
+        -DLIBCXXABI_INCLUDE_TESTS=OFF \
+        -DLIBCXXABI_USE_COMPILER_RT=ON \
+        -DLLVM_PATH=../../src/llvm \
+        -DLIBCXXABI_LIBUNWIND_PATH=../../src/libunwind \
+        -DLIBCXXABI_LIBCXX_INCLUDES=../../src/libcxx/include \
+        \
+        ../../src/libcxxabi \
+ && make -j \
+ && make install
+
+RUN mkdir libcxx && cd libcxx \
+ && cmake \
+        -DCMAKE_CXX_FLAGS="-resource-dir /sysroot/musl" \
+        \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_INSTALL_PREFIX=/sysroot/musl \
+        -DCMAKE_SYSROOT=/sysroot/musl \
+        -DCMAKE_AR=/usr/bin/llvm-ar-11 \
+        -DCMAKE_ASM_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_C_COMPILER=/usr/bin/clang-11 \
+        -DCMAKE_C_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN=/usr \
+        -DCMAKE_C_FLAGS="-resource-dir /sysroot/musl" \
+        -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+        -DCMAKE_CXX_COMPILER_TARGET=x86_64-none-linux-musl \
+        -DCMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN=/usr \
+        -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
+        -DCMAKE_SHARED_LINKER_FLAGS="-v -fuse-ld=lld" \
+        -DCMAKE_NM=/usr/bin/llvm-nm-11 \
+        -DCMAKE_RANLIB=/usr/bin/llvm-ranlib-11 \
+        \
+        -DLIBCXX_HAS_MUSL_LIBC=ON \
+        -DLIBCXX_CXX_ABI=libcxxabi \
+        -DLIBCXX_CXX_ABI_INCLUDE_PATHS=../../src/libcxxabi/include \
+        -DLIBCXX_USE_COMPILER_RT=ON \
+        -DLIBCXX_ENABLE_FILESYSTEM=0 \
+        -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=0 \
+        \
+        ../../src/libcxx \
+ && make -j \
+ && make install
+
+FROM toolchain AS build
+RUN mkdir /src/libddwaf
+COPY . /src/libddwaf
+
+RUN mkdir /build/libddwaf
+WORKDIR /build/libddwaf
+RUN cmake -E make_directory packages && \
+    cmake -DCMAKE_TOOLCHAIN_FILE="../../src/libddwaf/docker/libddwaf/x86_64-linux/Toolchain.aarch64.cmake" -DCMAKE_BUILD_TYPE=RelWithDebInfo ../../src/libddwaf && \
+    cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static -j
+
+FROM scratch
+COPY --from=build /src/libddwaf/include/ddwaf.h /build/include/
+COPY --from=build /build/libddwaf/libddwaf.so /build/libddwaf/libddwaf.so.debug /build/libddwaf/libddwaf.a /build/lib/
+COPY --from=build /build/libddwaf/CMakeFiles/Export/share/ /build/share/
+CMD /bin/false
+
+
+
+
