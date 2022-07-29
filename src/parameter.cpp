@@ -191,4 +191,31 @@ parameter::operator uint64_t()
     return uintValue;
 }
 
+parameter::operator std::vector<std::string>()
+{
+    if (type != DDWAF_OBJ_ARRAY)
+    {
+        throw bad_cast("array", strtype(type));
+    }
+
+    if (array == nullptr || nbEntries == 0)
+    {
+        return {};
+    }
+
+    std::vector<std::string> data;
+    data.reserve(nbEntries);
+    for (unsigned i = 0; i < nbEntries; i++)
+    {
+        if (array[i].type != DDWAF_OBJ_STRING)
+        {
+            throw malformed_object("item in array not a string, can't cast to string vector");
+        }
+
+        data.emplace_back(array[i].stringValue, array[i].nbEntries);
+    }
+
+    return data;
+}
+
 }

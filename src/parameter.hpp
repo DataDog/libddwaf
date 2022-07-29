@@ -42,6 +42,7 @@ public:
     operator std::string_view();
     operator std::string();
     operator uint64_t();
+    operator std::vector<std::string>();
 
     ~parameter() = default;
 };
@@ -81,6 +82,13 @@ struct parameter_traits<parameter::string_set>
 {
     static const char* name() { return "parameter::string_set"; }
 };
+
+template <>
+struct parameter_traits<std::vector<std::string>>
+{
+    static const char* name() { return "std::vector<std::string>"; }
+};
+
 
 }
 #endif // PARAMETER_H

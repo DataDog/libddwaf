@@ -89,7 +89,8 @@ public:
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
     rule(index_type index_, std::string &&id_, std::string &&name_,
-      std::string &&category_, std::vector<condition> &&conditions_);
+      std::string &&category_, std::vector<condition> &&conditions_,
+      std::vector<std::string> &&actions_ = {});
 
     rule(const rule&) = delete;
     rule& operator=(const rule&) = delete;
@@ -107,6 +108,7 @@ public:
     std::string category;
     std::vector<condition> conditions;
     std::unordered_set<ddwaf::manifest::target_type> targets;
+    std::vector<std::string> actions;
 };
 
 using rule_map        = std::unordered_map<rule::index_type, rule>;

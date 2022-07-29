@@ -53,7 +53,6 @@ typedef enum
     DDWAF_ERR_INVALID_ARGUMENT = -1,
     DDWAF_GOOD             = 0,
     DDWAF_MONITOR          = 1,
-    DDWAF_BLOCK            = 2
 } DDWAF_RET_CODE;
 
 /**
@@ -156,6 +155,9 @@ struct _ddwaf_result
     bool timeout;
     /** Run result in JSON format **/
     const char* data;
+    /** Actions array and its size (null-terminated) **/
+    const char **actions;
+    uint32_t actions_size;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
 };

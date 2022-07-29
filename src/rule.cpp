@@ -131,9 +131,11 @@ condition::status condition::match(const object_store& store,
 }
 
 rule::rule(index_type index_, std::string &&id_, std::string &&name_,
-  std::string &&category_, std::vector<condition> &&conditions_):
+  std::string &&category_, std::vector<condition> &&conditions_,
+  std::vector<std::string> &&actions_):
   index(index_), id(std::move(id_)), name(std::move(name_)),
-  category(std::move(category_)), conditions(std::move(conditions_))
+  category(std::move(category_)), conditions(std::move(conditions_)),
+  actions(std::move(actions_))
 {
     for (auto &cond : conditions) {
         targets.insert(cond.targets.begin(), cond.targets.end());

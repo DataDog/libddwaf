@@ -119,16 +119,8 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
     }
     else if (operation == "ip_match")
     {
-        auto list = at<parameter::vector>(params, "list");
-
-        std::vector<std::string> ips;
-        ips.reserve(list.size());
-
-        for (std::string ip : list) {
-            ips.push_back(std::move(ip));
-        }
-
-        processor = std::make_unique<rule_processor::ip_match>(std::move(ips));
+        processor = std::make_unique<rule_processor::ip_match>(
+            at<std::vector<std::string>>(params, "list"));
     }
     else if (operation == "exact_match")
     {
@@ -239,7 +231,8 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         rs.rules.emplace_back(index, std::string(id),
             at<std::string>(rule, "name"),
             at<std::string>(tags, "category", ""),
-            std::move(conditions));
+            std::move(conditions),
+            at<std::vector<std::string>>(rule, "on_match", {}));
 
         auto &rule_ref = rs.rules[index];
 
