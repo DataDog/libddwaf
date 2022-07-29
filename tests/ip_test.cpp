@@ -24,6 +24,7 @@ TEST(TestIP, ParsingIPv4Class)
 
     //// Unless the system does, we don't support classfull IPs
     EXPECT_FALSE(ddwaf::parse_ip("1.257", ip));
+    EXPECT_FALSE(ddwaf::parse_ip("this is a very long string but not an IP unfortunately", ip));
 }
 
 TEST(TestIP, ParsingIPv6)
@@ -164,6 +165,7 @@ TEST(TestIP, ParsingBadNetMask)
     EXPECT_FALSE(ddwaf::parse_cidr("1.2.3.4/33", ip)); 
     EXPECT_FALSE(ddwaf::parse_cidr("::1/129", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("::1/a", ip));
+    EXPECT_FALSE(ddwaf::parse_cidr("::1/1291", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("not an IP/a", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("not an IP but also very very very very long/a", ip));
 }

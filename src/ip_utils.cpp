@@ -27,6 +27,10 @@ namespace ddwaf {
 
 bool parse_ip(std::string_view ip, ipaddr& out)
 {
+    if (ip.size() > 40) {
+        return false;
+    }
+
     // Assume the string has no '\0'
     char ip_cstr[41] = {0};
     memcpy(ip_cstr, ip.data(), ip.size());
@@ -74,13 +78,12 @@ bool parse_cidr(std::string_view str, ipaddr& out)
     try {
         auto slash_idx = str.find('/');
         if (slash_idx != str.npos) {
-            // Not a valid IP
             if (slash_idx > 40) {
                 return false;
             }
 
             auto mask_len = str.size() - slash_idx - 1;
-            if (mask_len == 0 || mask_len > 4) { return false; }
+            if (mask_len == 0 || mask_len > 3) { return false; }
 
             if (!parse_ip(str.substr(0, slash_idx), out)) { return false; }
 
@@ -92,23 +95,22 @@ bool parse_cidr(std::string_view str, ipaddr& out)
 
             out.mask = static_cast<uint8_t>(mask);
         } else {
-            //Simpler!
             if (!parse_ip(str, out)) { return false; }
         }
 
         ipv4_to_ipv6(out);
 
         // Zero the masked bits if we have a mask
-        uint8_t indexStartMask = out.mask / 8;
-        if (indexStartMask < 16) {
+        uint8_t byte_index = out.mask / 8;
+        if (byte_index < 16) {
             // Mask the lower bits of the first masked byte (we want to keep some of them)
             // if bitLength & 0x7 == 2, we want to keep the top two bits (& 0x7 <=> % 8)
             // Therefore, we take 0xff and shift it by 2 (resulting in 0011_1111)
             // We then flip the bits (resulting in 1100_0000) and use that as a mask
-            out.data[indexStartMask] &= ~(0xff >> (out.mask & 0x7));
+            out.data[byte_index] &= ~(0xff >> (out.mask & 0x7));
 
-            while (++indexStartMask < 16) {
-                out.data[indexStartMask] = 0;
+            while (++byte_index < 16) {
+                out.data[byte_index] = 0;
             }
         }
     } catch (...) {

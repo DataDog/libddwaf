@@ -11,6 +11,9 @@
 
 namespace ddwaf {
 
+// TODO: Make parsing functions static from_* methods returning an ipaddr and
+//       throw exceptions on errors.
+//       Don't automatically generate mapped IPv6 addresses.
 struct ipaddr {
     uint8_t data[16]; // big endian
     uint8_t mask;
