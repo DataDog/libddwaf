@@ -7,20 +7,22 @@
 #pragma once
 
 #include <utils.h>
-#include <radixlib.h>
+#include <string_view>
 
 namespace ddwaf {
 
 struct ipaddr {
     uint8_t data[16]; // big endian
+    uint8_t mask;
     enum class address_family {
         ipv4,
         ipv6,
+        ipv4_mapped_ipv6,
     } type;
 };
 
-bool parse_ip(const char* str, ipaddr& parsed);
-void ipv4_to_ipv6(ipaddr& parsed);
-bool parse_cidr(const char* str, size_t length, prefix_t& prefix);
+bool parse_ip(std::string_view ip, ipaddr& out);
+void ipv4_to_ipv6(ipaddr& out);
+bool parse_cidr(std::string_view ip, ipaddr& out);
 
 }

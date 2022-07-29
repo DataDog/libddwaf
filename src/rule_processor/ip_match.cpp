@@ -19,10 +19,12 @@ ip_match::ip_match(const std::vector<std::string> &ip_list):
         throw std::runtime_error("failed to instantiate radix tree");
     }
 
-    for (const auto &ip : ip_list) {
+    for (const auto &str : ip_list) {
         // Parse and populate each IP/network
-        prefix_t prefix;
-        if (ddwaf::parse_cidr(ip.c_str(), ip.size(), prefix)) {
+        ipaddr ip;
+        if (ddwaf::parse_cidr(str, ip)) {
+            prefix_t prefix;
+            radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
             radix_put_if_absent(rtree_.get(), &prefix);
         }
     }
@@ -36,12 +38,8 @@ bool ip_match::match(const char* str, size_t length, MatchGatherer& gatherer) co
         return false;
     }
 
-    // Copy the IP so that we're sure that the buffer is zero-terminated
-    char zeroTerminatedIP[41] = { 0 };
-    memcpy(zeroTerminatedIP, str, length);
-
     ddwaf::ipaddr structuredIP;
-    if (!ddwaf::parse_ip(zeroTerminatedIP, structuredIP)) {
+    if (!ddwaf::parse_ip({str, length}, structuredIP)) {
         return false;
     }
 

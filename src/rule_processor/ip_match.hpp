@@ -9,6 +9,7 @@
 #include <rule_processor/base.hpp>
 #include <ip_utils.hpp>
 #include <memory>
+#include <radixlib.h>
 
 namespace ddwaf::rule_processor
 {
