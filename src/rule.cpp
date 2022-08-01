@@ -11,8 +11,6 @@
 #include "clock.hpp"
 #include <log.hpp>
 
-#include <iostream>
-
 namespace ddwaf
 {
 

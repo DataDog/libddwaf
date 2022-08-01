@@ -7,7 +7,6 @@
 
 #include "ddwaf.h"
 #include <PWRet.hpp>
-#include <iostream>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <string>

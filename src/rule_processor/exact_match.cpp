@@ -10,21 +10,26 @@
 namespace ddwaf::rule_processor
 {
 
+exact_match::exact_match(std::vector<std::string> &&data):
+    data_(std::move(data))
+{
+    values_.reserve(data_.size());
+    values_.insert(data_.cbegin(), data_.cend());
+}
+
 bool exact_match::match(const char* str, size_t length, MatchGatherer& gatherer) const
 {
     if (str == nullptr || length == 0) {
         return false;
     }
 
-    std::string value{str, length};
-
-    auto it = data_.find(value);
-    if (it == data_.end()) {
+    auto it = values_.find({str, length});
+    if (it == values_.end()) {
         return false;
     }
 
-    gatherer.resolvedValue = value;
-    gatherer.matchedValue = value;
+    gatherer.resolvedValue = *it;
+    gatherer.matchedValue = *it;
 
     return true;
 }

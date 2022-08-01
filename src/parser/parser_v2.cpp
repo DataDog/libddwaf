@@ -15,7 +15,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <iostream>
 #include <rule_processor/is_sqli.hpp>
 #include <rule_processor/is_xss.hpp>
 #include <rule_processor/phrase_match.hpp>
@@ -135,14 +134,14 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
     {
         auto list = at<parameter::vector>(params, "list");
 
-        std::unordered_set<std::string> str_set;
-        str_set.reserve(list.size());
+        std::vector<std::string> values;
+        values.reserve(list.size());
 
         for (std::string str : list) {
-            str_set.emplace(std::move(str));
+            values.push_back(std::move(str));
         }
 
-        processor = std::make_unique<rule_processor::exact_match>(std::move(str_set));
+        processor = std::make_unique<rule_processor::exact_match>(std::move(values));
     }
     else
     {

@@ -27,12 +27,12 @@ namespace ddwaf {
 
 bool parse_ip(std::string_view ip, ipaddr& out)
 {
-    if (ip.size() > 40) {
+    if (ip.size() >= INET6_ADDRSTRLEN) {
         return false;
     }
 
     // Assume the string has no '\0'
-    char ip_cstr[41] = {0};
+    char ip_cstr[INET6_ADDRSTRLEN] = {0};
     memcpy(ip_cstr, ip.data(), ip.size());
 
     int ret = inet_pton(AF_INET, ip_cstr, &out.data);
@@ -52,7 +52,7 @@ bool parse_ip(std::string_view ip, ipaddr& out)
 
 void ipv4_to_ipv6(ipaddr& out)
 {
-    if (out.type == ipaddr::address_family::ipv6) {
+    if (out.type != ipaddr::address_family::ipv4) {
         return;
     }
 
@@ -75,47 +75,51 @@ void ipv4_to_ipv6(ipaddr& out)
 
 bool parse_cidr(std::string_view str, ipaddr& out)
 {
-    try {
-        auto slash_idx = str.find('/');
-        if (slash_idx != str.npos) {
-            if (slash_idx > 40) {
-                return false;
-            }
-
-            auto mask_len = str.size() - slash_idx - 1;
-            if (mask_len == 0 || mask_len > 3) { return false; }
-
-            if (!parse_ip(str.substr(0, slash_idx), out)) { return false; }
-
-            int mask = std::stoi(std::string(str.substr(slash_idx + 1, mask_len)));
-            if ((out.type == ipaddr::address_family::ipv4 && mask > 32) ||
-              (out.type == ipaddr::address_family::ipv6 && mask > 128)) {
-                return false;
-            }
-
-            out.mask = static_cast<uint8_t>(mask);
-        } else {
-            if (!parse_ip(str, out)) { return false; }
+    auto slash_idx = str.find('/');
+    if (slash_idx != str.npos) {
+        if (slash_idx >= INET6_ADDRSTRLEN) {
+            return false;
         }
 
-        ipv4_to_ipv6(out);
+        auto mask_len = str.size() - slash_idx - 1;
+        if (mask_len == 0 || mask_len > 3) { return false; }
 
-        // Zero the masked bits if we have a mask
-        uint8_t byte_index = out.mask / 8;
-        if (byte_index < 16) {
-            // Mask the lower bits of the first masked byte (we want to keep some of them)
-            // if bitLength & 0x7 == 2, we want to keep the top two bits (& 0x7 <=> % 8)
-            // Therefore, we take 0xff and shift it by 2 (resulting in 0011_1111)
-            // We then flip the bits (resulting in 1100_0000) and use that as a mask
-            out.data[byte_index] &= ~(0xff >> (out.mask & 0x7));
+        if (!parse_ip(str.substr(0, slash_idx), out)) { return false; }
 
-            while (++byte_index < 16) {
-                out.data[byte_index] = 0;
-            }
+        int mask;
+        try {
+            mask = std::stoi(std::string(str.substr(slash_idx + 1, mask_len)));
+        } catch (...) {
+            return false;
         }
-    } catch (...) {
-        return false;
+
+        if ((out.type == ipaddr::address_family::ipv4 && mask > 32) ||
+            (out.type == ipaddr::address_family::ipv6 && mask > 128) ||
+            mask < 0) {
+            return false;
+        }
+
+        out.mask = static_cast<uint8_t>(mask);
+    } else {
+        if (!parse_ip(str, out)) { return false; }
     }
+
+    ipv4_to_ipv6(out);
+
+    // Zero the masked bits if we have a mask
+    uint8_t byte_index = out.mask / 8;
+    if (byte_index < 16) {
+        // Mask the lower bits of the first masked byte (we want to keep some of them)
+        // if bitLength & 0x7 == 2, we want to keep the top two bits (& 0x7 <=> % 8)
+        // Therefore, we take 0xff and shift it by 2 (resulting in 0011_1111)
+        // We then flip the bits (resulting in 1100_0000) and use that as a mask
+        out.data[byte_index] &= ~(0xff >> (out.mask & 0x7));
+
+        while (++byte_index < 16) {
+            out.data[byte_index] = 0;
+        }
+    }
+
     return true;
 }
 
