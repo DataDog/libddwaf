@@ -20,9 +20,9 @@ public:
     regex_match(const std::string& regex_str, std::size_t minLength, bool caseSensitive);
     ~regex_match() = default;
 
-    const std::string to_string() const override { return regex->pattern(); }
+    std::string_view to_string() const override { return regex->pattern(); }
     std::string_view name() const override { return "match_regex"; }
-    bool match(const char* str, size_t length, MatchGatherer& gatherer) const override;
+    std::optional<event::match> match(std::string_view pattern) const override;
 
 protected:
     static constexpr int max_match_count = 16;

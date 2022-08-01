@@ -20,7 +20,7 @@ class exact_match : public rule_processor_base
 public:
     explicit exact_match(std::vector<std::string> &&data);
     ~exact_match() = default;
-    bool match(const char* str, size_t length, MatchGatherer& gatherer) const override;
+    std::optional<event::match> match(std::string_view str) const override;
     std::string_view name() const override { return "exact_match"; }
 protected:
     std::vector<std::string> data_;

@@ -29,24 +29,24 @@ phrase_match::phrase_match(std::vector<const char*> pattern, std::vector<uint32_
     ac = std::unique_ptr<ac_t, void (*)(void*)>(ac_, ac_free);
 }
 
-bool phrase_match::match(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const
+std::optional<event::match> phrase_match::match(std::string_view str) const
 {
     ac_t* acStructure = ac.get();
-    if (patternValue == nullptr || patternLength == 0 || acStructure == nullptr) {
-        return false;
+    if (str.empty() || acStructure == nullptr) {
+        return {};
     }
 
-    ac_result_t result = ac_match(acStructure, patternValue, (uint32_t) patternLength);
+    ac_result_t result = ac_match(acStructure, str.data(), static_cast<uint32_t>(str.size()));
 
     bool didMatch   = result.match_begin >= 0 && result.match_end >= 0 && result.match_begin < result.match_end;
-    if (!didMatch) { return false; }
-    gatherer.resolvedValue = std::string(patternValue, patternLength);
-    if (patternLength > (uint32_t) result.match_end)
-    {
-        gatherer.matchedValue = std::string(&patternValue[result.match_begin], (uint32_t)(result.match_end - result.match_begin + 1));
+    if (!didMatch) { return {}; }
+
+    std::string matched_value;
+    if (str.size() > (uint32_t)result.match_end) {
+        matched_value = str.substr(result.match_begin, (result.match_end - result.match_begin + 1));
     }
 
-    return true;
+    return event::match{std::string(str), std::move(matched_value), name(), to_string(), {}, {}};
 }
 
 }

@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <context.hpp>
-#include <PWRet.hpp>
 #include <exception.hpp>
 #include <memory>
 #include <mutex>
@@ -137,7 +136,7 @@ extern "C"
     {
         if (result != nullptr)
         {
-            *result = {false, nullptr, 0};
+            *result = {false, nullptr, {nullptr, 0}, 0};
         }
 
         if (context == nullptr || data == nullptr)
@@ -201,4 +200,11 @@ extern "C"
                    log_level_to_str(min_level));
         return true;
     }
+
+    void ddwaf_result_free(ddwaf_result* result)
+    {
+        free(const_cast<char*>(result->data));
+        *result = {false, nullptr, 0};
+    }
+
 }

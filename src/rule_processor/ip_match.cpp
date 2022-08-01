@@ -31,34 +31,26 @@ ip_match::ip_match(const std::vector<std::string> &ip_list):
 
 }
 
-bool ip_match::match(const char* str, size_t length, MatchGatherer& gatherer) const
+std::optional<event::match> ip_match::match(std::string_view str) const
 {
-    // The maximum IPv6 length is of 39 characters. We add one for shenanigans around 0-terminated in the input
-    if (str == NULL || length == 0 || length > 40) {
-        return false;
-    }
-
-    ddwaf::ipaddr structuredIP;
-    if (!ddwaf::parse_ip({str, length}, structuredIP)) {
-        return false;
+    ddwaf::ipaddr ip;
+    if (!ddwaf::parse_ip(str, ip)) {
+        return {};
     }
 
     // Convert the IPv4 to IPv6
-    ddwaf::ipv4_to_ipv6(structuredIP);
+    ddwaf::ipv4_to_ipv6(ip);
 
     // Initialize the radix structure to check if the IP exist
-    prefix_t radixIP;
-    radix_prefix_init(FAMILY_IPv6, structuredIP.data, 128, &radixIP);
+    prefix_t radix_ip;
+    radix_prefix_init(FAMILY_IPv6, ip.data, 128, &radix_ip);
 
     // Run the check
-    if (!radix_matching_do(rtree_.get(), &radixIP)) {
-        return false;
+    if (!radix_matching_do(rtree_.get(), &radix_ip)) {
+        return {};
     }
 
-    gatherer.resolvedValue = std::string(str, length);
-    gatherer.matchedValue = gatherer.resolvedValue;
-
-    return true;
+    return event::match{std::string(str), {}, name(), to_string(), {}, {}};
 }
 
 }

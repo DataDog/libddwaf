@@ -155,9 +155,11 @@ struct _ddwaf_result
     bool timeout;
     /** Run result in JSON format **/
     const char* data;
-    /** Actions array and its size (null-terminated) **/
-    const char **actions;
-    uint32_t actions_size;
+    /** Actions array and its size **/
+    struct {
+        const char **array;
+        uint32_t size;
+    } actions;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
 };

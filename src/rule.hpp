@@ -14,7 +14,7 @@
 #include <rule_processor/base.hpp>
 #include <iterator.hpp>
 #include <manifest.hpp>
-#include <PWRet.hpp>
+#include <event.hpp>
 #include <object_store.hpp>
 #include <PWTransformer.h>
 #include <clock.hpp>
@@ -24,17 +24,10 @@ namespace ddwaf
 
 class rule;
 
+// TODO Move condition into rule
 class condition
 {
 public:
-    enum class status : uint8_t {
-        missing_arg,
-        timeout,
-        invalid,
-        matched,
-        no_match
-    };
-
     enum class data_source : uint8_t {
         values,
         keys
@@ -57,26 +50,21 @@ public:
     condition(const condition&) = delete;
     condition& operator=(const condition&) = delete;
 
-    status match(const object_store& store,
+    std::optional<event::match> match(const object_store& store,
         const ddwaf::manifest &manifest, bool run_on_new,
-        ddwaf::timer& deadline,
-        PWRetManager& retManager) const;
+        ddwaf::timer& deadline) const;
 
 protected:
-    bool match_object(const ddwaf_object* baseInput,
-        MatchGatherer& gatherer) const;
+    std::optional<event::match> match_object(const ddwaf_object* object) const;
 
     template <typename T>
-    status match_target(T &it,
-        const std::string &name,
-        ddwaf::timer& deadline,
-        PWRetManager& retManager) const;
+    std::optional<event::match> match_target(T &it, ddwaf::timer& deadline) const;
 
     friend class rule;
 
     std::vector<ddwaf::manifest::target_type> targets;
     std::vector<PW_TRANSFORM_ID> transformation;
-    std::unique_ptr<rule_processor_base> processor;
+    std::unique_ptr<rule_processor::rule_processor_base> processor;
     ddwaf::object_limits limits_;
     data_source source_;
 };
@@ -89,7 +77,8 @@ public:
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
     rule(index_type index_, std::string &&id_, std::string &&name_,
-      std::string &&category_, std::vector<condition> &&conditions_,
+      std::string &&type_, std::string &&category_,
+      std::vector<condition> &&conditions_,
       std::vector<std::string> &&actions_ = {});
 
     rule(const rule&) = delete;
@@ -102,14 +91,14 @@ public:
 
     bool has_new_targets(const object_store &store) const;
 
-    condition::status match(const object_store& store,
+    std::optional<event> match(const object_store& store,
         const ddwaf::manifest &manifest, bool run_on_new,
-        ddwaf::timer& deadline,
-        PWRetManager& retManager) const;
+        ddwaf::timer& deadline) const;
 
     index_type index;
     std::string id;
     std::string name;
+    std::string type;
     std::string category;
     std::vector<condition> conditions;
     std::unordered_set<ddwaf::manifest::target_type> targets;

@@ -6,29 +6,14 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <ddwaf.h>
-#include <string_view>
+#include <event.hpp>
 #include <utils.h>
-
-struct MatchGatherer
-{
-    std::string resolvedValue;
-    std::string matchedValue;
-    std::vector<std::string> keyPath;
-    std::string dataSource;
-
-    MatchGatherer() = default;
-
-    void clear() {
-        resolvedValue.clear();
-        matchedValue.clear();
-        keyPath.clear();
-        dataSource.clear();
-    }
-};
 
 namespace ddwaf::rule_processor {
 
@@ -38,13 +23,14 @@ public:
     rule_processor_base()          = default;
     virtual ~rule_processor_base() = default;
 
-    virtual bool match(const char* str, size_t length, MatchGatherer& gatherer) const = 0;
+    virtual std::optional<event::match> match(std::string_view str) const = 0;
 
-    virtual bool match_object(const ddwaf_object *obj, MatchGatherer &gatherer) const {
-        return match(obj->stringValue, obj->nbEntries, gatherer);
+    virtual std::optional<event::match> match_object(const ddwaf_object *obj) const {
+        if (obj->stringValue == nullptr) { return {}; }
+        return match({obj->stringValue, obj->nbEntries});
     }
 
-    virtual const std::string to_string() const { return {}; }
+    virtual std::string_view to_string() const { return {}; }
 
     /* The return value of this function should outlive the function scope,
      * for example, through a constexpr class static string_view initialised

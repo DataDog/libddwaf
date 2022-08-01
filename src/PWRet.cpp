@@ -153,9 +153,4 @@ DDWAF_RET_CODE PWRetManager::synthetize(ddwaf_result& output) const
 
 extern "C"
 {
-    void ddwaf_result_free(ddwaf_result* result)
-    {
-        free(const_cast<char*>(result->data));
-        *result = {false, nullptr, 0};
-    }
 }

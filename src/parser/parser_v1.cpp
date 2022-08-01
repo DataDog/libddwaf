@@ -191,12 +191,13 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         auto index = rs.rules.size();
         rs.rules.emplace_back(index, std::string(id),
             at<std::string>(rule, "name"),
+            at<std::string>(tags, "type"),
             at<std::string>(tags, "category", ""),
             std::move(conditions));
 
         auto &rule_ref = rs.rules[index];
 
-        auto& collection = rs.collections[type];
+        auto& collection = rs.collections[rule_ref.type];
         collection.push_back(rule_ref);
 
         // Add this rule to the set to check for duplicates

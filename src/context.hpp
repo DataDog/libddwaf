@@ -9,6 +9,7 @@
 #include <memory>
 
 #include <ddwaf.h>
+#include <event.hpp>
 #include <optional>
 #include <rule.hpp>
 #include <config.hpp>
@@ -38,18 +39,19 @@ public:
 
 protected:
     bool run_collection(const std::string& name,
-                 const ddwaf::rule_ref_vector& flow,
-                 PWRetManager& manager, ddwaf::timer& deadline);
+        const ddwaf::rule_ref_vector& collection,
+        event_serializer& serializer,
+        ddwaf::timer& deadline);
 
     bool is_first_run() const { return status_cache_.empty(); }
-    condition::status get_cached_status(ddwaf::rule::index_type rule_idx) const;
-    bool has_new_targets(const std::vector<ddwaf::condition>& rules) const;
 
     const ddwaf::ruleset &ruleset_;
     const ddwaf::config &config_;
     ddwaf::object_store store_;
 
-    std::unordered_map<rule::index_type, condition::status> status_cache_;
+    // If we have seen a match, the value will be true, if the value is present
+    // and false it means we executed the rule and it did not match.
+    std::unordered_map<rule::index_type, bool> status_cache_;
 };
 
 }

@@ -17,21 +17,18 @@ exact_match::exact_match(std::vector<std::string> &&data):
     values_.insert(data_.cbegin(), data_.cend());
 }
 
-bool exact_match::match(const char* str, size_t length, MatchGatherer& gatherer) const
+std::optional<event::match> exact_match::match(std::string_view str) const
 {
-    if (str == nullptr || length == 0) {
-        return false;
+    if (str.empty()) {
+        return {};
     }
 
-    auto it = values_.find({str, length});
+    auto it = values_.find(str);
     if (it == values_.end()) {
-        return false;
+        return {};
     }
 
-    gatherer.resolvedValue = *it;
-    gatherer.matchedValue = *it;
-
-    return true;
+    return event::match{std::string(str), {}, name(), to_string(), {}, {}};
 }
 
 }

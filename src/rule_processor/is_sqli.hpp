@@ -17,7 +17,7 @@ class is_sqli : public rule_processor_base
 public:
     is_sqli() = default;
     std::string_view name() const override { return "is_sqli"; }
-    bool match(const char* pattern, size_t length, MatchGatherer& gatherer) const override;
+    std::optional<event::match> match(std::string_view pattern) const override;
 };
 
 }

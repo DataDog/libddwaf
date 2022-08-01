@@ -10,93 +10,78 @@
 
 #include "clock.hpp"
 #include <log.hpp>
+#include <exception.hpp>
+#include <memory>
 
 namespace ddwaf
 {
 
-bool condition::match_object(const ddwaf_object* baseInput,
-  MatchGatherer& gatherer) const
+std::optional<event::match> condition::match_object(const ddwaf_object* object) const
 {
     const bool hasTransformation        = !transformation.empty();
     bool transformationWillChangeString = false;
 
-    if (hasTransformation)
-    {
+    if (hasTransformation) {
         // This codepath is shared with the mutable path. The structure can't be const :/
         transformationWillChangeString = PWTransformer::doesNeedTransform(transformation,
-            const_cast<ddwaf_object *>(baseInput));
+            const_cast<ddwaf_object *>(object));
     }
 
-    size_t length = find_string_cutoff(baseInput->stringValue,
-            baseInput->nbEntries, limits_.max_string_length);
+    size_t length = find_string_cutoff(object->stringValue,
+            object->nbEntries, limits_.max_string_length);
 
     //If we don't have transformation to perform, or if they're irrelevant, no need to waste time copying and allocating data
     if (!hasTransformation || !transformationWillChangeString) {
-        return processor->match(baseInput->stringValue, length, gatherer);
+        return processor->match({object->stringValue, length});
     }
 
-    ddwaf_object copyInput;
-    ddwaf_object_stringl(&copyInput, (const char*) baseInput->stringValue, length);
+    ddwaf_object copy;
+    ddwaf_object_stringl(&copy, (const char*) object->stringValue, length);
+
+    std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> scope(
+        &copy, ddwaf_object_free);
 
     //Transform it and pick the pointer to process
-    bool transformFailed = false, matched = false;
-    for (const PW_TRANSFORM_ID& transform : transformation)
-    {
-        transformFailed = !PWTransformer::transform(transform, &copyInput);
-        if (transformFailed || (copyInput.type == DDWAF_OBJ_STRING && copyInput.nbEntries == 0))
+    bool transformFailed = false;
+    for (const PW_TRANSFORM_ID& transform : transformation) {
+        transformFailed = !PWTransformer::transform(transform, &copy);
+        if (transformFailed || (copy.type == DDWAF_OBJ_STRING && copy.nbEntries == 0))
         {
             break;
         }
     }
 
-    //Run the transformed input
     if (transformFailed) {
-        matched |= processor->match(baseInput->stringValue, length, gatherer);
-    } else {
-        matched |= processor->match_object(&copyInput, gatherer);
+        return processor->match({object->stringValue, length});
     }
 
-    // Otherwise, the caller is in charge of freeing the pointer
-    ddwaf_object_free(&copyInput);
-
-    return matched;
+    return processor->match_object(&copy);
 }
 
 template <typename T>
-condition::status condition::match_target(T &it,
-    const std::string &name,
-    ddwaf::timer& deadline,
-    PWRetManager& retManager) const
+std::optional<event::match> condition::match_target(T &it, ddwaf::timer& deadline) const
 {
     for (; it; ++it) {
         if (deadline.expired()) {
-            return status::timeout;
+            throw ddwaf::timeout();
         }
 
-        MatchGatherer gather;
         if (it.type() != DDWAF_OBJ_STRING) { continue; }
-        if (!match_object(*it, gather)) { continue; }
 
-        gather.keyPath = it.get_current_path();
-        gather.dataSource = name;
+        auto optional_match = match_object(*it);
+        if (!optional_match.has_value()) { continue; }
 
-        DDWAF_TRACE("Target %s matched %s out of parameter value %s",
-                    gather.dataSource.c_str(),
-                    gather.matchedValue.c_str(),
-                    gather.resolvedValue.c_str());
-
-        retManager.recordRuleMatch(processor, gather);
-
+        optional_match->key_path = std::move(it.get_current_path());
         //If this target matched, we can stop processing
-        return status::matched;
+        return optional_match;
     }
 
-    return status::no_match;
+    return {};
 }
 
-condition::status condition::match(const object_store& store,
+std::optional<event::match> condition::match(const object_store& store,
     const ddwaf::manifest &manifest, bool run_on_new,
-    ddwaf::timer& deadline, PWRetManager& retManager) const
+    ddwaf::timer& deadline) const
 {
     for (const auto &target : targets) {
 
@@ -110,32 +95,38 @@ condition::status condition::match(const object_store& store,
 
         // TODO: iterators could be cached to avoid reinitialisation
 
-        condition::status res = status::no_match;
         auto object = store.get_target(target);
         if (object == nullptr) { continue; }
 
+        std::optional<event::match> optional_match;
         if (source_ == data_source::keys) {
             object::key_iterator it(object, info.key_path, limits_);
-            res = match_target(it, info.name, deadline, retManager);
+            optional_match = match_target(it, deadline);
         } else {
             object::value_iterator it(object, info.key_path, limits_);
-            res = match_target(it, info.name, deadline, retManager);
+            optional_match = match_target(it, deadline);
         }
 
-        if (res == status::matched || res == status::timeout) {
-            return res;
+        if (optional_match.has_value()) {
+            optional_match->source = info.name;
+
+            DDWAF_TRACE("Target %s matched %s out of parameter value %s",
+                    info.name.c_str(), optional_match->matched->c_str(),
+                    optional_match->resolved.c_str());
+            return optional_match;
         }
     }
 
-    return status::no_match;
+    return {};
 }
 
 rule::rule(index_type index_, std::string &&id_, std::string &&name_,
-  std::string &&category_, std::vector<condition> &&conditions_,
+  std::string &&type_, std::string &&category_,
+  std::vector<condition> &&conditions_,
   std::vector<std::string> &&actions_):
   index(index_), id(std::move(id_)), name(std::move(name_)),
-  category(std::move(category_)), conditions(std::move(conditions_)),
-  actions(std::move(actions_))
+  type(std::move(type_)), category(std::move(category_)), 
+  conditions(std::move(conditions_)), actions(std::move(actions_))
 {
     for (auto &cond : conditions) {
         targets.insert(cond.targets.begin(), cond.targets.end());
@@ -154,19 +145,31 @@ bool rule::has_new_targets(const object_store &store) const
     return false;
 }
 
-condition::status rule::match(const object_store& store,
+std::optional<event> rule::match(const object_store& store,
     const ddwaf::manifest &manifest, bool run_on_new,
-    ddwaf::timer& deadline, PWRetManager& retManager) const
+    ddwaf::timer& deadline) const
 {
-    for (const ddwaf::condition& cond : conditions)
-    {
-        auto status = cond.match(store, manifest, run_on_new,
-                                 deadline, retManager);
-        if (status != condition::status::matched) {
-            return status;
+    ddwaf::event event;
+
+    for (const ddwaf::condition& cond : conditions) {
+        auto opt_match = cond.match(store, manifest, run_on_new, deadline);
+        if (!opt_match.has_value()) {
+            return {};
         }
+        event.matches.emplace_back(std::move(*opt_match));
     }
-    return condition::status::matched;
+
+    event.id = id;
+    event.name = name;
+    event.type =  type;
+    event.category = category;
+
+    event.actions.reserve(actions.size());
+    for (const auto &action : actions) {
+        event.actions.push_back(action);
+    }
+
+    return {std::move(event)};
 }
 
 }
