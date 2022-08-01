@@ -42,8 +42,8 @@ std::optional<event::match> regex_match::match(std::string_view str) const
 
     if (!didMatch) { return {}; }
 
+    return make_event(str, {match[0].data(), match[0].size()});
 
-    return event::match{std::string(str), match[9].as_string(), name(), to_string(), {}, {}};
 }
 
 }

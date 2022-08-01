@@ -204,7 +204,9 @@ extern "C"
     void ddwaf_result_free(ddwaf_result* result)
     {
         free(const_cast<char*>(result->data));
-        *result = {false, nullptr, 0};
+        free(result->actions.array);
+
+        *result = {false, nullptr, {nullptr, 0}, 0};
     }
 
 }

@@ -88,7 +88,7 @@ bool context::run_collection(const std::string& name,
         if (hit != status_cache_.cend()) {
             // There was a match cached for this rule, stop processing collection
             if (hit->second) { break; }
-            
+
             // The value is present and it's false (no match), check if we have
             // new targets to decide if we should retry the rule.
             if (!rule.has_new_targets(store_)) { continue; }
@@ -109,6 +109,8 @@ bool context::run_collection(const std::string& name,
         try {
             auto event = rule.match(store_, ruleset_.manifest, run_on_new, deadline);
 
+            status_cache_.insert_or_assign(rule.index, event.has_value());
+
             if (event.has_value()) {
                 serializer.insert(std::move(event.value()));
                 break;
@@ -118,7 +120,6 @@ bool context::run_collection(const std::string& name,
             return false;
         }
 
-        status_cache_.insert_or_assign(rule.index, false);
     }
 
     return true;

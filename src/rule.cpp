@@ -110,9 +110,8 @@ std::optional<event::match> condition::match(const object_store& store,
         if (optional_match.has_value()) {
             optional_match->source = info.name;
 
-            DDWAF_TRACE("Target %s matched %s out of parameter value %s",
-                    info.name.c_str(), optional_match->matched->c_str(),
-                    optional_match->resolved.c_str());
+            DDWAF_TRACE("Target %s matched parameter value %s",
+                    info.name.c_str(), optional_match->resolved.c_str());
             return optional_match;
         }
     }

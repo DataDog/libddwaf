@@ -41,12 +41,12 @@ std::optional<event::match> phrase_match::match(std::string_view str) const
     bool didMatch   = result.match_begin >= 0 && result.match_end >= 0 && result.match_begin < result.match_end;
     if (!didMatch) { return {}; }
 
-    std::string matched_value;
+    std::string_view matched_value;
     if (str.size() > (uint32_t)result.match_end) {
         matched_value = str.substr(result.match_begin, (result.match_end - result.match_begin + 1));
     }
 
-    return event::match{std::string(str), std::move(matched_value), name(), to_string(), {}, {}};
+    return make_event(str, matched_value);
 }
 
 }

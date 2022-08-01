@@ -21,7 +21,7 @@ std::optional<event::match> is_xss::match(std::string_view str) const
         return {};
     }
 
-    return event::match{std::string(str), {}, name(), to_string(), {}, {}};
+    return make_event(str, str);
 }
 
 }

@@ -28,7 +28,7 @@ std::optional<event::match> exact_match::match(std::string_view str) const
         return {};
     }
 
-    return event::match{std::string(str), {}, name(), to_string(), {}, {}};
+    return make_event(str, str);
 }
 
 }

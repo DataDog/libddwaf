@@ -36,6 +36,14 @@ public:
      * for example, through a constexpr class static string_view initialised
      * with a literal. */
     virtual std::string_view name() const = 0;
+
+    event::match make_event(std::string_view resolved, std::string_view matched) const
+    {
+        return {
+            std::string(resolved), std::string(matched),
+            name(), to_string(), {}, {}
+        };
+    }
 };
 
 }

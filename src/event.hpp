@@ -9,9 +9,9 @@
 #include <ddwaf.h>
 #include <obfuscator.hpp>
 
+#include <optional>
 #include <string>
 #include <string_view>
-
 
 namespace ddwaf
 {
@@ -21,7 +21,7 @@ struct event
     struct match
     {
         std::string resolved;
-        std::optional<std::string> matched;
+        std::string matched;
         std::string_view operator_name;
         std::string_view operator_value;
         std::string_view source;
@@ -48,9 +48,7 @@ public:
 
     bool has_events() { return !events_.empty(); }
 
-    void serialize(ddwaf_result &output) {
-        (void)output;
-    }
+    void serialize(ddwaf_result &output);
 
 protected:
     std::vector<event> events_;

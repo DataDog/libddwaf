@@ -6,8 +6,6 @@
 
 #include "test.h"
 
-using match_status = ddwaf::condition::status;
-
 TEST(TestPWProcessor, TestOutput)
 {
     //Initialize a PowerWAF rule

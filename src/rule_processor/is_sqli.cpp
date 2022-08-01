@@ -22,7 +22,7 @@ std::optional<event::match> is_sqli::match(std::string_view str) const
         return {};
     }
 
-    return event::match{std::string(str), fingerprint, name(), to_string(), {}, {}};
+    return make_event(str, fingerprint);
 }
 
 }

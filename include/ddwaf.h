@@ -157,7 +157,7 @@ struct _ddwaf_result
     const char* data;
     /** Actions array and its size **/
     struct {
-        const char **array;
+        char **array;
         uint32_t size;
     } actions;
     /** Total WAF runtime in nanoseconds **/
