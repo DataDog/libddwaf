@@ -13,7 +13,7 @@ namespace ddwaf::rule_processor
 
 std::optional<event::match> is_xss::match(std::string_view str) const
 {
-    if (str.empty()) {
+    if (str.empty() || str.data() == nullptr) {
         return {};
     }
 
@@ -21,7 +21,7 @@ std::optional<event::match> is_xss::match(std::string_view str) const
         return {};
     }
 
-    return make_event(str, str);
+    return make_event(str, {});
 }
 
 }

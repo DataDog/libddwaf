@@ -11,16 +11,15 @@ using namespace ddwaf::rule_processor;
 TEST(TestIsSQLi, TestBasic)
 {
     is_sqli processor;
-    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.to_string().data(), "");
     EXPECT_STREQ(processor.name().data(), "is_sqli");
 
-    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "'OR 1=1/*");
 
-    EXPECT_TRUE(processor.match_object(&param, gatherer));
-
-    EXPECT_STREQ(gatherer.resolvedValue.c_str(), "'OR 1=1/*");
+    auto match = processor.match_object(&param);
+    EXPECT_TRUE(match);
+    EXPECT_STREQ(match->resolved.c_str(), "'OR 1=1/*");
 
     ddwaf_object_free(&param);
 }
@@ -28,14 +27,11 @@ TEST(TestIsSQLi, TestBasic)
 TEST(TestIsSQLi, TestNoMatch)
 {
     is_sqli processor;
-    EXPECT_STREQ(processor.to_string().c_str(), "");
-    EXPECT_STREQ(processor.name().data(), "is_sqli");
 
-    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "*");
 
-    EXPECT_FALSE(processor.match_object(&param, gatherer));
+    EXPECT_FALSE(processor.match_object(&param));
 
     ddwaf_object_free(&param);
 }
@@ -43,13 +39,10 @@ TEST(TestIsSQLi, TestNoMatch)
 TEST(TestIsSQLi, TestInvalidInput)
 {
     is_sqli processor;
-    EXPECT_STREQ(processor.to_string().c_str(), "");
-    EXPECT_STREQ(processor.name().data(), "is_sqli");
 
-    MatchGatherer gatherer;
-    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
-    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
-    EXPECT_FALSE(processor.match("*", 0,  gatherer));
+    EXPECT_FALSE(processor.match({nullptr, 0}));
+    EXPECT_FALSE(processor.match({nullptr, 30}));
+    EXPECT_FALSE(processor.match({"*", 0}));
 }
 
 TEST(TestIsSQLi, TestRuleset)

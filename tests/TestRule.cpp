@@ -29,9 +29,6 @@ TEST(TestCondition, TestMatch)
     store.insert(root);
 
     ddwaf::timer deadline{2s};
-    ddwaf::obfuscator obfuscator;
-    PWRetManager manager(obfuscator);
-    manager.startRule();
 
-    EXPECT_EQ(cond.match(store, manifest, true, deadline, manager), condition::status::matched);
+    EXPECT_TRUE(cond.match(store, manifest, true, deadline).has_value());
 }

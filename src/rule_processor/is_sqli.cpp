@@ -13,7 +13,7 @@ namespace ddwaf::rule_processor
 
 std::optional<event::match> is_sqli::match(std::string_view str) const
 {
-    if (str.empty()) {
+    if (str.empty() || str.data() == nullptr) {
         return {};
     }
     //The mandated length is 8

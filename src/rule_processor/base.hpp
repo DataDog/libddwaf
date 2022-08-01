@@ -30,7 +30,7 @@ public:
         return match({obj->stringValue, obj->nbEntries});
     }
 
-    virtual std::string_view to_string() const { return {}; }
+    virtual std::string_view to_string() const { return ""; }
 
     /* The return value of this function should outlive the function scope,
      * for example, through a constexpr class static string_view initialised

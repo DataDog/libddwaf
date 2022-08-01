@@ -32,7 +32,7 @@ phrase_match::phrase_match(std::vector<const char*> pattern, std::vector<uint32_
 std::optional<event::match> phrase_match::match(std::string_view str) const
 {
     ac_t* acStructure = ac.get();
-    if (str.empty() || acStructure == nullptr) {
+    if (str.empty() || str.data() == nullptr || acStructure == nullptr) {
         return {};
     }
 

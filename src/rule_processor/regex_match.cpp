@@ -28,7 +28,7 @@ regex_match::regex_match(const std::string& regex_str, std::size_t minLength, bo
 
 std::optional<event::match> regex_match::match(std::string_view str) const
 {
-    if (str.empty() || !regex->ok() || str.size() < min_length) {
+    if (str.data() == nullptr || !regex->ok() || str.size() < min_length) {
         return {};
     }
 

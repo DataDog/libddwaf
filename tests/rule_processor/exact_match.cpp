@@ -14,43 +14,48 @@ TEST(TestExactMatch, Basic)
     exact_match processor({"aaaa", "bbbb", "cccc"});
 
     EXPECT_STREQ(processor.name().data(), "exact_match");
-    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.to_string().data(), "");
 
-    MatchGatherer gatherer;
     {
-        std::string_view match{"aaaa"};
-        EXPECT_TRUE(processor.match(match.data(), match.size(), gatherer));
-        EXPECT_STREQ(gatherer.resolvedValue.c_str(), match.data());
-        EXPECT_STREQ(gatherer.matchedValue.c_str(), match.data());
+        std::string_view input{"aaaa"};
+        auto match = processor.match(input);
+        EXPECT_TRUE(match);
+        EXPECT_STREQ(match->resolved.c_str(), input.data());
+        EXPECT_STREQ(match->matched.c_str(), input.data());
     }
 
     {
-        std::string_view match{"bbbb"};
-        EXPECT_TRUE(processor.match(match.data(), match.size(), gatherer));
-        EXPECT_STREQ(gatherer.resolvedValue.c_str(), match.data());
-        EXPECT_STREQ(gatherer.matchedValue.c_str(), match.data());
+        std::string_view input{"bbbb"};
+        auto match = processor.match(input);
+        EXPECT_TRUE(match);
+        EXPECT_STREQ(match->resolved.c_str(), input.data());
+        EXPECT_STREQ(match->matched.c_str(), input.data());
     }
 
     {
-        std::string_view match{"cccc"};
-        EXPECT_TRUE(processor.match(match.data(), match.size(), gatherer));
-        EXPECT_STREQ(gatherer.resolvedValue.c_str(), match.data());
-        EXPECT_STREQ(gatherer.matchedValue.c_str(), match.data());
+        std::string_view input{"cccc"};
+        auto match = processor.match(input);
+        EXPECT_TRUE(match);
+        EXPECT_STREQ(match->resolved.c_str(), input.data());
+        EXPECT_STREQ(match->matched.c_str(), input.data());
     }
 
     {
-        std::string_view match{"cc"};
-        EXPECT_FALSE(processor.match(match.data(), match.size(), gatherer));
+        std::string_view input{"cc"};
+        auto match = processor.match(input);
+        EXPECT_FALSE(match);
     }
 
     {
-        std::string_view match{"aaaaaa"};
-        EXPECT_FALSE(processor.match(match.data(), match.size(), gatherer));
+        std::string_view input{"aaaaaa"};
+        auto match = processor.match(input);
+        EXPECT_FALSE(match);
     }
 
     {
-        std::string_view match{"ddddd"};
-        EXPECT_FALSE(processor.match(match.data(), match.size(), gatherer));
+        std::string_view input{"ddddd"};
+        auto match = processor.match(input);
+        EXPECT_FALSE(match);
     }
 }
 
@@ -58,8 +63,7 @@ TEST(TestExactMatch, InvalidMatchInput)
 {
     exact_match processor({"aaaa", "bbbb", "cccc"});
 
-    MatchGatherer gatherer;
-    EXPECT_FALSE(processor.match(nullptr, 30, gatherer));
-    EXPECT_FALSE(processor.match(nullptr, 0, gatherer));
-    EXPECT_FALSE(processor.match("aaaa", 0, gatherer));
+    EXPECT_FALSE(processor.match({nullptr, 0}));
+    EXPECT_FALSE(processor.match({nullptr, 30}));
+    EXPECT_FALSE(processor.match({"aaaa", 0}));
 }

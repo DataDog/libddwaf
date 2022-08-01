@@ -33,6 +33,10 @@ ip_match::ip_match(const std::vector<std::string> &ip_list):
 
 std::optional<event::match> ip_match::match(std::string_view str) const
 {
+    if (str.empty() || str.data() == nullptr) {
+        return {};
+    }
+
     ddwaf::ipaddr ip;
     if (!ddwaf::parse_ip(str, ip)) {
         return {};
