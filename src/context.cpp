@@ -89,12 +89,9 @@ bool context::run_collection(const std::string& name,
         return false;
     }
 
-    match_status status = match_status::invalid;
     //Process each rule we have to run for this step of the collection
     for (ddwaf::rule& rule : collection)
     {
-        status = match_status::invalid;
-
         //Have we already ran this rule?
         auto index              = rule.index;
         const auto cache_status = get_cached_status(index);
@@ -124,34 +121,18 @@ bool context::run_collection(const std::string& name,
         // match in the cache, we can safely assume it has already been executed
         // with existing data.
         bool run_on_new = cachedNegativeMatch && rule.conditions.size() == 1;
-        for (const ddwaf::condition& cond : rule.conditions)
-        {
-            status = cond.match(store_, ruleset_.manifest, run_on_new, deadline, retManager);
-            //Stop if we didn't matched any of the parameters (2) or that the parameter couldn't be found
-            if (status == match_status::no_match)
-            {
-                break;
-            }
-            else if (status == match_status::missing_arg)
-            {
-                DDWAF_DEBUG("Missing arguments to run rule %s", rule.id.c_str());
-                break;
-            }
-            else if (status == match_status::timeout)
-            {
-                DDWAF_INFO("Ran out of time when processing %s", rule.id.c_str());
-                retManager.recordTimeout();
-                return false;
-            }
-            else
-            {
-                DDWAF_DEBUG("Matched rule %s", rule.id.c_str());
-            }
+        auto status = rule.match(store_, ruleset_.manifest, run_on_new, deadline, retManager);
+
+        if (status == match_status::timeout) {
+            DDWAF_INFO("Ran out of time when processing %s", rule.id.c_str());
+            retManager.recordTimeout();
+            return false;
         }
 
         //Store the result of the rule in the cache
         if (status != match_status::missing_arg)
         {
+            DDWAF_DEBUG("Missing arguments to run rule %s", rule.id.c_str());
             status_cache_.insert_or_assign(index, status);
         }
 

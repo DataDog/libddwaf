@@ -102,6 +102,11 @@ public:
 
     bool has_new_targets(const object_store &store) const;
 
+    condition::status match(const object_store& store,
+        const ddwaf::manifest &manifest, bool run_on_new,
+        ddwaf::timer& deadline,
+        PWRetManager& retManager) const;
+
     index_type index;
     std::string id;
     std::string name;

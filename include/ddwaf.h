@@ -218,6 +218,8 @@ ddwaf_handle ddwaf_init(const ddwaf_object *rule,
  * @param Handle to the WAF instance.
  */
 void ddwaf_destroy(ddwaf_handle handle);
+
+DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data);
 /**
  * ddwaf_ruleset_info_free
  *

@@ -154,4 +154,19 @@ bool rule::has_new_targets(const object_store &store) const
     return false;
 }
 
+condition::status rule::match(const object_store& store,
+    const ddwaf::manifest &manifest, bool run_on_new,
+    ddwaf::timer& deadline, PWRetManager& retManager) const
+{
+    for (const ddwaf::condition& cond : conditions)
+    {
+        auto status = cond.match(store, manifest, run_on_new,
+                                 deadline, retManager);
+        if (status != condition::status::matched) {
+            return status;
+        }
+    }
+    return condition::status::matched;
+}
+
 }
