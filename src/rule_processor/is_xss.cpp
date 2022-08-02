@@ -4,28 +4,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <IPWRuleProcessor.h>
-
+#include <rule_processor/is_xss.hpp>
 #include <libinjection.h>
 #include <utils.h>
 
-bool LibInjectionSQL::match(const char* pattern, size_t length, MatchGatherer& gatherer) const
+namespace ddwaf::rule_processor
 {
-    //The mandated length is 8
-    char fingerprint[16]        = { 0 };
 
-    if (!libinjection_sqli(pattern, length, fingerprint)) {
+bool is_xss::match(const char* pattern, size_t length, MatchGatherer& gatherer) const
+{
+    if (pattern == nullptr || length == 0) {
         return false;
     }
 
-    gatherer.resolvedValue = std::string(pattern, length);
-    gatherer.matchedValue = std::string(fingerprint);
-
-    return true;
-}
-
-bool LibInjectionXSS::match(const char* pattern, size_t length, MatchGatherer& gatherer) const
-{
     if (!libinjection_xss(pattern, length)) {
         return false;
     }
@@ -33,4 +24,6 @@ bool LibInjectionXSS::match(const char* pattern, size_t length, MatchGatherer& g
     gatherer.resolvedValue = std::string(pattern, length);
 
     return true;
+}
+
 }

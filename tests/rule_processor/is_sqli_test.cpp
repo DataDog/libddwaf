@@ -6,11 +6,13 @@
 
 #include "../test.h"
 
-TEST(TestLibInjectionSQL, TestBasic)
+using namespace ddwaf::rule_processor;
+
+TEST(TestIsSQLi, TestBasic)
 {
-    LibInjectionSQL processor;
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "");
-    EXPECT_STREQ(processor.operatorName().data(), "is_sqli");
+    is_sqli processor;
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "is_sqli");
 
     MatchGatherer gatherer;
     ddwaf_object param;
@@ -23,7 +25,34 @@ TEST(TestLibInjectionSQL, TestBasic)
     ddwaf_object_free(&param);
 }
 
-TEST(TestLibInjectionSQL, TestRuleset)
+TEST(TestIsSQLi, TestNoMatch)
+{
+    is_sqli processor;
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "is_sqli");
+
+    MatchGatherer gatherer;
+    ddwaf_object param;
+    ddwaf_object_string(&param, "*");
+
+    EXPECT_FALSE(processor.match_object(&param, gatherer));
+
+    ddwaf_object_free(&param);
+}
+
+TEST(TestIsSQLi, TestInvalidInput)
+{
+    is_sqli processor;
+    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.name().data(), "is_sqli");
+
+    MatchGatherer gatherer;
+    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
+    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
+    EXPECT_FALSE(processor.match("*", 0,  gatherer));
+}
+
+TEST(TestIsSQLi, TestRuleset)
 {
     //Initialize a PowerWAF rule
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_sqli, parameters: {inputs: [{address: arg1}]}}]}]})");

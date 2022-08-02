@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <exception.hpp>
-#include <iostream>
 #include <log.hpp>
 #include <parser/common.hpp>
 #include <parser/parser.hpp>

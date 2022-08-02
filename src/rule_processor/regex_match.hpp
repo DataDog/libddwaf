@@ -8,23 +8,26 @@
 
 #include <memory>
 #include <re2/re2.h>
-
 #include <utils.h>
+#include <rule_processor/base.hpp>
 
-class RE2Manager : public IPWRuleProcessor
+namespace ddwaf::rule_processor
+{
+
+class regex_match: public rule_processor_base
 {
 public:
-    RE2Manager(const std::string& regex_str, std::size_t minLength, bool caseSensitive);
-    ~RE2Manager() = default;
+    regex_match(const std::string& regex_str, std::size_t minLength, bool caseSensitive);
+    ~regex_match() = default;
 
-    const std::string getStringRepresentation() const override { return regex->pattern(); }
-    std::string_view operatorName() const override { return name; }
+    const std::string to_string() const override { return regex->pattern(); }
+    std::string_view name() const override { return "match_regex"; }
     bool match(const char* str, size_t length, MatchGatherer& gatherer) const override;
 
 protected:
     static constexpr int max_match_count = 16;
-    static constexpr std::string_view name { "match_regex" };
-    uint8_t groupsToCatch { 0 };
     std::unique_ptr<re2::RE2> regex { nullptr };
     std::size_t min_length;
 };
+
+}

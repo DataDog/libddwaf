@@ -212,4 +212,57 @@ rules:
           regex: rule15
     transformers:
       - removeNulls
-
+  - id: 16
+    name: rule16-ip-match
+    tags:
+      type: flow16
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: rule16-input
+          list:
+            - "192.168.0.1"
+            - "1.2.3.4"
+            - "5.6.7.254"
+            - "::ffff:0102:0304"
+            - "1234:0:0:0:0:0:0:5678"
+            - "::1"
+            - "abcd::1234:5678:1234:5678"
+            - "abcd::1234:0:0:0"
+            - "abcd::1234:ffff:ffff:ffff"
+            - "1.2.3.5"
+            - "5.6.8.0"
+            - "::ffff:0102:0305"
+            - "5.6.8.0"
+            - "::2"
+            - "0:1234::5678"
+            - "abcd:0:1233::"
+  - id: 17
+    name: rule17-ip-match
+    tags:
+      type: flow17
+      category: category
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule17-input
+          list:
+            - "string"
+            - "other"
+            - "something else"
+  - id: 18
+    name: rule18-ip-match-with-cidr
+    tags:
+      type: flow18
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: rule18-input
+          list:
+            - "192.188.0.0/16"
+            - "abcd::1234:0:0:0/96"

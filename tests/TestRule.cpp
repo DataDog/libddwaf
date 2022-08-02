@@ -17,7 +17,8 @@ TEST(TestCondition, TestMatch)
 
     auto manifest = mb.build_manifest();
 
-    condition cond(std::move(targets), {}, std::make_unique<RE2Manager>(".*", 0, true));
+    condition cond(std::move(targets), {},
+        std::make_unique<rule_processor::regex_match>(".*", 0, true));
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);

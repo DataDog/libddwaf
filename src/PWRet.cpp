@@ -7,7 +7,6 @@
 
 #include "ddwaf.h"
 #include <PWRet.hpp>
-#include <iostream>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <string>
@@ -33,20 +32,20 @@ void PWRetManager::startRule()
     ruleCollector.SetArray();
 }
 
-void PWRetManager::recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather)
+void PWRetManager::recordRuleMatch(const std::unique_ptr<rule_processor_base>& processor, const MatchGatherer& gather)
 {
     auto redaction_msg = StringRef(ddwaf::obfuscator::redaction_msg);
 
     rapidjson::Value output;
     output.SetObject();
 
-    auto op = processor->operatorName();
+    auto op = processor->name();
     output.AddMember("operator",
                      rapidjson::GenericStringRef<char>(op.data(),
                                                        static_cast<rapidjson::SizeType>(op.size())),
                      allocator);
 
-    output.AddMember("operator_value", processor->getStringRepresentation(), allocator);
+    output.AddMember("operator_value", processor->to_string(), allocator);
 
     rapidjson::Value parameters, param, key_path;
     parameters.SetArray();

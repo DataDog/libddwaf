@@ -71,6 +71,7 @@ extern "C"
         prefix_t* prefix;             /* who we are in radix tree; null if glue */
         struct _radix_node_t *l, *r;  /* left and right children */
         struct _radix_node_t* parent; /* may be used */
+        uint64_t expiration;          /* the expiration epoch of this entry */
         uint8_t bit;                  /* flag if this node used */
     } radix_node_t;
 

@@ -4,13 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <IPWRuleProcessor.h>
+#include <rule_processor/regex_match.hpp>
 #include <exception.hpp>
-#include <utils.h>
 
-using namespace ddwaf;
+namespace ddwaf::rule_processor
+{
 
-RE2Manager::RE2Manager(const std::string& regex_str, std::size_t minLength, bool caseSensitive) : IPWRuleProcessor(), min_length(minLength)
+regex_match::regex_match(const std::string& regex_str, std::size_t minLength, bool caseSensitive):
+    min_length(minLength)
 {
     re2::RE2::Options options;
     options.set_max_mem(512 * 1024);
@@ -23,14 +24,11 @@ RE2Manager::RE2Manager(const std::string& regex_str, std::size_t minLength, bool
     {
         throw parsing_error("invalid regular expression: " + regex->error_arg());
     }
-
-    groupsToCatch = (uint8_t) std::min(regex->NumberOfCapturingGroups() + 1, max_match_count);
 }
 
-bool RE2Manager::match(const char* str, size_t length, MatchGatherer& gatherer) const
+bool regex_match::match(const char* str, size_t length, MatchGatherer& gatherer) const
 {
-    if (!regex->ok() || length < min_length)
-    {
+    if (str == nullptr || !regex->ok() || length < min_length) {
         return false;
     }
 
@@ -48,4 +46,6 @@ bool RE2Manager::match(const char* str, size_t length, MatchGatherer& gatherer) 
     gatherer.matchedValue = match[0].as_string();
 
     return true;
+}
+
 }

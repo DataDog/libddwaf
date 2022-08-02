@@ -8,14 +8,7 @@
 
 #include <ddwaf.h>
 #include <optional>
-#include <stdint.h>
-
-// IP Utils
-typedef struct
-{
-    uint8_t ip[16]; // big endian
-    bool isIPv6;
-} parsed_ip;
+#include <cstdint>
 
 template <typename T>
 using optional_ref = std::optional<std::reference_wrapper<T>>;
@@ -28,5 +21,3 @@ size_t find_string_cutoff(const char *str, size_t length,
 
 #define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
 #define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
-
-

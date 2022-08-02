@@ -12,7 +12,6 @@
 #include <waf.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>
-#include <iostream>
 #include <log.hpp>
 #include <parameter.hpp>
 #include <parser/parser.hpp>

@@ -6,11 +6,13 @@
 
 #include "../test.h"
 
+using namespace ddwaf::rule_processor;
+
 TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {
-    RE2Manager processor("^rEgEx$", 0, false);
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^rEgEx$");
-    EXPECT_STREQ(processor.operatorName().data(), "match_regex");
+    regex_match processor("^rEgEx$", 0, false);
+    EXPECT_STREQ(processor.to_string().c_str(), "^rEgEx$");
+    EXPECT_STREQ(processor.name().data(), "match_regex");
 
     MatchGatherer gatherer;
     ddwaf_object param;
@@ -26,9 +28,9 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
 
 TEST(TestRegexMatch, TestBasicCaseSensitive)
 {
-    RE2Manager processor("^rEgEx$", 0, true);
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^rEgEx$");
-    EXPECT_STREQ(processor.operatorName().data(), "match_regex");
+    regex_match processor("^rEgEx$", 0, true);
+    EXPECT_STREQ(processor.to_string().c_str(), "^rEgEx$");
+    EXPECT_STREQ(processor.name().data(), "match_regex");
 
     MatchGatherer gatherer;
     ddwaf_object param;
@@ -49,9 +51,9 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
 
 TEST(TestRegexMatch, TestMinLength)
 {
-    RE2Manager processor("^rEgEx.*$", 6, true);
-    EXPECT_STREQ(processor.getStringRepresentation().c_str(), "^rEgEx.*$");
-    EXPECT_STREQ(processor.operatorName().data(), "match_regex");
+    regex_match processor("^rEgEx.*$", 6, true);
+    EXPECT_STREQ(processor.to_string().c_str(), "^rEgEx.*$");
+    EXPECT_STREQ(processor.name().data(), "match_regex");
 
     MatchGatherer gatherer;
     ddwaf_object param, param2;
@@ -65,4 +67,14 @@ TEST(TestRegexMatch, TestMinLength)
 
     ddwaf_object_free(&param);
     ddwaf_object_free(&param2);
+}
+
+TEST(TestRegexMatch, TestInvalidInput)
+{
+    regex_match processor("^rEgEx.*$", 6, true);
+
+    MatchGatherer gatherer;
+    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
+    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
+    EXPECT_FALSE(processor.match("*", 0,  gatherer));
 }

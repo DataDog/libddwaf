@@ -15,11 +15,19 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <rule_processor/is_sqli.hpp>
+#include <rule_processor/is_xss.hpp>
+#include <rule_processor/phrase_match.hpp>
+#include <rule_processor/regex_match.hpp>
 
 using ddwaf::parameter;
 using ddwaf::parser::at;
 using ddwaf::manifest;
 using ddwaf::manifest_builder;
+using ddwaf::rule_processor::rule_processor_base;
+
+namespace ddwaf::parser::v1
+{
 
 namespace
 {
@@ -31,7 +39,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
     auto params    = at<parameter::map>(rule, "parameters");
 
     parameter::map options;
-    std::unique_ptr<IPWRuleProcessor> processor;
+    std::unique_ptr<rule_processor_base> processor;
     if (operation == "phrase_match")
     {
         auto list = at<parameter::vector>(params, "list");
@@ -53,7 +61,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
             lengths.push_back((uint32_t) pattern.nbEntries);
         }
 
-        processor = std::make_unique<PerfMatch>(patterns, lengths);
+        processor = std::make_unique<rule_processor::phrase_match>(patterns, lengths);
     }
     else if (operation == "match_regex")
     {
@@ -94,15 +102,16 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
             }
         }
 
-        processor = std::make_unique<RE2Manager>(regex, min_length, case_sensitive);
+        processor = std::make_unique<rule_processor::regex_match>(
+            regex, min_length, case_sensitive);
     }
     else if (operation == "is_xss")
     {
-        processor = std::make_unique<LibInjectionXSS>();
+        processor = std::make_unique<rule_processor::is_xss>();
     }
     else if (operation == "is_sqli")
     {
-        processor = std::make_unique<LibInjectionSQL>();
+        processor = std::make_unique<rule_processor::is_sqli>();
     }
     else
     {
@@ -203,9 +212,6 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 }
 
 }
-
-namespace ddwaf::parser::v1
-{
 
 void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg)
 {

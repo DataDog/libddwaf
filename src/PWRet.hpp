@@ -13,12 +13,14 @@
 
 class PWRetManager;
 
-#include <IPWRuleProcessor.h>
+#include <rule_processor/base.hpp>
 #include <clock.hpp>
 #include <ddwaf.h>
 #include <memory>
 #include <obfuscator.hpp>
 #include <utils.h>
+
+using ddwaf::rule_processor::rule_processor_base;
 
 class PWRetManager
 {
@@ -41,7 +43,7 @@ public:
     }
 
     void startRule();
-    void recordRuleMatch(const std::unique_ptr<IPWRuleProcessor>& processor, const MatchGatherer& gather);
+    void recordRuleMatch(const std::unique_ptr<rule_processor_base>& processor, const MatchGatherer& gather);
 
     void reportMatch(const std::string& id,
                      const std::string& type, const std::string& category,

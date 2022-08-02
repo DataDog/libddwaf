@@ -4,14 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <ac.h>
 
-#include <IPWRuleProcessor.h>
+#include <rule_processor/phrase_match.hpp>
 #include <exception.hpp>
 #include <stdexcept>
 #include <vector>
 
-PerfMatch::PerfMatch(std::vector<const char*> pattern, std::vector<uint32_t> lengths) : IPWRuleProcessor()
+namespace ddwaf::rule_processor
+{
+
+phrase_match::phrase_match(std::vector<const char*> pattern, std::vector<uint32_t> lengths)
 {
     if (pattern.size() != lengths.size())
     {
@@ -27,11 +29,12 @@ PerfMatch::PerfMatch(std::vector<const char*> pattern, std::vector<uint32_t> len
     ac = std::unique_ptr<ac_t, void (*)(void*)>(ac_, ac_free);
 }
 
-bool PerfMatch::match(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const
+bool phrase_match::match(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const
 {
     ac_t* acStructure = ac.get();
-    if (patternValue == NULL || patternLength == 0 || acStructure == nullptr)
+    if (patternValue == nullptr || patternLength == 0 || acStructure == nullptr) {
         return false;
+    }
 
     ac_result_t result = ac_match(acStructure, patternValue, (uint32_t) patternLength);
 
@@ -44,4 +47,6 @@ bool PerfMatch::match(const char* patternValue, size_t patternLength, MatchGathe
     }
 
     return true;
+}
+
 }

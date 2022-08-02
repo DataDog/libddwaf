@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef test_h
-#define test_h
+#pragma once
 
 #include <algorithm>
 #include <chrono>
@@ -34,6 +33,7 @@ using namespace std;
 #include <ddwaf.h>
 #include <config.hpp>
 #include <exception.hpp>
+#include <ip_utils.hpp>
 #include <log.hpp>
 #include <obfuscator.hpp>
 #include <parameter.hpp>
@@ -41,6 +41,13 @@ using namespace std;
 #include <ruleset_info.hpp>
 #include <utils.h>
 #include <yaml-cpp/yaml.h>
+
+#include <rule_processor/is_sqli.hpp>
+#include <rule_processor/is_xss.hpp>
+#include <rule_processor/phrase_match.hpp>
+#include <rule_processor/regex_match.hpp>
+#include <rule_processor/ip_match.hpp>
+#include <rule_processor/exact_match.hpp>
 
 using namespace std::literals;
 
@@ -89,5 +96,3 @@ struct as_if<ddwaf_object, void>
     {                                                 \
         NULL, 0, { string }, length, DDWAF_OBJ_STRING \
     }
-
-#endif /* test_h */
