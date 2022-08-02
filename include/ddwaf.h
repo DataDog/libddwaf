@@ -221,6 +221,14 @@ ddwaf_handle ddwaf_init(const ddwaf_object *rule,
  */
 void ddwaf_destroy(ddwaf_handle handle);
 
+/**
+ * ddwaf_update_rule_data
+ *
+ * Update existing rules with new rule data.
+ *
+ * @param handle to the WAF instance.
+ * @param data A ddwaf_object map with the format {rule_data_id : rule_data}.
+ */
 DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data);
 /**
  * ddwaf_ruleset_info_free

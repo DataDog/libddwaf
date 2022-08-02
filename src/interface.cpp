@@ -90,6 +90,13 @@ extern "C"
         }
     }
 
+    DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data)
+    {
+        (void)data;
+        (void)handle;
+        return DDWAF_GOOD;
+    }
+
     const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t* size)
     {
         if (handle == nullptr)
