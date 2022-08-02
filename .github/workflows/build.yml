@@ -10,14 +10,18 @@ on:
       - "**"
   schedule:
     - cron:  30 0 * * *
+
 jobs:
   windows-builds:
     runs-on: windows-2019
     strategy:
       matrix:
-        arch:
-          - Win32
-          - x64
+        include:
+          - arch: Win32
+            compiler: msvc
+          - arch: x64
+            compiler: msvc
+    name: Windows (${{ matrix.arch }}, ${{ matrix.libc }})
     steps:
       - uses: actions/checkout@v2
         with:
@@ -42,8 +46,18 @@ jobs:
           name: libddwaf-windows-${{ matrix.arch }}
           path: ${{ github.workspace }}/packages/*.tar.gz
 
-  macos-build:
+  macos-builds:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            platform: x86_64-darwin
+            test: true
+          - arch: arm64
+            platform: x86_64-darwin
+            test: false
+    name: macOS (${{ matrix.arch }})
     steps:
       - uses: actions/checkout@v2
         with:
@@ -51,12 +65,17 @@ jobs:
       - name: Create Build Directory
         run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
       - name: Generating Build Scripts
-        run: cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMACOSX_DEPLOYMENT_TARGET=10.9 -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
+        run: cmake -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMACOSX_DEPLOYMENT_TARGET=10.9 -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
         working-directory: ${{ github.workspace }}/build
       - name: Build Binaries
-        run: cmake --build . --config RelWithDebInfo --verbose --target all --target testPowerWAF -j
+        run: cmake --build . --config RelWithDebInfo --verbose --target all -j
+        working-directory: ${{ github.workspace }}/build
+      - name: Build Tests
+        if: ${{ matrix.test == true }}
+        run: cmake --build . --config RelWithDebInfo --verbose --target testPowerWAF -j
         working-directory: ${{ github.workspace }}/build
       - name: Test
+        if: ${{ matrix.test == true }}
         run: ${{ github.workspace }}/build/tests/testPowerWAF
         working-directory: ${{ github.workspace }}/tests
       - name: Build Packages
@@ -67,32 +86,7 @@ jobs:
         working-directory: ${{ github.workspace }}/packages
       - uses: actions/upload-artifact@v2
         with:
-          name: libddwaf-macos-x86_64
-          path: ${{ github.workspace }}/packages/*.tar.gz
-
-  macos-cross-build:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Create Build Directory
-        run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
-      - name: Generating Build Scripts
-        run: cmake -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMACOSX_DEPLOYMENT_TARGET=10.9 -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
-        working-directory: ${{ github.workspace }}/build
-      - name: Build Binaries
-        run: cmake --build . --config RelWithDebInfo --verbose --target all -j
-        working-directory: ${{ github.workspace }}/build
-      - name: Build Packages
-        run: cmake --build . --target package --config RelWithDebInfo --verbose
-        working-directory: ${{ github.workspace }}/build
-      - name: Remove Temporary Files
-        run: cmake -E remove_directory _CPack_Packages
-        working-directory: ${{ github.workspace }}/packages
-      - uses: actions/upload-artifact@v2
-        with:
-          name: libddwaf-macos-arm64
+          name: libddwaf-macos-${{ matrix.arch }}
           path: ${{ github.workspace }}/packages/*.tar.gz
 
   docker-builds:
@@ -100,19 +94,16 @@ jobs:
     strategy:
       matrix:
         target:
-          - name: mingw64
+          - platform: x86_64-w64-mingw32
             dockerfile: docker/libddwaf/gcc/mingw64/Dockerfile
             package: libddwaf-linux-mingw64
-          - name: aarch64
-            qemu_action_arch: arm64
-            dockerfile: docker/libddwaf/aarch64/Dockerfile
-            check_script: docker/libddwaf/aarch64/check
+          - platform: aarch64-linux
+            dockerfile: docker/libddwaf/aarch64-linux/Dockerfile.x86_64
             package: libddwaf-linux-aarch64
-          - name: x86_64
-            qemu_action_arch: amd64
-            dockerfile: docker/libddwaf/x86_64/Dockerfile
-            check_script: docker/libddwaf/x86_64/check
+          - platform: x86_64-linux
+            dockerfile: docker/libddwaf/x86_64-linux/Dockerfile.x86_64
             package: libddwaf-linux-x86_64
+    name: Docker (${{ matrix.platform }})
     steps:
       - uses: actions/checkout@v2
         with:
@@ -121,10 +112,6 @@ jobs:
         id: buildx
         with:
           install: true
-      - uses: docker/setup-qemu-action@v1
-        if: matrix.target.qemu_action_arch == 'arm64'
-        with:
-          platforms: ${{ matrix.target.qemu_action_arch }}
       - run: docker build -f ${{ matrix.target.dockerfile }} -o /tmp/packages .
       - run: ${{ matrix.target.check_script }}
         if: matrix.target.check_script
