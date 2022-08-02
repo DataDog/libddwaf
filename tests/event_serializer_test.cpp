@@ -30,6 +30,8 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     ddwaf_result output;
     serializer.serialize(output);
     EXPECT_STREQ(output.data, R"([{"rule":{"id":"","name":"","tags":{"type":"","category":""}},"rule_matches":[]}])");
+
+    ddwaf_result_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
@@ -68,6 +70,8 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     }
 
     EXPECT_EQ(expected_actions, found_actions);
+
+    ddwaf_result_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
@@ -109,6 +113,8 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     }
 
     EXPECT_EQ(expected_actions, found_actions);
+
+    ddwaf_result_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeMultipleEvents)
@@ -168,6 +174,8 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     }
 
     EXPECT_EQ(expected_actions, found_actions);
+
+    ddwaf_result_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeEventNoActions)
@@ -196,6 +204,8 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
     EXPECT_EQ(output.actions.array, nullptr);
     EXPECT_EQ(output.actions.size, 0);
+
+    ddwaf_result_free(&output);
 }
 
 
