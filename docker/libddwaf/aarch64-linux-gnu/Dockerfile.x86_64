@@ -8,7 +8,7 @@ WORKDIR /build
 COPY . /build/
 RUN cmake -E make_directory build packages && \
     cd build && \
-    cmake -DCMAKE_TOOLCHAIN_FILE="../docker/libddwaf/aarch64-linux-gnu/Toolchain.cmake" -DCMAKE_BUILD_TYPE=RelWithDebInfo .. && \
+    cmake -DCMAKE_TOOLCHAIN_FILE="../docker/libddwaf/aarch64-linux-gnu/Toolchain.x86_64.cmake" -DCMAKE_BUILD_TYPE=RelWithDebInfo .. && \
     cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static -j
 
 FROM scratch
