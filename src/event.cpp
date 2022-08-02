@@ -37,7 +37,6 @@ rapidjson::GenericStringRef<char> StringRef(const std::string &str) {
             str.c_str(), static_cast<rapidjson::SizeType>(str.size()));
 }
 
-
 bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
 {
     for (const auto &key: match.key_path) {
