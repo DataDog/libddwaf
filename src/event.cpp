@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <event.hpp>
-#include <log.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <unordered_set>
@@ -101,7 +100,6 @@ void event_serializer::serialize(ddwaf_result &output)
     std::unordered_set<std::string_view> actions;
 
     doc.SetArray();
-    DDWAF_DEBUG("SERIALIZING");
     for (auto &event : events_) {
         rapidjson::Value map, rule, tags, match_array;
 
@@ -109,7 +107,6 @@ void event_serializer::serialize(ddwaf_result &output)
         tags.AddMember("type", StringRef(event.type), allocator);
         tags.AddMember("category", StringRef(event.category), allocator);
 
-        DDWAF_DEBUG("EVENT %s, %s", event.id.data(), event.name.data());
         rule.SetObject();
         rule.AddMember("id", StringRef(event.id), allocator);
         rule.AddMember("name", StringRef(event.name), allocator);
