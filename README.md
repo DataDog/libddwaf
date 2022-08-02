@@ -53,6 +53,12 @@ cd ../tests
 ../build/tests/testPowerWAF
 ```
 
+### Docker-based builds
+
+A Docker-based process exists to facilitate reproducibility, cross-compilation, and libc portability.
+
+See [this README](docker/libddwaf/README.md) for details.
+
 ## Usage
 
 The general process is as follows:
