@@ -71,11 +71,10 @@ public:
     invalid_type(const std::string& key, const std::string& type) : parsing_error("invalid type for key '" + key + "', expected '" + type + "'") {}
 };
 
-class timeout : public exception
+class timeout_exception : public exception
 {
 public:
-    // TODO add line and file
-    timeout(): exception({}) {}
+    timeout_exception(): exception({}) {}
 };
 
 }

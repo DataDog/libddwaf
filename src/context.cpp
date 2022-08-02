@@ -73,7 +73,8 @@ bool context::run_collection(const std::string& name,
     for (ddwaf::rule& rule : collection)
     {
         if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while running collection %s and rule %s", name.c_str(), rule.id.c_str());
+            DDWAF_INFO("Ran out of time while running collection %s and rule %s",
+                name.c_str(), rule.id.c_str());
             break;
         }
 
@@ -115,11 +116,10 @@ bool context::run_collection(const std::string& name,
                 serializer.insert(std::move(event.value()));
                 break;
             }
-        } catch (const ddwaf::timeout&) {
+        } catch (const ddwaf::timeout_exception&) {
             DDWAF_INFO("Ran out of time when processing %s", rule.id.c_str());
             return false;
         }
-
     }
 
     return true;

@@ -32,58 +32,53 @@ rapidjson::GenericStringRef<char> StringRef(std::string_view str) {
             str.data(), static_cast<rapidjson::SizeType>(str.size()));
 }
 
+rapidjson::GenericStringRef<char> StringRef(const std::string &str) {
+    return rapidjson::GenericStringRef<char>(
+            str.c_str(), static_cast<rapidjson::SizeType>(str.size()));
+}
+
+
+bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
+{
+    for (const auto &key: match.key_path) {
+        if (obfuscator.is_sensitive_key(key)) {
+            return true;
+        }
+    }
+
+    return obfuscator.is_sensitive_value(match.resolved) ||
+           obfuscator.is_sensitive_value(match.matched);
+}
+
 void serialize_match(rapidjson::Value &output,
         rapidjson::Document::AllocatorType &allocator,
-        event::match &match, const ddwaf::obfuscator &obfuscator)
+        const event::match &match, bool redact)
 {
     auto redaction_msg = StringRef(ddwaf::obfuscator::redaction_msg);
 
-    output.AddMember("operator", StringRef(match.operator_name), allocator);
-    output.AddMember("operator_value", StringRef(match.operator_value), allocator);
+    rapidjson::Value parameters, param, key_path, highlight;
 
-    rapidjson::Value parameters, param, key_path;
-    parameters.SetArray();
+    key_path.SetArray();
+    for (const auto &key: match.key_path) {
+        key_path.PushBack(StringRef(key), allocator);
+    }
+
+    highlight.SetArray();
+    if (!match.matched.empty()) {
+        highlight.PushBack(redact ? redaction_msg : StringRef(match.matched), allocator);
+    }
 
     param.SetObject();
     param.AddMember("address", StringRef(match.source), allocator);
-
-    key_path.SetArray();
-    bool redact = false;
-    for (const auto &key: match.key_path)
-    {
-        redact = redact || obfuscator.is_sensitive_key(key);
-
-        rapidjson::Value jsonKey;
-        jsonKey.SetString(key, allocator);
-        key_path.PushBack(jsonKey, allocator);
-    }
     param.AddMember("key_path", key_path, allocator);
-
-    rapidjson::Value highlight, matched;
-    highlight.SetArray();
-
-    redact = redact ||
-             obfuscator.is_sensitive_value(match.resolved) ||
-             obfuscator.is_sensitive_value(match.matched);
-
-    if (redact) {
-        param.AddMember("value", redaction_msg, allocator);
-        if (!match.matched.empty()) {
-            matched.SetString(redaction_msg, allocator);
-            highlight.PushBack(matched, allocator);
-        }
-    } else {
-        param.AddMember("value", match.resolved, allocator);
-        if (!match.matched.empty()) {
-            matched.SetString(match.matched, allocator);
-            highlight.PushBack(matched, allocator);
-        }
-    }
-
+    param.AddMember("value", redact ? redaction_msg : StringRef(match.resolved), allocator);
     param.AddMember("highlight", highlight, allocator);
+
+    parameters.SetArray();
     parameters.PushBack(param, allocator);
 
-    // This field is required by the obfuscator and shouldn't be renamed
+    output.AddMember("operator", StringRef(match.operator_name), allocator);
+    output.AddMember("operator_value", StringRef(match.operator_value), allocator);
     output.AddMember("parameters", parameters, allocator);
 }
 
@@ -101,7 +96,7 @@ void event_serializer::serialize(ddwaf_result &output)
 
     doc.SetArray();
     for (auto &event : events_) {
-        rapidjson::Value map, rule, tags, match_array;
+        rapidjson::Value map, rule, tags, match_array, on_match;
 
         tags.SetObject();
         tags.AddMember("type", StringRef(event.type), allocator);
@@ -111,12 +106,22 @@ void event_serializer::serialize(ddwaf_result &output)
         rule.AddMember("id", StringRef(event.id), allocator);
         rule.AddMember("name", StringRef(event.name), allocator);
         rule.AddMember("tags", tags, allocator);
+        if (!event.actions.empty()) {
+            on_match.SetArray();
+            for (auto &action : event.actions) {
+                on_match.PushBack(StringRef(action), allocator);
+            }
+            rule.AddMember("on_match", on_match, allocator);
+        }
 
         match_array.SetArray();
         for (auto &match: event.matches) {
             rapidjson::Value output;
             output.SetObject();
-            serialize_match(output, allocator, match, obfuscator_);
+
+            bool redact = redact_match(obfuscator_, match);
+            serialize_match(output, allocator, match, redact);
+
             match_array.PushBack(output, allocator);
         }
 

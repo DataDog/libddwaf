@@ -63,7 +63,7 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer& deadlin
 {
     for (; it; ++it) {
         if (deadline.expired()) {
-            throw ddwaf::timeout();
+            throw ddwaf::timeout_exception();
         }
 
         if (it.type() != DDWAF_OBJ_STRING) { continue; }
@@ -84,6 +84,9 @@ std::optional<event::match> condition::match(const object_store& store,
     ddwaf::timer& deadline) const
 {
     for (const auto &target : targets) {
+        if (deadline.expired()) {
+            throw ddwaf::timeout_exception();
+        }
 
         // TODO: the conditions should keep track of the targets already
         // checked.
