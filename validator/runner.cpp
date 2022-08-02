@@ -7,6 +7,7 @@
 #include "runner.hpp"
 #include "assert.hpp"
 #include "utils.hpp"
+#include <unordered_set>
 
 test_runner::test_runner(const std::string &rule_file)
 {
@@ -57,7 +58,7 @@ bool test_runner::run_test(const YAML::Node &runs)
         ctx(ddwaf_context_init(handle_),
             ddwaf_context_destroy);
 
-    ddwaf_result res_mem{false, nullptr, 0};
+    ddwaf_result res_mem{false, nullptr, {nullptr, 0}, 0};
     std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res{
         &res_mem, ddwaf_result_free};
 
@@ -176,6 +177,16 @@ void test_runner::validate_rule(
 
     expect(expected_tags["type"], obtained_tags["type"]);
     expect(expected_tags["category"], obtained_tags["category"]);
+
+    if (expected["on_match"].IsDefined()) {
+        auto expected_actions = expected["on_match"];
+        auto obtained_actions = obtained["on_match"];
+
+        expect(true, obtained_actions.IsDefined());
+        expect(expected_actions.size(), obtained_actions.size());
+
+        expect(expected_actions, obtained_actions);
+    }
 }
 
 void test_runner::validate_conditions(
