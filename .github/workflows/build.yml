@@ -115,14 +115,14 @@ jobs:
         id: buildx
         with:
           install: true
-      - run: docker build -f ${{ matrix.dockerfile }} -o /tmp/packages .
+      - run: docker build -f ${{ matrix.dockerfile }} -o /tmp/out .
       - run: ${{ matrix.target.check_script }}
         if: matrix.target.check_script
         name: Invoke check script
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.package }}
-          path: /tmp/packages/*.tar.gz
+          path: /tmp/out/${{ matrix.platform }}/packages/*.tar.gz
 
   package-nuget:
     needs: [ windows-builds, macos-builds, docker-builds ]
