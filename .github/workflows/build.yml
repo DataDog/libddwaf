@@ -115,7 +115,7 @@ jobs:
         id: buildx
         with:
           install: true
-      - run: docker build -f ${{ matrix.dockerfile }} -o /tmp/out .
+      - run: docker build -f ${{ matrix.dockerfile }} -o /tmp/out/${{ matrix.platform }} .
       - run: ${{ matrix.target.check_script }}
         if: matrix.target.check_script
         name: Invoke check script
