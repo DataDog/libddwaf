@@ -136,27 +136,24 @@ jobs:
   package-nuget:
     needs: [ windows-builds, macos-builds, docker-builds ]
     runs-on: ubuntu-latest
+    name: Package (NuGet)
     steps:
       - uses: actions/checkout@v2
-
       - uses: nuget/setup-nuget@v1
         with:
           nuget-version: '5.x'
-
       - uses: actions/download-artifact@v2
         with:
           path: artifacts
-
       - name: Display structure of downloaded files
-        run: find
-
-      - name: Package Nuget
+        run: find ${{ github.workspace }}/artifacts
+      - name: Package NuGet
         run: |
           sudo apt-get update && sudo apt-get install -y libarchive-tools
           function extract_file {
-            local -r arch=$1 filepat=$2 dest=$3
-            local -r file_in_arch=$(bsdtar -tf "$arch" | grep "$filepat" | head -1)
-            bsdtar -xOf "$arch" "$file_in_arch" > "$dest"/"$(basename "$file_in_arch")"
+            local -r arch="$1" filepat="$2" dest="$3"
+            local -r file_in_arch="$(bsdtar -tf "${arch}" | grep "${filepat}" | head -1)"
+            bsdtar -xOf "${arch}" "${file_in_arch}" > "${dest}"/"$(basename "${file_in_arch}")"
           }
 
           mkdir -p ./packages/nuget/runtimes/{linux-x64,linux-arm64,osx-x64,win-x86,win-x64}/native
