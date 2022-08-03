@@ -46,6 +46,7 @@ jobs:
         with:
           name: libddwaf-windows-${{ matrix.arch }}
           path: ${{ github.workspace }}/packages/*.tar.gz
+          if-no-files-found: error
 
   macos-builds:
     runs-on: macos-latest
@@ -90,6 +91,7 @@ jobs:
         with:
           name: libddwaf-macos-${{ matrix.arch }}
           path: ${{ github.workspace }}/packages/*.tar.gz
+          if-no-files-found: error
 
   docker-builds:
     runs-on: ubuntu-latest
@@ -123,6 +125,7 @@ jobs:
         with:
           name: ${{ matrix.package }}
           path: /tmp/out/${{ matrix.platform }}/packages/*.tar.gz
+          if-no-files-found: error
 
   package-nuget:
     needs: [ windows-builds, macos-builds, docker-builds ]
