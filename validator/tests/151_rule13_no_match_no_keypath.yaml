@@ -5,7 +5,7 @@
       input: {
         rule13-input: rule13
       },
-      code: good
+      code: ok
     }
   ],
 }

@@ -5,7 +5,7 @@
       input: {
         rule4-input1: rule4
       },
-      code: good
+      code: ok
     }
   ],
 }

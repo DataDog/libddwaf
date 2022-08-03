@@ -281,4 +281,4 @@ rules:
             - "abcd::1234:0:0:0/96"
     on_match:
         - block_request
-        - monitor
+        - match

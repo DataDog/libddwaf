@@ -5,19 +5,19 @@
       input: {
         rule11-input2: rule11_2
       },
-      code: good
+      code: ok
     },
     {
       input: {
         rule11-input2: garbage
       },
-      code: good
+      code: ok
     },
     {
       input: {
         rule11-input1: rule11_1
       },
-      code: good
+      code: ok
     }
   ],
 }

@@ -94,7 +94,7 @@ extern "C"
     {
         (void)data;
         (void)handle;
-        return DDWAF_GOOD;
+        return DDWAF_OK;
     }
 
     const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t* size)

@@ -5,7 +5,7 @@
       input: {
         rule16-input: "abcd::1234:ffff:ffff:fffa"
       },
-      code: good
+      code: ok
     }
   ]
 }

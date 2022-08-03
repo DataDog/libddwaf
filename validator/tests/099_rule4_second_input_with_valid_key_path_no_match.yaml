@@ -7,7 +7,7 @@
           keypath: garbage
         }
       },
-      code: good
+      code: ok
     }
   ],
 }

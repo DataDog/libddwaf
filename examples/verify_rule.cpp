@@ -147,8 +147,8 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 				ddwaf_context ctx = ddwaf_context_init(handle);
 				DDWAF_RET_CODE ret = ddwaf_run(ctx, &root, nullptr, LONG_TIME);
 				
-				bool hadError = ret < DDWAF_GOOD;
-				bool hadMatch = !hadError && ret != DDWAF_GOOD;
+				bool hadError = ret < DDWAF_OK;
+				bool hadMatch = !hadError && ret != DDWAF_OK;
 				
 				if (hadError) {
 					printf("The WAF encountered an error processing rule %s and %s test vector #%zu\n", rule["id"].as<std::string>().data(), runPositiveMatches ? "positive" : "negative", counter);

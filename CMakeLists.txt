@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 file(READ "version" version)
-project(libddwaf VERSION ${version})
+
+project(libddwaf)
+set(PROJECT_VERSION ${version})
+set(CMAKE_PROJECT_VERSION ${version})
 
 configure_file(src/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.hpp)
 

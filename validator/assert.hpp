@@ -66,10 +66,10 @@ inline std::string to_string(DDWAF_RET_CODE val)
         return "invalid object";
     case DDWAF_ERR_INVALID_ARGUMENT:
         return "invalid argument";
-    case DDWAF_GOOD:
-        return "good";
-    case DDWAF_MONITOR:
-        return "monitor";
+    case DDWAF_OK:
+        return "ok";
+    case DDWAF_MATCH:
+        return "match";
     }
     return "unknown";
 }
