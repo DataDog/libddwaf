@@ -87,6 +87,8 @@ jobs:
       - name: Remove Temporary Files
         run: cmake -E remove_directory _CPack_Packages
         working-directory: ${{ github.workspace }}/packages
+      - name: List output
+        run: find ${{ github.workspace }}/packages
       - uses: actions/upload-artifact@v2
         with:
           name: libddwaf-macos-${{ matrix.arch }}
@@ -121,6 +123,8 @@ jobs:
       - run: ${{ matrix.target.check_script }}
         if: matrix.target.check_script
         name: Invoke check script
+      - name: List output
+        run: find /tmp/out
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.package }}
