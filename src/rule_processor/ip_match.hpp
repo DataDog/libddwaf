@@ -17,8 +17,7 @@ namespace ddwaf::rule_processor
 class ip_match : public rule_processor_base
 {
 public:
-    // TODO pass a string_view array
-    explicit ip_match(const std::vector<std::string> &ip_list);
+    explicit ip_match(const std::vector<std::string_view> &ip_list);
     std::string_view name() const override { return "ip_match"; }
 
     std::optional<event::match> match(std::string_view str) const override;

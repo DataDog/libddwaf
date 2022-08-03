@@ -46,9 +46,9 @@ public:
         events_.emplace_back(std::move(e));
     }
 
-    bool has_events() { return !events_.empty(); }
+    bool has_events() const { return !events_.empty(); }
 
-    void serialize(ddwaf_result &output);
+    void serialize(ddwaf_result &output) const;
 
 protected:
     std::vector<event> events_;

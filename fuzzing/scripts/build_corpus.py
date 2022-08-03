@@ -389,7 +389,6 @@ class InitPayloadGenerator:
         def get_random_action_array():
             return [choice(self.possible_values, ) for _ in range(randint(0, 3))]
 
-
         rules = get_random_rules()
 
         result = {

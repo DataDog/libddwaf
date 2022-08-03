@@ -43,6 +43,7 @@ public:
     operator std::string();
     operator uint64_t();
     operator std::vector<std::string>();
+    operator std::vector<std::string_view>();
 
     ~parameter() = default;
 };
@@ -87,6 +88,12 @@ template <>
 struct parameter_traits<std::vector<std::string>>
 {
     static const char* name() { return "std::vector<std::string>"; }
+};
+
+template <>
+struct parameter_traits<std::vector<std::string_view>>
+{
+    static const char* name() { return "std::vector<std::string_view>"; }
 };
 
 

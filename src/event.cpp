@@ -83,7 +83,7 @@ void serialize_match(rapidjson::Value &output,
 
 }
 
-void event_serializer::serialize(ddwaf_result &output)
+void event_serializer::serialize(ddwaf_result &output) const
 {
     rapidjson::Document doc;
     auto &allocator = doc.GetAllocator();

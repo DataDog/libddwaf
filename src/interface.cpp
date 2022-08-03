@@ -213,7 +213,7 @@ extern "C"
         free(const_cast<char*>(result->data));
 
         auto actions = result->actions;
-        if (actions.array != nullptr && actions.size > 0) {
+        if (actions.array != nullptr) {
             for (unsigned i = 0; i < actions.size; i++) {
                 free(actions.array[i]);
             }

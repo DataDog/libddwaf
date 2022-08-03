@@ -120,7 +120,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
     else if (operation == "ip_match")
     {
         processor = std::make_unique<rule_processor::ip_match>(
-            at<std::vector<std::string>>(params, "list"));
+            at<std::vector<std::string_view>>(params, "list"));
     }
     else if (operation == "exact_match")
     {

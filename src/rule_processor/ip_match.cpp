@@ -8,18 +8,19 @@
 #include <ip_utils.hpp>
 #include <cstring>
 #include <stdexcept>
+#include <string_view>
 
 namespace ddwaf::rule_processor
 {
 
-ip_match::ip_match(const std::vector<std::string> &ip_list):
+ip_match::ip_match(const std::vector<std::string_view> &ip_list):
     rtree_(radix_new(128), radix_free) // Allocate the radix tree in IPv6 mode
 {
     if (!rtree_) {
         throw std::runtime_error("failed to instantiate radix tree");
     }
 
-    for (const auto &str : ip_list) {
+    for (auto str : ip_list) {
         // Parse and populate each IP/network
         ipaddr ip;
         if (ddwaf::parse_cidr(str, ip)) {

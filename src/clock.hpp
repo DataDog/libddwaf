@@ -52,7 +52,7 @@ public:
         return expired_;
     }
     
-    bool expired_flag() { return expired_; }
+    bool expired_flag() const { return expired_; }
 
     monotonic_clock::duration elapsed() const {
         return monotonic_clock::now() - start_;

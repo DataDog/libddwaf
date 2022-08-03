@@ -50,7 +50,7 @@ TEST(TestCondition, NoMatch)
     auto manifest = mb.build_manifest();
 
     condition cond(std::move(targets), {},
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string>{}));
+        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -75,7 +75,7 @@ TEST(TestRule, Match)
     auto manifest = mb.build_manifest();
 
     ddwaf::condition condition(std::move(targets), {},
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string>{"192.168.0.1"}));
+        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<ddwaf::condition> conditions;
     conditions.push_back(std::move(condition));
@@ -122,7 +122,7 @@ TEST(TestRule, NoMatch)
     auto manifest = mb.build_manifest();
 
     ddwaf::condition condition(std::move(targets), {},
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string>{}));
+        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     std::vector<ddwaf::condition> conditions;
     conditions.push_back(std::move(condition));

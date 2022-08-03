@@ -218,4 +218,31 @@ parameter::operator std::vector<std::string>()
     return data;
 }
 
+parameter::operator std::vector<std::string_view>()
+{
+    if (type != DDWAF_OBJ_ARRAY)
+    {
+        throw bad_cast("array", strtype(type));
+    }
+
+    if (array == nullptr || nbEntries == 0)
+    {
+        return {};
+    }
+
+    std::vector<std::string_view> data;
+    data.reserve(nbEntries);
+    for (unsigned i = 0; i < nbEntries; i++)
+    {
+        if (array[i].type != DDWAF_OBJ_STRING)
+        {
+            throw malformed_object("item in array not a string, can't cast to string_view vector");
+        }
+
+        data.emplace_back(array[i].stringValue, array[i].nbEntries);
+    }
+
+    return data;
+}
+
 }
