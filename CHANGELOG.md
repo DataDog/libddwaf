@@ -5,6 +5,7 @@
 #### API \& Breaking Changes
 - Remove `ddwaf_version` and `ddwaf_get_version` now returns a version string ([#89](https://github.com/DataDog/libddwaf/pull/89))
 - Move free function from `ddwaf_context_init` to `ddwaf_config` ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Add `ddwaf_result.actions` struct containing a `char*` array and its size ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Add dummy `ddwaf_update_rule_data` for future use ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Rename `DDWAF_GOOD` to `DDWAF_OK` ([#92](https://github.com/DataDog/libddwaf/pull/92))
 - Rename `DDWAF_MONITOR` to `DDWAF_MATCH` ([#92](https://github.com/DataDog/libddwaf/pull/92))
@@ -27,7 +28,6 @@
 - Rename existing rule processors to more closely resemble their operator name ([#87](https://github.com/DataDog/libddwaf/pull/87))
 - Rename `IPWRuleProcessor` to `rule_processor_base` ([#87](https://github.com/DataDog/libddwaf/pull/87))
 - Add support for per-rule `on_match` array in ruleset ([#91](https://github.com/DataDog/libddwaf/pull/91))
-- Add `ddwaf_result.actions` struct containing a `char*` array and its size ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Add optional `on_match` to JSON event format ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Remove `PWRetManager` and `MatchGatherer` ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Add `event` to collect all relevant rule match data in one structure ([#91](https://github.com/DataDog/libddwaf/pull/91))
