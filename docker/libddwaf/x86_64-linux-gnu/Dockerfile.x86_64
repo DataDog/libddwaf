@@ -2,18 +2,19 @@ FROM debian:11 AS toolchain
 RUN true 1 && apt-get update && apt-get install -y build-essential git cmake
 
 FROM toolchain AS build
-RUN mkdir /build
-WORKDIR /build
-COPY . /build/
-RUN cmake -E make_directory build packages && \
-    cd build && \
-    cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=.. -DCPACK_PACKAGE_DIRECTORY=../packages .. && \
-    cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target testPowerWAF --target package -j
-RUN cd tests && ../build/tests/testPowerWAF
+RUN mkdir -p /src/libddwaf
+COPY . /src/libddwaf
+
+RUN mkdir -p /build/libddwaf
+WORKDIR /build/libddwaf
+RUN cmake -E make_directory packages \
+ && cmake -DCMAKE_TOOLCHAIN_FILE="../../src/libddwaf/docker/libddwaf/x86_64-linux-gnu/Toolchain.x86_64.cmake" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../prefix -DCPACK_PACKAGE_DIRECTORY=packages ../../src/libddwaf \
+ && cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target testPowerWAF --target install --target package -j
+RUN cd ../../src/libddwaf/tests && ../../../build/libddwaf/tests/testPowerWAF
 
 FROM scratch
 COPY --from=build /build/libddwaf/packages/ /packages/
-COPY --from=build /build/include/ddwaf.h /build/include/
-COPY --from=build /build/build/libddwaf.so /build/build/libddwaf.so.debug /build/build/libddwaf.a /build/lib/
-COPY --from=build /build/build/CMakeFiles/Export/share/ /build/share/
+COPY --from=build /src/libddwaf/include/ddwaf.h /build/include/
+COPY --from=build /build/libddwaf/libddwaf.so /build/libddwaf/libddwaf.so.debug /build/libddwaf/libddwaf.a /build/lib/
+COPY --from=build /build/libddwaf/CMakeFiles/Export/share/ /build/share/
 CMD /bin/false
