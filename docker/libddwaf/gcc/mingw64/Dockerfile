@@ -20,4 +20,4 @@ RUN src=/usr/local/src/libddwaf build=$src/build; \
     cmake --build $build --target package
 
 FROM scratch AS package-copy
-COPY --from=build /opt/packages/* /
+COPY --from=build /opt/packages/ /packages

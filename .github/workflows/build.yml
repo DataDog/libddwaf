@@ -123,6 +123,8 @@ jobs:
       - run: ${{ matrix.target.check_script }}
         if: matrix.target.check_script
         name: Invoke check script
+      - name: Remove Temporary Files
+        run: rm -rvf /tmp/out/${{ matrix.platform }}/packages/_CPack_Packages
       - name: List output
         run: find /tmp/out
       - uses: actions/upload-artifact@v2
