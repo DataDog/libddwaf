@@ -109,8 +109,8 @@ RUN mkdir libunwind && cd libunwind \
         -DLIBUNWIND_USE_COMPILER_RT=ON \
         \
         ../../src/libunwind \
-     && make -j \
-     && make install
+ && make -j \
+ && make install
 
 RUN mkdir libcxxabi && cd libcxxabi \
  && cmake \
