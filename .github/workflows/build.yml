@@ -57,9 +57,9 @@ jobs:
             platform: x86_64-darwin
             test: true
           - arch: arm64
-            platform: x86_64-darwin
+            platform: arm64-darwin
             test: false
-    name: macOS (${{ matrix.arch }})
+    name: macOS (${{ matrix.platform }})
     steps:
       - uses: actions/checkout@v2
         with:
