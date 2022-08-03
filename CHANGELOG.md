@@ -3,7 +3,7 @@
 ### v1.5.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/04
 
 #### API \& Breaking Changes
-- Remove `ddwaf_version` and `ddwaf_get_version` now returns a version string ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Remove `ddwaf_version`, `ddwaf_get_version` now returns a version string ([#89](https://github.com/DataDog/libddwaf/pull/89))
 - Move free function from `ddwaf_context_init` to `ddwaf_config` ([#89](https://github.com/DataDog/libddwaf/pull/89))
 - Add `ddwaf_result.actions` struct containing a `char*` array and its size ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Add dummy `ddwaf_update_rule_data` for future use ([#91](https://github.com/DataDog/libddwaf/pull/91))
@@ -30,10 +30,10 @@
 - Add support for per-rule `on_match` array in ruleset ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Add optional `on_match` to JSON event format ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Remove `PWRetManager` and `MatchGatherer` ([#91](https://github.com/DataDog/libddwaf/pull/91))
-- Add `event` to collect all relevant rule match data in one structure ([#91](https://github.com/DataDog/libddwaf/pull/91))
-- Add `event_serializer for JSON event ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Add `ddwaf::event` to collect all relevant rule match data in one structure ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Add `ddwaf::event_serializer for JSON event ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Update processors to use `std::string_view` rather than `char *` and length ([#91](https://github.com/DataDog/libddwaf/pull/91))
-- Add `timeout_exception` to avoid error code propagation ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Add `ddwaf::timeout_exception` to avoid error code propagation ([#91](https://github.com/DataDog/libddwaf/pull/91))
 
 #### Fixes
 - Timeout error propagation ([#89](https://github.com/DataDog/libddwaf/pull/89))
