@@ -15,13 +15,14 @@ jobs:
   windows-builds:
     runs-on: windows-2019
     strategy:
+      fail-fast: false
       matrix:
         include:
           - arch: Win32
             compiler: msvc
           - arch: x64
             compiler: msvc
-    name: Windows (${{ matrix.arch }}, ${{ matrix.libc }})
+    name: Windows (${{ matrix.arch }}, ${{ matrix.compiler }})
     steps:
       - uses: actions/checkout@v2
         with:
@@ -49,6 +50,7 @@ jobs:
   macos-builds:
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - arch: x86_64
@@ -92,6 +94,7 @@ jobs:
   docker-builds:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - platform: x86_64-w64-mingw32
