@@ -122,7 +122,7 @@ jobs:
           path: /tmp/packages/*.tar.gz
 
   package-nuget:
-    needs: [ windows-builds, macos-build, docker-builds ]
+    needs: [ windows-builds, macos-builds, docker-builds ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
