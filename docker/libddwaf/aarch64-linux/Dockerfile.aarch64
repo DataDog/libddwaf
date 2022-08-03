@@ -176,6 +176,8 @@ RUN mkdir libcxx && cd libcxx \
  && make -j \
  && make install
 
+RUN apt-get install -y patchelf
+
 FROM toolchain AS build
 RUN mkdir /src/libddwaf
 COPY . /src/libddwaf
@@ -184,7 +186,9 @@ RUN mkdir /build/libddwaf
 WORKDIR /build/libddwaf
 RUN cmake -E make_directory packages && \
     cmake -DCMAKE_TOOLCHAIN_FILE="../../src/libddwaf/docker/libddwaf/aarch64-linux/Toolchain.aarch64.cmake" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=.. -DCPACK_PACKAGE_DIRECTORY=packages ../../src/libddwaf && \
-    cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target testPowerWAF --target package -j
+    cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target testPowerWAF -j && \
+    patchelf --remove-needed libc.so libddwaf.so && \
+    cmake --build . --config RelWithDebInfo --verbose --target package -j
 RUN cd ../../src/libddwaf/tests && ../../../build/libddwaf/tests/testPowerWAF
 
 FROM scratch
