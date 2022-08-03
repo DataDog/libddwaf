@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target:
+        include:
           - platform: x86_64-w64-mingw32
             dockerfile: docker/libddwaf/gcc/mingw64/Dockerfile
             package: libddwaf-linux-mingw64
@@ -111,13 +111,13 @@ jobs:
         id: buildx
         with:
           install: true
-      - run: docker build -f ${{ matrix.target.dockerfile }} -o /tmp/packages .
+      - run: docker build -f ${{ matrix.dockerfile }} -o /tmp/packages .
       - run: ${{ matrix.target.check_script }}
         if: matrix.target.check_script
         name: Invoke check script
       - uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.target.package }}
+          name: ${{ matrix.package }}
           path: /tmp/packages/*.tar.gz
 
   package-nuget:
