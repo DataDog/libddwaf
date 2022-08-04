@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     }
 
     ddwaf_context context = ddwaf_context_init(handle);
-    if (handle == nullptr) {
+    if (context == nullptr) {
         std::cerr << "Error initializing ddwaf context\n";
         ddwaf_destroy(handle);
         exit(EXIT_FAILURE);
