@@ -5,7 +5,7 @@
       input: {
         rule2-input2: garbage
       },
-      code: good
+      code: ok
     }
   ],
 }

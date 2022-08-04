@@ -7,7 +7,7 @@
           other: rule3
         }
       },
-      code: good
+      code: ok
     }
   ],
 }

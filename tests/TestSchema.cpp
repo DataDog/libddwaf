@@ -78,7 +78,7 @@ public:
     void Validate(ddwaf_result ret, DDWAF_RET_CODE code)
     {
         Document d;
-        EXPECT_EQ(code, DDWAF_MONITOR);
+        EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_NE(ret.data, nullptr);
         EXPECT_FALSE(ret.timeout);
         if (!HasFailure())

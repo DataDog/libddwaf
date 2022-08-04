@@ -35,12 +35,12 @@ ip_match::ip_match(const std::vector<std::string_view> &ip_list):
 std::optional<event::match> ip_match::match(std::string_view str) const
 {
     if (str.empty() || str.data() == nullptr) {
-        return {};
+        return std::nullopt;
     }
 
     ddwaf::ipaddr ip;
     if (!ddwaf::parse_ip(str, ip)) {
-        return {};
+        return std::nullopt;
     }
 
     // Convert the IPv4 to IPv6

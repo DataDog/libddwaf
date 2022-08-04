@@ -7,7 +7,7 @@
           first: rule13
         }
       },
-      code: good
+      code: ok
     }
   ],
 }

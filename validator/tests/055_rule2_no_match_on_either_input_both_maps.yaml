@@ -10,7 +10,7 @@
           first: garbage
         }
       },
-      code: good
+      code: ok
     }
   ],
 }

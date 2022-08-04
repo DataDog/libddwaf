@@ -20,12 +20,12 @@ exact_match::exact_match(std::vector<std::string> &&data):
 std::optional<event::match> exact_match::match(std::string_view str) const
 {
     if (str.empty() || str.data() == nullptr) {
-        return {};
+        return std::nullopt;
     }
 
     auto it = values_.find(str);
     if (it == values_.end()) {
-        return {};
+        return std::nullopt;
     }
 
     return make_event(str, str);

@@ -67,16 +67,16 @@ bool test_runner::run_test(const YAML::Node &runs)
         expect(true, runs.size() > 0);
         for (auto it = runs.begin(); it != runs.end(); ++it) {
             YAML::Node run = *it;
-            DDWAF_RET_CODE code = DDWAF_GOOD;
-            if (run["code"].as<std::string>() == "monitor") {
-                code = DDWAF_MONITOR;
+            DDWAF_RET_CODE code = DDWAF_OK;
+            if (run["code"].as<std::string>() == "match") {
+                code = DDWAF_MATCH;
             }
 
             auto object = run["input"].as<ddwaf_object>();
             auto retval = ddwaf_run(ctx.get(), &object, res.get(), timeout);
 
             expect(retval, code);
-            if (code == DDWAF_MONITOR) {
+            if (code == DDWAF_MATCH) {
                 validate(run["rules"], YAML::Load(res->data));
             }
 

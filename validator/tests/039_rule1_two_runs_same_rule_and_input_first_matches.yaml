@@ -16,13 +16,13 @@
           ]
         }
       ],
-      code: monitor
+      code: match
     },
     {
       input: {
         rule1-input: rule1
       },
-      code: good
+      code: ok
     }
   ],
 }

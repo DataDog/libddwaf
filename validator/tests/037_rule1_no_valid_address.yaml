@@ -5,7 +5,7 @@
       input: {
         random: rule1
       },
-      code: good
+      code: ok
     }
   ],
 }

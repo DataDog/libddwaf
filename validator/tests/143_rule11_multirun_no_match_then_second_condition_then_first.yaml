@@ -5,13 +5,13 @@
       input: {
         rule11-input2: garbage
       },
-      code: good
+      code: ok
     },
     {
       input: {
         rule11-input2: rule11_2
       },
-      code: good
+      code: ok
     },
     {
       input: {
@@ -33,7 +33,7 @@
           ]
         }
       ],
-      code: monitor
+      code: match
     }
   ],
 }

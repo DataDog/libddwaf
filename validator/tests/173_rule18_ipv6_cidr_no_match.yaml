@@ -5,7 +5,7 @@
       input: {
         rule18-input: "abcd::1234:1:0:1"
       },
-      code: good
+      code: ok
     }
   ]
 }

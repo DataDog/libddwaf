@@ -33,13 +33,13 @@ std::optional<event::match> phrase_match::match(std::string_view str) const
 {
     ac_t* acStructure = ac.get();
     if (str.empty() || str.data() == nullptr || acStructure == nullptr) {
-        return {};
+        return std::nullopt;
     }
 
     ac_result_t result = ac_match(acStructure, str.data(), static_cast<uint32_t>(str.size()));
 
     bool didMatch   = result.match_begin >= 0 && result.match_end >= 0 && result.match_begin < result.match_end;
-    if (!didMatch) { return {}; }
+    if (!didMatch) { return std::nullopt; }
 
     std::string_view matched_value;
     if (str.size() > (uint32_t)result.match_end) {

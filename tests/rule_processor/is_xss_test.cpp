@@ -66,7 +66,7 @@ TEST(TestIsXSS, TestRuleset)
     ddwaf_result ret;
 
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
-    EXPECT_EQ(code, DDWAF_MONITOR);
+    EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
     EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"is_xss","operator_value":"","parameters":[{"address":"arg1","key_path":[],"value":"<script>alert(1);</script>","highlight":[]}]}]}])");
     ddwaf_result_free(&ret);

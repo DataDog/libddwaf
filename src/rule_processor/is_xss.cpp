@@ -14,11 +14,11 @@ namespace ddwaf::rule_processor
 std::optional<event::match> is_xss::match(std::string_view str) const
 {
     if (str.empty() || str.data() == nullptr) {
-        return {};
+        return std::nullopt;
     }
 
     if (!libinjection_xss(str.data(), str.size())) {
-        return {};
+        return std::nullopt;
     }
 
     return make_event(str, {});

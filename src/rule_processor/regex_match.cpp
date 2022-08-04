@@ -29,7 +29,7 @@ regex_match::regex_match(const std::string& regex_str, std::size_t minLength, bo
 std::optional<event::match> regex_match::match(std::string_view str) const
 {
     if (str.data() == nullptr || !regex->ok() || str.size() < min_length) {
-        return {};
+        return std::nullopt;
     }
 
     const re2::StringPiece ref(str.data(), str.size());
@@ -40,10 +40,9 @@ std::optional<event::match> regex_match::match(std::string_view str) const
                                  re2::RE2::UNANCHORED,
                                  match, 1);
 
-    if (!didMatch) { return {}; }
+    if (!didMatch) { return std::nullopt; }
 
     return make_event(str, {match[0].data(), match[0].size()});
-
 }
 
 }

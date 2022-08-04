@@ -1,5 +1,52 @@
 # libddwaf release
 
+### v1.5.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/04
+
+#### API \& Breaking Changes
+- Remove `ddwaf_version`, `ddwaf_get_version` now returns a version string ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Move free function from `ddwaf_context_init` to `ddwaf_config` ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Add `ddwaf_result.actions` struct containing a `char*` array and its size ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Add dummy `ddwaf_update_rule_data` for future use ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Remote `DDWAF_BLOCK` ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Rename `DDWAF_GOOD` to `DDWAF_OK` ([#92](https://github.com/DataDog/libddwaf/pull/92))
+- Rename `DDWAF_MONITOR` to `DDWAF_MATCH` ([#92](https://github.com/DataDog/libddwaf/pull/92))
+
+#### Changes
+- Add `unicode_normalize` transformer ([#82](https://github.com/DataDog/libddwaf/pull/82))
+- Remove `PWRetriever`, `PWArgsWrapper`, `Iterator` and `ArgsIterator` ([#77](https://github.com/DataDog/libddwaf/pull/77))
+- Add `ddwaf::object_store` to manage all targets and objects provided to the WAF ([#77](https://github.com/DataDog/libddwaf/pull/77))
+- Add `ddwaf::value_iterator` for object value traversal ([#77](https://github.com/DataDog/libddwaf/pull/77))
+- Add `ddwaf::key_iterator` for object key traversal ([#77](https://github.com/DataDog/libddwaf/pull/77))
+- Simplify target manifest ([#78](https://github.com/DataDog/libddwaf/pull/78))
+- Remove input object validation ([#85](https://github.com/DataDog/libddwaf/pull/85))
+- Merge `PWAdditive` and `PWProcessor`and rename to `ddwaf::context` ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Rename `PowerWAF` to `ddwaf::waf` ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Add `ddwaf::timer` to abstract deadline ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Simplify rule processors ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Add `ip_match` operator and tests ([#87](https://github.com/DataDog/libddwaf/pull/87))
+- Refactor ip handling into `ip_utils` ([#87](https://github.com/DataDog/libddwaf/pull/87))
+- Add `exact_match` operator and tests ([#87](https://github.com/DataDog/libddwaf/pull/87))
+- Rename existing rule processors to more closely resemble their operator name ([#87](https://github.com/DataDog/libddwaf/pull/87))
+- Rename `IPWRuleProcessor` to `rule_processor_base` ([#87](https://github.com/DataDog/libddwaf/pull/87))
+- Add support for per-rule `on_match` array in ruleset ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Add optional `on_match` to JSON event format ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Remove `PWRetManager` and `MatchGatherer` ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Add `ddwaf::event` to collect all relevant rule match data in one structure ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Add `ddwaf::event_serializer` for JSON event ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Update processors to use `std::string_view` rather than `char *` and length ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Add `ddwaf::timeout_exception` to avoid error code propagation ([#91](https://github.com/DataDog/libddwaf/pull/91))
+
+#### Fixes
+- Timeout error propagation ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Pass object limits configuration to iterators ([#89](https://github.com/DataDog/libddwaf/pull/89))
+- Apply string limits ([#89](https://github.com/DataDog/libddwaf/pull/89))
+
+#### Miscellaneous
+- Add `utf8proc` license ([#84](https://github.com/DataDog/libddwaf/pull/84))
+- Add codecov support ([#86](https://github.com/DataDog/libddwaf/pull/86))
+- Add CODEOWNERS  ([#88](https://github.com/DataDog/libddwaf/pull/88))
+- Add `benchmerge` to merge multiple benchmark results ([#85](https://github.com/DataDog/libddwaf/pull/85))
+
 ### v1.4.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/06/29
 - Correct nuget url ([#68](https://github.com/DataDog/libddwaf/pull/68))
 - Only take params ownership when needed ([#69](https://github.com/DataDog/libddwaf/pull/69))

@@ -91,7 +91,7 @@ _Note that this is considered a failure and the command will produce a non-zero 
 
 When a test has failed and it wasn't expected to fail, the following output is produced:
 ```
-tests/rule8_001.yaml => Failed: run_test(80): monitor != good
+tests/rule8_001.yaml => Failed: run_test(80): match != ok
 - rule:
     id: 7
     name: rule7-common-flow
@@ -113,7 +113,7 @@ As can be seen on the example, the output contains the validator assertion which
 
 Finally, when a test has failed and it was expected to fail, the following output is produced:
 ```
-tests/rule4_015.yaml => Failed (expected): run_test(80): monitor != good
+tests/rule4_015.yaml => Failed (expected): run_test(80): match != ok
 ```
 _Note that this test is not considered a failure and the command will produce a zero output._
 

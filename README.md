@@ -82,7 +82,7 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_object_free);
+    ddwaf_context context = ddwaf_context_init(handle);
     if (handle == nullptr) {
         ddwaf_destroy(handle);
         exit(EXIT_FAILURE);

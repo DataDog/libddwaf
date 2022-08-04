@@ -36,7 +36,7 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
             ddwaf_result& output = *res;
             output.timeout       = true;
         }
-        return DDWAF_GOOD;
+        return DDWAF_OK;
     }
 
     ddwaf::timer deadline{std::chrono::microseconds(timeLeft)};
@@ -44,7 +44,7 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
     // If this is a new run but no rule care about those new params, let's skip the run
     if (!is_first_run() && !store_.has_new_targets())
     {
-        return DDWAF_GOOD;
+        return DDWAF_OK;
     }
 
     event_serializer serializer(config_.event_obfuscator);
@@ -52,12 +52,12 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
         if (!run_collection(key, collection, serializer, deadline)) { break; }
     }
 
-    DDWAF_RET_CODE code = serializer.has_events() ? DDWAF_MONITOR : DDWAF_GOOD;
+    DDWAF_RET_CODE code = serializer.has_events() ? DDWAF_MATCH : DDWAF_OK;
     if (res.has_value()) {
         ddwaf_result& output = *res;
         serializer.serialize(output);
         output.total_runtime = deadline.elapsed().count();
-        output.timeout = deadline.expired_flag();
+        output.timeout = deadline.expired_before();
     }
 
     return code;
