@@ -208,6 +208,9 @@ typedef void (*ddwaf_log_cb)(
  * @param info Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Handle to the WAF instance.
+ *
+ * @note If config is NULL, default values will be used, including the default
+ *       free function (ddwaf_object_free).
  **/
 ddwaf_handle ddwaf_init(const ddwaf_object *rule,
     const ddwaf_config* config, ddwaf_ruleset_info *info);
@@ -605,7 +608,7 @@ void ddwaf_object_free(ddwaf_object *object);
  *
  * Return the version of the library
  *
- * @return version Version string
+ * @return version Version string, note that this should not be freed
  **/
 const char *ddwaf_get_version();
 
