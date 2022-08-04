@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <context.hpp>
-#include <PWRet.hpp>
 #include <exception.hpp>
 #include <memory>
 #include <mutex>
@@ -91,6 +90,13 @@ extern "C"
         }
     }
 
+    DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data)
+    {
+        (void)data;
+        (void)handle;
+        return DDWAF_GOOD;
+    }
+
     const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t* size)
     {
         if (handle == nullptr)
@@ -137,7 +143,7 @@ extern "C"
     {
         if (result != nullptr)
         {
-            *result = {false, nullptr, 0};
+            *result = {false, nullptr, {nullptr, 0}, 0};
         }
 
         if (context == nullptr || data == nullptr)
@@ -201,4 +207,20 @@ extern "C"
                    log_level_to_str(min_level));
         return true;
     }
+
+    void ddwaf_result_free(ddwaf_result* result)
+    {
+        free(const_cast<char*>(result->data));
+
+        auto actions = result->actions;
+        if (actions.array != nullptr) {
+            for (unsigned i = 0; i < actions.size; i++) {
+                free(actions.array[i]);
+            }
+            free(actions.array);
+        }
+
+        *result = {false, nullptr, {nullptr, 0}, 0};
+    }
+
 }

@@ -11,16 +11,16 @@ using namespace ddwaf::rule_processor;
 TEST(TestIsXSS, TestBasic)
 {
     is_xss processor;
-    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.to_string().data(), "");
     EXPECT_STREQ(processor.name().data(), "is_xss");
 
-    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "<script>alert(1);</script>");
 
-    EXPECT_TRUE(processor.match_object(&param, gatherer));
+    auto match = processor.match_object(&param);
+    EXPECT_TRUE(match.has_value());
 
-    EXPECT_STREQ(gatherer.resolvedValue.c_str(), "<script>alert(1);</script>");
+    EXPECT_STREQ(match->resolved.c_str(), "<script>alert(1);</script>");
 
     ddwaf_object_free(&param);
 }
@@ -28,14 +28,11 @@ TEST(TestIsXSS, TestBasic)
 TEST(TestIsXSS, TestNoMatch)
 {
     is_xss processor;
-    EXPECT_STREQ(processor.to_string().c_str(), "");
-    EXPECT_STREQ(processor.name().data(), "is_xss");
 
-    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "non-xss");
 
-    EXPECT_FALSE(processor.match_object(&param, gatherer));
+    EXPECT_FALSE(processor.match_object(&param));
 
     ddwaf_object_free(&param);
 }
@@ -43,13 +40,10 @@ TEST(TestIsXSS, TestNoMatch)
 TEST(TestIsXSS, TestInvalidInput)
 {
     is_xss processor;
-    EXPECT_STREQ(processor.to_string().c_str(), "");
-    EXPECT_STREQ(processor.name().data(), "is_xss");
 
-    MatchGatherer gatherer;
-    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
-    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
-    EXPECT_FALSE(processor.match("non-xss", 0,  gatherer));
+    EXPECT_FALSE(processor.match({nullptr, 0}));
+    EXPECT_FALSE(processor.match({nullptr, 30}));
+    EXPECT_FALSE(processor.match({"non-xss", 0}));
 }
 
 TEST(TestIsXSS, TestRuleset)

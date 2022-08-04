@@ -11,19 +11,17 @@
 namespace ddwaf::rule_processor
 {
 
-bool is_xss::match(const char* pattern, size_t length, MatchGatherer& gatherer) const
+std::optional<event::match> is_xss::match(std::string_view str) const
 {
-    if (pattern == nullptr || length == 0) {
-        return false;
+    if (str.empty() || str.data() == nullptr) {
+        return {};
     }
 
-    if (!libinjection_xss(pattern, length)) {
-        return false;
+    if (!libinjection_xss(str.data(), str.size())) {
+        return {};
     }
 
-    gatherer.resolvedValue = std::string(pattern, length);
-
-    return true;
+    return make_event(str, {});
 }
 
 }

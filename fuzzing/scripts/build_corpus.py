@@ -233,6 +233,7 @@ class InitPayloadGenerator:
         ]
 
         self.possible_values += [get_random_ip() for _ in range(100)]
+        self.possible_values += [ "block", "block_request", "monitor", "redirect" ]
 
         self.used_operators = None
 
@@ -275,9 +276,9 @@ class InitPayloadGenerator:
                     "type": "".join(choices(printable_chars, k=10)),
                     "crs_id": "".join(choices(printable_chars, k=10)),
                 },
+                "on_match": get_random_action_array(),
                 "conditions": get_random_condition_array(),
                 "transformers": get_random_transformation_array(),
-                "action": "record"
             }
 
         def get_random_condition_array():
@@ -385,6 +386,8 @@ class InitPayloadGenerator:
         def get_random_rules():
             return _get_random_array(get_random_event, 1, self.event_max_count, allow_none=False)
 
+        def get_random_action_array():
+            return [choice(self.possible_values, ) for _ in range(randint(0, 3))]
 
         rules = get_random_rules()
 

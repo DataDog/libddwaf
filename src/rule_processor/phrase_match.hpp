@@ -18,7 +18,7 @@ class phrase_match : public rule_processor_base
 public:
     phrase_match(std::vector<const char*> pattern, std::vector<uint32_t> lengths);
     std::string_view name() const override { return "phrase_match"; }
-    bool match(const char* patternValue, size_t patternLength, MatchGatherer& gatherer) const override;
+    std::optional<event::match> match(std::string_view pattern) const override;
 
 protected:
     std::unique_ptr<ac_t, void (*)(void*)> ac { nullptr, nullptr };

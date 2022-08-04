@@ -70,8 +70,6 @@ inline std::string to_string(DDWAF_RET_CODE val)
         return "good";
     case DDWAF_MONITOR:
         return "monitor";
-    case DDWAF_BLOCK:
-        return "block";
     }
     return "unknown";
 }

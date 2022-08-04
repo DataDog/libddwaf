@@ -7,12 +7,10 @@
 #include <log.hpp>
 
 #include <context.hpp>
-#include <PWRet.hpp>
+#include <exception.hpp>
 #include <tuple>
 #include <utils.h>
 #include <waf.hpp>
-
-using match_status = ddwaf::condition::status;
 
 namespace ddwaf
 {
@@ -22,7 +20,7 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
 {
     if (res.has_value()) {
         ddwaf_result& output = *res;
-        output = {false, nullptr, 0};
+        output = {false, nullptr, {nullptr, 0}, 0};
     }
 
     if (!store_.insert(newParameters)) {
@@ -49,21 +47,17 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
         return DDWAF_GOOD;
     }
 
-    PWRetManager retManager(config_.event_obfuscator);
-    for (const auto& [key, collection] : ruleset_.collections)
-    {
-        if (!run_collection(key, collection, retManager, deadline))
-        {
-            break;
-        }
+    event_serializer serializer(config_.event_obfuscator);
+    for (const auto& [key, collection] : ruleset_.collections) {
+        if (!run_collection(key, collection, serializer, deadline)) { break; }
     }
 
-    DDWAF_RET_CODE code = retManager.getResult();
-    if (res.has_value())
-    {
+    DDWAF_RET_CODE code = serializer.has_events() ? DDWAF_MONITOR : DDWAF_GOOD;
+    if (res.has_value()) {
         ddwaf_result& output = *res;
-        retManager.synthetize(output);
+        serializer.serialize(output);
         output.total_runtime = deadline.elapsed().count();
+        output.timeout = deadline.expired_flag();
     }
 
     return code;
@@ -71,123 +65,64 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
 
 bool context::run_collection(const std::string& name,
   const ddwaf::rule_ref_vector& collection,
-  PWRetManager& retManager, ddwaf::timer& deadline)
+  event_serializer &serializer, ddwaf::timer& deadline)
 {
-    /*
-	 *	A collection is a sequence of steps
-	 *	Each step provide an array of ruleIDs to match. The rule match if any of those rules matched (1)
-	 *	Each ruleID provide an array of filters (condition) and must all be matched for the rule to be matched (2)
-	 */
     DDWAF_DEBUG("Running collection %s", name.c_str());
 
-    //If we ran out of time, we want to generate DDWAF_ERR_TIMEOUT records for every collection we're going to skip
-    //This also protect us against loops for free (the cache could avoid the inner loop's check)
-    if (deadline.expired())
-    {
-        DDWAF_INFO("Ran out of time while running collection %s", name.c_str());
-        retManager.recordTimeout();
-        return false;
-    }
-
-    match_status status = match_status::invalid;
     //Process each rule we have to run for this step of the collection
     for (ddwaf::rule& rule : collection)
     {
-        status = match_status::invalid;
-
-        //Have we already ran this rule?
-        auto index              = rule.index;
-        const auto cache_status = get_cached_status(index);
-        if (cache_status == match_status::matched)
-        {
+        if (deadline.expired()) {
+            DDWAF_INFO("Ran out of time while running collection %s and rule %s",
+                name.c_str(), rule.id.c_str());
             break;
+        }
+
+        // TODO: replace this part with:
+        //         - Collection cache to avoid going through each rule if the
+        //           collection already had a match.
+        //         - Rule cache containing individual condition matches, this
+        //           cache will then allow the rule to keep track of which
+        //           conditions have been executed.
+        bool run_on_new = false;
+        const auto hit = status_cache_.find(rule.index);
+        if (hit != status_cache_.cend()) {
+            // There was a match cached for this rule, stop processing collection
+            if (hit->second) { break; }
+
+            // The value is present and it's false (no match), check if we have
+            // new targets to decide if we should retry the rule.
+            if (!rule.has_new_targets(store_)) { continue; }
+
+            // Currently we are not keeping track of which conditions were executed
+            // against the available data, so if a rule has more than one condition
+            // we can't know which one caused the negative match and consequently
+            // we don't know which ones have been executed.
+            //
+            // However if the rule only has one condition and there is a negative
+            // match in the cache, we can safely assume it has already been executed
+            // with existing data.
+            run_on_new = (rule.conditions.size() == 1);
         }
 
         DDWAF_DEBUG("Running the WAF on rule %s", rule.id.c_str());
 
-        bool cachedNegativeMatch = cache_status == match_status::no_match;
+        try {
+            auto event = rule.match(store_, ruleset_.manifest, run_on_new, deadline);
 
-        // If we had a negative match in the past, let's check if we have a reason to run again
-        if (cachedNegativeMatch && !rule.has_new_targets(store_))
-        {
-            continue;
-        }
+            status_cache_.insert_or_assign(rule.index, event.has_value());
 
-        retManager.startRule();
-
-        // Currently we are not keeping track of which conditions were executed
-        // against the available data, so if a rule has more than one condition
-        // we can't know which one caused the negative match and consequently
-        // we don't know which ones have been executed.
-        //
-        // However if the rule only has one condition and there is a negative
-        // match in the cache, we can safely assume it has already been executed
-        // with existing data.
-        bool run_on_new = cachedNegativeMatch && rule.conditions.size() == 1;
-        for (const ddwaf::condition& cond : rule.conditions)
-        {
-            status = cond.match(store_, ruleset_.manifest, run_on_new, deadline, retManager);
-            //Stop if we didn't matched any of the parameters (2) or that the parameter couldn't be found
-            if (status == match_status::no_match)
-            {
+            if (event.has_value()) {
+                serializer.insert(std::move(event.value()));
                 break;
             }
-            else if (status == match_status::missing_arg)
-            {
-                DDWAF_DEBUG("Missing arguments to run rule %s", rule.id.c_str());
-                break;
-            }
-            else if (status == match_status::timeout)
-            {
-                DDWAF_INFO("Ran out of time when processing %s", rule.id.c_str());
-                retManager.recordTimeout();
-                return false;
-            }
-            else
-            {
-                DDWAF_DEBUG("Matched rule %s", rule.id.c_str());
-            }
-        }
-
-        //Store the result of the rule in the cache
-        if (status != match_status::missing_arg)
-        {
-            status_cache_.insert_or_assign(index, status);
-        }
-
-        // Update the time measurement, and check the deadline while we're at it
-        // This is actually fairly important because the inner loop will only check after 16 iterations
-        if (status == match_status::matched)
-        {
-            DDWAF_RET_CODE code = DDWAF_MONITOR;
-            retManager.reportMatch(rule.id, name, rule.category, rule.name,
-                                   retManager.fetchRuleCollector().GetArray());
-            retManager.recordResult(code);
-            break;
-        }
-
-        if (deadline.expired())
-        {
-            DDWAF_INFO("Ran out of time while running collection %s and rule %s", name.c_str(), rule.id.c_str());
-            retManager.recordTimeout();
+        } catch (const ddwaf::timeout_exception&) {
+            DDWAF_INFO("Ran out of time when processing %s", rule.id.c_str());
             return false;
         }
     }
 
     return true;
-}
-
-
-condition::status context::get_cached_status(ddwaf::rule::index_type rule_idx) const
-{
-    const auto hit = status_cache_.find(rule_idx);
-    if (hit != status_cache_.end())
-    {
-        return hit->second;
-    }
-
-    return match_status::invalid;
-
 }
 
 }

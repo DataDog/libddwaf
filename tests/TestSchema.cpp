@@ -11,7 +11,7 @@ class TestSchemaFixture : public ::testing::Test
 public:
     TestSchemaFixture()
     {
-        std::ifstream rule_file("../schema/appsec-event-1.0.0.json", std::ios::in);
+        std::ifstream rule_file("../schema/appsec-event-1.1.0.json", std::ios::in);
         if (!rule_file)
         {
             throw std::system_error(errno, std::generic_category());

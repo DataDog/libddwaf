@@ -26,26 +26,24 @@ regex_match::regex_match(const std::string& regex_str, std::size_t minLength, bo
     }
 }
 
-bool regex_match::match(const char* str, size_t length, MatchGatherer& gatherer) const
+std::optional<event::match> regex_match::match(std::string_view str) const
 {
-    if (str == nullptr || !regex->ok() || length < min_length) {
-        return false;
+    if (str.data() == nullptr || !regex->ok() || str.size() < min_length) {
+        return {};
     }
 
-    const re2::StringPiece ref(str, length);
+    const re2::StringPiece ref(str.data(), str.size());
     re2::StringPiece match[max_match_count];
     bool didMatch = regex->Match(ref,
                                  0,
-                                 length,
+                                 str.size(),
                                  re2::RE2::UNANCHORED,
                                  match, 1);
 
-    if (!didMatch) { return false; }
+    if (!didMatch) { return {}; }
 
-    gatherer.resolvedValue = std::string(str, length);
-    gatherer.matchedValue = match[0].as_string();
+    return make_event(str, {match[0].data(), match[0].size()});
 
-    return true;
 }
 
 }

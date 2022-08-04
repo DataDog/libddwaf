@@ -17,21 +17,21 @@ TEST(TestPhraseMatch, TestBasic)
     phrase_match processor(strings, lengths);
 
     EXPECT_STREQ(processor.name().data(), "phrase_match");
-    EXPECT_STREQ(processor.to_string().c_str(), "");
+    EXPECT_STREQ(processor.to_string().data(), "");
 
-    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    EXPECT_TRUE(processor.match_object(&param, gatherer));
+    auto match = processor.match_object(&param);
+    EXPECT_TRUE(match);
 
-    EXPECT_STREQ(gatherer.resolvedValue.c_str(), "bbbb");
-    EXPECT_STREQ(gatherer.matchedValue.c_str(), "bbbb");
+    EXPECT_STREQ(match->resolved.c_str(), "bbbb");
+    EXPECT_STREQ(match->matched.c_str(), "bbbb");
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "dddd");
 
-    EXPECT_FALSE(processor.match_object(&param2, gatherer));
+    EXPECT_FALSE(processor.match_object(&param2));
 
     ddwaf_object_free(&param2);
     ddwaf_object_free(&param);
@@ -45,11 +45,10 @@ TEST(TestPhraseMatch, TestEmptyArrays)
 
     EXPECT_STREQ(processor.name().data(), "phrase_match");
 
-    MatchGatherer gatherer;
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    EXPECT_FALSE(processor.match_object(&param, gatherer));
+    EXPECT_FALSE(processor.match_object(&param));
 
     ddwaf_object_free(&param);
 }
@@ -71,18 +70,18 @@ TEST(TestPhraseMatch, TestComplex)
     phrase_match processor(strings, lengths);
 
     auto run = [&processor](const char* str, const char* expect) {
-        MatchGatherer gatherer;
         ddwaf_object param;
         ddwaf_object_string(&param, str);
         if (expect)
         {
-            EXPECT_TRUE(processor.match_object(&param, gatherer));
-            EXPECT_STREQ(gatherer.resolvedValue.c_str(), str);
-            EXPECT_STREQ(gatherer.matchedValue.c_str(), expect);
+            auto match = processor.match_object(&param);
+            EXPECT_TRUE(match);
+            EXPECT_STREQ(match->resolved.c_str(), str);
+            EXPECT_STREQ(match->matched.c_str(), expect);
         }
         else
         {
-            EXPECT_FALSE(processor.match_object(&param, gatherer));
+            EXPECT_FALSE(processor.match_object(&param));
         }
         ddwaf_object_free(&param);
     };
@@ -107,8 +106,7 @@ TEST(TestPhraseMatch, TestInvalidInput)
 
     phrase_match processor(strings, lengths);
 
-    MatchGatherer gatherer;
-    EXPECT_FALSE(processor.match(nullptr, 0,  gatherer));
-    EXPECT_FALSE(processor.match(nullptr, 30,  gatherer));
-    EXPECT_FALSE(processor.match("*", 0,  gatherer));
+    EXPECT_FALSE(processor.match({nullptr, 0}));
+    EXPECT_FALSE(processor.match({nullptr, 30}));
+    EXPECT_FALSE(processor.match({"*", 0}));
 }

@@ -6,7 +6,8 @@ on:
     tags:
       - "*"
   pull_request:
-    branches: [ master ]
+    branches:
+      - "**"
   schedule:
     - cron:  30 0 * * *
 jobs:

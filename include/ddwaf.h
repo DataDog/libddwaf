@@ -53,7 +53,6 @@ typedef enum
     DDWAF_ERR_INVALID_ARGUMENT = -1,
     DDWAF_GOOD             = 0,
     DDWAF_MONITOR          = 1,
-    DDWAF_BLOCK            = 2
 } DDWAF_RET_CODE;
 
 /**
@@ -156,6 +155,11 @@ struct _ddwaf_result
     bool timeout;
     /** Run result in JSON format **/
     const char* data;
+    /** Actions array and its size **/
+    struct {
+        char **array;
+        uint32_t size;
+    } actions;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
 };
@@ -216,6 +220,16 @@ ddwaf_handle ddwaf_init(const ddwaf_object *rule,
  * @param Handle to the WAF instance.
  */
 void ddwaf_destroy(ddwaf_handle handle);
+
+/**
+ * ddwaf_update_rule_data
+ *
+ * Update existing rules with new rule data.
+ *
+ * @param handle to the WAF instance.
+ * @param data A ddwaf_object map with the format {rule_data_id : rule_data}.
+ */
+DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data);
 /**
  * ddwaf_ruleset_info_free
  *

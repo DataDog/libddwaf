@@ -11,23 +11,18 @@
 namespace ddwaf::rule_processor
 {
 
-bool is_sqli::match(const char* pattern, size_t length, MatchGatherer& gatherer) const
+std::optional<event::match> is_sqli::match(std::string_view str) const
 {
-    if (pattern == nullptr || length == 0) {
-        return false;
+    if (str.empty() || str.data() == nullptr) {
+        return {};
     }
-
     //The mandated length is 8
-    char fingerprint[16]        = { 0 };
-
-    if (!libinjection_sqli(pattern, length, fingerprint)) {
-        return false;
+    char fingerprint[16] = {0};
+    if (!libinjection_sqli(str.data(), str.size(), fingerprint)) {
+        return {};
     }
 
-    gatherer.resolvedValue = std::string(pattern, length);
-    gatherer.matchedValue = std::string(fingerprint);
-
-    return true;
+    return make_event(str, fingerprint);
 }
 
 }
