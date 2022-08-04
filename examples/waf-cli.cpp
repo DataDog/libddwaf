@@ -133,7 +133,9 @@ int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        DDWAF_ERROR("Usage: %s <json/yaml rule file> <yaml input>", argv[0]);
+        std::cerr << "Usage: " << argv[0] << " <json/yaml rule file> <yaml input>" << std::endl;
+        std::cerr << std::endl;
+        std::cerr <<"    " << argv[0] << "appsec-event-rules/build/recommended.json '{\"server.request.query\": \"<script>alert(0)\"}'" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -145,11 +147,13 @@ int main(int argc, char* argv[])
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ddwaf_object_free(&rule);
     if (handle == nullptr) {
+        std::cerr << "Error initializing ddwaf (check rules)\n";
         exit(EXIT_FAILURE);
     }
 
     ddwaf_context context = ddwaf_context_init(handle);
     if (handle == nullptr) {
+        std::cerr << "Error initializing ddwaf context\n";
         ddwaf_destroy(handle);
         exit(EXIT_FAILURE);
     }
