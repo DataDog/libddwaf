@@ -14,12 +14,12 @@ namespace ddwaf::rule_processor
 std::optional<event::match> is_sqli::match(std::string_view str) const
 {
     if (str.empty() || str.data() == nullptr) {
-        return {};
+        return std::nullopt;
     }
     //The mandated length is 8
     char fingerprint[16] = {0};
     if (!libinjection_sqli(str.data(), str.size(), fingerprint)) {
-        return {};
+        return std::nullopt;
     }
 
     return make_event(str, fingerprint);

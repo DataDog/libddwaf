@@ -57,7 +57,7 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
         ddwaf_result& output = *res;
         serializer.serialize(output);
         output.total_runtime = deadline.elapsed().count();
-        output.timeout = deadline.expired_flag();
+        output.timeout = deadline.expired_before();
     }
 
     return code;

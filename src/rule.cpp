@@ -76,7 +76,7 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer& deadlin
         return optional_match;
     }
 
-    return {};
+    return std::nullopt;
 }
 
 std::optional<event::match> condition::match(const object_store& store,
@@ -119,7 +119,7 @@ std::optional<event::match> condition::match(const object_store& store,
         }
     }
 
-    return {};
+    return std::nullopt;
 }
 
 rule::rule(index_type index_, std::string &&id_, std::string &&name_,
@@ -156,7 +156,7 @@ std::optional<event> rule::match(const object_store& store,
     for (const ddwaf::condition& cond : conditions) {
         auto opt_match = cond.match(store, manifest, run_on_new, deadline);
         if (!opt_match.has_value()) {
-            return {};
+            return std::nullopt;
         }
         event.matches.emplace_back(std::move(*opt_match));
     }

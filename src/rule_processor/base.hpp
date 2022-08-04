@@ -26,7 +26,7 @@ public:
     virtual std::optional<event::match> match(std::string_view str) const = 0;
 
     virtual std::optional<event::match> match_object(const ddwaf_object *obj) const {
-        if (obj->stringValue == nullptr) { return {}; }
+        if (obj->stringValue == nullptr) { return std::nullopt; }
         return match({obj->stringValue, static_cast<std::size_t>(obj->nbEntries)});
     }
 
