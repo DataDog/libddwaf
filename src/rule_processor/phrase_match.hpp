@@ -13,7 +13,7 @@
 namespace ddwaf::rule_processor
 {
 
-class phrase_match : public rule_processor_base
+class phrase_match : public base
 {
 public:
     phrase_match(std::vector<const char*> pattern, std::vector<uint32_t> lengths);

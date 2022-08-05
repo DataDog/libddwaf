@@ -18,20 +18,25 @@ namespace ddwaf
 
 std::optional<event::match> condition::match_object(const ddwaf_object* object) const
 {
-    const bool hasTransformation        = !transformation.empty();
-    bool transformationWillChangeString = false;
+    // TODO: this might use mutexes internally, so it might be worth having a
+    //       flag to determine if the processor should be accessed atomatically
+    //       or not.
+    auto processor = std::atomic_load_explicit(&processor_, std::memory_order_relaxed);
 
-    if (hasTransformation) {
+    const bool has_transform = !transformers_.empty();
+    bool transform_required = false;
+
+    if (has_transform) {
         // This codepath is shared with the mutable path. The structure can't be const :/
-        transformationWillChangeString = PWTransformer::doesNeedTransform(transformation,
+        transform_required = PWTransformer::doesNeedTransform(transformers_,
             const_cast<ddwaf_object *>(object));
     }
 
     size_t length = find_string_cutoff(object->stringValue,
             object->nbEntries, limits_.max_string_length);
 
-    //If we don't have transformation to perform, or if they're irrelevant, no need to waste time copying and allocating data
-    if (!hasTransformation || !transformationWillChangeString) {
+    //If we don't have transform to perform, or if they're irrelevant, no need to waste time copying and allocating data
+    if (!has_transform || !transform_required) {
         return processor->match({object->stringValue, length});
     }
 
@@ -43,7 +48,7 @@ std::optional<event::match> condition::match_object(const ddwaf_object* object) 
 
     //Transform it and pick the pointer to process
     bool transformFailed = false;
-    for (const PW_TRANSFORM_ID& transform : transformation) {
+    for (const PW_TRANSFORM_ID& transform : transformers_) {
         transformFailed = !PWTransformer::transform(transform, &copy);
         if (transformFailed || (copy.type == DDWAF_OBJ_STRING && copy.nbEntries == 0))
         {
@@ -83,7 +88,7 @@ std::optional<event::match> condition::match(const object_store& store,
     const ddwaf::manifest &manifest, bool run_on_new,
     ddwaf::timer& deadline) const
 {
-    for (const auto &target : targets) {
+    for (const auto &target : targets_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
@@ -131,7 +136,7 @@ rule::rule(index_type index_, std::string &&id_, std::string &&name_,
   conditions(std::move(conditions_)), actions(std::move(actions_))
 {
     for (auto &cond : conditions) {
-        targets.insert(cond.targets.begin(), cond.targets.end());
+        targets.insert(cond.targets_.begin(), cond.targets_.end());
     }
 }
 

@@ -15,7 +15,7 @@ bool match(ip_match &processor, std::string_view ip) {
 
 TEST(TestIPMatch, Basic)
 {
-    ip_match processor({
+    ip_match processor(std::vector<std::string_view>{
         "1.2.3.4",
         "5.6.7.254",
         "::ffff:0102:0304",
@@ -58,9 +58,9 @@ TEST(TestIPMatch, Basic)
     EXPECT_FALSE(match(processor, "other"));
 }
 
-TEST(TestIPMatch, TestCIDR)
+TEST(TestIPMatch, CIDR)
 {
-    ip_match processor({
+    ip_match processor(std::vector<std::string_view>{
         "1.2.0.0/16",
         "1234:abdc::0/112",
     });
@@ -76,9 +76,9 @@ TEST(TestIPMatch, TestCIDR)
     EXPECT_FALSE(match(processor, "1234:abdc::1:0"));
 }
 
-TEST(TestIPMatch, TestInvalidInput)
+TEST(TestIPMatch, InvalidInput)
 {
-    ip_match processor({
+    ip_match processor(std::vector<std::string_view>{
         "1.2.3.4",
         "5.6.7.254",
         "::ffff:0102:0304",
@@ -87,5 +87,34 @@ TEST(TestIPMatch, TestInvalidInput)
 
     EXPECT_FALSE(processor.match({nullptr, 0}));
     EXPECT_FALSE(processor.match({nullptr, 30}));
-    //EXPECT_FALSE(processor.match({"*", 0}));
+    EXPECT_FALSE(processor.match({"*", 0}));
+}
+
+TEST(TestIPMatch, Expiration)
+{
+    uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+
+    ip_match processor(std::vector<std::pair<std::string_view,uint64_t>>{
+        {"1.2.3.4", now - 1},
+        {"5.6.7.254", now + 100},
+        {"::ffff:0102:0304", now - 1},
+        {"1234:0:0:0:0:0:0:5678", now + 100},
+        {"::1", now - 1},
+        {"abcd::1234:5678:1234:5678", now + 100},
+        {"abcd::1234:0:0:0", now - 1},
+        {"abcd::1234:ffff:ffff:ffff", now + 100}
+    });
+
+    EXPECT_STREQ(processor.to_string().data(), "");
+    EXPECT_STREQ(processor.name().data(), "ip_match");
+
+    EXPECT_FALSE(match(processor, "1.2.3.4"));
+    EXPECT_TRUE(match(processor, "5.6.7.254"));
+    EXPECT_FALSE(match(processor, "::ffff:0102:0304"));
+    EXPECT_TRUE(match(processor, "1234:0:0:0:0:0:0:5678"));
+    EXPECT_FALSE(match(processor, "::1"));
+    EXPECT_TRUE(match(processor, "abcd::1234:5678:1234:5678"));
+    EXPECT_FALSE(match(processor, "abcd::1234:0:0:0"));
+    EXPECT_TRUE(match(processor, "abcd::1234:ffff:ffff:ffff"));
 }

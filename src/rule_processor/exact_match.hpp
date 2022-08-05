@@ -10,21 +10,23 @@
 #include <clock.hpp>
 #include <string_view>
 #include <utils.h>
-#include <unordered_set>
+#include <unordered_map>
 
 namespace ddwaf::rule_processor
 {
 
-class exact_match : public rule_processor_base
+class exact_match : public base
 {
 public:
     explicit exact_match(std::vector<std::string> &&data);
+    explicit exact_match(const std::vector<std::pair<std::string_view,uint64_t>> &data);
+
     ~exact_match() = default;
     std::optional<event::match> match(std::string_view str) const override;
     std::string_view name() const override { return "exact_match"; }
 protected:
     std::vector<std::string> data_;
-    std::unordered_set<std::string_view> values_;
+    std::unordered_map<std::string_view, uint64_t> values_;
 };
 
 }

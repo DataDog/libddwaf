@@ -33,14 +33,14 @@ public:
         keys
     };
 
-    condition(std::vector<ddwaf::manifest::target_type>&& targets_,
+    condition(std::vector<ddwaf::manifest::target_type>&& targets,
               std::vector<PW_TRANSFORM_ID>&& transformers,
-              std::unique_ptr<rule_processor::rule_processor_base>&& processor_,
+              std::shared_ptr<rule_processor::base>&& processor,
               ddwaf::object_limits limits = ddwaf::object_limits(),
               data_source source = data_source::values):
-        targets(std::move(targets_)),
-        transformation(std::move(transformers)),
-        processor(std::move(processor_)),
+        targets_(std::move(targets)),
+        transformers_(std::move(transformers)),
+        processor_(std::move(processor)),
         limits_(limits),
         source_(source) {}
 
@@ -54,6 +54,9 @@ public:
         const ddwaf::manifest &manifest, bool run_on_new,
         ddwaf::timer& deadline) const;
 
+    void reset_processor(std::shared_ptr<rule_processor::base> &proc) {
+        std::atomic_store(&processor_, proc);
+    }
 protected:
     std::optional<event::match> match_object(const ddwaf_object* object) const;
 
@@ -62,9 +65,9 @@ protected:
 
     friend class rule;
 
-    std::vector<ddwaf::manifest::target_type> targets;
-    std::vector<PW_TRANSFORM_ID> transformation;
-    std::unique_ptr<rule_processor::rule_processor_base> processor;
+    std::vector<ddwaf::manifest::target_type> targets_;
+    std::vector<PW_TRANSFORM_ID> transformers_;
+    std::shared_ptr<rule_processor::base> processor_;
     ddwaf::object_limits limits_;
     data_source source_;
 };

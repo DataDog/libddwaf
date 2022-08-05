@@ -206,7 +206,7 @@ void radix_free(radix_tree_t* radix)
     free(radix);
 }
 
-bool radix_matching_do(radix_tree_t* radix, prefix_t* prefix)
+radix_node_t* radix_matching_do(radix_tree_t* radix, prefix_t* prefix)
 {
     radix_node_t* node;
     radix_node_t* stack[RADIX_MAXBITS + 1];
@@ -215,7 +215,7 @@ bool radix_matching_do(radix_tree_t* radix, prefix_t* prefix)
     unsigned cnt = 0;
 
     if (radix->head == NULL)
-        return false;
+        return NULL;
 
     addr   = PREFIX_TO_UCHAR(prefix);
     bitlen = prefix->bitlen;
@@ -244,11 +244,11 @@ bool radix_matching_do(radix_tree_t* radix, prefix_t* prefix)
                             PREFIX_TO_UCHAR(prefix),
                             node->prefix->bitlen))
         {
-            return true;
+            return node;
         }
     }
 
-    return false;
+    return NULL;
 }
 
 radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix)

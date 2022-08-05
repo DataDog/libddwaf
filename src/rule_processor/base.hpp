@@ -17,11 +17,11 @@
 
 namespace ddwaf::rule_processor {
 
-class rule_processor_base
+class base
 {
 public:
-    rule_processor_base()          = default;
-    virtual ~rule_processor_base() = default;
+    base()          = default;
+    virtual ~base() = default;
 
     virtual std::optional<event::match> match(std::string_view str) const = 0;
 
