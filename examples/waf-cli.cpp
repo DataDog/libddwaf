@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
     {
         std::cerr << "Usage: " << argv[0] << " <json/yaml rule file> <yaml input>" << std::endl;
         std::cerr << std::endl;
-        std::cerr <<"    " << argv[0] << "appsec-event-rules/build/recommended.json '{\"server.request.query\": \"<script>alert(0)\"}'" << std::endl;
+        std::cerr <<"    " << argv[0] << "appsec-event-rules/build/recommended.json \"<script>alert(0)\"" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -158,9 +158,14 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-
     ddwaf_result ret;
-    ddwaf_object input = YAML::Load(argv[2]).as<ddwaf_object>();
+    // ddwaf_object input = YAML::Load(argv[2]).as<ddwaf_object>();
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "server.request.query";
+    out << YAML::Value << argv[2];
+    out << YAML::EndMap;
+    ddwaf_object input = YAML::Load(out.c_str()).as<ddwaf_object>();
     ddwaf_run(context, &input, &ret, LONG_TIME);
     if (ret.data) {
         auto result = YAML::Load(ret.data);
