@@ -202,13 +202,6 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    ddwaf_context context = ddwaf_context_init(handle);
-    if (context == nullptr) {
-        std::cerr << "Error initializing ddwaf context\n";
-        ddwaf_destroy(handle);
-        exit(EXIT_FAILURE);
-    }
-
 
     auto inputJson = read_file(argv[2]);
     Document d;
@@ -224,13 +217,23 @@ int main(int argc, char* argv[])
     for (auto& m : d.GetObject()) {
         std::string org_id = m.name.GetString();
         for (auto& a : m.value.GetArray()) {
+
             std::string attack = a.GetString();
+
+            ddwaf_context context = ddwaf_context_init(handle);
+            if (context == nullptr) {
+                std::cerr << "Error initializing ddwaf context\n";
+                ddwaf_destroy(handle);
+                exit(EXIT_FAILURE);
+            }
+
             process_attack(&context, attack, org_id);
+
+            ddwaf_context_destroy(context);
         }
     }
 
 
-    ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
