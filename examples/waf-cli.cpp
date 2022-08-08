@@ -12,7 +12,33 @@
 #include <iostream>
 #include <ctime>
 
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/schema.h"
+#include "rapidjson/error/en.h"
+
+using namespace rapidjson;
+
+
 #define LONG_TIME 1000000
+
+std::string read_file(const std::string_view& filename)
+{
+    std::ifstream rule_file(filename.data(), std::ios::in);
+    if (!rule_file)
+    {
+        throw std::system_error(errno, std::generic_category());
+    }
+
+    std::string buffer;
+    rule_file.seekg(0, std::ios::end);
+    buffer.resize(rule_file.tellg());
+    rule_file.seekg(0, std::ios::beg);
+
+    rule_file.read(&buffer[0], buffer.size());
+    rule_file.close();
+    return buffer;
+}
+
 
 namespace YAML
 {
@@ -129,6 +155,31 @@ std::string read_rule_file(const std::string_view& filename)
 }
 
 
+void process_attack(ddwaf_context *context, std::string attack, std::string org_id) {
+
+    // std::cout << org_id << "; " << attack << std::endl;
+
+    ddwaf_result ret = {0};
+    // ddwaf_object input = YAML::Load(argv[2]).as<ddwaf_object>();
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "server.request.query";
+    out << YAML::Value << attack;
+    out << YAML::EndMap;
+    ddwaf_object input = YAML::Load(out.c_str()).as<ddwaf_object>();
+    ddwaf_run(*context, &input, &ret, LONG_TIME);
+    if (ret.data) {
+        auto result = YAML::Load(ret.data);
+        for (unsigned i = 0; i < result.size(); i++) {
+            auto rule = result[i]["rule"];
+            auto match = result[i]["rule_matches"][0]["parameters"][0];
+            std::cout << org_id << "; " << rule["id"] << "; ";
+            std::cout  << match["value"] << std::endl;
+        }
+    }
+    ddwaf_result_free(&ret);
+}
+
 int main(int argc, char* argv[])
 {
     if (argc < 2)
@@ -158,25 +209,28 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    ddwaf_result ret;
-    // ddwaf_object input = YAML::Load(argv[2]).as<ddwaf_object>();
-    YAML::Emitter out;
-    out << YAML::BeginMap;
-    out << YAML::Key << "server.request.query";
-    out << YAML::Value << argv[2];
-    out << YAML::EndMap;
-    ddwaf_object input = YAML::Load(out.c_str()).as<ddwaf_object>();
-    ddwaf_run(context, &input, &ret, LONG_TIME);
-    if (ret.data) {
-        auto result = YAML::Load(ret.data);
-        for (unsigned i = 0; i < result.size(); i++) {
-            auto rule = result[i]["rule"];
-            auto match = result[i]["rule_matches"][0]["parameters"][0];
-            std::cout << rule["id"] << " - " << match["value"] << '\n';
+
+    auto inputJson = read_file(argv[2]);
+    Document d;
+    rapidjson::ParseResult result = d.Parse(inputJson);
+    if (!result)
+    {
+        std::cerr << "Failed to parse input json: " 
+                  << rapidjson::GetParseError_En(result.Code())
+                  << result.Offset() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    for (auto& m : d.GetObject()) {
+        std::string org_id = m.name.GetString();
+        for (auto& a : m.value.GetArray()) {
+            std::string attack = a.GetString();
+            process_attack(&context, attack, org_id);
         }
     }
-    ddwaf_result_free(&ret);
+
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
