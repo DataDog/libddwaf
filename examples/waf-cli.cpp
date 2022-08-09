@@ -23,19 +23,20 @@ using namespace rapidjson;
 
 std::string read_file(const std::string_view& filename)
 {
-    std::ifstream rule_file(filename.data(), std::ios::in);
-    if (!rule_file)
+    std::ifstream file(filename.data(), std::ios::in);
+    if (!file)
     {
+        std::cerr << "Can't read file " << filename << std::endl;
         throw std::system_error(errno, std::generic_category());
     }
 
     std::string buffer;
-    rule_file.seekg(0, std::ios::end);
-    buffer.resize(rule_file.tellg());
-    rule_file.seekg(0, std::ios::beg);
+    file.seekg(0, std::ios::end);
+    buffer.resize(file.tellg());
+    file.seekg(0, std::ios::beg);
 
-    rule_file.read(&buffer[0], buffer.size());
-    rule_file.close();
+    file.read(&buffer[0], buffer.size());
+    file.close();
     return buffer;
 }
 
@@ -140,6 +141,7 @@ std::string read_rule_file(const std::string_view& filename)
     std::ifstream rule_file(filename.data(), std::ios::in);
     if (!rule_file)
     {
+        std::cerr << "Can't read rule file " << filename << std::endl;
         throw std::system_error(errno, std::generic_category());
     }
 
@@ -182,11 +184,21 @@ void process_attack(ddwaf_context *context, std::string attack, std::string org_
 
 int main(int argc, char* argv[])
 {
-    if (argc < 2)
+    if (argc != 3)
     {
-        std::cerr << "Usage: " << argv[0] << " <json/yaml rule file> <yaml input>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <json/yaml rule file> <json inputs file>" << std::endl;
         std::cerr << std::endl;
-        std::cerr <<"    " << argv[0] << "appsec-event-rules/build/recommended.json \"<script>alert(0)\"" << std::endl;
+        std::cerr << "    " << argv[0] << " appsec-event-rules/build/recommended.json /path/to/attacks.json" << std::endl;
+        // std::cerr << "    " << argv[0] << " appsec-event-rules/build/recommended.json \"<script>alert(0)\"" << std::endl;
+        std::cerr << std::endl;
+        std::cerr << "    JSON file format: {\"org_id\": [array of attacks]" << std::endl;
+        std::cerr << "    Example: {\"1000201\": [\"<script>alert()\", \"' OR 1=1-- \"]}" << std::endl;
+        std::cerr << std::endl;
+        std::cerr << "    The address used as attack provenance is \"server.request.query\"" << std::endl;
+        std::cerr << std::endl;
+        std::cerr << "    In order to run every rule against an attack, each rule has to have a different type. " << std::endl;
+        std::cerr << "    the rule file has to be changed in such a way, for instance in VIM: " << std::endl;
+        std::cerr << "    \":let i=1 | g/^ *\"type\": \"/s//\\='\"type\": \"'.i/ | let i=i+1l;\"" << std::endl;
         return EXIT_FAILURE;
     }
 
