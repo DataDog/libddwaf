@@ -155,7 +155,7 @@ std::string read_rule_file(const std::string_view& filename)
 }
 
 
-void process_attack(ddwaf_context *context, std::string attack, std::string org_id) {
+void process_attack(ddwaf_context *context, std::string attack, std::string org_id, int run_id) {
 
     // std::cout << org_id << "; " << attack << std::endl;
 
@@ -174,7 +174,7 @@ void process_attack(ddwaf_context *context, std::string attack, std::string org_
             auto rule = result[i]["rule"];
             auto match = result[i]["rule_matches"][0]["parameters"][0];
             std::cout << org_id << "; " << rule["id"] << "; ";
-            std::cout  << match["value"] << std::endl;
+            std::cout  << run_id << "; " << match["value"] << std::endl;
         }
     }
     ddwaf_result_free(&ret);
@@ -214,6 +214,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    int run_id = 0;
     for (auto& m : d.GetObject()) {
         std::string org_id = m.name.GetString();
         for (auto& a : m.value.GetArray()) {
@@ -227,7 +228,7 @@ int main(int argc, char* argv[])
                 exit(EXIT_FAILURE);
             }
 
-            process_attack(&context, attack, org_id);
+            process_attack(&context, attack, org_id, ++run_id);
 
             ddwaf_context_destroy(context);
         }
