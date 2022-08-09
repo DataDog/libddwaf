@@ -159,7 +159,7 @@ void process_attack(ddwaf_context *context, std::string attack, std::string org_
 
     // std::cout << org_id << "; " << attack << std::endl;
 
-    ddwaf_result ret = {0};
+    ddwaf_result ret;
     // ddwaf_object input = YAML::Load(argv[2]).as<ddwaf_object>();
     YAML::Emitter out;
     out << YAML::BeginMap;
