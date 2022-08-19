@@ -844,7 +844,8 @@ static const keyword_t sql_keywords[] = {
     {"01)BVK", 'F'},
     {"01)BVO", 'F'},
     {"01)BVU", 'F'},
-    {"01)C", 'F'},
+    // Mostly catches passwords
+    {"01)C", '~'},
     {"01)E(1", 'F'},
     {"01)E(F", 'F'},
     {"01)E(N", 'F'},
