@@ -12,6 +12,7 @@
 #include <type_traits>
 #include <parameter.hpp>
 #include <rule.hpp>
+#include <parser/rule_data_parser.hpp>
 
 namespace ddwaf::rule_data {
 
@@ -21,7 +22,7 @@ protected:
     class type_dispatcher_base {
     public:
         virtual ~type_dispatcher_base() = default;
-        virtual void dispatch(const ddwaf::parameter &data) = 0;
+        virtual void dispatch(std::string_view type, ddwaf::parameter &data) = 0;
     };
 
     template<typename T>
@@ -36,8 +37,8 @@ protected:
             functions_.emplace_back(std::move(fn), cond);
         }
 
-        virtual void dispatch(const ddwaf::parameter &data) {
-            auto converted_data = T(data);
+        void dispatch(std::string_view type, ddwaf::parameter &data) override {
+            auto converted_data = parser::parse_rule_data<T>(type, data);
             for (auto &[fn, cond] : functions_) {
                 auto processor = fn(converted_data);
                 if (processor) {
@@ -76,7 +77,7 @@ public:
             it = new_it;
         }
 
-        auto &td = dynamic_cast<type_dispatcher<rule_data_type>>(*it->second);
+        auto &td = *dynamic_cast<type_dispatcher<rule_data_type>*>(it->second.get());
 
         td.insert([](const rule_data_type & data) {
             return std::make_shared<T>(data);
@@ -84,13 +85,13 @@ public:
     }
 
     // TODO: Return a known result or throw
-    void dispatch(const std::string &id, ddwaf_object *data) {
+    void dispatch(const std::string &id, std::string_view type, parameter &data) {
         auto it = type_dispatchers_.find(id);
         if (it == type_dispatchers_.end()) {
             return;
         }
 
-        it->second->dispatch(*data);
+        it->second->dispatch(type, data);
     }
 
 protected:
@@ -103,13 +104,14 @@ public:
     void insert(std::string_view id, std::string_view op_name,
         std::size_t rule_idx, std::size_t cond_idx)
     {
-        entries_.emplace_back(dispatcher_entry{id, op_name, rule_idx, cond_idx});
+        entries_.emplace_back(
+            dispatcher_entry{std::string(id), op_name, rule_idx, cond_idx});
     }
 
     dispatcher build(ddwaf::rule_vector &rules);
 protected:
     struct dispatcher_entry {
-        std::string_view id;
+        std::string id;
         std::string_view op_name;
         std::size_t rule_idx;
         std::size_t cond_idx;

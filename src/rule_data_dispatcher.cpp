@@ -5,6 +5,8 @@
 // Copyright 2022 Datadog, Inc.
 
 #include <rule_data_dispatcher.hpp>
+#include <rule_processor/ip_match.hpp>
+#include <rule_processor/exact_match.hpp>
 
 namespace ddwaf::rule_data {
 
@@ -15,16 +17,22 @@ namespace {
 }
 dispatcher dispatcher_builder::build(ddwaf::rule_vector &rules)
 {
+    dispatcher d;
     for (auto &entry : entries_) {
-        if (entry.rule_idx >= rules.size() { continue; }
+        if (entry.rule_idx >= rules.size()) { continue; }
 
         auto &rule = rules[entry.rule_idx];
         if (entry.cond_idx >= rule.conditions.size()) { continue; }
 
         auto &condition = rule.conditions[entry.cond_idx];
 
-
+        if (entry.op_name == "ip_match") {
+            d.register_condition<rule_processor::ip_match>(entry.id, condition);
+        } else if (entry.op_name == "exact_match") {
+            d.register_condition<rule_processor::exact_match>(entry.id, condition);
+        }
     }
+    return d;
 }
 
 }

@@ -94,6 +94,6 @@ waf* waf::from_config(const ddwaf_object ruleset,
 bool update_rule_data(const ddwaf_object input)
 {
     
-
+    return true;
 }
 }

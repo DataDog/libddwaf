@@ -36,9 +36,9 @@ namespace
 {
 
 ddwaf::condition parseCondition(parameter::map& rule,
-    std::pair<std::size_t, std::size_t> index,
-    manifest_builder& mb,
-    ddwaf::condition::data_source source,
+    std::size_t rule_idx, std::size_t cond_idx,
+    rule_data::dispatcher_builder &db,
+    manifest_builder& mb, ddwaf::condition::data_source source,
     std::vector<PW_TRANSFORM_ID>& transformers,
     ddwaf::config& cfg)
 {
@@ -124,25 +124,21 @@ ddwaf::condition parseCondition(parameter::map& rule,
     {
         auto it = params.find("list");
         if (it == params.end()) {
-            //auto rule_data_id = at<std::string>
-            // Use data instead
-            throw;
+            auto rule_data_id = at<std::string_view>(params, "data");
+            db.insert(rule_data_id, "ip_match", rule_idx, cond_idx);
         } else {
             processor = std::make_shared<rule_processor::ip_match>(it->second);
         }
     }
     else if (operation == "exact_match")
     {
-        auto list = at<parameter::vector>(params, "list");
-
-        std::vector<std::string> values;
-        values.reserve(list.size());
-
-        for (std::string str : list) {
-            values.push_back(std::move(str));
+        auto it = params.find("list");
+        if (it == params.end()) {
+            auto rule_data_id = at<std::string_view>(params, "data");
+            db.insert(rule_data_id, "exact_match", rule_idx, cond_idx);
+        } else {
+            processor = std::make_shared<rule_processor::exact_match>(it->second);
         }
-
-        processor = std::make_shared<rule_processor::exact_match>(std::move(values));
     }
     else
     {
@@ -186,6 +182,7 @@ ddwaf::condition parseCondition(parameter::map& rule,
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
+               rule_data::dispatcher_builder& db,
                manifest_builder& mb, ddwaf::ruleset& rs,
                std::set<std::string_view> &seen_rules,
                ddwaf::config& cfg)
@@ -234,8 +231,8 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 
         for (parameter::map cond : conditions_array) {
             conditions.push_back(parseCondition(
-                cond, {index, conditions.size()},
-                mb, source, rule_transformers, cfg));
+                cond, index, conditions.size(),
+                db, mb, source, rule_transformers, cfg));
         }
 
         auto tags = at<parameter::map>(rule, "tags");
@@ -280,8 +277,8 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
     //]
 //}
 
-void parse_rule_data(parameter::vector& rule_data)
-{
+//void parse_rule_data(parameter::vector& rule_data)
+//{
     // This method of parsing generates intermediate structures and requires
     // exception handling which can be slightly more expensive and relevant
     // if done on the hot path, so a potential optimisation could be to parse
@@ -295,7 +292,8 @@ void parse_rule_data(parameter::vector& rule_data)
 
         //for 
     /*}*/
-}
+//}
+
 
 void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddwaf::config& cfg)
 {
@@ -311,13 +309,14 @@ void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddw
     // are valid, otherwise reallocations would invalidate them.
     rs.rules.reserve(rules_array.size());
 
+    rule_data::dispatcher_builder db;
     ddwaf::manifest_builder mb;
     std::set<std::string_view> seen_rules;
     for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, info, mb, rs, seen_rules, cfg);
+            parseRule(rule, info, db, mb, rs, seen_rules, cfg);
         }
         catch (const std::exception& e)
         {
@@ -330,7 +329,7 @@ void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddw
     {
         throw ddwaf::parsing_error("no valid rules found");
     }
-
+    rs.dispatcher = db.build(rs.rules);
     rs.manifest = mb.build_manifest();
 
     DDWAF_DEBUG("Loaded %zu rules out of %zu available in the ruleset",
