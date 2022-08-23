@@ -10,6 +10,7 @@
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <rule.hpp>
+#include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <set>
 #include <string>

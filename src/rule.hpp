@@ -113,11 +113,4 @@ using rule_vector     = std::vector<rule>;
 using rule_ref_vector = std::vector<std::reference_wrapper<rule>>;
 using collection_map  = std::unordered_map<std::string, rule_ref_vector>;
 
-struct ruleset
-{
-    ddwaf::manifest manifest;
-    ddwaf::rule_vector rules;
-    ddwaf::collection_map collections;
-};
-
 }

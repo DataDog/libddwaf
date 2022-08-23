@@ -17,8 +17,12 @@ namespace ddwaf::rule_processor
 class ip_match : public base
 {
 public:
+    using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
+
+    ip_match() = default;
     explicit ip_match(const std::vector<std::string_view> &ip_list);
-    explicit ip_match(const std::vector<std::pair<std::string_view,uint64_t>> &ip_list);
+    explicit ip_match(const rule_data_type  &ip_list);
+    ~ip_match() override = default;
 
     std::string_view name() const override { return "ip_match"; }
 

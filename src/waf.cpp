@@ -90,4 +90,10 @@ waf* waf::from_config(const ddwaf_object ruleset,
     return nullptr;
 }
 
+
+bool update_rule_data(const ddwaf_object input)
+{
+    
+
+}
 }

@@ -18,10 +18,13 @@ namespace ddwaf::rule_processor
 class exact_match : public base
 {
 public:
-    explicit exact_match(std::vector<std::string> &&data);
-    explicit exact_match(const std::vector<std::pair<std::string_view,uint64_t>> &data);
+    using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
-    ~exact_match() = default;
+    exact_match() = default;
+    explicit exact_match(std::vector<std::string> &&data);
+    explicit exact_match(const rule_data_type &data);
+    ~exact_match() override = default;
+
     std::optional<event::match> match(std::string_view str) const override;
     std::string_view name() const override { return "exact_match"; }
 protected:

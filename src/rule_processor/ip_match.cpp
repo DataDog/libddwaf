@@ -54,7 +54,7 @@ ip_match::ip_match(const std::vector<std::pair<std::string_view,uint64_t>> &ip_l
 
 std::optional<event::match> ip_match::match(std::string_view str) const
 {
-    if (str.empty() || str.data() == nullptr) {
+    if (!rtree_ || str.empty() || str.data() == nullptr) {
         return std::nullopt;
     }
 

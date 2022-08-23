@@ -7,6 +7,7 @@
 
 #include <config.hpp>
 #include <context.hpp>
+#include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <utils.h>
 #include <version.hpp>
@@ -26,6 +27,8 @@ public:
     ddwaf::context create_context() const {
         return ddwaf::context(ruleset_, config_);
     }
+
+    bool update_rule_data(const ddwaf_object input);
 
     const std::vector<const char*>& get_root_addresses() const {
         return ruleset_.manifest.get_root_addresses();

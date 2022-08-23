@@ -31,7 +31,7 @@ exact_match::exact_match(const std::vector<std::pair<std::string_view,uint64_t>>
 
 std::optional<event::match> exact_match::match(std::string_view str) const
 {
-    if (str.empty() || str.data() == nullptr) {
+    if (values_.empty() || str.empty() || str.data() == nullptr) {
         return std::nullopt;
     }
 

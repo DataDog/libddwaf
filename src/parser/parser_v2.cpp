@@ -10,6 +10,7 @@
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <rule.hpp>
+#include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <set>
 #include <string>
@@ -34,7 +35,9 @@ namespace ddwaf::parser::v2
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
+ddwaf::condition parseCondition(parameter::map& rule,
+    std::pair<std::size_t, std::size_t> index,
+    manifest_builder& mb,
     ddwaf::condition::data_source source,
     std::vector<PW_TRANSFORM_ID>& transformers,
     ddwaf::config& cfg)
@@ -119,8 +122,14 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
     }
     else if (operation == "ip_match")
     {
-        processor = std::make_shared<rule_processor::ip_match>(
-            at<std::vector<std::string_view>>(params, "list"));
+        auto it = params.find("list");
+        if (it == params.end()) {
+            //auto rule_data_id = at<std::string>
+            // Use data instead
+            throw;
+        } else {
+            processor = std::make_shared<rule_processor::ip_match>(it->second);
+        }
     }
     else if (operation == "exact_match")
     {
@@ -217,16 +226,19 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
             }
         }
 
+        auto index           = rs.rules.size();
+
         std::vector<ddwaf::condition> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
-        for (parameter::map cond : conditions_array)
-        {
-            conditions.push_back(parseCondition(cond, mb, source, rule_transformers, cfg));
+        conditions.reserve(conditions_array.size());
+
+        for (parameter::map cond : conditions_array) {
+            conditions.push_back(parseCondition(
+                cond, {index, conditions.size()},
+                mb, source, rule_transformers, cfg));
         }
 
         auto tags = at<parameter::map>(rule, "tags");
-
-        auto index           = rs.rules.size();
         rs.rules.emplace_back(index, std::string(id),
             at<std::string>(rule, "name"),
             at<std::string>(tags, "type"),
@@ -251,6 +263,38 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
     }
 }
 
+}
+
+/*{*/
+    //"rules_data": [
+        //{
+            //"id": ip_with_expiration,
+            //"type": DATA_TYPE,
+            //"data": [
+                //{
+                    //"value": DATA_VALUE,
+                    //( "expiration": TIMESTAMP )
+                //}
+            //]
+        //}
+    //]
+//}
+
+void parse_rule_data(parameter::vector& rule_data)
+{
+    // This method of parsing generates intermediate structures and requires
+    // exception handling which can be slightly more expensive and relevant
+    // if done on the hot path, so a potential optimisation could be to parse
+    // without intermediate steps.
+/*    for (parameter::map entry : rule_data) {*/
+        //auto id = at<std::string_view>(entry, "id");
+        //auto type = at<std::string_view(entry, "type");
+
+        //switch (
+        //auto data = at<parameter::vector>(entry, "data");
+
+        //for 
+    /*}*/
 }
 
 void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddwaf::config& cfg)
