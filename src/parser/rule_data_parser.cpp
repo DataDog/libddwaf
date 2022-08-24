@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <exception.hpp>
-#include <parser/common.hpp>
 #include <parser/rule_data_parser.hpp>
 
 namespace ddwaf::parser

@@ -54,6 +54,10 @@ public:
         const ddwaf::manifest &manifest, bool run_on_new,
         ddwaf::timer& deadline) const;
 
+    std::string_view processor_name() {
+        return processor_ ? processor_->name() : "";
+    }
+
     void reset_processor(std::shared_ptr<rule_processor::base> &proc) {
         std::atomic_store(&processor_, proc);
     }

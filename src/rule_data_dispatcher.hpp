@@ -61,7 +61,6 @@ public:
     dispatcher(dispatcher&&) = default;
     dispatcher& operator=(dispatcher&&) = default;
 
-
     template<typename T,
         typename = std::enable_if_t<std::conjunction_v<
             std::is_base_of<rule_processor::base, std::remove_cv_t<std::decay_t<T>>>,
@@ -77,7 +76,7 @@ public:
             it = new_it;
         }
 
-        auto &td = *dynamic_cast<type_dispatcher<rule_data_type>*>(it->second.get());
+        auto &td = dynamic_cast<type_dispatcher<rule_data_type>&>(*it->second.get());
 
         td.insert([](const rule_data_type & data) {
             return std::make_shared<T>(data);
@@ -94,6 +93,16 @@ public:
         it->second->dispatch(type, data);
     }
 
+    void dispatch(parameter::vector &input) {
+        for (ddwaf::parameter::map entry : input) {
+            auto data = parser::at<parameter>(entry, "data");
+            dispatch(
+                parser::at<std::string>(entry, "id"),
+                parser::at<std::string_view>(entry, "type"),
+                data
+            );
+        }
+    }
 protected:
     std::unordered_map<std::string,
         std::unique_ptr<type_dispatcher_base>> type_dispatchers_;
@@ -101,18 +110,16 @@ protected:
 
 class dispatcher_builder {
 public:
-    void insert(std::string_view id, std::string_view op_name,
-        std::size_t rule_idx, std::size_t cond_idx)
+    void insert(std::string_view id, std::size_t rule_idx, std::size_t cond_idx)
     {
         entries_.emplace_back(
-            dispatcher_entry{std::string(id), op_name, rule_idx, cond_idx});
+            dispatcher_entry{std::string(id), rule_idx, cond_idx});
     }
 
     dispatcher build(ddwaf::rule_vector &rules);
 protected:
     struct dispatcher_entry {
         std::string id;
-        std::string_view op_name;
         std::size_t rule_idx;
         std::size_t cond_idx;
     };

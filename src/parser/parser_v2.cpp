@@ -125,7 +125,8 @@ ddwaf::condition parseCondition(parameter::map& rule,
         auto it = params.find("list");
         if (it == params.end()) {
             auto rule_data_id = at<std::string_view>(params, "data");
-            db.insert(rule_data_id, "ip_match", rule_idx, cond_idx);
+            db.insert(rule_data_id, rule_idx, cond_idx);
+            //processor = std::make_shared<rule_processor::ip_match>();
         } else {
             processor = std::make_shared<rule_processor::ip_match>(it->second);
         }
@@ -135,7 +136,8 @@ ddwaf::condition parseCondition(parameter::map& rule,
         auto it = params.find("list");
         if (it == params.end()) {
             auto rule_data_id = at<std::string_view>(params, "data");
-            db.insert(rule_data_id, "exact_match", rule_idx, cond_idx);
+            db.insert(rule_data_id, rule_idx, cond_idx);
+            //processor = std::make_shared<rule_processor::exact_match>();
         } else {
             processor = std::make_shared<rule_processor::exact_match>(it->second);
         }

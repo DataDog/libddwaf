@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <parser/common.hpp>
 #include <parameter.hpp>
 #include <string_view>
 

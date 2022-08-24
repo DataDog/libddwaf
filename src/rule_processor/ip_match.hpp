@@ -28,7 +28,7 @@ public:
 
     std::optional<event::match> match(std::string_view str) const override;
 protected:
-    std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_;
+    std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_{nullptr, nullptr};
 };
 
 }

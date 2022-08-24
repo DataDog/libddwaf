@@ -79,7 +79,6 @@ std::optional<event::match> ip_match::match(std::string_view str) const
     if (node->expiration > 0) {
         uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
-        std::cerr << node->expiration << ", " << now << '\n';
         if (node->expiration < now) {
             return std::nullopt;
         }

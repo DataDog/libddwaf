@@ -39,6 +39,7 @@ using namespace std;
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <ruleset_info.hpp>
+#include <rule_data_dispatcher.hpp>
 #include <utils.h>
 #include <yaml-cpp/yaml.h>
 

@@ -92,8 +92,21 @@ extern "C"
 
     DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data)
     {
-        (void)data;
-        (void)handle;
+        if (handle == nullptr || data == nullptr) {
+            return DDWAF_ERR_INVALID_ARGUMENT;
+        }
+
+        try {
+            ddwaf::parameter param = *data;
+            handle->update_rule_data(param);
+        } catch (const std::exception& e) {
+            DDWAF_ERROR("%s", e.what());
+            return DDWAF_ERR_INVALID_ARGUMENT;
+        } catch (...) {
+            DDWAF_ERROR("unknown exception");
+            return DDWAF_ERR_INTERNAL;
+        }
+
         return DDWAF_OK;
     }
 

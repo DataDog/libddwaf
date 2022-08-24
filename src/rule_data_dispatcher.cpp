@@ -10,11 +10,6 @@
 
 namespace ddwaf::rule_data {
 
-namespace {
-
-
-
-}
 dispatcher dispatcher_builder::build(ddwaf::rule_vector &rules)
 {
     dispatcher d;
@@ -25,10 +20,11 @@ dispatcher dispatcher_builder::build(ddwaf::rule_vector &rules)
         if (entry.cond_idx >= rule.conditions.size()) { continue; }
 
         auto &condition = rule.conditions[entry.cond_idx];
+        auto processor_name = condition.processor_name();
 
-        if (entry.op_name == "ip_match") {
+        if (processor_name == "ip_match") {
             d.register_condition<rule_processor::ip_match>(entry.id, condition);
-        } else if (entry.op_name == "exact_match") {
+        } else if (processor_name == "exact_match") {
             d.register_condition<rule_processor::exact_match>(entry.id, condition);
         }
     }

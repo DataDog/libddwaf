@@ -183,12 +183,13 @@ parameter::operator std::string()
 
 parameter::operator uint64_t()
 {
-    if (type != DDWAF_OBJ_UNSIGNED)
-    {
-        throw bad_cast("unsigned", strtype(type));
+    if (type == DDWAF_OBJ_UNSIGNED) {
+        return uintValue;
+    } else if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
+        return std::stoll({stringValue, nbEntries});
     }
 
-    return uintValue;
+    throw bad_cast("unsigned", strtype(type));
 }
 
 parameter::operator std::vector<std::string>()
