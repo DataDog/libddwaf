@@ -301,6 +301,11 @@ void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddw
     rs.dispatcher = db.build(rs.rules);
     rs.manifest = mb.build_manifest();
 
+    auto data_array = at<parameter::vector>(ruleset, "rules_data", {});
+    if (!data_array.empty()) {
+        rs.dispatcher.dispatch(data_array);
+    }
+
     DDWAF_DEBUG("Loaded %zu rules out of %zu available in the ruleset",
                 rs.rules.size(), rules_array.size());
 }

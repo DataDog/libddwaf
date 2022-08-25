@@ -20,7 +20,4 @@ namespace ddwaf::parser
 
 void parse(parameter input, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg);
 
-template <typename T>
-T parse_rule_data(std::string_view type, parameter &input);
-
 }
