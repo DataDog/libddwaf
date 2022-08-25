@@ -281,7 +281,7 @@ TEST(TestRuleDataDispatcher, InterfacePreloadData)
     ddwaf_destroy(handle);
 }
 
-TEST(TestRuleDataDispatcher, InterfaceInvalidUser)
+TEST(TestRuleDataDispatcher, InterfaceInvalidUserData)
 {
     auto rule = readFile("rule_data.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -382,7 +382,6 @@ TEST(TestRuleDataDispatcher, InterfaceInvalidUser)
     ddwaf_destroy(handle);
 }
 
-
 TEST(TestRuleDataDispatcher, Basic)
 {
     std::vector<ddwaf::manifest::target_type> targets;
@@ -450,7 +449,7 @@ TEST(TestRuleDataDispatcher, Basic)
     }
 }
 
-TEST(TestRuleDataDispatcher, MultipleProcessorTypes)
+TEST(TestRuleDataDispatcher, MultipleProcessors)
 {
     ddwaf::manifest_builder mb;
     auto client_ip_target = mb.insert("http.client_ip", {});
@@ -465,11 +464,132 @@ TEST(TestRuleDataDispatcher, MultipleProcessorTypes)
 
     rule_data::dispatcher dispatcher;
 
-    dispatcher.register_condition<rule_processor::ip_match>("id", cond1);
-    dispatcher.register_condition<rule_processor::exact_match>("id", cond2);
+    dispatcher.register_condition<rule_processor::ip_match>("ip_data", cond1);
+    dispatcher.register_condition<rule_processor::exact_match>("usr_data", cond2);
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        auto match = cond1.match(store, manifest, true, deadline);
+        EXPECT_FALSE(match.has_value());
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "paco"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        auto match = cond2.match(store, manifest, true, deadline);
+        EXPECT_FALSE(match.has_value());
+    }
+
+    {
+        ddwaf_object data, data_point, tmp;
+
+        ddwaf_object_map(&data_point);
+        ddwaf_object_map_add(&data_point, "value", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_string(&tmp, "0"));
+
+        ddwaf_object_array(&data);
+        ddwaf_object_array_add(&data, &data_point);
+
+        ddwaf::parameter param = data;
+        dispatcher.dispatch("ip_data", "ip_with_expiration", param);
+
+        ddwaf_object_free(&data);
+    }
+
+    {
+        ddwaf_object data, data_point, tmp;
+
+        ddwaf_object_map(&data_point);
+        ddwaf_object_map_add(&data_point, "value", ddwaf_object_string(&tmp, "paco"));
+        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_string(&tmp, "0"));
+
+        ddwaf_object_array(&data);
+        ddwaf_object_array_add(&data, &data_point);
+
+        ddwaf::parameter param = data;
+        dispatcher.dispatch("usr_data", "data_with_expiration", param);
+
+        ddwaf_object_free(&data);
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        auto match = cond1.match(store, manifest, true, deadline);
+        EXPECT_TRUE(match.has_value());
+
+        EXPECT_STREQ(match->resolved.c_str(), "192.168.1.1");
+        EXPECT_STREQ(match->matched.c_str(), "192.168.1.1");
+        EXPECT_STREQ(match->operator_name.data(), "ip_match");
+        EXPECT_STREQ(match->source.data(), "http.client_ip");
+        EXPECT_TRUE(match->key_path.empty());
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "paco"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        auto match = cond2.match(store, manifest, true, deadline);
+        EXPECT_TRUE(match.has_value());
+
+        EXPECT_STREQ(match->resolved.c_str(), "paco");
+        EXPECT_STREQ(match->matched.c_str(), "paco");
+        EXPECT_STREQ(match->operator_name.data(), "exact_match");
+        EXPECT_STREQ(match->source.data(), "usr.id");
+        EXPECT_TRUE(match->key_path.empty());
+    }
 }
 
-TEST(TestRuleDataDispatcher, ConflictingProcessorTypes)
+TEST(TestRuleDataDispatcher, MultipleProcessorTypesSameID)
+{
+    ddwaf::manifest_builder mb;
+    auto client_ip_target = mb.insert("http.client_ip", {});
+    auto usr_id_target = mb.insert("usr.id", {});
+    auto manifest = mb.build_manifest();
+
+    condition cond1({client_ip_target}, {},
+        std::make_unique<rule_processor::ip_match>());
+
+    condition cond2({usr_id_target}, {},
+        std::make_unique<rule_processor::exact_match>());
+
+    rule_data::dispatcher dispatcher;
+
+    EXPECT_NO_THROW(
+        dispatcher.register_condition<rule_processor::ip_match>("id", cond1));
+    EXPECT_NO_THROW(
+        dispatcher.register_condition<rule_processor::exact_match>("id", cond2));
+}
+
+TEST(TestRuleDataDispatcher, ConflictingProcessorTypesSameID)
 {
     ddwaf::manifest_builder mb;
     auto target = mb.insert("http.client_ip", {});
@@ -487,4 +607,154 @@ TEST(TestRuleDataDispatcher, ConflictingProcessorTypes)
     EXPECT_THROW(
         dispatcher.register_condition<rule_processor::mock_processor>("id", cond2),
         std::bad_cast);
+}
+
+TEST(TestRuleDataDispatcher, UnkonwnID)
+{
+    std::vector<ddwaf::manifest::target_type> targets;
+
+    ddwaf::manifest_builder mb;
+    targets.push_back(mb.insert("http.client_ip", {}));
+
+    auto manifest = mb.build_manifest();
+
+    condition cond(std::move(targets), {},
+        std::make_unique<rule_processor::ip_match>());
+
+    rule_data::dispatcher dispatcher;
+
+    dispatcher.register_condition<rule_processor::ip_match>("id", cond);
+
+    {
+        ddwaf_object data, data_point, tmp;
+
+        ddwaf_object_map(&data_point);
+        ddwaf_object_map_add(&data_point, "value", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_string(&tmp, "0"));
+
+        ddwaf_object_array(&data);
+        ddwaf_object_array_add(&data, &data_point);
+
+        ddwaf::parameter param = data;
+        dispatcher.dispatch("unknown", "ip_with_expiration", param);
+        ddwaf_object_free(&data);
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        auto match = cond.match(store, manifest, true, deadline);
+        EXPECT_FALSE(match.has_value());
+    }
+}
+
+TEST(TestRuleDataDispatcherBuilder, Basic)
+{
+    ddwaf::manifest_builder mb;
+    auto client_ip_target = mb.insert("http.client_ip", {});
+    auto usr_id_target = mb.insert("usr.id", {});
+    auto manifest = mb.build_manifest();
+
+    condition cond1({client_ip_target}, {},
+        std::make_unique<rule_processor::ip_match>());
+
+    condition cond2({usr_id_target}, {},
+        std::make_unique<rule_processor::exact_match>());
+
+    rule_vector rules;
+    {
+        std::vector<condition> conditions;
+        conditions.emplace_back(std::move(cond1));
+        rules.emplace_back(0, "1", "rule1", "test", "category", std::move(conditions));
+    }
+    {
+        std::vector<condition> conditions;
+        conditions.emplace_back(std::move(cond2));
+        rules.emplace_back(1, "2", "rule2", "test", "category", std::move(conditions));
+    }
+
+    rule_data::dispatcher_builder db;
+    db.insert("ip_data", 0, 0);
+    db.insert("usr_data", 1, 0);
+
+    rule_data::dispatcher dispatcher = db.build(rules);
+
+    {
+        ddwaf_object data, data_point, tmp;
+
+        ddwaf_object_map(&data_point);
+        ddwaf_object_map_add(&data_point, "value", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_string(&tmp, "0"));
+
+        ddwaf_object_array(&data);
+        ddwaf_object_array_add(&data, &data_point);
+
+        ddwaf::parameter param = data;
+        dispatcher.dispatch("ip_data", "ip_with_expiration", param);
+
+        ddwaf_object_free(&data);
+    }
+
+    {
+        ddwaf_object data, data_point, tmp;
+
+        ddwaf_object_map(&data_point);
+        ddwaf_object_map_add(&data_point, "value", ddwaf_object_string(&tmp, "paco"));
+        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_string(&tmp, "0"));
+
+        ddwaf_object_array(&data);
+        ddwaf_object_array_add(&data, &data_point);
+
+        ddwaf::parameter param = data;
+        dispatcher.dispatch("usr_data", "data_with_expiration", param);
+
+        ddwaf_object_free(&data);
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        auto match = rules[0].conditions[0].match(store, manifest, true, deadline);
+        EXPECT_TRUE(match.has_value());
+
+        EXPECT_STREQ(match->resolved.c_str(), "192.168.1.1");
+        EXPECT_STREQ(match->matched.c_str(), "192.168.1.1");
+        EXPECT_STREQ(match->operator_name.data(), "ip_match");
+        EXPECT_STREQ(match->source.data(), "http.client_ip");
+        EXPECT_TRUE(match->key_path.empty());
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "paco"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        auto match = rules[1].conditions[0].match(store, manifest, true, deadline);
+        EXPECT_TRUE(match.has_value());
+
+        EXPECT_STREQ(match->resolved.c_str(), "paco");
+        EXPECT_STREQ(match->matched.c_str(), "paco");
+        EXPECT_STREQ(match->operator_name.data(), "exact_match");
+        EXPECT_STREQ(match->source.data(), "usr.id");
+        EXPECT_TRUE(match->key_path.empty());
+    }
 }

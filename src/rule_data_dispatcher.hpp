@@ -87,6 +87,7 @@ public:
     void dispatch(const std::string &id, std::string_view type, parameter &data) {
         auto it = type_dispatchers_.find(id);
         if (it == type_dispatchers_.end()) {
+            DDWAF_ERROR("Dispatcher not found for id '%s'", id.c_str());
             return;
         }
 
