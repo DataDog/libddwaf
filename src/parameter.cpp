@@ -186,7 +186,7 @@ parameter::operator uint64_t()
     if (type == DDWAF_OBJ_UNSIGNED) {
         return uintValue;
     } else if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        return std::stoll({stringValue, nbEntries});
+        return std::stoll({stringValue, static_cast<std::size_t>(nbEntries)});
     }
 
     throw bad_cast("unsigned", strtype(type));
