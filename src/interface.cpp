@@ -99,9 +99,12 @@ extern "C"
         try {
             ddwaf::parameter param = *data;
             handle->update_rule_data(param);
+        } catch (const ddwaf::bad_cast &e) {
+            DDWAF_ERROR("%s", e.what());
+            return DDWAF_ERR_INVALID_OBJECT;
         } catch (const std::exception& e) {
             DDWAF_ERROR("%s", e.what());
-            return DDWAF_ERR_INVALID_ARGUMENT;
+            return DDWAF_ERR_INTERNAL;
         } catch (...) {
             DDWAF_ERROR("unknown exception");
             return DDWAF_ERR_INTERNAL;

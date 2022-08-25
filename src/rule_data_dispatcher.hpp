@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <log.hpp>
 #include <utils.h>
 #include <string_view>
 #include <memory>
@@ -83,7 +84,6 @@ public:
         }, cond);
     }
 
-    // TODO: Return a known result or throw
     void dispatch(const std::string &id, std::string_view type, parameter &data) {
         auto it = type_dispatchers_.find(id);
         if (it == type_dispatchers_.end()) {
@@ -95,12 +95,21 @@ public:
 
     void dispatch(parameter::vector &input) {
         for (ddwaf::parameter::map entry : input) {
-            auto data = parser::at<parameter>(entry, "data");
-            dispatch(
-                parser::at<std::string>(entry, "id"),
-                parser::at<std::string_view>(entry, "type"),
-                data
-            );
+            std::string id;
+            try {
+                id = parser::at<std::string>(entry, "id");
+                auto type = parser::at<std::string_view>(entry, "type");
+
+                DDWAF_DEBUG("Updating rules with id '%s' and type '%s'",
+                    id.c_str(), type.data());
+
+                auto data = parser::at<parameter>(entry, "data");
+                dispatch(id, type, data);
+            } catch (const ddwaf::exception &e) {
+                DDWAF_ERROR("Failed to parse data id '%s': %s",
+                    (!id.empty() ? id.c_str() : "(unknown)"), e.what());
+
+            }
         }
     }
 protected:

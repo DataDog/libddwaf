@@ -22,10 +22,15 @@ dispatcher dispatcher_builder::build(ddwaf::rule_vector &rules)
         auto &condition = rule.conditions[entry.cond_idx];
         auto processor_name = condition.processor_name();
 
-        if (processor_name == "ip_match") {
-            d.register_condition<rule_processor::ip_match>(entry.id, condition);
-        } else if (processor_name == "exact_match") {
-            d.register_condition<rule_processor::exact_match>(entry.id, condition);
+        try {
+            if (processor_name == "ip_match") {
+                d.register_condition<rule_processor::ip_match>(entry.id, condition);
+            } else if (processor_name == "exact_match") {
+                d.register_condition<rule_processor::exact_match>(entry.id, condition);
+            }
+        } catch (const std::bad_cast&) {
+            DDWAF_ERROR("Inconsistent data type for rule %s with ID %s",
+                rule.name.c_str(), entry.id.c_str());
         }
     }
     return d;

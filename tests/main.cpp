@@ -14,8 +14,37 @@ const static char path_sep =
     '/';
 #endif
 
+const char *level_to_str(DDWAF_LOG_LEVEL level)
+{
+    switch (level) {
+    case DDWAF_LOG_TRACE:
+        return "trace";
+    case DDWAF_LOG_DEBUG:
+        return "debug";
+    case DDWAF_LOG_ERROR:
+        return "error";
+    case DDWAF_LOG_WARN:
+        return "warn";
+    case DDWAF_LOG_INFO:
+        return "info";
+    case DDWAF_LOG_OFF:
+        break;
+    }
+
+    return "off";
+}
+
+void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file,
+    unsigned line, const char *message, [[maybe_unused]] uint64_t len)
+{
+    printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line,
+        message);
+}
+
+
 int main(int argc, char* argv[])
 {
+    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

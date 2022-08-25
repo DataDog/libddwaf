@@ -845,8 +845,6 @@ TEST(TestKeyIterator, TestInvalidMapKeyWithPath)
 
 TEST(TestKeyIterator, TestRecursiveMap)
 {
-    ddwaf::object_limits limits;
-
     ddwaf_object root;
     root.nbEntries     = 1;
     root.parameterName = "Sqreen";

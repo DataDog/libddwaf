@@ -1,0 +1,24 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+              - address: http.client_ip
+          data: ip_data
+  - id: 2
+    name: rule2
+    tags:
+      type: flow2
+      category: category2
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+              - address: usr.id
+          data: usr_data

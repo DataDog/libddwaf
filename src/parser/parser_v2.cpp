@@ -126,7 +126,7 @@ ddwaf::condition parseCondition(parameter::map& rule,
         if (it == params.end()) {
             auto rule_data_id = at<std::string_view>(params, "data");
             db.insert(rule_data_id, rule_idx, cond_idx);
-            //processor = std::make_shared<rule_processor::ip_match>();
+            processor = std::make_shared<rule_processor::ip_match>();
         } else {
             processor = std::make_shared<rule_processor::ip_match>(it->second);
         }
@@ -137,7 +137,7 @@ ddwaf::condition parseCondition(parameter::map& rule,
         if (it == params.end()) {
             auto rule_data_id = at<std::string_view>(params, "data");
             db.insert(rule_data_id, rule_idx, cond_idx);
-            //processor = std::make_shared<rule_processor::exact_match>();
+            processor = std::make_shared<rule_processor::exact_match>();
         } else {
             processor = std::make_shared<rule_processor::exact_match>(it->second);
         }
@@ -263,39 +263,6 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 }
 
 }
-
-/*{*/
-    //"rules_data": [
-        //{
-            //"id": ip_with_expiration,
-            //"type": DATA_TYPE,
-            //"data": [
-                //{
-                    //"value": DATA_VALUE,
-                    //( "expiration": TIMESTAMP )
-                //}
-            //]
-        //}
-    //]
-//}
-
-//void parse_rule_data(parameter::vector& rule_data)
-//{
-    // This method of parsing generates intermediate structures and requires
-    // exception handling which can be slightly more expensive and relevant
-    // if done on the hot path, so a potential optimisation could be to parse
-    // without intermediate steps.
-/*    for (parameter::map entry : rule_data) {*/
-        //auto id = at<std::string_view>(entry, "id");
-        //auto type = at<std::string_view(entry, "type");
-
-        //switch (
-        //auto data = at<parameter::vector>(entry, "data");
-
-        //for 
-    /*}*/
-//}
-
 
 void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddwaf::config& cfg)
 {
