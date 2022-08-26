@@ -230,7 +230,7 @@ void ddwaf_destroy(ddwaf_handle handle);
  * Update existing rules with new rule data.
  *
  * @param handle to the WAF instance.
- * @param data A ddwaf_object map with the format {rule_data_id : rule_data}.
+ * @param data A ddwaf_object map with the format [{id, type, [data]}].
  */
 DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data);
 /**

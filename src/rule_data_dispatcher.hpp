@@ -95,9 +95,11 @@ public:
     }
 
     void dispatch(parameter::vector &input) {
-        for (ddwaf::parameter::map entry : input) {
+        for (ddwaf::parameter object : input) {
             std::string id;
             try {
+                ddwaf::parameter::map entry = object;
+
                 id = parser::at<std::string>(entry, "id");
                 auto type = parser::at<std::string_view>(entry, "type");
 
