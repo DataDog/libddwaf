@@ -109,8 +109,9 @@ TEST(TestParameter, ToVector)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
+        ddwaf::parameter param = root;
         EXPECT_THROW(
-            ddwaf::parameter::vector(ddwaf::parameter(root)),
+            static_cast<ddwaf::parameter::vector>(param),
             ddwaf::bad_cast
         );
     }
@@ -142,8 +143,9 @@ TEST(TestParameter, ToMap)
         ddwaf_object root;
         ddwaf_object_array(&root);
 
+        ddwaf::parameter param = root;
         EXPECT_THROW(
-            ddwaf::parameter::map(ddwaf::parameter(root)),
+            static_cast<ddwaf::parameter::map>(param),
             ddwaf::bad_cast
         );
     }
@@ -177,8 +179,9 @@ TEST(TestParameter, ToStringVector)
 
         ddwaf_object_array_add(&root, ddwaf_object_unsigned_force(&tmp, 50));
 
+        ddwaf::parameter param = root;
         EXPECT_THROW(
-            std::vector<std::string>(ddwaf::parameter(root)),
+            static_cast<std::vector<std::string>>(param),
             ddwaf::malformed_object
         );
 
@@ -188,8 +191,9 @@ TEST(TestParameter, ToStringVector)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
+        ddwaf::parameter param = root;
         EXPECT_THROW(
-            std::vector<std::string>(ddwaf::parameter(root)),
+            static_cast<std::vector<std::string>>(param),
             ddwaf::bad_cast
         );
     }
@@ -223,8 +227,9 @@ TEST(TestParameter, ToStringViewVector)
 
         ddwaf_object_array_add(&root, ddwaf_object_unsigned_force(&tmp, 50));
 
+        ddwaf::parameter param = root;
         EXPECT_THROW(
-            std::vector<std::string_view>(ddwaf::parameter(root)),
+            static_cast<std::vector<std::string_view>>(param),
             ddwaf::malformed_object
         );
 
@@ -234,8 +239,9 @@ TEST(TestParameter, ToStringViewVector)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
+        ddwaf::parameter param = root;
         EXPECT_THROW(
-            std::vector<std::string_view>(ddwaf::parameter(root)),
+            static_cast<std::vector<std::string_view>>(param),
             ddwaf::bad_cast
         );
     }
@@ -268,8 +274,9 @@ TEST(TestParameter, ToStringViewSet)
 
         ddwaf_object_array_add(&root, ddwaf_object_unsigned_force(&tmp, 50));
 
+        ddwaf::parameter param = root;
         EXPECT_THROW(
-            ddwaf::parameter::string_set(ddwaf::parameter(root)),
+            static_cast<ddwaf::parameter::string_set>(param),
             ddwaf::malformed_object
         );
 
@@ -279,8 +286,9 @@ TEST(TestParameter, ToStringViewSet)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
+        ddwaf::parameter param = root;
         EXPECT_THROW(
-            ddwaf::parameter::string_set(ddwaf::parameter(root)),
+            static_cast<ddwaf::parameter::string_set>(param),
             ddwaf::bad_cast
         );
     }
