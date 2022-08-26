@@ -2,7 +2,7 @@
 
 # Datadog's WAF
 
-``libddwaf`` is Datadog's implementation of a WAF engine, with a goal of low performance and memory overhead, and embeddability in a wide variety of language runtimes through a C API.
+``libddwaf`` is Datadog's implementation of a Web Application Firewall (WAF) engine, with a goal of low performance and memory overhead, and embeddability in a wide variety of language runtimes through a C API.
 
 ## Versioning semantics
 
