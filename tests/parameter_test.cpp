@@ -111,7 +111,7 @@ TEST(TestParameter, ToVector)
 
         ddwaf::parameter param = root;
         EXPECT_THROW(
-            (ddwaf::parameter::vector)param,
+            param.operator ddwaf::parameter::vector(),
             ddwaf::bad_cast
         );
     }
@@ -145,7 +145,7 @@ TEST(TestParameter, ToMap)
 
         ddwaf::parameter param = root;
         EXPECT_THROW(
-            (ddwaf::parameter::map)param,
+            param.operator ddwaf::parameter::map(),
             ddwaf::bad_cast
         );
     }
@@ -179,9 +179,10 @@ TEST(TestParameter, ToStringVector)
 
         ddwaf_object_array_add(&root, ddwaf_object_unsigned_force(&tmp, 50));
 
+
         ddwaf::parameter param = root;
         EXPECT_THROW(
-            (std::vector<std::string>)param,
+            param.operator std::vector<std::string>(),
             ddwaf::malformed_object
         );
 
@@ -193,7 +194,7 @@ TEST(TestParameter, ToStringVector)
 
         ddwaf::parameter param = root;
         EXPECT_THROW(
-            (std::vector<std::string>)param,
+            param.operator std::vector<std::string>(),
             ddwaf::bad_cast
         );
     }
@@ -229,7 +230,7 @@ TEST(TestParameter, ToStringViewVector)
 
         ddwaf::parameter param = root;
         EXPECT_THROW(
-            (std::vector<std::string_view>)param,
+            param.operator std::vector<std::string_view>(),
             ddwaf::malformed_object
         );
 
@@ -241,7 +242,7 @@ TEST(TestParameter, ToStringViewVector)
 
         ddwaf::parameter param = root;
         EXPECT_THROW(
-            (std::vector<std::string_view>)param,
+            param.operator std::vector<std::string_view>(),
             ddwaf::bad_cast
         );
     }
@@ -276,7 +277,7 @@ TEST(TestParameter, ToStringViewSet)
 
         ddwaf::parameter param = root;
         EXPECT_THROW(
-            (ddwaf::parameter::string_set)param,
+            param.operator ddwaf::parameter::string_set(),
             ddwaf::malformed_object
         );
 
@@ -288,7 +289,7 @@ TEST(TestParameter, ToStringViewSet)
 
         ddwaf::parameter param = root;
         EXPECT_THROW(
-            (ddwaf::parameter::string_set)param,
+            param.operator ddwaf::parameter::string_set(),
             ddwaf::bad_cast
         );
     }
