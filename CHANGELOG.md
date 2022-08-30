@@ -1,5 +1,8 @@
 # libddwaf release
 
+### v1.4.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/30
+- Deanonymize nested structs ([#97](https://github.com/DataDog/libddwaf/pull/97))
+
 ### v1.4.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/06/29
 - Correct nuget url ([#68](https://github.com/DataDog/libddwaf/pull/68))
 - Only take params ownership when needed ([#69](https://github.com/DataDog/libddwaf/pull/69))
