@@ -392,7 +392,8 @@ TEST(TestRuleDataDispatcher, Basic)
     auto manifest = mb.build_manifest();
 
     condition cond(std::move(targets), {},
-        std::make_unique<rule_processor::ip_match>());
+        std::make_unique<rule_processor::ip_match>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
 
@@ -457,10 +458,12 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
     auto manifest = mb.build_manifest();
 
     condition cond1({client_ip_target}, {},
-        std::make_unique<rule_processor::ip_match>());
+        std::make_unique<rule_processor::ip_match>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     condition cond2({usr_id_target}, {},
-        std::make_unique<rule_processor::exact_match>());
+        std::make_unique<rule_processor::exact_match>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
 
@@ -576,10 +579,12 @@ TEST(TestRuleDataDispatcher, MultipleProcessorTypesSameID)
     auto manifest = mb.build_manifest();
 
     condition cond1({client_ip_target}, {},
-        std::make_unique<rule_processor::ip_match>());
+        std::make_unique<rule_processor::ip_match>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     condition cond2({usr_id_target}, {},
-        std::make_unique<rule_processor::exact_match>());
+        std::make_unique<rule_processor::exact_match>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
 
@@ -596,10 +601,12 @@ TEST(TestRuleDataDispatcher, ConflictingProcessorTypesSameID)
     auto manifest = mb.build_manifest();
 
     condition cond1({target}, {},
-        std::make_unique<rule_processor::ip_match>());
+        std::make_unique<rule_processor::ip_match>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     condition cond2({target}, {},
-        std::make_unique<rule_processor::mock_processor>());
+        std::make_unique<rule_processor::mock_processor>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
 
@@ -619,7 +626,8 @@ TEST(TestRuleDataDispatcher, UnkonwnID)
     auto manifest = mb.build_manifest();
 
     condition cond(std::move(targets), {},
-        std::make_unique<rule_processor::ip_match>());
+        std::make_unique<rule_processor::ip_match>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
 
@@ -655,6 +663,42 @@ TEST(TestRuleDataDispatcher, UnkonwnID)
     }
 }
 
+TEST(TestRuleDataDispatcher, ImmutableCondition)
+{
+    std::vector<ddwaf::manifest::target_type> targets;
+
+    ddwaf::manifest_builder mb;
+    targets.push_back(mb.insert("http.client_ip", {}));
+
+    auto manifest = mb.build_manifest();
+
+    condition cond(std::move(targets), {},
+        std::make_unique<rule_processor::ip_match>());
+
+    rule_data::dispatcher dispatcher;
+
+    dispatcher.register_condition<rule_processor::ip_match>("id", cond);
+
+    {
+        ddwaf_object data, data_point, tmp;
+
+        ddwaf_object_map(&data_point);
+        ddwaf_object_map_add(&data_point, "value", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_string(&tmp, "0"));
+
+        ddwaf_object_array(&data);
+        ddwaf_object_array_add(&data, &data_point);
+
+        ddwaf::parameter param = data;
+        EXPECT_THROW(
+            dispatcher.dispatch("id", "ip_with_expiration", param),
+            std::runtime_error);
+
+        ddwaf_object_free(&data);
+    }
+}
+
+
 TEST(TestRuleDataDispatcherBuilder, Basic)
 {
     ddwaf::manifest_builder mb;
@@ -663,10 +707,12 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
     auto manifest = mb.build_manifest();
 
     condition cond1({client_ip_target}, {},
-        std::make_unique<rule_processor::ip_match>());
+        std::make_unique<rule_processor::ip_match>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     condition cond2({usr_id_target}, {},
-        std::make_unique<rule_processor::exact_match>());
+        std::make_unique<rule_processor::exact_match>(),
+        ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_vector rules;
     {

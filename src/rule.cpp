@@ -21,7 +21,12 @@ std::optional<event::match> condition::match_object(const ddwaf_object* object) 
     // TODO: this might use mutexes internally, so it might be worth having a
     //       flag to determine if the processor should be accessed atomatically
     //       or not.
-    auto processor = std::atomic_load_explicit(&processor_, std::memory_order_relaxed);
+    decltype(processor_) processor;
+    if (mutable_) {
+        processor = std::atomic_load(&processor_);
+    } else {
+        processor = processor_;
+    }
 
     const bool has_transform = !transformers_.empty();
     bool transform_required = false;

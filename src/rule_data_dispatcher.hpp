@@ -26,20 +26,21 @@ protected:
         virtual void dispatch(std::string_view type, ddwaf::parameter &data) = 0;
     };
 
-    template<typename T>
+    template<typename RuleDataType>
     class type_dispatcher : public type_dispatcher_base {
     public:
-        using function_type = std::function<std::shared_ptr<rule_processor::base>(const T&)>;
+        using constructor_wrapper_function =
+            std::function<std::shared_ptr<rule_processor::base>(const RuleDataType&)>;
 
         type_dispatcher() = default;
         ~type_dispatcher() override = default;
 
-        void insert(function_type &&fn, condition& cond) {
+        void insert(constructor_wrapper_function &&fn, condition& cond) {
             functions_.emplace_back(std::move(fn), cond);
         }
 
         void dispatch(std::string_view type, ddwaf::parameter &data) override {
-            auto converted_data = parser::parse_rule_data<T>(type, data);
+            auto converted_data = parser::parse_rule_data<RuleDataType>(type, data);
             for (auto &[fn, cond] : functions_) {
                 auto processor = fn(converted_data);
                 if (processor) {
@@ -49,7 +50,7 @@ protected:
         }
 
     protected:
-        std::vector<std::pair<function_type, condition&>> functions_;
+        std::vector<std::pair<constructor_wrapper_function, condition&>> functions_;
     };
 
 public:
@@ -62,14 +63,14 @@ public:
     dispatcher(dispatcher&&) = default;
     dispatcher& operator=(dispatcher&&) = default;
 
-    template<typename T,
+    template<typename RuleProcessorType,
         typename = std::enable_if_t<std::conjunction_v<
-            std::is_base_of<rule_processor::base, std::remove_cv_t<std::decay_t<T>>>,
+            std::is_base_of<rule_processor::base, std::remove_cv_t<std::decay_t<RuleProcessorType>>>,
             std::negation<std::is_same<rule_processor::base,
-                std::remove_cv_t<std::decay_t<T>>>>>>>
+                std::remove_cv_t<std::decay_t<RuleProcessorType>>>>>>>
     void register_condition(const std::string &id, condition &cond)
     {
-        using rule_data_type = typename T::rule_data_type;
+        using rule_data_type = typename RuleProcessorType::rule_data_type;
         auto it = type_dispatchers_.find(id);
         if (it == type_dispatchers_.end()) {
             auto [new_it, res] = type_dispatchers_.emplace(id,
@@ -80,7 +81,7 @@ public:
         auto &td = dynamic_cast<type_dispatcher<rule_data_type>&>(*it->second.get());
 
         td.insert([](const rule_data_type & data) {
-            return std::make_shared<T>(data);
+            return std::make_shared<RuleProcessorType>(data);
         }, cond);
     }
 

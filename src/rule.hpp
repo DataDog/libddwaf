@@ -37,12 +37,14 @@ public:
               std::vector<PW_TRANSFORM_ID>&& transformers,
               std::shared_ptr<rule_processor::base>&& processor,
               ddwaf::object_limits limits = ddwaf::object_limits(),
-              data_source source = data_source::values):
+              data_source source = data_source::values,
+              bool is_mutable = false):
         targets_(std::move(targets)),
         transformers_(std::move(transformers)),
         processor_(std::move(processor)),
         limits_(limits),
-        source_(source) {}
+        source_(source),
+        mutable_(is_mutable) {}
 
     condition(condition&&) = default;
     condition& operator=(condition&&) = default;
@@ -55,10 +57,19 @@ public:
         ddwaf::timer& deadline) const;
 
     std::string_view processor_name() {
-        return processor_ ? processor_->name() : "";
+        if (mutable_) {
+            return std::atomic_load(&processor_)->name();
+        }
+
+        return processor_->name();
     }
 
     void reset_processor(std::shared_ptr<rule_processor::base> &proc) {
+        if (!mutable_) {
+            throw std::runtime_error("Attempting to mutate an immutable "
+                "condition with processor " + std::string(processor_->name()));
+        }
+
         std::atomic_store(&processor_, proc);
     }
 protected:
@@ -74,6 +85,7 @@ protected:
     std::shared_ptr<rule_processor::base> processor_;
     ddwaf::object_limits limits_;
     data_source source_;
+    bool mutable_;
 };
 
 class rule

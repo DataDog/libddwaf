@@ -44,6 +44,7 @@ ddwaf::condition parseCondition(parameter::map& rule,
 {
     auto operation = at<std::string_view>(rule, "operator");
     auto params    = at<parameter::map>(rule, "parameters");
+    bool is_mutable = false;
 
     parameter::map options;
     std::shared_ptr<base> processor;
@@ -127,6 +128,7 @@ ddwaf::condition parseCondition(parameter::map& rule,
             auto rule_data_id = at<std::string_view>(params, "data");
             db.insert(rule_data_id, rule_idx, cond_idx);
             processor = std::make_shared<rule_processor::ip_match>();
+            is_mutable = true;
         } else {
             processor = std::make_shared<rule_processor::ip_match>(it->second);
         }
@@ -138,6 +140,7 @@ ddwaf::condition parseCondition(parameter::map& rule,
             auto rule_data_id = at<std::string_view>(params, "data");
             db.insert(rule_data_id, rule_idx, cond_idx);
             processor = std::make_shared<rule_processor::exact_match>();
+            is_mutable = true;
         } else {
             processor = std::make_shared<rule_processor::exact_match>(it->second);
         }
@@ -180,7 +183,7 @@ ddwaf::condition parseCondition(parameter::map& rule,
     }
 
     return ddwaf::condition(std::move(targets), std::move(transformers),
-                std::move(processor), cfg.limits, source);
+                std::move(processor), cfg.limits, source, is_mutable);
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,

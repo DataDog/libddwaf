@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cinttypes>
+#include <charconv>
 #include <exception.hpp>
 #include <parameter.hpp>
 
@@ -186,7 +187,12 @@ parameter::operator uint64_t()
     if (type == DDWAF_OBJ_UNSIGNED) {
         return uintValue;
     } else if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        return std::stoll({stringValue, static_cast<std::size_t>(nbEntries)});
+        uint64_t result;
+        auto end { &stringValue[nbEntries] };
+        auto [endConv, err] = std::from_chars(stringValue, end, result);
+        if (err == std::errc{} && endConv == end) {
+            return result;
+        }
     }
 
     throw bad_cast("unsigned", strtype(type));
