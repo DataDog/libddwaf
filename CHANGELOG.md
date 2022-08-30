@@ -1,5 +1,14 @@
 # libddwaf release
 
+### v1.5.0-alpha1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/30
+
+#### API \& Breaking Changes
+- Deanonymize nested structs ([#97](https://github.com/DataDog/libddwaf/pull/97))
+
+#### Changes
+- Disable the `1)c` libinjection fingerprint ([#94](https://github.com/DataDog/libddwaf/pull/94))
+- Configurable rule data ([#96](https://github.com/DataDog/libddwaf/pull/96))
+
 ### v1.5.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/04
 
 #### API \& Breaking Changes
