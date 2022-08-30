@@ -49,7 +49,7 @@ TEST(TestManifest, TestMultipleAddrs)
     ddwaf::manifest_builder mb;
 
     std::map<std::string, manifest::target_type> targets;
-    for (auto str : { "path0", "path1", "path2", "path3" })
+    for (const std::string str : { "path0", "path1", "path2", "path3" })
     {
         auto target = mb.insert(str, {});
         targets[str] = target;
@@ -60,7 +60,7 @@ TEST(TestManifest, TestMultipleAddrs)
 
     auto manifest = mb.build_manifest();
 
-    for (auto str : { "path0", "path1", "path2", "path3" })
+    for (const std::string str : { "path0", "path1", "path2", "path3" })
     {
         EXPECT_TRUE(manifest.contains(str));
 
@@ -76,7 +76,7 @@ TEST(TestManifest, TestMultipleAddrs)
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
 
-    for (const std::string &str : {"path0", "path1", "path2", "path3"}) {
+    for (const std::string str : {"path0", "path1", "path2", "path3"}) {
         EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
     }
 }
@@ -136,7 +136,7 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
 
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
-    for (const std::string &str : {"path0", "path1", "path2", "path3"}) {
+    for (const std::string str : {"path0", "path1", "path2", "path3"}) {
         EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
     }
 }
@@ -196,7 +196,7 @@ TEST(TestManifest, TestMultipleAddrsMultiKeyPath)
 
     auto& addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
-    for (const std::string &str : {"path0", "path1", "path2", "path3"}) {
+    for (const std::string str : {"path0", "path1", "path2", "path3"}) {
         EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
     }
 }

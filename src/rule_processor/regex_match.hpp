@@ -14,7 +14,7 @@
 namespace ddwaf::rule_processor
 {
 
-class regex_match: public rule_processor_base
+class regex_match: public base
 {
 public:
     regex_match(const std::string& regex_str, std::size_t minLength, bool caseSensitive);

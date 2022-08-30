@@ -86,7 +86,7 @@ extern "C"
     radix_tree_t* radix_new(uint8_t max_bits);
     void radix_free(radix_tree_t* radix);
 
-    bool radix_matching_do(radix_tree_t* radix, prefix_t* prefix);
+    radix_node_t* radix_matching_do(radix_tree_t* radix, prefix_t* prefix);
     radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix);
     void radix_remove(radix_tree_t* radix, radix_node_t* node);
 

@@ -14,12 +14,24 @@ exact_match::exact_match(std::vector<std::string> &&data):
     data_(std::move(data))
 {
     values_.reserve(data_.size());
-    values_.insert(data_.cbegin(), data_.cend());
+    for (const auto &str : data_) {
+        values_.emplace(str, 0);
+    }
+}
+
+exact_match::exact_match(const std::vector<std::pair<std::string_view,uint64_t>> &data)
+{
+    data_.reserve(data.size());
+    values_.reserve(data.size());
+    for (auto [str, expiration] : data) {
+        const auto &ref = data_.emplace_back(str);
+        values_.emplace(ref, expiration);
+    }
 }
 
 std::optional<event::match> exact_match::match(std::string_view str) const
 {
-    if (str.empty() || str.data() == nullptr) {
+    if (values_.empty() || str.empty() || str.data() == nullptr) {
         return std::nullopt;
     }
 
@@ -28,6 +40,13 @@ std::optional<event::match> exact_match::match(std::string_view str) const
         return std::nullopt;
     }
 
+    if (it->second > 0) {
+        uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        if (it->second < now) {
+            return std::nullopt;
+        }
+    }
     return make_event(str, str);
 }
 

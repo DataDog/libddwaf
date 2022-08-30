@@ -14,15 +14,21 @@
 namespace ddwaf::rule_processor
 {
 
-class ip_match : public rule_processor_base
+class ip_match : public base
 {
 public:
+    using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
+
+    ip_match() = default;
     explicit ip_match(const std::vector<std::string_view> &ip_list);
+    explicit ip_match(const rule_data_type  &ip_list);
+    ~ip_match() override = default;
+
     std::string_view name() const override { return "ip_match"; }
 
     std::optional<event::match> match(std::string_view str) const override;
 protected:
-    std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_;
+    std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_{nullptr, nullptr};
 };
 
 }

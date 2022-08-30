@@ -12,7 +12,7 @@
 namespace ddwaf::rule_processor
 {
 
-class is_xss : public rule_processor_base
+class is_xss : public base
 {
 public:
     is_xss() = default;

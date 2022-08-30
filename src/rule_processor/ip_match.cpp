@@ -9,6 +9,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <string_view>
+#include <iostream>
 
 namespace ddwaf::rule_processor
 {
@@ -26,15 +27,34 @@ ip_match::ip_match(const std::vector<std::string_view> &ip_list):
         if (ddwaf::parse_cidr(str, ip)) {
             prefix_t prefix;
             radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
-            radix_put_if_absent(rtree_.get(), &prefix);
+            auto node = radix_put_if_absent(rtree_.get(), &prefix);
+            node->expiration = 0;
         }
     }
+}
 
+ip_match::ip_match(const std::vector<std::pair<std::string_view,uint64_t>> &ip_list):
+    rtree_(radix_new(128), radix_free) // Allocate the radix tree in IPv6 mode
+{
+    if (!rtree_) {
+        throw std::runtime_error("failed to instantiate radix tree");
+    }
+
+    for (auto [str, expiration] : ip_list) {
+        // Parse and populate each IP/network
+        ipaddr ip;
+        if (ddwaf::parse_cidr(str, ip)) {
+            prefix_t prefix;
+            radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
+            auto node = radix_put_if_absent(rtree_.get(), &prefix);
+            node->expiration = expiration;
+        }
+    }
 }
 
 std::optional<event::match> ip_match::match(std::string_view str) const
 {
-    if (str.empty() || str.data() == nullptr) {
+    if (!rtree_ || str.empty() || str.data() == nullptr) {
         return std::nullopt;
     }
 
@@ -51,8 +71,17 @@ std::optional<event::match> ip_match::match(std::string_view str) const
     radix_prefix_init(FAMILY_IPv6, ip.data, 128, &radix_ip);
 
     // Run the check
-    if (!radix_matching_do(rtree_.get(), &radix_ip)) {
-        return {};
+    auto node = radix_matching_do(rtree_.get(), &radix_ip);
+    if (node == nullptr) {
+        return std::nullopt;
+    }
+
+    if (node->expiration > 0) {
+        uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        if (node->expiration < now) {
+            return std::nullopt;
+        }
     }
 
     return make_event(str, str);

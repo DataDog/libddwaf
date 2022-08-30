@@ -7,17 +7,18 @@
 #pragma once
 
 #include <manifest.hpp>
-#include <parameter.hpp>
 #include <rule.hpp>
-#include <ruleset.hpp>
-#include <ruleset_info.hpp>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <rule_data_dispatcher.hpp>
 
-namespace ddwaf::parser
+namespace ddwaf
 {
 
-void parse(parameter input, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg);
+struct ruleset
+{
+    ddwaf::manifest manifest;
+    ddwaf::rule_vector rules;
+    ddwaf::collection_map collections;
+    ddwaf::rule_data::dispatcher dispatcher;
+};
 
 }

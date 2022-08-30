@@ -6,18 +6,14 @@
 
 #pragma once
 
-#include <manifest.hpp>
+#include <parser/common.hpp>
 #include <parameter.hpp>
-#include <rule.hpp>
-#include <ruleset.hpp>
-#include <ruleset_info.hpp>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <string_view>
 
 namespace ddwaf::parser
 {
 
-void parse(parameter input, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg);
+template <typename T>
+T parse_rule_data(std::string_view type, parameter &input);
 
 }

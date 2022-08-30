@@ -11,7 +11,7 @@ TEST(FunctionalTests, ddwaf_run)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{0};
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle1, nullptr);
@@ -165,7 +165,7 @@ TEST(FunctionalTests, ddwaf_run)
 
 TEST(FunctionalTests, HandleGood)
 {
-    ddwaf_config config{{0},{0}, ddwaf_object_free};
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
 
     auto rule = readFile("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -206,7 +206,7 @@ TEST(FunctionalTests, HandleGood)
 
 TEST(FunctionalTests, HandleBad)
 {
-    ddwaf_config config{{0},{0}, ddwaf_object_free};
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
 
     ddwaf_object tmp, object = DDWAF_OBJECT_INVALID;
     EXPECT_EQ(ddwaf_init(&object, &config, nullptr), nullptr);
@@ -242,7 +242,7 @@ TEST(FunctionalTests, HandleBad)
 
 TEST(FunctionalTests, Budget)
 {
-    ddwaf_config config{0};
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
 
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -302,7 +302,7 @@ TEST(FunctionalTests, ddwaf_get_version)
 
 TEST(FunctionalTests, ddwaf_runNull)
 {
-    ddwaf_config config{0};
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
 
     auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);

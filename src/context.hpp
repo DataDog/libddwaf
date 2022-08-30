@@ -15,6 +15,7 @@
 #include <config.hpp>
 #include <utils.h>
 #include <obfuscator.hpp>
+#include <ruleset.hpp>
 
 namespace ddwaf
 {

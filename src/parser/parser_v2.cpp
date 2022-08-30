@@ -10,6 +10,7 @@
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <rule.hpp>
+#include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <set>
 #include <string>
@@ -26,7 +27,7 @@ using ddwaf::parameter;
 using ddwaf::parser::at;
 using ddwaf::manifest;
 using ddwaf::manifest_builder;
-using ddwaf::rule_processor::rule_processor_base;
+using ddwaf::rule_processor::base;
 
 namespace ddwaf::parser::v2
 {
@@ -34,16 +35,19 @@ namespace ddwaf::parser::v2
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
-    ddwaf::condition::data_source source,
+ddwaf::condition parseCondition(parameter::map& rule,
+    std::size_t rule_idx, std::size_t cond_idx,
+    rule_data::dispatcher_builder &db,
+    manifest_builder& mb, ddwaf::condition::data_source source,
     std::vector<PW_TRANSFORM_ID>& transformers,
     ddwaf::config& cfg)
 {
     auto operation = at<std::string_view>(rule, "operator");
     auto params    = at<parameter::map>(rule, "parameters");
+    bool is_mutable = false;
 
     parameter::map options;
-    std::unique_ptr<rule_processor_base> processor;
+    std::shared_ptr<base> processor;
     if (operation == "phrase_match")
     {
         auto list = at<parameter::vector>(params, "list");
@@ -65,7 +69,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
             lengths.push_back((uint32_t) pattern.nbEntries);
         }
 
-        processor = std::make_unique<rule_processor::phrase_match>(patterns, lengths);
+        processor = std::make_shared<rule_processor::phrase_match>(patterns, lengths);
     }
     else if (operation == "match_regex")
     {
@@ -106,34 +110,40 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
             }
         }
 
-        processor = std::make_unique<rule_processor::regex_match>(
+        processor = std::make_shared<rule_processor::regex_match>(
             regex, min_length, case_sensitive);
     }
     else if (operation == "is_xss")
     {
-        processor = std::make_unique<rule_processor::is_xss>();
+        processor = std::make_shared<rule_processor::is_xss>();
     }
     else if (operation == "is_sqli")
     {
-        processor = std::make_unique<rule_processor::is_sqli>();
+        processor = std::make_shared<rule_processor::is_sqli>();
     }
     else if (operation == "ip_match")
     {
-        processor = std::make_unique<rule_processor::ip_match>(
-            at<std::vector<std::string_view>>(params, "list"));
+        auto it = params.find("list");
+        if (it == params.end()) {
+            auto rule_data_id = at<std::string_view>(params, "data");
+            db.insert(rule_data_id, rule_idx, cond_idx);
+            processor = std::make_shared<rule_processor::ip_match>();
+            is_mutable = true;
+        } else {
+            processor = std::make_shared<rule_processor::ip_match>(it->second);
+        }
     }
     else if (operation == "exact_match")
     {
-        auto list = at<parameter::vector>(params, "list");
-
-        std::vector<std::string> values;
-        values.reserve(list.size());
-
-        for (std::string str : list) {
-            values.push_back(std::move(str));
+        auto it = params.find("list");
+        if (it == params.end()) {
+            auto rule_data_id = at<std::string_view>(params, "data");
+            db.insert(rule_data_id, rule_idx, cond_idx);
+            processor = std::make_shared<rule_processor::exact_match>();
+            is_mutable = true;
+        } else {
+            processor = std::make_shared<rule_processor::exact_match>(it->second);
         }
-
-        processor = std::make_unique<rule_processor::exact_match>(std::move(values));
     }
     else
     {
@@ -173,10 +183,11 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
     }
 
     return ddwaf::condition(std::move(targets), std::move(transformers),
-                std::move(processor), cfg.limits, source);
+                std::move(processor), cfg.limits, source, is_mutable);
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
+               rule_data::dispatcher_builder& db,
                manifest_builder& mb, ddwaf::ruleset& rs,
                std::set<std::string_view> &seen_rules,
                ddwaf::config& cfg)
@@ -217,16 +228,19 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
             }
         }
 
+        auto index           = rs.rules.size();
+
         std::vector<ddwaf::condition> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
-        for (parameter::map cond : conditions_array)
-        {
-            conditions.push_back(parseCondition(cond, mb, source, rule_transformers, cfg));
+        conditions.reserve(conditions_array.size());
+
+        for (parameter::map cond : conditions_array) {
+            conditions.push_back(parseCondition(
+                cond, index, conditions.size(),
+                db, mb, source, rule_transformers, cfg));
         }
 
         auto tags = at<parameter::map>(rule, "tags");
-
-        auto index           = rs.rules.size();
         rs.rules.emplace_back(index, std::string(id),
             at<std::string>(rule, "name"),
             at<std::string>(tags, "type"),
@@ -267,13 +281,14 @@ void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddw
     // are valid, otherwise reallocations would invalidate them.
     rs.rules.reserve(rules_array.size());
 
+    rule_data::dispatcher_builder db;
     ddwaf::manifest_builder mb;
     std::set<std::string_view> seen_rules;
     for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, info, mb, rs, seen_rules, cfg);
+            parseRule(rule, info, db, mb, rs, seen_rules, cfg);
         }
         catch (const std::exception& e)
         {
@@ -286,8 +301,13 @@ void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddw
     {
         throw ddwaf::parsing_error("no valid rules found");
     }
-
+    rs.dispatcher = db.build(rs.rules);
     rs.manifest = mb.build_manifest();
+
+    auto data_array = at<parameter::vector>(ruleset, "rules_data", {});
+    if (!data_array.empty()) {
+        rs.dispatcher.dispatch(data_array);
+    }
 
     DDWAF_DEBUG("Loaded %zu rules out of %zu available in the ruleset",
                 rs.rules.size(), rules_array.size());

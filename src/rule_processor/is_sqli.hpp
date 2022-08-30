@@ -12,7 +12,7 @@
 namespace ddwaf::rule_processor
 {
 
-class is_sqli : public rule_processor_base
+class is_sqli : public base
 {
 public:
     is_sqli() = default;
