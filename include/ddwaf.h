@@ -114,7 +114,7 @@ struct _ddwaf_object
  **/
 struct _ddwaf_config
 {
-    struct {
+    struct _ddwaf_config_limits {
         /** Maximum size of ddwaf::object containers. */
         uint32_t max_container_size;
         /** Maximum depth of ddwaf::object containers. */
@@ -124,7 +124,7 @@ struct _ddwaf_config
     } limits;
 
     /** Obfuscator regexes - the strings are owned by the caller */
-    struct {
+    struct _ddwaf_config_obfuscator {
         /** Regular expression for key-based obfuscation */
         const char *key_regex;
         /** Regular expression for value-based obfuscation */
