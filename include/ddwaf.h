@@ -121,7 +121,7 @@ typedef void (*ddwaf_object_free_fn)(ddwaf_object *object);
  **/
 struct _ddwaf_config
 {
-    struct {
+    struct _ddwaf_config_limits {
         /** Maximum size of ddwaf::object containers. */
         uint32_t max_container_size;
         /** Maximum depth of ddwaf::object containers. */
@@ -131,7 +131,7 @@ struct _ddwaf_config
     } limits;
 
     /** Obfuscator regexes - the strings are owned by the caller */
-    struct {
+    struct _ddwaf_config_obfuscator {
         /** Regular expression for key-based obfuscation */
         const char *key_regex;
         /** Regular expression for value-based obfuscation */
@@ -156,7 +156,7 @@ struct _ddwaf_result
     /** Run result in JSON format **/
     const char* data;
     /** Actions array and its size **/
-    struct {
+    struct _ddwaf_result_actions {
         char **array;
         uint32_t size;
     } actions;
