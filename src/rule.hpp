@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -95,6 +96,7 @@ public:
 
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
+
     rule(index_type index_, std::string &&id_, std::string &&name_,
       std::string &&type_, std::string &&category_,
       std::vector<condition> &&conditions_,
@@ -103,8 +105,31 @@ public:
     rule(const rule&) = delete;
     rule& operator=(const rule&) = delete;
 
-    rule(rule&&) = default;
-    rule& operator=(rule&&) = default;
+    // Constructors are not atomic...
+    rule(rule &&rhs):
+        enabled(rhs.enabled.load(std::memory_order_relaxed)),
+        index(rhs.index),
+        id(std::move(rhs.id)),
+        name(std::move(rhs.name)),
+        type(std::move(rhs.type)),
+        category(std::move(rhs.category)),
+        conditions(std::move(rhs.conditions)),
+        targets(std::move(rhs.targets)),
+        actions(std::move(rhs.actions)) {}
+
+    rule& operator=(rule &&rhs) {
+        enabled = rhs.enabled.load(std::memory_order_relaxed);
+        index = rhs.index;
+        id = std::move(rhs.id);
+        name = std::move(rhs.name);
+        type = std::move(rhs.type);
+        category = std::move(rhs.category);
+        conditions = std::move(rhs.conditions);
+        targets = std::move(rhs.targets);
+        actions = std::move(rhs.actions);
+
+        return *this;
+    }
 
     ~rule() = default;
 
@@ -114,6 +139,10 @@ public:
         const ddwaf::manifest &manifest, bool run_on_new,
         ddwaf::timer& deadline) const;
 
+    bool is_enabled() { return enabled.load(std::memory_order_relaxed); }
+    void toggle(bool value) { enabled.store(value, std::memory_order_relaxed); }
+
+    std::atomic<bool> enabled{true};
     index_type index;
     std::string id;
     std::string name;
@@ -124,8 +153,8 @@ public:
     std::vector<std::string> actions;
 };
 
-using rule_map        = std::unordered_map<rule::index_type, rule>;
 using rule_vector     = std::vector<rule>;
+using rule_ref_map    = std::unordered_map<std::string_view, std::reference_wrapper<rule>>;
 using rule_ref_vector = std::vector<std::reference_wrapper<rule>>;
 using collection_map  = std::unordered_map<std::string, rule_ref_vector>;
 

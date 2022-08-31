@@ -112,7 +112,6 @@ public:
             } catch (const ddwaf::exception &e) {
                 DDWAF_ERROR("Failed to parse data id '%s': %s",
                     (!id.empty() ? id.c_str() : "(unknown)"), e.what());
-
             }
         }
     }

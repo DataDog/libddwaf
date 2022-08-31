@@ -42,6 +42,7 @@ public:
     operator std::string_view();
     operator std::string();
     operator uint64_t();
+    operator bool();
     operator std::vector<std::string>();
     operator std::vector<std::string_view>();
 

@@ -200,6 +200,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 
         auto& collection = rs.collections[rule_ref.type];
         collection.push_back(rule_ref);
+        rs.rule_map.emplace(rule_ref.id, rule_ref);
 
         // Add this rule to the set to check for duplicates
         seen_rules.emplace(rule_ref.id);

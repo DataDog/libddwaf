@@ -28,9 +28,11 @@ public:
         return ddwaf::context(ruleset_, config_);
     }
 
-    void update_rule_data(ddwaf::parameter::vector &&input){
+    void update_rule_data(ddwaf::parameter::vector &&input) {
         ruleset_.dispatcher.dispatch(input);
     }
+
+    void toggle_rules(ddwaf::parameter::map &&input);
 
     const std::vector<const char*>& get_root_addresses() const {
         return ruleset_.manifest.get_root_addresses();
