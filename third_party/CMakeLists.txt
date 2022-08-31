@@ -64,6 +64,9 @@ if(NOT MSVC)
 endif()
 add_dependencies(lib_re2 proj_re2)
 
+add_library(xenium INTERFACE)
+target_include_directories(xenium INTERFACE ${PROJECT_SOURCE_DIR}/xenium)
+
 set(GOOGLETEST_COMMIT 955c7f837efad184ec63e771c42542d37545eaef)
 ExternalProject_Add(proj_gtest
     URL         https://github.com/google/googletest/archive/${GOOGLETEST_COMMIT}.tar.gz

@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <atomic>
 #include <rule.hpp>
 
 #include <waf.hpp>
@@ -18,16 +19,6 @@ namespace ddwaf
 
 std::optional<event::match> condition::match_object(const ddwaf_object* object) const
 {
-    // TODO: this might use mutexes internally, so it might be worth having a
-    //       flag to determine if the processor should be accessed atomatically
-    //       or not.
-    decltype(processor_) processor;
-    if (mutable_) {
-        processor = std::atomic_load(&processor_);
-    } else {
-        processor = processor_;
-    }
-
     const bool has_transform = !transformers_.empty();
     bool transform_required = false;
 
@@ -42,7 +33,13 @@ std::optional<event::match> condition::match_object(const ddwaf_object* object) 
 
     //If we don't have transform to perform, or if they're irrelevant, no need to waste time copying and allocating data
     if (!has_transform || !transform_required) {
-        return processor->match({object->stringValue, length});
+        if (!mutable_) {
+            auto *proc = processor_.load(std::memory_order_relaxed).get();
+            proc->match({ object->stringValue, length });
+        }
+        guard_ptr proc_guard;
+        proc_guard.acquire(processor_, std::memory_order_acquire);
+        return proc_guard->match({object->stringValue, length});
     }
 
     ddwaf_object copy;
@@ -61,11 +58,23 @@ std::optional<event::match> condition::match_object(const ddwaf_object* object) 
         }
     }
 
-    if (transformFailed) {
-        return processor->match({object->stringValue, length});
+    auto do_match = [&](auto &&proc_ptr)
+    {
+        if (transformFailed)
+        {
+            return proc_ptr->match({ object->stringValue, length });
+        }
+
+        return proc_ptr->match_object(&copy);
+    };
+
+    if (!mutable_) {
+        return do_match(processor_.load(std::memory_order_relaxed));
     }
 
-    return processor->match_object(&copy);
+    guard_ptr proc_guard;
+    proc_guard.acquire(processor_, std::memory_order_acquire);
+    return do_match(proc_guard);
 }
 
 template <typename T>

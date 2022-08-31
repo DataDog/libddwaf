@@ -30,7 +30,7 @@ protected:
     class type_dispatcher : public type_dispatcher_base {
     public:
         using constructor_wrapper_function =
-            std::function<std::shared_ptr<rule_processor::base>(const RuleDataType&)>;
+            std::function<std::unique_ptr<rule_processor::base>(const RuleDataType&)>;
 
         type_dispatcher() = default;
         ~type_dispatcher() override = default;
@@ -44,7 +44,7 @@ protected:
             for (auto &[fn, cond] : functions_) {
                 auto processor = fn(converted_data);
                 if (processor) {
-                    cond.reset_processor(processor);
+                    cond.reset_processor(std::move(processor));
                 }
             }
         }
@@ -81,7 +81,7 @@ public:
         auto &td = dynamic_cast<type_dispatcher<rule_data_type>&>(*it->second.get());
 
         td.insert([](const rule_data_type & data) {
-            return std::make_shared<RuleProcessorType>(data);
+            return std::make_unique<RuleProcessorType>(data);
         }, cond);
     }
 

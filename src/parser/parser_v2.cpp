@@ -47,7 +47,7 @@ ddwaf::condition parseCondition(parameter::map& rule,
     bool is_mutable = false;
 
     parameter::map options;
-    std::shared_ptr<base> processor;
+    std::unique_ptr<base> processor;
     if (operation == "phrase_match")
     {
         auto list = at<parameter::vector>(params, "list");
@@ -69,7 +69,7 @@ ddwaf::condition parseCondition(parameter::map& rule,
             lengths.push_back((uint32_t) pattern.nbEntries);
         }
 
-        processor = std::make_shared<rule_processor::phrase_match>(patterns, lengths);
+        processor = std::make_unique<rule_processor::phrase_match>(patterns, lengths);
     }
     else if (operation == "match_regex")
     {
@@ -110,16 +110,16 @@ ddwaf::condition parseCondition(parameter::map& rule,
             }
         }
 
-        processor = std::make_shared<rule_processor::regex_match>(
+        processor = std::make_unique<rule_processor::regex_match>(
             regex, min_length, case_sensitive);
     }
     else if (operation == "is_xss")
     {
-        processor = std::make_shared<rule_processor::is_xss>();
+        processor = std::make_unique<rule_processor::is_xss>();
     }
     else if (operation == "is_sqli")
     {
-        processor = std::make_shared<rule_processor::is_sqli>();
+        processor = std::make_unique<rule_processor::is_sqli>();
     }
     else if (operation == "ip_match")
     {
@@ -127,10 +127,10 @@ ddwaf::condition parseCondition(parameter::map& rule,
         if (it == params.end()) {
             auto rule_data_id = at<std::string_view>(params, "data");
             db.insert(rule_data_id, rule_idx, cond_idx);
-            processor = std::make_shared<rule_processor::ip_match>();
+            processor = std::make_unique<rule_processor::ip_match>();
             is_mutable = true;
         } else {
-            processor = std::make_shared<rule_processor::ip_match>(it->second);
+            processor = std::make_unique<rule_processor::ip_match>(it->second);
         }
     }
     else if (operation == "exact_match")
@@ -139,10 +139,10 @@ ddwaf::condition parseCondition(parameter::map& rule,
         if (it == params.end()) {
             auto rule_data_id = at<std::string_view>(params, "data");
             db.insert(rule_data_id, rule_idx, cond_idx);
-            processor = std::make_shared<rule_processor::exact_match>();
+            processor = std::make_unique<rule_processor::exact_match>();
             is_mutable = true;
         } else {
-            processor = std::make_shared<rule_processor::exact_match>(it->second);
+            processor = std::make_unique<rule_processor::exact_match>(it->second);
         }
     }
     else

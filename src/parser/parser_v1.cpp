@@ -40,7 +40,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
     auto params    = at<parameter::map>(rule, "parameters");
 
     parameter::map options;
-    std::shared_ptr<base> processor;
+    std::unique_ptr<base> processor;
     if (operation == "phrase_match")
     {
         auto list = at<parameter::vector>(params, "list");
@@ -62,7 +62,7 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
             lengths.push_back((uint32_t) pattern.nbEntries);
         }
 
-        processor = std::make_shared<rule_processor::phrase_match>(patterns, lengths);
+        processor = std::make_unique<rule_processor::phrase_match>(patterns, lengths);
     }
     else if (operation == "match_regex")
     {
@@ -103,16 +103,16 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
             }
         }
 
-        processor = std::make_shared<rule_processor::regex_match>(
+        processor = std::make_unique<rule_processor::regex_match>(
             regex, min_length, case_sensitive);
     }
     else if (operation == "is_xss")
     {
-        processor = std::make_shared<rule_processor::is_xss>();
+        processor = std::make_unique<rule_processor::is_xss>();
     }
     else if (operation == "is_sqli")
     {
-        processor = std::make_shared<rule_processor::is_sqli>();
+        processor = std::make_unique<rule_processor::is_sqli>();
     }
     else
     {

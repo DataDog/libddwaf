@@ -15,9 +15,15 @@
 #include <event.hpp>
 #include <utils.h>
 
+#include <xenium/reclamation/hazard_pointer.hpp>
+
 namespace ddwaf::rule_processor {
 
-class base
+using Reclaimer = xenium::reclamation::hazard_pointer<
+    xenium::reclamation::hazard_pointer_traits<
+        xenium::reclamation::hp_allocation::static_strategy<1, 1, 1>>>;
+
+class base : public Reclaimer::enable_concurrent_ptr<base>
 {
 public:
     using shared = std::shared_ptr<base>;

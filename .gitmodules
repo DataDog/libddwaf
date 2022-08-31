@@ -1,3 +1,6 @@
 [submodule "third_party/lua-aho-corasick"]
 	path = third_party/lua-aho-corasick
 	url = https://github.com/sqreen/lua-aho-corasick.git
+[submodule "third_party/xenium"]
+	path = third_party/xenium
+	url = https://github.com/cataphract/xenium.git

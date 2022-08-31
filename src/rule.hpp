@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -35,44 +36,83 @@ public:
 
     condition(std::vector<ddwaf::manifest::target_type>&& targets,
               std::vector<PW_TRANSFORM_ID>&& transformers,
-              std::shared_ptr<rule_processor::base>&& processor,
+              std::unique_ptr<rule_processor::base> processor,
               ddwaf::object_limits limits = ddwaf::object_limits(),
               data_source source = data_source::values,
               bool is_mutable = false):
         targets_(std::move(targets)),
         transformers_(std::move(transformers)),
-        processor_(std::move(processor)),
+        processor_(processor.release()),
         limits_(limits),
         source_(source),
         mutable_(is_mutable) {}
 
-    condition(condition&&) = default;
-    condition& operator=(condition&&) = default;
+    // This constructor should *not* be used after the rule has been put into
+    // operation, for processor_ contains an atomic variable
+    condition(condition&& oth) : targets_(std::move(oth.targets_)),
+                                 transformers_(std::move(oth.transformers_)),
+                                 processor_(oth.processor_.load()),
+                                 limits_(oth.limits_),
+                                 source_(oth.source_),
+                                 mutable_(oth.mutable_)
+    {
+        oth.processor_.store(nullptr);
+    }
+    condition& operator=(condition&&) = delete;
 
     condition(const condition&) = delete;
     condition& operator=(const condition&) = delete;
+
+    ~condition() {
+        delete processor_.load(std::memory_order_relaxed).get();
+    }
 
     std::optional<event::match> match(const object_store& store,
         const ddwaf::manifest &manifest, bool run_on_new,
         ddwaf::timer& deadline) const;
 
     std::string_view processor_name() {
-        if (mutable_) {
-            return std::atomic_load(&processor_)->name();
+        if (!mutable_) {
+            return processor_.load(std::memory_order_relaxed)->name();
         }
 
-        return processor_->name();
+        guard_ptr gptr;
+        gptr.acquire(processor_, std::memory_order_acquire);
+        return gptr->name();
     }
 
-    void reset_processor(std::shared_ptr<rule_processor::base> &proc) {
+    void reset_processor(std::unique_ptr<rule_processor::base> proc) {
         if (!mutable_) {
             throw std::runtime_error("Attempting to mutate an immutable "
-                "condition with processor " + std::string(processor_->name()));
+                                     "condition with processor "
+                                     + std::string(processor_.load()->name()));
         }
 
-        std::atomic_store(&processor_, proc);
+        marked_ptr new_proc = proc.release();
+
+        while (true)
+        {
+            guard_ptr guard;
+            marked_ptr cur_proc;
+            guard.acquire(processor_, std::memory_order_relaxed);
+            cur_proc = guard.get();
+            if (processor_.compare_exchange_strong(
+                    cur_proc, new_proc,
+                    std::memory_order_release, std::memory_order_relaxed))
+            {
+                guard.reclaim();
+                break;
+            }
+            guard.reset();
+            continue;
+        }
     }
 protected:
+    using Reclaimer = rule_processor::Reclaimer;
+    using concurrent_ptr = Reclaimer::concurrent_ptr<rule_processor::base>;
+    using marked_ptr = concurrent_ptr::marked_ptr;
+    using guard_ptr = concurrent_ptr::guard_ptr;
+
     std::optional<event::match> match_object(const ddwaf_object* object) const;
 
     template <typename T>
@@ -82,7 +122,7 @@ protected:
 
     std::vector<ddwaf::manifest::target_type> targets_;
     std::vector<PW_TRANSFORM_ID> transformers_;
-    std::shared_ptr<rule_processor::base> processor_;
+    concurrent_ptr processor_;
     ddwaf::object_limits limits_;
     data_source source_;
     bool mutable_;
