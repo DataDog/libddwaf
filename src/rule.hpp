@@ -105,7 +105,9 @@ public:
     rule(const rule&) = delete;
     rule& operator=(const rule&) = delete;
 
-    // Constructors are not atomic...
+    // Atomics aren't movable so the default move constructor and move
+    // assignment operator can't be used. With this constructor and operator
+    // any relevant atomic member does not behave as such.
     rule(rule &&rhs):
         enabled(rhs.enabled.load(std::memory_order_relaxed)),
         index(rhs.index),
