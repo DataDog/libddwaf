@@ -42,6 +42,9 @@ static void print_(parameter args, uint64_t depth)
         case DDWAF_OBJ_INVALID:
             std::printf("- invalid\n");
             break;
+        case DDWAF_OBJ_BOOL:
+            std::printf("- %s\n", args.boolean ? "true" : "false");
+            break;
         case DDWAF_OBJ_SIGNED:
         {
             if (args.parameterName != NULL)
@@ -197,6 +200,16 @@ parameter::operator uint64_t()
 
     throw bad_cast("unsigned", strtype(type));
 }
+
+parameter::operator bool()
+{
+    if (type == DDWAF_OBJ_BOOL) {
+        return boolean;
+    }
+
+    throw bad_cast("bool", strtype(type));
+}
+
 
 parameter::operator std::vector<std::string>()
 {

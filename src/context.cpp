@@ -78,6 +78,8 @@ bool context::run_collection(const std::string& name,
             break;
         }
 
+        if (!rule.is_enabled()) { continue; }
+
         // TODO: replace this part with:
         //         - Collection cache to avoid going through each rule if the
         //           collection already had a match.

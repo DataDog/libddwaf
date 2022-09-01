@@ -39,6 +39,8 @@ typedef enum
     DDWAF_OBJ_ARRAY    = 1 << 3,
     /** Value shall be decoded as an array of ddwaf_object of length nbEntries, each item having a parameterName. **/
     DDWAF_OBJ_MAP      = 1 << 4,
+
+    DDWAF_OBJ_BOOL     = 1 << 5,
 } DDWAF_OBJ_TYPE;
 
 /**
@@ -102,6 +104,7 @@ struct _ddwaf_object
         uint64_t uintValue;
         int64_t intValue;
         ddwaf_object* array;
+        bool boolean;
     };
     uint64_t nbEntries;
     DDWAF_OBJ_TYPE type;
@@ -230,9 +233,20 @@ void ddwaf_destroy(ddwaf_handle handle);
  * Update existing rules with new rule data.
  *
  * @param handle to the WAF instance.
- * @param data A ddwaf_object map with the format [{id, type, [data]}].
+ * @param data A ddwaf_object with the format [{id, type, [data]}].
  */
 DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data);
+
+/**
+ * ddwaf_toggle_rules
+ *
+ * Enable or disable rules (true -> rule enabled, false -> rule disabled).
+ *
+ * @param handle to the WAF instance.
+ * @param data A ddwaf_object with the format {rule_id : boolean}.
+ */
+DDWAF_RET_CODE ddwaf_toggle_rules(ddwaf_handle handle, ddwaf_object *rule_map);
+
 /**
  * ddwaf_ruleset_info_free
  *
@@ -423,6 +437,19 @@ ddwaf_object* ddwaf_object_unsigned_force(ddwaf_object *object, uint64_t value);
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
 ddwaf_object* ddwaf_object_signed_force(ddwaf_object *object, int64_t value);
+
+/**
+ * ddwaf_object_bool
+ *
+ * Creates an object using a boolean, the resulting object will contain a
+ * boolean as opposed to a string.
+ *
+ * @param object Object to perform the operation on. (nonnull)
+ * @param value Boolean to initialise the object with.
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+ddwaf_object* ddwaf_object_bool(ddwaf_object *object, bool value);
 
 /**
  * ddwaf_object_array

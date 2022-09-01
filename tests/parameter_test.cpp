@@ -6,6 +6,35 @@
 
 #include "test.h"
 
+TEST(TestParameter, ToBool)
+{
+    {
+        ddwaf_object root;
+        ddwaf_object_bool(&root, true);
+
+        bool value = ddwaf::parameter(root);
+        EXPECT_TRUE(value);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_bool(&root, false);
+
+        bool value = ddwaf::parameter(root);
+        EXPECT_FALSE(value);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_map(&root);
+
+        EXPECT_THROW(
+            static_cast<bool>(ddwaf::parameter(root)),
+            ddwaf::bad_cast
+        );
+    }
+}
+
 TEST(TestParameter, ToUint64)
 {
     {

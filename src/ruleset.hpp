@@ -17,6 +17,7 @@ struct ruleset
 {
     ddwaf::manifest manifest;
     ddwaf::rule_vector rules;
+    ddwaf::rule_ref_map rule_map;
     ddwaf::collection_map collections;
     ddwaf::rule_data::dispatcher dispatcher;
 };

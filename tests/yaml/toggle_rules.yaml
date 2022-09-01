@@ -1,6 +1,6 @@
 version: '2.1'
 rules:
-  - id: 1
+  - id: id-rule-1
     name: rule1
     tags:
       type: flow1
@@ -10,9 +10,8 @@ rules:
         parameters:
           inputs:
             - address: value1
-            - address: value12
           regex: rule1
-  - id: 2
+  - id: id-rule-2
     name: rule2
     tags:
       type: flow2
@@ -22,10 +21,8 @@ rules:
         parameters:
           inputs:
             - address: value2
-            - address: value12
-            - address: value23
           regex: rule2
-  - id: 3
+  - id: id-rule-3
     name: rule3
     tags:
       type: flow2
@@ -34,7 +31,5 @@ rules:
       - operator: match_regex
         parameters:
           inputs:
-            - address: value3
-            - address: value23
-          regex: rule3
-
+            - address: value2
+          regex: rule2

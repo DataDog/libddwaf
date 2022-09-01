@@ -142,3 +142,186 @@ TEST(TestRule, NoMatch)
     EXPECT_FALSE(match.has_value());
 }
 
+TEST(TestRule, ToggleSingleRule)
+{
+    auto rule = readFile("toggle_rules.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
+
+        EXPECT_EQ(ddwaf_run(context, &root, NULL, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "id-rule-1", ddwaf_object_bool(&tmp, false));
+
+        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
+
+        EXPECT_EQ(ddwaf_run(context, &root, NULL, LONG_TIME), DDWAF_OK);
+
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestRule, ToggleRuleInCollection)
+{
+    auto rule = readFile("toggle_rules.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
+
+        ddwaf_result res;
+        EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_STREQ(res.data, R"([{"rule":{"id":"id-rule-2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value2","key_path":[],"value":"rule2","highlight":["rule2"]}]}]}])");
+
+        ddwaf_result_free(&res);
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "id-rule-2", ddwaf_object_bool(&tmp, false));
+
+        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
+
+        ddwaf_result res;
+        EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_STREQ(res.data, R"([{"rule":{"id":"id-rule-3","name":"rule3","tags":{"type":"flow2","category":"category3"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value2","key_path":[],"value":"rule2","highlight":["rule2"]}]}]}])");
+
+        ddwaf_result_free(&res);
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "id-rule-3", ddwaf_object_bool(&tmp, false));
+
+        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
+
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestRule, ToggleNonExistentRules)
+{
+    auto rule = readFile("toggle_rules.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_object root, tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "id-rule-4", ddwaf_object_bool(&tmp, false));
+
+    EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
+
+    ddwaf_object_free(&root);
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestRule, ToggleWithInvalidObject)
+{
+    auto rule = readFile("toggle_rules.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_array(&root);
+        ddwaf_object_array_add(&root, ddwaf_object_bool(&tmp, false));
+
+        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_ERR_INVALID_OBJECT);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "id-rule-1", ddwaf_object_unsigned(&tmp, 5));
+
+        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_ERR_INVALID_OBJECT);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(ddwaf_toggle_rules(handle, nullptr), DDWAF_ERR_INVALID_ARGUMENT);
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestRule, ToggleWithInvalidHandle)
+{
+    EXPECT_EQ(ddwaf_toggle_rules(nullptr, nullptr), DDWAF_ERR_INVALID_ARGUMENT);
+}

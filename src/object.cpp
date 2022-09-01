@@ -157,6 +157,16 @@ extern "C"
         return object;
     }
 
+    ddwaf_object* ddwaf_object_bool(ddwaf_object *object, bool value)
+    {
+        if (object == NULL) { return NULL; }
+
+        *object  = { NULL, 0, { NULL }, 0, DDWAF_OBJ_BOOL };
+        object->boolean = value;
+
+        return object;
+    }
+
     ddwaf_object* ddwaf_object_array(ddwaf_object* object)
     {
         if (object == NULL)

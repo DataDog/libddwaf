@@ -17,7 +17,7 @@ namespace ddwaf
 class ruleset_info
 {
 public:
-    explicit ruleset_info(ddwaf_ruleset_info* info_) : info(info_)
+    explicit ruleset_info(ddwaf_ruleset_info* info_ = nullptr) : info(info_)
     {
         if (info == nullptr)
         {
