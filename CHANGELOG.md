@@ -1,5 +1,18 @@
 # libddwaf release
 
+### v1.5.0-rc0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/02
+
+#### API \& Breaking Changes
+- Add `ddwaf_object_bool` for backwards-compatible support for boolean `ddwaf_object` ([#99](https://github.com/DataDog/libddwaf/pull/99))
+- Add `ddwaf_toggle_rules` to enable or disable rules at runtime ([#99](https://github.com/DataDog/libddwaf/pull/99))
+
+#### Fixes
+- Fix missing exports ([#101](https://github.com/DataDog/libddwaf/pull/101))
+
+#### Miscellaneous
+- Update ruleset version for testing to 1.3.2 ([#101](https://github.com/DataDog/libddwaf/pull/101))
+- Fix missing build flags from `utf8proc` build ([#100](https://github.com/DataDog/libddwaf/pull/100))
+
 ### v1.5.0-alpha1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/30
 
 #### API \& Breaking Changes
