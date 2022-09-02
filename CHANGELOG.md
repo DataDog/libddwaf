@@ -22,7 +22,6 @@
 - Disable the `1)c` libinjection fingerprint ([#94](https://github.com/DataDog/libddwaf/pull/94))
 - Configurable rule data ([#96](https://github.com/DataDog/libddwaf/pull/96))
 
-#### Miscellaneous
 ### v1.5.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/04
 
 #### API \& Breaking Changes
