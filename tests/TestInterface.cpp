@@ -297,7 +297,7 @@ TEST(FunctionalTests, Budget)
 
 TEST(FunctionalTests, ddwaf_get_version)
 {
-    EXPECT_STREQ(ddwaf_get_version(), "1.5.0-alpha1");
+    EXPECT_STREQ(ddwaf_get_version(), "1.5.0-rc0");
 }
 
 TEST(FunctionalTests, ddwaf_runNull)

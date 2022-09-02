@@ -2,6 +2,8 @@ LIBRARY ddwaf
 EXPORTS
   ddwaf_init
   ddwaf_destroy
+  ddwaf_update_rule_data
+  ddwaf_toggle_rules
   ddwaf_ruleset_info_free
   ddwaf_context_init
   ddwaf_run
@@ -15,6 +17,7 @@ EXPORTS
   ddwaf_object_signed
   ddwaf_object_unsigned_force
   ddwaf_object_signed_force
+  ddwaf_object_bool
   ddwaf_object_array
   ddwaf_object_map
   ddwaf_object_array_add
