@@ -108,19 +108,47 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 
     ddwaf_result output;
     serializer.serialize(output);
+
+    EXPECT_THAT(output, WithEvent(
+    {
+        .id = "xasd1022",
+        .name = "random rule",
+        .type = "test",
+        .category = "none",
+        .actions = {"block", "monitor"},
+        .matches = {{
+            .op = "random",
+            .op_value = "val",
+            .address = "query",
+            .path = {"root", "key"},
+            .value = "value",
+            .highlight = "val"
+        },
+        {
+            .op = "match_regex",
+            .op_value = ".*",
+            .address = "response.body",
+            .value = "string",
+            .highlight = "string"
+        },
+        {
+            .op = "ip_match",
+            .address = "client.ip",
+            .value = "192.168.0.1",
+            .highlight = "192.168.0.1"
+        },
+        {
+            .op = "is_xss",
+            .address = "path_params",
+            .path = {"key"},
+            .value = "<script>",
+        }}
+    }));
+
+
     EXPECT_STREQ(output.data, R"([{"rule":{"id":"xasd1022","name":"random rule","tags":{"type":"test","category":"none"},"on_match":["block","monitor"]},"rule_matches":[{"operator":"random","operator_value":"val","parameters":[{"address":"query","key_path":["root","key"],"value":"value","highlight":["val"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"response.body","key_path":[],"value":"string","highlight":["string"]}]},{"operator":"ip_match","operator_value":"","parameters":[{"address":"client.ip","key_path":[],"value":"192.168.0.1","highlight":["192.168.0.1"]}]},{"operator":"is_xss","operator_value":"","parameters":[{"address":"path_params","key_path":["key"],"value":"<script>","highlight":[]}]}]}])");
 
-    ASSERT_NE(output.actions.array, nullptr);
-
-    std::unordered_set<std::string_view> expected_actions{"block", "monitor"};
-    std::unordered_set<std::string_view> found_actions;
-    for (unsigned i = 0; i < output.actions.size; i++) {
-        char *value = output.actions.array[i];
-        EXPECT_NE(value, nullptr);
-        found_actions.emplace(value);
-    }
-
-    EXPECT_EQ(expected_actions, found_actions);
+    EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
 
     ddwaf_result_free(&output);
 }
@@ -169,21 +197,54 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     ddwaf_result output;
     serializer.serialize(output);
+    EXPECT_THAT(output, WithEvent(
+    {
+        .id = "xasd1022",
+        .name = "random rule",
+        .type = "test",
+        .category = "none",
+        .actions = {"block", "monitor"},
+        .matches = {{
+            .op = "random",
+            .op_value = "val",
+            .address = "query",
+            .path = {"root", "key"},
+            .value = "value",
+            .highlight = "val"
+        },
+        {
+            .op = "match_regex",
+            .op_value = ".*",
+            .address = "response.body",
+            .value = "string",
+            .highlight = "string"
+        },
+        {
+            .op = "is_xss",
+            .address = "path_params",
+            .path = {"key"},
+            .value = "<script>",
+        }}
+    }));
 
+    EXPECT_THAT(output, WithEvent(
+    {
+        .id = "xasd1023",
+        .name = "pseudorandom rule",
+        .type = "test",
+        .category = "none",
+        .actions = {"unblock"},
+        .matches = {{
+            .op = "ip_match",
+            .address = "client.ip",
+            .value = "192.168.0.1",
+            .highlight = "192.168.0.1"
+        }}
+    }));
 
     EXPECT_STREQ(output.data, R"([{"rule":{"id":"xasd1022","name":"random rule","tags":{"type":"test","category":"none"},"on_match":["block","monitor"]},"rule_matches":[{"operator":"random","operator_value":"val","parameters":[{"address":"query","key_path":["root","key"],"value":"value","highlight":["val"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"response.body","key_path":[],"value":"string","highlight":["string"]}]},{"operator":"is_xss","operator_value":"","parameters":[{"address":"path_params","key_path":["key"],"value":"<script>","highlight":[]}]}]},{"rule":{"id":"xasd1023","name":"pseudorandom rule","tags":{"type":"test","category":"none"},"on_match":["unblock"]},"rule_matches":[{"operator":"ip_match","operator_value":"","parameters":[{"address":"client.ip","key_path":[],"value":"192.168.0.1","highlight":["192.168.0.1"]}]}]},{"rule":{"id":"","name":"","tags":{"type":"","category":""}},"rule_matches":[]}])");
 
-    ASSERT_NE(output.actions.array, nullptr);
-
-    std::unordered_set<std::string_view> expected_actions{"block", "monitor", "unblock"};
-    std::unordered_set<std::string_view> found_actions;
-    for (unsigned i = 0; i < output.actions.size; i++) {
-        char *value = output.actions.array[i];
-        EXPECT_NE(value, nullptr);
-        found_actions.emplace(value);
-    }
-
-    EXPECT_EQ(expected_actions, found_actions);
+    EXPECT_THAT(output.actions, WithActions({"block", "monitor", "unblock"}));
 
     ddwaf_result_free(&output);
 }
@@ -210,6 +271,25 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
     ddwaf_result output;
     serializer.serialize(output);
+
+    EXPECT_THAT(output, WithEvent(
+    {
+        .id = "xasd1022",
+        .name = "random rule",
+        .type = "test",
+        .category = "none",
+        .matches = {{
+            .op = "random",
+            .op_value = "val",
+            .address = "query",
+            .path = {"root", "key"},
+            .value = "value",
+            .highlight = "val"
+        }}
+    }));
+
+    EXPECT_THAT(output.actions, WithActions({}));
+
     EXPECT_STREQ(output.data, R"([{"rule":{"id":"xasd1022","name":"random rule","tags":{"type":"test","category":"none"}},"rule_matches":[{"operator":"random","operator_value":"val","parameters":[{"address":"query","key_path":["root","key"],"value":"value","highlight":["val"]}]}]}])");
 
     EXPECT_EQ(output.actions.array, nullptr);

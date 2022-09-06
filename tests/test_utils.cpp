@@ -83,6 +83,33 @@ namespace YAML
 using event = ddwaf::test::event;
 using match = ddwaf::test::event::match;
 
+template <class T>
+T as(const YAML::Node &node, const std::string &key)
+{
+    auto value = node[key];
+    if (!value) { return {}; }
+
+    try {
+        return value.as<T>();
+    } catch (...) {
+        throw parsing_error("failed to parse " + key);
+    }
+}
+
+template <class T>
+T as(const YAML::Node &node, unsigned key)
+{
+    auto value = node[key];
+    if (!value) { return {}; }
+
+    try {
+        return value.as<T>();
+    } catch (...) {
+        throw parsing_error("failed to parse " + std::to_string(key));
+    }
+}
+
+
 match as_if<match, void>::operator()() const
 {
     if (node.Type() != NodeType::Map) {
@@ -91,19 +118,24 @@ match as_if<match, void>::operator()() const
 
     match m;
 
-    m.op = node["operator"].as<std::string>();
-    m.op_value = node["operator_value"].as<std::string>();
+    m.op = as<std::string>(node, "operator");
+    m.op_value = as<std::string>(node, "operator_value");
 
     auto parameters = node["parameters"][0];
-
-    if (parameters.Type() != NodeType::Map) {
+    if (!parameters || parameters.Type() != NodeType::Map) {
         throw parsing_error("parameter should be a map");
     }
 
-    m.address = parameters["address"].as<std::string>();
-    m.path = parameters["key_path"].as<std::vector<std::string>>();
-    m.value = parameters["value"].as<std::string>();
-    m.highlight = parameters["highlight"][0].as<std::string>();
+    m.address = as<std::string>(parameters, "address");
+    m.path = as<std::vector<std::string>>(parameters, "key_path");
+    m.value = as<std::string>(parameters, "value");
+
+    auto highlight = parameters["highlight"];
+    if (!highlight || highlight.Type() != NodeType::Sequence) {
+        throw parsing_error("parameter should be a sequence");
+    }
+
+    m.highlight = as<std::string>(highlight, 0);
 
     return m;
 }
@@ -115,26 +147,24 @@ event as_if<event, void>::operator()() const
     }
 
     auto rule = node["rule"];
-    if (rule.Type() != YAML::NodeType::Map) {
+    if (!rule || rule.Type() != YAML::NodeType::Map) {
         throw parsing_error("rule should be a map");
     }
 
     event e;
-    e.id = rule["id"].as<std::string>();
-    e.name = rule["name"].as<std::string>();
+    auto id = rule["id"];
+    e.id = as<std::string>(rule, "id");
+    e.name = as<std::string>(rule, "name");
 
     auto tags = rule["tags"];
-    if (tags.Type() != YAML::NodeType::Map) {
+    if (!tags || tags.Type() != YAML::NodeType::Map) {
         throw parsing_error("tags should be a map");
     }
 
-    e.type = tags["type"].as<std::string>();
-    e.category = tags["category"].as<std::string>();
-    // on_match is optional
-    if (rule["on_match"]) {
-        e.actions = rule["on_match"].as<std::vector<std::string>>();
-    }
-    e.matches = node["rule_matches"].as<std::vector<match>>();
+    e.type = as<std::string>(tags, "type");
+    e.category = as<std::string>(tags, "category");
+    e.actions = as<std::vector<std::string>>(rule, "on_match");
+    e.matches = as<std::vector<match>>(node, "rule_matches");
 
     return e;
 }
