@@ -209,7 +209,20 @@ TEST(TestRule, ToggleRuleInCollection)
 
         ddwaf_result res;
         EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_STREQ(res.data, R"([{"rule":{"id":"id-rule-2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value2","key_path":[],"value":"rule2","highlight":["rule2"]}]}]}])");
+        EXPECT_THAT(res, WithEvent(
+        {
+            .id = "id-rule-2",
+            .name = "rule2",
+            .type = "flow2",
+            .category = "category2",
+            .matches = {{
+                .op = "match_regex",
+                .op_value = "rule2",
+                .address = "value2",
+                .value = "rule2",
+                .highlight = "rule2"
+            }}
+        }));
 
         ddwaf_result_free(&res);
         ddwaf_context_destroy(context);
@@ -235,7 +248,20 @@ TEST(TestRule, ToggleRuleInCollection)
 
         ddwaf_result res;
         EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_STREQ(res.data, R"([{"rule":{"id":"id-rule-3","name":"rule3","tags":{"type":"flow2","category":"category3"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value2","key_path":[],"value":"rule2","highlight":["rule2"]}]}]}])");
+        EXPECT_THAT(res, WithEvent(
+        {
+            .id = "id-rule-3",
+            .name = "rule3",
+            .type = "flow2",
+            .category = "category3",
+            .matches = {{
+                .op = "match_regex",
+                .op_value = "rule2",
+                .address = "value2",
+                .value = "rule2",
+                .highlight = "rule2"
+            }}
+        }));
 
         ddwaf_result_free(&res);
         ddwaf_context_destroy(context);

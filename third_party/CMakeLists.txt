@@ -1,5 +1,6 @@
 project(third_party)
 include(ExternalProject)
+include(FetchContent)
 
 set(DOWNLOAD_SUBDIR downloads)
 set(INSTALL_DIR  ${CMAKE_BINARY_DIR}/third_party)
@@ -64,37 +65,12 @@ if(NOT MSVC)
 endif()
 add_dependencies(lib_re2 proj_re2)
 
-set(GOOGLETEST_COMMIT 955c7f837efad184ec63e771c42542d37545eaef)
-ExternalProject_Add(proj_gtest
-    URL         https://github.com/google/googletest/archive/${GOOGLETEST_COMMIT}.tar.gz
-    INSTALL_DIR ${INSTALL_DIR}
-    CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-                -DCMAKE_INSTALL_LIBDIR=lib
-                -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-                -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
-                -DCMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}
-                -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
-                -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
-                -DBUILD_SHARED_LIBS=0
-                -DBUILD_GMOCK=0
-)
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-    set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtestd${CMAKE_STATIC_LIBRARY_SUFFIX})
-else()
-    set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
+FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG 955c7f837efad184ec63e771c42542d37545eaef)
 
-add_library(lib_gtest STATIC IMPORTED GLOBAL)
-set_property(TARGET lib_gtest PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBGTEST_FILENAME})
-target_include_directories(lib_gtest INTERFACE ${INSTALL_DIR}/include)
-if(NOT MSVC)
-    target_link_libraries(lib_gtest INTERFACE -lpthread)
-endif()
-add_dependencies(lib_gtest proj_gtest)
-set_target_properties(lib_gtest proj_gtest PROPERTIES EXCLUDE_FROM_ALL TRUE)
+FetchContent_MakeAvailable(googletest)
 
 add_library(lib_injection STATIC
     libinjection/src/xss.c

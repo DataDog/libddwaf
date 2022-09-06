@@ -32,7 +32,7 @@ else()
 endif()
 
 target_link_libraries(testPowerWAF
-    PRIVATE lib_gtest ${COVERAGE_LINK_FLAGS}
+    PRIVATE gtest gmock ${COVERAGE_LINK_FLAGS}
     ${LIBDDWAF_PRIVATE_LIBRARIES} ${LIBDDWAF_INTERFACE_LIBRARIES}
     ${LIBDDWAF_EXE_LINKER_FLAGS} lib_yamlcpp)
 

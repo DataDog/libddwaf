@@ -18,6 +18,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <re2/re2.h>
 
@@ -50,28 +51,14 @@ using namespace std;
 #include <rule_processor/ip_match.hpp>
 #include <rule_processor/exact_match.hpp>
 
-using namespace std::literals;
+#include "test_utils.hpp"
 
+using namespace std::literals;
 using namespace ddwaf;
+
 // 1s and 1us
 #define LONG_TIME 1000000
 #define SHORT_TIME 1
-
-extern ddwaf_object readFile(const char* filename);
-extern ddwaf_object readRule(const char* rule);
-extern void compareData(const char* rulename, ddwaf_object input, size_t time, const char* expectedOutput);
-
-namespace YAML
-{
-template <>
-struct as_if<ddwaf_object, void>
-{
-    explicit as_if(const Node& node_);
-    ddwaf_object operator()() const;
-    const Node& node;
-};
-
-}
 
 #define DDWAF_OBJECT_INVALID                    \
     {                                           \
