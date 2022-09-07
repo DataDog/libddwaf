@@ -98,22 +98,34 @@ private:
 
 class WafResultDataMatcher {
 public:
-    WafResultDataMatcher(ddwaf::test::event expected):
-        expected_(std::move(expected)) {}
+    WafResultDataMatcher(ddwaf::test::event expected_events,
+      bool exact_match = true):
+        expected_events_({std::move(expected_events)}),
+        exact_match_(exact_match) {}
+
+    WafResultDataMatcher(std::vector<ddwaf::test::event> expected_events,
+      bool exact_match = true):
+        expected_events_(std::move(expected_events)),
+        exact_match_(exact_match) {}
 
     bool MatchAndExplain(const ddwaf_result &result,
       ::testing::MatchResultListener*) const;
 
     void DescribeTo(::std::ostream* os) const {
-        *os << expected_;
+        for (auto expected : expected_events_) {
+            *os << expected;
+        }
     }
 
     void DescribeNegationTo(::std::ostream* os) const {
-        *os << expected_;
+        for (auto expected : expected_events_) {
+            *os << expected;
+        }
     }
 
 protected:
-    ddwaf::test::event expected_;
+    std::vector<ddwaf::test::event> expected_events_;
+    bool exact_match_;
 };
 
 
@@ -123,8 +135,26 @@ inline ::testing::PolymorphicMatcher<WafResultActionMatcher> WithActions(
         WafResultActionMatcher(std::move(values)));
 }
 
+inline ::testing::PolymorphicMatcher<WafResultDataMatcher> ContainsEvent(
+    ddwaf::test::event &&expected) {
+    return ::testing::MakePolymorphicMatcher(
+        WafResultDataMatcher(std::move(expected), false));
+}
+
+inline ::testing::PolymorphicMatcher<WafResultDataMatcher> ContainsEvents(
+    std::vector<ddwaf::test::event> &&expected) {
+    return ::testing::MakePolymorphicMatcher(
+        WafResultDataMatcher(std::move(expected), false));
+}
+
 inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvent(
     ddwaf::test::event &&expected) {
+    return ::testing::MakePolymorphicMatcher(
+        WafResultDataMatcher(std::move(expected)));
+}
+
+inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
+    std::vector<ddwaf::test::event> &&expected) {
     return ::testing::MakePolymorphicMatcher(
         WafResultDataMatcher(std::move(expected)));
 }

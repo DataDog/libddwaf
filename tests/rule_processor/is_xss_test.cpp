@@ -68,7 +68,17 @@ TEST(TestIsXSS, TestRuleset)
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"is_xss","operator_value":"","parameters":[{"address":"arg1","key_path":[],"value":"<script>alert(1);</script>","highlight":[]}]}]}])");
+    EXPECT_THAT(ret, WithEvent({
+        .id = "1",
+        .name = "rule1",
+        .type = "flow1",
+        .category = "category1",
+        .matches = {{
+            .op = "is_xss",
+            .address = "arg1",
+            .value = "<script>alert(1);</script>",
+        }}
+    }));
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

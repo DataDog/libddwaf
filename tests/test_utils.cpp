@@ -274,12 +274,28 @@ bool WafResultDataMatcher::MatchAndExplain(const ddwaf_result &result,
     if (result.data == nullptr) { return false; }
 
     YAML::Node doc = YAML::Load(result.data);
-    auto events = doc.as<std::vector<ddwaf::test::event>>();
-    for (auto &obtained : events) {
-        if (obtained == expected_) { return true; }
+    auto events = doc.as<std::list<ddwaf::test::event>>();
+
+    if (exact_match_ && events.size() != expected_events_.size()) {
+        return false;
     }
 
-    return false;
+    for (auto expected : expected_events_) {
+        bool found = false;
+        for (auto it = events.begin() ; it != events.end() ; ++it) {
+            auto &obtained = *it;
+            if (obtained == expected) {
+                if (exact_match_) { events.erase(it); }
+                found = true;
+                break;
+            }
+        }
+        if (!found) { return false; }
+    }
+
+    if (exact_match_ && !events.empty()) { return false; }
+
+    return true;
 }
 
 size_t getFileSize(const char* filename)
