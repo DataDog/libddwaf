@@ -6,6 +6,8 @@
 #pragma once
 
 #include "test.h"
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/schema.h"
 
 using ddwaf_result_actions = ddwaf_result::_ddwaf_result_actions;
 
@@ -72,6 +74,22 @@ struct as_if<ddwaf::test::event, void>
 };
 
 }
+
+class event_schema_validator
+{
+public:
+    event_schema_validator();
+    std::optional<std::string> validate(const char *events);
+protected:
+    rapidjson::Document schema_doc_;
+    std::unique_ptr<rapidjson::SchemaDocument> schema_;
+    std::unique_ptr<rapidjson::SchemaValidator> validator_;
+};
+
+// Note that naming conventions (and Pascal case) are kept for functions and
+// classes involved in anything GTest related.
+
+::testing::AssertionResult ValidateSchema(const ddwaf_result &result);
 
 // Required by gtest to pretty print relevant types
 void PrintTo(const ddwaf_result_actions &actions, ::std::ostream *os);
@@ -158,6 +176,12 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     return ::testing::MakePolymorphicMatcher(
         WafResultDataMatcher(std::move(expected)));
 }
+
+#define EXPECT_EVENTS(result, ...) \
+    EXPECT_TRUE(ValidateSchema(result)); \
+    EXPECT_THAT(result, WithEvents(__VA_ARGS__));
+
+#define EXPECT_EVENT(result, ...)  EXPECT_EVENTS(result, {__VA_ARGS__})
 
 ddwaf_object readFile(const char* filename);
 ddwaf_object readRule(const char* rule);

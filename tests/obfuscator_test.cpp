@@ -72,7 +72,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -85,7 +85,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
                 .value = "rule1",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -100,7 +100,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -114,7 +114,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
                 .value = "<Redacted>",
                 .highlight = "<Redacted>"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -128,7 +128,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -141,7 +141,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
                 .value = "<Redacted>",
                 .highlight = "<Redacted>"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -156,7 +156,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -170,7 +170,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
                 .value = "<Redacted>",
                 .highlight = "<Redacted>"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -199,7 +199,7 @@ TEST(TestObfuscator, TestConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -212,7 +212,7 @@ TEST(TestObfuscator, TestConfigKey)
                 .value = "rule1",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -227,7 +227,7 @@ TEST(TestObfuscator, TestConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -241,7 +241,7 @@ TEST(TestObfuscator, TestConfigKey)
                 .value = "<Redacted>",
                 .highlight = "<Redacted>"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -255,7 +255,7 @@ TEST(TestObfuscator, TestConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -268,7 +268,7 @@ TEST(TestObfuscator, TestConfigKey)
                 .value = "rule1_obf",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -296,7 +296,7 @@ TEST(TestObfuscator, TestConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -309,7 +309,7 @@ TEST(TestObfuscator, TestConfigValue)
                 .value = "rule1",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -324,7 +324,7 @@ TEST(TestObfuscator, TestConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -338,7 +338,7 @@ TEST(TestObfuscator, TestConfigValue)
                 .value = "rule1",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -352,7 +352,7 @@ TEST(TestObfuscator, TestConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -365,7 +365,7 @@ TEST(TestObfuscator, TestConfigValue)
                 .value = "<Redacted>",
                 .highlight = "<Redacted>"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -393,7 +393,7 @@ TEST(TestObfuscator, TestConfigHighlight)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "2",
             .name = "rule2",
@@ -405,7 +405,7 @@ TEST(TestObfuscator, TestConfigHighlight)
                 .value = "<Redacted>",
                 .highlight = "<Redacted>"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -419,7 +419,7 @@ TEST(TestObfuscator, TestConfigHighlight)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "2",
             .name = "rule2",
@@ -431,7 +431,7 @@ TEST(TestObfuscator, TestConfigHighlight)
                 .value = "othervalue_badvalue",
                 .highlight = "othervalue"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -460,7 +460,7 @@ TEST(TestObfuscator, TestConfigEmpty)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -473,7 +473,7 @@ TEST(TestObfuscator, TestConfigEmpty)
                 .value = "rule1",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -488,7 +488,7 @@ TEST(TestObfuscator, TestConfigEmpty)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -502,7 +502,7 @@ TEST(TestObfuscator, TestConfigEmpty)
                 .value = "rule1",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -516,7 +516,7 @@ TEST(TestObfuscator, TestConfigEmpty)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -529,7 +529,7 @@ TEST(TestObfuscator, TestConfigEmpty)
                 .value = "rule1_obf",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -557,7 +557,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -570,7 +570,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
                 .value = "rule1",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -585,7 +585,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -599,7 +599,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
                 .value = "<Redacted>",
                 .highlight = "<Redacted>"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -613,7 +613,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -626,7 +626,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
                 .value = "rule1_obf",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -655,7 +655,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -668,7 +668,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
                 .value = "rule1",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -683,7 +683,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -697,7 +697,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
                 .value = "rule1",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -711,7 +711,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(out, WithEvent(
+        EXPECT_EVENT(out,
         {
             .id = "1",
             .name = "rule1",
@@ -724,7 +724,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
                 .value = "rule1_obf",
                 .highlight = "rule1"
             }}
-        }));
+        });
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }

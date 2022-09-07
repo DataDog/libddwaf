@@ -29,8 +29,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
 
     ddwaf_result output;
     serializer.serialize(output);
-    EXPECT_THAT(output, WithEvent({}));
-    EXPECT_STREQ(output.data, R"([{"rule":{"id":"","name":"","tags":{"type":"","category":""}},"rule_matches":[]}])");
+    EXPECT_EVENT(output, {});
 
     ddwaf_result_free(&output);
 }
@@ -59,8 +58,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf_result output;
     serializer.serialize(output);
 
-    EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
-    EXPECT_THAT(output, WithEvent(
+    EXPECT_EVENT(output,
     {
         .id = "xasd1022",
         .name = "random rule",
@@ -75,10 +73,9 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
             .value = "value",
             .highlight = "val"
         }}
-    }));
-    EXPECT_STREQ(output.data, R"([{"rule":{"id":"xasd1022","name":"random rule","tags":{"type":"test","category":"none"},"on_match":["block","monitor"]},"rule_matches":[{"operator":"random","operator_value":"val","parameters":[{"address":"query","key_path":["root","key"],"value":"value","highlight":["val"]}]}]}])");
+    });
 
-    ASSERT_NE(output.actions.array, nullptr);
+    EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
 
     ddwaf_result_free(&output);
 }
@@ -110,7 +107,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf_result output;
     serializer.serialize(output);
 
-    EXPECT_THAT(output, WithEvent(
+    EXPECT_EVENT(output,
     {
         .id = "xasd1022",
         .name = "random rule",
@@ -144,10 +141,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
             .path = {"key"},
             .value = "<script>",
         }}
-    }));
-
-
-    EXPECT_STREQ(output.data, R"([{"rule":{"id":"xasd1022","name":"random rule","tags":{"type":"test","category":"none"},"on_match":["block","monitor"]},"rule_matches":[{"operator":"random","operator_value":"val","parameters":[{"address":"query","key_path":["root","key"],"value":"value","highlight":["val"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"response.body","key_path":[],"value":"string","highlight":["string"]}]},{"operator":"ip_match","operator_value":"","parameters":[{"address":"client.ip","key_path":[],"value":"192.168.0.1","highlight":["192.168.0.1"]}]},{"operator":"is_xss","operator_value":"","parameters":[{"address":"path_params","key_path":["key"],"value":"<script>","highlight":[]}]}]}])");
+    });
 
     EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
 
@@ -198,7 +192,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     ddwaf_result output;
     serializer.serialize(output);
-    EXPECT_THAT(output, WithEvents({
+    EXPECT_EVENT(output, {
     {
         .id = "xasd1022",
         .name = "random rule",
@@ -241,9 +235,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         }}
     },
     {}
-    }));
-
-    EXPECT_STREQ(output.data, R"([{"rule":{"id":"xasd1022","name":"random rule","tags":{"type":"test","category":"none"},"on_match":["block","monitor"]},"rule_matches":[{"operator":"random","operator_value":"val","parameters":[{"address":"query","key_path":["root","key"],"value":"value","highlight":["val"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"response.body","key_path":[],"value":"string","highlight":["string"]}]},{"operator":"is_xss","operator_value":"","parameters":[{"address":"path_params","key_path":["key"],"value":"<script>","highlight":[]}]}]},{"rule":{"id":"xasd1023","name":"pseudorandom rule","tags":{"type":"test","category":"none"},"on_match":["unblock"]},"rule_matches":[{"operator":"ip_match","operator_value":"","parameters":[{"address":"client.ip","key_path":[],"value":"192.168.0.1","highlight":["192.168.0.1"]}]}]},{"rule":{"id":"","name":"","tags":{"type":"","category":""}},"rule_matches":[]}])");
+    });
 
     EXPECT_THAT(output.actions, WithActions({"block", "monitor", "unblock"}));
 
@@ -273,7 +265,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf_result output;
     serializer.serialize(output);
 
-    EXPECT_THAT(output, WithEvent(
+    EXPECT_EVENT(output,
     {
         .id = "xasd1022",
         .name = "random rule",
@@ -287,11 +279,9 @@ TEST(TestEventSerializer, SerializeEventNoActions)
             .value = "value",
             .highlight = "val"
         }}
-    }));
+    });
 
     EXPECT_THAT(output.actions, WithActions({}));
-
-    EXPECT_STREQ(output.data, R"([{"rule":{"id":"xasd1022","name":"random rule","tags":{"type":"test","category":"none"}},"rule_matches":[{"operator":"random","operator_value":"val","parameters":[{"address":"query","key_path":["root","key"],"value":"value","highlight":["val"]}]}]}])");
 
     EXPECT_EQ(output.actions.array, nullptr);
     EXPECT_EQ(output.actions.size, 0);

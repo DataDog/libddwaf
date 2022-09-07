@@ -5,6 +5,8 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test_utils.hpp"
+#include <fstream>
+#include <memory>
 
 namespace ddwaf::test {
 
@@ -220,6 +222,68 @@ ddwaf_object as_if<ddwaf_object, void>::operator()() const
 
 }
 
+event_schema_validator::event_schema_validator()
+{
+    std::ifstream rule_file("../schema/appsec-event-1.1.0.json", std::ios::in);
+    if (!rule_file)
+    {
+        throw std::system_error(errno, std::generic_category());
+    }
+
+    std::string buffer;
+    rule_file.seekg(0, std::ios::end);
+    buffer.resize(rule_file.tellg());
+    rule_file.seekg(0, std::ios::beg);
+
+    rule_file.read(&buffer[0], buffer.size());
+    rule_file.close();
+
+    if (schema_doc_.Parse(buffer).HasParseError()) {
+        throw std::runtime_error("failed to parse schema");
+    }
+
+    schema_   = std::make_unique<rapidjson::SchemaDocument>(schema_doc_);
+    validator_ = std::make_unique<rapidjson::SchemaValidator>(*schema_);
+}
+
+std::optional<std::string> event_schema_validator::validate(const char *events)
+{
+    validator_->Reset();
+
+    rapidjson::Document doc;
+    doc.Parse(events);
+    if (doc.HasParseError()) {
+        return std::to_string(doc.GetErrorOffset()) + ": " +
+            rapidjson::GetParseError_En(doc.GetParseError());
+    }
+
+    if (!doc.Accept(*validator_)) {
+
+        rapidjson::StringBuffer sb;
+        rapidjson::PrettyWriter<rapidjson::StringBuffer> w(sb);
+        validator_->GetError().Accept(w);
+
+        return sb.GetString();
+    }
+
+    return std::nullopt;
+}
+
+::testing::AssertionResult ValidateSchema(const ddwaf_result &result) {
+
+    if (result.data == nullptr) {
+        return ::testing::AssertionFailure() << " invalid data";
+    }
+
+    static event_schema_validator schema;
+    auto error = schema.validate(result.data);
+    if (error) {
+        return ::testing::AssertionFailure() << *error;
+    }
+
+    return ::testing::AssertionSuccess();
+}
+
 void PrintTo(const ddwaf_result_actions &actions, ::std::ostream *os)
 {
     *os << "[";
@@ -272,6 +336,7 @@ bool WafResultActionMatcher::MatchAndExplain(const ddwaf_result_actions &actions
 bool WafResultDataMatcher::MatchAndExplain(const ddwaf_result &result,
   ::testing::MatchResultListener*) const {
     if (result.data == nullptr) { return false; }
+
 
     YAML::Node doc = YAML::Load(result.data);
     auto events = doc.as<std::list<ddwaf::test::event>>();

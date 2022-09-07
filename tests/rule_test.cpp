@@ -209,7 +209,7 @@ TEST(TestRule, ToggleRuleInCollection)
 
         ddwaf_result res;
         EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(res, WithEvent(
+        EXPECT_EVENT(res,
         {
             .id = "id-rule-2",
             .name = "rule2",
@@ -222,7 +222,7 @@ TEST(TestRule, ToggleRuleInCollection)
                 .value = "rule2",
                 .highlight = "rule2"
             }}
-        }));
+        });
 
         ddwaf_result_free(&res);
         ddwaf_context_destroy(context);
@@ -248,7 +248,7 @@ TEST(TestRule, ToggleRuleInCollection)
 
         ddwaf_result res;
         EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_THAT(res, WithEvent(
+        EXPECT_EVENT(res,
         {
             .id = "id-rule-3",
             .name = "rule3",
@@ -261,7 +261,7 @@ TEST(TestRule, ToggleRuleInCollection)
                 .value = "rule2",
                 .highlight = "rule2"
             }}
-        }));
+        });
 
         ddwaf_result_free(&res);
         ddwaf_context_destroy(context);

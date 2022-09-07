@@ -67,7 +67,8 @@ TEST(TestIsSQLi, TestRuleset)
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_THAT(ret, WithEvent({
+    EXPECT_EVENT(ret,
+    {
         .id = "1",
         .name = "rule1",
         .type = "flow1",
@@ -78,7 +79,7 @@ TEST(TestIsSQLi, TestRuleset)
             .value = "'OR 1=1/*",
             .highlight = "s&1c"
         }}
-    }));
+    });
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);
