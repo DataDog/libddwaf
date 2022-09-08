@@ -209,7 +209,7 @@ TEST(TestRule, ToggleRuleInCollection)
 
         ddwaf_result res;
         EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(res,
+        EXPECT_EVENTS(res,
         {
             .id = "id-rule-2",
             .name = "rule2",
@@ -248,7 +248,7 @@ TEST(TestRule, ToggleRuleInCollection)
 
         ddwaf_result res;
         EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(res,
+        EXPECT_EVENTS(res,
         {
             .id = "id-rule-3",
             .name = "rule3",

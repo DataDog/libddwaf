@@ -72,6 +72,11 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
+set_target_properties(gtest PROPERTIES EXCLUDE_FROM_ALL TRUE)
+set_target_properties(gtest_main PROPERTIES EXCLUDE_FROM_ALL TRUE)
+set_target_properties(gmock PROPERTIES EXCLUDE_FROM_ALL TRUE)
+set_target_properties(gmock_main PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
 add_library(lib_injection STATIC
     libinjection/src/xss.c
     libinjection/src/libinjection_html5.c

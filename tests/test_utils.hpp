@@ -116,15 +116,9 @@ private:
 
 class WafResultDataMatcher {
 public:
-    WafResultDataMatcher(ddwaf::test::event expected_events,
-      bool exact_match = true):
-        expected_events_({std::move(expected_events)}),
-        exact_match_(exact_match) {}
 
-    WafResultDataMatcher(std::vector<ddwaf::test::event> expected_events,
-      bool exact_match = true):
-        expected_events_(std::move(expected_events)),
-        exact_match_(exact_match) {}
+    WafResultDataMatcher(std::vector<ddwaf::test::event> expected_events):
+        expected_events_(std::move(expected_events)) {}
 
     bool MatchAndExplain(const ddwaf_result &result,
       ::testing::MatchResultListener*) const;
@@ -143,7 +137,6 @@ public:
 
 protected:
     std::vector<ddwaf::test::event> expected_events_;
-    bool exact_match_;
 };
 
 
@@ -151,24 +144,6 @@ inline ::testing::PolymorphicMatcher<WafResultActionMatcher> WithActions(
   std::vector<std::string_view> &&values) {
     return ::testing::MakePolymorphicMatcher(
         WafResultActionMatcher(std::move(values)));
-}
-
-inline ::testing::PolymorphicMatcher<WafResultDataMatcher> ContainsEvent(
-    ddwaf::test::event &&expected) {
-    return ::testing::MakePolymorphicMatcher(
-        WafResultDataMatcher(std::move(expected), false));
-}
-
-inline ::testing::PolymorphicMatcher<WafResultDataMatcher> ContainsEvents(
-    std::vector<ddwaf::test::event> &&expected) {
-    return ::testing::MakePolymorphicMatcher(
-        WafResultDataMatcher(std::move(expected), false));
-}
-
-inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvent(
-    ddwaf::test::event &&expected) {
-    return ::testing::MakePolymorphicMatcher(
-        WafResultDataMatcher(std::move(expected)));
 }
 
 inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
@@ -179,9 +154,7 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
 
 #define EXPECT_EVENTS(result, ...) \
     EXPECT_TRUE(ValidateSchema(result)); \
-    EXPECT_THAT(result, WithEvents(__VA_ARGS__));
-
-#define EXPECT_EVENT(result, ...)  EXPECT_EVENTS(result, {__VA_ARGS__})
+    EXPECT_THAT(result, WithEvents({__VA_ARGS__}));
 
 ddwaf_object readFile(const char* filename);
 ddwaf_object readRule(const char* rule);

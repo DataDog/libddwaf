@@ -68,7 +68,7 @@ TEST(TestIsXSS, TestRuleset)
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_EVENT(ret,
+    EXPECT_EVENTS(ret,
     {
         .id = "1",
         .name = "rule1",

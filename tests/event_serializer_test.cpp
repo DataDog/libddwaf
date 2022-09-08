@@ -29,7 +29,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
 
     ddwaf_result output;
     serializer.serialize(output);
-    EXPECT_EVENT(output, {});
+    EXPECT_EVENTS(output, {});
 
     ddwaf_result_free(&output);
 }
@@ -58,7 +58,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf_result output;
     serializer.serialize(output);
 
-    EXPECT_EVENT(output,
+    EXPECT_EVENTS(output,
     {
         .id = "xasd1022",
         .name = "random rule",
@@ -107,7 +107,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf_result output;
     serializer.serialize(output);
 
-    EXPECT_EVENT(output,
+    EXPECT_EVENTS(output,
     {
         .id = "xasd1022",
         .name = "random rule",
@@ -192,7 +192,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     ddwaf_result output;
     serializer.serialize(output);
-    EXPECT_EVENT(output, {
+    EXPECT_EVENTS(output,
     {
         .id = "xasd1022",
         .name = "random rule",
@@ -235,7 +235,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         }}
     },
     {}
-    });
+    );
 
     EXPECT_THAT(output.actions, WithActions({"block", "monitor", "unblock"}));
 
@@ -265,7 +265,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf_result output;
     serializer.serialize(output);
 
-    EXPECT_EVENT(output,
+    EXPECT_EVENTS(output,
     {
         .id = "xasd1022",
         .name = "random rule",

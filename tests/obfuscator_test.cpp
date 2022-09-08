@@ -72,7 +72,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -100,7 +100,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -128,7 +128,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -156,7 +156,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -199,7 +199,7 @@ TEST(TestObfuscator, TestConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -227,7 +227,7 @@ TEST(TestObfuscator, TestConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -255,7 +255,7 @@ TEST(TestObfuscator, TestConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -296,7 +296,7 @@ TEST(TestObfuscator, TestConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -324,7 +324,7 @@ TEST(TestObfuscator, TestConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -352,7 +352,7 @@ TEST(TestObfuscator, TestConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -393,7 +393,7 @@ TEST(TestObfuscator, TestConfigHighlight)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "2",
             .name = "rule2",
@@ -419,7 +419,7 @@ TEST(TestObfuscator, TestConfigHighlight)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "2",
             .name = "rule2",
@@ -460,7 +460,7 @@ TEST(TestObfuscator, TestConfigEmpty)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -488,7 +488,7 @@ TEST(TestObfuscator, TestConfigEmpty)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -516,7 +516,7 @@ TEST(TestObfuscator, TestConfigEmpty)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -557,7 +557,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -585,7 +585,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -613,7 +613,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -655,7 +655,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -683,7 +683,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
@@ -711,7 +711,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENT(out,
+        EXPECT_EVENTS(out,
         {
             .id = "1",
             .name = "rule1",
