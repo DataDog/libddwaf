@@ -6,7 +6,7 @@
 - Remove `ddwaf_version`, `ddwaf_get_version` now returns a version string ([#89](https://github.com/DataDog/libddwaf/pull/89))
 - Move free function from `ddwaf_context_init` to `ddwaf_config` ([#89](https://github.com/DataDog/libddwaf/pull/89))
 - Add `ddwaf_result.actions` struct containing a `char*` array and its size ([#91](https://github.com/DataDog/libddwaf/pull/91))
-- Add dummy `ddwaf_update_rule_data` for future use ([#91](https://github.com/DataDog/libddwaf/pull/91))
+- Add `ddwaf_update_rule_data` ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Remote `DDWAF_BLOCK` ([#91](https://github.com/DataDog/libddwaf/pull/91))
 - Rename `DDWAF_GOOD` to `DDWAF_OK` ([#92](https://github.com/DataDog/libddwaf/pull/92))
 - Rename `DDWAF_MONITOR` to `DDWAF_MATCH` ([#92](https://github.com/DataDog/libddwaf/pull/92))
