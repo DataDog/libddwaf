@@ -1,8 +1,4 @@
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/schema.h"
 #include "test.h"
-#include <fstream>
-#include <memory>
 
 using namespace rapidjson;
 
@@ -11,28 +7,6 @@ class TestSchemaFixture : public ::testing::Test
 public:
     TestSchemaFixture()
     {
-        std::ifstream rule_file("../schema/appsec-event-1.1.0.json", std::ios::in);
-        if (!rule_file)
-        {
-            throw std::system_error(errno, std::generic_category());
-        }
-
-        std::string buffer;
-        rule_file.seekg(0, std::ios::end);
-        buffer.resize(rule_file.tellg());
-        rule_file.seekg(0, std::ios::beg);
-
-        rule_file.read(&buffer[0], buffer.size());
-        rule_file.close();
-
-        if (sd.Parse(buffer).HasParseError())
-        {
-            throw std::runtime_error("failed to parse schema");
-        }
-
-        schema    = std::make_unique<SchemaDocument>(sd);
-        validator = std::make_unique<SchemaValidator>(*schema);
-
         auto rule = readFile("schema.yaml");
         if (rule.type == DDWAF_OBJ_INVALID)
         {
@@ -55,8 +29,6 @@ public:
 
     void SetUp()
     {
-        validator->Reset();
-
         context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
     }
@@ -67,24 +39,14 @@ public:
         context = nullptr;
     }
 
-    std::string Error()
-    {
-        StringBuffer sb;
-        PrettyWriter<StringBuffer> w(sb);
-        validator->GetError().Accept(w);
-        return sb.GetString();
-    }
-
     void Validate(ddwaf_result ret, DDWAF_RET_CODE code)
     {
         Document d;
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_NE(ret.data, nullptr);
         EXPECT_FALSE(ret.timeout);
-        if (!HasFailure())
-        {
-            EXPECT_FALSE(d.Parse(ret.data).HasParseError());
-            EXPECT_TRUE(d.Accept(*validator)) << Error();
+        if (!HasFailure()) {
+            EXPECT_TRUE(ValidateSchema(ret));
         }
     }
 

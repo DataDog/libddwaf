@@ -6,7 +6,7 @@ add_executable(testPowerWAF ${LIBDDWAF_SOURCE} ${LIBDDWAF_TEST_SOURCE})
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 
 set_target_properties(testPowerWAF PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
 
