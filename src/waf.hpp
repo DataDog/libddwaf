@@ -37,6 +37,10 @@ public:
     const std::vector<const char*>& get_root_addresses() const {
         return ruleset_.manifest.get_root_addresses();
     }
+    const std::vector<const char*>& get_rule_data_ids() {
+        return ruleset_.dispatcher.get_rule_data_ids();
+    }
+
 protected:
     ddwaf::ruleset ruleset_;
     ddwaf::config config_;

@@ -23,6 +23,33 @@ TEST(TestWaf, RootAddresses)
     }
 }
 
+TEST(TestWaf, RuleDatIDs)
+{
+    auto rule = readFile("rule_data.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf::ruleset_info info;
+    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    ddwaf_object_free(&rule);
+
+    std::set<std::string_view> available_ids{"usr_data", "ip_data"};
+    for (auto id: instance->get_rule_data_ids()) {
+        EXPECT_NE(available_ids.find(id), available_ids.end());
+    }
+}
+
+TEST(TestWaf, EmptyRuleDatIDs)
+{
+    auto rule = readFile("interface.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf::ruleset_info info;
+    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(instance->get_rule_data_ids().empty());
+}
+
 TEST(TestWaf, BasicContextRun)
 {
     auto rule = readFile("interface.yaml");

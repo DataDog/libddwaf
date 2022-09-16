@@ -155,6 +155,26 @@ extern "C"
         return addresses.data();
     }
 
+
+    const char* const* ddwaf_required_rule_data_ids(const ddwaf_handle handle, uint32_t *size)
+    {
+        if (handle == nullptr)
+        {
+            *size = 0;
+            return nullptr;
+        }
+
+        const auto& ids = handle->get_rule_data_ids();
+        if (ids.empty() || ids.size() > std::numeric_limits<uint32_t>::max())
+        {
+            *size = 0;
+            return nullptr;
+        }
+
+        *size = (uint32_t) ids.size();
+        return ids.data();
+    }
+
     ddwaf_context ddwaf_context_init(const ddwaf_handle handle)
     {
         ddwaf_context output = nullptr;

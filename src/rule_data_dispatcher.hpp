@@ -12,6 +12,7 @@
 #include <memory>
 #include <type_traits>
 #include <parameter.hpp>
+#include <vector>
 #include <rule.hpp>
 #include <parser/rule_data_parser.hpp>
 
@@ -88,7 +89,7 @@ public:
     void dispatch(const std::string &id, std::string_view type, parameter &data) {
         auto it = type_dispatchers_.find(id);
         if (it == type_dispatchers_.end()) {
-            DDWAF_ERROR("Dispatcher not found for id '%s'", id.c_str());
+            DDWAF_WARN("Rule data id '%s' has no associated dispatcher", id.c_str());
             return;
         }
 
@@ -115,9 +116,22 @@ public:
             }
         }
     }
+
+    const std::vector<const char*>& get_rule_data_ids() {
+        if (!type_dispatchers_.empty() && rule_data_ids_.empty()) {
+            rule_data_ids_.reserve(type_dispatchers_.size());
+            for (auto &[key, value] : type_dispatchers_) {
+                rule_data_ids_.emplace_back(key.c_str());
+            }
+        }
+
+        return rule_data_ids_;
+    }
+        
 protected:
     std::unordered_map<std::string,
         std::unique_ptr<type_dispatcher_base>> type_dispatchers_;
+    std::vector<const char *> rule_data_ids_;
 };
 
 class dispatcher_builder {
