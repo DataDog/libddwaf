@@ -115,7 +115,7 @@ bool context::run_collection(const std::string& name,
             status_cache_.insert_or_assign(rule.index, event.has_value());
 
             if (event.has_value()) {
-                serializer.insert(std::move(event.value()));
+                serializer.insert(std::move(*event));
                 break;
             }
         } catch (const ddwaf::timeout_exception&) {
