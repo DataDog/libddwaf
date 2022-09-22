@@ -5,6 +5,8 @@ EXPORTS
   ddwaf_update_rule_data
   ddwaf_toggle_rules
   ddwaf_ruleset_info_free
+  ddwaf_required_addresses
+  ddwaf_required_rule_data_ids
   ddwaf_context_init
   ddwaf_run
   ddwaf_context_destroy
