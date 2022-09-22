@@ -1,5 +1,15 @@
 # libddwaf release
 
+### v1.5.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/22
+
+#### API \& Breaking Changes
+- Add `ddwaf_required_rule_data_ids` to obtain the rule data IDs defined in the ruleset ([#104](https://github.com/DataDog/libddwaf/pull/104))
+
+#### Miscellaneous
+- GTest `ddwaf_result` validators ([#102](https://github.com/DataDog/libddwaf/pull/102))
+- Replace `std::optional::value()` with `std::optional::operator*()` ([#105](https://github.com/DataDog/libddwaf/pull/105))
+- Add new and missing exports ([#106](https://github.com/DataDog/libddwaf/pull/106))
+
 ### v1.5.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/08
 
 #### API \& Breaking Changes
