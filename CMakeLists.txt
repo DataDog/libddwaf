@@ -29,6 +29,7 @@ endif()
 option(LIBDDWAF_BUILD_SHARED "Build shared library" ON)
 option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
 option(LIBDDWAF_KEEP_SYMBOL_FILE "Keep the debug symbol file" ON)
+option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -326,10 +327,11 @@ set(CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION TRUE)
 
 include(CPack)
 
-add_subdirectory(tests EXCLUDE_FROM_ALL)
-add_subdirectory(validator EXCLUDE_FROM_ALL)
-add_subdirectory(perf EXCLUDE_FROM_ALL)
-add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
-add_subdirectory(examples EXCLUDE_FROM_ALL)
-
+if (LIBDDWAF_TESTING)
+    add_subdirectory(tests EXCLUDE_FROM_ALL)
+    add_subdirectory(validator EXCLUDE_FROM_ALL)
+    add_subdirectory(perf EXCLUDE_FROM_ALL)
+    add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
+    add_subdirectory(examples EXCLUDE_FROM_ALL)
+endif()
 # vim: set et:
