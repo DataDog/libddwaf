@@ -198,8 +198,18 @@ if (LIBDDWAF_BUILD_STATIC)
               COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
               COMMAND rm -rf ar_comb
               WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-        endif()
-    endif()
+      endif()
+      if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
+          if (CMAKE_SYSTEM_NAME STREQUAL Darwin OR CMAKE_SYSTEM_NAME STREQUAL Linux)
+              find_program(STRIP strip)
+              if (STRIP STREQUAL "STRIP-NOTFOUND")
+                  message(FATAL_ERROR "strip not found")
+              endif()
+              add_custom_command(TARGET libddwaf_static POST_BUILD
+                  COMMAND ${STRIP} -x -S $<TARGET_FILE:libddwaf_static> -o $<TARGET_FILE:libddwaf_static>.stripped)
+          endif()
+      endif()
+  endif()
 endif()
 
 # Shared library
