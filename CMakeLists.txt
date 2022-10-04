@@ -15,7 +15,7 @@ endif()
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON
 
 set(LIBDDWAF_SHARED_LINKER_FLAGS "-static-libstdc++" CACHE STRING "Shared library extra linker flags")
 set(LIBDDWAF_EXE_LINKER_FLAGS "" CACHE STRING "Executable extra linker flags")
@@ -208,7 +208,7 @@ if (LIBDDWAF_BUILD_STATIC)
               endif()
               add_custom_command(TARGET libddwaf_static POST_BUILD
                   COMMAND ${STRIP} -x -S $<TARGET_FILE:libddwaf_static> -o $<TARGET_FILE:libddwaf_static>.stripped)
-              install(ARCHIVE $<TARGET_FILE:libddwaf_static>.stripped DESTINATION${CMAKE_INSTALL_LIBDIR})
+              install(FILES $<TARGET_FILE:libddwaf_static>.stripped DESTINATION${CMAKE_INSTALL_LIBDIR})
           endif()
       endif()
   endif()
