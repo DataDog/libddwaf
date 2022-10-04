@@ -208,7 +208,7 @@ if (LIBDDWAF_BUILD_STATIC)
               endif()
               add_custom_command(TARGET libddwaf_static POST_BUILD
                   COMMAND ${STRIP} -x -S $<TARGET_FILE:libddwaf_static> -o $<TARGET_FILE:libddwaf_static>.stripped)
-              install(FILES $<TARGET_FILE:libddwaf_static>.stripped DESTINATION${CMAKE_INSTALL_LIBDIR})
+              install(FILES $<TARGET_FILE:libddwaf_static>.stripped DESTINATION ${CMAKE_INSTALL_LIBDIR})
           endif()
       endif()
   endif()
