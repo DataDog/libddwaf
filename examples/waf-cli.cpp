@@ -186,7 +186,19 @@ int main(int argc, char* argv[])
     {
         std::cerr << "Usage: " << argv[0] << " <json/yaml rule file> <yaml input>" << std::endl;
         std::cerr << std::endl;
-        std::cerr <<"    " << argv[0] << "appsec-event-rules/build/recommended.json \"<script>alert(0)\"" << std::endl;
+        std::cerr << "    " << argv[0] << "appsec-event-rules/build/recommended.json \"<script>alert(0)\"" << std::endl;
+        std::cerr << std::endl;
+        std::cerr << "   JSON file format: {\"org_id\": [array of attacks]" << std::endl;
+        std::cerr << "   Example: {\"1000201\": [\"<script>alert()\", \"' OR 1=1-- \"]}" << std::endl;
+        std::cerr << "" << std::endl;
+        std::cerr << "   The address used as attack provenance is \"server.request.query\"" << std::endl;
+        std::cerr << "" << std::endl;
+        std::cerr << "   In order to run every rule against an attack, each rule has to have a different type." << std::endl;
+        std::cerr << "   the rule file has to be changed in such a way, for instance in VIM:" << std::endl;
+        std::cerr << "   :let i=1 | g/^ *\"type\": \"/s//\\='\"type\": \"'.i/ | let i=i+1l;" << std::endl;
+        std::cerr << "" << std::endl;
+        std::cerr << std::endl;
+
         return EXIT_FAILURE;
     }
 
