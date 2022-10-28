@@ -2,7 +2,7 @@ FROM alpine:3.12 AS cross
 RUN apk update && apk add build-base abuild git sudo
 RUN git clone https://gitlab.alpinelinux.org/alpine/aports.git --branch 3.12-stable --depth 1
 COPY docker/libddwaf/aarch64-linux-musl/binutils.patch docker/libddwaf/aarch64-linux-musl/gcc.patch /across/
-RUN cd /aports && patch -p1 < /across/binutils.patch && patch -p1 < /across/gcc.patch
+RUN cd /aports && patch -p1 < /across/binutils.patch
 COPY docker/libddwaf/aarch64-linux-musl/setup-cross-cc.sh /across/
 WORKDIR /across
 RUN sh setup-cross-cc.sh aarch64
