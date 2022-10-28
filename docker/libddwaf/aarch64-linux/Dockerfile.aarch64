@@ -39,7 +39,7 @@ RUN mkdir -p /build
 WORKDIR /build
 
 RUN mkdir musl && cd musl \
- && /src/musl/configure --prefix=/sysroot/musl && make -j && make install
+ && /src/musl/configure --prefix=/sysroot/musl && make -j$(nproc) && make install
 
 RUN cd /usr/include \
     && cp -av linux asm-generic $(gcc -print-multiarch)/asm /sysroot/musl/include
@@ -81,7 +81,7 @@ RUN mkdir compiler-rt && cd compiler-rt \
         -DLLVM_CONFIG_PATH=/usr/bin/llvm-config-11 \
         \
         ../../src/compiler-rt \
- && make -j \
+ && make -j$(nproc) \
  && make install
 
 RUN mkdir libunwind && cd libunwind \
@@ -109,7 +109,7 @@ RUN mkdir libunwind && cd libunwind \
         -DLIBUNWIND_USE_COMPILER_RT=ON \
         \
         ../../src/libunwind \
- && make -j \
+ && make -j$(nproc) \
  && make install
 
 RUN mkdir libcxxabi && cd libcxxabi \
@@ -141,7 +141,7 @@ RUN mkdir libcxxabi && cd libcxxabi \
         -DLIBCXXABI_LIBCXX_INCLUDES=../../src/libcxx/include \
         \
         ../../src/libcxxabi \
- && make -j \
+ && make -j$(nproc) \
  && make install
 
 RUN mkdir libcxx && cd libcxx \
@@ -173,7 +173,7 @@ RUN mkdir libcxx && cd libcxx \
         -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=0 \
         \
         ../../src/libcxx \
- && make -j \
+ && make -j$(nproc) \
  && make install
 
 RUN apt-get install -y patchelf
@@ -186,10 +186,10 @@ RUN mkdir /build/libddwaf
 WORKDIR /build/libddwaf
 RUN cmake -E make_directory packages && \
     cmake -DCMAKE_TOOLCHAIN_FILE="../../src/libddwaf/docker/libddwaf/aarch64-linux/Toolchain.aarch64.cmake" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../prefix -DCPACK_PACKAGE_DIRECTORY=packages ../../src/libddwaf && \
-    cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target testPowerWAF -j && \
+    cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target testPowerWAF -j$(nproc) && \
     patchelf --remove-needed libc.so libddwaf.so && \
-    cmake --build . --config RelWithDebInfo --verbose --target install -j && \
-    cmake --build . --config RelWithDebInfo --verbose --target package -j
+    cmake --build . --config RelWithDebInfo --verbose --target install -j$(nproc) && \
+    cmake --build . --config RelWithDebInfo --verbose --target package -j$(nproc)
 RUN cd ../../src/libddwaf/tests && ../../../build/libddwaf/tests/testPowerWAF
 
 FROM scratch

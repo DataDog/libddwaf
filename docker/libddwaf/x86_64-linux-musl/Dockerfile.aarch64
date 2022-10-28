@@ -25,7 +25,7 @@ RUN mkdir -p /build/libddwaf
 WORKDIR /build/libddwaf
 RUN cmake -E make_directory packages \
  && cmake -DCMAKE_TOOLCHAIN_FILE="../../src/libddwaf/docker/libddwaf/x86_64-linux-musl/Toolchain.aarch64.cmake" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../prefix -DCPACK_PACKAGE_DIRECTORY=packages ../../src/libddwaf \
- && cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target install --target package -j
+ && cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target install --target package -j$(nproc)
 
 FROM scratch
 COPY --from=build /build/libddwaf/packages/ /packages/
