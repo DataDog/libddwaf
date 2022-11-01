@@ -72,11 +72,6 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
 bool context::run_rules(const ddwaf::rule_ref_vector& rules,
   event_serializer &serializer, ddwaf::timer& deadline)
 {
-    // Cache collections to avoid processing once a result has been obtained
-    // TODO: rules could be reordered by collection or we could have one vector
-    //       per collection as usual.
-    std::unordered_set<std::string> collection_cache;
-
     //Process each rule we have to run for this step of the collection
     for (ddwaf::rule& rule : rules)
     {
@@ -87,7 +82,7 @@ bool context::run_rules(const ddwaf::rule_ref_vector& rules,
 
         if (!rule.is_enabled()) { continue; }
 
-        if (collection_cache.find(rule.type) != collection_cache.end()) {
+        if (collection_cache_.find(rule.type) != collection_cache_.end()) {
             continue;
         }
 
@@ -126,7 +121,7 @@ bool context::run_rules(const ddwaf::rule_ref_vector& rules,
             status_cache_.insert_or_assign(rule.index, event.has_value());
 
             if (event.has_value()) {
-                collection_cache.emplace(rule.type);
+                collection_cache_.emplace(rule.type);
                 serializer.insert(std::move(*event));
                 DDWAF_DEBUG("Found event on rule %s", rule.id.c_str());
             }
