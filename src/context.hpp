@@ -52,10 +52,6 @@ protected:
     ddwaf::object_store store_;
     ddwaf::rule_prefilter prefilter;
 
-    // Cache collections to avoid processing once a result has been obtained
-    // TODO: strings should be replaced by a scalar.
-    std::unordered_set<std::string> collection_cache_;
-
     // If we have seen a match, the value will be true, if the value is present
     // and false it means we executed the rule and it did not match.
     std::unordered_map<rule::index_type, bool> status_cache_;
