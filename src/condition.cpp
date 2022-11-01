@@ -18,9 +18,6 @@ namespace ddwaf
 
 std::optional<event::match> condition::match_object(const ddwaf_object* object) const
 {
-    // TODO: this might use mutexes internally, so it might be worth having a
-    //       flag to determine if the processor should be accessed atomatically
-    //       or not.
     decltype(processor_) processor;
     if (mutable_) {
         processor = std::atomic_load(&processor_);
