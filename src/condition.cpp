@@ -16,8 +16,6 @@
 namespace ddwaf
 {
 
-condition::index_type condition::global_index_ = 0;
-
 std::optional<event::match> condition::match_object(const ddwaf_object* object) const
 {
     decltype(processor_) processor;

@@ -20,7 +20,7 @@ dispatcher dispatcher_builder::build(ddwaf::rule_vector &rules)
         if (entry.cond_idx >= rule.conditions.size()) { continue; }
 
         auto &condition = rule.conditions[entry.cond_idx];
-        auto processor_name = condition.processor_name();
+        auto processor_name = condition->processor_name();
 
         try {
             if (processor_name == "ip_match") {

@@ -35,7 +35,7 @@ namespace ddwaf::parser::v2
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule,
+std::shared_ptr<condition> parseCondition(parameter::map& rule,
     std::size_t rule_idx, std::size_t cond_idx,
     rule_data::dispatcher_builder &db,
     manifest_builder& mb, ddwaf::condition::data_source source,
@@ -182,8 +182,8 @@ ddwaf::condition parseCondition(parameter::map& rule,
         targets.push_back(target);
     }
 
-    return {std::move(targets), std::move(transformers),
-        std::move(processor), cfg.limits, source, is_mutable};
+    return std::make_shared<condition>(std::move(targets), std::move(transformers),
+        std::move(processor), cfg.limits, source, is_mutable);
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
@@ -230,7 +230,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 
         auto index           = rs.rules.size();
 
-        std::vector<ddwaf::condition> conditions;
+        std::vector<std::shared_ptr<condition>> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         conditions.reserve(conditions_array.size());
 

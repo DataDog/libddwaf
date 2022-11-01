@@ -18,14 +18,14 @@ namespace ddwaf
 
 rule::rule(index_type index_, std::string &&id_, std::string &&name_,
   std::string &&type_, std::string &&category_,
-  std::vector<condition> &&conditions_,
+  std::vector<std::shared_ptr<condition>> &&conditions_,
   std::vector<std::string> &&actions_):
   index(index_), id(std::move(id_)), name(std::move(name_)),
   type(std::move(type_)), category(std::move(category_)), 
   conditions(std::move(conditions_)), actions(std::move(actions_))
 {
     for (auto &cond : conditions) {
-        const auto &cond_targets = cond.get_targets();
+        const auto &cond_targets = cond->get_targets();
         targets.insert(cond_targets.begin(), cond_targets.end());
     }
 }
@@ -48,8 +48,8 @@ std::optional<event> rule::match(const object_store& store,
 {
     ddwaf::event event;
 
-    for (const ddwaf::condition& cond : conditions) {
-        auto opt_match = cond.match(store, manifest, run_on_new, deadline);
+    for (auto& cond : conditions) {
+        auto opt_match = cond->match(store, manifest, run_on_new, deadline);
         if (!opt_match.has_value()) {
             return std::nullopt;
         }

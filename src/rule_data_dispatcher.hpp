@@ -36,7 +36,7 @@ protected:
         type_dispatcher() = default;
         ~type_dispatcher() override = default;
 
-        void insert(constructor_wrapper_function &&fn, condition& cond) {
+        void insert(constructor_wrapper_function &&fn, std::shared_ptr<condition>& cond) {
             functions_.emplace_back(std::move(fn), cond);
         }
 
@@ -45,13 +45,13 @@ protected:
             for (auto &[fn, cond] : functions_) {
                 auto processor = fn(converted_data);
                 if (processor) {
-                    cond.reset_processor(processor);
+                    cond->reset_processor(processor);
                 }
             }
         }
 
     protected:
-        std::vector<std::pair<constructor_wrapper_function, condition&>> functions_;
+        std::vector<std::pair<constructor_wrapper_function, std::shared_ptr<condition>>> functions_;
     };
 
 public:
@@ -69,7 +69,7 @@ public:
             std::is_base_of<rule_processor::base, std::remove_cv_t<std::decay_t<RuleProcessorType>>>,
             std::negation<std::is_same<rule_processor::base,
                 std::remove_cv_t<std::decay_t<RuleProcessorType>>>>>>>
-    void register_condition(const std::string &id, condition &cond)
+    void register_condition(const std::string &id, std::shared_ptr<condition> &cond)
     {
         using rule_data_type = typename RuleProcessorType::rule_data_type;
         auto it = type_dispatchers_.find(id);

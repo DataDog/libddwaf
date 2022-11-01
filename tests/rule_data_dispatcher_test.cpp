@@ -391,7 +391,8 @@ TEST(TestRuleDataDispatcher, Basic)
 
     auto manifest = mb.build_manifest();
 
-    condition cond(std::move(targets), {},
+    auto cond = std::make_shared<condition>(std::move(targets),
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
@@ -409,7 +410,7 @@ TEST(TestRuleDataDispatcher, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond.match(store, manifest, true, deadline);
+        auto match = cond->match(store, manifest, true, deadline);
         EXPECT_FALSE(match.has_value());
     }
 
@@ -439,7 +440,7 @@ TEST(TestRuleDataDispatcher, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond.match(store, manifest, true, deadline);
+        auto match = cond->match(store, manifest, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "192.168.1.1");
@@ -457,11 +458,15 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
     auto usr_id_target = mb.insert("usr.id", {});
     auto manifest = mb.build_manifest();
 
-    condition cond1({client_ip_target}, {},
+    auto cond1 = std::make_shared<condition>(
+        std::vector<manifest::target_type>{client_ip_target},
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
-    condition cond2({usr_id_target}, {},
+    auto cond2 = std::make_shared<condition>(
+        std::vector<manifest::target_type>{usr_id_target},
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::exact_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
@@ -480,7 +485,7 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond1.match(store, manifest, true, deadline);
+        auto match = cond1->match(store, manifest, true, deadline);
         EXPECT_FALSE(match.has_value());
     }
 
@@ -494,7 +499,7 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond2.match(store, manifest, true, deadline);
+        auto match = cond2->match(store, manifest, true, deadline);
         EXPECT_FALSE(match.has_value());
     }
 
@@ -540,7 +545,7 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond1.match(store, manifest, true, deadline);
+        auto match = cond1->match(store, manifest, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "192.168.1.1");
@@ -560,7 +565,7 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond2.match(store, manifest, true, deadline);
+        auto match = cond2->match(store, manifest, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "paco");
@@ -578,11 +583,15 @@ TEST(TestRuleDataDispatcher, MultipleProcessorTypesSameID)
     auto usr_id_target = mb.insert("usr.id", {});
     auto manifest = mb.build_manifest();
 
-    condition cond1({client_ip_target}, {},
+    auto cond1 = std::make_shared<condition>(
+        std::vector<manifest::target_type>{client_ip_target},
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
-    condition cond2({usr_id_target}, {},
+    auto cond2 = std::make_shared<condition>(
+        std::vector<manifest::target_type>{usr_id_target},
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::exact_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
@@ -600,11 +609,15 @@ TEST(TestRuleDataDispatcher, ConflictingProcessorTypesSameID)
     auto target = mb.insert("http.client_ip", {});
     auto manifest = mb.build_manifest();
 
-    condition cond1({target}, {},
+    auto cond1 = std::make_shared<condition>(
+        std::vector<manifest::target_type>{target},
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
-    condition cond2({target}, {},
+    auto cond2 = std::make_shared<condition>(
+        std::vector<manifest::target_type>{target},
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::mock_processor>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
@@ -625,7 +638,8 @@ TEST(TestRuleDataDispatcher, UnkonwnID)
 
     auto manifest = mb.build_manifest();
 
-    condition cond(std::move(targets), {},
+    auto cond = std::make_shared<condition>(std::move(targets),
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
@@ -658,7 +672,7 @@ TEST(TestRuleDataDispatcher, UnkonwnID)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond.match(store, manifest, true, deadline);
+        auto match = cond->match(store, manifest, true, deadline);
         EXPECT_FALSE(match.has_value());
     }
 }
@@ -672,7 +686,8 @@ TEST(TestRuleDataDispatcher, ImmutableCondition)
 
     auto manifest = mb.build_manifest();
 
-    condition cond(std::move(targets), {},
+    auto cond = std::make_shared<condition>(std::move(targets),
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>());
 
     rule_data::dispatcher dispatcher;
@@ -706,22 +721,26 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
     auto usr_id_target = mb.insert("usr.id", {});
     auto manifest = mb.build_manifest();
 
-    condition cond1({client_ip_target}, {},
+    auto cond1 = std::make_shared<condition>(
+        std::vector<manifest::target_type>{client_ip_target},
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
-    condition cond2({usr_id_target}, {},
+    auto cond2 = std::make_shared<condition>(
+        std::vector<manifest::target_type>{usr_id_target},
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::exact_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_vector rules;
     {
-        std::vector<condition> conditions;
+        std::vector<std::shared_ptr<condition>> conditions;
         conditions.emplace_back(std::move(cond1));
         rules.emplace_back(0, "1", "rule1", "test", "category", std::move(conditions));
     }
     {
-        std::vector<condition> conditions;
+        std::vector<std::shared_ptr<condition>> conditions;
         conditions.emplace_back(std::move(cond2));
         rules.emplace_back(1, "2", "rule2", "test", "category", std::move(conditions));
     }
@@ -774,7 +793,7 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = rules[0].conditions[0].match(store, manifest, true, deadline);
+        auto match = rules[0].conditions[0]->match(store, manifest, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "192.168.1.1");
@@ -794,7 +813,7 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = rules[1].conditions[0].match(store, manifest, true, deadline);
+        auto match = rules[1].conditions[0]->match(store, manifest, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "paco");

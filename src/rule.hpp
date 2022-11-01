@@ -29,14 +29,12 @@ class rule
 public:
     using index_type = uint32_t;
 
-    using cache_type = std::unordered_map<condition::index_type, bool>;
-
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
 
     rule(index_type index_, std::string &&id_, std::string &&name_,
       std::string &&type_, std::string &&category_,
-      std::vector<condition> &&conditions_,
+      std::vector<std::shared_ptr<condition>> &&conditions_,
       std::vector<std::string> &&actions_ = {});
 
     rule(const rule&) = delete;
@@ -87,7 +85,7 @@ public:
     std::string name;
     std::string type;
     std::string category;
-    std::vector<condition> conditions;
+    std::vector<std::shared_ptr<condition>> conditions;
     std::unordered_set<ddwaf::manifest::target_type> targets;
     std::vector<std::string> actions;
 };

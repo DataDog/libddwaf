@@ -17,7 +17,8 @@ TEST(TestCondition, Match)
 
     auto manifest = mb.build_manifest();
 
-    condition cond(std::move(targets), {},
+    auto cond = std::make_shared<condition>(std::move(targets),
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::regex_match>(".*", 0, true));
 
     ddwaf_object root, tmp;
@@ -29,7 +30,7 @@ TEST(TestCondition, Match)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond.match(store, manifest, true, deadline);
+    auto match = cond->match(store, manifest, true, deadline);
     EXPECT_TRUE(match.has_value());
 
     EXPECT_STREQ(match->resolved.c_str(), "value");
@@ -49,7 +50,8 @@ TEST(TestCondition, NoMatch)
 
     auto manifest = mb.build_manifest();
 
-    condition cond(std::move(targets), {},
+    auto cond = std::make_shared<condition>(std::move(targets),
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     ddwaf_object root, tmp;
@@ -61,7 +63,7 @@ TEST(TestCondition, NoMatch)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond.match(store, manifest, true, deadline);
+    auto match = cond->match(store, manifest, true, deadline);
     EXPECT_FALSE(match.has_value());
 }
 
@@ -74,11 +76,11 @@ TEST(TestRule, Match)
 
     auto manifest = mb.build_manifest();
 
-    ddwaf::condition condition(std::move(targets), {},
+    auto cond = std::make_shared<condition>(std::move(targets),
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
-    std::vector<ddwaf::condition> conditions;
-    conditions.push_back(std::move(condition));
+    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
     ddwaf::rule rule(1, "id", "name", "type", "category",
         std::move(conditions), {"update", "block", "passlist"});
@@ -121,11 +123,11 @@ TEST(TestRule, NoMatch)
 
     auto manifest = mb.build_manifest();
 
-    ddwaf::condition condition(std::move(targets), {},
+    auto cond = std::make_shared<condition>(std::move(targets),
+        std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
-    std::vector<ddwaf::condition> conditions;
-    conditions.push_back(std::move(condition));
+    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
     ddwaf::rule rule(1, "id", "name", "type", "category", std::move(conditions));
 

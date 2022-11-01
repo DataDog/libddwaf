@@ -33,8 +33,9 @@ namespace ddwaf::parser::v1
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
-  std::vector<PW_TRANSFORM_ID>& transformers, ddwaf::config& cfg)
+std::shared_ptr<condition> parseCondition(parameter::map& rule,
+  manifest_builder& mb, std::vector<PW_TRANSFORM_ID>& transformers,
+  ddwaf::config& cfg)
 {
     auto operation = at<std::string_view>(rule, "operation");
     auto params    = at<parameter::map>(rule, "parameters");
@@ -149,7 +150,8 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
         targets.push_back(target);
     }
 
-    return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor), cfg.limits);
+    return std::make_shared<condition>(std::move(targets),
+        std::move(transformers), std::move(processor), cfg.limits);
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
@@ -179,7 +181,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
             rule_transformers.push_back(transform_id);
         }
 
-        std::vector<ddwaf::condition> conditions;
+        std::vector<std::shared_ptr<condition>> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         for (parameter::map cond : conditions_array)
         {
