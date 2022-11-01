@@ -29,6 +29,8 @@ class rule
 public:
     using index_type = uint32_t;
 
+    using cache_type = std::unordered_map<condition::index_type, bool>;
+
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
 

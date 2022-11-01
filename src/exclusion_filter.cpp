@@ -8,6 +8,8 @@
 
 namespace ddwaf {
 
+exclusion_filter::index_type global_index_ = 0;
+
 bool exclusion_filter::match(const object_store& store,
     const ddwaf::manifest &manifest, ddwaf::timer& deadline) const
 {

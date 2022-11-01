@@ -22,13 +22,11 @@
 
 namespace ddwaf {
 
-class condition
-{
+class condition {
 public:
-    enum class data_source : uint8_t {
-        values,
-        keys
-    };
+    using index_type = uint32_t;
+
+    enum class data_source : uint8_t { values, keys };
 
     condition(std::vector<ddwaf::manifest::target_type>&& targets,
               std::vector<PW_TRANSFORM_ID>&& transformers,
@@ -36,6 +34,7 @@ public:
               ddwaf::object_limits limits = ddwaf::object_limits(),
               data_source source = data_source::values,
               bool is_mutable = false):
+        index_(++global_index_),
         targets_(std::move(targets)),
         transformers_(std::move(transformers)),
         processor_(std::move(processor)),
@@ -49,6 +48,8 @@ public:
 
     condition(const condition&) = delete;
     condition& operator=(const condition&) = delete;
+
+    operator index_type() { return index_; }
 
     std::optional<event::match> match(const object_store& store,
         const ddwaf::manifest &manifest, bool run_on_new,
@@ -80,7 +81,7 @@ protected:
     template <typename T>
     std::optional<event::match> match_target(T &it, ddwaf::timer& deadline) const;
 
-
+    index_type index_;
     std::vector<ddwaf::manifest::target_type> targets_;
     std::vector<PW_TRANSFORM_ID> transformers_;
     std::shared_ptr<rule_processor::base> processor_;

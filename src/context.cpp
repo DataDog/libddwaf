@@ -54,9 +54,6 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
 
     auto rules = prefilter.filter(store_, deadline);
     run_rules(rules, serializer, deadline);
-/*    for (const auto& [key, collection] : ruleset_.collections) {*/
-        /*if (!run_collection(key, collection, serializer, deadline)) { break; }*/
-    /*}*/
 
     DDWAF_RET_CODE code = serializer.has_events() ? DDWAF_MATCH : DDWAF_OK;
     if (res.has_value()) {
@@ -87,8 +84,6 @@ bool context::run_rules(const ddwaf::rule_ref_vector& rules,
         }
 
         // TODO: replace this part with:
-        //         - Collection cache to avoid going through each rule if the
-        //           collection already had a match.
         //         - Rule cache containing individual condition matches, this
         //           cache will then allow the rule to keep track of which
         //           conditions have been executed.

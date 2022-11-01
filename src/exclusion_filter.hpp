@@ -22,10 +22,14 @@ class exclusion_filter {
 public:
     using index_type = uint32_t;
 
-    exclusion_filter(index_type index, std::vector<condition> &&conditions,
+    using cache_type = std::unordered_map<condition::index_type, bool>;
+
+    exclusion_filter(std::vector<condition> &&conditions,
             std::unordered_set<rule::index_type> &&rule_targets):
-        index_(index), conditions_(std::move(conditions)),
+        index_(++global_index_), conditions_(std::move(conditions)),
         rule_targets_(std::move(rule_targets)) {}
+
+    operator index_type() { return index_; }
 
     const std::unordered_set<rule::index_type> &get_rule_targets() {
         return targets_;
@@ -39,6 +43,8 @@ protected:
     std::vector<condition> conditions_;
     std::unordered_set<rule::index_type> rule_targets_;
     std::unordered_set<ddwaf::manifest::target_type> targets_;
+
+    static index_type global_index_;
 };
 
 } // namespace ddwaf

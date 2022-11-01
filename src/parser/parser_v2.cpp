@@ -182,8 +182,8 @@ ddwaf::condition parseCondition(parameter::map& rule,
         targets.push_back(target);
     }
 
-    return ddwaf::condition(std::move(targets), std::move(transformers),
-                std::move(processor), cfg.limits, source, is_mutable);
+    return {std::move(targets), std::move(transformers),
+        std::move(processor), cfg.limits, source, is_mutable};
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
