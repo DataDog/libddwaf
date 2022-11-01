@@ -52,9 +52,9 @@ public:
         return expired_;
     }
 
-    bool expired_before() const { return expired_; }
+    [[nodiscard]] bool expired_before() const { return expired_; }
 
-    monotonic_clock::duration elapsed() const {
+    [[nodiscard]] monotonic_clock::duration elapsed() const {
         return monotonic_clock::now() - start_;
     }
 protected:
@@ -64,4 +64,4 @@ protected:
     uint32_t calls_{1};
     bool expired_{false};
 };
-}
+} // namespace ddwaf

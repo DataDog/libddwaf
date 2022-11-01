@@ -22,4 +22,4 @@ struct ruleset
     ddwaf::rule_data::dispatcher dispatcher;
 };
 
-}
+} // namespace ddwaf

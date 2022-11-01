@@ -65,9 +65,9 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
     return limits;
 }
 
-}
+} // namespace
 
-waf* waf::from_config(const ddwaf_object ruleset,
+waf* waf::from_config(const ddwaf_object &ruleset,
     const ddwaf_config* config, ddwaf::ruleset_info& info)
 {
     try
@@ -75,7 +75,7 @@ waf* waf::from_config(const ddwaf_object ruleset,
         ddwaf::config cfg{
             limits_from_config(config),
             obfuscator_from_config(config),
-            config ? config->free_fn : ddwaf_object_free,
+            config != nullptr ? config->free_fn : ddwaf_object_free,
         };
 
         ddwaf::ruleset rs;

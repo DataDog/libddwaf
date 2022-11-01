@@ -12,82 +12,17 @@
 #include <unordered_map>
 #include <vector>
 
-#include <rule_processor/base.hpp>
-#include <iterator.hpp>
-#include <manifest.hpp>
-#include <event.hpp>
-#include <object_store.hpp>
 #include <PWTransformer.h>
 #include <clock.hpp>
+#include <condition.hpp>
+#include <event.hpp>
+#include <iterator.hpp>
+#include <manifest.hpp>
+#include <object_store.hpp>
+#include <rule_processor/base.hpp>
 
 namespace ddwaf
 {
-
-class rule;
-
-// TODO Move condition into rule
-class condition
-{
-public:
-    enum class data_source : uint8_t {
-        values,
-        keys
-    };
-
-    condition(std::vector<ddwaf::manifest::target_type>&& targets,
-              std::vector<PW_TRANSFORM_ID>&& transformers,
-              std::shared_ptr<rule_processor::base>&& processor,
-              ddwaf::object_limits limits = ddwaf::object_limits(),
-              data_source source = data_source::values,
-              bool is_mutable = false):
-        targets_(std::move(targets)),
-        transformers_(std::move(transformers)),
-        processor_(std::move(processor)),
-        limits_(limits),
-        source_(source),
-        mutable_(is_mutable) {}
-
-    condition(condition&&) = default;
-    condition& operator=(condition&&) = default;
-
-    condition(const condition&) = delete;
-    condition& operator=(const condition&) = delete;
-
-    std::optional<event::match> match(const object_store& store,
-        const ddwaf::manifest &manifest, bool run_on_new,
-        ddwaf::timer& deadline) const;
-
-    std::string_view processor_name() {
-        if (mutable_) {
-            return std::atomic_load(&processor_)->name();
-        }
-
-        return processor_->name();
-    }
-
-    void reset_processor(std::shared_ptr<rule_processor::base> &proc) {
-        if (!mutable_) {
-            throw std::runtime_error("Attempting to mutate an immutable "
-                "condition with processor " + std::string(processor_->name()));
-        }
-
-        std::atomic_store(&processor_, proc);
-    }
-protected:
-    std::optional<event::match> match_object(const ddwaf_object* object) const;
-
-    template <typename T>
-    std::optional<event::match> match_target(T &it, ddwaf::timer& deadline) const;
-
-    friend class rule;
-
-    std::vector<ddwaf::manifest::target_type> targets_;
-    std::vector<PW_TRANSFORM_ID> transformers_;
-    std::shared_ptr<rule_processor::base> processor_;
-    ddwaf::object_limits limits_;
-    data_source source_;
-    bool mutable_;
-};
 
 class rule
 {
@@ -108,7 +43,7 @@ public:
     // Atomics aren't movable so the default move constructor and move
     // assignment operator can't be used. With this constructor and operator
     // any relevant atomic member does not behave as such.
-    rule(rule &&rhs):
+    rule(rule &&rhs) noexcept :
         enabled(rhs.enabled.load(std::memory_order_relaxed)),
         index(rhs.index),
         id(std::move(rhs.id)),
@@ -119,7 +54,7 @@ public:
         targets(std::move(rhs.targets)),
         actions(std::move(rhs.actions)) {}
 
-    rule& operator=(rule &&rhs) {
+    rule& operator=(rule &&rhs)  noexcept {
         enabled = rhs.enabled.load(std::memory_order_relaxed);
         index = rhs.index;
         id = std::move(rhs.id);
@@ -141,7 +76,7 @@ public:
         const ddwaf::manifest &manifest, bool run_on_new,
         ddwaf::timer& deadline) const;
 
-    bool is_enabled() { return enabled.load(std::memory_order_relaxed); }
+    bool is_enabled() const { return enabled.load(std::memory_order_relaxed); }
     void toggle(bool value) { enabled.store(value, std::memory_order_relaxed); }
 
     std::atomic<bool> enabled{true};

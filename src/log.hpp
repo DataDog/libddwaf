@@ -31,25 +31,20 @@ static_assert(DDWAF_COMPILE_LOG_OFF == DDWAF_LOG_OFF);
 #endif
 
 #if DDWAF_COMPILE_LOG_LEVEL < DDWAF_COMPILE_LOG_OFF
-namespace
-{
 constexpr const char* base_name(const char* path)
 {
     const char* base = path;
-    while (*path)
-    {
+    while (*path != '\0') {
 #ifdef _WIN32
         char separator = '\\';
 #else
         char separator = '/';
 #endif
-        if (*path++ == separator)
-        {
+        if (*path++ == separator) {
             base = path;
         }
     }
     return base;
-}
 }
 
 #define DDWAF_LOG_HELPER(level, function, file, line, fmt, ...)                          \

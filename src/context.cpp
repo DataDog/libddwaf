@@ -42,15 +42,21 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
     ddwaf::timer deadline{std::chrono::microseconds(timeLeft)};
 
     // If this is a new run but no rule care about those new params, let's skip the run
-    if (!is_first_run() && !store_.has_new_targets())
-    {
+    if (!is_first_run() && !store_.has_new_targets()) {
         return DDWAF_OK;
     }
 
     event_serializer serializer(config_.event_obfuscator);
-    for (const auto& [key, collection] : ruleset_.collections) {
-        if (!run_collection(key, collection, serializer, deadline)) { break; }
-    }
+
+    // Get rule_ref array of rules to run on
+    // Should the rules be ordered by collection?
+    // FIXME currently generating a rule_ref vector from original set of rules
+
+    auto rules = prefilter.filter(store_, deadline);
+    run_rules(rules, serializer, deadline);
+/*    for (const auto& [key, collection] : ruleset_.collections) {*/
+        /*if (!run_collection(key, collection, serializer, deadline)) { break; }*/
+    /*}*/
 
     DDWAF_RET_CODE code = serializer.has_events() ? DDWAF_MATCH : DDWAF_OK;
     if (res.has_value()) {
@@ -63,22 +69,22 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
     return code;
 }
 
-bool context::run_collection(const std::string& name,
-  const ddwaf::rule_ref_vector& collection,
+bool context::run_rules(const ddwaf::rule_ref_vector& rules,
   event_serializer &serializer, ddwaf::timer& deadline)
 {
-    DDWAF_DEBUG("Running collection %s", name.c_str());
-
     //Process each rule we have to run for this step of the collection
-    for (ddwaf::rule& rule : collection)
+    for (ddwaf::rule& rule : rules)
     {
         if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while running collection %s and rule %s",
-                name.c_str(), rule.id.c_str());
+            DDWAF_INFO("Ran out of time while running rule %s", rule.id.c_str());
             break;
         }
 
         if (!rule.is_enabled()) { continue; }
+
+        if (collection_cache_.find(rule.type) != collection_cache_.end()) {
+            continue;
+        }
 
         // TODO: replace this part with:
         //         - Collection cache to avoid going through each rule if the
@@ -90,7 +96,7 @@ bool context::run_collection(const std::string& name,
         const auto hit = status_cache_.find(rule.index);
         if (hit != status_cache_.cend()) {
             // There was a match cached for this rule, stop processing collection
-            if (hit->second) { break; }
+            if (hit->second) { continue; }
 
             // The value is present and it's false (no match), check if we have
             // new targets to decide if we should retry the rule.
@@ -115,8 +121,9 @@ bool context::run_collection(const std::string& name,
             status_cache_.insert_or_assign(rule.index, event.has_value());
 
             if (event.has_value()) {
+                collection_cache_.emplace(rule.type);
                 serializer.insert(std::move(*event));
-                break;
+                DDWAF_DEBUG("Found event on rule %s", rule.id.c_str());
             }
         } catch (const ddwaf::timeout_exception&) {
             DDWAF_INFO("Ran out of time when processing %s", rule.id.c_str());
@@ -127,4 +134,4 @@ bool context::run_collection(const std::string& name,
     return true;
 }
 
-}
+} // namespace ddwaf
