@@ -37,7 +37,7 @@ namespace
 
 std::shared_ptr<condition> parse_condition(parameter::map& rule,
     rule_data::dispatcher &dispatcher, manifest_builder& mb, ddwaf::config& cfg,
-    ddwaf::condition::data_source source = ddwaf::condition::data_source::keys,
+    ddwaf::condition::data_source source = ddwaf::condition::data_source::values,
     std::vector<PW_TRANSFORM_ID> transformers = {})
 {
     auto operation = at<std::string_view>(rule, "operator");
