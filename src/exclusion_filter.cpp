@@ -8,13 +8,24 @@
 
 namespace ddwaf {
 
-exclusion_filter::index_type global_index_ = 0;
-
-bool exclusion_filter::match(const object_store& store,
-    const ddwaf::manifest &manifest, ddwaf::timer& deadline) const
+bool exclusion_filter::filter(const object_store& store,
+    const ddwaf::manifest &manifest,
+    cache_type &cache, ddwaf::timer& deadline) const
 {
-    for (const ddwaf::condition& cond : conditions_) {
-        auto opt_match = cond.match(store, manifest, true, deadline);
+    for (auto cond : conditions_) {
+        // If there's a (false) cache hit, we only need to run this condition
+        // on new parameters.
+        bool run_on_new = false;
+        auto cached_result = cache.find(cond);
+        if (cached_result != cache.end()) {
+            if (cached_result->second) {
+                continue;
+            }
+            run_on_new = true;
+        }
+
+        // TODO: Condition interface without events
+        auto opt_match = cond->match(store, manifest, run_on_new, deadline);
         if (!opt_match.has_value()) {
             return false;
         }

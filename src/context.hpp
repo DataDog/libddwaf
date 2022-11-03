@@ -7,15 +7,15 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
 #include <ddwaf.h>
 #include <event.hpp>
-#include <optional>
+#include <exclusion_filter.hpp>
 #include <rule.hpp>
 #include <config.hpp>
 #include <utils.h>
 #include <obfuscator.hpp>
-#include <rule_prefilter.hpp>
 #include <ruleset.hpp>
 
 namespace ddwaf
@@ -26,8 +26,7 @@ class context
 public:
     context(ddwaf::ruleset &ruleset, const ddwaf::config &config):
         ruleset_(ruleset), config_(config),
-        store_(ruleset_.manifest, config_.free_fn),
-        prefilter(ruleset)
+        store_(ruleset_.manifest, config_.free_fn)
     {
         status_cache_.reserve(ruleset_.rules.size());
     }
@@ -41,7 +40,9 @@ public:
     DDWAF_RET_CODE run(const ddwaf_object&, optional_ref<ddwaf_result> res, uint64_t);
 
 protected:
-    bool run_rules(const ddwaf::rule_ref_vector& rules,
+    rule_ref_vector filter(ddwaf::timer& deadline);
+
+    void match(const ddwaf::rule_ref_vector& rules,
         event_serializer& serializer,
         ddwaf::timer& deadline);
 
@@ -50,7 +51,11 @@ protected:
     ddwaf::ruleset &ruleset_;
     const ddwaf::config &config_;
     ddwaf::object_store store_;
-    ddwaf::rule_prefilter prefilter;
+
+    using cache_entry = std::pair<bool,
+          std::unordered_map<std::shared_ptr<condition>, bool>>;
+
+    std::unordered_map<std::shared_ptr<exclusion_filter>, cache_entry> filter_cache_;
 
     // Cache collections to avoid processing once a result has been obtained
     // TODO: rules could be reordered by collection or we could have one vector

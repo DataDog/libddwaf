@@ -156,11 +156,10 @@ std::shared_ptr<condition> parseCondition(parameter::map& rule,
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
                 manifest_builder& mb, ddwaf::ruleset& rs,
-               std::set<std::string_view> &seen_rules,
                ddwaf::config& cfg)
 {
     auto id = at<std::string>(rule, "id");
-    if (seen_rules.find(id) != seen_rules.end())
+    if (rs.rule_map.find(id) != rs.rule_map.end())
     {
         DDWAF_WARN("duplicate rule %s", id.c_str());
         info.insert_error(id, "duplicate rule");
@@ -204,9 +203,6 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         collection.push_back(rule_ref);
         rs.rule_map.emplace(rule_ref.id, rule_ref);
 
-        // Add this rule to the set to check for duplicates
-        seen_rules.emplace(rule_ref.id);
-
         info.add_loaded();
     }
     catch (const std::exception& e)
@@ -226,12 +222,11 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::ruleset& rs, ddwa
     rs.rules.reserve(rules_array.size());
 
     ddwaf::manifest_builder mb;
-    std::set<std::string_view> seen_rules;
     for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, info, mb, rs, seen_rules, cfg);
+            parseRule(rule, info, mb, rs, cfg);
         }
         catch (const std::exception& e)
         {

@@ -35,12 +35,10 @@ namespace ddwaf::parser::v2
 namespace
 {
 
-std::shared_ptr<condition> parseCondition(parameter::map& rule,
-    std::size_t rule_idx, std::size_t cond_idx,
-    rule_data::dispatcher_builder &db,
-    manifest_builder& mb, ddwaf::condition::data_source source,
-    std::vector<PW_TRANSFORM_ID>& transformers,
-    ddwaf::config& cfg)
+std::shared_ptr<condition> parse_condition(parameter::map& rule,
+    rule_data::dispatcher &dispatcher, manifest_builder& mb, ddwaf::config& cfg,
+    ddwaf::condition::data_source source = ddwaf::condition::data_source::keys,
+    std::vector<PW_TRANSFORM_ID> transformers = {})
 {
     auto operation = at<std::string_view>(rule, "operator");
     auto params    = at<parameter::map>(rule, "parameters");
@@ -48,6 +46,7 @@ std::shared_ptr<condition> parseCondition(parameter::map& rule,
 
     parameter::map options;
     std::shared_ptr<base> processor;
+    std::optional<std::string> rule_data_id = std::nullopt;
     if (operation == "phrase_match")
     {
         auto list = at<parameter::vector>(params, "list");
@@ -125,8 +124,7 @@ std::shared_ptr<condition> parseCondition(parameter::map& rule,
     {
         auto it = params.find("list");
         if (it == params.end()) {
-            auto rule_data_id = at<std::string_view>(params, "data");
-            db.insert(rule_data_id, rule_idx, cond_idx);
+            rule_data_id = at<std::string>(params, "data");
             processor = std::make_shared<rule_processor::ip_match>();
             is_mutable = true;
         } else {
@@ -137,8 +135,7 @@ std::shared_ptr<condition> parseCondition(parameter::map& rule,
     {
         auto it = params.find("list");
         if (it == params.end()) {
-            auto rule_data_id = at<std::string_view>(params, "data");
-            db.insert(rule_data_id, rule_idx, cond_idx);
+            rule_data_id = at<std::string>(params, "data");
             processor = std::make_shared<rule_processor::exact_match>();
             is_mutable = true;
         } else {
@@ -182,18 +179,30 @@ std::shared_ptr<condition> parseCondition(parameter::map& rule,
         targets.push_back(target);
     }
 
-    return std::make_shared<condition>(std::move(targets), std::move(transformers),
-        std::move(processor), cfg.limits, source, is_mutable);
+    auto cond = std::make_shared<condition>(std::move(targets),
+        std::move(transformers), std::move(processor), cfg.limits,
+        source, is_mutable);
+
+
+    if (rule_data_id.has_value()) {
+        if (operation == "ip_match") {
+            dispatcher.register_condition<rule_processor::ip_match>(
+                *rule_data_id, cond);
+        } else if (operation == "exact_match") {
+            dispatcher.register_condition<rule_processor::exact_match>(
+                *rule_data_id, cond);
+        }
+    }
+
+    return cond;
 }
 
-void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
-               rule_data::dispatcher_builder& db,
+void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
                manifest_builder& mb, ddwaf::ruleset& rs,
-               std::set<std::string_view> &seen_rules,
                ddwaf::config& cfg)
 {
     auto id = at<std::string>(rule, "id");
-    if (seen_rules.find(id) != seen_rules.end())
+    if (rs.rule_map.find(id) != rs.rule_map.end())
     {
         DDWAF_WARN("duplicate rule %s", id.c_str());
         info.insert_error(id, "duplicate rule");
@@ -228,18 +237,16 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
             }
         }
 
-        auto index           = rs.rules.size();
-
         std::vector<std::shared_ptr<condition>> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         conditions.reserve(conditions_array.size());
 
         for (parameter::map cond : conditions_array) {
-            conditions.push_back(parseCondition(
-                cond, index, conditions.size(),
-                db, mb, source, rule_transformers, cfg));
+            conditions.push_back(parse_condition(
+                cond, rs.dispatcher, mb, cfg, source, rule_transformers));
         }
 
+        auto index           = rs.rules.size();
         auto tags = at<parameter::map>(rule, "tags");
         rs.rules.emplace_back(index, std::string(id),
             at<std::string>(rule, "name"),
@@ -254,9 +261,6 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         collection.push_back(rule_ref);
         rs.rule_map.emplace(rule_ref.id, rule_ref);
 
-        // Add this rule to the set to check for duplicates
-        seen_rules.emplace(rule_ref.id);
-
         info.add_loaded();
     }
     catch (const std::exception& e)
@@ -266,14 +270,115 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
     }
 }
 
+void find_rules_by_category_and_type(const std::string& type,
+    const std::string& category, ddwaf::ruleset &rs,
+    std::unordered_set<rule::index_type> &rules_target)
+{
+    for (auto &rule : rs.rules) {
+        if (rule.type == type && rule.category == category) {
+            rules_target.emplace(rule.index);
+        }
+    }
 }
 
-void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddwaf::config& cfg)
+void find_rules_by_type(const std::string& type, ddwaf::ruleset &rs,
+    std::unordered_set<rule::index_type> &rules_target)
 {
-    auto metadata      = at<parameter::map>(ruleset, "metadata", parameter::map());
+    for (auto &rule : rs.rules) {
+        if (rule.type == type) {
+            rules_target.emplace(rule.index);
+        }
+    }
+}
+
+
+void find_rules_by_category(const std::string& category, ddwaf::ruleset &rs,
+    std::unordered_set<rule::index_type> &rules_target)
+{
+    for (auto &rule : rs.rules) {
+        if (rule.category == category) {
+            rules_target.emplace(rule.index);
+        }
+    }
+}
+
+void parse_rules_target(parameter::map& target, ddwaf::ruleset &rs,
+    std::unordered_set<rule::index_type> &rules_target)
+{
+    auto rule_id = at<std::string>(target, "rule_id", {});
+    if (!rule_id.empty()) {
+        const auto &rule_it = rs.rule_map.find(rule_id);
+        if (rule_it != rs.rule_map.end()) {
+            ddwaf::rule &rule = rule_it->second;
+            rules_target.emplace(rule.index);
+        }
+        return;
+    }
+
+    auto tags = at<parameter::map>(target, "tags", {});
+    if (tags.empty()) {
+        throw ddwaf::parsing_error("empty rules_target tags");;
+    }
+
+    auto type = at<std::string>(tags, "type", {});
+    auto category = at<std::string>(tags, "category", {});
+    
+    if (!type.empty()) {
+        if (!category.empty()) {
+            find_rules_by_category_and_type(type, category, rs, rules_target);
+        } else {
+            find_rules_by_type(type, rs, rules_target);
+        }
+    } else if (!category.empty()) {
+        find_rules_by_category(category, rs, rules_target);
+    } else {
+        throw ddwaf::parsing_error("no supported tags in rules_target");;
+    }
+}
+
+void parse_exclusion_filter(parameter::map& filter, manifest_builder& mb,
+    ddwaf::ruleset& rs, ddwaf::config& cfg)
+{
+    // Check for conditions first
+    std::vector<std::shared_ptr<condition>> conditions;
+    auto conditions_array = at<parameter::vector>(filter, "conditions", {});
+    if (!conditions_array.empty()) {
+        conditions.reserve(conditions_array.size());
+
+        for (parameter::map cond : conditions_array) {
+            conditions.push_back(parse_condition(cond, rs.dispatcher, mb, cfg));
+        }
+    }
+
+    std::unordered_set<rule::index_type> rules_target;
+    auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
+    if (rules_target_array.empty()) {
+        rules_target.reserve(rs.rules.size());
+        for (const auto &rule : rs.rules) {
+            rules_target.emplace(rule.index);
+        }
+    } else {
+        for (parameter::map target : rules_target_array) {
+            parse_rules_target(target, rs, rules_target);
+        }
+    }
+
+    if (conditions.empty() && rules_target.empty()) {
+        throw ddwaf::parsing_error("rule without conditions or targets");
+    }
+
+    rs.filters.emplace_back(std::make_shared<exclusion_filter>(
+        std::move(conditions), std::move(rules_target)));
+}
+
+}
+
+void parse(parameter::map& ruleset, ruleset_info& info,
+    ddwaf::ruleset& rs, ddwaf::config& cfg)
+{
+    auto metadata      = at<parameter::map>(ruleset, "metadata", {});
     auto rules_version = metadata.find("rules_version");
-    if (rules_version != metadata.end())
-    {
+    if (rules_version != metadata.end()) {
         info.set_version(rules_version->second);
     }
 
@@ -282,27 +387,30 @@ void parse(parameter::map& ruleset, ruleset_info& info,  ddwaf::ruleset& rs, ddw
     // are valid, otherwise reallocations would invalidate them.
     rs.rules.reserve(rules_array.size());
 
-    rule_data::dispatcher_builder db;
     ddwaf::manifest_builder mb;
-    std::set<std::string_view> seen_rules;
-    for (parameter::map rule : rules_array)
-    {
-        try
-        {
-            parseRule(rule, info, db, mb, rs, seen_rules, cfg);
-        }
-        catch (const std::exception& e)
-        {
+    for (parameter::map rule : rules_array) {
+        try {
+            parse_rule(rule, info, mb, rs, cfg);
+        } catch (const std::exception& e) {
             DDWAF_WARN("%s", e.what());
             info.add_failed();
         }
     }
 
-    if (rs.rules.empty() || rs.collections.empty())
-    {
+    if (rs.rules.empty() || rs.collections.empty()) {
         throw ddwaf::parsing_error("no valid rules found");
     }
-    rs.dispatcher = db.build(rs.rules);
+
+    auto filters_array = at<parameter::vector>(ruleset, "exclusions", {});
+    for (parameter::map filter : filters_array) {
+        try {
+            parse_exclusion_filter(filter, mb, rs, cfg);
+        } catch (const std::exception& e) {
+            DDWAF_WARN("%s", e.what());
+            info.add_failed();
+        }
+    }
+
     rs.manifest = mb.build_manifest();
 
     auto data_array = at<parameter::vector>(ruleset, "rules_data", {});

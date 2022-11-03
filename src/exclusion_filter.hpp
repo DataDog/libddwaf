@@ -22,29 +22,24 @@ class exclusion_filter {
 public:
     using index_type = uint32_t;
 
-    using cache_type = std::unordered_map<condition::index_type, bool>;
+    using cache_type = std::unordered_map<std::shared_ptr<condition>, bool>;
 
-    exclusion_filter(std::vector<condition> &&conditions,
+    exclusion_filter(std::vector<std::shared_ptr<condition>> &&conditions,
             std::unordered_set<rule::index_type> &&rule_targets):
-        index_(++global_index_), conditions_(std::move(conditions)),
+        conditions_(std::move(conditions)),
         rule_targets_(std::move(rule_targets)) {}
 
-    operator index_type() { return index_; }
-
-    const std::unordered_set<rule::index_type> &get_rule_targets() {
-        return targets_;
+    const std::unordered_set<rule::index_type> &get_rule_targets() const {
+        return rule_targets_;
     }
 
-    bool match(const object_store& store, const ddwaf::manifest &manifest,
-        ddwaf::timer& deadline) const;
+    bool filter(const object_store& store, const ddwaf::manifest &manifest,
+        cache_type &cache, ddwaf::timer& deadline) const;
 
 protected:
-    index_type index_;
-    std::vector<condition> conditions_;
+    std::vector<std::shared_ptr<condition>> conditions_;
     std::unordered_set<rule::index_type> rule_targets_;
-    std::unordered_set<ddwaf::manifest::target_type> targets_;
-
-    static index_type global_index_;
 };
 
+using exclusion_filter_vector = std::vector<std::shared_ptr<exclusion_filter>>;
 } // namespace ddwaf

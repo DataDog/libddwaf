@@ -134,6 +134,7 @@ protected:
     std::vector<const char *> rule_data_ids_;
 };
 
+// TODO remove builder since conditions are now pointers
 class dispatcher_builder {
 public:
     void insert(std::string_view id, std::size_t rule_idx, std::size_t cond_idx)

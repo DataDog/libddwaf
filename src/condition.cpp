@@ -96,7 +96,7 @@ std::optional<event::match> condition::match(const object_store& store,
         }
 
         // TODO: the conditions should keep track of the targets already
-        // checked.
+        // checked (?).
         if (run_on_new && !store.is_new_target(target)) {
             continue;
         }

@@ -52,8 +52,10 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
     // Should the rules be ordered by collection?
     // FIXME currently generating a rule_ref vector from original set of rules
 
-    auto rules = prefilter.filter(store_, deadline);
-    run_rules(rules, serializer, deadline);
+    auto rules = filter(deadline);
+    if (!rules.empty()) {
+        match(rules, serializer, deadline);
+    }
 
     DDWAF_RET_CODE code = serializer.has_events() ? DDWAF_MATCH : DDWAF_OK;
     if (res.has_value()) {
@@ -66,7 +68,51 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
     return code;
 }
 
-bool context::run_rules(const ddwaf::rule_ref_vector& rules,
+rule_ref_vector context::filter(ddwaf::timer& deadline)
+{
+    std::unordered_set<rule::index_type> rules_to_exclude;
+    for (const auto &filter : ruleset_.filters) {
+        if (deadline.expired()) {
+            DDWAF_INFO("Ran out of time while running exclusion filters");
+            return {};
+        }
+
+        bool result = false;
+        auto it = filter_cache_.find(filter);
+        if (it != filter_cache_.end()) {
+            auto &[cached_result, cond_cache] = it->second;
+            if (!cached_result) {
+                result = filter->filter(store_, ruleset_.manifest,
+                        cond_cache, deadline);
+            } else {
+                result = true;
+            }
+        } else {
+            std::unordered_map<std::shared_ptr<condition>, bool> cond_cache;
+            result = filter->filter(store_, ruleset_.manifest, 
+                cond_cache, deadline);
+            filter_cache_.emplace(filter,
+                    std::make_pair(result, std::move(cond_cache)));
+        }
+
+        if (result) {
+            for (auto rule: filter->get_rule_targets()) {
+                rules_to_exclude.emplace(rule);
+            }
+        }
+    }
+
+    rule_ref_vector rules_to_run;
+    for (auto &rule : ruleset_.rules) {
+        if (rules_to_exclude.find(rule.index) == rules_to_exclude.end()) {
+            rules_to_run.push_back(rule);
+        }
+    }
+
+    return rules_to_run;
+}
+
+void context::match(const ddwaf::rule_ref_vector& rules,
   event_serializer &serializer, ddwaf::timer& deadline)
 {
     //Process each rule we have to run for this step of the collection
@@ -122,11 +168,9 @@ bool context::run_rules(const ddwaf::rule_ref_vector& rules,
             }
         } catch (const ddwaf::timeout_exception&) {
             DDWAF_INFO("Ran out of time when processing %s", rule.id.c_str());
-            return false;
+            break;
         }
     }
-
-    return true;
 }
 
 } // namespace ddwaf

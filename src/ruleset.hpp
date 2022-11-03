@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <exclusion_filter.hpp>
 #include <manifest.hpp>
 #include <rule.hpp>
 #include <rule_data_dispatcher.hpp>
@@ -16,6 +17,7 @@ namespace ddwaf
 struct ruleset
 {
     ddwaf::manifest manifest;
+    ddwaf::exclusion_filter_vector filters;
     ddwaf::rule_vector rules;
     ddwaf::rule_ref_map rule_map;
     ddwaf::collection_map collections;
