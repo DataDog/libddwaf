@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <algorithm>
 #include <manifest.hpp>
 #include <exception.hpp>
 #include <log.hpp>
@@ -34,6 +35,55 @@ namespace ddwaf::parser::v2
 
 namespace
 {
+
+class rules_tagmap
+{
+public:
+    using rule_ptr = std::shared_ptr<ddwaf::rule>;
+    using rule_set = std::unordered_set<rule_ptr>;
+
+    rules_tagmap() = default;
+
+    rule_set get_by_type(std::string_view type) const {
+        auto it = by_type_.find(type);
+        if (it == by_type_.end()) { return {}; }
+        return it->second;
+    }
+
+    rule_set get_by_category(std::string_view category) const {
+        auto it = by_category_.find(category);
+        if (it == by_category_.end()) { return {}; }
+        return it->second;
+    }
+
+    rule_set get_by_type_and_category(std::string_view type,
+      std::string_view category) const {
+        auto type_it = by_type_.find(type);
+        if (type_it == by_type_.end()) { return {}; }
+
+        auto category_it = by_category_.find(category);
+        if (category_it == by_category_.end()) { return {}; }
+
+        const rule_set &type_set = type_it->second;
+        const rule_set &category_set = category_it->second;
+        rule_set intersection;
+
+        std::set_intersection(type_set.begin(), type_set.end(),
+            category_set.begin(), category_set.end(),
+            std::inserter(intersection, intersection.begin()));
+
+        return intersection;
+    }
+
+    void insert(rule_ptr rule) {
+        by_type_[rule->type].emplace(rule);
+        by_category_[rule->type].emplace(rule);
+    }
+
+protected:
+    std::unordered_map<std::string_view, rule_set> by_type_;
+    std::unordered_map<std::string_view, rule_set> by_category_;
+};
 
 std::shared_ptr<condition> parse_condition(parameter::map& rule,
     rule_data::dispatcher &dispatcher, manifest_builder& mb, ddwaf::config& cfg,
@@ -183,7 +233,6 @@ std::shared_ptr<condition> parse_condition(parameter::map& rule,
         std::move(transformers), std::move(processor), cfg.limits,
         source, is_mutable);
 
-
     if (rule_data_id.has_value()) {
         if (operation == "ip_match") {
             dispatcher.register_condition<rule_processor::ip_match>(
@@ -199,10 +248,10 @@ std::shared_ptr<condition> parse_condition(parameter::map& rule,
 
 void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
                manifest_builder& mb, ddwaf::ruleset& rs,
-               ddwaf::config& cfg)
+               rules_tagmap &rules_by_tags, ddwaf::config& cfg)
 {
     auto id = at<std::string>(rule, "id");
-    if (rs.rule_map.find(id) != rs.rule_map.end())
+    if (rs.rules.find(id) != rs.rules.end())
     {
         DDWAF_WARN("duplicate rule %s", id.c_str());
         info.insert_error(id, "duplicate rule");
@@ -246,21 +295,18 @@ void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
                 cond, rs.dispatcher, mb, cfg, source, rule_transformers));
         }
 
-        auto index           = rs.rules.size();
         auto tags = at<parameter::map>(rule, "tags");
-        rs.rules.emplace_back(index, std::string(id),
+        auto rule_ptr = std::make_shared<ddwaf::rule>(
+            std::string(id),
             at<std::string>(rule, "name"),
             at<std::string>(tags, "type"),
             at<std::string>(tags, "category", ""),
             std::move(conditions),
             at<std::vector<std::string>>(rule, "on_match", {}));
 
-        auto &rule_ref = rs.rules[index];
-
-        auto& collection = rs.collections[rule_ref.type];
-        collection.push_back(rule_ref);
-        rs.rule_map.emplace(rule_ref.id, rule_ref);
-
+        rs.rules.emplace(id, rule_ptr);
+        rs.rule_set.emplace(rule_ptr);
+        rules_by_tags.insert(rule_ptr);
         info.add_loaded();
     }
     catch (const std::exception& e)
@@ -270,49 +316,16 @@ void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
     }
 }
 
-void find_rules_by_category_and_type(const std::string& type,
-    const std::string& category, ddwaf::ruleset &rs,
-    std::unordered_set<rule::index_type> &rules_target)
-{
-    for (auto &rule : rs.rules) {
-        if (rule.type == type && rule.category == category) {
-            rules_target.emplace(rule.index);
-        }
-    }
-}
-
-void find_rules_by_type(const std::string& type, ddwaf::ruleset &rs,
-    std::unordered_set<rule::index_type> &rules_target)
-{
-    for (auto &rule : rs.rules) {
-        if (rule.type == type) {
-            rules_target.emplace(rule.index);
-        }
-    }
-}
-
-
-void find_rules_by_category(const std::string& category, ddwaf::ruleset &rs,
-    std::unordered_set<rule::index_type> &rules_target)
-{
-    for (auto &rule : rs.rules) {
-        if (rule.category == category) {
-            rules_target.emplace(rule.index);
-        }
-    }
-}
-
-void parse_rules_target(parameter::map& target, ddwaf::ruleset &rs,
-    std::unordered_set<rule::index_type> &rules_target)
+std::unordered_set<std::shared_ptr<ddwaf::rule>> parse_rules_target(
+    parameter::map& target, ddwaf::ruleset &rs, rules_tagmap &rules_by_tags)
 {
     auto rule_id = at<std::string>(target, "rule_id", {});
     if (!rule_id.empty()) {
-        const auto &rule_it = rs.rule_map.find(rule_id);
-        if (rule_it != rs.rule_map.end()) {
-            ddwaf::rule &rule = rule_it->second;
-            rules_target.emplace(rule.index);
+        const auto &rule_it = rs.rules.find(rule_id);
+        if (rule_it != rs.rules.end()) {
+            return {rule_it->second};
         }
-        return;
+        return {};
     }
 
     auto tags = at<parameter::map>(target, "tags", {});
@@ -322,22 +335,22 @@ void parse_rules_target(parameter::map& target, ddwaf::ruleset &rs,
 
     auto type = at<std::string>(tags, "type", {});
     auto category = at<std::string>(tags, "category", {});
-    
+
     if (!type.empty()) {
         if (!category.empty()) {
-            find_rules_by_category_and_type(type, category, rs, rules_target);
+            return rules_by_tags.get_by_type_and_category(type, category);
         } else {
-            find_rules_by_type(type, rs, rules_target);
+            return rules_by_tags.get_by_type(type);
         }
     } else if (!category.empty()) {
-        find_rules_by_category(category, rs, rules_target);
-    } else {
-        throw ddwaf::parsing_error("no supported tags in rules_target");;
+        return rules_by_tags.get_by_category(category);
     }
+
+    throw ddwaf::parsing_error("no supported tags in rules_target");;
 }
 
 void parse_exclusion_filter(parameter::map& filter, manifest_builder& mb,
-    ddwaf::ruleset& rs, ddwaf::config& cfg)
+    ddwaf::ruleset& rs, rules_tagmap &rules_by_tags, ddwaf::config& cfg)
 {
     // Check for conditions first
     std::vector<std::shared_ptr<condition>> conditions;
@@ -350,16 +363,17 @@ void parse_exclusion_filter(parameter::map& filter, manifest_builder& mb,
         }
     }
 
-    std::unordered_set<rule::index_type> rules_target;
+    std::unordered_set<std::shared_ptr<ddwaf::rule>> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
     if (rules_target_array.empty()) {
         rules_target.reserve(rs.rules.size());
-        for (const auto &rule : rs.rules) {
-            rules_target.emplace(rule.index);
+        for (const auto &[id, rule] : rs.rules) {
+            rules_target.emplace(rule);
         }
     } else {
         for (parameter::map target : rules_target_array) {
-            parse_rules_target(target, rs, rules_target);
+            auto rules_subset = parse_rules_target(target, rs, rules_by_tags);
+            rules_target.merge(rules_subset);
         }
     }
 
@@ -387,24 +401,25 @@ void parse(parameter::map& ruleset, ruleset_info& info,
     // are valid, otherwise reallocations would invalidate them.
     rs.rules.reserve(rules_array.size());
 
+    rules_tagmap rules_by_tags;
     ddwaf::manifest_builder mb;
     for (parameter::map rule : rules_array) {
         try {
-            parse_rule(rule, info, mb, rs, cfg);
+            parse_rule(rule, info, mb, rs, rules_by_tags, cfg);
         } catch (const std::exception& e) {
             DDWAF_WARN("%s", e.what());
             info.add_failed();
         }
     }
 
-    if (rs.rules.empty() || rs.collections.empty()) {
+    if (rs.rules.empty()) {
         throw ddwaf::parsing_error("no valid rules found");
     }
 
     auto filters_array = at<parameter::vector>(ruleset, "exclusions", {});
     for (parameter::map filter : filters_array) {
         try {
-            parse_exclusion_filter(filter, mb, rs, cfg);
+            parse_exclusion_filter(filter, mb, rs, rules_by_tags, cfg);
         } catch (const std::exception& e) {
             DDWAF_WARN("%s", e.what());
             info.add_failed();

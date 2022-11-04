@@ -733,23 +733,9 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
         std::make_unique<rule_processor::exact_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
-    rule_vector rules;
-    {
-        std::vector<std::shared_ptr<condition>> conditions;
-        conditions.emplace_back(std::move(cond1));
-        rules.emplace_back(0, "1", "rule1", "test", "category", std::move(conditions));
-    }
-    {
-        std::vector<std::shared_ptr<condition>> conditions;
-        conditions.emplace_back(std::move(cond2));
-        rules.emplace_back(1, "2", "rule2", "test", "category", std::move(conditions));
-    }
-
-    rule_data::dispatcher_builder db;
-    db.insert("ip_data", 0, 0);
-    db.insert("usr_data", 1, 0);
-
-    rule_data::dispatcher dispatcher = db.build(rules);
+    rule_data::dispatcher dispatcher;
+    dispatcher.register_condition<rule_processor::ip_match>("ip_data", cond1);
+    dispatcher.register_condition<rule_processor::exact_match>("usr_data", cond2);
 
     {
         ddwaf_object data, data_point, tmp;
@@ -793,7 +779,7 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = rules[0].conditions[0]->match(store, manifest, true, deadline);
+        auto match = cond1->match(store, manifest, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "192.168.1.1");
@@ -813,7 +799,7 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = rules[1].conditions[0]->match(store, manifest, true, deadline);
+        auto match = cond2->match(store, manifest, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "paco");

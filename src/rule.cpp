@@ -16,11 +16,11 @@
 namespace ddwaf
 {
 
-rule::rule(index_type index_, std::string &&id_, std::string &&name_,
+rule::rule(std::string &&id_, std::string &&name_,
   std::string &&type_, std::string &&category_,
   std::vector<std::shared_ptr<condition>> &&conditions_,
   std::vector<std::string> &&actions_):
-  index(index_), id(std::move(id_)), name(std::move(name_)),
+  id(std::move(id_)), name(std::move(name_)),
   type(std::move(type_)), category(std::move(category_)), 
   conditions(std::move(conditions_)), actions(std::move(actions_))
 {
@@ -43,30 +43,42 @@ bool rule::has_new_targets(const object_store &store) const
 }
 
 std::optional<event> rule::match(const object_store& store,
-    const ddwaf::manifest &manifest, bool run_on_new,
+    const ddwaf::manifest &manifest, cache_type &cache,
     ddwaf::timer& deadline) const
 {
-    ddwaf::event event;
-
     for (auto& cond : conditions) {
+        bool run_on_new = false;
+        auto cached_result = cache.conditions.find(cond);
+        if (cached_result != cache.conditions.end()) {
+            if (cached_result->second) {
+                continue;
+            }
+            run_on_new = true;
+        } else {
+            auto [it, res] = cache.conditions.emplace(cond, false);
+            cached_result = it;
+        }
+
         auto opt_match = cond->match(store, manifest, run_on_new, deadline);
         if (!opt_match.has_value()) {
+            cached_result->second = false;
             return std::nullopt;
         }
-        event.matches.emplace_back(std::move(*opt_match));
+        cached_result->second = true;
+        cache.event.matches.emplace_back(std::move(*opt_match));
     }
 
-    event.id = id;
-    event.name = name;
-    event.type =  type;
-    event.category = category;
+    cache.event.id = id;
+    cache.event.name = name;
+    cache.event.type =  type;
+    cache.event.category = category;
 
-    event.actions.reserve(actions.size());
+    cache.event.actions.reserve(actions.size());
     for (const auto &action : actions) {
-        event.actions.push_back(action);
+        cache.event.actions.push_back(action);
     }
 
-    return {std::move(event)};
+    return {std::move(cache.event)};
 }
 
 }

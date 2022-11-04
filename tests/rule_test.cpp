@@ -82,7 +82,7 @@ TEST(TestRule, Match)
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-    ddwaf::rule rule(1, "id", "name", "type", "category",
+    ddwaf::rule rule("id", "name", "type", "category",
         std::move(conditions), {"update", "block", "passlist"});
 
     ddwaf_object root, tmp;
@@ -94,7 +94,8 @@ TEST(TestRule, Match)
 
     ddwaf::timer deadline{2s};
 
-    auto event = rule.match(store, manifest, true, deadline);
+    rule::cache_type cache;
+    auto event = rule.match(store, manifest, cache, deadline);
     EXPECT_TRUE(event.has_value());
 
     EXPECT_STREQ(event->id.data(), "id");
@@ -129,7 +130,7 @@ TEST(TestRule, NoMatch)
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-    ddwaf::rule rule(1, "id", "name", "type", "category", std::move(conditions));
+    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -140,7 +141,8 @@ TEST(TestRule, NoMatch)
 
     ddwaf::timer deadline{2s};
 
-    auto match = rule.match(store, manifest, true, deadline);
+    rule::cache_type cache;
+    auto match = rule.match(store, manifest, cache, deadline);
     EXPECT_FALSE(match.has_value());
 }
 

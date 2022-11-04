@@ -40,9 +40,9 @@ public:
     DDWAF_RET_CODE run(const ddwaf_object&, optional_ref<ddwaf_result> res, uint64_t);
 
 protected:
-    rule_ref_vector filter(ddwaf::timer& deadline);
+    std::unordered_set<std::shared_ptr<rule>> filter(ddwaf::timer& deadline);
 
-    void match(const ddwaf::rule_ref_vector& rules,
+    void match(const std::unordered_set<std::shared_ptr<rule>>& rules,
         event_serializer& serializer,
         ddwaf::timer& deadline);
 
@@ -52,20 +52,17 @@ protected:
     const ddwaf::config &config_;
     ddwaf::object_store store_;
 
-    using cache_entry = std::pair<bool,
-          std::unordered_map<std::shared_ptr<condition>, bool>>;
-
-    std::unordered_map<std::shared_ptr<exclusion_filter>, cache_entry> filter_cache_;
+    std::unordered_map<std::shared_ptr<exclusion_filter>,
+        exclusion_filter::cache_type> filter_cache_;
+    std::unordered_map<std::shared_ptr<rule>, rule::cache_type> rule_cache_;
 
     // Cache collections to avoid processing once a result has been obtained
-    // TODO: rules could be reordered by collection or we could have one vector
-    //       per collection as usual.
     std::unordered_set<std::string> collection_cache_;
 
 
     // If we have seen a match, the value will be true, if the value is present
     // and false it means we executed the rule and it did not match.
-    std::unordered_map<rule::index_type, bool> status_cache_;
+    std::unordered_map<std::shared_ptr<rule>, bool> status_cache_;
 };
 
 }

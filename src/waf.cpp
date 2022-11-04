@@ -94,15 +94,14 @@ waf* waf::from_config(const ddwaf_object &ruleset,
 void waf::toggle_rules(ddwaf::parameter::map &&input)
 {
     for (auto &[key, value] : input) {
-        auto it = ruleset_.rule_map.find(key);
+        auto it = ruleset_.rules.find(std::string(key));
 
-        if (it == ruleset_.rule_map.end()) {
+        if (it == ruleset_.rules.end()) {
             DDWAF_WARN("Attempting to toggle an unknown rule %s", key.data());
             continue;
         }
 
-        ddwaf::rule& rule = it->second;
-        rule.toggle(value);
+        it->second->toggle(value);
     }
 }
 

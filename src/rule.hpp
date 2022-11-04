@@ -27,12 +27,16 @@ namespace ddwaf
 class rule
 {
 public:
-    using index_type = uint32_t;
+    struct cache_type {
+        bool result{false};
+        std::unordered_map<std::shared_ptr<condition>, bool> conditions;
+        ddwaf::event event;
+    };
 
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
 
-    rule(index_type index_, std::string &&id_, std::string &&name_,
+    rule(std::string &&id_, std::string &&name_,
       std::string &&type_, std::string &&category_,
       std::vector<std::shared_ptr<condition>> &&conditions_,
       std::vector<std::string> &&actions_ = {});
@@ -45,7 +49,6 @@ public:
     // any relevant atomic member does not behave as such.
     rule(rule &&rhs) noexcept :
         enabled(rhs.enabled.load(std::memory_order_relaxed)),
-        index(rhs.index),
         id(std::move(rhs.id)),
         name(std::move(rhs.name)),
         type(std::move(rhs.type)),
@@ -56,7 +59,6 @@ public:
 
     rule& operator=(rule &&rhs)  noexcept {
         enabled = rhs.enabled.load(std::memory_order_relaxed);
-        index = rhs.index;
         id = std::move(rhs.id);
         name = std::move(rhs.name);
         type = std::move(rhs.type);
@@ -73,14 +75,13 @@ public:
     bool has_new_targets(const object_store &store) const;
 
     std::optional<event> match(const object_store& store,
-        const ddwaf::manifest &manifest, bool run_on_new,
+        const ddwaf::manifest &manifest, cache_type &cache,
         ddwaf::timer& deadline) const;
 
     bool is_enabled() const { return enabled.load(std::memory_order_relaxed); }
     void toggle(bool value) { enabled.store(value, std::memory_order_relaxed); }
 
     std::atomic<bool> enabled{true};
-    index_type index;
     std::string id;
     std::string name;
     std::string type;
@@ -89,10 +90,5 @@ public:
     std::unordered_set<ddwaf::manifest::target_type> targets;
     std::vector<std::string> actions;
 };
-
-using rule_vector     = std::vector<rule>;
-using rule_ref_map    = std::unordered_map<std::string_view, std::reference_wrapper<rule>>;
-using rule_ref_vector = std::vector<std::reference_wrapper<rule>>;
-using collection_map  = std::unordered_map<std::string, rule_ref_vector>;
 
 }

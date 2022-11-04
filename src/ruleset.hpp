@@ -18,9 +18,8 @@ struct ruleset
 {
     ddwaf::manifest manifest;
     ddwaf::exclusion_filter_vector filters;
-    ddwaf::rule_vector rules;
-    ddwaf::rule_ref_map rule_map;
-    ddwaf::collection_map collections;
+    std::unordered_map<std::string, std::shared_ptr<ddwaf::rule>> rules;
+    std::unordered_set<std::shared_ptr<ddwaf::rule>> rule_set;
     ddwaf::rule_data::dispatcher dispatcher;
 };
 

@@ -20,25 +20,26 @@ namespace ddwaf
 
 class exclusion_filter {
 public:
-    using index_type = uint32_t;
-
-    using cache_type = std::unordered_map<std::shared_ptr<condition>, bool>;
+    struct cache_type {
+        bool result{false};
+        std::unordered_map<std::shared_ptr<condition>, bool> conditions;
+    };
 
     exclusion_filter(std::vector<std::shared_ptr<condition>> &&conditions,
-            std::unordered_set<rule::index_type> &&rule_targets):
+            std::unordered_set<std::shared_ptr<rule>> &&rule_targets):
         conditions_(std::move(conditions)),
         rule_targets_(std::move(rule_targets)) {}
 
-    const std::unordered_set<rule::index_type> &get_rule_targets() const {
+    const std::unordered_set<std::shared_ptr<rule>> &get_rule_targets() const {
         return rule_targets_;
     }
 
-    bool filter(const object_store& store, const ddwaf::manifest &manifest,
+    bool match(const object_store& store, const ddwaf::manifest &manifest,
         cache_type &cache, ddwaf::timer& deadline) const;
 
 protected:
     std::vector<std::shared_ptr<condition>> conditions_;
-    std::unordered_set<rule::index_type> rule_targets_;
+    std::unordered_set<std::shared_ptr<rule>> rule_targets_;
 };
 
 using exclusion_filter_vector = std::vector<std::shared_ptr<exclusion_filter>>;

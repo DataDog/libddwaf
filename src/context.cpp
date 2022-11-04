@@ -68,9 +68,9 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
     return code;
 }
 
-rule_ref_vector context::filter(ddwaf::timer& deadline)
+std::unordered_set<std::shared_ptr<rule>> context::filter(ddwaf::timer& deadline)
 {
-    std::unordered_set<rule::index_type> rules_to_exclude;
+    std::unordered_set<std::shared_ptr<rule>> rules_to_exclude;
     for (const auto &filter : ruleset_.filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while running exclusion filters");
@@ -79,95 +79,74 @@ rule_ref_vector context::filter(ddwaf::timer& deadline)
 
         bool result = false;
         auto it = filter_cache_.find(filter);
-        if (it != filter_cache_.end()) {
-            auto &[cached_result, cond_cache] = it->second;
-            if (!cached_result) {
-                result = filter->filter(store_, ruleset_.manifest,
-                        cond_cache, deadline);
-            } else {
-                result = true;
-            }
+        if (it == filter_cache_.end()) {
+            auto [new_it, res] = filter_cache_.emplace(filter, 
+                    exclusion_filter::cache_type{});
+            it = new_it;
+        }
+
+        exclusion_filter::cache_type &cache = it->second;
+        if (!cache.result) {
+            result = filter->match(store_, ruleset_.manifest,
+                cache, deadline);
         } else {
-            std::unordered_map<std::shared_ptr<condition>, bool> cond_cache;
-            result = filter->filter(store_, ruleset_.manifest, 
-                cond_cache, deadline);
-            filter_cache_.emplace(filter,
-                    std::make_pair(result, std::move(cond_cache)));
+            result = true;
         }
 
         if (result) {
+            cache.result = true;
             for (auto rule: filter->get_rule_targets()) {
                 rules_to_exclude.emplace(rule);
             }
         }
     }
 
-    rule_ref_vector rules_to_run;
-    for (auto &rule : ruleset_.rules) {
-        if (rules_to_exclude.find(rule.index) == rules_to_exclude.end()) {
-            rules_to_run.push_back(rule);
-        }
-    }
+    std::unordered_set<std::shared_ptr<rule>> rules_to_run;
+    std::set_difference(ruleset_.rule_set.begin(), ruleset_.rule_set.end(),
+        rules_to_exclude.begin(), rules_to_exclude.end(),
+        std::inserter(rules_to_run, rules_to_run.begin()));
 
     return rules_to_run;
 }
 
-void context::match(const ddwaf::rule_ref_vector& rules,
+void context::match(const std::unordered_set<std::shared_ptr<rule>>& rules,
   event_serializer &serializer, ddwaf::timer& deadline)
 {
     //Process each rule we have to run for this step of the collection
-    for (ddwaf::rule& rule : rules)
+    for (auto rule : rules)
     {
         if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while running rule %s", rule.id.c_str());
+            DDWAF_INFO("Ran out of time while running rule %s", rule->id.c_str());
             break;
         }
 
-        if (!rule.is_enabled()) { continue; }
+        if (!rule->is_enabled()) { continue; }
 
-        if (collection_cache_.find(rule.type) != collection_cache_.end()) {
+        if (collection_cache_.find(rule->type) != collection_cache_.end()) {
             continue;
         }
 
-        // TODO: replace this part with:
-        //         - Rule cache containing individual condition matches, this
-        //           cache will then allow the rule to keep track of which
-        //           conditions have been executed.
-        bool run_on_new = false;
-        const auto hit = status_cache_.find(rule.index);
-        if (hit != status_cache_.cend()) {
-            // There was a match cached for this rule, stop processing collection
-            if (hit->second) { continue; }
-
-            // The value is present and it's false (no match), check if we have
-            // new targets to decide if we should retry the rule.
-            if (!rule.has_new_targets(store_)) { continue; }
-
-            // Currently we are not keeping track of which conditions were executed
-            // against the available data, so if a rule has more than one condition
-            // we can't know which one caused the negative match and consequently
-            // we don't know which ones have been executed.
-            //
-            // However if the rule only has one condition and there is a negative
-            // match in the cache, we can safely assume it has already been executed
-            // with existing data.
-            run_on_new = (rule.conditions.size() == 1);
-        }
-
-        DDWAF_DEBUG("Running the WAF on rule %s", rule.id.c_str());
+        DDWAF_DEBUG("Running the WAF on rule %s", rule->id.c_str());
 
         try {
-            auto event = rule.match(store_, ruleset_.manifest, run_on_new, deadline);
+            auto it = rule_cache_.find(rule);
+            if (it != rule_cache_.end() && it->second.result) {
+                continue;
+            } else {
+                auto [new_it, res] = rule_cache_.emplace(rule, rule::cache_type{});
+                it = new_it;
+            }
 
-            status_cache_.insert_or_assign(rule.index, event.has_value());
-
+            rule::cache_type &cache = it->second;
+            auto event = rule->match(store_, ruleset_.manifest, cache, deadline);
             if (event.has_value()) {
-                collection_cache_.emplace(rule.type);
+                cache.result = true;
+                collection_cache_.emplace(rule->type);
                 serializer.insert(std::move(*event));
-                DDWAF_DEBUG("Found event on rule %s", rule.id.c_str());
+                DDWAF_DEBUG("Found event on rule %s", rule->id.c_str());
             }
         } catch (const ddwaf::timeout_exception&) {
-            DDWAF_INFO("Ran out of time when processing %s", rule.id.c_str());
+            DDWAF_INFO("Ran out of time when processing %s", rule->id.c_str());
             break;
         }
     }

@@ -34,7 +34,7 @@ namespace
 {
 
 std::shared_ptr<condition> parseCondition(parameter::map& rule,
-  manifest_builder& mb, std::vector<PW_TRANSFORM_ID>& transformers,
+  manifest_builder& mb, std::vector<PW_TRANSFORM_ID> transformers,
   ddwaf::config& cfg)
 {
     auto operation = at<std::string_view>(rule, "operation");
@@ -159,7 +159,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
                ddwaf::config& cfg)
 {
     auto id = at<std::string>(rule, "id");
-    if (rs.rule_map.find(id) != rs.rule_map.end())
+    if (rs.rules.find(id) != rs.rules.end())
     {
         DDWAF_WARN("duplicate rule %s", id.c_str());
         info.insert_error(id, "duplicate rule");
@@ -188,21 +188,15 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         }
 
         auto tags = at<parameter::map>(rule, "tags");
-        auto type = at<std::string>(tags, "type");
-
-        auto index = rs.rules.size();
-        rs.rules.emplace_back(index, std::string(id),
+        auto rule_ptr = std::make_shared<ddwaf::rule>(
+            std::string(id),
             at<std::string>(rule, "name"),
             at<std::string>(tags, "type"),
             at<std::string>(tags, "category", ""),
             std::move(conditions));
 
-        auto &rule_ref = rs.rules[index];
-
-        auto& collection = rs.collections[rule_ref.type];
-        collection.push_back(rule_ref);
-        rs.rule_map.emplace(rule_ref.id, rule_ref);
-
+        rs.rules.emplace(id, rule_ptr);
+        rs.rule_set.emplace(rule_ptr);
         info.add_loaded();
     }
     catch (const std::exception& e)
@@ -235,8 +229,7 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::ruleset& rs, ddwa
         }
     }
 
-    if (rs.rules.empty() || rs.collections.empty())
-    {
+    if (rs.rules.empty()) {
         throw ddwaf::parsing_error("no valid rules found");
     }
 
