@@ -1,0 +1,11 @@
+{
+  name: "Rule excluded by ID through multi-target exclusion filter",
+  runs: [
+    {
+      input: {
+        rule27-input: "rule27"
+      },
+      code: ok
+    }
+  ]
+}

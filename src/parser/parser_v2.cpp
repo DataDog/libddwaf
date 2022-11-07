@@ -40,7 +40,7 @@ class rules_tagmap
 {
 public:
     using rule_ptr = std::shared_ptr<ddwaf::rule>;
-    using rule_set = std::unordered_set<rule_ptr>;
+    using rule_set = std::set<rule_ptr>;
 
     rules_tagmap() = default;
 
@@ -77,9 +77,8 @@ public:
 
     void insert(rule_ptr rule) {
         by_type_[rule->type].emplace(rule);
-        by_category_[rule->type].emplace(rule);
+        by_category_[rule->category].emplace(rule);
     }
-
 protected:
     std::unordered_map<std::string_view, rule_set> by_type_;
     std::unordered_map<std::string_view, rule_set> by_category_;
@@ -305,7 +304,6 @@ void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
             at<std::vector<std::string>>(rule, "on_match", {}));
 
         rs.rules.emplace(id, rule_ptr);
-        rs.rule_set.emplace(rule_ptr);
         rules_by_tags.insert(rule_ptr);
         info.add_loaded();
     }
@@ -316,7 +314,7 @@ void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
     }
 }
 
-std::unordered_set<std::shared_ptr<ddwaf::rule>> parse_rules_target(
+std::set<std::shared_ptr<ddwaf::rule>> parse_rules_target(
     parameter::map& target, ddwaf::ruleset &rs, rules_tagmap &rules_by_tags)
 {
     auto rule_id = at<std::string>(target, "rule_id", {});
@@ -363,10 +361,9 @@ void parse_exclusion_filter(parameter::map& filter, manifest_builder& mb,
         }
     }
 
-    std::unordered_set<std::shared_ptr<ddwaf::rule>> rules_target;
+    std::set<std::shared_ptr<ddwaf::rule>> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
     if (rules_target_array.empty()) {
-        rules_target.reserve(rs.rules.size());
         for (const auto &[id, rule] : rs.rules) {
             rules_target.emplace(rule);
         }
@@ -378,7 +375,7 @@ void parse_exclusion_filter(parameter::map& filter, manifest_builder& mb,
     }
 
     if (conditions.empty() && rules_target.empty()) {
-        throw ddwaf::parsing_error("rule without conditions or targets");
+        throw ddwaf::parsing_error("exclusion filter without conditions or targets");
     }
 
     rs.filters.emplace_back(std::make_shared<exclusion_filter>(

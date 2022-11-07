@@ -215,45 +215,6 @@ TEST(TestRule, ToggleRuleInCollection)
         EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(res,
         {
-            .id = "id-rule-2",
-            .name = "rule2",
-            .type = "flow2",
-            .category = "category2",
-            .matches = {{
-                .op = "match_regex",
-                .op_value = "rule2",
-                .address = "value2",
-                .value = "rule2",
-                .highlight = "rule2"
-            }}
-        });
-
-        ddwaf_result_free(&res);
-        ddwaf_context_destroy(context);
-    }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "id-rule-2", ddwaf_object_bool(&tmp, false));
-
-        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
-
-        ddwaf_object_free(&root);
-    }
-
-    {
-        ddwaf_context context = ddwaf_context_init(handle);
-        ASSERT_NE(context, nullptr);
-
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
-
-        ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(res,
-        {
             .id = "id-rule-3",
             .name = "rule3",
             .type = "flow2",
@@ -275,6 +236,45 @@ TEST(TestRule, ToggleRuleInCollection)
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "id-rule-3", ddwaf_object_bool(&tmp, false));
+
+        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
+
+        ddwaf_result res;
+        EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(res,
+        {
+            .id = "id-rule-2",
+            .name = "rule2",
+            .type = "flow2",
+            .category = "category2",
+            .matches = {{
+                .op = "match_regex",
+                .op_value = "rule2",
+                .address = "value2",
+                .value = "rule2",
+                .highlight = "rule2"
+            }}
+        });
+
+        ddwaf_result_free(&res);
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "id-rule-2", ddwaf_object_bool(&tmp, false));
 
         EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
 

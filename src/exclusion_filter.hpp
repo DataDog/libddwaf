@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 #include <clock.hpp>
@@ -26,11 +26,11 @@ public:
     };
 
     exclusion_filter(std::vector<std::shared_ptr<condition>> &&conditions,
-            std::unordered_set<std::shared_ptr<rule>> &&rule_targets):
+            std::set<std::shared_ptr<rule>> &&rule_targets):
         conditions_(std::move(conditions)),
         rule_targets_(std::move(rule_targets)) {}
 
-    const std::unordered_set<std::shared_ptr<rule>> &get_rule_targets() const {
+    const std::set<std::shared_ptr<rule>> &get_rule_targets() const {
         return rule_targets_;
     }
 
@@ -39,7 +39,7 @@ public:
 
 protected:
     std::vector<std::shared_ptr<condition>> conditions_;
-    std::unordered_set<std::shared_ptr<rule>> rule_targets_;
+    std::set<std::shared_ptr<rule>> rule_targets_;
 };
 
 using exclusion_filter_vector = std::vector<std::shared_ptr<exclusion_filter>>;

@@ -1,4 +1,50 @@
 version: '2.1'
+exclusions:
+  - rules_target:
+      - rule_id: 20
+  - rules_target:
+      - tags:
+          type: flow21
+  - rules_target:
+      - tags:
+          category: category22
+  - rules_target:
+      - tags:
+          type: flow23-5
+          category: category23-5
+  - rules_target:
+      - tags:
+          type: flow26
+          category: category26
+      - rule_id: 27
+  - conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-1-input
+          regex: exclusion-filter-1
+  - conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-2-input1
+          regex: exclusion-filter-2
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-2-input2
+          regex: exclusion-filter-2
+  - conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-3-input
+          regex: exclusion-filter-3
+    rule_targets:
+      - tags:
+          type: flow28
+          category: category28
+      - rule_id: 29
 rules:
   - id: 1
     name: rule1-basic-single-input
@@ -282,3 +328,113 @@ rules:
     on_match:
         - block_request
         - match
+  - id: 20
+    name: rule20-exclude-by-id
+    tags:
+      type: flow20
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule20-input
+          regex: rule20
+  - id: 21
+    name: rule21-exclude-by-type
+    tags:
+      type: flow21
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule21-input
+          regex: rule21
+  - id: 22
+    name: rule22-exclude-by-category
+    tags:
+      type: flow22
+      category: category22
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule22-input
+          regex: rule22
+  - id: 23
+    name: rule23-exclude-by-type-and-category
+    tags:
+      type: flow23-5
+      category: category23-5
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule23-input
+          regex: rule23
+  - id: 24
+    name: rule24-not-excluded-due-to-category
+    tags:
+      type: flow23-5
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule24-input
+          regex: rule24
+  - id: 25
+    name: rule25-not-exclude-due-to-type
+    tags:
+      type: flow25
+      category: category23-5
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule25-input
+          regex: rule25
+  - id: 26
+    name: rule26-target-excluded-by-tags-multitarget
+    tags:
+      type: flow26
+      category: category26
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule26-input
+          regex: rule26
+  - id: 27
+    name: rule27-target-excluded-by-id-multitarget
+    tags:
+      type: flow27
+      category: category27
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule27-input
+          regex: rule27
+  - id: 28
+    name: rule28-target-excluded-through-conditions
+    tags:
+      type: flow28
+      category: category28
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule28-input
+          regex: rule28
+  - id: 29
+    name: rule29-target-excluded-through-conditions
+    tags:
+      type: flow29
+      category: category29
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule29-input
+          regex: rule29

@@ -52,15 +52,13 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
     // Should the rules be ordered by collection?
     // FIXME currently generating a rule_ref vector from original set of rules
 
-    auto rules = filter(deadline);
-    if (!rules.empty()) {
-        match(rules, serializer, deadline);
-    }
+    auto rules_to_exclude = filter(deadline);
+    auto events = match(rules_to_exclude, deadline);
 
-    DDWAF_RET_CODE code = serializer.has_events() ? DDWAF_MATCH : DDWAF_OK;
+    DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
         ddwaf_result& output = *res;
-        serializer.serialize(output);
+        serializer.serialize(events, output);
         output.total_runtime = deadline.elapsed().count();
         output.timeout = deadline.expired_before();
     }
@@ -68,10 +66,11 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
     return code;
 }
 
-std::unordered_set<std::shared_ptr<rule>> context::filter(ddwaf::timer& deadline)
+std::set<std::shared_ptr<rule>> context::filter(ddwaf::timer& deadline)
 {
-    std::unordered_set<std::shared_ptr<rule>> rules_to_exclude;
+    std::set<std::shared_ptr<rule>> rules_to_exclude;
     for (const auto &filter : ruleset_.filters) {
+        DDWAF_INFO("Running exclusion filter");
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while running exclusion filters");
             return {};
@@ -101,32 +100,27 @@ std::unordered_set<std::shared_ptr<rule>> context::filter(ddwaf::timer& deadline
         }
     }
 
-    std::unordered_set<std::shared_ptr<rule>> rules_to_run;
-    std::set_difference(ruleset_.rule_set.begin(), ruleset_.rule_set.end(),
-        rules_to_exclude.begin(), rules_to_exclude.end(),
-        std::inserter(rules_to_run, rules_to_run.begin()));
-
-    return rules_to_run;
+    return rules_to_exclude;
 }
 
-void context::match(const std::unordered_set<std::shared_ptr<rule>>& rules,
-  event_serializer &serializer, ddwaf::timer& deadline)
+std::vector<event> context::match(
+    const std::set<std::shared_ptr<rule>> &exclude, ddwaf::timer& deadline)
 {
     //Process each rule we have to run for this step of the collection
-    for (auto rule : rules)
+    std::vector<ddwaf::event> events;
+    for (auto &[id, rule] : ruleset_.rules)
     {
         if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while running rule %s", rule->id.c_str());
+            DDWAF_INFO("Ran out of time while running rule %s", id.c_str());
             break;
         }
 
-        if (!rule->is_enabled()) { continue; }
-
-        if (collection_cache_.find(rule->type) != collection_cache_.end()) {
+        if (!rule->is_enabled() || exclude.find(rule) != exclude.end() ||
+          collection_cache_.find(rule->type) != collection_cache_.end()) {
             continue;
         }
 
-        DDWAF_DEBUG("Running the WAF on rule %s", rule->id.c_str());
+        DDWAF_DEBUG("Running the WAF on rule %s", id.c_str());
 
         try {
             auto it = rule_cache_.find(rule);
@@ -142,14 +136,16 @@ void context::match(const std::unordered_set<std::shared_ptr<rule>>& rules,
             if (event.has_value()) {
                 cache.result = true;
                 collection_cache_.emplace(rule->type);
-                serializer.insert(std::move(*event));
-                DDWAF_DEBUG("Found event on rule %s", rule->id.c_str());
+                events.emplace_back(std::move(*event));
+                DDWAF_DEBUG("Found event on rule %s", id.c_str());
             }
         } catch (const ddwaf::timeout_exception&) {
-            DDWAF_INFO("Ran out of time when processing %s", rule->id.c_str());
+            DDWAF_INFO("Ran out of time when processing %s", id.c_str());
             break;
         }
     }
+
+    return events;
 }
 
 } // namespace ddwaf

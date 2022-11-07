@@ -39,13 +39,10 @@ public:
 
     DDWAF_RET_CODE run(const ddwaf_object&, optional_ref<ddwaf_result> res, uint64_t);
 
+    std::set<std::shared_ptr<rule>> filter(ddwaf::timer& deadline);
+    std::vector<event> match(
+        const std::set<std::shared_ptr<rule>> &exclude, ddwaf::timer& deadline);
 protected:
-    std::unordered_set<std::shared_ptr<rule>> filter(ddwaf::timer& deadline);
-
-    void match(const std::unordered_set<std::shared_ptr<rule>>& rules,
-        event_serializer& serializer,
-        ddwaf::timer& deadline);
-
     bool is_first_run() const { return status_cache_.empty(); }
 
     ddwaf::ruleset &ruleset_;

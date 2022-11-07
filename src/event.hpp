@@ -41,16 +41,9 @@ public:
     explicit event_serializer(const ddwaf::obfuscator &event_obfuscator):
         obfuscator_(event_obfuscator) {}
 
-    void insert(event &&e) {
-        events_.emplace_back(std::move(e));
-    }
-
-    [[nodiscard]] bool has_events() const { return !events_.empty(); }
-
-    void serialize(ddwaf_result &output) const;
+    void serialize(const std::vector<event> &events, ddwaf_result &output) const;
 
 protected:
-    std::vector<event> events_;
     const ddwaf::obfuscator &obfuscator_;
 };
 
