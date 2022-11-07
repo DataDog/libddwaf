@@ -48,10 +48,7 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
 
     event_serializer serializer(config_.event_obfuscator);
 
-    // Get rule_ref array of rules to run on
-    // Should the rules be ordered by collection?
-    // FIXME currently generating a rule_ref vector from original set of rules
-
+    // Get rule_ref array of rules to exclude.
     auto rules_to_exclude = filter(deadline);
     auto events = match(rules_to_exclude, deadline);
 
@@ -70,13 +67,11 @@ std::set<std::shared_ptr<rule>> context::filter(ddwaf::timer& deadline)
 {
     std::set<std::shared_ptr<rule>> rules_to_exclude;
     for (const auto &filter : ruleset_.filters) {
-        DDWAF_INFO("Running exclusion filter");
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while running exclusion filters");
             return {};
         }
 
-        bool result = false;
         auto it = filter_cache_.find(filter);
         if (it == filter_cache_.end()) {
             auto [new_it, res] = filter_cache_.emplace(filter, 
@@ -85,15 +80,7 @@ std::set<std::shared_ptr<rule>> context::filter(ddwaf::timer& deadline)
         }
 
         exclusion_filter::cache_type &cache = it->second;
-        if (!cache.result) {
-            result = filter->match(store_, ruleset_.manifest,
-                cache, deadline);
-        } else {
-            result = true;
-        }
-
-        if (result) {
-            cache.result = true;
+        if (filter->match(store_, ruleset_.manifest, cache, deadline)) {
             for (auto rule: filter->get_rule_targets()) {
                 rules_to_exclude.emplace(rule);
             }
@@ -124,9 +111,7 @@ std::vector<event> context::match(
 
         try {
             auto it = rule_cache_.find(rule);
-            if (it != rule_cache_.end() && it->second.result) {
-                continue;
-            } else {
+            if (it == rule_cache_.end()) {
                 auto [new_it, res] = rule_cache_.emplace(rule, rule::cache_type{});
                 it = new_it;
             }
@@ -134,7 +119,6 @@ std::vector<event> context::match(
             rule::cache_type &cache = it->second;
             auto event = rule->match(store_, ruleset_.manifest, cache, deadline);
             if (event.has_value()) {
-                cache.result = true;
                 collection_cache_.emplace(rule->type);
                 events.emplace_back(std::move(*event));
                 DDWAF_DEBUG("Found event on rule %s", id.c_str());

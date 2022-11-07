@@ -30,22 +30,13 @@ rule::rule(std::string &&id_, std::string &&name_,
     }
 }
 
-bool rule::has_new_targets(const object_store &store) const
-{
-    for (const auto& target : targets)
-    {
-        if (store.is_new_target(target)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 std::optional<event> rule::match(const object_store& store,
     const ddwaf::manifest &manifest, cache_type &cache,
     ddwaf::timer& deadline) const
 {
+    // An event was already produced, so we skip the rule
+    if (cache.result) { return std::nullopt; }
+
     for (auto& cond : conditions) {
         bool run_on_new = false;
         auto cached_result = cache.conditions.find(cond);
@@ -67,6 +58,8 @@ std::optional<event> rule::match(const object_store& store,
         cached_result->second = true;
         cache.event.matches.emplace_back(std::move(*opt_match));
     }
+
+    cache.result = true;
 
     cache.event.id = id;
     cache.event.name = name;

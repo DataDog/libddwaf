@@ -72,8 +72,6 @@ public:
 
     ~rule() = default;
 
-    bool has_new_targets(const object_store &store) const;
-
     std::optional<event> match(const object_store& store,
         const ddwaf::manifest &manifest, cache_type &cache,
         ddwaf::timer& deadline) const;
