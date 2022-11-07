@@ -203,18 +203,8 @@ TEST(TestRule, ToggleRuleInCollection)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    {
-        ddwaf_context context = ddwaf_context_init(handle);
-        ASSERT_NE(context, nullptr);
-
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
-
-        ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(res,
-        {
+    std::unordered_map<std::string, ddwaf::test::event> events = {
+        {"id-rule-3", ddwaf::test::event{
             .id = "id-rule-3",
             .name = "rule3",
             .type = "flow2",
@@ -226,7 +216,49 @@ TEST(TestRule, ToggleRuleInCollection)
                 .value = "rule2",
                 .highlight = "rule2"
             }}
-        });
+        }},
+        {"id-rule-2", ddwaf::test::event{
+            .id = "id-rule-2",
+            .name = "rule2",
+            .type = "flow2",
+            .category = "category2",
+            .matches = {{
+                .op = "match_regex",
+                .op_value = "rule2",
+                .address = "value2",
+                .value = "rule2",
+                .highlight = "rule2"
+            }}
+        }}
+    };
+
+    // Due to the use of unordered structures we can't really know which rule
+    // will match first as it's implementation dependent, so we keep track of
+    // which one matched first.
+    std::string first_id;
+    std::string second_id;
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
+
+        ddwaf_result res;
+        EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_NE(res.data, nullptr);
+
+        if (strstr(res.data, "id-rule-3") != nullptr) {
+            first_id = "id-rule-3";
+            second_id = "id-rule-2";
+        } else {
+            first_id = "id-rule-2";
+            second_id = "id-rule-3";
+        }
+
+        EXPECT_EVENTS(res, events[first_id]);
 
         ddwaf_result_free(&res);
         ddwaf_context_destroy(context);
@@ -235,7 +267,7 @@ TEST(TestRule, ToggleRuleInCollection)
     {
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "id-rule-3", ddwaf_object_bool(&tmp, false));
+        ddwaf_object_map_add(&root, first_id.c_str(), ddwaf_object_bool(&tmp, false));
 
         EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
 
@@ -252,20 +284,7 @@ TEST(TestRule, ToggleRuleInCollection)
 
         ddwaf_result res;
         EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(res,
-        {
-            .id = "id-rule-2",
-            .name = "rule2",
-            .type = "flow2",
-            .category = "category2",
-            .matches = {{
-                .op = "match_regex",
-                .op_value = "rule2",
-                .address = "value2",
-                .value = "rule2",
-                .highlight = "rule2"
-            }}
-        });
+        EXPECT_EVENTS(res, events[second_id]);
 
         ddwaf_result_free(&res);
         ddwaf_context_destroy(context);
@@ -274,7 +293,7 @@ TEST(TestRule, ToggleRuleInCollection)
     {
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "id-rule-2", ddwaf_object_bool(&tmp, false));
+        ddwaf_object_map_add(&root, second_id.c_str(), ddwaf_object_bool(&tmp, false));
 
         EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
 
