@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef EXCEPTION_H
-#define EXCEPTION_H
+#pragma once
 
 #include <stdexcept>
 #include <string>
@@ -78,5 +77,3 @@ public:
 };
 
 }
-
-#endif // EXCEPTION_H

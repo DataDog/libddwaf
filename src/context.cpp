@@ -63,9 +63,9 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
     return code;
 }
 
-std::set<std::shared_ptr<rule>> context::filter(ddwaf::timer& deadline)
+std::set<rule::ptr> context::filter(ddwaf::timer& deadline)
 {
-    std::set<std::shared_ptr<rule>> rules_to_exclude;
+    std::set<rule::ptr> rules_to_exclude;
     for (const auto &filter : ruleset_.filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while running exclusion filters");
@@ -90,8 +90,8 @@ std::set<std::shared_ptr<rule>> context::filter(ddwaf::timer& deadline)
     return rules_to_exclude;
 }
 
-std::vector<event> context::match(
-    const std::set<std::shared_ptr<rule>> &exclude, ddwaf::timer& deadline)
+std::vector<event> context::match(const std::set<rule::ptr> &exclude,
+    ddwaf::timer& deadline)
 {
     //Process each rule we have to run for this step of the collection
     std::vector<ddwaf::event> events;

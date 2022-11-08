@@ -8,65 +8,6 @@
 
 using namespace ddwaf;
 
-TEST(TestCondition, Match)
-{
-    std::vector<ddwaf::manifest::target_type> targets;
-
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("server.request.query", {}));
-
-    auto manifest = mb.build_manifest();
-
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::regex_match>(".*", 0, true));
-
-    ddwaf_object root, tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
-
-    ddwaf::object_store store(manifest);
-    store.insert(root);
-
-    ddwaf::timer deadline{2s};
-
-    auto match = cond->match(store, manifest, true, deadline);
-    EXPECT_TRUE(match.has_value());
-
-    EXPECT_STREQ(match->resolved.c_str(), "value");
-    EXPECT_STREQ(match->matched.c_str(), "value");
-    EXPECT_STREQ(match->operator_name.data(), "match_regex");
-    EXPECT_STREQ(match->operator_value.data(), ".*");
-    EXPECT_STREQ(match->source.data(), "server.request.query");
-    EXPECT_TRUE(match->key_path.empty());
-}
-
-TEST(TestCondition, NoMatch)
-{
-    std::vector<ddwaf::manifest::target_type> targets;
-
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
-
-    auto manifest = mb.build_manifest();
-
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
-
-    ddwaf_object root, tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-
-    ddwaf::object_store store(manifest);
-    store.insert(root);
-
-    ddwaf::timer deadline{2s};
-
-    auto match = cond->match(store, manifest, true, deadline);
-    EXPECT_FALSE(match.has_value());
-}
-
 TEST(TestRule, Match)
 {
     std::vector<ddwaf::manifest::target_type> targets;
@@ -145,6 +86,275 @@ TEST(TestRule, NoMatch)
     auto match = rule.match(store, manifest, cache, deadline);
     EXPECT_FALSE(match.has_value());
 }
+
+TEST(TestRule, ValidateCachedMatch)
+{
+    ddwaf::manifest_builder mb;
+    std::vector<std::shared_ptr<condition>> conditions;
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("http.client_ip", {}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        conditions.push_back(std::move(cond));
+    }
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("usr.id", {}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+        conditions.push_back(std::move(cond));
+    }
+
+    auto manifest = mb.build_manifest();
+    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
+    ddwaf::rule::cache_type cache;
+
+    // To validate that the cache works, we pass an object store containing
+    // only the latest address. This ensures that the IP condition can't be
+    // matched on the second run.
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        auto event = rule.match(store, manifest, cache, deadline);
+        EXPECT_FALSE(event.has_value());
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        auto event = rule.match(store, manifest, cache, deadline);
+        EXPECT_TRUE(event.has_value());
+
+        {
+            auto &match = event->matches[0];
+            EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
+            EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+            EXPECT_STREQ(match.operator_name.data(), "ip_match");
+            EXPECT_STREQ(match.operator_value.data(), "");
+            EXPECT_STREQ(match.source.data(), "http.client_ip");
+            EXPECT_TRUE(match.key_path.empty());
+        }
+        {
+            auto &match = event->matches[1];
+            EXPECT_STREQ(match.resolved.c_str(), "admin");
+            EXPECT_STREQ(match.matched.c_str(), "admin");
+            EXPECT_STREQ(match.operator_name.data(), "exact_match");
+            EXPECT_STREQ(match.operator_value.data(), "");
+            EXPECT_STREQ(match.source.data(), "usr.id");
+            EXPECT_TRUE(match.key_path.empty());
+        }
+    }
+}
+
+TEST(TestRule, MatchWithoutCache)
+{
+    ddwaf::manifest_builder mb;
+    std::vector<std::shared_ptr<condition>> conditions;
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("http.client_ip", {}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        conditions.push_back(std::move(cond));
+    }
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("usr.id", {}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+        conditions.push_back(std::move(cond));
+    }
+
+    auto manifest = mb.build_manifest();
+    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
+
+    // In this instance we pass a complete store with both addresses but an
+    // empty cache on every run to ensure that both conditions are matched on
+    // the second run when there isn't a cached match.
+    ddwaf::object_store store(manifest);
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        ddwaf::rule::cache_type cache;
+        auto event = rule.match(store, manifest, cache, deadline);
+        EXPECT_FALSE(event.has_value());
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        ddwaf::rule::cache_type cache;
+        auto event = rule.match(store, manifest, cache, deadline);
+        EXPECT_TRUE(event.has_value());
+
+        {
+            auto &match = event->matches[0];
+            EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
+            EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+            EXPECT_STREQ(match.operator_name.data(), "ip_match");
+            EXPECT_STREQ(match.operator_value.data(), "");
+            EXPECT_STREQ(match.source.data(), "http.client_ip");
+            EXPECT_TRUE(match.key_path.empty());
+        }
+        {
+            auto &match = event->matches[1];
+            EXPECT_STREQ(match.resolved.c_str(), "admin");
+            EXPECT_STREQ(match.matched.c_str(), "admin");
+            EXPECT_STREQ(match.operator_name.data(), "exact_match");
+            EXPECT_STREQ(match.operator_value.data(), "");
+            EXPECT_STREQ(match.source.data(), "usr.id");
+            EXPECT_TRUE(match.key_path.empty());
+        }
+    }
+}
+
+TEST(TestRule, NoMatchWithoutCache)
+{
+    ddwaf::manifest_builder mb;
+    std::vector<std::shared_ptr<condition>> conditions;
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("http.client_ip", {}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        conditions.push_back(std::move(cond));
+    }
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("usr.id", {}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+        conditions.push_back(std::move(cond));
+    }
+
+    auto manifest = mb.build_manifest();
+    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
+
+    // In this test we validate that when the cache is empty and only one
+    // address is passed, the filter doesn't match (as it should be).
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        ddwaf::rule::cache_type cache;
+        auto event = rule.match(store, manifest, cache, deadline);
+        EXPECT_FALSE(event.has_value());
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        ddwaf::rule::cache_type cache;
+        auto event = rule.match(store, manifest, cache, deadline);
+        EXPECT_FALSE(event.has_value());
+    }
+}
+
+TEST(TestRule, FullCachedMatchSecondRun)
+{
+    ddwaf::manifest_builder mb;
+    std::vector<std::shared_ptr<condition>> conditions;
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("http.client_ip", {}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        conditions.push_back(std::move(cond));
+    }
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("usr.id", {}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+        conditions.push_back(std::move(cond));
+    }
+
+    auto manifest = mb.build_manifest();
+    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
+
+    // In this test we validate that when a match has already occurred, the 
+    // second run for the same rule returns no events regardless of input.
+
+    ddwaf::rule::cache_type cache;
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        auto event = rule.match(store, manifest, cache, deadline);
+        EXPECT_TRUE(event.has_value());
+    }
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        ddwaf::object_store store(manifest);
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        auto event = rule.match(store, manifest, cache, deadline);
+        EXPECT_FALSE(event.has_value());
+    }
+}
+
 
 TEST(TestRule, ToggleSingleRule)
 {

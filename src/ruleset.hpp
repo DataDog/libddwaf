@@ -16,12 +16,10 @@ namespace ddwaf
 
 struct ruleset
 {
-    using rule_ptr = std::shared_ptr<ddwaf::rule>;
-
     ddwaf::manifest manifest;
-    ddwaf::exclusion_filter_vector filters;
-    std::unordered_map<std::string, rule_ptr> rules;
-    std::unordered_map<std::string, std::vector<rule_ptr>> collections;
+    std::vector<exclusion_filter::ptr> filters;
+    std::unordered_map<std::string, rule::ptr> rules;
+    std::unordered_map<std::string, std::vector<rule::ptr>> collections;
     ddwaf::rule_data::dispatcher dispatcher;
 };
 

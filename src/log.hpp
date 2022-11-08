@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef DDWAF_LOG_H
-#define DDWAF_LOG_H
+#pragma once
 
 #include <cinttypes>
 #include <ddwaf.h>
@@ -114,4 +113,3 @@ private:
 };
 
 }
-#endif

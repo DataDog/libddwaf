@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef PARAMETER_H
-#define PARAMETER_H
+#pragma once
 
 #include <ddwaf.h>
 #include <exception.hpp>
@@ -97,6 +96,4 @@ struct parameter_traits<std::vector<std::string_view>>
     static const char* name() { return "std::vector<std::string_view>"; }
 };
 
-
 }
-#endif // PARAMETER_H

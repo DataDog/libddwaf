@@ -39,8 +39,7 @@ namespace
 class rules_tagmap
 {
 public:
-    using rule_ptr = std::shared_ptr<ddwaf::rule>;
-    using rule_set = std::set<rule_ptr>;
+    using rule_set = std::set<rule::ptr>;
 
     rules_tagmap() = default;
 
@@ -75,7 +74,7 @@ public:
         return intersection;
     }
 
-    void insert(rule_ptr rule) {
+    void insert(rule::ptr rule) {
         by_type_[rule->type].emplace(rule);
         by_category_[rule->category].emplace(rule);
     }
@@ -84,7 +83,7 @@ protected:
     std::unordered_map<std::string_view, rule_set> by_category_;
 };
 
-std::shared_ptr<condition> parse_condition(parameter::map& rule,
+condition::ptr parse_condition(parameter::map& rule,
     rule_data::dispatcher &dispatcher, manifest_builder& mb, ddwaf::config& cfg,
     ddwaf::condition::data_source source = ddwaf::condition::data_source::values,
     std::vector<PW_TRANSFORM_ID> transformers = {})
@@ -285,7 +284,7 @@ void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
             }
         }
 
-        std::vector<std::shared_ptr<condition>> conditions;
+        std::vector<condition::ptr> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         conditions.reserve(conditions_array.size());
 
@@ -315,7 +314,7 @@ void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
     }
 }
 
-std::set<std::shared_ptr<ddwaf::rule>> parse_rules_target(
+std::set<rule::ptr> parse_rules_target(
     parameter::map& target, ddwaf::ruleset &rs, rules_tagmap &rules_by_tags)
 {
     auto rule_id = at<std::string>(target, "rule_id", {});
@@ -352,7 +351,7 @@ void parse_exclusion_filter(parameter::map& filter, manifest_builder& mb,
     ddwaf::ruleset& rs, rules_tagmap &rules_by_tags, ddwaf::config& cfg)
 {
     // Check for conditions first
-    std::vector<std::shared_ptr<condition>> conditions;
+    std::vector<condition::ptr> conditions;
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
     if (!conditions_array.empty()) {
         conditions.reserve(conditions_array.size());
@@ -362,7 +361,7 @@ void parse_exclusion_filter(parameter::map& filter, manifest_builder& mb,
         }
     }
 
-    std::set<std::shared_ptr<ddwaf::rule>> rules_target;
+    std::set<rule::ptr> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
     if (rules_target_array.empty()) {
         for (const auto &[id, rule] : rs.rules) {

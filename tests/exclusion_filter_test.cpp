@@ -263,8 +263,8 @@ TEST(TestExclusionFilter, FullCachedMatchSecondRun)
     ddwaf::object_store store(manifest);
     ddwaf::exclusion_filter::cache_type cache;
 
-    // In this test we validate that when the cache is empty and only one
-    // address is passed, the filter doesn't match (as it should be).
+    // In this test we validate that when a match has already occurred, the 
+    // second run for the same rule also returns a match (regardless of input).
     {
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);

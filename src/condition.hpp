@@ -24,7 +24,7 @@ namespace ddwaf {
 
 class condition {
 public:
-    using index_type = uint32_t;
+    using ptr = std::shared_ptr<condition>;
 
     enum class data_source : uint8_t { values, keys };
 

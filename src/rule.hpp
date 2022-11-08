@@ -27,9 +27,11 @@ namespace ddwaf
 class rule
 {
 public:
+    using ptr = std::shared_ptr<rule>;
+
     struct cache_type {
         bool result{false};
-        std::unordered_map<std::shared_ptr<condition>, bool> conditions;
+        std::unordered_map<condition::ptr, bool> conditions;
         ddwaf::event event;
     };
 
@@ -38,7 +40,7 @@ public:
 
     rule(std::string &&id_, std::string &&name_,
       std::string &&type_, std::string &&category_,
-      std::vector<std::shared_ptr<condition>> &&conditions_,
+      std::vector<condition::ptr> &&conditions_,
       std::vector<std::string> &&actions_ = {});
 
     rule(const rule&) = delete;
@@ -84,7 +86,7 @@ public:
     std::string name;
     std::string type;
     std::string category;
-    std::vector<std::shared_ptr<condition>> conditions;
+    std::vector<condition::ptr> conditions;
     std::unordered_set<ddwaf::manifest::target_type> targets;
     std::vector<std::string> actions;
 };

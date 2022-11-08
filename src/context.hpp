@@ -28,7 +28,7 @@ public:
         ruleset_(ruleset), config_(config),
         store_(ruleset_.manifest, config_.free_fn)
     {
-        status_cache_.reserve(ruleset_.rules.size());
+        rule_cache_.reserve(ruleset_.rules.size());
     }
 
     context(const context&) = delete;
@@ -39,27 +39,22 @@ public:
 
     DDWAF_RET_CODE run(const ddwaf_object&, optional_ref<ddwaf_result> res, uint64_t);
 
-    std::set<std::shared_ptr<rule>> filter(ddwaf::timer& deadline);
+    std::set<rule::ptr> filter(ddwaf::timer& deadline);
     std::vector<event> match(
-        const std::set<std::shared_ptr<rule>> &exclude, ddwaf::timer& deadline);
+        const std::set<rule::ptr> &exclude, ddwaf::timer& deadline);
 protected:
-    bool is_first_run() const { return status_cache_.empty(); }
+    bool is_first_run() const { return rule_cache_.empty(); }
 
     ddwaf::ruleset &ruleset_;
     const ddwaf::config &config_;
     ddwaf::object_store store_;
 
-    std::unordered_map<std::shared_ptr<exclusion_filter>,
+    std::unordered_map<exclusion_filter::ptr,
         exclusion_filter::cache_type> filter_cache_;
-    std::unordered_map<std::shared_ptr<rule>, rule::cache_type> rule_cache_;
+    std::unordered_map<rule::ptr, rule::cache_type> rule_cache_;
 
     // Cache collections to avoid processing once a result has been obtained
     std::unordered_set<std::string> collection_cache_;
-
-
-    // If we have seen a match, the value will be true, if the value is present
-    // and false it means we executed the rule and it did not match.
-    std::unordered_map<std::shared_ptr<rule>, bool> status_cache_;
 };
 
 }
