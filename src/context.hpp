@@ -9,14 +9,14 @@
 #include <memory>
 #include <optional>
 
+#include <config.hpp>
 #include <ddwaf.h>
 #include <event.hpp>
 #include <exclusion_filter.hpp>
-#include <rule.hpp>
-#include <config.hpp>
-#include <utils.h>
 #include <obfuscator.hpp>
+#include <rule.hpp>
 #include <ruleset.hpp>
+#include <utils.h>
 
 namespace ddwaf
 {
@@ -29,6 +29,8 @@ public:
         store_(ruleset_.manifest, config_.free_fn)
     {
         rule_cache_.reserve(ruleset_.rules.size());
+        filter_cache_.reserve(ruleset_.filters.size());
+        collection_cache_.reserve(ruleset_.collections.size());
     }
 
     context(const context&) = delete;
@@ -49,12 +51,12 @@ protected:
     const ddwaf::config &config_;
     ddwaf::object_store store_;
 
-    std::unordered_map<exclusion_filter::ptr,
-        exclusion_filter::cache_type> filter_cache_;
+    // Cache of filters and conditions
+    std::unordered_map<exclusion_filter::ptr, exclusion_filter::cache_type> filter_cache_;
+    // Cache of rules and conditions
     std::unordered_map<rule::ptr, rule::cache_type> rule_cache_;
-
-    // Cache collections to avoid processing once a result has been obtained
+    // Cache of collections to avoid processing once a result has been obtained
     std::unordered_set<std::string> collection_cache_;
 };
 
-}
+} // namespace ddwaf

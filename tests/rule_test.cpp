@@ -141,6 +141,12 @@ TEST(TestRule, ValidateCachedMatch)
         ddwaf::timer deadline{2s};
         auto event = rule.match(store, manifest, cache, deadline);
         EXPECT_TRUE(event.has_value());
+        EXPECT_STREQ(event->id.data(), "id");
+        EXPECT_STREQ(event->name.data(), "name");
+        EXPECT_STREQ(event->type.data(), "type");
+        EXPECT_STREQ(event->category.data(), "category");
+        EXPECT_TRUE(event->actions.empty());
+        EXPECT_EQ(event->matches.size(), 2);
 
         {
             auto &match = event->matches[0];

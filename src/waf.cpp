@@ -25,14 +25,15 @@ namespace ddwaf
 namespace {
 obfuscator obfuscator_from_config(const ddwaf_config* config)
 {
-    std::string_view key_regex, value_regex;
+    std::string_view key_regex;
+    std::string_view value_regex;
 
     if (config != nullptr) {
-        if (config->obfuscator.key_regex) {
+        if (config->obfuscator.key_regex != nullptr) {
             key_regex = config->obfuscator.key_regex;
         }
 
-        if (config->obfuscator.value_regex) {
+        if (config->obfuscator.value_regex != nullptr) {
             value_regex = config->obfuscator.value_regex;
         }
     }
