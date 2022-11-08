@@ -9,7 +9,7 @@ set(INSTALL_DIR  ${CMAKE_BINARY_DIR}/third_party)
 # workaround for using it in target_include_directories
 file(MAKE_DIRECTORY ${INSTALL_DIR}/include)
 
-set(RAPIDJSON_COMMIT d87b698d0fcc10a5f632ecbc80a9cb2a8fa094a5)
+set(RAPIDJSON_COMMIT 22a62fcc2c2fa2418f5d358cdf65c1df73b418ae)
 ExternalProject_Add(proj_rapidjson
     URL               https://github.com/Tencent/rapidjson/archive/${RAPIDJSON_COMMIT}.tar.gz
     INSTALL_DIR       ${INSTALL_DIR}
