@@ -305,6 +305,7 @@ void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
 
         rs.rules.emplace(id, rule_ptr);
         rules_by_tags.insert(rule_ptr);
+        rs.collections[rule_ptr->type].emplace_back(rule_ptr);
         info.add_loaded();
     }
     catch (const std::exception& e)

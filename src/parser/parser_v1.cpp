@@ -196,6 +196,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
             std::move(conditions));
 
         rs.rules.emplace(id, rule_ptr);
+        rs.collections[rule_ptr->type].emplace_back(rule_ptr);
         info.add_loaded();
     }
     catch (const std::exception& e)
