@@ -99,13 +99,6 @@ TEST(TestRuleset, ByType)
     }
 }
 
-/*std::make_shared<ddwaf::rule>("id0", "name", "type0", "category0",*/
-/*std::make_shared<ddwaf::rule>("id1", "name", "type1", "category0",*/
-/*std::make_shared<ddwaf::rule>("id2", "name", "type1", "category0",*/
-/*std::make_shared<ddwaf::rule>("id3", "name", "type2", "category0",*/
-/*std::make_shared<ddwaf::rule>("id4", "name", "type2", "category1",*/
-/*std::make_shared<ddwaf::rule>("id5", "name", "type2", "category1",*/
-
 TEST(TestRuleset, ByTypeAndCategory)
 {
     auto rules = test_rules();
