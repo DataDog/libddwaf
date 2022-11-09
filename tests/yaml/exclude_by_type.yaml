@@ -1,0 +1,30 @@
+version: '2.1'
+exclusions:
+  - rules_target:
+      - tags:
+          type: type2
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: type1
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: http.client_ip
+          list:
+            - 192.168.0.1
+  - id: 2
+    name: rule2
+    tags:
+      type: type2
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: http.client_ip
+          list:
+            - 192.168.0.1

@@ -22,7 +22,7 @@ public:
 
 }
 
-TEST(TestContext, Timeout)
+TEST(TestContext, MatchTimeout)
 {
     std::vector<ddwaf::manifest::target_type> targets;
 
@@ -52,9 +52,7 @@ TEST(TestContext, Timeout)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, deadline);
-    EXPECT_EQ(events.size(), 0);
-    EXPECT_TRUE(deadline.expired());
+    EXPECT_THROW(ctx.match({}, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestContext, NoMatch)
@@ -79,7 +77,7 @@ TEST(TestContext, NoMatch)
     ruleset.collections["type"].emplace_back(rule);
     ruleset.manifest = mb.build_manifest();
 
-    ddwaf::timer deadline{0s};
+    ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset, ddwaf::config());
 
     ddwaf_object root, tmp;
@@ -460,6 +458,61 @@ TEST(TestContext, FilterWithCondition)
 
     auto events = ctx.match(rules_to_exclude, deadline);
     EXPECT_EQ(events.size(), 0);
+}
+
+TEST(TestContext, FilterTimeout)
+{
+    ddwaf::ruleset ruleset;
+    ddwaf::manifest_builder mb;
+
+    // Generate rule
+    ddwaf::rule::ptr rule;
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("usr.id", {}));
+
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+
+        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+
+        rule = std::make_shared<ddwaf::rule>(
+            "id", "name", "type", "category", std::move(conditions),
+            std::vector<std::string>{"update", "block", "passlist"});
+
+        ruleset.rules.emplace("id", rule);
+        ruleset.collections["type"].emplace_back(rule);
+    }
+
+    // Generate filter
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("http.client_ip", {}));
+
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+
+        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+
+        auto filter = std::make_shared<ddwaf::exclusion_filter>(
+            std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
+        ruleset.filters.emplace_back(filter);
+    }
+
+    ruleset.manifest = mb.build_manifest();
+
+    ddwaf::timer deadline{0s};
+    ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+    ddwaf_object root, tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ctx.insert(root);
+
+    EXPECT_THROW(ctx.filter(deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestContext, NoFilterWithCondition)

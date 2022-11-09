@@ -48,9 +48,12 @@ DDWAF_RET_CODE context::run(const ddwaf_object &newParameters,
 
     event_serializer serializer(config_.event_obfuscator);
 
-    // Get rule_ref array of rules to exclude.
-    auto rules_to_exclude = filter(deadline);
-    auto events = match(rules_to_exclude, deadline);
+    std::vector<ddwaf::event> events;
+    try {
+        // Get rule_ref array of rules to exclude.
+        auto rules_to_exclude = filter(deadline);
+        events = match(rules_to_exclude, deadline);
+    } catch (const ddwaf::timeout_exception&) {}
 
     DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
@@ -69,7 +72,7 @@ std::set<rule::ptr> context::filter(ddwaf::timer& deadline)
     for (const auto &filter : ruleset_.filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while running exclusion filters");
-            return {};
+            throw timeout_exception();
         }
 
         auto it = filter_cache_.find(filter);
@@ -106,7 +109,7 @@ std::vector<event> context::match(const std::set<rule::ptr> &exclude,
 
             if (deadline.expired()) {
                 DDWAF_INFO("Ran out of time while running rule %s", id.c_str());
-                break;
+                throw timeout_exception();
             }
 
             if (!rule->is_enabled() || exclude.find(rule) != exclude.end()) {
@@ -131,8 +134,8 @@ std::vector<event> context::match(const std::set<rule::ptr> &exclude,
                     break;
                 }
             } catch (const ddwaf::timeout_exception&) {
-                DDWAF_INFO("Ran out of time when processing %s", id.c_str());
-                break;
+                DDWAF_INFO("Ran out of time while processing %s", id.c_str());
+                throw;
             }
         }
     }
