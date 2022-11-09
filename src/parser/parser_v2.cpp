@@ -36,53 +36,6 @@ namespace ddwaf::parser::v2
 namespace
 {
 
-class rules_tagmap
-{
-public:
-    using rule_set = std::set<rule::ptr>;
-
-    rules_tagmap() = default;
-
-    rule_set get_by_type(std::string_view type) const {
-        auto it = by_type_.find(type);
-        if (it == by_type_.end()) { return {}; }
-        return it->second;
-    }
-
-    rule_set get_by_category(std::string_view category) const {
-        auto it = by_category_.find(category);
-        if (it == by_category_.end()) { return {}; }
-        return it->second;
-    }
-
-    rule_set get_by_type_and_category(std::string_view type,
-      std::string_view category) const {
-        auto type_it = by_type_.find(type);
-        if (type_it == by_type_.end()) { return {}; }
-
-        auto category_it = by_category_.find(category);
-        if (category_it == by_category_.end()) { return {}; }
-
-        const rule_set &type_set = type_it->second;
-        const rule_set &category_set = category_it->second;
-        rule_set intersection;
-
-        std::set_intersection(type_set.begin(), type_set.end(),
-            category_set.begin(), category_set.end(),
-            std::inserter(intersection, intersection.begin()));
-
-        return intersection;
-    }
-
-    void insert(rule::ptr rule) {
-        by_type_[rule->type].emplace(rule);
-        by_category_[rule->category].emplace(rule);
-    }
-protected:
-    std::unordered_map<std::string_view, rule_set> by_type_;
-    std::unordered_map<std::string_view, rule_set> by_category_;
-};
-
 condition::ptr parse_condition(parameter::map& rule,
     rule_data::dispatcher &dispatcher, manifest_builder& mb, ddwaf::config& cfg,
     ddwaf::condition::data_source source = ddwaf::condition::data_source::values,
@@ -245,8 +198,7 @@ condition::ptr parse_condition(parameter::map& rule,
 }
 
 void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
-               manifest_builder& mb, ddwaf::ruleset& rs,
-               rules_tagmap &rules_by_tags, ddwaf::config& cfg)
+               manifest_builder& mb, ddwaf::ruleset& rs, ddwaf::config& cfg)
 {
     auto id = at<std::string>(rule, "id");
     if (rs.rules.find(id) != rs.rules.end())
@@ -302,9 +254,7 @@ void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
             std::move(conditions),
             at<std::vector<std::string>>(rule, "on_match", {}));
 
-        rs.rules.emplace(id, rule_ptr);
-        rules_by_tags.insert(rule_ptr);
-        rs.collections[rule_ptr->type].emplace_back(rule_ptr);
+        rs.insert_rule(rule_ptr);
         info.add_loaded();
     }
     catch (const std::exception& e)
@@ -314,8 +264,7 @@ void parse_rule(parameter::map& rule, ddwaf::ruleset_info& info,
     }
 }
 
-std::set<rule::ptr> parse_rules_target(
-    parameter::map& target, ddwaf::ruleset &rs, rules_tagmap &rules_by_tags)
+std::set<rule::ptr> parse_rules_target(parameter::map& target, ddwaf::ruleset &rs)
 {
     auto rule_id = at<std::string>(target, "rule_id", {});
     if (!rule_id.empty()) {
@@ -336,19 +285,20 @@ std::set<rule::ptr> parse_rules_target(
 
     if (!type.empty()) {
         if (!category.empty()) {
-            return rules_by_tags.get_by_type_and_category(type, category);
-        } else {
-            return rules_by_tags.get_by_type(type);
+            return rs.get_rules_by_type_and_category(type, category);
         }
-    } else if (!category.empty()) {
-        return rules_by_tags.get_by_category(category);
+        return rs.get_rules_by_type(type);
+    }
+
+    if (!category.empty()) {
+        return rs.get_rules_by_category(category);
     }
 
     throw ddwaf::parsing_error("no supported tags in rules_target");;
 }
 
 void parse_exclusion_filter(parameter::map& filter, manifest_builder& mb,
-    ddwaf::ruleset& rs, rules_tagmap &rules_by_tags, ddwaf::config& cfg)
+    ddwaf::ruleset& rs, ddwaf::config& cfg)
 {
     // Check for conditions first
     std::vector<condition::ptr> conditions;
@@ -369,7 +319,7 @@ void parse_exclusion_filter(parameter::map& filter, manifest_builder& mb,
         }
     } else {
         for (parameter::map target : rules_target_array) {
-            auto rules_subset = parse_rules_target(target, rs, rules_by_tags);
+            auto rules_subset = parse_rules_target(target, rs);
             rules_target.merge(rules_subset);
         }
     }
@@ -394,15 +344,12 @@ void parse(parameter::map& ruleset, ruleset_info& info,
     }
 
     auto rules_array = at<parameter::vector>(ruleset, "rules");
-    // Note that reserving elements is required to ensure all references
-    // are valid, otherwise reallocations would invalidate them.
     rs.rules.reserve(rules_array.size());
 
-    rules_tagmap rules_by_tags;
     ddwaf::manifest_builder mb;
     for (parameter::map rule : rules_array) {
         try {
-            parse_rule(rule, info, mb, rs, rules_by_tags, cfg);
+            parse_rule(rule, info, mb, rs, cfg);
         } catch (const std::exception& e) {
             DDWAF_WARN("%s", e.what());
             info.add_failed();
@@ -416,7 +363,7 @@ void parse(parameter::map& ruleset, ruleset_info& info,
     auto filters_array = at<parameter::vector>(ruleset, "exclusions", {});
     for (parameter::map filter : filters_array) {
         try {
-            parse_exclusion_filter(filter, mb, rs, rules_by_tags, cfg);
+            parse_exclusion_filter(filter, mb, rs, cfg);
         } catch (const std::exception& e) {
             DDWAF_WARN("%s", e.what());
             info.add_failed();

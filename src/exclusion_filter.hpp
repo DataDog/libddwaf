@@ -32,7 +32,7 @@ public:
         conditions_(std::move(conditions)),
         rule_targets_(std::move(rule_targets)) {}
 
-    const std::set<rule::ptr> &get_rule_targets() const {
+    [[nodiscard]] const std::set<rule::ptr> &get_rule_targets() const {
         return rule_targets_;
     }
 

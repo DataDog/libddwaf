@@ -195,8 +195,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
             at<std::string>(tags, "category", ""),
             std::move(conditions));
 
-        rs.rules.emplace(id, rule_ptr);
-        rs.collections[rule_ptr->type].emplace_back(rule_ptr);
+        rs.insert_rule(rule_ptr);
         info.add_loaded();
     }
     catch (const std::exception& e)
@@ -211,8 +210,6 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg)
 {
     auto rules_array = at<parameter::vector>(ruleset, "events");
-    // Note that reserving elements is required to ensure all references
-    // are valid, otherwise reallocations would invalidate them.
     rs.rules.reserve(rules_array.size());
 
     ddwaf::manifest_builder mb;
