@@ -16,10 +16,10 @@ using monotonic_clock = std::chrono::steady_clock;
 #else  // linux
 struct monotonic_clock
 {
-    typedef std::chrono::nanoseconds duration;
-    typedef duration::rep rep;
-    typedef duration::period period;
-    typedef std::chrono::time_point<monotonic_clock, duration> time_point;
+    using duration = std::chrono::nanoseconds;
+    using rep = duration::rep;
+    using period = duration::period;
+    using time_point = std::chrono::time_point<monotonic_clock, duration>;
 
     static constexpr bool is_steady = true;
 
@@ -52,9 +52,9 @@ public:
         return expired_;
     }
 
-    bool expired_before() const { return expired_; }
+    [[nodiscard]] bool expired_before() const { return expired_; }
 
-    monotonic_clock::duration elapsed() const {
+    [[nodiscard]] monotonic_clock::duration elapsed() const {
         return monotonic_clock::now() - start_;
     }
 protected:
@@ -64,4 +64,4 @@ protected:
     uint32_t calls_{1};
     bool expired_{false};
 };
-}
+} // namespace ddwaf

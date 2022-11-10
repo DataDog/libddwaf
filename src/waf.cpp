@@ -25,14 +25,15 @@ namespace ddwaf
 namespace {
 obfuscator obfuscator_from_config(const ddwaf_config* config)
 {
-    std::string_view key_regex, value_regex;
+    std::string_view key_regex;
+    std::string_view value_regex;
 
     if (config != nullptr) {
-        if (config->obfuscator.key_regex) {
+        if (config->obfuscator.key_regex != nullptr) {
             key_regex = config->obfuscator.key_regex;
         }
 
-        if (config->obfuscator.value_regex) {
+        if (config->obfuscator.value_regex != nullptr) {
             value_regex = config->obfuscator.value_regex;
         }
     }
@@ -65,9 +66,9 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
     return limits;
 }
 
-}
+} // namespace
 
-waf* waf::from_config(const ddwaf_object ruleset,
+waf* waf::from_config(const ddwaf_object &ruleset,
     const ddwaf_config* config, ddwaf::ruleset_info& info)
 {
     try
@@ -75,7 +76,7 @@ waf* waf::from_config(const ddwaf_object ruleset,
         ddwaf::config cfg{
             limits_from_config(config),
             obfuscator_from_config(config),
-            config ? config->free_fn : ddwaf_object_free,
+            config != nullptr ? config->free_fn : ddwaf_object_free,
         };
 
         ddwaf::ruleset rs;
@@ -94,15 +95,14 @@ waf* waf::from_config(const ddwaf_object ruleset,
 void waf::toggle_rules(ddwaf::parameter::map &&input)
 {
     for (auto &[key, value] : input) {
-        auto it = ruleset_.rule_map.find(key);
+        auto it = ruleset_.rules.find(std::string(key));
 
-        if (it == ruleset_.rule_map.end()) {
+        if (it == ruleset_.rules.end()) {
             DDWAF_WARN("Attempting to toggle an unknown rule %s", key.data());
             continue;
         }
 
-        ddwaf::rule& rule = it->second;
-        rule.toggle(value);
+        it->second->toggle(value);
     }
 }
 

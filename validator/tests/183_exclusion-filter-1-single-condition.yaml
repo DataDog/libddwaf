@@ -1,0 +1,18 @@
+{
+  name: "Exclude all rules through condition-based exclusion filter",
+  runs: [
+    {
+      input: {
+        exclusion-filter-1-input: "exclusion-filter-1",
+        rule1-input: "rule1",
+        rule2-input1: "rule2",
+        rule2-input2: "rule2",
+        rule9-input: "RULE9",
+        rule10-input: {
+          rule10: value
+        }
+      },
+      code: ok
+    }
+  ]
+}

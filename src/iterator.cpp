@@ -32,7 +32,7 @@ bool is_scalar(const ddwaf_object *obj)
     return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
 }
 
-}
+} // namespace
 
 template <typename T>
 iterator_base<T>::iterator_base(const object_limits &limits): limits_(limits)
@@ -57,7 +57,7 @@ std::vector<std::string> iterator_base<T>::get_current_path() const
     if (current_ == nullptr) { return {}; }
     if (stack_.empty()) {
         if (path_.empty()) { return {}; }
-        else { return path_; }
+         return path_;
     }
 
     std::vector<std::string> keys = path_;
@@ -103,7 +103,7 @@ void value_iterator::initialise_cursor(const ddwaf_object *obj,
 
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.push_back({obj, 0});
+            stack_.emplace_back(obj, 0);
             set_cursor_to_next_object();
         }
     } else {
@@ -120,7 +120,7 @@ void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
     if (path.size() > limits_.max_container_depth) { return; }
 
     // Add container to stack and find next scalar within the given path
-    stack_.push_back({obj, 0});
+    stack_.emplace_back(obj, 0);
 
     for (std::size_t i = 0; i < path.size(); i++) {
         std::string_view key = path[i];
@@ -129,7 +129,7 @@ void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
         ddwaf_object *child = nullptr;
         if (is_map(parent)) {
             for (std::size_t j = 0; j < parent->nbEntries; j++) {
-                auto possible_child = &parent->array[j];
+                auto *possible_child = &parent->array[j];
                 if (possible_child->parameterName == nullptr) {
                     continue;
                 }
@@ -193,7 +193,7 @@ void value_iterator::set_cursor_to_next_object()
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                stack_.push_back({&parent->array[index++], 0});
+                stack_.emplace_back(&parent->array[index++], 0);
                 continue;
             }
         } else if (is_scalar(&parent->array[index])) {
@@ -219,7 +219,7 @@ void key_iterator::initialise_cursor(const ddwaf_object *obj,
     if (path.empty()) {
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.push_back({obj, 0});
+            stack_.emplace_back(obj, 0);
             set_cursor_to_next_object();
         }
     } else {
@@ -233,7 +233,7 @@ void key_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
     if (path.size() >= limits_.max_container_depth) { return; }
 
     // Add container to stack and find next scalar within the given path
-    stack_.push_back({obj, 0});
+    stack_.emplace_back(obj, 0);
 
     for (std::size_t i = 0; i < path.size(); i++) {
         std::string_view key = path[i];
@@ -242,7 +242,7 @@ void key_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
         ddwaf_object *child = nullptr;
         if (parent->type == DDWAF_OBJ_MAP) {
             for (std::size_t j = 0; j < parent->nbEntries; j++) {
-                auto possible_child = &parent->array[j];
+                auto *possible_child = &parent->array[j];
                 if (possible_child->parameterName == nullptr) {
                     continue;
                 }
@@ -269,7 +269,7 @@ void key_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
         break;
     }
 
-    // Once we reach this point, if current_is valid, we found the key path
+    // Once we reach this point, if current_ is valid, we found the key path
     if (current_ != nullptr) {
         path_ = path;
     }
@@ -304,7 +304,7 @@ void key_iterator::set_cursor_to_next_object()
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
                 ++index;
-                stack_.push_back({child, 0});
+                stack_.emplace_back(child, 0);
                 continue;
             }
         } else if (child->parameterName != nullptr) {
@@ -318,4 +318,4 @@ void key_iterator::set_cursor_to_next_object()
 template class iterator_base<value_iterator>;
 template class iterator_base<key_iterator>;
 
-}
+} // namespace ddwaf::object

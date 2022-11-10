@@ -241,22 +241,11 @@ TEST(TestPWProcessor, TestCacheReport)
 
     {
         ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "Pony"));
+        ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EQ(ret.data, nullptr);
-
-        ddwaf_result_free(&ret);
-    }
-
-    {
-        ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
-
-        EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(ret.timeout);
-        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow1","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
 
         ddwaf_result_free(&ret);
     }

@@ -1,0 +1,11 @@
+{
+  name: "Rule excluded by tag through multi-target exclusion filter",
+  runs: [
+    {
+      input: {
+        rule26-input: "rule26"
+      },
+      code: ok
+    }
+  ]
+}

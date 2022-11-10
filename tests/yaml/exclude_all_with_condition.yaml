@@ -1,0 +1,34 @@
+version: '2.1'
+exclusions:
+  - conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: usr.id
+          list:
+            - admin
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: type1
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: http.client_ip
+          list:
+            - 192.168.0.1
+  - id: 2
+    name: rule2
+    tags:
+      type: type2
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: http.client_ip
+          list:
+            - 192.168.0.1

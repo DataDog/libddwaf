@@ -23,7 +23,7 @@ struct config
 {
     ddwaf::object_limits limits;
     ddwaf::obfuscator event_obfuscator;
-    ddwaf_object_free_fn free_fn;
+    ddwaf_object_free_fn free_fn{ddwaf_object_free};
 };
 
-}
+} // namespace ddwaf

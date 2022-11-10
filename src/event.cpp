@@ -83,7 +83,8 @@ void serialize_match(rapidjson::Value &output,
 
 }
 
-void event_serializer::serialize(ddwaf_result &output) const
+void event_serializer::serialize(const std::vector<event> &events,
+    ddwaf_result &output) const
 {
     rapidjson::Document doc;
     auto &allocator = doc.GetAllocator();
@@ -94,7 +95,7 @@ void event_serializer::serialize(ddwaf_result &output) const
     std::unordered_set<std::string_view> actions;
 
     doc.SetArray();
-    for (auto &event : events_) {
+    for (auto &event : events) {
         rapidjson::Value map, rule, tags, match_array, on_match;
 
         tags.SetObject();
@@ -135,7 +136,7 @@ void event_serializer::serialize(ddwaf_result &output) const
         doc.PushBack(map, allocator);
     }
 
-    if (!events_.empty()) {
+    if (!events.empty()) {
         rapidjson::StringBuffer buffer;
         buffer.Clear();
 

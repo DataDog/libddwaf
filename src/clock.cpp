@@ -17,13 +17,13 @@
 
 namespace ddwaf
 {
-typedef int (*clock_gettime_t)(clockid_t, timespec* ts);
+using clock_gettime_t = int (*)(clockid_t, timespec *);
 
 static clock_gettime_t clock_gettime = &::clock_gettime;
 
 monotonic_clock::time_point monotonic_clock::now() noexcept
 {
-    struct timespec ts;
+    struct timespec ts{};
     int ret = ddwaf::clock_gettime(CLOCK_MONOTONIC, &ts);
     if (ret < 0)
     {

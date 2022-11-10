@@ -7,15 +7,16 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
+#include <config.hpp>
 #include <ddwaf.h>
 #include <event.hpp>
-#include <optional>
-#include <rule.hpp>
-#include <config.hpp>
-#include <utils.h>
+#include <exclusion_filter.hpp>
 #include <obfuscator.hpp>
+#include <rule.hpp>
 #include <ruleset.hpp>
+#include <utils.h>
 
 namespace ddwaf
 {
@@ -23,11 +24,13 @@ namespace ddwaf
 class context
 {
 public:
-    context(const ddwaf::ruleset &ruleset, const ddwaf::config &config):
+    context(ddwaf::ruleset &ruleset, const ddwaf::config &config):
         ruleset_(ruleset), config_(config),
         store_(ruleset_.manifest, config_.free_fn)
     {
-        status_cache_.reserve(ruleset_.rules.size());
+        rule_cache_.reserve(ruleset_.rules.size());
+        filter_cache_.reserve(ruleset_.filters.size());
+        collection_cache_.reserve(ruleset_.collections.size());
     }
 
     context(const context&) = delete;
@@ -38,21 +41,22 @@ public:
 
     DDWAF_RET_CODE run(const ddwaf_object&, optional_ref<ddwaf_result> res, uint64_t);
 
+    std::set<rule::ptr> filter(ddwaf::timer& deadline);
+    std::vector<event> match(
+        const std::set<rule::ptr> &exclude, ddwaf::timer& deadline);
 protected:
-    bool run_collection(const std::string& name,
-        const ddwaf::rule_ref_vector& collection,
-        event_serializer& serializer,
-        ddwaf::timer& deadline);
+    bool is_first_run() const { return rule_cache_.empty(); }
 
-    bool is_first_run() const { return status_cache_.empty(); }
-
-    const ddwaf::ruleset &ruleset_;
+    ddwaf::ruleset &ruleset_;
     const ddwaf::config &config_;
     ddwaf::object_store store_;
 
-    // If we have seen a match, the value will be true, if the value is present
-    // and false it means we executed the rule and it did not match.
-    std::unordered_map<rule::index_type, bool> status_cache_;
+    // Cache of filters and conditions
+    std::unordered_map<exclusion_filter::ptr, exclusion_filter::cache_type> filter_cache_;
+    // Cache of rules and conditions
+    std::unordered_map<rule::ptr, rule::cache_type> rule_cache_;
+    // Cache of collections to avoid processing once a result has been obtained
+    std::unordered_set<std::string> collection_cache_;
 };
 
-}
+} // namespace ddwaf

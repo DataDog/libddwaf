@@ -6,17 +6,16 @@
 
 #pragma once
 
+#include <config.hpp>
+#include <cstdint>
 #include <functional>
+#include <manifest.hpp>
 #include <set>
-#include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
-
-#include <manifest.hpp>
 #include <utils.h>
-#include <config.hpp>
+#include <vector>
 
 // Eventually object will be a class rather than a namespace
 namespace ddwaf::object
@@ -30,14 +29,14 @@ public:
     ~iterator_base() = default;
 
     iterator_base(const iterator_base&) = default;
-    iterator_base(iterator_base&&) = default;
+    iterator_base(iterator_base&&) noexcept = default;
 
     iterator_base &operator=(const iterator_base&) = default;
-    iterator_base &operator=(iterator_base&&) = default;
+    iterator_base &operator=(iterator_base&&) noexcept = default;
 
     bool operator++();
 
-    [[nodiscard]] operator bool() const { return current_ != nullptr; }
+    [[nodiscard]] explicit operator bool() const { return current_ != nullptr; }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
 
@@ -123,9 +122,9 @@ protected:
 
     void set_cursor_to_next_object();
 
-    ddwaf_object current_key_;
+    ddwaf_object current_key_{};
 
     friend class iterator_base<key_iterator>;
 };
 
-}
+} // namespace ddwaf::object

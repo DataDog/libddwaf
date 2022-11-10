@@ -13,13 +13,10 @@
 #include <string>
 #include <string_view>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-struct event
-{
-    struct match
-    {
+struct event {
+    struct match {
         std::string resolved;
         std::string matched;
         std::string_view operator_name;
@@ -36,23 +33,18 @@ struct event
     std::vector<match> matches;
 };
 
-class event_serializer
-{
+using optional_event = std::optional<event>;
+using optional_match = std::optional<event::match>;
+
+class event_serializer {
 public:
-    event_serializer(const ddwaf::obfuscator &event_obfuscator):
+    explicit event_serializer(const ddwaf::obfuscator &event_obfuscator):
         obfuscator_(event_obfuscator) {}
 
-    void insert(event &&e) {
-        events_.emplace_back(std::move(e));
-    }
-
-    bool has_events() const { return !events_.empty(); }
-
-    void serialize(ddwaf_result &output) const;
+    void serialize(const std::vector<event> &events, ddwaf_result &output) const;
 
 protected:
-    std::vector<event> events_;
     const ddwaf::obfuscator &obfuscator_;
 };
 
-}
+} // namespace ddwaf

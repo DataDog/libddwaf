@@ -9,12 +9,15 @@
 #include <ddwaf.h>
 #include <optional>
 #include <cstdint>
+#include <unordered_map>
+#include <iterator>
 
 template <typename T>
 using optional_ref = std::optional<std::reference_wrapper<T>>;
 
 size_t find_string_cutoff(const char *str, size_t length,
         uint32_t max_string_length = DDWAF_MAX_STRING_LENGTH);
+
 
 //Internals
 #define IS_CONTAINER(obj) ((obj)->type & (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP))

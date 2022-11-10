@@ -29,6 +29,7 @@
 #include <rapidjson/prettywriter.h>
 using namespace std;
 
+#include <exclusion_filter.hpp>
 #include <waf.hpp>
 #include <context.hpp>
 #include <clock.hpp>

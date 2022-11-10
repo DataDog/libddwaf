@@ -21,11 +21,11 @@ public:
     waf(ddwaf::ruleset &&ruleset, ddwaf::config &&config):
         ruleset_(std::move(ruleset)), config_(std::move(config)) {}
 
-    static waf* from_config(const ddwaf_object rules,
+    static waf* from_config(const ddwaf_object &rules,
         const ddwaf_config* config, ddwaf::ruleset_info& info);
 
-    ddwaf::context create_context() const {
-        return ddwaf::context(ruleset_, config_);
+    ddwaf::context create_context() {
+        return {ruleset_, config_};
     }
 
     void update_rule_data(ddwaf::parameter::vector &&input) {

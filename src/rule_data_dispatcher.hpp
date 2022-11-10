@@ -36,7 +36,7 @@ protected:
         type_dispatcher() = default;
         ~type_dispatcher() override = default;
 
-        void insert(constructor_wrapper_function &&fn, condition& cond) {
+        void insert(constructor_wrapper_function &&fn, const condition::ptr &cond) {
             functions_.emplace_back(std::move(fn), cond);
         }
 
@@ -45,13 +45,13 @@ protected:
             for (auto &[fn, cond] : functions_) {
                 auto processor = fn(converted_data);
                 if (processor) {
-                    cond.reset_processor(processor);
+                    cond->reset_processor(processor);
                 }
             }
         }
 
     protected:
-        std::vector<std::pair<constructor_wrapper_function, condition&>> functions_;
+        std::vector<std::pair<constructor_wrapper_function, condition::ptr>> functions_;
     };
 
 public:
@@ -69,7 +69,7 @@ public:
             std::is_base_of<rule_processor::base, std::remove_cv_t<std::decay_t<RuleProcessorType>>>,
             std::negation<std::is_same<rule_processor::base,
                 std::remove_cv_t<std::decay_t<RuleProcessorType>>>>>>>
-    void register_condition(const std::string &id, condition &cond)
+    void register_condition(const std::string &id, const condition::ptr &cond)
     {
         using rule_data_type = typename RuleProcessorType::rule_data_type;
         auto it = type_dispatchers_.find(id);
@@ -132,24 +132,5 @@ protected:
     std::unordered_map<std::string,
         std::unique_ptr<type_dispatcher_base>> type_dispatchers_;
     std::vector<const char *> rule_data_ids_;
-};
-
-class dispatcher_builder {
-public:
-    void insert(std::string_view id, std::size_t rule_idx, std::size_t cond_idx)
-    {
-        entries_.emplace_back(
-            dispatcher_entry{std::string(id), rule_idx, cond_idx});
-    }
-
-    dispatcher build(ddwaf::rule_vector &rules);
-protected:
-    struct dispatcher_entry {
-        std::string id;
-        std::size_t rule_idx;
-        std::size_t cond_idx;
-    };
-
-    std::vector<dispatcher_entry> entries_;
 };
 }

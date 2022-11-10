@@ -33,8 +33,9 @@ namespace ddwaf::parser::v1
 namespace
 {
 
-ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
-  std::vector<PW_TRANSFORM_ID>& transformers, ddwaf::config& cfg)
+condition::ptr parseCondition(parameter::map& rule,
+  manifest_builder& mb, std::vector<PW_TRANSFORM_ID> transformers,
+  ddwaf::config& cfg)
 {
     auto operation = at<std::string_view>(rule, "operation");
     auto params    = at<parameter::map>(rule, "parameters");
@@ -149,16 +150,16 @@ ddwaf::condition parseCondition(parameter::map& rule, manifest_builder& mb,
         targets.push_back(target);
     }
 
-    return ddwaf::condition(std::move(targets), std::move(transformers), std::move(processor), cfg.limits);
+    return std::make_shared<condition>(std::move(targets),
+        std::move(transformers), std::move(processor), cfg.limits);
 }
 
 void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
                 manifest_builder& mb, ddwaf::ruleset& rs,
-               std::set<std::string_view> &seen_rules,
                ddwaf::config& cfg)
 {
     auto id = at<std::string>(rule, "id");
-    if (seen_rules.find(id) != seen_rules.end())
+    if (rs.rules.find(id) != rs.rules.end())
     {
         DDWAF_WARN("duplicate rule %s", id.c_str());
         info.insert_error(id, "duplicate rule");
@@ -179,7 +180,7 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
             rule_transformers.push_back(transform_id);
         }
 
-        std::vector<ddwaf::condition> conditions;
+        std::vector<condition::ptr> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         for (parameter::map cond : conditions_array)
         {
@@ -187,24 +188,14 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
         }
 
         auto tags = at<parameter::map>(rule, "tags");
-        auto type = at<std::string>(tags, "type");
-
-        auto index = rs.rules.size();
-        rs.rules.emplace_back(index, std::string(id),
+        auto rule_ptr = std::make_shared<ddwaf::rule>(
+            std::string(id),
             at<std::string>(rule, "name"),
             at<std::string>(tags, "type"),
             at<std::string>(tags, "category", ""),
             std::move(conditions));
 
-        auto &rule_ref = rs.rules[index];
-
-        auto& collection = rs.collections[rule_ref.type];
-        collection.push_back(rule_ref);
-        rs.rule_map.emplace(rule_ref.id, rule_ref);
-
-        // Add this rule to the set to check for duplicates
-        seen_rules.emplace(rule_ref.id);
-
+        rs.insert_rule(rule_ptr);
         info.add_loaded();
     }
     catch (const std::exception& e)
@@ -219,17 +210,14 @@ void parseRule(parameter::map& rule, ddwaf::ruleset_info& info,
 void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg)
 {
     auto rules_array = at<parameter::vector>(ruleset, "events");
-    // Note that reserving elements is required to ensure all references
-    // are valid, otherwise reallocations would invalidate them.
     rs.rules.reserve(rules_array.size());
 
     ddwaf::manifest_builder mb;
-    std::set<std::string_view> seen_rules;
     for (parameter::map rule : rules_array)
     {
         try
         {
-            parseRule(rule, info, mb, rs, seen_rules, cfg);
+            parseRule(rule, info, mb, rs, cfg);
         }
         catch (const std::exception& e)
         {
@@ -238,8 +226,7 @@ void parse(parameter::map& ruleset, ruleset_info& info, ddwaf::ruleset& rs, ddwa
         }
     }
 
-    if (rs.rules.empty() || rs.collections.empty())
-    {
+    if (rs.rules.empty()) {
         throw ddwaf::parsing_error("no valid rules found");
     }
 

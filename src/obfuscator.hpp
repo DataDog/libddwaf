@@ -24,8 +24,8 @@ class obfuscator
 public:
     explicit obfuscator(std::string_view key_regex_str = std::string_view(),
         std::string_view value_regex_str = std::string_view());
-    bool is_sensitive_key(std::string_view key) const;
-    bool is_sensitive_value(std::string_view value) const;
+    [[nodiscard]] bool is_sensitive_key(std::string_view key) const;
+    [[nodiscard]] bool is_sensitive_value(std::string_view value) const;
 
     static constexpr std::string_view redaction_msg{"<Redacted>"};
 

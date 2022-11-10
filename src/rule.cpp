@@ -16,172 +16,62 @@
 namespace ddwaf
 {
 
-std::optional<event::match> condition::match_object(const ddwaf_object* object) const
-{
-    // TODO: this might use mutexes internally, so it might be worth having a
-    //       flag to determine if the processor should be accessed atomatically
-    //       or not.
-    decltype(processor_) processor;
-    if (mutable_) {
-        processor = std::atomic_load(&processor_);
-    } else {
-        processor = processor_;
-    }
-
-    const bool has_transform = !transformers_.empty();
-    bool transform_required = false;
-
-    if (has_transform) {
-        // This codepath is shared with the mutable path. The structure can't be const :/
-        transform_required = PWTransformer::doesNeedTransform(transformers_,
-            const_cast<ddwaf_object *>(object));
-    }
-
-    size_t length = find_string_cutoff(object->stringValue,
-            object->nbEntries, limits_.max_string_length);
-
-    //If we don't have transform to perform, or if they're irrelevant, no need to waste time copying and allocating data
-    if (!has_transform || !transform_required) {
-        return processor->match({object->stringValue, length});
-    }
-
-    ddwaf_object copy;
-    ddwaf_object_stringl(&copy, (const char*) object->stringValue, length);
-
-    std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> scope(
-        &copy, ddwaf_object_free);
-
-    //Transform it and pick the pointer to process
-    bool transformFailed = false;
-    for (const PW_TRANSFORM_ID& transform : transformers_) {
-        transformFailed = !PWTransformer::transform(transform, &copy);
-        if (transformFailed || (copy.type == DDWAF_OBJ_STRING && copy.nbEntries == 0))
-        {
-            break;
-        }
-    }
-
-    if (transformFailed) {
-        return processor->match({object->stringValue, length});
-    }
-
-    return processor->match_object(&copy);
-}
-
-template <typename T>
-std::optional<event::match> condition::match_target(T &it, ddwaf::timer& deadline) const
-{
-    for (; it; ++it) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
-
-        if (it.type() != DDWAF_OBJ_STRING) { continue; }
-
-        auto optional_match = match_object(*it);
-        if (!optional_match.has_value()) { continue; }
-
-        optional_match->key_path = std::move(it.get_current_path());
-        //If this target matched, we can stop processing
-        return optional_match;
-    }
-
-    return std::nullopt;
-}
-
-std::optional<event::match> condition::match(const object_store& store,
-    const ddwaf::manifest &manifest, bool run_on_new,
-    ddwaf::timer& deadline) const
-{
-    for (const auto &target : targets_) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
-
-        // TODO: the conditions should keep track of the targets already
-        // checked.
-        if (run_on_new && !store.is_new_target(target)) {
-            continue;
-        }
-
-        const auto& info = manifest.get_target_info(target);
-
-        // TODO: iterators could be cached to avoid reinitialisation
-
-        auto object = store.get_target(target);
-        if (object == nullptr) { continue; }
-
-        std::optional<event::match> optional_match;
-        if (source_ == data_source::keys) {
-            object::key_iterator it(object, info.key_path, limits_);
-            optional_match = match_target(it, deadline);
-        } else {
-            object::value_iterator it(object, info.key_path, limits_);
-            optional_match = match_target(it, deadline);
-        }
-
-        if (optional_match.has_value()) {
-            optional_match->source = info.name;
-
-            DDWAF_TRACE("Target %s matched parameter value %s",
-                    info.name.c_str(), optional_match->resolved.c_str());
-            return optional_match;
-        }
-    }
-
-    return std::nullopt;
-}
-
-rule::rule(index_type index_, std::string &&id_, std::string &&name_,
+rule::rule(std::string &&id_, std::string &&name_,
   std::string &&type_, std::string &&category_,
-  std::vector<condition> &&conditions_,
+  std::vector<condition::ptr> &&conditions_,
   std::vector<std::string> &&actions_):
-  index(index_), id(std::move(id_)), name(std::move(name_)),
+  id(std::move(id_)), name(std::move(name_)),
   type(std::move(type_)), category(std::move(category_)), 
   conditions(std::move(conditions_)), actions(std::move(actions_))
 {
     for (auto &cond : conditions) {
-        targets.insert(cond.targets_.begin(), cond.targets_.end());
+        const auto &cond_targets = cond->get_targets();
+        targets.insert(cond_targets.begin(), cond_targets.end());
     }
-}
-
-bool rule::has_new_targets(const object_store &store) const
-{
-    for (const auto& target : targets)
-    {
-        if (store.is_new_target(target)) {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 std::optional<event> rule::match(const object_store& store,
-    const ddwaf::manifest &manifest, bool run_on_new,
+    const ddwaf::manifest &manifest, cache_type &cache,
     ddwaf::timer& deadline) const
 {
-    ddwaf::event event;
+    // An event was already produced, so we skip the rule
+    if (cache.result) { return std::nullopt; }
 
-    for (const ddwaf::condition& cond : conditions) {
-        auto opt_match = cond.match(store, manifest, run_on_new, deadline);
+    for (auto& cond : conditions) {
+        bool run_on_new = false;
+        auto cached_result = cache.conditions.find(cond);
+        if (cached_result != cache.conditions.end()) {
+            if (cached_result->second) {
+                continue;
+            }
+            run_on_new = true;
+        } else {
+            auto [it, res] = cache.conditions.emplace(cond, false);
+            cached_result = it;
+        }
+
+        auto opt_match = cond->match(store, manifest, run_on_new, deadline);
         if (!opt_match.has_value()) {
+            cached_result->second = false;
             return std::nullopt;
         }
-        event.matches.emplace_back(std::move(*opt_match));
+        cached_result->second = true;
+        cache.event.matches.emplace_back(std::move(*opt_match));
     }
 
-    event.id = id;
-    event.name = name;
-    event.type =  type;
-    event.category = category;
+    cache.result = true;
 
-    event.actions.reserve(actions.size());
+    cache.event.id = id;
+    cache.event.name = name;
+    cache.event.type =  type;
+    cache.event.category = category;
+
+    cache.event.actions.reserve(actions.size());
     for (const auto &action : actions) {
-        event.actions.push_back(action);
+        cache.event.actions.push_back(action);
     }
 
-    return {std::move(event)};
+    return {std::move(cache.event)};
 }
 
 }

@@ -22,7 +22,7 @@ struct hash<std::vector<std::string>>
 {
     std::size_t operator()(const std::vector<std::string>& k) const {
         std::size_t hash = 0;
-        for (auto &str : k) {
+        for (const auto &str : k) {
             hash ^= std::hash<std::string>{}(str);
         }
         return hash;

@@ -24,6 +24,5 @@
       },
       code: ok
     }
-  ],
-  expected-fail: true
+  ]
 }

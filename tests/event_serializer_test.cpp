@@ -11,10 +11,8 @@ TEST(TestEventSerializer, SerializeNothing)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    EXPECT_FALSE(serializer.has_events());
-
     ddwaf_result output;
-    serializer.serialize(output);
+    serializer.serialize({}, output);
     EXPECT_STREQ(output.data, nullptr);
 }
 
@@ -23,12 +21,8 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    EXPECT_FALSE(serializer.has_events());
-    serializer.insert({});
-    EXPECT_TRUE(serializer.has_events());
-
     ddwaf_result output;
-    serializer.serialize(output);
+    serializer.serialize({ddwaf::event{}}, output);
     EXPECT_EVENTS(output, {});
 
     ddwaf_result_free(&output);
@@ -49,14 +43,8 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    EXPECT_FALSE(serializer.has_events());
-
-    serializer.insert(std::move(event));
-
-    EXPECT_TRUE(serializer.has_events());
-
     ddwaf_result output;
-    serializer.serialize(output);
+    serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output,
     {
@@ -98,14 +86,8 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    EXPECT_FALSE(serializer.has_events());
-
-    serializer.insert(std::move(event));
-
-    EXPECT_TRUE(serializer.has_events());
-
     ddwaf_result output;
-    serializer.serialize(output);
+    serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output,
     {
@@ -153,8 +135,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    EXPECT_FALSE(serializer.has_events());
-
+    std::vector<ddwaf::event> events;
     {
         ddwaf::event event;
         event.id = "xasd1022";
@@ -167,10 +148,8 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
             {"string", "string", "match_regex", ".*", "response.body", {}},
             {"<script>", "", "is_xss", "", "path_params", {"key"}}
         };
-        serializer.insert(std::move(event));
+        events.emplace_back(std::move(event));
     }
-
-    EXPECT_TRUE(serializer.has_events());
 
     {
         ddwaf::event event;
@@ -182,16 +161,13 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         event.matches = {
             {"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}}
         };
-        serializer.insert(std::move(event));
+        events.emplace_back(std::move(event));
     }
 
-    EXPECT_TRUE(serializer.has_events());
-
-    serializer.insert({});
-    EXPECT_TRUE(serializer.has_events());
+    events.emplace_back(ddwaf::event{});
 
     ddwaf_result output;
-    serializer.serialize(output);
+    serializer.serialize(events, output);
     EXPECT_EVENTS(output,
     {
         .id = "xasd1022",
@@ -256,14 +232,8 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    EXPECT_FALSE(serializer.has_events());
-
-    serializer.insert(std::move(event));
-
-    EXPECT_TRUE(serializer.has_events());
-
     ddwaf_result output;
-    serializer.serialize(output);
+    serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output,
     {
