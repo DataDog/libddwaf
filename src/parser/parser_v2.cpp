@@ -280,8 +280,17 @@ std::set<rule::ptr> parse_rules_target(parameter::map& target, ddwaf::ruleset &r
         throw ddwaf::parsing_error("empty rules_target tags");;
     }
 
-    auto type = at<std::string>(tags, "type", {});
-    auto category = at<std::string>(tags, "category", {});
+    std::string type;
+    std::string category;
+    for (auto &[tag, value] : tags) {
+        if (tag == "type") {
+            type = std::string(value);
+        } else if (tag == "category") {
+            category = std::string(value);
+        } else {
+            DDWAF_WARN("Unknown tag %s in rules_target", tag.data());
+        }
+    }
 
     if (!type.empty()) {
         if (!category.empty()) {

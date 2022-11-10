@@ -58,10 +58,11 @@ struct ruleset
         return intersection;
     }
 
-    // TODO remove collections in favour of an iterator (using rules_by_type)
     ddwaf::manifest manifest;
     std::vector<exclusion_filter::ptr> filters;
+    // Rules are ordered by ID
     std::unordered_map<std::string, rule::ptr> rules;
+    // Collections are ordered by rule.type
     std::unordered_map<std::string, std::vector<rule::ptr>> collections;
     ddwaf::rule_data::dispatcher dispatcher;
 
