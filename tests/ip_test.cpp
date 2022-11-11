@@ -33,9 +33,7 @@ TEST(TestIP, ParsingIPv6)
     EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
     EXPECT_EQ(ip.data[0], 0xab);
     EXPECT_EQ(ip.data[1], 0xcd);
-    for(int i = 2; i < 14; ++i) {
-        EXPECT_EQ(ip.data[i], 0);
-    }
+    for (int i = 2; i < 14; ++i) { EXPECT_EQ(ip.data[i], 0); }
 
     EXPECT_EQ(ip.data[14], 0xef);
     EXPECT_EQ(ip.data[15], 0x01);
@@ -49,9 +47,7 @@ TEST(TestIP, ParsingIPv4MappedIPv6)
         ddwaf::ipaddr ip;
         EXPECT_TRUE(ddwaf::parse_ip("0000:0000:0000:0000:0000:ffff:251.252.253.254", ip));
         EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
-        for(int i = 0; i < 9; ++i) {
-            EXPECT_EQ(ip.data[i], 0);
-        }
+        for (int i = 0; i < 9; ++i) { EXPECT_EQ(ip.data[i], 0); }
         EXPECT_EQ(ip.data[10], 0xff);
         EXPECT_EQ(ip.data[11], 0xff);
 
@@ -67,9 +63,7 @@ TEST(TestIP, ParsingIPv4MappedIPv6)
         ddwaf::ipv4_to_ipv6(ip);
 
         EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4_mapped_ipv6);
-        for(int i = 0; i < 9; ++i) {
-            EXPECT_EQ(ip.data[i], 0);
-        }
+        for (int i = 0; i < 9; ++i) { EXPECT_EQ(ip.data[i], 0); }
         EXPECT_EQ(ip.data[10], 0xff);
         EXPECT_EQ(ip.data[11], 0xff);
 
@@ -85,7 +79,8 @@ TEST(TestIP, ParsingBadIP)
     ddwaf::ipaddr ip;
     EXPECT_FALSE(ddwaf::parse_ip("not an IP", ip));
     EXPECT_FALSE(ddwaf::parse_ip("this is a very long string but not an IP"
-        "unfortunately but that doesn't matter", ip));
+                                 "unfortunately but that doesn't matter",
+        ip));
 }
 
 TEST(TestIP, ParsingIPv4CIDR)
@@ -95,10 +90,7 @@ TEST(TestIP, ParsingIPv4CIDR)
     EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4_mapped_ipv6);
 
     // Check address
-    for(int i = 0; i < 10; ++i)
-    {
-        EXPECT_EQ(ip.data[i], 0);
-    }
+    for (int i = 0; i < 10; ++i) { EXPECT_EQ(ip.data[i], 0); }
     EXPECT_EQ(ip.data[10], 0xff);
     EXPECT_EQ(ip.data[11], 0xff);
     EXPECT_EQ(ip.data[12], 0x01);
@@ -118,10 +110,7 @@ TEST(TestIP, ParsingIPv4AsCIDR)
         EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4_mapped_ipv6);
 
         // Check address
-        for(int i = 0; i < 10; ++i)
-        {
-            EXPECT_EQ(ip.data[i], 0);
-        }
+        for (int i = 0; i < 10; ++i) { EXPECT_EQ(ip.data[i], 0); }
         EXPECT_EQ(ip.data[10], 0xff);
         EXPECT_EQ(ip.data[11], 0xff);
         EXPECT_EQ(ip.data[12], 0x01);
@@ -139,10 +128,7 @@ TEST(TestIP, ParsingIPv4AsCIDR)
         EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4_mapped_ipv6);
 
         // Check address
-        for(int i = 0; i < 10; ++i)
-        {
-            EXPECT_EQ(ip.data[i], 0);
-        }
+        for (int i = 0; i < 10; ++i) { EXPECT_EQ(ip.data[i], 0); }
         EXPECT_EQ(ip.data[10], 0xff);
         EXPECT_EQ(ip.data[11], 0xff);
         EXPECT_EQ(ip.data[12], 0x00);
@@ -160,10 +146,7 @@ TEST(TestIP, ParsingIPv4AsCIDR)
         EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4_mapped_ipv6);
 
         // Check address
-        for(int i = 0; i < 10; ++i)
-        {
-            EXPECT_EQ(ip.data[i], 0);
-        }
+        for (int i = 0; i < 10; ++i) { EXPECT_EQ(ip.data[i], 0); }
         EXPECT_EQ(ip.data[10], 0xff);
         EXPECT_EQ(ip.data[11], 0xff);
         EXPECT_EQ(ip.data[12], 0x01);
@@ -185,9 +168,7 @@ TEST(TestIP, ParsingIPv6CIDR)
     // Check address
     EXPECT_EQ(ip.data[0], 0xab);
     EXPECT_EQ(ip.data[1], 0xcd);
-    for(int i = 2; i < 14; ++i) {
-        EXPECT_EQ(ip.data[i], 0);
-    }
+    for (int i = 2; i < 14; ++i) { EXPECT_EQ(ip.data[i], 0); }
     EXPECT_EQ(ip.data[15], 0x80);
 
     // Check mask
@@ -201,9 +182,7 @@ TEST(TestIP, ParsingIPv4MappedIPv6CIDR)
     EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
 
     // Check address
-    for(int i = 0; i < 9; ++i) {
-        EXPECT_EQ(ip.data[i], 0);
-    }
+    for (int i = 0; i < 9; ++i) { EXPECT_EQ(ip.data[i], 0); }
     EXPECT_EQ(ip.data[10], 0xff);
     EXPECT_EQ(ip.data[11], 0xff);
 
@@ -216,14 +195,13 @@ TEST(TestIP, ParsingIPv4MappedIPv6CIDR)
     EXPECT_EQ(ip.mask, 125);
 }
 
-
 TEST(TestIP, ParsingBadNetMask)
 {
     ddwaf::ipaddr ip;
     EXPECT_FALSE(ddwaf::parse_cidr("bad ip", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("1.2.3.4/", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("1.2.3.4/1234", ip));
-    EXPECT_FALSE(ddwaf::parse_cidr("1.2.3.4/33", ip)); 
+    EXPECT_FALSE(ddwaf::parse_cidr("1.2.3.4/33", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("::1/129", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("::1/a", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("::1/1291", ip));

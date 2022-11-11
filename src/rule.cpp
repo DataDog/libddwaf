@@ -9,20 +9,17 @@
 #include <waf.hpp>
 
 #include "clock.hpp"
-#include <log.hpp>
 #include <exception.hpp>
+#include <log.hpp>
 #include <memory>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-rule::rule(std::string &&id_, std::string &&name_,
-  std::string &&type_, std::string &&category_,
-  std::vector<condition::ptr> &&conditions_,
-  std::vector<std::string> &&actions_):
-  id(std::move(id_)), name(std::move(name_)),
-  type(std::move(type_)), category(std::move(category_)), 
-  conditions(std::move(conditions_)), actions(std::move(actions_))
+rule::rule(std::string &&id_, std::string &&name_, std::string &&type_, std::string &&category_,
+    std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_)
+    : id(std::move(id_)), name(std::move(name_)), type(std::move(type_)),
+      category(std::move(category_)), conditions(std::move(conditions_)),
+      actions(std::move(actions_))
 {
     for (auto &cond : conditions) {
         const auto &cond_targets = cond->get_targets();
@@ -30,14 +27,15 @@ rule::rule(std::string &&id_, std::string &&name_,
     }
 }
 
-std::optional<event> rule::match(const object_store& store,
-    const ddwaf::manifest &manifest, cache_type &cache,
-    ddwaf::timer& deadline) const
+std::optional<event> rule::match(const object_store &store, const ddwaf::manifest &manifest,
+    cache_type &cache, ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
-    if (cache.result) { return std::nullopt; }
+    if (cache.result) {
+        return std::nullopt;
+    }
 
-    for (auto& cond : conditions) {
+    for (auto &cond : conditions) {
         bool run_on_new = false;
         auto cached_result = cache.conditions.find(cond);
         if (cached_result != cache.conditions.end()) {
@@ -63,15 +61,13 @@ std::optional<event> rule::match(const object_store& store,
 
     cache.event.id = id;
     cache.event.name = name;
-    cache.event.type =  type;
+    cache.event.type = type;
     cache.event.category = category;
 
     cache.event.actions.reserve(actions.size());
-    for (const auto &action : actions) {
-        cache.event.actions.push_back(action);
-    }
+    for (const auto &action : actions) { cache.event.actions.push_back(action); }
 
     return {std::move(cache.event)};
 }
 
-}
+} // namespace ddwaf

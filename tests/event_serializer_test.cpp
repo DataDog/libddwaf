@@ -36,9 +36,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     event.type = "test";
     event.category = "none";
     event.actions = {"block", "monitor"};
-    event.matches = {
-        {"value", "val", "random", "val", "query", {"root", "key"}}
-    };
+    event.matches = {{"value", "val", "random", "val", "query", {"root", "key"}}};
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
@@ -46,22 +44,17 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf_result output;
     serializer.serialize({event}, output);
 
-    EXPECT_EVENTS(output,
-    {
-        .id = "xasd1022",
-        .name = "random rule",
-        .type = "test",
-        .category = "none",
-        .actions = {"block", "monitor"},
-        .matches = {{
-            .op = "random",
-            .op_value = "val",
-            .address = "query",
-            .path = {"root", "key"},
-            .value = "value",
-            .highlight = "val"
-        }}
-    });
+    EXPECT_EVENTS(output, {.id = "xasd1022",
+                              .name = "random rule",
+                              .type = "test",
+                              .category = "none",
+                              .actions = {"block", "monitor"},
+                              .matches = {{.op = "random",
+                                  .op_value = "val",
+                                  .address = "query",
+                                  .path = {"root", "key"},
+                                  .value = "value",
+                                  .highlight = "val"}}});
 
     EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
 
@@ -76,12 +69,10 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     event.type = "test";
     event.category = "none";
     event.actions = {"block", "monitor"};
-    event.matches = {
-        {"value", "val", "random", "val", "query", {"root", "key"}},
+    event.matches = {{"value", "val", "random", "val", "query", {"root", "key"}},
         {"string", "string", "match_regex", ".*", "response.body", {}},
         {"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}},
-        {"<script>", "", "is_xss", "", "path_params", {"key"}}
-    };
+        {"<script>", "", "is_xss", "", "path_params", {"key"}}};
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
@@ -89,41 +80,32 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf_result output;
     serializer.serialize({event}, output);
 
-    EXPECT_EVENTS(output,
-    {
-        .id = "xasd1022",
-        .name = "random rule",
-        .type = "test",
-        .category = "none",
-        .actions = {"block", "monitor"},
-        .matches = {{
-            .op = "random",
-            .op_value = "val",
-            .address = "query",
-            .path = {"root", "key"},
-            .value = "value",
-            .highlight = "val"
-        },
-        {
-            .op = "match_regex",
-            .op_value = ".*",
-            .address = "response.body",
-            .value = "string",
-            .highlight = "string"
-        },
-        {
-            .op = "ip_match",
-            .address = "client.ip",
-            .value = "192.168.0.1",
-            .highlight = "192.168.0.1"
-        },
-        {
-            .op = "is_xss",
-            .address = "path_params",
-            .path = {"key"},
-            .value = "<script>",
-        }}
-    });
+    EXPECT_EVENTS(output, {.id = "xasd1022",
+                              .name = "random rule",
+                              .type = "test",
+                              .category = "none",
+                              .actions = {"block", "monitor"},
+                              .matches = {{.op = "random",
+                                              .op_value = "val",
+                                              .address = "query",
+                                              .path = {"root", "key"},
+                                              .value = "value",
+                                              .highlight = "val"},
+                                  {.op = "match_regex",
+                                      .op_value = ".*",
+                                      .address = "response.body",
+                                      .value = "string",
+                                      .highlight = "string"},
+                                  {.op = "ip_match",
+                                      .address = "client.ip",
+                                      .value = "192.168.0.1",
+                                      .highlight = "192.168.0.1"},
+                                  {
+                                      .op = "is_xss",
+                                      .address = "path_params",
+                                      .path = {"key"},
+                                      .value = "<script>",
+                                  }}});
 
     EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
 
@@ -143,11 +125,9 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         event.type = "test";
         event.category = "none";
         event.actions = {"block", "monitor"};
-        event.matches = {
-            {"value", "val", "random", "val", "query", {"root", "key"}},
+        event.matches = {{"value", "val", "random", "val", "query", {"root", "key"}},
             {"string", "string", "match_regex", ".*", "response.body", {}},
-            {"<script>", "", "is_xss", "", "path_params", {"key"}}
-        };
+            {"<script>", "", "is_xss", "", "path_params", {"key"}}};
         events.emplace_back(std::move(event));
     }
 
@@ -158,9 +138,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         event.type = "test";
         event.category = "none";
         event.actions = {"unblock"};
-        event.matches = {
-            {"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}}
-        };
+        event.matches = {{"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}}};
         events.emplace_back(std::move(event));
     }
 
@@ -169,49 +147,38 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     ddwaf_result output;
     serializer.serialize(events, output);
     EXPECT_EVENTS(output,
-    {
-        .id = "xasd1022",
-        .name = "random rule",
-        .type = "test",
-        .category = "none",
-        .actions = {"block", "monitor"},
-        .matches = {{
-            .op = "random",
-            .op_value = "val",
-            .address = "query",
-            .path = {"root", "key"},
-            .value = "value",
-            .highlight = "val"
-        },
-        {
-            .op = "match_regex",
-            .op_value = ".*",
-            .address = "response.body",
-            .value = "string",
-            .highlight = "string"
-        },
-        {
-            .op = "is_xss",
-            .address = "path_params",
-            .path = {"key"},
-            .value = "<script>",
-        }}
-    },
-    {
-        .id = "xasd1023",
-        .name = "pseudorandom rule",
-        .type = "test",
-        .category = "none",
-        .actions = {"unblock"},
-        .matches = {{
-            .op = "ip_match",
-            .address = "client.ip",
-            .value = "192.168.0.1",
-            .highlight = "192.168.0.1"
-        }}
-    },
-    {}
-    );
+        {.id = "xasd1022",
+            .name = "random rule",
+            .type = "test",
+            .category = "none",
+            .actions = {"block", "monitor"},
+            .matches = {{.op = "random",
+                            .op_value = "val",
+                            .address = "query",
+                            .path = {"root", "key"},
+                            .value = "value",
+                            .highlight = "val"},
+                {.op = "match_regex",
+                    .op_value = ".*",
+                    .address = "response.body",
+                    .value = "string",
+                    .highlight = "string"},
+                {
+                    .op = "is_xss",
+                    .address = "path_params",
+                    .path = {"key"},
+                    .value = "<script>",
+                }}},
+        {.id = "xasd1023",
+            .name = "pseudorandom rule",
+            .type = "test",
+            .category = "none",
+            .actions = {"unblock"},
+            .matches = {{.op = "ip_match",
+                .address = "client.ip",
+                .value = "192.168.0.1",
+                .highlight = "192.168.0.1"}}},
+        {});
 
     EXPECT_THAT(output.actions, WithActions({"block", "monitor", "unblock"}));
 
@@ -225,9 +192,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     event.name = "random rule";
     event.type = "test";
     event.category = "none";
-    event.matches = {
-        {"value", "val", "random", "val", "query", {"root", "key"}}
-    };
+    event.matches = {{"value", "val", "random", "val", "query", {"root", "key"}}};
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
@@ -235,21 +200,16 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf_result output;
     serializer.serialize({event}, output);
 
-    EXPECT_EVENTS(output,
-    {
-        .id = "xasd1022",
-        .name = "random rule",
-        .type = "test",
-        .category = "none",
-        .matches = {{
-            .op = "random",
-            .op_value = "val",
-            .address = "query",
-            .path = {"root", "key"},
-            .value = "value",
-            .highlight = "val"
-        }}
-    });
+    EXPECT_EVENTS(output, {.id = "xasd1022",
+                              .name = "random rule",
+                              .type = "test",
+                              .category = "none",
+                              .matches = {{.op = "random",
+                                  .op_value = "val",
+                                  .address = "query",
+                                  .path = {"root", "key"},
+                                  .value = "value",
+                                  .highlight = "val"}}});
 
     EXPECT_THAT(output.actions, WithActions({}));
 
@@ -258,5 +218,3 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
     ddwaf_result_free(&output);
 }
-
-

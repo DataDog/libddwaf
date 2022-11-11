@@ -4,15 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <object_store.hpp>
 #include <log.hpp>
+#include <object_store.hpp>
 #include <vector>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-object_store::object_store(const manifest& m, ddwaf_object_free_fn free_fn):
-  manifest_(m), obj_free_(free_fn)
+object_store::object_store(const manifest &m, ddwaf_object_free_fn free_fn)
+    : manifest_(m), obj_free_(free_fn)
 {
     if (obj_free_ != nullptr) {
         objects_to_free_.reserve(8);
@@ -21,10 +20,10 @@ object_store::object_store(const manifest& m, ddwaf_object_free_fn free_fn):
 
 object_store::~object_store()
 {
-    if (obj_free_ == nullptr) { return; }
-    for (auto &obj : objects_to_free_) {
-        obj_free_(&obj);
+    if (obj_free_ == nullptr) {
+        return;
     }
+    for (auto &obj : objects_to_free_) { obj_free_(&obj); }
 }
 
 bool object_store::insert(const ddwaf_object &input)
@@ -45,7 +44,7 @@ bool object_store::insert(const ddwaf_object &input)
         return true;
     }
 
-    const ddwaf_object* array = input.array;
+    const ddwaf_object *array = input.array;
     if (array == nullptr) {
         // Since we have established that the size of the map is not 0, a null
         // array constitutes a malformed map.
@@ -56,8 +55,7 @@ bool object_store::insert(const ddwaf_object &input)
 
     latest_batch_.reserve(entries);
 
-    for (std::size_t i = 0; i < entries; ++i)
-    {
+    for (std::size_t i = 0; i < entries; ++i) {
         auto length = static_cast<std::size_t>(array[i].parameterNameLength);
         if (array[i].parameterName == nullptr || length == 0) {
             continue;
@@ -65,7 +63,9 @@ bool object_store::insert(const ddwaf_object &input)
 
         std::string key(array[i].parameterName, length);
         auto [res, target] = manifest_.get_target(key);
-        if (!res) { continue; }
+        if (!res) {
+            continue;
+        }
 
         objects_[target] = &array[i];
         latest_batch_.emplace(target);
@@ -74,10 +74,10 @@ bool object_store::insert(const ddwaf_object &input)
     return true;
 }
 
-const ddwaf_object* object_store::get_target(manifest::target_type target) const
+const ddwaf_object *object_store::get_target(manifest::target_type target) const
 {
     auto it = objects_.find(manifest::get_root(target));
     return it != objects_.end() ? it->second : nullptr;
 }
 
-}
+} // namespace ddwaf

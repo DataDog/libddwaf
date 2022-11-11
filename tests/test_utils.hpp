@@ -5,9 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
-#include "test.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/schema.h"
+#include "test.h"
 
 using ddwaf_result_actions = ddwaf_result::_ddwaf_result_actions;
 
@@ -33,53 +33,45 @@ struct event {
 bool operator==(const event::match &lhs, const event::match &rhs);
 bool operator==(const event &lhs, const event &rhs);
 
-std::ostream& operator<<(std::ostream& os, const event& e);
-}
+std::ostream &operator<<(std::ostream &os, const event &e);
+} // namespace ddwaf::test
 
-namespace YAML
-{
+namespace YAML {
 
-class parsing_error : public std::exception
-{
+class parsing_error : public std::exception {
 public:
-    parsing_error(const std::string& what) : what_(what) {}
-    const char* what() const noexcept { return what_.c_str(); }
+    parsing_error(const std::string &what) : what_(what) {}
+    const char *what() const noexcept { return what_.c_str(); }
 
 protected:
     const std::string what_;
 };
 
-template <>
-struct as_if<ddwaf_object, void>
-{
-    explicit as_if(const Node& node_);
+template <> struct as_if<ddwaf_object, void> {
+    explicit as_if(const Node &node_);
     ddwaf_object operator()() const;
-    const Node& node;
+    const Node &node;
 };
 
-template <>
-struct as_if<ddwaf::test::event::match, void>
-{
-    explicit as_if(const Node& node_): node(node_) {}
+template <> struct as_if<ddwaf::test::event::match, void> {
+    explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::event::match operator()() const;
-    const Node& node;
+    const Node &node;
 };
 
-template <>
-struct as_if<ddwaf::test::event, void>
-{
-    explicit as_if(const Node& node_): node(node_) {}
+template <> struct as_if<ddwaf::test::event, void> {
+    explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::event operator()() const;
-    const Node& node;
+    const Node &node;
 };
 
-}
+} // namespace YAML
 
-class event_schema_validator
-{
+class event_schema_validator {
 public:
     event_schema_validator();
     std::optional<std::string> validate(const char *events);
+
 protected:
     rapidjson::Document schema_doc_;
     std::unique_ptr<rapidjson::SchemaDocument> schema_;
@@ -98,16 +90,12 @@ void PrintTo(const ddwaf_result &result, ::std::ostream *os);
 class WafResultActionMatcher {
 public:
     WafResultActionMatcher(std::vector<std::string_view> &&values);
-    bool MatchAndExplain(const ddwaf_result_actions &actions,
-      ::testing::MatchResultListener*) const;
+    bool MatchAndExplain(
+        const ddwaf_result_actions &actions, ::testing::MatchResultListener *) const;
 
-    void DescribeTo(::std::ostream* os) const {
-        *os << expected_as_string_;
-    }
+    void DescribeTo(::std::ostream *os) const { *os << expected_as_string_; }
 
-    void DescribeNegationTo(::std::ostream* os) const {
-        *os << expected_as_string_;
-    }
+    void DescribeNegationTo(::std::ostream *os) const { *os << expected_as_string_; }
 
 private:
     std::string expected_as_string_;
@@ -116,45 +104,41 @@ private:
 
 class WafResultDataMatcher {
 public:
+    WafResultDataMatcher(std::vector<ddwaf::test::event> expected_events)
+        : expected_events_(std::move(expected_events))
+    {}
 
-    WafResultDataMatcher(std::vector<ddwaf::test::event> expected_events):
-        expected_events_(std::move(expected_events)) {}
+    bool MatchAndExplain(const ddwaf_result &result, ::testing::MatchResultListener *) const;
 
-    bool MatchAndExplain(const ddwaf_result &result,
-      ::testing::MatchResultListener*) const;
-
-    void DescribeTo(::std::ostream* os) const {
-        for (auto expected : expected_events_) {
-            *os << expected;
-        }
+    void DescribeTo(::std::ostream *os) const
+    {
+        for (auto expected : expected_events_) { *os << expected; }
     }
 
-    void DescribeNegationTo(::std::ostream* os) const {
-        for (auto expected : expected_events_) {
-            *os << expected;
-        }
+    void DescribeNegationTo(::std::ostream *os) const
+    {
+        for (auto expected : expected_events_) { *os << expected; }
     }
 
 protected:
     std::vector<ddwaf::test::event> expected_events_;
 };
 
-
 inline ::testing::PolymorphicMatcher<WafResultActionMatcher> WithActions(
-  std::vector<std::string_view> &&values) {
-    return ::testing::MakePolymorphicMatcher(
-        WafResultActionMatcher(std::move(values)));
+    std::vector<std::string_view> &&values)
+{
+    return ::testing::MakePolymorphicMatcher(WafResultActionMatcher(std::move(values)));
 }
 
 inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
-    std::vector<ddwaf::test::event> &&expected) {
-    return ::testing::MakePolymorphicMatcher(
-        WafResultDataMatcher(std::move(expected)));
+    std::vector<ddwaf::test::event> &&expected)
+{
+    return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected)));
 }
 
-#define EXPECT_EVENTS(result, ...) \
-    EXPECT_TRUE(ValidateSchema(result)); \
+#define EXPECT_EVENTS(result, ...)                                                                 \
+    EXPECT_TRUE(ValidateSchema(result));                                                           \
     EXPECT_THAT(result, WithEvents({__VA_ARGS__}));
 
-ddwaf_object readFile(const char* filename);
-ddwaf_object readRule(const char* rule);
+ddwaf_object readFile(const char *filename);
+ddwaf_object readRule(const char *rule);

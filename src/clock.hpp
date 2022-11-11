@@ -9,13 +9,11 @@
 #include <atomic>
 #include <chrono>
 
-namespace ddwaf
-{
+namespace ddwaf {
 #ifndef __linux__
 using monotonic_clock = std::chrono::steady_clock;
 #else  // linux
-struct monotonic_clock
-{
+struct monotonic_clock {
     using duration = std::chrono::nanoseconds;
     using rep = duration::rep;
     using period = duration::period;
@@ -30,18 +28,18 @@ private:
 };
 #endif // __linux__
 
-class timer
-{
+class timer {
 public:
     // Syscall period refers to the number of calls to expired() before
-    // clock_gettime is called. This approach is only feasible because the 
+    // clock_gettime is called. This approach is only feasible because the
     // WAF calls expired() quite often, otherwise another solution would be
     // required to minimise syscalls.
-    explicit timer(std::chrono::microseconds exp, uint32_t syscall_period = 16):
-      start_(monotonic_clock::now()), end_(start_ + exp),
-      syscall_period_(syscall_period) {}
+    explicit timer(std::chrono::microseconds exp, uint32_t syscall_period = 16)
+        : start_(monotonic_clock::now()), end_(start_ + exp), syscall_period_(syscall_period)
+    {}
 
-    bool expired() {
+    bool expired()
+    {
         if (!expired_ && --calls_ == 0) {
             if (end_ <= monotonic_clock::now()) {
                 expired_ = true;
@@ -54,9 +52,11 @@ public:
 
     [[nodiscard]] bool expired_before() const { return expired_; }
 
-    [[nodiscard]] monotonic_clock::duration elapsed() const {
+    [[nodiscard]] monotonic_clock::duration elapsed() const
+    {
         return monotonic_clock::now() - start_;
     }
+
 protected:
     monotonic_clock::time_point start_;
     monotonic_clock::time_point end_;

@@ -48,8 +48,9 @@ TEST(TestIsXSS, TestInvalidInput)
 
 TEST(TestIsXSS, TestRuleset)
 {
-    //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_xss, parameters: {inputs: [{address: arg1}]}}]}]})");
+    // Initialize a PowerWAF rule
+    auto rule = readRule(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_xss, parameters: {inputs: [{address: arg1}]}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -68,18 +69,15 @@ TEST(TestIsXSS, TestRuleset)
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_EVENTS(ret,
-    {
-        .id = "1",
-        .name = "rule1",
-        .type = "flow1",
-        .category = "category1",
-        .matches = {{
-            .op = "is_xss",
-            .address = "arg1",
-            .value = "<script>alert(1);</script>",
-        }}
-    });
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .type = "flow1",
+                           .category = "category1",
+                           .matches = {{
+                               .op = "is_xss",
+                               .address = "arg1",
+                               .value = "<script>alert(1);</script>",
+                           }}});
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

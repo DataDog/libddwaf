@@ -53,14 +53,11 @@ bool test_runner::run_self_test(const YAML::Node &runs)
 bool test_runner::run_test(const YAML::Node &runs)
 {
     bool passed = false;
-    std::unique_ptr<std::remove_pointer<ddwaf_context>::type,
-        decltype(&ddwaf_context_destroy)>
-        ctx(ddwaf_context_init(handle_),
-            ddwaf_context_destroy);
+    std::unique_ptr<std::remove_pointer<ddwaf_context>::type, decltype(&ddwaf_context_destroy)> ctx(
+        ddwaf_context_init(handle_), ddwaf_context_destroy);
 
     ddwaf_result res_mem{false, nullptr, {nullptr, 0}, 0};
-    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res{
-        &res_mem, ddwaf_result_free};
+    std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res{&res_mem, ddwaf_result_free};
 
     try {
         expect(true, runs.IsDefined());
@@ -129,15 +126,14 @@ test_runner::result test_runner::run(const fs::path &file)
     return {passed, expected_fail, error_.str(), output_.str()};
 }
 
-void test_runner::validate(
-    const YAML::Node &expected, const YAML::Node &obtained)
+void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected.size(), obtained.size());
 
     std::vector<bool> seen(obtained.size(), false);
 
     bool found_expected = false;
-    for (const auto &expected_rule_matches: expected) {
+    for (const auto &expected_rule_matches : expected) {
         for (std::size_t j = 0; j < obtained.size(); j++) {
             auto obtained_rule_match = obtained[j];
             auto id = obtained_rule_match["rule"]["id"].as<std::string>();
@@ -154,10 +150,8 @@ void test_runner::validate(
 
             auto rule = rules_[id];
             validate_rule(rule, obtained_rule_match["rule"]);
-            validate_conditions(
-                rule["conditions"], obtained_rule_match["rule_matches"]);
-            validate_matches(
-                expected_rule_match, obtained_rule_match["rule_matches"]);
+            validate_conditions(rule["conditions"], obtained_rule_match["rule_matches"]);
+            validate_matches(expected_rule_match, obtained_rule_match["rule_matches"]);
         }
 
         expect(true, found_expected);
@@ -166,8 +160,7 @@ void test_runner::validate(
     for (bool v : seen) { expect(true, v); }
 }
 
-void test_runner::validate_rule(
-    const YAML::Node &expected, const YAML::Node &obtained)
+void test_runner::validate_rule(const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected["id"], obtained["id"]);
     expect(expected["name"], obtained["name"]);
@@ -189,8 +182,7 @@ void test_runner::validate_rule(
     }
 }
 
-void test_runner::validate_conditions(
-    const YAML::Node &expected, const YAML::Node &obtained)
+void test_runner::validate_conditions(const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected.size(), obtained.size());
 
@@ -210,8 +202,7 @@ void test_runner::validate_conditions(
     }
 }
 
-void test_runner::validate_matches(
-    const YAML::Node &expected, const YAML::Node &obtained)
+void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected.size(), obtained.size());
 

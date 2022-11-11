@@ -8,23 +8,21 @@
 #include <cstdarg>
 #include <cstdio>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-ddwaf_log_cb logger::cb           = nullptr;
+ddwaf_log_cb logger::cb = nullptr;
 DDWAF_LOG_LEVEL logger::min_level = DDWAF_LOG_OFF;
 
 void logger::init(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 {
-    logger::cb        = cb;
+    logger::cb = cb;
     logger::min_level = min_level;
 }
 
-void logger::log(DDWAF_LOG_LEVEL level,
-                 const char* function, const char* file, unsigned line,
-                 const char* message, size_t length)
+void logger::log(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line,
+    const char *message, size_t length)
 {
     logger::cb(level, function, file, line, message, length);
 }
 
-}
+} // namespace ddwaf

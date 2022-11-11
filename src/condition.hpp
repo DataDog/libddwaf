@@ -28,31 +28,27 @@ public:
 
     enum class data_source : uint8_t { values, keys };
 
-    condition(std::vector<ddwaf::manifest::target_type>&& targets,
-              std::vector<PW_TRANSFORM_ID>&& transformers,
-              std::shared_ptr<rule_processor::base>&& processor,
-              ddwaf::object_limits limits = ddwaf::object_limits(),
-              data_source source = data_source::values,
-              bool is_mutable = false):
-        targets_(std::move(targets)),
-        transformers_(std::move(transformers)),
-        processor_(std::move(processor)),
-        limits_(limits),
-        source_(source),
-        mutable_(is_mutable) {}
+    condition(std::vector<ddwaf::manifest::target_type> &&targets,
+        std::vector<PW_TRANSFORM_ID> &&transformers,
+        std::shared_ptr<rule_processor::base> &&processor,
+        ddwaf::object_limits limits = ddwaf::object_limits(),
+        data_source source = data_source::values, bool is_mutable = false)
+        : targets_(std::move(targets)), transformers_(std::move(transformers)),
+          processor_(std::move(processor)), limits_(limits), source_(source), mutable_(is_mutable)
+    {}
 
     ~condition() = default;
-    condition(condition&&) = default;
-    condition& operator=(condition&&) = default;
+    condition(condition &&) = default;
+    condition &operator=(condition &&) = default;
 
-    condition(const condition&) = delete;
-    condition& operator=(const condition&) = delete;
+    condition(const condition &) = delete;
+    condition &operator=(const condition &) = delete;
 
-    std::optional<event::match> match(const object_store& store,
-        const ddwaf::manifest &manifest, bool run_on_new,
-        ddwaf::timer& deadline) const;
+    std::optional<event::match> match(const object_store &store, const ddwaf::manifest &manifest,
+        bool run_on_new, ddwaf::timer &deadline) const;
 
-    std::string_view processor_name() {
+    std::string_view processor_name()
+    {
         if (mutable_) {
             return std::atomic_load(&processor_)->name();
         }
@@ -60,23 +56,24 @@ public:
         return processor_->name();
     }
 
-    void reset_processor(std::shared_ptr<rule_processor::base> &proc) {
+    void reset_processor(std::shared_ptr<rule_processor::base> &proc)
+    {
         if (!mutable_) {
             throw std::runtime_error("Attempting to mutate an immutable "
-                "condition with processor " + std::string(processor_->name()));
+                                     "condition with processor " +
+                                     std::string(processor_->name()));
         }
 
         std::atomic_store(&processor_, proc);
     }
 
-    const std::vector<ddwaf::manifest::target_type>& get_targets() {
-        return targets_;
-    }
+    const std::vector<ddwaf::manifest::target_type> &get_targets() { return targets_; }
+
 protected:
-    std::optional<event::match> match_object(const ddwaf_object* object) const;
+    std::optional<event::match> match_object(const ddwaf_object *object) const;
 
     template <typename T>
-    std::optional<event::match> match_target(T &it, ddwaf::timer& deadline) const;
+    std::optional<event::match> match_target(T &it, ddwaf::timer &deadline) const;
 
     std::vector<ddwaf::manifest::target_type> targets_;
     std::vector<PW_TRANSFORM_ID> transformers_;

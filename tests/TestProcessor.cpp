@@ -8,7 +8,7 @@
 
 TEST(TestPWProcessor, TestOutput)
 {
-    //Initialize a PowerWAF rule
+    // Initialize a PowerWAF rule
     auto rule = readFile("processor.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -19,17 +19,18 @@ TEST(TestPWProcessor, TestOutput)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    //Setup the parameter structure
+    // Setup the parameter structure
     ddwaf_object parameter = DDWAF_OBJECT_MAP, subMap = DDWAF_OBJECT_MAP, tmp;
     ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule2"));
     ddwaf_object_map_add(&subMap, "key", ddwaf_object_string(&tmp, "rule3"));
-    ddwaf_object_map_add(&parameter, "value2", &subMap); //ddwaf_object_string(&,"rule3"));
+    ddwaf_object_map_add(&parameter, "value2", &subMap); // ddwaf_object_string(&,"rule3"));
 
     ddwaf_result ret;
     EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value","key_path":[],"value":"rule2","highlight":["rule2"]}]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["key"],"value":"rule3","highlight":["rule3"]}]}]}])");
+    EXPECT_STREQ(ret.data,
+        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value","key_path":[],"value":"rule2","highlight":["rule2"]}]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["key"],"value":"rule3","highlight":["rule3"]}]}]}])");
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -38,7 +39,7 @@ TEST(TestPWProcessor, TestOutput)
 
 TEST(TestPWProcessor, TestKeyPaths)
 {
-    //Initialize a PowerWAF rule
+    // Initialize a PowerWAF rule
     auto rule = readFile("processor5.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -57,11 +58,12 @@ TEST(TestPWProcessor, TestKeyPaths)
     EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["x"],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
+    EXPECT_STREQ(ret.data,
+        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["x"],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
 
     ddwaf_result_free(&ret);
 
-    root  = DDWAF_OBJECT_MAP;
+    root = DDWAF_OBJECT_MAP;
     param = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&param, "z", ddwaf_object_string(&tmp, "Sqreen"));
     ddwaf_object_map_add(&root, "param", &param);
@@ -69,7 +71,8 @@ TEST(TestPWProcessor, TestKeyPaths)
     EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["z"],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
+    EXPECT_STREQ(ret.data,
+        R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["z"],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -77,8 +80,8 @@ TEST(TestPWProcessor, TestKeyPaths)
     context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    //Generate a wrapper
-    root  = DDWAF_OBJECT_MAP;
+    // Generate a wrapper
+    root = DDWAF_OBJECT_MAP;
     param = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&param, "y", ddwaf_object_string(&tmp, "Sqreen"));
     ddwaf_object_map_add(&root, "param", &param);
@@ -86,7 +89,8 @@ TEST(TestPWProcessor, TestKeyPaths)
     EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["y"],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
+    EXPECT_STREQ(ret.data,
+        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["y"],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -95,7 +99,7 @@ TEST(TestPWProcessor, TestKeyPaths)
 
 TEST(TestPWProcessor, TestMissingParameter)
 {
-    //Initialize a PowerWAF rule
+    // Initialize a PowerWAF rule
     auto rule = readFile("processor.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -106,7 +110,7 @@ TEST(TestPWProcessor, TestMissingParameter)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    //Generate a wrapper
+    // Generate a wrapper
     ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
 
     ddwaf_object_map_add(&param, "param", ddwaf_object_signed(&tmp, 42));
@@ -124,8 +128,9 @@ TEST(TestPWProcessor, TestMissingParameter)
 
 TEST(TestPWProcessor, TestInvalidUTF8Input)
 {
-    //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
+    // Initialize a PowerWAF rule
+    auto rule = readRule(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -135,9 +140,8 @@ TEST(TestPWProcessor, TestInvalidUTF8Input)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    //Generate a wrapper
-    std::string ba1    = "keys",
-                ba2    = "values";
+    // Generate a wrapper
+    std::string ba1 = "keys", ba2 = "values";
     ddwaf_object param = DDWAF_OBJECT_MAP, mapItem, tmp;
     ddwaf_object_string(&mapItem, "\xF0\x82\x82\xAC\xC1"
                                   "bla");
@@ -149,7 +153,7 @@ TEST(TestPWProcessor, TestInvalidUTF8Input)
     EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    auto pos = std::string { ret.data }.find(mapItem.stringValue);
+    auto pos = std::string{ret.data}.find(mapItem.stringValue);
     EXPECT_TRUE(pos != string::npos);
 
     ddwaf_result_free(&ret);
@@ -157,66 +161,67 @@ TEST(TestPWProcessor, TestInvalidUTF8Input)
     ddwaf_destroy(handle);
 }
 
-//TEST(TestPWProcessor, TestCache)
+// TEST(TestPWProcessor, TestCache)
 //{
-    ////Initialize a PowerWAF rule
-    //auto rule = readFile("processor2.yaml");
-    //ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+////Initialize a PowerWAF rule
+// auto rule = readFile("processor2.yaml");
+// ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    //ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    //ASSERT_NE(handle, nullptr);
-    //ddwaf_object_free(&rule);
+// ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+// ASSERT_NE(handle, nullptr);
+// ddwaf_object_free(&rule);
 
-    //ddwaf_result ret;
-    //ddwaf_context context = ddwaf_context_init(handle);
-    //ASSERT_NE(context, nullptr);
+// ddwaf_result ret;
+// ddwaf_context context = ddwaf_context_init(handle);
+// ASSERT_NE(context, nullptr);
 
-    //ddwaf::context* add = reinterpret_cast<ddwaf::context*>(context);
+// ddwaf::context* add = reinterpret_cast<ddwaf::context*>(context);
 
-    //{
-        //ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
-        //ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "not valid"));
+//{
+// ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
+// ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "not valid"));
 
-        //EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
-        //EXPECT_FALSE(ret.timeout);
-        //ddwaf_result_free(&ret);
+// EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
+// EXPECT_FALSE(ret.timeout);
+// ddwaf_result_free(&ret);
 
-        //EXPECT_GE(add->processor_.ranCache.size(), 1);
-        //EXPECT_EQ(add->processor_.ranCache.at(0), match_status::no_match);
-    //}
+// EXPECT_GE(add->processor_.ranCache.size(), 1);
+// EXPECT_EQ(add->processor_.ranCache.at(0), match_status::no_match);
+//}
 
-    //{
-        //ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
-        //ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
+//{
+// ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
+// ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
 
-        //EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
-        //EXPECT_FALSE(ret.timeout);
-        //ddwaf_result_free(&ret);
+// EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
+// EXPECT_FALSE(ret.timeout);
+// ddwaf_result_free(&ret);
 
-        //EXPECT_EQ(add->processor_.ranCache.at(0), match_status::no_match);
-    //}
+// EXPECT_EQ(add->processor_.ranCache.at(0), match_status::no_match);
+//}
 
-    //{
-        //ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
-        //ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "Sqreen"));
+//{
+// ddwaf_object param = DDWAF_OBJECT_MAP, tmp;
+// ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "Sqreen"));
 
-        //EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
-        //EXPECT_FALSE(ret.timeout);
-        //EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]},{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
+// EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
+// EXPECT_FALSE(ret.timeout);
+// EXPECT_STREQ(ret.data,
+// R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]},{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
 
-        //EXPECT_EQ(add->processor_.ranCache.at(0), match_status::matched);
+// EXPECT_EQ(add->processor_.ranCache.at(0), match_status::matched);
 
-        //ddwaf_result_free(&ret);
-    //}
+// ddwaf_result_free(&ret);
+//}
 
-    //ddwaf_context_destroy(context);
-    //ddwaf_destroy(handle);
+// ddwaf_context_destroy(context);
+// ddwaf_destroy(handle);
 //}
 
 TEST(TestPWProcessor, TestCacheReport)
 {
     // NOTE: this test only works due to the order of the rules in the ruleset
-    //Initialize a PowerWAF rule
+    // Initialize a PowerWAF rule
     auto rule = readFile("processor3.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -234,7 +239,8 @@ TEST(TestPWProcessor, TestCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param1, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
-        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
+        EXPECT_STREQ(ret.data,
+            R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
 
         ddwaf_result_free(&ret);
     }
@@ -256,7 +262,7 @@ TEST(TestPWProcessor, TestCacheReport)
 
 TEST(TestPWProcessor, TestMultiFlowCacheReport)
 {
-    //Initialize a PowerWAF rule
+    // Initialize a PowerWAF rule
     auto rule = readFile("processor4.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -274,7 +280,8 @@ TEST(TestPWProcessor, TestMultiFlowCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
-        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
+        EXPECT_STREQ(ret.data,
+            R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
 
         ddwaf_result_free(&ret);
     }
@@ -296,7 +303,8 @@ TEST(TestPWProcessor, TestMultiFlowCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
-        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
+        EXPECT_STREQ(ret.data,
+            R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
 
         ddwaf_result_free(&ret);
     }
@@ -305,55 +313,57 @@ TEST(TestPWProcessor, TestMultiFlowCacheReport)
     ddwaf_destroy(handle);
 }
 
-//TEST(TestPWProcessor, TestBudget)
+// TEST(TestPWProcessor, TestBudget)
 //{
-    ////Initialize a PowerWAF rule
-    //auto rule = readFile("slow.yaml");
-    //ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+////Initialize a PowerWAF rule
+// auto rule = readFile("slow.yaml");
+// ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    //ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    //ASSERT_NE(handle, nullptr);
-    //ddwaf_object_free(&rule);
+// ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+// ASSERT_NE(handle, nullptr);
+// ddwaf_object_free(&rule);
 
-    ////Generate a wrapper
-    //ddwaf_object param = DDWAF_OBJECT_MAP, mapItem = DDWAF_OBJECT_ARRAY, array = DDWAF_OBJECT_ARRAY, tmp;
+////Generate a wrapper
+// ddwaf_object param = DDWAF_OBJECT_MAP, mapItem = DDWAF_OBJECT_ARRAY, array = DDWAF_OBJECT_ARRAY,
+// tmp;
 
-    //for (int i = 0; i < 500; ++i)
-    //{
-        //ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "abbbbbbbbbabababababababaaaaaaaaaaaaaad"));
-    //}
+// for (int i = 0; i < 500; ++i)
+//{
+// ddwaf_object_array_add(&array, ddwaf_object_string(&tmp,
+// "abbbbbbbbbabababababababaaaaaaaaaaaaaad"));
+//}
 
-    //ddwaf_object_array_add(&mapItem, &array);
-    //ddwaf_object_map_add(&param, "rx_param", &mapItem);
+// ddwaf_object_array_add(&mapItem, &array);
+// ddwaf_object_map_add(&param, "rx_param", &mapItem);
 
-    //ddwaf::waf* waf = reinterpret_cast<ddwaf::waf*>(handle);
-    //ddwaf::object_store store(waf->manifest);
-    //store.insert(param);
-    //ASSERT_TRUE((bool)store);
+// ddwaf::waf* waf = reinterpret_cast<ddwaf::waf*>(handle);
+// ddwaf::object_store store(waf->manifest);
+// store.insert(param);
+// ASSERT_TRUE((bool)store);
 
-    ////Fetch the rule and flow managers
-    //auto& flows = waf->flows;
+////Fetch the rule and flow managers
+// auto& flows = waf->flows;
 
-    //rapidjson::Document document;
-    //ddwaf::obfuscator eo;
-    //PWRetManager rManager(eo);
-    //ddwaf::processor processor(store, waf->manifest);
+// rapidjson::Document document;
+// ddwaf::obfuscator eo;
+// PWRetManager rManager(eo);
+// ddwaf::processor processor(store, waf->manifest);
 
-    //auto deadline = ddwaf::monotonic_clock::now() + chrono::microseconds(50);
-    //processor.runFlow("flow1", flows["flow1"], rManager, deadline);
-    //ddwaf_result ret;
-    //rManager.synthetize(ret);
-    //EXPECT_EQ(ret.data, nullptr);
+// auto deadline = ddwaf::monotonic_clock::now() + chrono::microseconds(50);
+// processor.runFlow("flow1", flows["flow1"], rManager, deadline);
+// ddwaf_result ret;
+// rManager.synthetize(ret);
+// EXPECT_EQ(ret.data, nullptr);
 
-    //mapItem.parameterName = NULL;
+// mapItem.parameterName = NULL;
 
-    //ddwaf_result_free(&ret);
-    //ddwaf_destroy(handle);
+// ddwaf_result_free(&ret);
+// ddwaf_destroy(handle);
 /*}*/
 
 TEST(TestPWProcessor, TestBudgetRules)
 {
-    //Initialize a PowerWAF rule
+    // Initialize a PowerWAF rule
     auto rule = readFile("slow.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 

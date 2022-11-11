@@ -30,7 +30,7 @@ TEST(TestManifest, TestBasic)
     EXPECT_TRUE(manifest.contains("path"));
     EXPECT_FALSE(manifest.empty());
 
-    auto [res, id]  = manifest.get_target("path");
+    auto [res, id] = manifest.get_target("path");
     auto info = manifest.get_target_info(id);
     EXPECT_TRUE(info.key_path.empty());
     EXPECT_STREQ(info.name.c_str(), "path");
@@ -39,7 +39,7 @@ TEST(TestManifest, TestBasic)
     // This is it's own root address
     EXPECT_EQ(manifest::get_root(id), id);
 
-    auto& addresses = manifest.get_root_addresses();
+    auto &addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 1);
     EXPECT_STREQ(addresses[0], "path");
 }
@@ -49,8 +49,7 @@ TEST(TestManifest, TestMultipleAddrs)
     ddwaf::manifest_builder mb;
 
     std::map<std::string, manifest::target_type> targets;
-    for (const std::string str : { "path0", "path1", "path2", "path3" })
-    {
+    for (const std::string str : {"path0", "path1", "path2", "path3"}) {
         auto target = mb.insert(str, {});
         targets[str] = target;
 
@@ -60,8 +59,7 @@ TEST(TestManifest, TestMultipleAddrs)
 
     auto manifest = mb.build_manifest();
 
-    for (const std::string str : { "path0", "path1", "path2", "path3" })
-    {
+    for (const std::string str : {"path0", "path1", "path2", "path3"}) {
         EXPECT_TRUE(manifest.contains(str));
 
         auto [res, id] = manifest.get_target(str);
@@ -73,7 +71,7 @@ TEST(TestManifest, TestMultipleAddrs)
         EXPECT_EQ(manifest::get_root(id), id);
     }
 
-    auto& addresses = manifest.get_root_addresses();
+    auto &addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
 
     for (const std::string str : {"path0", "path1", "path2", "path3"}) {
@@ -100,10 +98,10 @@ TEST(TestManifest, TestBasicKeyPath)
     EXPECT_TRUE(info.key_path == key_path);
     EXPECT_STREQ(info.name.c_str(), "path");
 
-    auto [res, root_id]  = manifest.get_target("path");
+    auto [res, root_id] = manifest.get_target("path");
     EXPECT_EQ(manifest::get_root(target), root_id);
 
-    auto& addresses = manifest.get_root_addresses();
+    auto &addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 1);
     EXPECT_STREQ(addresses[0], "path");
 }
@@ -114,8 +112,7 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
 
     std::vector<std::string> key_path{"key_path"};
     std::map<std::string, manifest::target_type> targets;
-    for (auto str : { "path0", "path1", "path2", "path3" })
-    {
+    for (auto str : {"path0", "path1", "path2", "path3"}) {
         auto target = mb.insert(str, key_path);
         targets[str] = target;
 
@@ -125,8 +122,7 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
 
     auto manifest = mb.build_manifest();
 
-    for (auto &[name, id] : targets)
-    {
+    for (auto &[name, id] : targets) {
         auto [res, root_id] = manifest.get_target(name);
         auto info = manifest.get_target_info(id);
         EXPECT_TRUE(info.key_path == key_path);
@@ -134,7 +130,7 @@ TEST(TestManifest, TestMultipleAddrsKeyPath)
         EXPECT_STREQ(info.name.c_str(), name.c_str());
     }
 
-    auto& addresses = manifest.get_root_addresses();
+    auto &addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
     for (const std::string str : {"path0", "path1", "path2", "path3"}) {
         EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
@@ -160,10 +156,10 @@ TEST(TestManifest, TestBasicMultiKeyPath)
     EXPECT_TRUE(info.key_path == key_path);
     EXPECT_STREQ(info.name.c_str(), "path");
 
-    auto [res, root_id]  = manifest.get_target("path");
+    auto [res, root_id] = manifest.get_target("path");
     EXPECT_EQ(manifest::get_root(target), root_id);
 
-    auto& addresses = manifest.get_root_addresses();
+    auto &addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 1);
     EXPECT_STREQ(addresses[0], "path");
 }
@@ -174,8 +170,7 @@ TEST(TestManifest, TestMultipleAddrsMultiKeyPath)
 
     std::vector<std::string> key_path{"first", "second", "last"};
     std::map<std::string, manifest::target_type> targets;
-    for (auto str : { "path0", "path1", "path2", "path3" })
-    {
+    for (auto str : {"path0", "path1", "path2", "path3"}) {
         auto target = mb.insert(str, key_path);
         targets[str] = target;
 
@@ -185,8 +180,7 @@ TEST(TestManifest, TestMultipleAddrsMultiKeyPath)
 
     auto manifest = mb.build_manifest();
 
-    for (auto &[name, id] : targets)
-    {
+    for (auto &[name, id] : targets) {
         auto [res, root_id] = manifest.get_target(name);
         auto info = manifest.get_target_info(id);
         EXPECT_TRUE(info.key_path == key_path);
@@ -194,7 +188,7 @@ TEST(TestManifest, TestMultipleAddrsMultiKeyPath)
         EXPECT_STREQ(info.name.c_str(), name.c_str());
     }
 
-    auto& addresses = manifest.get_root_addresses();
+    auto &addresses = manifest.get_root_addresses();
     EXPECT_EQ(addresses.size(), 4);
     for (const std::string str : {"path0", "path1", "path2", "path3"}) {
         EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());

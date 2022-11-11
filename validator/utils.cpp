@@ -48,10 +48,7 @@ ddwaf_object node_to_arg(const Node &node)
     throw parsing_error("Invalid YAML node type");
 }
 
-ddwaf_object as_if<ddwaf_object, void>::operator()() const
-{
-    return node_to_arg(node);
-}
+ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(node); }
 
 } // namespace YAML
 
@@ -86,7 +83,6 @@ std::ostream &operator<<(std::ostream &os, term::colour c)
         return os;
     }
 
-    os << "\033[" << static_cast<std::underlying_type<term::colour>::type>(c)
-       << "m";
+    os << "\033[" << static_cast<std::underlying_type<term::colour>::type>(c) << "m";
     return os;
 }

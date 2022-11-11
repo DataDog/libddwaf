@@ -32,7 +32,7 @@ TEST(TestObject, TestString)
     EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(object.nbEntries, 6);
     EXPECT_TRUE(object.parameterName == NULL);
-    EXPECT_STREQ((const char*) object.stringValue, "Sqreen");
+    EXPECT_STREQ((const char *)object.stringValue, "Sqreen");
 
     // Getters
     size_t length;
@@ -53,7 +53,7 @@ TEST(TestObject, TestCreateStringl)
     EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(object.nbEntries, 6);
     EXPECT_TRUE(object.parameterName == NULL);
-    EXPECT_STREQ((const char*) object.stringValue, "Sqreen");
+    EXPECT_STREQ((const char *)object.stringValue, "Sqreen");
 
     // Getters
     size_t length;
@@ -227,7 +227,7 @@ TEST(TestObject, TestAddArray)
     EXPECT_EQ(ddwaf_object_length(&container), 0);
     EXPECT_EQ(ddwaf_object_size(&container), 2);
 
-    ddwaf_object* internal;
+    ddwaf_object *internal;
     internal = ddwaf_object_get_index(&container, 0);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "42");
@@ -264,7 +264,7 @@ TEST(TestObject, TestAddMap)
     ASSERT_TRUE(ddwaf_object_map_addl(&map, "key2", 4, ddwaf_object_signed(&tmp, 43)));
     EXPECT_STREQ(map.array[1].parameterName, "key2");
 
-    char* str = strdup("key3");
+    char *str = strdup("key3");
     ASSERT_TRUE(ddwaf_object_map_addl_nc(&map, str, 4, ddwaf_object_signed(&tmp, 44)));
     EXPECT_EQ(map.array[2].parameterName, str);
 
@@ -274,7 +274,7 @@ TEST(TestObject, TestAddMap)
     EXPECT_EQ(ddwaf_object_size(&map), 3);
 
     size_t length;
-    ddwaf_object* internal;
+    ddwaf_object *internal;
     internal = ddwaf_object_get_index(&map, 0);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "42");
@@ -299,36 +299,33 @@ TEST(TestObject, TestAddMap)
     ddwaf_object_free(&array);
 }
 
-TEST(TestObject, TestFree)
-{
-    ddwaf_object_free(NULL);
-}
+TEST(TestObject, TestFree) { ddwaf_object_free(NULL); }
 
 TEST(TestUTF8, TestLongUTF8)
 {
-    char buffer[DDWAF_MAX_STRING_LENGTH + 64] = { 0 };
-    const uint8_t emoji[]                     = { 0xe2, 0x98, 0xa2 };
+    char buffer[DDWAF_MAX_STRING_LENGTH + 64] = {0};
+    const uint8_t emoji[] = {0xe2, 0x98, 0xa2};
 
-    //Only ASCII/single-byte characters
+    // Only ASCII/single-byte characters
     memset(buffer, 'A', sizeof(buffer));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
 
-    //New sequence starting just after the cut-off point
+    // New sequence starting just after the cut-off point
     memcpy(&buffer[DDWAF_MAX_STRING_LENGTH], emoji, sizeof(emoji));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
     memset(&buffer[DDWAF_MAX_STRING_LENGTH], 'A', sizeof(emoji));
 
-    //We need to step back once
+    // We need to step back once
     memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 1], emoji, sizeof(emoji));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 1);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 1);
     memset(&buffer[DDWAF_MAX_STRING_LENGTH - 1], 'A', sizeof(emoji));
 
-    //We need to step back twice
+    // We need to step back twice
     memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 2], emoji, sizeof(emoji));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 2);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 2);
     memset(&buffer[DDWAF_MAX_STRING_LENGTH - 2], 'A', sizeof(emoji));
 
-    //No need to step back, the sequence finishes just before the cutoff
+    // No need to step back, the sequence finishes just before the cutoff
     memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 3], emoji, sizeof(emoji));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t) sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
+    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
 }

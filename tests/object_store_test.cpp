@@ -12,7 +12,7 @@ TEST(TestObjectStore, InsertInvalidObject)
 {
     ddwaf::manifest_builder mb;
     auto query = mb.insert("query", {});
-    auto query_key= mb.insert("query", {"key"});
+    auto query_key = mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
     auto manifest = mb.build_manifest();
@@ -60,7 +60,7 @@ TEST(TestObjectStore, InsertMalformedMapKey)
     ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
 
-    free((void*)root.array[0].parameterName);
+    free((void *)root.array[0].parameterName);
     root.array[0].parameterName = nullptr;
 
     EXPECT_TRUE(store.insert(root));
@@ -71,7 +71,7 @@ TEST(TestObjectStore, InsertStringObject)
 {
     ddwaf::manifest_builder mb;
     auto query = mb.insert("query", {});
-    auto query_key= mb.insert("query", {"key"});
+    auto query_key = mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
     auto manifest = mb.build_manifest();
@@ -99,7 +99,7 @@ TEST(TestObjectStore, InsertAndGetObject)
 {
     ddwaf::manifest_builder mb;
     auto query = mb.insert("query", {});
-    auto query_key= mb.insert("query", {"key"});
+    auto query_key = mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
     auto manifest = mb.build_manifest();
@@ -128,7 +128,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
 {
     ddwaf::manifest_builder mb;
     auto query = mb.insert("query", {});
-    auto query_key= mb.insert("query", {"key"});
+    auto query_key = mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
     auto manifest = mb.build_manifest();
@@ -186,7 +186,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
 {
     ddwaf::manifest_builder mb;
     auto query = mb.insert("query", {});
-    auto query_key= mb.insert("query", {"key"});
+    auto query_key = mb.insert("query", {"key"});
     auto url = mb.insert("url", {});
     auto url_key = mb.insert("url", {"key"});
     auto manifest = mb.build_manifest();

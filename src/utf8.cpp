@@ -73,8 +73,8 @@ uint8_t write_codepoint(uint32_t codepoint, char *utf8Buffer, uint64_t lengthLef
     if (codepoint == 0 || (codepoint >= 0xd800 && codepoint <= 0xdfff) || codepoint > 0x10ffff) {
         // Insert U+FFFD as an error character per-spec
         //  We need three bytes to encode it, which may be a problem as `\0` only takes two
-        //  A fully correct implementation would make room for the error bytes if there isn't enough room but we won't
-        //  bother with that
+        //  A fully correct implementation would make room for the error bytes if there isn't enough
+        //  room but we won't bother with that
         if (lengthLeft > 2) {
             *((uint8_t *)utf8Buffer++) = 0xEFu;
             *((uint8_t *)utf8Buffer++) = 0xBFu;
@@ -100,9 +100,10 @@ int8_t findNextGlyphLength(const char *utf8Buffer, uint64_t lengthLeft)
     // We're going to assume the caller provided us with the beginning of a UTF-8 sequence.
 
     // Valid UTF8 has a specific binary format.
-    //  If it's a single byte UTF8 character, then it is always of form '0xxxxxxx', where 'x' is any binary digit.
-    //  If it's a two byte UTF8 character, then it's always of form '110xxxxx 10xxxxxx'.
-    //  Similarly for three and four byte UTF8 characters it starts with '1110xxxx' and '11110xxx' followed
+    //  If it's a single byte UTF8 character, then it is always of form '0xxxxxxx', where 'x' is any
+    //  binary digit. If it's a two byte UTF8 character, then it's always of form '110xxxxx
+    //  10xxxxxx'. Similarly for three and four byte UTF8 characters it starts with '1110xxxx' and
+    //  '11110xxx' followed
     //      by '10xxxxxx' one less times as there are bytes.
 
     uint8_t firstByte = (uint8_t)utf8Buffer[0];
@@ -167,8 +168,9 @@ uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64
         return (uint32_t)utf8Buffer[position++];
     }
 
-    // Alright, we need to read multiple byte. The first one as a variable length so we need to deal with it :(
-    // To illustrate, here is the operation with trying to perform based on nextGlyphLength
+    // Alright, we need to read multiple byte. The first one as a variable length so we need to deal
+    // with it :( To illustrate, here is the operation with trying to perform based on
+    // nextGlyphLength
     //
     //  NGL = 2, buf = 110xxxxx -> buf & 00011111
     //  NGL = 3, buf = 1110xxxx -> buf & 00001111
@@ -178,11 +180,12 @@ uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64
 
     // Once we parsed the header, we parse the following bytes
     for (uint8_t byteIndex = 1; byteIndex < nextGlyphLength; ++byteIndex) {
-        // We first shift the codepoint we already loaded by 6 bits to make room for the 6 new bits we're about to add
+        // We first shift the codepoint we already loaded by 6 bits to make room for the 6 new bits
+        // we're about to add
         codepoint <<= 6;
 
-        // The bytes after the header are formatted like 10xxxxxx, we thus mask by 00111111 to only keep xxxxxx and
-        // append it at the end of codepoint
+        // The bytes after the header are formatted like 10xxxxxx, we thus mask by 00111111 to only
+        // keep xxxxxx and append it at the end of codepoint
         codepoint |= utf8Buffer[position + byteIndex] & 0x3F;
     }
 
@@ -194,7 +197,10 @@ struct ScratchpadChunck {
     char *scratchpad;
     uint64_t length, used;
 
-    ScratchpadChunck(uint64_t chunckLength) : length(chunckLength), used(0) { scratchpad = (char *)malloc(length); }
+    ScratchpadChunck(uint64_t chunckLength) : length(chunckLength), used(0)
+    {
+        scratchpad = (char *)malloc(length);
+    }
 
     ScratchpadChunck(ScratchpadChunck &) = delete;
     ScratchpadChunck(ScratchpadChunck &&chunck)
@@ -221,22 +227,25 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
         return 1;
     }
 
-    size_t decomposedLength =
-        (size_t)utf8proc_decompose_char((int32_t)codepoint, wbBuffer, (utf8proc_ssize_t)wbBufferLength,
-            (utf8proc_option_t)(UTF8PROC_DECOMPOSE | UTF8PROC_IGNORE | UTF8PROC_COMPAT | UTF8PROC_LUMP |
-                                UTF8PROC_STRIPMARK | UTF8PROC_STRIPNA | UTF8PROC_CASEFOLD),
-            NULL);
+    size_t decomposedLength = (size_t)utf8proc_decompose_char((int32_t)codepoint, wbBuffer,
+        (utf8proc_ssize_t)wbBufferLength,
+        (utf8proc_option_t)(UTF8PROC_DECOMPOSE | UTF8PROC_IGNORE | UTF8PROC_COMPAT | UTF8PROC_LUMP |
+                            UTF8PROC_STRIPMARK | UTF8PROC_STRIPNA | UTF8PROC_CASEFOLD),
+        NULL);
 
     // This decomposition is unfortunately not complete. It leaves behind a few chars like ı (i)
-    //  Moreover, some conversions like ß (ss) require casefolding, which changes the case of characters
-    //  We're trying to address what's left
+    //  Moreover, some conversions like ß (ss) require casefolding, which changes the case of
+    //  characters We're trying to address what's left
     if (decomposedLength > 0 && decomposedLength <= wbBufferLength) {
-        // If casefolding happened, we check what was the case of the original codepoint and move it back there
-        // This is a no-op if the case is already correct
-        const utf8proc_property_t *originalCodepointProperty = utf8proc_get_property((int32_t)codepoint);
+        // If casefolding happened, we check what was the case of the original codepoint and move it
+        // back there This is a no-op if the case is already correct
+        const utf8proc_property_t *originalCodepointProperty =
+            utf8proc_get_property((int32_t)codepoint);
         if (originalCodepointProperty->casefold_seqindex != UINT16_MAX) {
-            if (originalCodepointProperty->category & (UTF8PROC_CATEGORY_LU | UTF8PROC_CATEGORY_LL)) {
-                bool originalCPWasUpper = originalCodepointProperty->category == UTF8PROC_CATEGORY_LU;
+            if (originalCodepointProperty->category &
+                (UTF8PROC_CATEGORY_LU | UTF8PROC_CATEGORY_LL)) {
+                bool originalCPWasUpper =
+                    originalCodepointProperty->category == UTF8PROC_CATEGORY_LU;
                 for (size_t wbIndex = 0; wbIndex < decomposedLength; ++wbIndex) {
                     if (originalCPWasUpper) {
                         wbBuffer[wbIndex] = utf8proc_toupper(wbBuffer[wbIndex]);
@@ -246,9 +255,11 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
                 }
             }
         } else {
-            // We're forcing a case conversion back and forth if necessary to catch the few stragglers like ı (i)
+            // We're forcing a case conversion back and forth if necessary to catch the few
+            // stragglers like ı (i)
             for (size_t wbIndex = 0; wbIndex < decomposedLength; ++wbIndex) {
-                const utf8proc_property_t *codepointProperty = utf8proc_get_property(wbBuffer[wbIndex]);
+                const utf8proc_property_t *codepointProperty =
+                    utf8proc_get_property(wbBuffer[wbIndex]);
 
                 // If this is a uppercase codepoint, we do a tolower then toupper
                 if (codepointProperty->category == UTF8PROC_CATEGORY_LU) {
@@ -275,10 +286,11 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
     int32_t inFlightBuffer[INFLIGHT_BUFFER_SIZE];
     std::vector<ScratchpadChunck> scratchPad;
 
-    // A tricky part of this conversion is that the output size is totally unknown, but we want to be efficient with our
-    // allocations. We're going to write the glyph we're normalising in a static buffer (if possible) and write the
-    // filtered, normalized results in a bunch of semi-fixed buffer (the scratchpad) Only when the conversion is over
-    // will we allocate the final buffer and copy everything in there.
+    // A tricky part of this conversion is that the output size is totally unknown, but we want to
+    // be efficient with our allocations. We're going to write the glyph we're normalising in a
+    // static buffer (if possible) and write the filtered, normalized results in a bunch of
+    // semi-fixed buffer (the scratchpad) Only when the conversion is over will we allocate the
+    // final buffer and copy everything in there.
     scratchPad.reserve(8);
     scratchPad.emplace_back(bufferLength > 1024 ? bufferLength : 1024);
 
@@ -290,7 +302,8 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
             continue;
         }
 
-        size_t decomposedLength = normalize_codepoint(codepoint, inFlightBuffer, INFLIGHT_BUFFER_SIZE);
+        size_t decomposedLength =
+            normalize_codepoint(codepoint, inFlightBuffer, INFLIGHT_BUFFER_SIZE);
 
         // No codepoint can generate more than 18 codepoints, that's extremely odd
         //  Let's drop this codepoint
@@ -299,9 +312,11 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
         }
 
         // Write the codepoints to the scratchpad
-        for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength; ++inflightBufferIndex) {
+        for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength;
+             ++inflightBufferIndex) {
             char utf8Write[4];
-            uint8_t lengthWritten = write_codepoint((uint32_t)inFlightBuffer[inflightBufferIndex], utf8Write, 4);
+            uint8_t lengthWritten =
+                write_codepoint((uint32_t)inFlightBuffer[inflightBufferIndex], utf8Write, 4);
 
             if (scratchPad.back().used + lengthWritten >= scratchPad.back().length) {
                 scratchPad.emplace_back(scratchPad.back().length);
@@ -318,20 +333,20 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
         free(*_utf8Buffer);
         *_utf8Buffer = scratchPad.front().scratchpad;
         bufferLength = scratchPad.front().used;
-        
+
         // Prevent the destructor from freeing the pointer we're now using.
         scratchPad.front().scratchpad = nullptr;
     } else {
         // Compile the scratch pads into the final normalized string
         uint64_t outputLength = 0;
         for (ScratchpadChunck &chunck : scratchPad) { outputLength += chunck.used; }
-        
+
         if (outputLength > bufferLength) {
-            void* newUTF8Buffer = realloc((void *)*_utf8Buffer, outputLength);
-            if(newUTF8Buffer == NULL) {
+            void *newUTF8Buffer = realloc((void *)*_utf8Buffer, outputLength);
+            if (newUTF8Buffer == NULL) {
                 return false;
             }
-            *_utf8Buffer = (char*) newUTF8Buffer;
+            *_utf8Buffer = (char *)newUTF8Buffer;
         }
 
         uint64_t writeIndex = 0;

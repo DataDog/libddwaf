@@ -4,12 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <rule_processor/is_xss.hpp>
 #include <libinjection.h>
+#include <rule_processor/is_xss.hpp>
 #include <utils.h>
 
-namespace ddwaf::rule_processor
-{
+namespace ddwaf::rule_processor {
 
 std::optional<event::match> is_xss::match(std::string_view str) const
 {
@@ -24,4 +23,4 @@ std::optional<event::match> is_xss::match(std::string_view str) const
     return make_event(str, {});
 }
 
-}
+} // namespace ddwaf::rule_processor

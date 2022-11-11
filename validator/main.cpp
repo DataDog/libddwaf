@@ -36,11 +36,10 @@ const char *level_to_str(DDWAF_LOG_LEVEL level)
     return "off";
 }
 
-void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file,
-    unsigned line, const char *message, [[maybe_unused]] uint64_t len)
+void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line,
+    const char *message, [[maybe_unused]] uint64_t len)
 {
-    printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line,
-        message);
+    printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line, message);
 }
 
 void print_help_and_exit(std::string_view name, std::string_view error = {})
@@ -71,7 +70,8 @@ int main(int argc, char *argv[])
             while (++i < argc) {
                 std::string_view file = argv[i];
                 if (file.substr(0, 2) == "--") {
-                    --i; break;
+                    --i;
+                    break;
                 }
 
                 fs::path sample_path = file;
@@ -87,19 +87,16 @@ int main(int argc, char *argv[])
             }
 
             if (files.empty()) {
-                print_help_and_exit(argv[0],
-                    "No valid tests provided with --tests");
+                print_help_and_exit(argv[0], "No valid tests provided with --tests");
             }
         } else if (arg == "--ruleset") {
             if (++i < argc) {
                 ruleset = argv[i];
                 if (ruleset.substr(0, 2) == "--") {
-                    print_help_and_exit(argv[0],
-                        "No valid ruleset provided with --ruleset");
+                    print_help_and_exit(argv[0], "No valid ruleset provided with --ruleset");
                 }
             } else {
-                print_help_and_exit(argv[0],
-                    "No valid ruleset provided with --ruleset");
+                print_help_and_exit(argv[0], "No valid ruleset provided with --ruleset");
             }
         } else {
             print_help_and_exit(argv[0]);
@@ -134,8 +131,7 @@ int main(int argc, char *argv[])
         auto [res, expected_fail, error, output] = runner.run(file);
         if (res) {
             if (!expected_fail) {
-                std::cout << std::string{file} << " => " << term::colour::green
-                          << "Passed\n"
+                std::cout << std::string{file} << " => " << term::colour::green << "Passed\n"
                           << term::colour::off;
             } else {
                 std::cout << std::string{file} << " => " << term::colour::red
@@ -145,8 +141,8 @@ int main(int argc, char *argv[])
             }
         } else {
             if (!expected_fail) {
-                std::cout << std::string{file} << " => " << term::colour::red
-                          << "Failed: " << error << "\n"
+                std::cout << std::string{file} << " => " << term::colour::red << "Failed: " << error
+                          << "\n"
                           << term::colour::off;
                 if (!output.empty()) {
                     std::cout << output << "\n";

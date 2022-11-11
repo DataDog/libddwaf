@@ -18,32 +18,29 @@
 #include <ruleset.hpp>
 #include <utils.h>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-class context
-{
+class context {
 public:
-    context(ddwaf::ruleset &ruleset, const ddwaf::config &config):
-        ruleset_(ruleset), config_(config),
-        store_(ruleset_.manifest, config_.free_fn)
+    context(ddwaf::ruleset &ruleset, const ddwaf::config &config)
+        : ruleset_(ruleset), config_(config), store_(ruleset_.manifest, config_.free_fn)
     {
         rule_cache_.reserve(ruleset_.rules.size());
         filter_cache_.reserve(ruleset_.filters.size());
         collection_cache_.reserve(ruleset_.collections.size());
     }
 
-    context(const context&) = delete;
-    context& operator=(const context&) = delete;
-    context(context&&) = default;
-    context& operator=(context&&) = delete;
+    context(const context &) = delete;
+    context &operator=(const context &) = delete;
+    context(context &&) = default;
+    context &operator=(context &&) = delete;
     ~context() = default;
 
-    DDWAF_RET_CODE run(const ddwaf_object&, optional_ref<ddwaf_result> res, uint64_t);
+    DDWAF_RET_CODE run(const ddwaf_object &, optional_ref<ddwaf_result> res, uint64_t);
 
-    std::set<rule::ptr> filter(ddwaf::timer& deadline);
-    std::vector<event> match(
-        const std::set<rule::ptr> &exclude, ddwaf::timer& deadline);
+    std::set<rule::ptr> filter(ddwaf::timer &deadline);
+    std::vector<event> match(const std::set<rule::ptr> &exclude, ddwaf::timer &deadline);
+
 protected:
     bool is_first_run() const { return rule_cache_.empty(); }
 

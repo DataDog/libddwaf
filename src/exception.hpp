@@ -9,45 +9,40 @@
 #include <stdexcept>
 #include <string>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-class exception : public std::exception
-{
+class exception : public std::exception {
 public:
-    const char* what() const noexcept { return what_.c_str(); }
+    const char *what() const noexcept { return what_.c_str(); }
 
 protected:
-    exception(const std::string& what) : what_(what) {}
+    exception(const std::string &what) : what_(what) {}
 
 protected:
     const std::string what_;
 };
 
-class unsupported_version : public exception
-{
+class unsupported_version : public exception {
 public:
-    unsupported_version() : exception(std::string()) {};
+    unsupported_version() : exception(std::string()){};
 };
 
-class parsing_error : public exception
-{
+class parsing_error : public exception {
 public:
-    parsing_error(const std::string& what) : exception(what) {}
+    parsing_error(const std::string &what) : exception(what) {}
 };
 
-class malformed_object : public exception
-{
+class malformed_object : public exception {
 public:
-    malformed_object(const std::string& what) : exception("malformed object," + what) {}
+    malformed_object(const std::string &what) : exception("malformed object," + what) {}
 };
 
-class bad_cast : public exception
-{
+class bad_cast : public exception {
 public:
-    bad_cast(const std::string& exp, const std::string& obt) : exception("bad cast, expected '" + exp + "', obtained '" + obt + "'"),
-                                                               expected_(exp),
-                                                               obtained_(obt) {}
+    bad_cast(const std::string &exp, const std::string &obt)
+        : exception("bad cast, expected '" + exp + "', obtained '" + obt + "'"), expected_(exp),
+          obtained_(obt)
+    {}
 
     const std::string expected() const { return expected_; }
     const std::string obtained() const { return obtained_; }
@@ -57,23 +52,25 @@ protected:
     const std::string obtained_;
 };
 
-class missing_key : public parsing_error
-{
+class missing_key : public parsing_error {
 public:
-    missing_key(const std::string& key) : parsing_error("missing key '" + key + "'") {}
+    missing_key(const std::string &key) : parsing_error("missing key '" + key + "'") {}
 };
 
-class invalid_type : public parsing_error
-{
+class invalid_type : public parsing_error {
 public:
-    invalid_type(const std::string& key, const bad_cast& e) : parsing_error("invalid type '" + e.obtained() + "' for key '" + key + "', expected '" + e.expected() + "'") {}
-    invalid_type(const std::string& key, const std::string& type) : parsing_error("invalid type for key '" + key + "', expected '" + type + "'") {}
+    invalid_type(const std::string &key, const bad_cast &e)
+        : parsing_error("invalid type '" + e.obtained() + "' for key '" + key + "', expected '" +
+                        e.expected() + "'")
+    {}
+    invalid_type(const std::string &key, const std::string &type)
+        : parsing_error("invalid type for key '" + key + "', expected '" + type + "'")
+    {}
 };
 
-class timeout_exception : public exception
-{
+class timeout_exception : public exception {
 public:
-    timeout_exception(): exception({}) {}
+    timeout_exception() : exception({}) {}
 };
 
-}
+} // namespace ddwaf

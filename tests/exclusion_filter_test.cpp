@@ -17,8 +17,7 @@ TEST(TestExclusionFilter, Match)
 
     auto manifest = mb.build_manifest();
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -47,8 +46,7 @@ TEST(TestExclusionFilter, NoMatch)
 
     auto manifest = mb.build_manifest();
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -76,17 +74,16 @@ TEST(TestExclusionFilter, ValidateCachedMatch)
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("http.client_ip", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("usr.id", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -132,17 +129,16 @@ TEST(TestExclusionFilter, MatchWithoutCache)
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("http.client_ip", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("usr.id", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -187,17 +183,16 @@ TEST(TestExclusionFilter, NoMatchWithoutCache)
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("http.client_ip", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("usr.id", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -242,17 +237,16 @@ TEST(TestExclusionFilter, FullCachedMatchSecondRun)
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("http.client_ip", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("usr.id", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -263,7 +257,7 @@ TEST(TestExclusionFilter, FullCachedMatchSecondRun)
     ddwaf::object_store store(manifest);
     ddwaf::exclusion_filter::cache_type cache;
 
-    // In this test we validate that when a match has already occurred, the 
+    // In this test we validate that when a match has already occurred, the
     // second run for the same rule also returns a match (regardless of input).
     {
         ddwaf_object root, tmp;
@@ -308,19 +302,14 @@ TEST(TestExclusionFilter, ExcludeSingleRule)
 
     ddwaf_result out;
     EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EVENTS(out,
-    {
-        .id = "2",
-        .name = "rule2",
-        .type = "type2",
-        .category = "category",
-        .matches = {{
-            .op = "ip_match",
-            .address = "http.client_ip",
-            .value = "192.168.0.1",
-            .highlight = "192.168.0.1"
-        }}
-    });
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .type = "type2",
+                           .category = "category",
+                           .matches = {{.op = "ip_match",
+                               .address = "http.client_ip",
+                               .value = "192.168.0.1",
+                               .highlight = "192.168.0.1"}}});
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -344,19 +333,14 @@ TEST(TestExclusionFilter, ExcludeByType)
 
     ddwaf_result out;
     EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EVENTS(out,
-    {
-        .id = "1",
-        .name = "rule1",
-        .type = "type1",
-        .category = "category",
-        .matches = {{
-            .op = "ip_match",
-            .address = "http.client_ip",
-            .value = "192.168.0.1",
-            .highlight = "192.168.0.1"
-        }}
-    });
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .type = "type1",
+                           .category = "category",
+                           .matches = {{.op = "ip_match",
+                               .address = "http.client_ip",
+                               .value = "192.168.0.1",
+                               .highlight = "192.168.0.1"}}});
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -404,19 +388,14 @@ TEST(TestExclusionFilter, ExcludeByTags)
 
     ddwaf_result out;
     EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EVENTS(out,
-    {
-        .id = "2",
-        .name = "rule2",
-        .type = "type2",
-        .category = "category",
-        .matches = {{
-            .op = "ip_match",
-            .address = "http.client_ip",
-            .value = "192.168.0.1",
-            .highlight = "192.168.0.1"
-        }}
-    });
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .type = "type2",
+                           .category = "category",
+                           .matches = {{.op = "ip_match",
+                               .address = "http.client_ip",
+                               .value = "192.168.0.1",
+                               .highlight = "192.168.0.1"}}});
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -458,30 +437,22 @@ TEST(TestExclusionFilter, ExcludeAllWithCondition)
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
-        {
-            .id = "1",
-            .name = "rule1",
-            .type = "type1",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        },
-        {
-            .id = "2",
-            .name = "rule2",
-            .type = "type2",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        });
+            {.id = "1",
+                .name = "rule1",
+                .type = "type1",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}},
+            {.id = "2",
+                .name = "rule2",
+                .type = "type2",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -508,19 +479,14 @@ TEST(TestExclusionFilter, ExcludeSingleRuleWithCondition)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(out,
-        {
-            .id = "2",
-            .name = "rule2",
-            .type = "type2",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        });
+        EXPECT_EVENTS(out, {.id = "2",
+                               .name = "rule2",
+                               .type = "type2",
+                               .category = "category",
+                               .matches = {{.op = "ip_match",
+                                   .address = "http.client_ip",
+                                   .value = "192.168.0.1",
+                                   .highlight = "192.168.0.1"}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -537,30 +503,22 @@ TEST(TestExclusionFilter, ExcludeSingleRuleWithCondition)
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
-        {
-            .id = "1",
-            .name = "rule1",
-            .type = "type1",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        },
-        {
-            .id = "2",
-            .name = "rule2",
-            .type = "type2",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        });
+            {.id = "1",
+                .name = "rule1",
+                .type = "type1",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}},
+            {.id = "2",
+                .name = "rule2",
+                .type = "type2",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -587,19 +545,14 @@ TEST(TestExclusionFilter, ExcludeByTypeWithCondition)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(out,
-        {
-            .id = "1",
-            .name = "rule1",
-            .type = "type1",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        });
+        EXPECT_EVENTS(out, {.id = "1",
+                               .name = "rule1",
+                               .type = "type1",
+                               .category = "category",
+                               .matches = {{.op = "ip_match",
+                                   .address = "http.client_ip",
+                                   .value = "192.168.0.1",
+                                   .highlight = "192.168.0.1"}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -616,30 +569,22 @@ TEST(TestExclusionFilter, ExcludeByTypeWithCondition)
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
-        {
-            .id = "1",
-            .name = "rule1",
-            .type = "type1",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        },
-        {
-            .id = "2",
-            .name = "rule2",
-            .type = "type2",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        });
+            {.id = "1",
+                .name = "rule1",
+                .type = "type1",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}},
+            {.id = "2",
+                .name = "rule2",
+                .type = "type2",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -682,30 +627,22 @@ TEST(TestExclusionFilter, ExcludeByCategoryWithCondition)
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
-        {
-            .id = "1",
-            .name = "rule1",
-            .type = "type1",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        },
-        {
-            .id = "2",
-            .name = "rule2",
-            .type = "type2",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        });
+            {.id = "1",
+                .name = "rule1",
+                .type = "type1",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}},
+            {.id = "2",
+                .name = "rule2",
+                .type = "type2",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -732,19 +669,14 @@ TEST(TestExclusionFilter, ExcludeByTagsWithCondition)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(out,
-        {
-            .id = "2",
-            .name = "rule2",
-            .type = "type2",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        });
+        EXPECT_EVENTS(out, {.id = "2",
+                               .name = "rule2",
+                               .type = "type2",
+                               .category = "category",
+                               .matches = {{.op = "ip_match",
+                                   .address = "http.client_ip",
+                                   .value = "192.168.0.1",
+                                   .highlight = "192.168.0.1"}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -761,33 +693,24 @@ TEST(TestExclusionFilter, ExcludeByTagsWithCondition)
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
-        {
-            .id = "1",
-            .name = "rule1",
-            .type = "type1",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        },
-        {
-            .id = "2",
-            .name = "rule2",
-            .type = "type2",
-            .category = "category",
-            .matches = {{
-                .op = "ip_match",
-                .address = "http.client_ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"
-            }}
-        });
+            {.id = "1",
+                .name = "rule1",
+                .type = "type1",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}},
+            {.id = "2",
+                .name = "rule2",
+                .type = "type2",
+                .category = "category",
+                .matches = {{.op = "ip_match",
+                    .address = "http.client_ip",
+                    .value = "192.168.0.1",
+                    .highlight = "192.168.0.1"}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
     ddwaf_destroy(handle);
 }
-

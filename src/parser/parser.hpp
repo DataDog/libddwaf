@@ -15,9 +15,8 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ddwaf::parser
-{
+namespace ddwaf::parser {
 
-void parse(parameter input, ruleset_info& info, ddwaf::ruleset& rs, ddwaf::config& cfg);
+void parse(parameter input, ruleset_info &info, ddwaf::ruleset &rs, ddwaf::config &cfg);
 
 }

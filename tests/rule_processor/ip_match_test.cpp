@@ -9,25 +9,13 @@
 
 using namespace ddwaf::rule_processor;
 
-bool match(ip_match &processor, std::string_view ip) {
-    return processor.match(ip).has_value();
-}
+bool match(ip_match &processor, std::string_view ip) { return processor.match(ip).has_value(); }
 
 TEST(TestIPMatch, Basic)
 {
-    ip_match processor(std::vector<std::string_view>{
-        "1.2.3.4",
-        "5.6.7.254",
-        "::ffff:0102:0304",
-        "1234:0:0:0:0:0:0:5678",
-        "::1",
-        "abcd::1234:5678:1234:5678",
-        "abcd::1234:0:0:0",
-        "abcd::1234:ffff:ffff:ffff",
-        "42",
-        "bad ip",
-        "other"
-    });
+    ip_match processor(std::vector<std::string_view>{"1.2.3.4", "5.6.7.254", "::ffff:0102:0304",
+        "1234:0:0:0:0:0:0:5678", "::1", "abcd::1234:5678:1234:5678", "abcd::1234:0:0:0",
+        "abcd::1234:ffff:ffff:ffff", "42", "bad ip", "other"});
 
     EXPECT_STREQ(processor.to_string().data(), "");
     EXPECT_STREQ(processor.name().data(), "ip_match");
@@ -93,18 +81,14 @@ TEST(TestIPMatch, InvalidInput)
 TEST(TestIPMatch, Expiration)
 {
     uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
+        std::chrono::system_clock::now().time_since_epoch())
+                       .count();
 
-    ip_match processor(std::vector<std::pair<std::string_view,uint64_t>>{
-        {"1.2.3.4", now - 1},
-        {"5.6.7.254", now + 100},
-        {"::ffff:0102:0304", now - 1},
-        {"1234:0:0:0:0:0:0:5678", now + 100},
-        {"::1", now - 1},
-        {"abcd::1234:5678:1234:5678", now + 100},
-        {"abcd::1234:0:0:0", now - 1},
-        {"abcd::1234:ffff:ffff:ffff", now + 100}
-    });
+    ip_match processor(std::vector<std::pair<std::string_view, uint64_t>>{{"1.2.3.4", now - 1},
+        {"5.6.7.254", now + 100}, {"::ffff:0102:0304", now - 1},
+        {"1234:0:0:0:0:0:0:5678", now + 100}, {"::1", now - 1},
+        {"abcd::1234:5678:1234:5678", now + 100}, {"abcd::1234:0:0:0", now - 1},
+        {"abcd::1234:ffff:ffff:ffff", now + 100}});
 
     EXPECT_STREQ(processor.to_string().data(), "");
     EXPECT_STREQ(processor.name().data(), "ip_match");

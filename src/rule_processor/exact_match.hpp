@@ -6,17 +6,15 @@
 
 #pragma once
 
-#include <rule_processor/base.hpp>
 #include <clock.hpp>
+#include <rule_processor/base.hpp>
 #include <string_view>
-#include <utils.h>
 #include <unordered_map>
+#include <utils.h>
 
-namespace ddwaf::rule_processor
-{
+namespace ddwaf::rule_processor {
 
-class exact_match : public base
-{
+class exact_match : public base {
 public:
     using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
@@ -27,9 +25,10 @@ public:
 
     std::optional<event::match> match(std::string_view str) const override;
     std::string_view name() const override { return "exact_match"; }
+
 protected:
     std::vector<std::string> data_;
     std::unordered_map<std::string_view, uint64_t> values_;
 };
 
-}
+} // namespace ddwaf::rule_processor

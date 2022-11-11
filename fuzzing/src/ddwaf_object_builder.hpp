@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <ddwaf.h>
 
-ddwaf_object build_object(const uint8_t* bytes, size_t size, bool verbose, bool fuzzTimeout, size_t* timeLeftInMs);
+ddwaf_object build_object(
+    const uint8_t *bytes, size_t size, bool verbose, bool fuzzTimeout, size_t *timeLeftInMs);
 
 #endif

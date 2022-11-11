@@ -10,21 +10,17 @@
 #include <utils.h>
 #include <vector>
 
-namespace ddwaf::object
-{
+namespace ddwaf::object {
 
-namespace
-{
+namespace {
 bool is_container(const ddwaf_object *obj)
 {
-    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 &&
-        obj->array != nullptr;
+    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
 }
 
 bool is_map(const ddwaf_object *obj)
 {
-    return obj != nullptr && obj->type == DDWAF_OBJ_MAP &&
-        obj->array != nullptr;
+    return obj != nullptr && obj->type == DDWAF_OBJ_MAP && obj->array != nullptr;
 }
 
 bool is_scalar(const ddwaf_object *obj)
@@ -34,30 +30,31 @@ bool is_scalar(const ddwaf_object *obj)
 
 } // namespace
 
-template <typename T>
-iterator_base<T>::iterator_base(const object_limits &limits): limits_(limits)
+template <typename T> iterator_base<T>::iterator_base(const object_limits &limits) : limits_(limits)
 {
     stack_.reserve(initial_stack_size);
 }
 
-template <typename T>
-bool iterator_base<T>::operator++()
+template <typename T> bool iterator_base<T>::operator++()
 {
     if (current_ != nullptr) {
-        T& derived = static_cast<T&>(*this);
+        T &derived = static_cast<T &>(*this);
         derived.set_cursor_to_next_object();
     }
     return current_ != nullptr;
 }
 
 // TODO: return string_view as this will be immediately copied after
-template <typename T>
-std::vector<std::string> iterator_base<T>::get_current_path() const
+template <typename T> std::vector<std::string> iterator_base<T>::get_current_path() const
 {
-    if (current_ == nullptr) { return {}; }
+    if (current_ == nullptr) {
+        return {};
+    }
     if (stack_.empty()) {
-        if (path_.empty()) { return {}; }
-         return path_;
+        if (path_.empty()) {
+            return {};
+        }
+        return path_;
     }
 
     std::vector<std::string> keys = path_;
@@ -85,21 +82,26 @@ std::vector<std::string> iterator_base<T>::get_current_path() const
     return keys;
 }
 
-value_iterator::value_iterator(const ddwaf_object *obj,
-    const std::vector<std::string> &path, const object_limits &limits):
-  iterator_base(limits)
+value_iterator::value_iterator(
+    const ddwaf_object *obj, const std::vector<std::string> &path, const object_limits &limits)
+    : iterator_base(limits)
 {
     initialise_cursor(obj, path);
 }
 
-void value_iterator::initialise_cursor(const ddwaf_object *obj,
-    const std::vector<std::string> &path)
+void value_iterator::initialise_cursor(
+    const ddwaf_object *obj, const std::vector<std::string> &path)
 {
     if (path.empty()) {
-        if (is_scalar(obj)) { current_ = obj; return; }
+        if (is_scalar(obj)) {
+            current_ = obj;
+            return;
+        }
 
         // Uninitialised object...? We should throw an exception at some point
-        if (!is_container(obj)) { return; }
+        if (!is_container(obj)) {
+            return;
+        }
 
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
@@ -111,13 +113,17 @@ void value_iterator::initialise_cursor(const ddwaf_object *obj,
     }
 }
 
-void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
-    const std::vector<std::string> &path)
+void value_iterator::initialise_cursor_with_path(
+    const ddwaf_object *obj, const std::vector<std::string> &path)
 {
     // An object with a path should always start with a container
-    if (!is_container(obj)) { return; }
+    if (!is_container(obj)) {
+        return;
+    }
 
-    if (path.size() > limits_.max_container_depth) { return; }
+    if (path.size() > limits_.max_container_depth) {
+        return;
+    }
 
     // Add container to stack and find next scalar within the given path
     stack_.emplace_back(obj, 0);
@@ -134,8 +140,8 @@ void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
                     continue;
                 }
 
-                std::string_view child_key(possible_child->parameterName,
-                    possible_child->parameterNameLength);
+                std::string_view child_key(
+                    possible_child->parameterName, possible_child->parameterNameLength);
 
                 if (child_key == key) {
                     child = possible_child;
@@ -143,7 +149,7 @@ void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
                     break;
                 }
             }
-        } 
+        }
 
         // If we find a scalar and it's the last element,
         // we found a valid element within the path.
@@ -154,12 +160,16 @@ void value_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
             // of the key path is a scalar, we clear the stack.
             stack_.clear();
         } else if (is_container(child)) {
-            if ((i + 1) == limits_.max_container_depth) { break; }
+            if ((i + 1) == limits_.max_container_depth) {
+                break;
+            }
 
             // Replace the stack top
             stack_.back() = {child, 0};
 
-            if ((i + 1) < path.size()) { continue; }
+            if ((i + 1) < path.size()) {
+                continue;
+            }
             // If it's the last element in the path, we get the next
             // scalar and exit
             set_cursor_to_next_object();
@@ -204,17 +214,18 @@ void value_iterator::set_cursor_to_next_object()
     }
 }
 
-key_iterator::key_iterator(const ddwaf_object *obj,
-    const std::vector<std::string> &path, const object_limits &limits):
-  iterator_base(limits)
+key_iterator::key_iterator(
+    const ddwaf_object *obj, const std::vector<std::string> &path, const object_limits &limits)
+    : iterator_base(limits)
 {
     initialise_cursor(obj, path);
 }
 
-void key_iterator::initialise_cursor(const ddwaf_object *obj,
-    const std::vector<std::string> &path)
+void key_iterator::initialise_cursor(const ddwaf_object *obj, const std::vector<std::string> &path)
 {
-    if (!is_container(obj)) { return; }
+    if (!is_container(obj)) {
+        return;
+    }
 
     if (path.empty()) {
         // Add container to stack and find next scalar
@@ -227,10 +238,12 @@ void key_iterator::initialise_cursor(const ddwaf_object *obj,
     }
 }
 
-void key_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
-    const std::vector<std::string> &path)
+void key_iterator::initialise_cursor_with_path(
+    const ddwaf_object *obj, const std::vector<std::string> &path)
 {
-    if (path.size() >= limits_.max_container_depth) { return; }
+    if (path.size() >= limits_.max_container_depth) {
+        return;
+    }
 
     // Add container to stack and find next scalar within the given path
     stack_.emplace_back(obj, 0);
@@ -247,8 +260,8 @@ void key_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
                     continue;
                 }
 
-                std::string_view child_key(possible_child->parameterName,
-                    possible_child->parameterNameLength);
+                std::string_view child_key(
+                    possible_child->parameterName, possible_child->parameterNameLength);
 
                 if (child_key == key) {
                     child = possible_child;
@@ -261,7 +274,9 @@ void key_iterator::initialise_cursor_with_path(const ddwaf_object *obj,
         if (is_container(child)) {
             stack_.back() = {child, 0};
 
-            if ((i + 1) < path.size()) { continue; }
+            if ((i + 1) < path.size()) {
+                continue;
+            }
 
             set_cursor_to_next_object();
         }

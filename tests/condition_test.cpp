@@ -17,8 +17,7 @@ TEST(TestCondition, Match)
 
     auto manifest = mb.build_manifest();
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::regex_match>(".*", 0, true));
 
     ddwaf_object root, tmp;
@@ -50,8 +49,7 @@ TEST(TestCondition, NoMatch)
 
     auto manifest = mb.build_manifest();
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     ddwaf_object root, tmp;

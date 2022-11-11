@@ -8,16 +8,14 @@
 
 #include <memory>
 #include <re2/re2.h>
-#include <utils.h>
 #include <rule_processor/base.hpp>
+#include <utils.h>
 
-namespace ddwaf::rule_processor
-{
+namespace ddwaf::rule_processor {
 
-class regex_match: public base
-{
+class regex_match : public base {
 public:
-    regex_match(const std::string& regex_str, std::size_t minLength, bool caseSensitive);
+    regex_match(const std::string &regex_str, std::size_t minLength, bool caseSensitive);
     ~regex_match() = default;
 
     std::string_view to_string() const override { return regex->pattern(); }
@@ -26,8 +24,8 @@ public:
 
 protected:
     static constexpr int max_match_count = 16;
-    std::unique_ptr<re2::RE2> regex { nullptr };
+    std::unique_ptr<re2::RE2> regex{nullptr};
     std::size_t min_length;
 };
 
-}
+} // namespace ddwaf::rule_processor
