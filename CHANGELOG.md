@@ -1,5 +1,16 @@
 # libddwaf release
 
+### v1.6.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/11/11
+
+#### Changes
+- Exclusion filters: targets and conditions ([#110](https://github.com/DataDog/libddwaf/pull/110))
+
+#### Miscellaneous
+- Experiment building libddwaf on the oldest available macos target ([#111](https://github.com/DataDog/libddwaf/pull/110))
+- Strip libddwaf.a for darwin/linux release ([#107](https://github.com/DataDog/libddwaf/pull/110))
+- linux/aarch64: add missing libunwind.a artefact ([#109](https://github.com/DataDog/libddwaf/pull/110))
+- Add option to prevent loading test targets ([#108](https://github.com/DataDog/libddwaf/pull/110))
+
 ### v1.5.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/22
 
 #### API \& Breaking Changes
