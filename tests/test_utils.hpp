@@ -137,8 +137,8 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
 }
 
 #define EXPECT_EVENTS(result, ...)                                                                 \
-    EXPECT_TRUE(ValidateSchema(result));                                                           \
-    EXPECT_THAT(result, WithEvents({__VA_ARGS__}));
+  EXPECT_TRUE(ValidateSchema(result));                                                             \
+  EXPECT_THAT(result, WithEvents({__VA_ARGS__}));
 
 ddwaf_object readFile(const char *filename);
 ddwaf_object readRule(const char *rule);

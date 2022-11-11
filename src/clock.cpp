@@ -8,12 +8,12 @@
 
 #ifdef __linux__
 
-#    include <system_error>
+#  include <system_error>
 
-#    define _GNU_SOURCE 1
-#    include <dlfcn.h>
-#    include <log.hpp>
-#    include <time.h>
+#  define _GNU_SOURCE 1
+#  include <dlfcn.h>
+#  include <log.hpp>
+#  include <time.h>
 
 namespace ddwaf {
 using clock_gettime_t = int (*)(clockid_t, timespec *);

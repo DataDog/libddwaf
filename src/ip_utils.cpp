@@ -11,16 +11,16 @@
 
 #if defined(_WIN32) || defined(__MINGW32__)
 
-#    if defined(__MINGW32__) || defined(_WIN32_WINNT)
+#  if defined(__MINGW32__) || defined(_WIN32_WINNT)
 // Mingw is messing with the NT version
 // https://github.com/msys2/MINGW-packages/issues/6191
-#        undef _WIN32_WINNT
-#        define _WIN32_WINNT 0x600
-#    endif
+#    undef _WIN32_WINNT
+#    define _WIN32_WINNT 0x600
+#  endif
 
-#    include <ws2tcpip.h>
+#  include <ws2tcpip.h>
 #else
-#    include <arpa/inet.h>
+#  include <arpa/inet.h>
 #endif
 
 namespace ddwaf {
