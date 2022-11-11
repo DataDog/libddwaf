@@ -37,7 +37,7 @@ jobs:
       - name: Remove Temporary Files
         run: cmake -E remove_directory _CPack_Packages
         working-directory: ${{ github.workspace }}/packages
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: libddwaf-windows-${{ matrix.arch }}
           path: ${{ github.workspace }}/packages/*.tar.gz
@@ -65,7 +65,7 @@ jobs:
       - name: Remove Temporary Files
         run: cmake -E remove_directory _CPack_Packages
         working-directory: ${{ github.workspace }}/packages
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: libddwaf-macos-x86_64
           path: ${{ github.workspace }}/packages/*.tar.gz
@@ -90,7 +90,7 @@ jobs:
       - name: Remove Temporary Files
         run: cmake -E remove_directory _CPack_Packages
         working-directory: ${{ github.workspace }}/packages
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: libddwaf-macos-arm64
           path: ${{ github.workspace }}/packages/*.tar.gz
@@ -117,11 +117,11 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-      - uses: docker/setup-buildx-action@v1
+      - uses: docker/setup-buildx-action@v2
         id: buildx
         with:
           install: true
-      - uses: docker/setup-qemu-action@v1
+      - uses: docker/setup-qemu-action@v2
         if: matrix.target.qemu_action_arch == 'arm64'
         with:
           platforms: ${{ matrix.target.qemu_action_arch }}
@@ -129,7 +129,7 @@ jobs:
       - run: ${{ matrix.target.check_script }}
         if: matrix.target.check_script
         name: Invoke check script
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target.package }}
           path: /tmp/packages/*.tar.gz
@@ -144,7 +144,7 @@ jobs:
         with:
           nuget-version: '5.x'
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           path: artifacts
 
@@ -180,7 +180,7 @@ jobs:
           mkdir output-packages
           nuget pack ./packages/nuget/libddwaf.nuspec -Version $version -OutputDirectory ./output-packages
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: nuget
           path: ${{ github.workspace }}/output-packages
