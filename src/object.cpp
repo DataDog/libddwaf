@@ -20,11 +20,11 @@
 extern "C" {
 ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
-    *object = {NULL, 0, {NULL}, 0, DDWAF_OBJ_INVALID};
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID};
 
     return object;
 }
@@ -34,44 +34,44 @@ static ddwaf_object *ddwaf_object_string_helper(
 {
     if (length == SIZE_MAX) {
         DDWAF_DEBUG("invalid string length: %zu", length);
-        return NULL;
+        return nullptr;
     }
 
     char *copy = (char *)malloc(length + 1);
-    if (copy == NULL) {
-        return NULL;
+    if (copy == nullptr) {
+        return nullptr;
     }
 
     memcpy(copy, string, length);
     copy[length] = '\0';
 
-    *object = {NULL, 0, {copy}, length, DDWAF_OBJ_STRING};
+    *object = {nullptr, 0, {copy}, length, DDWAF_OBJ_STRING};
 
     return object;
 }
 
 ddwaf_object *ddwaf_object_string(ddwaf_object *object, const char *string)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
-    if (string == NULL) {
-        DDWAF_DEBUG("tried to create a string from an NULL pointer");
-        return NULL;
+    if (string == nullptr) {
+        DDWAF_DEBUG("tried to create a string from an nullptr pointer");
+        return nullptr;
     }
     return ddwaf_object_string_helper(object, string, strlen(string));
 }
 
 ddwaf_object *ddwaf_object_stringl(ddwaf_object *object, const char *string, size_t length)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
-    if (string == NULL) {
-        DDWAF_DEBUG("Tried to create a string from an NULL pointer");
-        return NULL;
+    if (string == nullptr) {
+        DDWAF_DEBUG("Tried to create a string from an nullptr pointer");
+        return nullptr;
     }
 
     return ddwaf_object_string_helper(object, string, length);
@@ -79,24 +79,24 @@ ddwaf_object *ddwaf_object_stringl(ddwaf_object *object, const char *string, siz
 
 ddwaf_object *ddwaf_object_stringl_nc(ddwaf_object *object, const char *string, size_t length)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
-    if (string == NULL) {
-        DDWAF_DEBUG("Tried to create a string from an NULL pointer");
-        return NULL;
+    if (string == nullptr) {
+        DDWAF_DEBUG("Tried to create a string from an nullptr pointer");
+        return nullptr;
     }
 
-    *object = {NULL, 0, {string}, length, DDWAF_OBJ_STRING};
+    *object = {nullptr, 0, {string}, length, DDWAF_OBJ_STRING};
 
     return object;
 }
 
 ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
     // INT64_MIN is 20 char long
@@ -108,8 +108,8 @@ ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
 
 ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
     // UINT64_MAX is 20 char long
@@ -121,11 +121,11 @@ ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
 
 ddwaf_object *ddwaf_object_unsigned_force(ddwaf_object *object, uint64_t value)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
-    *object = {NULL, 0, {NULL}, 0, DDWAF_OBJ_UNSIGNED};
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_UNSIGNED};
     object->uintValue = value;
 
     return object;
@@ -133,11 +133,11 @@ ddwaf_object *ddwaf_object_unsigned_force(ddwaf_object *object, uint64_t value)
 
 ddwaf_object *ddwaf_object_signed_force(ddwaf_object *object, int64_t value)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
-    *object = {NULL, 0, {NULL}, 0, DDWAF_OBJ_SIGNED};
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_SIGNED};
     object->intValue = value;
 
     return object;
@@ -145,11 +145,11 @@ ddwaf_object *ddwaf_object_signed_force(ddwaf_object *object, int64_t value)
 
 ddwaf_object *ddwaf_object_bool(ddwaf_object *object, bool value)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
-    *object = {NULL, 0, {NULL}, 0, DDWAF_OBJ_BOOL};
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_BOOL};
     object->boolean = value;
 
     return object;
@@ -157,22 +157,22 @@ ddwaf_object *ddwaf_object_bool(ddwaf_object *object, bool value)
 
 ddwaf_object *ddwaf_object_array(ddwaf_object *object)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
-    *object = {NULL, 0, {NULL}, 0, DDWAF_OBJ_ARRAY};
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY};
 
     return object;
 }
 
 ddwaf_object *ddwaf_object_map(ddwaf_object *object)
 {
-    if (object == NULL) {
-        return NULL;
+    if (object == nullptr) {
+        return nullptr;
     }
 
-    *object = {NULL, 0, {NULL}, 0, DDWAF_OBJ_MAP};
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP};
 
     return object;
 }
@@ -182,7 +182,7 @@ static bool ddwaf_object_insert(ddwaf_object *array, ddwaf_object object)
     // We preallocate 8 entries
     if (array->nbEntries == 0) {
         array->array = (ddwaf_object *)malloc(8 * sizeof(ddwaf_object));
-        if (array->array == NULL) {
+        if (array->array == nullptr) {
             DDWAF_DEBUG("Allocation failure when trying to initialize a map or an array");
             return false;
         }
@@ -196,7 +196,7 @@ static bool ddwaf_object_insert(ddwaf_object *array, ddwaf_object object)
         size_t size = (size_t)(array->nbEntries + 8);
         ddwaf_object *newArray =
             (ddwaf_object *)realloc((void *)array->array, size * sizeof(ddwaf_object));
-        if (newArray == NULL) {
+        if (newArray == nullptr) {
             DDWAF_DEBUG("Allocation failure when trying to lengthen a map or an array");
             return false;
         }
@@ -210,10 +210,10 @@ static bool ddwaf_object_insert(ddwaf_object *array, ddwaf_object object)
 
 bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object)
 {
-    if (array == NULL || array->type != DDWAF_OBJ_ARRAY) {
+    if (array == nullptr || array->type != DDWAF_OBJ_ARRAY) {
         DDWAF_DEBUG("Invalid call, this API can only be called with an array as first parameter");
         return false;
-    } else if (object == NULL || object->type == DDWAF_OBJ_INVALID) {
+    } else if (object == nullptr || object->type == DDWAF_OBJ_INVALID) {
         DDWAF_DEBUG("Tried to add an invalid entry to an array");
         return false;
     }
@@ -229,7 +229,7 @@ bool ddwaf_object_map_add_helper(
     }
 
     char *name = (char *)malloc((length + 1) * sizeof(char));
-    if (name == NULL) {
+    if (name == nullptr) {
         DDWAF_DEBUG("Allocation failure when trying to allocate the map key");
         return false;
     }
@@ -246,13 +246,13 @@ bool ddwaf_object_map_add_helper(
 static inline bool ddwaf_object_map_add_valid(
     ddwaf_object *map, const char *key, ddwaf_object *object)
 {
-    if (map == NULL || map->type != DDWAF_OBJ_MAP || key == NULL) {
+    if (map == nullptr || map->type != DDWAF_OBJ_MAP || key == nullptr) {
         DDWAF_DEBUG("Invalid call, this API can only be called with a map as first parameter");
         return false;
-    } else if (key == NULL) {
-        DDWAF_DEBUG("Invalid call, NULL key");
+    } else if (key == nullptr) {
+        DDWAF_DEBUG("Invalid call, nullptr key");
         return false;
-    } else if (object == NULL || object->type == DDWAF_OBJ_INVALID) {
+    } else if (object == nullptr || object->type == DDWAF_OBJ_INVALID) {
         DDWAF_DEBUG("Tried to add an invalid entry to a map");
         return false;
     }
@@ -290,7 +290,7 @@ bool ddwaf_object_map_addl_nc(
 
 void ddwaf_object_free(ddwaf_object *object)
 {
-    if (object == NULL || object->type == DDWAF_OBJ_INVALID)
+    if (object == nullptr || object->type == DDWAF_OBJ_INVALID)
         return;
 
     free((void *)object->parameterName);
@@ -324,7 +324,7 @@ DDWAF_OBJ_TYPE ddwaf_object_type(ddwaf_object *object)
 
 size_t ddwaf_object_size(ddwaf_object *object)
 {
-    if (object == NULL || !IS_CONTAINER(object)) {
+    if (object == nullptr || !IS_CONTAINER(object)) {
         return 0;
     }
 
@@ -333,7 +333,7 @@ size_t ddwaf_object_size(ddwaf_object *object)
 
 size_t ddwaf_object_length(ddwaf_object *object)
 {
-    if (object == NULL || object->type != DDWAF_OBJ_STRING) {
+    if (object == nullptr || object->type != DDWAF_OBJ_STRING) {
         return 0;
     }
 
@@ -342,8 +342,8 @@ size_t ddwaf_object_length(ddwaf_object *object)
 
 const char *ddwaf_object_get_key(ddwaf_object *object, size_t *length)
 {
-    if (object == NULL || object->parameterName == NULL) {
-        return NULL;
+    if (object == nullptr || object->parameterName == nullptr) {
+        return nullptr;
     }
 
     if (length) {
@@ -355,8 +355,8 @@ const char *ddwaf_object_get_key(ddwaf_object *object, size_t *length)
 
 const char *ddwaf_object_get_string(ddwaf_object *object, size_t *length)
 {
-    if (object == NULL || object->type != DDWAF_OBJ_STRING) {
-        return NULL;
+    if (object == nullptr || object->type != DDWAF_OBJ_STRING) {
+        return nullptr;
     }
 
     if (length) {
@@ -368,7 +368,7 @@ const char *ddwaf_object_get_string(ddwaf_object *object, size_t *length)
 
 uint64_t ddwaf_object_get_unsigned(ddwaf_object *object)
 {
-    if (object == NULL || object->type != DDWAF_OBJ_UNSIGNED) {
+    if (object == nullptr || object->type != DDWAF_OBJ_UNSIGNED) {
         return 0;
     }
 
@@ -377,7 +377,7 @@ uint64_t ddwaf_object_get_unsigned(ddwaf_object *object)
 
 int64_t ddwaf_object_get_signed(ddwaf_object *object)
 {
-    if (object == NULL || object->type != DDWAF_OBJ_SIGNED) {
+    if (object == nullptr || object->type != DDWAF_OBJ_SIGNED) {
         return 0;
     }
 
@@ -386,8 +386,8 @@ int64_t ddwaf_object_get_signed(ddwaf_object *object)
 
 ddwaf_object *ddwaf_object_get_index(ddwaf_object *object, size_t index)
 {
-    if (object == NULL || !IS_CONTAINER(object) || index >= object->nbEntries) {
-        return NULL;
+    if (object == nullptr || !IS_CONTAINER(object) || index >= object->nbEntries) {
+        return nullptr;
     }
 
     return &object->array[index];

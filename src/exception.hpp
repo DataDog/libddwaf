@@ -8,17 +8,17 @@
 
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace ddwaf {
 
 class exception : public std::exception {
 public:
-    const char *what() const noexcept { return what_.c_str(); }
+    [[nodiscard]] const char *what() const noexcept override { return what_.c_str(); }
 
 protected:
-    exception(const std::string &what) : what_(what) {}
+    explicit exception(std::string what) : what_(std::move(what)) {}
 
-protected:
     const std::string what_;
 };
 
@@ -29,12 +29,12 @@ public:
 
 class parsing_error : public exception {
 public:
-    parsing_error(const std::string &what) : exception(what) {}
+    explicit parsing_error(const std::string &what) : exception(what) {}
 };
 
 class malformed_object : public exception {
 public:
-    malformed_object(const std::string &what) : exception("malformed object," + what) {}
+    explicit malformed_object(const std::string &what) : exception("malformed object," + what) {}
 };
 
 class bad_cast : public exception {
@@ -44,8 +44,8 @@ public:
           obtained_(obt)
     {}
 
-    const std::string expected() const { return expected_; }
-    const std::string obtained() const { return obtained_; }
+    [[nodiscard]] std::string expected() const { return expected_; }
+    [[nodiscard]] std::string obtained() const { return obtained_; }
 
 protected:
     const std::string expected_;
@@ -54,7 +54,7 @@ protected:
 
 class missing_key : public parsing_error {
 public:
-    missing_key(const std::string &key) : parsing_error("missing key '" + key + "'") {}
+    explicit missing_key(const std::string &key) : parsing_error("missing key '" + key + "'") {}
 };
 
 class invalid_type : public parsing_error {

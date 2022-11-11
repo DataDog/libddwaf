@@ -15,7 +15,8 @@ namespace {
 
 char *to_cstr(std::string_view input)
 {
-    std::size_t size = input.size();
+    const std::size_t size = input.size();
+    // NOLINTNEXTLINE
     char *str = static_cast<char *>(malloc(size + 1));
     memcpy(str, input.data(), size);
     str[size] = '\0';
@@ -29,14 +30,14 @@ char *to_cstr(rapidjson::StringBuffer &buffer)
 
 rapidjson::GenericStringRef<char> StringRef(std::string_view str)
 {
-    return rapidjson::GenericStringRef<char>(
-        str.data(), static_cast<rapidjson::SizeType>(str.size()));
+    return {
+        str.data(), static_cast<rapidjson::SizeType>(str.size())};
 }
 
 rapidjson::GenericStringRef<char> StringRef(const std::string &str)
 {
-    return rapidjson::GenericStringRef<char>(
-        str.c_str(), static_cast<rapidjson::SizeType>(str.size()));
+    return {
+        str.c_str(), static_cast<rapidjson::SizeType>(str.size())};
 }
 
 bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
@@ -56,7 +57,10 @@ void serialize_match(rapidjson::Value &output, rapidjson::Document::AllocatorTyp
 {
     auto redaction_msg = StringRef(ddwaf::obfuscator::redaction_msg);
 
-    rapidjson::Value parameters, param, key_path, highlight;
+    rapidjson::Value parameters;
+    rapidjson::Value param;
+    rapidjson::Value key_path;
+    rapidjson::Value highlight;
 
     key_path.SetArray();
     for (const auto &key : match.key_path) { key_path.PushBack(StringRef(key), allocator); }
@@ -93,8 +97,12 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
     std::unordered_set<std::string_view> actions;
 
     doc.SetArray();
-    for (auto &event : events) {
-        rapidjson::Value map, rule, tags, match_array, on_match;
+    for (const auto &event : events) {
+        rapidjson::Value map;
+        rapidjson::Value rule;
+        rapidjson::Value tags;
+        rapidjson::Value match_array;
+        rapidjson::Value on_match;
 
         tags.SetObject();
         tags.AddMember("type", StringRef(event.type), allocator);
@@ -106,16 +114,16 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         rule.AddMember("tags", tags, allocator);
         if (!event.actions.empty()) {
             on_match.SetArray();
-            for (auto &action : event.actions) { on_match.PushBack(StringRef(action), allocator); }
+            for (const auto &action : event.actions) { on_match.PushBack(StringRef(action), allocator); }
             rule.AddMember("on_match", on_match, allocator);
         }
 
         match_array.SetArray();
-        for (auto &match : event.matches) {
+        for (const auto &match : event.matches) {
             rapidjson::Value output;
             output.SetObject();
 
-            bool redact = redact_match(obfuscator_, match);
+            const bool redact = redact_match(obfuscator_, match);
             serialize_match(output, allocator, match, redact);
 
             match_array.PushBack(output, allocator);
@@ -125,7 +133,7 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         map.AddMember("rule", rule, allocator);
         map.AddMember("rule_matches", match_array, allocator);
 
-        for (std::string_view action : event.actions) { actions.emplace(action); }
+        for (const std::string_view action : event.actions) { actions.emplace(action); }
 
         doc.PushBack(map, allocator);
     }
@@ -140,6 +148,7 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         }
 
         if (!actions.empty()) {
+            // NOLINTNEXTLINE
             output.actions.array = static_cast<char **>(malloc(sizeof(char *) * actions.size()));
             output.actions.size = actions.size();
 

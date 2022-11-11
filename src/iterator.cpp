@@ -129,7 +129,7 @@ void value_iterator::initialise_cursor_with_path(
     stack_.emplace_back(obj, 0);
 
     for (std::size_t i = 0; i < path.size(); i++) {
-        std::string_view key = path[i];
+        const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
         ddwaf_object *child = nullptr;
@@ -140,7 +140,7 @@ void value_iterator::initialise_cursor_with_path(
                     continue;
                 }
 
-                std::string_view child_key(
+                const std::string_view child_key(
                     possible_child->parameterName, possible_child->parameterNameLength);
 
                 if (child_key == key) {
@@ -249,7 +249,7 @@ void key_iterator::initialise_cursor_with_path(
     stack_.emplace_back(obj, 0);
 
     for (std::size_t i = 0; i < path.size(); i++) {
-        std::string_view key = path[i];
+        const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
         ddwaf_object *child = nullptr;
@@ -260,7 +260,7 @@ void key_iterator::initialise_cursor_with_path(
                     continue;
                 }
 
-                std::string_view child_key(
+                const std::string_view child_key(
                     possible_child->parameterName, possible_child->parameterNameLength);
 
                 if (child_key == key) {

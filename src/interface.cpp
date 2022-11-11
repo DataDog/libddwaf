@@ -16,8 +16,6 @@
 
 #include <log.hpp>
 
-using namespace ddwaf;
-
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_INFO
 namespace {
 const char *log_level_to_str(DDWAF_LOG_LEVEL level)
@@ -49,7 +47,7 @@ ddwaf_handle ddwaf_init(
     try {
         if (rule != nullptr) {
             ddwaf::ruleset_info ri(info);
-            return waf::from_config(*rule, config, ri);
+            return ddwaf::waf::from_config(*rule, config, ri);
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
@@ -121,14 +119,14 @@ DDWAF_RET_CODE ddwaf_toggle_rules(ddwaf_handle handle, ddwaf_object *rule_map)
     return DDWAF_OK;
 }
 
-const char *const *ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size)
+const char *const *ddwaf_required_addresses(ddwaf::waf *const handle, uint32_t *size)
 {
     if (handle == nullptr) {
         *size = 0;
         return nullptr;
     }
 
-    auto &addresses = handle->get_root_addresses();
+    const auto &addresses = handle->get_root_addresses();
     if (addresses.empty() || addresses.size() > std::numeric_limits<uint32_t>::max()) {
         *size = 0;
         return nullptr;
@@ -138,7 +136,7 @@ const char *const *ddwaf_required_addresses(const ddwaf_handle handle, uint32_t 
     return addresses.data();
 }
 
-const char *const *ddwaf_required_rule_data_ids(const ddwaf_handle handle, uint32_t *size)
+const char *const *ddwaf_required_rule_data_ids(ddwaf::waf *const handle, uint32_t *size)
 {
     if (handle == nullptr) {
         *size = 0;
@@ -155,7 +153,7 @@ const char *const *ddwaf_required_rule_data_ids(const ddwaf_handle handle, uint3
     return ids.data();
 }
 
-ddwaf_context ddwaf_context_init(const ddwaf_handle handle)
+ddwaf_context ddwaf_context_init(ddwaf::waf *const handle)
 {
     ddwaf_context output = nullptr;
 
@@ -219,18 +217,21 @@ const char *ddwaf_get_version() { return LIBDDWAF_VERSION; }
 
 bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 {
-    logger::init(cb, min_level);
+    ddwaf::logger::init(cb, min_level);
     DDWAF_INFO("Sending log messages to binding, min level %s", log_level_to_str(min_level));
     return true;
 }
 
 void ddwaf_result_free(ddwaf_result *result)
 {
+    // NOLINTNEXTLINE
     free(const_cast<char *>(result->data));
 
     auto actions = result->actions;
     if (actions.array != nullptr) {
+        // NOLINTNEXTLINE
         for (unsigned i = 0; i < actions.size; i++) { free(actions.array[i]); }
+        // NOLINTNEXTLINE
         free(actions.array);
     }
 

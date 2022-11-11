@@ -51,7 +51,7 @@ manifest manifest_builder::build_manifest()
         }
     }
 
-    return manifest(std::move(targets), std::move(info));
+    return {std::move(targets), std::move(info)};
 }
 
 } // namespace ddwaf

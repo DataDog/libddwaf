@@ -16,7 +16,9 @@
 
 #include <ddwaf.h>
 
+// NOLINTNEXTLINE(cert-dcl58-cpp)
 namespace std {
+// NOLINTNEXTLINE(cert-dcl58-cpp)
 template <> struct hash<std::vector<std::string>> {
     std::size_t operator()(const std::vector<std::string> &k) const
     {
@@ -44,6 +46,7 @@ public:
         root_addresses_.reserve(targets_.size());
         for (auto &[k, v] : targets_) { root_addresses_.push_back(k.c_str()); }
     }
+    ~manifest() = default;
 
     manifest(manifest &&) = default;
     manifest(const manifest &) = delete;
@@ -64,7 +67,7 @@ public:
 
     const target_info &get_target_info(target_type target) const
     {
-        static target_info empty_info = {};
+        static const target_info empty_info = {};
         auto it = info_.find(target);
         if (it == info_.end()) {
             return empty_info;
@@ -74,6 +77,7 @@ public:
 
     const std::vector<const char *> &get_root_addresses() const { return root_addresses_; }
 
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     static target_type get_root(target_type target) { return target & 0xFFFF0000; }
 
 protected:
@@ -103,6 +107,7 @@ protected:
 
     static constexpr manifest::target_type generate_target(uint16_t root, uint16_t id)
     {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
         return static_cast<uint32_t>(root) << 16 | id;
     }
 

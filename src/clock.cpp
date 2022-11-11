@@ -10,10 +10,11 @@
 
 #  include <system_error>
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #  define _GNU_SOURCE 1
+#  include <ctime>
 #  include <dlfcn.h>
 #  include <log.hpp>
-#  include <time.h>
 
 namespace ddwaf {
 using clock_gettime_t = int (*)(clockid_t, timespec *);
@@ -23,7 +24,7 @@ static clock_gettime_t clock_gettime = &::clock_gettime;
 monotonic_clock::time_point monotonic_clock::now() noexcept
 {
     struct timespec ts {};
-    int ret = ddwaf::clock_gettime(CLOCK_MONOTONIC, &ts);
+    const int ret = ddwaf::clock_gettime(CLOCK_MONOTONIC, &ts);
     if (ret < 0) {
         bool expected = false;
         if (warning_issued.compare_exchange_strong(expected, true)) {
@@ -34,18 +35,17 @@ monotonic_clock::time_point monotonic_clock::now() noexcept
     return time_point(std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
 }
 
+// NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
 std::atomic_bool monotonic_clock::warning_issued{};
 
-// TODO: potentially check on initialisation if CLOCK_MONOTONIC_COARSE is
-//       available, as well as it's resolution, so that timer can decide
-//       the best clock to use.
 struct VdsoInitializer {
-    VdsoInitializer()
+    VdsoInitializer() noexcept :
+        handle(dlopen("linux-vdso.so.1", RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD))
     {
-        handle = dlopen("linux-vdso.so.1", RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD);
-        if (handle) {
+        if (handle != nullptr) {
             void *p = dlsym(handle, "__vdso_clock_gettime");
-            if (p) {
+            if (p != nullptr) {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
                 ddwaf::clock_gettime = reinterpret_cast<clock_gettime_t>(p);
             }
         }
@@ -53,16 +53,22 @@ struct VdsoInitializer {
 
     ~VdsoInitializer()
     {
-        if (handle) {
+        if (handle != nullptr) {
             ddwaf::clock_gettime = &::clock_gettime;
             dlclose(handle);
         }
     }
 
+    VdsoInitializer(const VdsoInitializer&) = delete;
+    VdsoInitializer& operator=(const VdsoInitializer&) = delete;
+    VdsoInitializer(VdsoInitializer&&) = delete;
+    VdsoInitializer& operator=(VdsoInitializer&&) = delete;
 private:
     void *handle;
 };
 
+// NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
 static const VdsoInitializer vdso_initializer;
+
 } // namespace ddwaf
 #endif

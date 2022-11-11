@@ -45,7 +45,7 @@ DDWAF_RET_CODE context::run(
         return DDWAF_OK;
     }
 
-    event_serializer serializer(config_.event_obfuscator);
+    const event_serializer serializer(config_.event_obfuscator);
 
     std::vector<ddwaf::event> events;
     try {
@@ -54,7 +54,7 @@ DDWAF_RET_CODE context::run(
         events = match(rules_to_exclude, deadline);
     } catch (const ddwaf::timeout_exception &) {}
 
-    DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
+    const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
         ddwaf_result &output = *res;
         serializer.serialize(events, output);
@@ -82,7 +82,7 @@ std::set<rule::ptr> context::filter(ddwaf::timer &deadline)
 
         exclusion_filter::cache_type &cache = it->second;
         if (filter->match(store_, ruleset_.manifest, cache, deadline)) {
-            for (auto rule : filter->get_rule_targets()) { rules_to_exclude.emplace(rule); }
+            for (const auto &rule : filter->get_rule_targets()) { rules_to_exclude.emplace(rule); }
         }
     }
 
@@ -98,7 +98,7 @@ std::vector<event> context::match(const std::set<rule::ptr> &exclude, ddwaf::tim
             continue;
         }
 
-        for (auto rule : collection) {
+        for (const auto &rule : collection) {
             const auto &id = rule->id;
 
             if (deadline.expired()) {

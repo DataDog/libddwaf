@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstddef>
 #include <log.hpp>
 #include <obfuscator.hpp>
 #include <utils.h>
@@ -23,7 +24,8 @@ bool match(re2::RE2 &regex, std::string_view value)
 obfuscator::obfuscator(std::string_view key_regex_str, std::string_view value_regex_str)
 {
     re2::RE2::Options options;
-    options.set_max_mem(512 * 1024);
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    options.set_max_mem(static_cast<int64_t>(512 * 1024));
     options.set_log_errors(false);
     options.set_case_sensitive(false);
 

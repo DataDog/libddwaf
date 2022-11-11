@@ -30,10 +30,11 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object) 
     if (has_transform) {
         // This codepath is shared with the mutable path. The structure can't be const :/
         transform_required =
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
             PWTransformer::doesNeedTransform(transformers_, const_cast<ddwaf_object *>(object));
     }
 
-    size_t length =
+    const size_t length =
         find_string_cutoff(object->stringValue, object->nbEntries, limits_.max_string_length);
 
     // If we don't have transform to perform, or if they're irrelevant, no need to waste time
@@ -45,7 +46,8 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object) 
     ddwaf_object copy;
     ddwaf_object_stringl(&copy, (const char *)object->stringValue, length);
 
-    std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> scope(&copy, ddwaf_object_free);
+    const std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> scope(
+        &copy, ddwaf_object_free);
 
     // Transform it and pick the pointer to process
     bool transformFailed = false;
@@ -106,7 +108,7 @@ std::optional<event::match> condition::match(const object_store &store,
 
         // TODO: iterators could be cached to avoid reinitialisation
 
-        auto object = store.get_target(target);
+        const auto *object = store.get_target(target);
         if (object == nullptr) {
             continue;
         }

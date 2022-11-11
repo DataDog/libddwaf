@@ -7,8 +7,10 @@
 #include <cctype>
 #include <cstring>
 #include <ip_utils.hpp>
+#include <netinet/in.h>
 #include <string>
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 #if defined(_WIN32) || defined(__MINGW32__)
 
 #  if defined(__MINGW32__) || defined(_WIN32_WINNT)
@@ -32,12 +34,14 @@ bool parse_ip(std::string_view ip, ipaddr &out)
     }
 
     // Assume the string has no '\0'
-    char ip_cstr[INET6_ADDRSTRLEN] = {0};
-    memcpy(ip_cstr, ip.data(), ip.size());
+    //char ip_cstr[INET6_ADDRSTRLEN] = {0};
+    std::array<char, INET6_ADDRSTRLEN> ip_cstr{0};
 
-    int ret = inet_pton(AF_INET, ip_cstr, &out.data);
+    memcpy(ip_cstr.data(), ip.data(), ip.size());
+
+    int ret = inet_pton(AF_INET, ip_cstr.data(), &out.data);
     if (ret != 1) {
-        ret = inet_pton(AF_INET6, ip_cstr, &out.data);
+        ret = inet_pton(AF_INET6, ip_cstr.data(), &out.data);
         if (ret != 1) {
             return false;
         }
@@ -67,7 +71,7 @@ void ipv4_to_ipv6(ipaddr &out)
     out.data[14] = out.data[2];
     out.data[15] = out.data[3];
 
-    memset(out.data, 0, 10);
+    memset(&out.data[0], 0, 10);
 
     out.mask += 96;
     out.type = ipaddr::address_family::ipv4_mapped_ipv6;
@@ -76,7 +80,7 @@ void ipv4_to_ipv6(ipaddr &out)
 bool parse_cidr(std::string_view str, ipaddr &out)
 {
     auto slash_idx = str.find('/');
-    if (slash_idx != str.npos) {
+    if (slash_idx != std::string_view::npos) {
         if (slash_idx >= INET6_ADDRSTRLEN) {
             return false;
         }
@@ -127,3 +131,4 @@ bool parse_cidr(std::string_view str, ipaddr &out)
 }
 
 } // namespace ddwaf
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

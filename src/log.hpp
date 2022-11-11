@@ -11,12 +11,14 @@
 #include <string>
 #include <type_traits>
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define DDWAF_COMPILE_LOG_TRACE 0
 #define DDWAF_COMPILE_LOG_DEBUG 1
 #define DDWAF_COMPILE_LOG_INFO 2
 #define DDWAF_COMPILE_LOG_WARN 3
 #define DDWAF_COMPILE_LOG_ERROR 4
 #define DDWAF_COMPILE_LOG_OFF 5
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 static_assert(DDWAF_COMPILE_LOG_TRACE == DDWAF_LOG_TRACE);
 static_assert(DDWAF_COMPILE_LOG_DEBUG == DDWAF_LOG_DEBUG);
@@ -29,6 +31,7 @@ static_assert(DDWAF_COMPILE_LOG_OFF == DDWAF_LOG_OFF);
 #  define DDWAF_COMPILE_LOG_LEVEL DDWAF_COMPILE_LOG_TRACE
 #endif
 
+// NOLINTBEGIN
 #if DDWAF_COMPILE_LOG_LEVEL < DDWAF_COMPILE_LOG_OFF
 constexpr const char *base_name(const char *path)
 {
@@ -50,11 +53,11 @@ constexpr const char *base_name(const char *path)
     {                                                                                              \
       if (ddwaf::logger::valid(level)) {                                                           \
         constexpr const char *filename = base_name(file);                                          \
-        int _bytes = snprintf(NULL, 0, fmt, ##__VA_ARGS__);                                        \
+        int _bytes = snprintf(nullptr, 0, fmt, ##__VA_ARGS__);                                        \
         if (_bytes > 0) {                                                                          \
           size_t bytes = (size_t)_bytes;                                                           \
           char *message = (char *)malloc(bytes + 1);                                               \
-          if (message != NULL) {                                                                   \
+          if (message != nullptr) {                                                                   \
             snprintf(message, bytes + 1, fmt, ##__VA_ARGS__);                                      \
             ddwaf::logger::log(level, function, filename, line, message, bytes);                   \
             free((void *)message);                                                                 \
@@ -92,6 +95,7 @@ constexpr const char *base_name(const char *path)
 #else
 #  define DDWAF_ERROR(fmt, ...) (void)0
 #endif
+// NOLINTEND
 
 namespace ddwaf {
 class logger {

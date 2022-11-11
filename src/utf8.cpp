@@ -206,7 +206,7 @@ struct ScratchpadChunck {
     ScratchpadChunck(ScratchpadChunck &&chunck)
         : scratchpad(chunck.scratchpad), length(chunck.length), used(chunck.used)
     {
-        chunck.scratchpad = NULL;
+        chunck.scratchpad = nullptr;
     }
 
     ~ScratchpadChunck() { free(scratchpad); }
@@ -231,7 +231,7 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
         (utf8proc_ssize_t)wbBufferLength,
         (utf8proc_option_t)(UTF8PROC_DECOMPOSE | UTF8PROC_IGNORE | UTF8PROC_COMPAT | UTF8PROC_LUMP |
                             UTF8PROC_STRIPMARK | UTF8PROC_STRIPNA | UTF8PROC_CASEFOLD),
-        NULL);
+        nullptr);
 
     // This decomposition is unfortunately not complete. It leaves behind a few chars like ı (i)
     //  Moreover, some conversions like ß (ss) require casefolding, which changes the case of
@@ -343,7 +343,7 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
 
         if (outputLength > bufferLength) {
             void *newUTF8Buffer = realloc((void *)*_utf8Buffer, outputLength);
-            if (newUTF8Buffer == NULL) {
+            if (newUTF8Buffer == nullptr) {
                 return false;
             }
             *_utf8Buffer = (char *)newUTF8Buffer;

@@ -24,7 +24,7 @@ static bool decodeBase64(char *array, uint64_t &length);
 bool PWTransformer::runTransform(
     ddwaf_object *parameter, const std::function<transformer> &transformer, bool readOnly)
 {
-    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == NULL)
+    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == nullptr)
         return false;
 
     uint64_t newLength = parameter->nbEntries;
@@ -225,7 +225,7 @@ bool PWTransformer::transformNormalize(ddwaf_object *parameter, bool readOnly)
 bool PWTransformer::transformNormalizeWin(ddwaf_object *parameter, bool readOnly)
 {
     // This sanitization is usually handled by runTransform but we want to chain two transforms here
-    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == NULL)
+    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == nullptr)
         return false;
 
     // Look for any backslash
@@ -773,7 +773,7 @@ bool PWTransformer::transformEncodeBase64(ddwaf_object *parameter, bool readOnly
 {
     // If that's a non empty string, we can encode it (assuming it's not too long)
     //  We likely could extend to the other scallars but not until someone ask for it
-    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == NULL ||
+    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == nullptr ||
         parameter->nbEntries == 0 || parameter->nbEntries >= UINT64_MAX / 4 * 3) {
         return false;
     }
@@ -788,7 +788,7 @@ bool PWTransformer::transformEncodeBase64(ddwaf_object *parameter, bool readOnly
     char *newString = (char *)malloc((size_t)encodedLength + 1);
 
     // We don't have a good way to make this test fail in the CI, thus crapping on the coverage
-    if (newString == NULL)
+    if (newString == nullptr)
         return false;
 
     const static char b64Encoding[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
@@ -1009,7 +1009,7 @@ bool PWTransformer::transformRemoveComments(ddwaf_object *parameter, bool readOn
                 }
 
                 while (read < length) {
-                    void *token = NULL;
+                    void *token = nullptr;
                     size_t remaining = (size_t)(length - read);
                     if (type == CommentType::HTML &&
                         (token = memchr(&array[read], '-', remaining))) {
@@ -1056,7 +1056,7 @@ bool PWTransformer::transformNumerize(ddwaf_object *parameter, bool readOnly)
     if (parameter->type != DDWAF_OBJ_STRING)
         return false;
 
-    if (parameter->stringValue == NULL || parameter->nbEntries == 0)
+    if (parameter->stringValue == nullptr || parameter->nbEntries == 0)
         return false;
 
     bool isNegative = parameter->nbEntries > 0 && parameter->stringValue[0] == '-';
@@ -1094,7 +1094,7 @@ bool PWTransformer::transformUnicodeNormalize(ddwaf_object *parameter, bool read
     if (parameter->type != DDWAF_OBJ_STRING)
         return false;
 
-    if (parameter->stringValue == NULL || parameter->nbEntries == 0)
+    if (parameter->stringValue == nullptr || parameter->nbEntries == 0)
         return false;
 
     uint32_t codepoint;
@@ -1131,7 +1131,7 @@ bool PWTransformer::transformURLBaseName(ddwaf_object *parameter, bool readOnly)
 {
     // Skip the read only phase
     if (readOnly) {
-        return parameter != NULL && parameter->type == DDWAF_OBJ_STRING;
+        return parameter != nullptr && parameter->type == DDWAF_OBJ_STRING;
     }
 
     // From the following URI: `/path/index.php?a=b`
@@ -1173,7 +1173,7 @@ bool PWTransformer::transformURLFilename(ddwaf_object *parameter, bool readOnly)
 {
     // Skip the read only phase
     if (readOnly) {
-        return parameter != NULL && parameter->type == DDWAF_OBJ_STRING;
+        return parameter != nullptr && parameter->type == DDWAF_OBJ_STRING;
     }
 
     // From the following URI: `/path/index.php?a=b`
@@ -1196,7 +1196,7 @@ bool PWTransformer::transformURLQueryString(ddwaf_object *parameter, bool readOn
 {
     // Skip the read only phase
     if (readOnly) {
-        return parameter != NULL && parameter->type == DDWAF_OBJ_STRING;
+        return parameter != nullptr && parameter->type == DDWAF_OBJ_STRING;
     }
 
     // From the following URI: `/path/index.php?a=b`
@@ -1365,7 +1365,7 @@ PW_TRANSFORM_ID PWTransformer::getIDForString(std::string_view str)
 bool PWTransformer::doesNeedTransform(
     const std::vector<PW_TRANSFORM_ID> &transformIDs, ddwaf_object *parameter)
 {
-    if (parameter == NULL)
+    if (parameter == nullptr)
         return false;
 
     for (const PW_TRANSFORM_ID &transformID : transformIDs) {

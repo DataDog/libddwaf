@@ -39,7 +39,7 @@ static void print_(parameter args, uint64_t depth)
         std::printf("- %s\n", args.boolean ? "true" : "false");
         break;
     case DDWAF_OBJ_SIGNED: {
-        if (args.parameterName != NULL)
+        if (args.parameterName != nullptr)
             std::printf("- %s: %" PRId64 "\n", args.parameterName, args.intValue);
         else
             std::printf("- %" PRId64 "\n", args.intValue);
@@ -47,7 +47,7 @@ static void print_(parameter args, uint64_t depth)
     }
 
     case DDWAF_OBJ_UNSIGNED: {
-        if (args.parameterName != NULL)
+        if (args.parameterName != nullptr)
             std::printf("- %s: %" PRIu64 "\n", args.parameterName, args.uintValue);
         else
             std::printf("- %" PRIu64 "\n", args.uintValue);
@@ -55,7 +55,7 @@ static void print_(parameter args, uint64_t depth)
     }
 
     case DDWAF_OBJ_STRING: {
-        if (args.parameterName != NULL)
+        if (args.parameterName != nullptr)
             std::printf("- %s: %s\n", args.parameterName, args.stringValue);
         else
             std::printf("- %s\n", args.stringValue);
@@ -63,7 +63,7 @@ static void print_(parameter args, uint64_t depth)
     }
 
     case DDWAF_OBJ_ARRAY: {
-        if (args.parameterName != NULL)
+        if (args.parameterName != nullptr)
             std::printf("- %s:\n", args.parameterName);
 
         for (uint64_t i = 0; i < args.nbEntries; ++i) print_(args.array[i], depth + 1);
@@ -71,7 +71,7 @@ static void print_(parameter args, uint64_t depth)
     }
 
     case DDWAF_OBJ_MAP: {
-        if (args.parameterName != NULL)
+        if (args.parameterName != nullptr)
             std::printf("- %s:\n", args.parameterName);
 
         for (uint64_t i = 0; i < args.nbEntries; ++i) print_(args.array[i], depth + 1);

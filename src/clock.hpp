@@ -34,7 +34,7 @@ public:
     // clock_gettime is called. This approach is only feasible because the
     // WAF calls expired() quite often, otherwise another solution would be
     // required to minimise syscalls.
-    explicit timer(std::chrono::microseconds exp, uint32_t syscall_period = 16)
+    explicit timer(std::chrono::microseconds exp, uint32_t syscall_period = default_syscall_period)
         : start_(monotonic_clock::now()), end_(start_ + exp), syscall_period_(syscall_period)
     {}
 
@@ -58,9 +58,11 @@ public:
     }
 
 protected:
+    constexpr static uint32_t default_syscall_period{16};
+
     monotonic_clock::time_point start_;
     monotonic_clock::time_point end_;
-    const uint32_t syscall_period_{16};
+    const uint32_t syscall_period_;
     uint32_t calls_{1};
     bool expired_{false};
 };
