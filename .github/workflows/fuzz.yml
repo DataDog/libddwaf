@@ -47,7 +47,7 @@ jobs:
         run: tar -czvf fuzzing.tar.gz fuzzing/
 
       - name: Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ always() }}
         with:
           name: fuzzing-data
