@@ -133,7 +133,7 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         map.AddMember("rule", rule, allocator);
         map.AddMember("rule_matches", match_array, allocator);
 
-        for (const std::string_view action : event.actions) { actions.emplace(action); }
+        for (const std::string_view &action : event.actions) { actions.emplace(action); }
 
         doc.PushBack(map, allocator);
     }
