@@ -168,7 +168,7 @@ jobs:
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-arm64/native
           extract_file ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.tar.gz \
             '/libddwaf\.dylib$' ./packages/nuget/runtimes/osx-x64/native
-          extract_file ./artifacts/libddwaf-macos-arm64/libddwaf-*-darwin-x86_64*.tar.gz \
+          extract_file ./artifacts/libddwaf-macos-arm64/libddwaf-*-darwin-arm64*.tar.gz \
             '/libddwaf\.dylib$' ./packages/nuget/runtimes/osx-arm64/native
           extract_file ./artifacts/libddwaf-windows-Win32/libddwaf-*-windows-win32*.tar.gz \
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x86/native
