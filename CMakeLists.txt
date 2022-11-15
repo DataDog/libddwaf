@@ -345,5 +345,8 @@ if (LIBDDWAF_TESTING)
     add_subdirectory(perf EXCLUDE_FROM_ALL)
     add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
     add_subdirectory(examples EXCLUDE_FROM_ALL)
+
+    include(cmake/clang-tidy.cmake)
+    include(cmake/clang-format.cmake)
 endif()
 # vim: set et:

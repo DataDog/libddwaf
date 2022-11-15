@@ -147,3 +147,38 @@ jobs:
       - name: Test WAF
         run: make validate
         working-directory: Debug
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Create directories
+        run: mkdir Debug
+
+      - name: Install clang-{tidy,format}
+        run: |
+          sudo .github/workflows/scripts/llvm.sh 13
+          sudo apt-get install -y clang-tidy-13 clang-format-13
+
+      - name: CMake
+        env:
+          CXX: clang++-13
+          CC: clang-13
+        run: |
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/clang-tidy-13 \
+            -DCLANG_FORMAT=/usr/bin/clang-format-15
+        working-directory: Debug
+
+      - name: Build
+        run: VERBOSE=1 make -j $(nproc)
+        working-directory: Debug
+
+      - name: Format
+        run: make format
+        working-directory: Debug
+
+      - name: Tidy
+        run: make tidy
+        working-directory: Debug
