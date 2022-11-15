@@ -25,15 +25,13 @@ public:
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     runner(settings &s)
-        : iterations_(s.iterations), threads_(s.threads),
-          store_samples(s.store_samples)
+        : iterations_(s.iterations), threads_(s.threads), store_samples(s.store_samples)
     {}
 
     template <typename F, typename... Args>
     void register_fixture(const std::string &name, Args &&...args)
     {
-        tests_.emplace(
-            name, std::make_unique<F>(std::forward<Args &&>(args)...));
+        tests_.emplace(name, std::make_unique<F>(std::forward<Args &&>(args)...));
     }
 
     std::map<std::string_view, test_result> run();

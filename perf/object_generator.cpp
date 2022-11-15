@@ -18,17 +18,15 @@ namespace {
 
 using settings = object_generator::settings;
 
-void generate_object(ddwaf_object &o, const settings &l,
-    std::size_t &max_elements, std::size_t depth = 0);
+void generate_object(
+    ddwaf_object &o, const settings &l, std::size_t &max_elements, std::size_t depth = 0);
 
 char *generate_random_string(const settings &l, std::size_t *length)
 {
-    static const auto &charset =
-        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"!";
+    static const auto &charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                 "`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"!";
 
-    std::size_t numchars =
-        l.string_length.min + random::get() % l.string_length.range();
+    std::size_t numchars = l.string_length.min + random::get() % l.string_length.range();
 
     // NOLINTNEXTLINE
     char *str = (char *)malloc(numchars + 1);
@@ -49,14 +47,13 @@ void generate_string_object(ddwaf_object &o, const settings &l)
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-void generate_map_object(ddwaf_object &o, const settings &l,
-    std::size_t &max_elements, std::size_t depth)
+void generate_map_object(
+    ddwaf_object &o, const settings &l, std::size_t &max_elements, std::size_t depth)
 
 {
     ddwaf_object_map(&o);
 
-    std::size_t n =
-        l.container_size.min + random::get() % l.container_size.range();
+    std::size_t n = l.container_size.min + random::get() % l.container_size.range();
 
     n = std::min(n, max_elements);
 
@@ -71,13 +68,12 @@ void generate_map_object(ddwaf_object &o, const settings &l,
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-void generate_array_object(ddwaf_object &o, const settings &l,
-    std::size_t &max_elements, std::size_t depth)
+void generate_array_object(
+    ddwaf_object &o, const settings &l, std::size_t &max_elements, std::size_t depth)
 {
     ddwaf_object_array(&o);
 
-    std::size_t n =
-        l.container_size.min + random::get() % l.container_size.range();
+    std::size_t n = l.container_size.min + random::get() % l.container_size.range();
 
     n = std::min(n, max_elements);
 
@@ -89,8 +85,8 @@ void generate_array_object(ddwaf_object &o, const settings &l,
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-void generate_object(ddwaf_object &o, const settings &l,
-    std::size_t &max_elements, std::size_t depth)
+void generate_object(
+    ddwaf_object &o, const settings &l, std::size_t &max_elements, std::size_t depth)
 {
     if (max_elements > 0) {
         max_elements--;
@@ -141,8 +137,7 @@ void object_generator::parse_rule(const fs::path &rule_path)
         if (op.as<std::string>() == "phrase_match") {
             const YAML::Node &list = parameters["list"];
             cond_values = list.as<std::vector<ddwaf_object>>();
-            objects_.insert(
-                objects_.end(), cond_values.begin(), cond_values.end());
+            objects_.insert(objects_.end(), cond_values.begin(), cond_values.end());
         } else {
             continue;
         }
@@ -151,8 +146,7 @@ void object_generator::parse_rule(const fs::path &rule_path)
         for (auto addr = inputs.begin(); addr != inputs.end(); ++addr) {
             auto key = (*addr)["address"].as<std::string>();
             auto &current_values = addresses_[key];
-            current_values.insert(
-                current_values.end(), cond_values.begin(), cond_values.end());
+            current_values.insert(current_values.end(), cond_values.begin(), cond_values.end());
         }
     }
 
@@ -182,8 +176,7 @@ object_generator::object_generator(
     const std::vector<std::string_view> &addresses, const fs::path &rules_dir)
 {
     if (!fs::is_directory(rules_dir)) {
-        throw std::invalid_argument(
-            std::string(rules_dir) + " should be a directory");
+        throw std::invalid_argument(std::string(rules_dir) + " should be a directory");
     }
 
     for (auto addr : addresses) { addresses_[addr] = {}; }

@@ -30,14 +30,12 @@ char *to_cstr(rapidjson::StringBuffer &buffer)
 
 rapidjson::GenericStringRef<char> StringRef(std::string_view str)
 {
-    return {
-        str.data(), static_cast<rapidjson::SizeType>(str.size())};
+    return {str.data(), static_cast<rapidjson::SizeType>(str.size())};
 }
 
 rapidjson::GenericStringRef<char> StringRef(const std::string &str)
 {
-    return {
-        str.c_str(), static_cast<rapidjson::SizeType>(str.size())};
+    return {str.c_str(), static_cast<rapidjson::SizeType>(str.size())};
 }
 
 bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
@@ -114,7 +112,9 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         rule.AddMember("tags", tags, allocator);
         if (!event.actions.empty()) {
             on_match.SetArray();
-            for (const auto &action : event.actions) { on_match.PushBack(StringRef(action), allocator); }
+            for (const auto &action : event.actions) {
+                on_match.PushBack(StringRef(action), allocator);
+            }
             rule.AddMember("on_match", on_match, allocator);
         }
 

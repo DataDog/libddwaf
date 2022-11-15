@@ -35,32 +35,29 @@ using generator_type = benchmark::object_generator::generator_type;
 
 std::map<std::string, benchmark::object_generator::settings> default_tests = {
     {"run.random.any", {.type = generator_type::random}},
-    {"run.random.long_strings",
-        {.string_length = {1024, 4096}, .type = generator_type::random}},
-    {"run.random.deep_containers",
-        {.container_depth = {5, 20}, .type = generator_type::random}},
+    {"run.random.long_strings", {.string_length = {1024, 4096}, .type = generator_type::random}},
+    {"run.random.deep_containers", {.container_depth = {5, 20}, .type = generator_type::random}},
     {"run.valid", {.type = generator_type::valid}},
     {"run.mixed", {.type = generator_type::mixed}},
 };
 
 void print_help_and_exit(std::string_view name, std::string_view error = {})
 {
-    std::cerr
-        << "Usage: " << name << " [OPTION]...\n"
-        << "    --rule-repo VALUE     AppSec rules repository path\n"
-        << "    --iterations VALUE    Number of iterations per test\n"
-        << "    --seed VALUE          Seed for the random number generator\n"
-        << "    --format VALUE        Output format: csv, json, human, none\n"
-        << "    --list-tests          List all of the available tests\n"
-        << "    --test                A comma-separated list of tests to run\n"
-        << "    --rtest               A regex matching the tests to run\n"
-        << "    --threads VALUE       Number of threads for concurrent "
-           "testing\n"
-        << "    --output VALUE        Results output file\n"
-        << "    --max-objects VALUE   Maximum number of objects to cache per "
-           "test\n"
-        << "    --raw                 Include all samples in output (only "
-           "works with --format=json\n";
+    std::cerr << "Usage: " << name << " [OPTION]...\n"
+              << "    --rule-repo VALUE     AppSec rules repository path\n"
+              << "    --iterations VALUE    Number of iterations per test\n"
+              << "    --seed VALUE          Seed for the random number generator\n"
+              << "    --format VALUE        Output format: csv, json, human, none\n"
+              << "    --list-tests          List all of the available tests\n"
+              << "    --test                A comma-separated list of tests to run\n"
+              << "    --rtest               A regex matching the tests to run\n"
+              << "    --threads VALUE       Number of threads for concurrent "
+                 "testing\n"
+              << "    --output VALUE        Results output file\n"
+              << "    --max-objects VALUE   Maximum number of objects to cache per "
+                 "test\n"
+              << "    --raw                 Include all samples in output (only "
+                 "works with --format=json\n";
     // " "
 
     if (!error.empty()) {
@@ -106,8 +103,7 @@ std::map<std::string_view, std::string_view> parse_args(int argc, char *argv[])
     return parsed_args;
 }
 
-bool contains(
-    std::map<std::string_view, std::string_view> &opts, std::string_view name)
+bool contains(std::map<std::string_view, std::string_view> &opts, std::string_view name)
 {
     return opts.find(name) != opts.end();
 }
@@ -158,8 +154,7 @@ benchmark::settings generate_settings(int argc, char *argv[])
     if (contains(opts, "iterations")) {
         s.iterations = atoi(opts["iterations"].data());
         if (s.iterations == 0) {
-            print_help_and_exit(
-                argv[0], "Iterations should be a positive number");
+            print_help_and_exit(argv[0], "Iterations should be a positive number");
         }
     }
 
@@ -176,8 +171,7 @@ benchmark::settings generate_settings(int argc, char *argv[])
     if (contains(opts, "max-objects")) {
         s.max_objects = atoi(opts["max-objects"].data());
         if (s.max_objects == 0) {
-            print_help_and_exit(
-                argv[0], "Max objects should be a positive number");
+            print_help_and_exit(argv[0], "Max objects should be a positive number");
         }
     }
 
@@ -220,17 +214,14 @@ benchmark::settings generate_settings(int argc, char *argv[])
     return s;
 }
 
-void initialise_runner(
-    benchmark::runner &runner, ddwaf_handle handle, benchmark::settings &s)
+void initialise_runner(benchmark::runner &runner, ddwaf_handle handle, benchmark::settings &s)
 {
     uint32_t addrs_len;
     const auto *const addrs = ddwaf_required_addresses(handle, &addrs_len);
 
-    std::vector<std::string_view> addresses{
-        addrs, addrs + static_cast<size_t>(addrs_len)};
+    std::vector<std::string_view> addresses{addrs, addrs + static_cast<size_t>(addrs_len)};
 
-    benchmark::object_generator generator(
-        addresses, s.rule_repo / "rules/recommended/");
+    benchmark::object_generator generator(addresses, s.rule_repo / "rules/recommended/");
 
     unsigned num_objects = std::min(s.max_objects, s.iterations);
     for (auto &[k, v] : default_tests) {
@@ -239,8 +230,7 @@ void initialise_runner(
         }
 
         auto objects = generator(v, num_objects);
-        runner.register_fixture<benchmark::run_fixture>(
-            k, handle, std::move(objects));
+        runner.register_fixture<benchmark::run_fixture>(k, handle, std::move(objects));
     }
 }
 
@@ -254,7 +244,7 @@ int main(int argc, char *argv[])
 
     ddwaf_object rule = benchmark::rule_parser::from_file(rule_file);
 
-    ddwaf_config cfg{{0, 0, 0},{nullptr, nullptr}, nullptr};
+    ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
     ddwaf_handle handle = ddwaf_init(&rule, &cfg, nullptr);
     ddwaf_object_free(&rule);
     if (handle == nullptr) {

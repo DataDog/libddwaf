@@ -15,7 +15,7 @@
 
 namespace ddwaf::benchmark {
 
-void output_results(const benchmark::settings &s,
-    const std::map<std::string_view, runner::test_result> &results);
+void output_results(
+    const benchmark::settings &s, const std::map<std::string_view, runner::test_result> &results);
 
 } // namespace ddwaf::benchmark

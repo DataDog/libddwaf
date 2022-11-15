@@ -296,10 +296,7 @@ TEST(FunctionalTests, HandleBad)
 /*ddwaf_destroy(handle2);*/
 /*}*/
 
-TEST(FunctionalTests, ddwaf_get_version)
-{
-    EXPECT_STREQ(ddwaf_get_version(), "1.6.0-alpha0");
-}
+TEST(FunctionalTests, ddwaf_get_version) { EXPECT_STREQ(ddwaf_get_version(), "1.6.0-alpha0"); }
 
 TEST(FunctionalTests, ddwaf_runNull)
 {

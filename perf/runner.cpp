@@ -53,8 +53,8 @@ std::map<std::string_view, runner::test_result> runner::run_st()
 
         for (std::size_t i = 0; i < iterations_; i++) {
             if (!f->set_up()) {
-                std::cerr << "Failed to initialise iteration " << i
-                          << " for fixture " << name << std::endl;
+                std::cerr << "Failed to initialise iteration " << i << " for fixture " << name
+                          << std::endl;
                 break;
             }
 
@@ -69,11 +69,10 @@ std::map<std::string_view, runner::test_result> runner::run_st()
         auto samples = store_samples ? times : std::vector<uint64_t>();
 
         std::sort(times.begin(), times.end());
-        results.emplace(name, test_result{average, percentile(times, 0),
-                        percentile(times, 50), percentile(times, 75),
-                        percentile(times, 90), percentile(times, 95),
-                        percentile(times, 99), percentile(times, 100),
-                        standard_deviation(times, average), samples});
+        results.emplace(name,
+            test_result{average, percentile(times, 0), percentile(times, 50), percentile(times, 75),
+                percentile(times, 90), percentile(times, 95), percentile(times, 99),
+                percentile(times, 100), standard_deviation(times, average), samples});
     }
 
     return results;
@@ -108,8 +107,8 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
             double average = 0.0;
             for (std::size_t i = 0; i < iterations_; i++) {
                 if (!f->set_up()) {
-                    std::cerr << "Failed to initialise iteration " << i
-                              << " for fixture " << name << std::endl;
+                    std::cerr << "Failed to initialise iteration " << i << " for fixture " << name
+                              << std::endl;
                     break;
                 }
 
@@ -123,11 +122,10 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
             average /= times.size();
             auto samples = store_samples ? times : std::vector<uint64_t>();
             std::sort(times.begin(), times.end());
-            test_result tr = {average, percentile(times, 0),
-                percentile(times, 50), percentile(times, 75),
-                percentile(times, 90), percentile(times, 95),
-                percentile(times, 99), percentile(times, 100),
-                standard_deviation(times, average), samples};
+            test_result tr = {average, percentile(times, 0), percentile(times, 50),
+                percentile(times, 75), percentile(times, 90), percentile(times, 95),
+                percentile(times, 99), percentile(times, 100), standard_deviation(times, average),
+                samples};
 
             {
                 std::lock_guard<std::mutex> lg(result_mtx);

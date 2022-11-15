@@ -13,10 +13,7 @@ namespace YAML {
 class parsing_error : public std::exception {
 public:
     explicit parsing_error(std::string what) : what_(std::move(what)) {}
-    [[nodiscard]] const char *what() const noexcept override
-    {
-        return what_.c_str();
-    }
+    [[nodiscard]] const char *what() const noexcept override { return what_.c_str(); }
 
 protected:
     const std::string what_;

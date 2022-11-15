@@ -53,11 +53,11 @@ constexpr const char *base_name(const char *path)
     {                                                                                              \
       if (ddwaf::logger::valid(level)) {                                                           \
         constexpr const char *filename = base_name(file);                                          \
-        int _bytes = snprintf(nullptr, 0, fmt, ##__VA_ARGS__);                                        \
+        int _bytes = snprintf(nullptr, 0, fmt, ##__VA_ARGS__);                                     \
         if (_bytes > 0) {                                                                          \
           size_t bytes = (size_t)_bytes;                                                           \
           char *message = (char *)malloc(bytes + 1);                                               \
-          if (message != nullptr) {                                                                   \
+          if (message != nullptr) {                                                                \
             snprintf(message, bytes + 1, fmt, ##__VA_ARGS__);                                      \
             ddwaf::logger::log(level, function, filename, line, message, bytes);                   \
             free((void *)message);                                                                 \

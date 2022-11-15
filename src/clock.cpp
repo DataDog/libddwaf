@@ -39,8 +39,8 @@ monotonic_clock::time_point monotonic_clock::now() noexcept
 std::atomic_bool monotonic_clock::warning_issued{};
 
 struct VdsoInitializer {
-    VdsoInitializer() noexcept :
-        handle(dlopen("linux-vdso.so.1", RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD))
+    VdsoInitializer() noexcept
+        : handle(dlopen("linux-vdso.so.1", RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD))
     {
         if (handle != nullptr) {
             void *p = dlsym(handle, "__vdso_clock_gettime");
@@ -59,10 +59,11 @@ struct VdsoInitializer {
         }
     }
 
-    VdsoInitializer(const VdsoInitializer&) = delete;
-    VdsoInitializer& operator=(const VdsoInitializer&) = delete;
-    VdsoInitializer(VdsoInitializer&&) = delete;
-    VdsoInitializer& operator=(VdsoInitializer&&) = delete;
+    VdsoInitializer(const VdsoInitializer &) = delete;
+    VdsoInitializer &operator=(const VdsoInitializer &) = delete;
+    VdsoInitializer(VdsoInitializer &&) = delete;
+    VdsoInitializer &operator=(VdsoInitializer &&) = delete;
+
 private:
     void *handle;
 };
