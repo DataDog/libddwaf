@@ -159,16 +159,16 @@ jobs:
 
       - name: Install clang-{tidy,format}
         run: |
-          sudo .github/workflows/scripts/llvm.sh 13
-          sudo apt-get install -y clang-tidy-13 clang-format-13
+          sudo .github/workflows/scripts/llvm.sh 15
+          sudo apt-get install -y clang-tidy-15 clang-format-15
 
       - name: CMake
         env:
-          CXX: clang++-13
-          CC: clang-13
+          CXX: clang++-15
+          CC: clang-15
         run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/clang-tidy-13 \
-            -DCLANG_FORMAT=/usr/bin/clang-format-13
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/clang-tidy-15 \
+            -DCLANG_FORMAT=/usr/bin/clang-format-15
         working-directory: Debug
 
       - name: Build
