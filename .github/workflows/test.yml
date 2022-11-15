@@ -168,7 +168,7 @@ jobs:
           CC: clang-13
         run: |
           cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/clang-tidy-13 \
-            -DCLANG_FORMAT=/usr/bin/clang-format-15
+            -DCLANG_FORMAT=/usr/bin/clang-format-13
         working-directory: Debug
 
       - name: Build
