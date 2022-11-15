@@ -6,20 +6,18 @@
 
 #include "test.h"
 
-void populateManifest(ddwaf::manifest& manifest)
+void populateManifest(ddwaf::manifest &manifest)
 {
     ddwaf::manifest_builder mb;
-    for (auto key : { "value", "key", "mixed", "mixed2" })
-    {
-        mb.insert(key, {});
-    }
+    for (auto key : {"value", "key", "mixed", "mixed2"}) { mb.insert(key, {}); }
     manifest = mb.build_manifest();
 }
 
 TEST(TestAdditive, TestMultiCall)
 {
-    //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
+    // Initialize a PowerWAF rule
+    auto rule = readRule(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -48,7 +46,8 @@ TEST(TestAdditive, TestMultiCall)
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
+    EXPECT_STREQ(ret.data,
+        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);
@@ -69,7 +68,8 @@ TEST(TestAdditive, TestBad)
     EXPECT_FALSE(ret.timeout);
     ddwaf_object_free(&object);
 
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
+    auto rule = readRule(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -98,8 +98,9 @@ TEST(TestAdditive, TestBad)
 
 TEST(TestAdditive, TestParameterOverride)
 {
-    //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: ^string.*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
+    // Initialize a PowerWAF rule
+    auto rule = readRule(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: ^string.*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -126,7 +127,8 @@ TEST(TestAdditive, TestParameterOverride)
     // Override `arg1`
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
-    EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"^string.*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
+    EXPECT_STREQ(ret.data,
+        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"^string.*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
     ddwaf_result_free(&ret);
 
     // Run again without change

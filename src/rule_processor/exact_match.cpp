@@ -7,19 +7,15 @@
 #include <exception.hpp>
 #include <rule_processor/exact_match.hpp>
 
-namespace ddwaf::rule_processor
-{
+namespace ddwaf::rule_processor {
 
-exact_match::exact_match(std::vector<std::string> &&data):
-    data_(std::move(data))
+exact_match::exact_match(std::vector<std::string> &&data) : data_(std::move(data))
 {
     values_.reserve(data_.size());
-    for (const auto &str : data_) {
-        values_.emplace(str, 0);
-    }
+    for (const auto &str : data_) { values_.emplace(str, 0); }
 }
 
-exact_match::exact_match(const std::vector<std::pair<std::string_view,uint64_t>> &data)
+exact_match::exact_match(const std::vector<std::pair<std::string_view, uint64_t>> &data)
 {
     data_.reserve(data.size());
     values_.reserve(data.size());
@@ -42,7 +38,8 @@ std::optional<event::match> exact_match::match(std::string_view str) const
 
     if (it->second > 0) {
         uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::system_clock::now().time_since_epoch())
+                           .count();
         if (it->second < now) {
             return std::nullopt;
         }
@@ -50,4 +47,4 @@ std::optional<event::match> exact_match::match(std::string_view str) const
     return make_event(str, str);
 }
 
-}
+} // namespace ddwaf::rule_processor

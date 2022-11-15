@@ -47,8 +47,9 @@ TEST(TestIsSQLi, TestInvalidInput)
 
 TEST(TestIsSQLi, TestRuleset)
 {
-    //Initialize a PowerWAF rule
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_sqli, parameters: {inputs: [{address: arg1}]}}]}]})");
+    // Initialize a PowerWAF rule
+    auto rule = readRule(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_sqli, parameters: {inputs: [{address: arg1}]}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -68,18 +69,12 @@ TEST(TestIsSQLi, TestRuleset)
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret,
-    {
-        .id = "1",
-        .name = "rule1",
-        .type = "flow1",
-        .category = "category1",
-        .matches = {{
-            .op = "is_sqli",
-            .address = "arg1",
-            .value = "'OR 1=1/*",
-            .highlight = "s&1c"
-        }}
-    });
+        {.id = "1",
+            .name = "rule1",
+            .type = "flow1",
+            .category = "category1",
+            .matches = {
+                {.op = "is_sqli", .address = "arg1", .value = "'OR 1=1/*", .highlight = "s&1c"}}});
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

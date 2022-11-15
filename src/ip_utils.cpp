@@ -4,40 +4,45 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <ip_utils.hpp>
-#include <cstring>
+#include <array>
 #include <cctype>
+#include <cstring>
+#include <ip_utils.hpp>
 #include <string>
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 #if defined(_WIN32) || defined(__MINGW32__)
 
-#if defined(__MINGW32__) || defined(_WIN32_WINNT)
+#  if defined(__MINGW32__) || defined(_WIN32_WINNT)
 // Mingw is messing with the NT version
 // https://github.com/msys2/MINGW-packages/issues/6191
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x600
-#endif
+#    undef _WIN32_WINNT
+#    define _WIN32_WINNT 0x600
+#  endif
 
-#include <ws2tcpip.h>
+#  include <ws2tcpip.h>
 #else
-#include <arpa/inet.h>
+#  include <arpa/inet.h>
+#  include <netinet/in.h>
 #endif
 
 namespace ddwaf {
 
-bool parse_ip(std::string_view ip, ipaddr& out)
+bool parse_ip(std::string_view ip, ipaddr &out)
 {
     if (ip.size() >= INET6_ADDRSTRLEN) {
         return false;
     }
 
     // Assume the string has no '\0'
-    char ip_cstr[INET6_ADDRSTRLEN] = {0};
-    memcpy(ip_cstr, ip.data(), ip.size());
+    //char ip_cstr[INET6_ADDRSTRLEN] = {0};
+    std::array<char, INET6_ADDRSTRLEN> ip_cstr{0};
 
-    int ret = inet_pton(AF_INET, ip_cstr, &out.data);
+    memcpy(ip_cstr.data(), ip.data(), ip.size());
+
+    int ret = inet_pton(AF_INET, ip_cstr.data(), &out.data);
     if (ret != 1) {
-        ret = inet_pton(AF_INET6, ip_cstr, &out.data);
+        ret = inet_pton(AF_INET6, ip_cstr.data(), &out.data);
         if (ret != 1) {
             return false;
         }
@@ -50,7 +55,7 @@ bool parse_ip(std::string_view ip, ipaddr& out)
     return true;
 }
 
-void ipv4_to_ipv6(ipaddr& out)
+void ipv4_to_ipv6(ipaddr &out)
 {
     if (out.type != ipaddr::address_family::ipv4) {
         return;
@@ -67,24 +72,28 @@ void ipv4_to_ipv6(ipaddr& out)
     out.data[14] = out.data[2];
     out.data[15] = out.data[3];
 
-    memset(out.data, 0, 10);
+    memset(&out.data[0], 0, 10);
 
     out.mask += 96;
     out.type = ipaddr::address_family::ipv4_mapped_ipv6;
 }
 
-bool parse_cidr(std::string_view str, ipaddr& out)
+bool parse_cidr(std::string_view str, ipaddr &out)
 {
     auto slash_idx = str.find('/');
-    if (slash_idx != str.npos) {
+    if (slash_idx != std::string_view::npos) {
         if (slash_idx >= INET6_ADDRSTRLEN) {
             return false;
         }
 
         auto mask_len = str.size() - slash_idx - 1;
-        if (mask_len == 0 || mask_len > 3) { return false; }
+        if (mask_len == 0 || mask_len > 3) {
+            return false;
+        }
 
-        if (!parse_ip(str.substr(0, slash_idx), out)) { return false; }
+        if (!parse_ip(str.substr(0, slash_idx), out)) {
+            return false;
+        }
 
         int mask;
         try {
@@ -94,14 +103,15 @@ bool parse_cidr(std::string_view str, ipaddr& out)
         }
 
         if ((out.type == ipaddr::address_family::ipv4 && mask > 32) ||
-            (out.type == ipaddr::address_family::ipv6 && mask > 128) ||
-            mask < 0) {
+            (out.type == ipaddr::address_family::ipv6 && mask > 128) || mask < 0) {
             return false;
         }
 
         out.mask = static_cast<uint8_t>(mask);
     } else {
-        if (!parse_ip(str, out)) { return false; }
+        if (!parse_ip(str, out)) {
+            return false;
+        }
     }
 
     ipv4_to_ipv6(out);
@@ -115,12 +125,11 @@ bool parse_cidr(std::string_view str, ipaddr& out)
         // We then flip the bits (resulting in 1100_0000) and use that as a mask
         out.data[byte_index] &= ~(0xff >> (out.mask & 0x7));
 
-        while (++byte_index < 16) {
-            out.data[byte_index] = 0;
-        }
+        while (++byte_index < 16) { out.data[byte_index] = 0; }
     }
 
     return true;
 }
 
-}
+} // namespace ddwaf
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

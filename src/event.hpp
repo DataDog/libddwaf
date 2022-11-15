@@ -38,8 +38,9 @@ using optional_match = std::optional<event::match>;
 
 class event_serializer {
 public:
-    explicit event_serializer(const ddwaf::obfuscator &event_obfuscator):
-        obfuscator_(event_obfuscator) {}
+    explicit event_serializer(const ddwaf::obfuscator &event_obfuscator)
+        : obfuscator_(event_obfuscator)
+    {}
 
     void serialize(const std::vector<event> &events, ddwaf_result &output) const;
 

@@ -11,57 +11,51 @@
 #include <map>
 #include <string_view>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-class ruleset_info
-{
+class ruleset_info {
 public:
-    explicit ruleset_info(ddwaf_ruleset_info* info_ = nullptr) : info(info_)
+    explicit ruleset_info(ddwaf_ruleset_info *info_ = nullptr) : info(info_)
     {
-        if (info == nullptr)
-        {
+        if (info == nullptr) {
             return;
         }
-        info->loaded  = 0;
-        info->failed  = 0;
+        info->loaded = 0;
+        info->failed = 0;
         info->version = nullptr;
         ddwaf_object_map(&info->errors);
     }
 
     void add_failed()
     {
-        if (info != nullptr)
-        {
+        if (info != nullptr) {
             info->failed++;
         }
     }
     void add_loaded()
     {
-        if (info != nullptr)
-        {
+        if (info != nullptr) {
             info->loaded++;
         }
     }
 
     void set_version(std::string_view version)
     {
-        if (info == nullptr || version.size() == 0 || version == "")
-        {
+        if (info == nullptr || version.size() == 0 || version == "") {
             return;
         }
 
-        char* str = new char[version.size() + 1];
+        char *str = new char[version.size() + 1];
         std::memcpy(str, version.data(), version.size());
         str[version.size()] = '\0';
-        info->version       = str;
+        info->version = str;
     }
 
     void insert_error(std::string_view rule_id, std::string_view error);
 
 protected:
     std::map<std::string_view, uint64_t> error_obj_cache;
-    ddwaf_ruleset_info* info;
+    ddwaf_ruleset_info *info;
 };
 
-}
+} // namespace ddwaf

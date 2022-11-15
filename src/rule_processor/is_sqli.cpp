@@ -4,19 +4,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <rule_processor/is_sqli.hpp>
 #include <libinjection.h>
+#include <rule_processor/is_sqli.hpp>
 #include <utils.h>
 
-namespace ddwaf::rule_processor
-{
+namespace ddwaf::rule_processor {
 
 std::optional<event::match> is_sqli::match(std::string_view str) const
 {
     if (str.empty() || str.data() == nullptr) {
         return std::nullopt;
     }
-    //The mandated length is 8
+    // The mandated length is 8
     char fingerprint[16] = {0};
     if (!libinjection_sqli(str.data(), str.size(), fingerprint)) {
         return std::nullopt;
@@ -25,4 +24,4 @@ std::optional<event::match> is_sqli::match(std::string_view str) const
     return make_event(str, fingerprint);
 }
 
-}
+} // namespace ddwaf::rule_processor

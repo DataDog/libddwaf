@@ -8,13 +8,14 @@
 
 namespace ddwaf {
 
-bool exclusion_filter::match(const object_store& store,
-    const ddwaf::manifest &manifest,
-    cache_type &cache, ddwaf::timer& deadline) const
+bool exclusion_filter::match(const object_store &store, const ddwaf::manifest &manifest,
+    cache_type &cache, ddwaf::timer &deadline) const
 {
-    if (cache.result) { return true; }
+    if (cache.result) {
+        return true;
+    }
 
-    for (auto cond : conditions_) {
+    for (const auto &cond : conditions_) {
         // If there's a (false) cache hit, we only need to run this condition
         // on new parameters.
         bool run_on_new = false;

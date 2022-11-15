@@ -7,11 +7,10 @@
 #include <iostream>
 #include <manifest.hpp>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-manifest::target_type manifest_builder::insert(const std::string& root,
-    const std::vector<std::string>& key_path)
+manifest::target_type manifest_builder::insert(
+    const std::string &root, const std::vector<std::string> &key_path)
 {
     auto it = targets_.find(root);
     if (it == targets_.end()) {
@@ -35,7 +34,8 @@ manifest::target_type manifest_builder::insert(const std::string& root,
     return generate_target(root_id, derived_it->second);
 }
 
-manifest manifest_builder::build_manifest() {
+manifest manifest_builder::build_manifest()
+{
     std::unordered_map<std::string, manifest::target_type> targets;
     std::unordered_map<manifest::target_type, manifest::target_info> info;
 
@@ -51,7 +51,7 @@ manifest manifest_builder::build_manifest() {
         }
     }
 
-    return manifest(std::move(targets), std::move(info));
+    return {std::move(targets), std::move(info)};
 }
 
-}
+} // namespace ddwaf

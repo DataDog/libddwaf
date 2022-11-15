@@ -8,7 +8,6 @@
 #include <unordered_map>
 
 #include "clock.hpp"
-#include <waf.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>
 #include <log.hpp>
@@ -16,14 +15,14 @@
 #include <parser/parser.hpp>
 #include <stdexcept>
 #include <utils.h>
+#include <waf.hpp>
 
 using namespace std::literals;
 
-namespace ddwaf
-{
+namespace ddwaf {
 
 namespace {
-obfuscator obfuscator_from_config(const ddwaf_config* config)
+obfuscator obfuscator_from_config(const ddwaf_config *config)
 {
     std::string_view key_regex;
     std::string_view value_regex;
@@ -46,19 +45,15 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
     ddwaf::object_limits limits;
 
     if (config != nullptr) {
-        if (config->limits.max_container_size != 0)
-        {
+        if (config->limits.max_container_size != 0) {
             limits.max_container_size = config->limits.max_container_size;
         }
 
-        if (config->limits.max_container_depth != 0)
-        {
+        if (config->limits.max_container_depth != 0) {
             limits.max_container_depth = config->limits.max_container_depth;
         }
 
-
-        if (config->limits.max_string_length != 0)
-        {
+        if (config->limits.max_string_length != 0) {
             limits.max_string_length = config->limits.max_string_length;
         }
     }
@@ -68,11 +63,10 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
 
 } // namespace
 
-waf* waf::from_config(const ddwaf_object &ruleset,
-    const ddwaf_config* config, ddwaf::ruleset_info& info)
+waf *waf::from_config(
+    const ddwaf_object &ruleset, const ddwaf_config *config, ddwaf::ruleset_info &info)
 {
-    try
-    {
+    try {
         ddwaf::config cfg{
             limits_from_config(config),
             obfuscator_from_config(config),
@@ -82,15 +76,12 @@ waf* waf::from_config(const ddwaf_object &ruleset,
         ddwaf::ruleset rs;
         parser::parse(ruleset, info, rs, cfg);
         return new waf(std::move(rs), std::move(cfg));
-    }
-    catch (const std::exception& e)
-    {
+    } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
     }
 
     return nullptr;
 }
-
 
 void waf::toggle_rules(ddwaf::parameter::map &&input)
 {
@@ -106,4 +97,4 @@ void waf::toggle_rules(ddwaf::parameter::map &&input)
     }
 }
 
-}
+} // namespace ddwaf

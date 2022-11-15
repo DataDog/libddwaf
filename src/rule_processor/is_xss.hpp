@@ -6,18 +6,16 @@
 
 #pragma once
 
-#include <rule_processor/base.hpp>
 #include <libinjection.h>
+#include <rule_processor/base.hpp>
 
-namespace ddwaf::rule_processor
-{
+namespace ddwaf::rule_processor {
 
-class is_xss : public base
-{
+class is_xss : public base {
 public:
     is_xss() = default;
     std::string_view name() const override { return "is_xss"; }
     std::optional<event::match> match(std::string_view pattern) const override;
 };
 
-}
+} // namespace ddwaf::rule_processor

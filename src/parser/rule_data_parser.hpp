@@ -6,14 +6,12 @@
 
 #pragma once
 
-#include <parser/common.hpp>
 #include <parameter.hpp>
+#include <parser/common.hpp>
 #include <string_view>
 
-namespace ddwaf::parser
-{
+namespace ddwaf::parser {
 
-template <typename T>
-T parse_rule_data(std::string_view type, parameter &input);
+template <typename T> T parse_rule_data(std::string_view type, parameter &input);
 
 }

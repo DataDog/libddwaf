@@ -17,14 +17,13 @@ TEST(TestRule, Match)
 
     auto manifest = mb.build_manifest();
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-    ddwaf::rule rule("id", "name", "type", "category",
-        std::move(conditions), {"update", "block", "passlist"});
+    ddwaf::rule rule(
+        "id", "name", "type", "category", std::move(conditions), {"update", "block", "passlist"});
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -65,8 +64,7 @@ TEST(TestRule, NoMatch)
 
     auto manifest = mb.build_manifest();
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -95,17 +93,16 @@ TEST(TestRule, ValidateCachedMatch)
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("http.client_ip", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("usr.id", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -177,17 +174,16 @@ TEST(TestRule, MatchWithoutCache)
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("http.client_ip", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("usr.id", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -253,17 +249,16 @@ TEST(TestRule, NoMatchWithoutCache)
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("http.client_ip", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("usr.id", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -310,17 +305,16 @@ TEST(TestRule, FullCachedMatchSecondRun)
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("http.client_ip", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<ddwaf::manifest::target_type> targets;
         targets.push_back(mb.insert("usr.id", {}));
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -328,7 +322,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
     auto manifest = mb.build_manifest();
     ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
 
-    // In this test we validate that when a match has already occurred, the 
+    // In this test we validate that when a match has already occurred, the
     // second run for the same rule returns no events regardless of input.
 
     ddwaf::rule::cache_type cache;
@@ -360,7 +354,6 @@ TEST(TestRule, FullCachedMatchSecondRun)
         EXPECT_FALSE(event.has_value());
     }
 }
-
 
 TEST(TestRule, ToggleSingleRule)
 {
@@ -420,33 +413,24 @@ TEST(TestRule, ToggleRuleInCollection)
     ddwaf_object_free(&rule);
 
     std::unordered_map<std::string, ddwaf::test::event> events = {
-        {"id-rule-3", ddwaf::test::event{
-            .id = "id-rule-3",
-            .name = "rule3",
-            .type = "flow2",
-            .category = "category3",
-            .matches = {{
-                .op = "match_regex",
-                .op_value = "rule2",
-                .address = "value2",
-                .value = "rule2",
-                .highlight = "rule2"
-            }}
-        }},
-        {"id-rule-2", ddwaf::test::event{
-            .id = "id-rule-2",
-            .name = "rule2",
-            .type = "flow2",
-            .category = "category2",
-            .matches = {{
-                .op = "match_regex",
-                .op_value = "rule2",
-                .address = "value2",
-                .value = "rule2",
-                .highlight = "rule2"
-            }}
-        }}
-    };
+        {"id-rule-3", ddwaf::test::event{.id = "id-rule-3",
+                          .name = "rule3",
+                          .type = "flow2",
+                          .category = "category3",
+                          .matches = {{.op = "match_regex",
+                              .op_value = "rule2",
+                              .address = "value2",
+                              .value = "rule2",
+                              .highlight = "rule2"}}}},
+        {"id-rule-2", ddwaf::test::event{.id = "id-rule-2",
+                          .name = "rule2",
+                          .type = "flow2",
+                          .category = "category2",
+                          .matches = {{.op = "match_regex",
+                              .op_value = "rule2",
+                              .address = "value2",
+                              .value = "rule2",
+                              .highlight = "rule2"}}}}};
 
     // Due to the use of unordered structures we can't really know which rule
     // will match first as it's implementation dependent, so we keep track of

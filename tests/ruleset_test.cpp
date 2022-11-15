@@ -9,10 +9,10 @@
 using namespace ddwaf;
 
 namespace {
-std::vector<rule::ptr> test_rules() {
-    return {
-        std::make_shared<ddwaf::rule>("id0", "name", "type0", "category0",
-            std::vector<condition::ptr>{}, std::vector<std::string>{}),
+std::vector<rule::ptr> test_rules()
+{
+    return {std::make_shared<ddwaf::rule>("id0", "name", "type0", "category0",
+                std::vector<condition::ptr>{}, std::vector<std::string>{}),
         std::make_shared<ddwaf::rule>("id1", "name", "type1", "category0",
             std::vector<condition::ptr>{}, std::vector<std::string>{}),
         std::make_shared<ddwaf::rule>("id2", "name", "type1", "category0",
@@ -22,8 +22,7 @@ std::vector<rule::ptr> test_rules() {
         std::make_shared<ddwaf::rule>("id4", "name", "type2", "category1",
             std::vector<condition::ptr>{}, std::vector<std::string>{}),
         std::make_shared<ddwaf::rule>("id5", "name", "type2", "category1",
-            std::vector<condition::ptr>{}, std::vector<std::string>{})
-    };
+            std::vector<condition::ptr>{}, std::vector<std::string>{})};
 }
 } // namespace
 

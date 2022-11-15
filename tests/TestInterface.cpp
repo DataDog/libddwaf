@@ -195,7 +195,8 @@ TEST(FunctionalTests, HandleGood)
         EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
 
-        EXPECT_STREQ(ret.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value1","key_path":["0"],"value":"rule2","highlight":["rule2"]}]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["bla"],"value":"rule3","highlight":["rule3"]}]}]}])");
+        EXPECT_STREQ(ret.data,
+            R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value1","key_path":["0"],"value":"rule2","highlight":["rule2"]}]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["bla"],"value":"rule3","highlight":["rule3"]}]}]}])");
 
         ddwaf_result_free(&ret);
         ddwaf_context_destroy(context);
@@ -242,57 +243,57 @@ TEST(FunctionalTests, HandleBad)
 
 /*TEST(FunctionalTests, Budget)*/
 /*{*/
-    /*ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};*/
+/*ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};*/
 
-    /*auto rule = readFile("interface.yaml");*/
-    /*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
+/*auto rule = readFile("interface.yaml");*/
+/*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
 
-    /*ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);*/
-    /*ASSERT_NE(handle1, nullptr);*/
-    /*ddwaf_object_free(&rule);*/
+/*ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);*/
+/*ASSERT_NE(handle1, nullptr);*/
+/*ddwaf_object_free(&rule);*/
 
-    /*rule = readFile("interface2.yaml");*/
-    /*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
+/*rule = readFile("interface2.yaml");*/
+/*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
 
-    /*ddwaf_handle handle2 = ddwaf_init(&rule, &config, nullptr);*/
-    /*ASSERT_NE(handle2, nullptr);*/
-    /*ddwaf_object_free(&rule);*/
+/*ddwaf_handle handle2 = ddwaf_init(&rule, &config, nullptr);*/
+/*ASSERT_NE(handle2, nullptr);*/
+/*ddwaf_object_free(&rule);*/
 
-    /*ddwaf_context context1 = ddwaf_context_init(handle1);*/
-    /*ASSERT_NE(context1, nullptr);*/
+/*ddwaf_context context1 = ddwaf_context_init(handle1);*/
+/*ASSERT_NE(context1, nullptr);*/
 
-    /*ddwaf_context context2 = ddwaf_context_init(handle2);*/
-    /*ASSERT_NE(context2, nullptr);*/
+/*ddwaf_context context2 = ddwaf_context_init(handle2);*/
+/*ASSERT_NE(context2, nullptr);*/
 
-    /*ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;*/
-    /*ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;*/
+/*ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;*/
+/*ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;*/
 
-    /*ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));*/
-    /*ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));*/
+/*ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));*/
+/*ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));*/
 
-    /*ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));*/
+/*ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));*/
 
-    /*ddwaf_object_map_add(&parameter, "value1", &param_val);*/
-    /*ddwaf_object_map_add(&parameter, "value2", &param_key);*/
+/*ddwaf_object_map_add(&parameter, "value1", &param_val);*/
+/*ddwaf_object_map_add(&parameter, "value2", &param_key);*/
 
-    /*ddwaf_result ret;*/
+/*ddwaf_result ret;*/
 /*[>    EXPECT_EQ(ddwaf_run(context1, &parameter, &ret, LONG_TIME), DDWAF_MATCH);<]*/
-    /*[>EXPECT_FALSE(ret.timeout);<]*/
-    /*[>ddwaf_result_free(&ret);<]*/
-    /*[>EXPECT_EQ(ddwaf_run(context2, &parameter, &ret, LONG_TIME), DDWAF_MATCH);<]*/
-    /*[>EXPECT_FALSE(ret.timeout);<]*/
-    /*[>ddwaf_result_free(&ret);<]*/
+/*[>EXPECT_FALSE(ret.timeout);<]*/
+/*[>ddwaf_result_free(&ret);<]*/
+/*[>EXPECT_EQ(ddwaf_run(context2, &parameter, &ret, LONG_TIME), DDWAF_MATCH);<]*/
+/*[>EXPECT_FALSE(ret.timeout);<]*/
+/*[>ddwaf_result_free(&ret);<]*/
 
-    /*EXPECT_EQ(ddwaf_run(context1, &parameter, &ret, SHORT_TIME), DDWAF_OK);*/
-    /*EXPECT_EQ(ddwaf_run(context2, &parameter, &ret, SHORT_TIME), DDWAF_OK);*/
+/*EXPECT_EQ(ddwaf_run(context1, &parameter, &ret, SHORT_TIME), DDWAF_OK);*/
+/*EXPECT_EQ(ddwaf_run(context2, &parameter, &ret, SHORT_TIME), DDWAF_OK);*/
 
-    /*ddwaf_object_free(&parameter);*/
+/*ddwaf_object_free(&parameter);*/
 
-    /*ddwaf_context_destroy(context1);*/
-    /*ddwaf_context_destroy(context2);*/
+/*ddwaf_context_destroy(context1);*/
+/*ddwaf_context_destroy(context2);*/
 
-    /*ddwaf_destroy(handle1);*/
-    /*ddwaf_destroy(handle2);*/
+/*ddwaf_destroy(handle1);*/
+/*ddwaf_destroy(handle2);*/
 /*}*/
 
 TEST(FunctionalTests, ddwaf_get_version)
@@ -304,7 +305,8 @@ TEST(FunctionalTests, ddwaf_runNull)
 {
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
 
-    auto rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
+    auto rule = readRule(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -319,14 +321,16 @@ TEST(FunctionalTests, ddwaf_runNull)
 
     ddwaf_result out;
     EXPECT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
-    EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"\u0000Arachni\u0000","highlight":["Arachni"]}]}]}])");
+    EXPECT_STREQ(out.data,
+        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"\u0000Arachni\u0000","highlight":["Arachni"]}]}]}])");
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 
     ////Add a removeNull transformer
-    rule = readRule(R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}], transformers: [removeNulls]}]})");
+    rule = readRule(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}], transformers: [removeNulls]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -337,7 +341,8 @@ TEST(FunctionalTests, ddwaf_runNull)
 
     EXPECT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
-    EXPECT_STREQ(out.data, R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"Arachni","highlight":["Arachni"]}]}]}])");
+    EXPECT_STREQ(out.data,
+        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"arachni_detection","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Arachni","parameters":[{"address":"bla","key_path":[],"value":"Arachni","highlight":["Arachni"]}]}]}])");
 
     ddwaf_object_free(&map);
     ddwaf_result_free(&out);

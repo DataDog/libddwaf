@@ -14,24 +14,22 @@
 #include <unordered_set>
 #include <vector>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-class parameter : public ddwaf_object
-{
+class parameter : public ddwaf_object {
 public:
     typedef std::unordered_map<std::string_view, parameter> map;
     typedef std::vector<parameter> vector;
     typedef std::unordered_set<std::string_view> string_set;
 
     parameter() = default;
-    parameter(const ddwaf_object& arg) { *((ddwaf_object*) this) = arg; }
+    parameter(const ddwaf_object &arg) { *((ddwaf_object *)this) = arg; }
 
-    parameter(const parameter&) = default;
-    parameter& operator=(const parameter&) = default;
+    parameter(const parameter &) = default;
+    parameter &operator=(const parameter &) = default;
 
-    parameter(parameter&&) = delete;
-    parameter operator=(parameter&&) = delete;
+    parameter(parameter &&) = delete;
+    parameter operator=(parameter &&) = delete;
 
     void print();
 
@@ -48,52 +46,36 @@ public:
     ~parameter() = default;
 };
 
-template <typename T>
-struct parameter_traits
-{
-    static const char* name() { return typeid(T).name(); }
+template <typename T> struct parameter_traits {
+    static const char *name() { return typeid(T).name(); }
 };
 
-template <>
-struct parameter_traits<std::string>
-{
-    static const char* name() { return "std::string"; }
+template <> struct parameter_traits<std::string> {
+    static const char *name() { return "std::string"; }
 };
 
-template <>
-struct parameter_traits<std::string_view>
-{
-    static const char* name() { return "std::string_view"; }
+template <> struct parameter_traits<std::string_view> {
+    static const char *name() { return "std::string_view"; }
 };
 
-template <>
-struct parameter_traits<parameter::map>
-{
-    static const char* name() { return "parameter::map"; }
+template <> struct parameter_traits<parameter::map> {
+    static const char *name() { return "parameter::map"; }
 };
 
-template <>
-struct parameter_traits<parameter::vector>
-{
-    static const char* name() { return "parameter::vector"; }
+template <> struct parameter_traits<parameter::vector> {
+    static const char *name() { return "parameter::vector"; }
 };
 
-template <>
-struct parameter_traits<parameter::string_set>
-{
-    static const char* name() { return "parameter::string_set"; }
+template <> struct parameter_traits<parameter::string_set> {
+    static const char *name() { return "parameter::string_set"; }
 };
 
-template <>
-struct parameter_traits<std::vector<std::string>>
-{
-    static const char* name() { return "std::vector<std::string>"; }
+template <> struct parameter_traits<std::vector<std::string>> {
+    static const char *name() { return "std::vector<std::string>"; }
 };
 
-template <>
-struct parameter_traits<std::vector<std::string_view>>
-{
-    static const char* name() { return "std::vector<std::string_view>"; }
+template <> struct parameter_traits<std::vector<std::string_view>> {
+    static const char *name() { return "std::vector<std::string_view>"; }
 };
 
-}
+} // namespace ddwaf

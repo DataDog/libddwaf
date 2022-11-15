@@ -21,7 +21,7 @@ TEST(TestInterface, RootAddresses)
     ddwaf_object_free(&rule);
 
     uint32_t size;
-    const char * const * addresses = ddwaf_required_addresses(handle, &size);
+    const char *const *addresses = ddwaf_required_addresses(handle, &size);
     EXPECT_EQ(size, 2);
 
     std::set<std::string_view> available_addresses{"value1", "value2"};
@@ -44,13 +44,11 @@ TEST(TestInterface, RuleDatIDs)
     ddwaf_object_free(&rule);
 
     uint32_t size;
-    const char * const * ids = ddwaf_required_rule_data_ids(handle, &size);
+    const char *const *ids = ddwaf_required_rule_data_ids(handle, &size);
     EXPECT_EQ(size, 2);
 
     std::set<std::string_view> available_ids{"usr_data", "ip_data"};
-    while ((size--) != 0U) {
-        EXPECT_NE(available_ids.find(ids[size]), available_ids.end());
-    }
+    while ((size--) != 0U) { EXPECT_NE(available_ids.find(ids[size]), available_ids.end()); }
 
     ddwaf_destroy(handle);
 }
@@ -67,11 +65,9 @@ TEST(TestInterface, EmptyRuleDatIDs)
     ddwaf_object_free(&rule);
 
     uint32_t size;
-    const char * const * ids = ddwaf_required_rule_data_ids(handle, &size);
+    const char *const *ids = ddwaf_required_rule_data_ids(handle, &size);
     EXPECT_EQ(ids, nullptr);
     EXPECT_EQ(size, 0);
 
     ddwaf_destroy(handle);
 }
-
-

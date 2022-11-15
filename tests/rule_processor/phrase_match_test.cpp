@@ -11,8 +11,8 @@ using namespace ddwaf::rule_processor;
 
 TEST(TestPhraseMatch, TestBasic)
 {
-    std::vector<const char*> strings { "aaaa", "bbbb", "cccc" };
-    std::vector<uint32_t> lengths { 4, 4, 4 };
+    std::vector<const char *> strings{"aaaa", "bbbb", "cccc"};
+    std::vector<uint32_t> lengths{4, 4, 4};
 
     phrase_match processor(strings, lengths);
 
@@ -39,7 +39,7 @@ TEST(TestPhraseMatch, TestBasic)
 
 TEST(TestPhraseMatch, TestEmptyArrays)
 {
-    std::vector<const char*> strings;
+    std::vector<const char *> strings;
     std::vector<uint32_t> lengths;
     phrase_match processor(strings, lengths);
 
@@ -55,32 +55,29 @@ TEST(TestPhraseMatch, TestEmptyArrays)
 
 TEST(TestPhraseMatch, TestInconsistentArrays)
 {
-    std::vector<const char*> strings { "aaaa" };
+    std::vector<const char *> strings{"aaaa"};
     std::vector<uint32_t> lengths;
     EXPECT_THROW(phrase_match(strings, lengths), std::invalid_argument);
 }
 
 TEST(TestPhraseMatch, TestComplex)
 {
-    std::vector<const char*> strings { "String1", "string2", "string 3", "string_4", "string21" };
+    std::vector<const char *> strings{"String1", "string2", "string 3", "string_4", "string21"};
     std::vector<uint32_t> lengths(strings.size());
     std::generate(lengths.begin(), lengths.end(),
-                  [i = 0, &strings]() mutable { return strlen(strings[i++]); });
+        [i = 0, &strings]() mutable { return strlen(strings[i++]); });
 
     phrase_match processor(strings, lengths);
 
-    auto run = [&processor](const char* str, const char* expect) {
+    auto run = [&processor](const char *str, const char *expect) {
         ddwaf_object param;
         ddwaf_object_string(&param, str);
-        if (expect)
-        {
+        if (expect) {
             auto match = processor.match_object(&param);
             EXPECT_TRUE(match);
             EXPECT_STREQ(match->resolved.c_str(), str);
             EXPECT_STREQ(match->matched.c_str(), expect);
-        }
-        else
-        {
+        } else {
             EXPECT_FALSE(processor.match_object(&param));
         }
         ddwaf_object_free(&param);
@@ -101,8 +98,8 @@ TEST(TestPhraseMatch, TestComplex)
 
 TEST(TestPhraseMatch, TestInvalidInput)
 {
-    std::vector<const char*> strings { "aaaa", "bbbb", "cccc" };
-    std::vector<uint32_t> lengths { 4, 4, 4 };
+    std::vector<const char *> strings{"aaaa", "bbbb", "cccc"};
+    std::vector<uint32_t> lengths{4, 4, 4};
 
     phrase_match processor(strings, lengths);
 

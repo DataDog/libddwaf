@@ -12,32 +12,29 @@
 #include <utils.h>
 #include <version.hpp>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
-class waf
-{
+class waf {
 public:
-    waf(ddwaf::ruleset &&ruleset, ddwaf::config &&config):
-        ruleset_(std::move(ruleset)), config_(std::move(config)) {}
+    waf(ddwaf::ruleset &&ruleset, ddwaf::config &&config)
+        : ruleset_(std::move(ruleset)), config_(std::move(config))
+    {}
 
-    static waf* from_config(const ddwaf_object &rules,
-        const ddwaf_config* config, ddwaf::ruleset_info& info);
+    static waf *from_config(
+        const ddwaf_object &rules, const ddwaf_config *config, ddwaf::ruleset_info &info);
 
-    ddwaf::context create_context() {
-        return {ruleset_, config_};
-    }
+    ddwaf::context create_context() { return {ruleset_, config_}; }
 
-    void update_rule_data(ddwaf::parameter::vector &&input) {
-        ruleset_.dispatcher.dispatch(input);
-    }
+    void update_rule_data(ddwaf::parameter::vector &&input) { ruleset_.dispatcher.dispatch(input); }
 
     void toggle_rules(ddwaf::parameter::map &&input);
 
-    const std::vector<const char*>& get_root_addresses() const {
+    const std::vector<const char *> &get_root_addresses() const
+    {
         return ruleset_.manifest.get_root_addresses();
     }
-    const std::vector<const char*>& get_rule_data_ids() {
+    const std::vector<const char *> &get_rule_data_ids()
+    {
         return ruleset_.dispatcher.get_rule_data_ids();
     }
 
@@ -46,4 +43,4 @@ protected:
     ddwaf::config config_;
 };
 
-}
+} // namespace ddwaf

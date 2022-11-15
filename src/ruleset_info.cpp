@@ -6,52 +6,42 @@
 
 #include <ruleset_info.hpp>
 
-extern "C"
-{
+extern "C" {
 
-    void ddwaf_ruleset_info_free(ddwaf_ruleset_info* info)
-    {
-        if (info != nullptr)
-        {
-            ddwaf_object_free(&info->errors);
-            delete[] info->version;
-        }
+void ddwaf_ruleset_info_free(ddwaf_ruleset_info *info)
+{
+    if (info != nullptr) {
+        ddwaf_object_free(&info->errors);
+        delete[] info->version;
     }
 }
+}
 
-namespace ddwaf
-{
+namespace ddwaf {
 
 void ruleset_info::insert_error(std::string_view rule_id, std::string_view error)
 {
-    if (info == nullptr)
-    {
+    if (info == nullptr) {
         return;
     }
 
     ddwaf_object *rule_array, id_str;
 
     auto it = error_obj_cache.find(error);
-    if (it == error_obj_cache.end())
-    {
+    if (it == error_obj_cache.end()) {
         ddwaf_object tmp_array;
         ddwaf_object_array(&tmp_array);
-        bool res = ddwaf_object_map_addl(&info->errors,
-                                         error.data(), error.size(), &tmp_array);
-        if (!res)
-        {
+        bool res = ddwaf_object_map_addl(&info->errors, error.data(), error.size(), &tmp_array);
+        if (!res) {
             return;
         }
 
         // Get the map element we just added
         uint64_t index = info->errors.nbEntries - 1;
         rule_array = &info->errors.array[index];
-        std::string_view key(rule_array->parameterName,
-                             rule_array->parameterNameLength);
+        std::string_view key(rule_array->parameterName, rule_array->parameterNameLength);
         error_obj_cache[key] = index;
-    }
-    else
-    {
+    } else {
         rule_array = &info->errors.array[it->second];
     }
 
@@ -61,4 +51,4 @@ void ruleset_info::insert_error(std::string_view rule_id, std::string_view error
     add_failed();
 }
 
-}
+} // namespace ddwaf

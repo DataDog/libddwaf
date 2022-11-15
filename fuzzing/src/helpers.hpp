@@ -10,6 +10,6 @@
 #include <ddwaf.h>
 
 void print_object(ddwaf_object object);
-char* read_file_content(const char* filename, size_t* size);
+char *read_file_content(const char *filename, size_t *size);
 
 #endif

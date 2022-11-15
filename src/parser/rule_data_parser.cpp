@@ -7,8 +7,7 @@
 #include <exception.hpp>
 #include <parser/rule_data_parser.hpp>
 
-namespace ddwaf::parser
-{
+namespace ddwaf::parser {
 
 using data_with_expiration = std::vector<std::pair<std::string_view, uint64_t>>;
 
@@ -25,12 +24,10 @@ data_with_expiration parse_rule_data<data_with_expiration>(std::string_view type
     parameter::vector array = input;
     for (parameter::map values : array) {
         data.emplace_back(
-            at<std::string_view>(values, "value"),
-            at<uint64_t>(values, "expiration", 0)
-        );
+            at<std::string_view>(values, "value"), at<uint64_t>(values, "expiration", 0));
     }
 
     return data;
 }
 
-}
+} // namespace ddwaf::parser

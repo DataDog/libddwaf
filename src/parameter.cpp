@@ -4,93 +4,79 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cinttypes>
 #include <charconv>
+#include <cinttypes>
 #include <exception.hpp>
 #include <parameter.hpp>
 
-namespace
-{
+namespace {
 
 const std::string strtype(int type)
 {
-    switch (type)
-    {
-        case DDWAF_OBJ_MAP:
-            return "map";
-        case DDWAF_OBJ_ARRAY:
-            return "array";
-        case DDWAF_OBJ_STRING:
-            return "string";
+    switch (type) {
+    case DDWAF_OBJ_MAP:
+        return "map";
+    case DDWAF_OBJ_ARRAY:
+        return "array";
+    case DDWAF_OBJ_STRING:
+        return "string";
     }
     return "unknown";
 }
 
-}
+} // namespace
 
-namespace ddwaf
-{
+namespace ddwaf {
 static void print_(parameter args, uint64_t depth)
 {
-    for (uint64_t i = 0; i < depth; ++i)
-    {
-        std::printf("  ");
+    for (uint64_t i = 0; i < depth; ++i) { std::printf("  "); }
+
+    switch (args.type) {
+    case DDWAF_OBJ_INVALID:
+        std::printf("- invalid\n");
+        break;
+    case DDWAF_OBJ_BOOL:
+        std::printf("- %s\n", args.boolean ? "true" : "false");
+        break;
+    case DDWAF_OBJ_SIGNED: {
+        if (args.parameterName != nullptr)
+            std::printf("- %s: %" PRId64 "\n", args.parameterName, args.intValue);
+        else
+            std::printf("- %" PRId64 "\n", args.intValue);
+        break;
     }
 
-    switch (args.type)
-    {
-        case DDWAF_OBJ_INVALID:
-            std::printf("- invalid\n");
-            break;
-        case DDWAF_OBJ_BOOL:
-            std::printf("- %s\n", args.boolean ? "true" : "false");
-            break;
-        case DDWAF_OBJ_SIGNED:
-        {
-            if (args.parameterName != NULL)
-                std::printf("- %s: %" PRId64 "\n", args.parameterName, args.intValue);
-            else
-                std::printf("- %" PRId64 "\n", args.intValue);
-            break;
-        }
+    case DDWAF_OBJ_UNSIGNED: {
+        if (args.parameterName != nullptr)
+            std::printf("- %s: %" PRIu64 "\n", args.parameterName, args.uintValue);
+        else
+            std::printf("- %" PRIu64 "\n", args.uintValue);
+        break;
+    }
 
-        case DDWAF_OBJ_UNSIGNED:
-        {
-            if (args.parameterName != NULL)
-                std::printf("- %s: %" PRIu64 "\n", args.parameterName, args.uintValue);
-            else
-                std::printf("- %" PRIu64 "\n", args.uintValue);
-            break;
-        }
+    case DDWAF_OBJ_STRING: {
+        if (args.parameterName != nullptr)
+            std::printf("- %s: %s\n", args.parameterName, args.stringValue);
+        else
+            std::printf("- %s\n", args.stringValue);
+        break;
+    }
 
-        case DDWAF_OBJ_STRING:
-        {
-            if (args.parameterName != NULL)
-                std::printf("- %s: %s\n", args.parameterName, args.stringValue);
-            else
-                std::printf("- %s\n", args.stringValue);
-            break;
-        }
+    case DDWAF_OBJ_ARRAY: {
+        if (args.parameterName != nullptr)
+            std::printf("- %s:\n", args.parameterName);
 
-        case DDWAF_OBJ_ARRAY:
-        {
-            if (args.parameterName != NULL)
-                std::printf("- %s:\n", args.parameterName);
+        for (uint64_t i = 0; i < args.nbEntries; ++i) print_(args.array[i], depth + 1);
+        break;
+    }
 
-            for (uint64_t i = 0; i < args.nbEntries; ++i)
-                print_(args.array[i], depth + 1);
-            break;
-        }
+    case DDWAF_OBJ_MAP: {
+        if (args.parameterName != nullptr)
+            std::printf("- %s:\n", args.parameterName);
 
-        case DDWAF_OBJ_MAP:
-        {
-            if (args.parameterName != NULL)
-                std::printf("- %s:\n", args.parameterName);
-
-            for (uint64_t i = 0; i < args.nbEntries; ++i)
-                print_(args.array[i], depth + 1);
-            break;
-        }
+        for (uint64_t i = 0; i < args.nbEntries; ++i) print_(args.array[i], depth + 1);
+        break;
+    }
     }
 }
 
@@ -98,23 +84,19 @@ void parameter::print() { print_(*this, 0); }
 
 parameter::operator parameter::map()
 {
-    if (type != DDWAF_OBJ_MAP)
-    {
+    if (type != DDWAF_OBJ_MAP) {
         throw bad_cast("map", strtype(type));
     }
 
-    if (array == nullptr || nbEntries == 0)
-    {
+    if (array == nullptr || nbEntries == 0) {
         return parameter::map();
     }
 
     std::unordered_map<std::string_view, parameter> map;
     map.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++)
-    {
-        const parameter& kv = array[i];
-        if (kv.parameterName == nullptr)
-        {
+    for (unsigned i = 0; i < nbEntries; i++) {
+        const parameter &kv = array[i];
+        if (kv.parameterName == nullptr) {
             throw malformed_object("invalid key on map entry");
         }
 
@@ -126,13 +108,11 @@ parameter::operator parameter::map()
 
 parameter::operator parameter::vector()
 {
-    if (type != DDWAF_OBJ_ARRAY)
-    {
+    if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
     }
 
-    if (array == nullptr || nbEntries == 0)
-    {
+    if (array == nullptr || nbEntries == 0) {
         return parameter::vector();
     }
     return std::vector<parameter>(array, array + nbEntries);
@@ -140,22 +120,18 @@ parameter::operator parameter::vector()
 
 parameter::operator parameter::string_set()
 {
-    if (type != DDWAF_OBJ_ARRAY)
-    {
+    if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
     }
 
-    if (array == nullptr || nbEntries == 0)
-    {
+    if (array == nullptr || nbEntries == 0) {
         return parameter::string_set();
     }
 
     parameter::string_set set;
     set.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++)
-    {
-        if (array[i].type != DDWAF_OBJ_STRING)
-        {
+    for (unsigned i = 0; i < nbEntries; i++) {
+        if (array[i].type != DDWAF_OBJ_STRING) {
             throw malformed_object("item in array not a string, can't cast to string set");
         }
 
@@ -167,8 +143,7 @@ parameter::operator parameter::string_set()
 
 parameter::operator std::string_view()
 {
-    if (type != DDWAF_OBJ_STRING || stringValue == nullptr)
-    {
+    if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
         throw bad_cast("string", strtype(type));
     }
 
@@ -177,8 +152,7 @@ parameter::operator std::string_view()
 
 parameter::operator std::string()
 {
-    if (type != DDWAF_OBJ_STRING || stringValue == nullptr)
-    {
+    if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
         throw bad_cast("string", strtype(type));
     }
 
@@ -191,7 +165,7 @@ parameter::operator uint64_t()
         return uintValue;
     } else if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
         uint64_t result;
-        auto end { &stringValue[nbEntries] };
+        auto end{&stringValue[nbEntries]};
         auto [endConv, err] = std::from_chars(stringValue, end, result);
         if (err == std::errc{} && endConv == end) {
             return result;
@@ -210,25 +184,20 @@ parameter::operator bool()
     throw bad_cast("bool", strtype(type));
 }
 
-
 parameter::operator std::vector<std::string>()
 {
-    if (type != DDWAF_OBJ_ARRAY)
-    {
+    if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
     }
 
-    if (array == nullptr || nbEntries == 0)
-    {
+    if (array == nullptr || nbEntries == 0) {
         return {};
     }
 
     std::vector<std::string> data;
     data.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++)
-    {
-        if (array[i].type != DDWAF_OBJ_STRING)
-        {
+    for (unsigned i = 0; i < nbEntries; i++) {
+        if (array[i].type != DDWAF_OBJ_STRING) {
             throw malformed_object("item in array not a string, can't cast to string vector");
         }
 
@@ -240,22 +209,18 @@ parameter::operator std::vector<std::string>()
 
 parameter::operator std::vector<std::string_view>()
 {
-    if (type != DDWAF_OBJ_ARRAY)
-    {
+    if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
     }
 
-    if (array == nullptr || nbEntries == 0)
-    {
+    if (array == nullptr || nbEntries == 0) {
         return {};
     }
 
     std::vector<std::string_view> data;
     data.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++)
-    {
-        if (array[i].type != DDWAF_OBJ_STRING)
-        {
+    for (unsigned i = 0; i < nbEntries; i++) {
+        if (array[i].type != DDWAF_OBJ_STRING) {
             throw malformed_object("item in array not a string, can't cast to string_view vector");
         }
 
@@ -265,4 +230,4 @@ parameter::operator std::vector<std::string_view>()
     return data;
 }
 
-}
+} // namespace ddwaf

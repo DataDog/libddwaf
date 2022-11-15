@@ -33,7 +33,7 @@ TEST(TestWaf, RuleDatIDs)
     ddwaf_object_free(&rule);
 
     std::set<std::string_view> available_ids{"usr_data", "ip_data"};
-    for (auto id: instance->get_rule_data_ids()) {
+    for (auto id : instance->get_rule_data_ids()) {
         EXPECT_NE(available_ids.find(id), available_ids.end());
     }
 }
@@ -153,5 +153,3 @@ TEST(TestWaf, ToggleWithInvalidObject)
         ddwaf_object_free(&root);
     }
 }
-
-

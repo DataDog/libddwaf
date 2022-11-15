@@ -2,30 +2,24 @@
 
 using namespace rapidjson;
 
-class TestSchemaFixture : public ::testing::Test
-{
+class TestSchemaFixture : public ::testing::Test {
 public:
     TestSchemaFixture()
     {
         auto rule = readFile("schema.yaml");
-        if (rule.type == DDWAF_OBJ_INVALID)
-        {
+        if (rule.type == DDWAF_OBJ_INVALID) {
             throw std::runtime_error("failed to load schema.yaml");
         }
 
         handle = ddwaf_init(&rule, nullptr, nullptr);
-        if (handle == nullptr)
-        {
+        if (handle == nullptr) {
             throw std::runtime_error("failed to obtain waf handle");
         }
 
         ddwaf_object_free(&rule);
     }
 
-    ~TestSchemaFixture()
-    {
-        ddwaf_destroy(handle);
-    }
+    ~TestSchemaFixture() { ddwaf_destroy(handle); }
 
     void SetUp()
     {
@@ -55,9 +49,9 @@ protected:
     std::unique_ptr<SchemaDocument> schema;
     std::unique_ptr<SchemaValidator> validator;
 
-    ddwaf_handle handle { nullptr };
+    ddwaf_handle handle{nullptr};
 
-    ddwaf_context context { nullptr };
+    ddwaf_context context{nullptr};
 };
 
 TEST_F(TestSchemaFixture, SimpleResult)

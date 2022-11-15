@@ -91,8 +91,7 @@ TEST(TestValueIterator, TestArrayMultipleItems)
     ddwaf_object object, tmp;
     ddwaf_object_array(&object);
     for (unsigned i = 0; i < 50; i++) {
-        ddwaf_object_array_add(&object,
-            ddwaf_object_string(&tmp, std::to_string(i).c_str()));
+        ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
     }
 
     ddwaf::object::value_iterator it(&object);
@@ -121,8 +120,7 @@ TEST(TestValueIterator, TestArrayPastSizeLimit)
     ddwaf_object_array(&object);
 
     for (unsigned i = 0; i < limits.max_container_size + 50; i++) {
-        ddwaf_object_array_add(&object,
-            ddwaf_object_string(&tmp, std::to_string(i).c_str()));
+        ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
     }
 
     ddwaf::object::value_iterator it(&object);
@@ -157,8 +155,7 @@ TEST(TestValueIterator, TestDeepArray)
         auto index = std::to_string(i);
 
         ddwaf_object_array(&intermediate);
-        ddwaf_object_array_add(array,
-                ddwaf_object_string(&tmp, ("val" + index).c_str()));
+        ddwaf_object_array_add(array, ddwaf_object_string(&tmp, ("val" + index).c_str()));
         ddwaf_object_array_add(array, &intermediate);
 
         array = &array->array[1];
@@ -173,9 +170,7 @@ TEST(TestValueIterator, TestDeepArray)
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), i + 1);
 
-        for (unsigned j = 0; j < i; j++) {
-            EXPECT_STREQ(path[j].c_str(), "1");
-        }
+        for (unsigned j = 0; j < i; j++) { EXPECT_STREQ(path[j].c_str(), "1"); }
         ++it;
     }
 
@@ -198,8 +193,7 @@ TEST(TestValueIterator, TestDeepArrayPastLimit)
         auto index = std::to_string(i);
 
         ddwaf_object_array(&intermediate);
-        ddwaf_object_array_add(array,
-                ddwaf_object_string(&tmp, ("val" + index).c_str()));
+        ddwaf_object_array_add(array, ddwaf_object_string(&tmp, ("val" + index).c_str()));
         ddwaf_object_array_add(array, &intermediate);
 
         array = &array->array[1];
@@ -214,9 +208,7 @@ TEST(TestValueIterator, TestDeepArrayPastLimit)
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), i + 1);
 
-        for (unsigned j = 0; j < i; j++) {
-            EXPECT_STREQ(path[j].c_str(), "1");
-        }
+        for (unsigned j = 0; j < i; j++) { EXPECT_STREQ(path[j].c_str(), "1"); }
         ++it;
     }
 
@@ -229,9 +221,7 @@ TEST(TestValueIterator, TestArrayNoScalars)
 {
     ddwaf_object object, tmp;
     ddwaf_object_array(&object);
-    for (unsigned i = 0; i < 50; i++) {
-        ddwaf_object_array_add(&object, ddwaf_object_array(&tmp));
-    }
+    for (unsigned i = 0; i < 50; i++) { ddwaf_object_array_add(&object, ddwaf_object_array(&tmp)); }
 
     ddwaf::object::value_iterator it(&object);
 
@@ -271,8 +261,7 @@ TEST(TestValueIterator, TestMapMultipleItems)
         auto index = std::to_string(i);
         std::string key = "key" + index;
         std::string value = "value" + index;
-        ddwaf_object_map_add(&object, key.c_str(),
-            ddwaf_object_string(&tmp, value.c_str()));
+        ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
     }
 
     ddwaf::object::value_iterator it(&object);
@@ -307,8 +296,7 @@ TEST(TestValueIterator, TestMapPastSizeLimit)
         auto index = std::to_string(i);
         std::string key = "key" + index;
         std::string value = "value" + index;
-        ddwaf_object_map_add(&object, key.c_str(),
-            ddwaf_object_string(&tmp, value.c_str()));
+        ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
     }
 
     ddwaf::object::value_iterator it(&object);
@@ -346,8 +334,8 @@ TEST(TestValueIterator, TestDeepMap)
         auto index = std::to_string(i);
 
         ddwaf_object_map(&intermediate);
-        ddwaf_object_map_add(map, ("str" + index).c_str(),
-                ddwaf_object_string(&tmp, ("val" + index).c_str()));
+        ddwaf_object_map_add(
+            map, ("str" + index).c_str(), ddwaf_object_string(&tmp, ("val" + index).c_str()));
         ddwaf_object_map_add(map, ("map" + index).c_str(), &intermediate);
 
         map = &map->array[1];
@@ -389,8 +377,8 @@ TEST(TestValueIterator, TestMapPastDepthLimit)
         auto index = std::to_string(i);
 
         ddwaf_object_map(&intermediate);
-        ddwaf_object_map_add(map, ("str" + index).c_str(),
-                ddwaf_object_string(&tmp, ("val" + index).c_str()));
+        ddwaf_object_map_add(
+            map, ("str" + index).c_str(), ddwaf_object_string(&tmp, ("val" + index).c_str()));
         ddwaf_object_map_add(map, ("map" + index).c_str(), &intermediate);
 
         map = &map->array[1];
@@ -456,16 +444,11 @@ TEST(TestValueIterator, TestContainerMix)
         ddwaf::object::value_iterator it(&object);
 
         std::vector<std::pair<std::string, std::vector<std::string>>> values = {
-            {"value0_0", {"root", "key0", "0"}},
-            {"value0_1", {"root", "key0", "1"}},
-            {"value0_2", {"root", "key0", "2", "key0_0"}},
-            {"value0_3", {"root", "key0", "3"}},
-            {"value1_0", {"root", "key1"}},
-            {"value2_0", {"root", "key2", "key2_0"}},
-            {"value2_1", {"root", "key2", "key2_1"}},
-            {"value2_2", {"root", "key2", "key2_2", "0"}},
-            {"value2_3", {"root", "key2", "key2_2", "1"}}
-        };
+            {"value0_0", {"root", "key0", "0"}}, {"value0_1", {"root", "key0", "1"}},
+            {"value0_2", {"root", "key0", "2", "key0_0"}}, {"value0_3", {"root", "key0", "3"}},
+            {"value1_0", {"root", "key1"}}, {"value2_0", {"root", "key2", "key2_0"}},
+            {"value2_1", {"root", "key2", "key2_1"}}, {"value2_2", {"root", "key2", "key2_2", "0"}},
+            {"value2_3", {"root", "key2", "key2_2", "1"}}};
 
         for (auto &[value, path] : values) {
             EXPECT_STREQ((*it)->stringValue, value.c_str());
@@ -651,7 +634,6 @@ TEST(TestValueIterator, TestMultiPath)
     ddwaf_object_free(&object);
 }
 
-
 TEST(TestValueIterator, TestContainerMixPath)
 {
     ddwaf_object object = readRule(R"(
@@ -703,11 +685,9 @@ TEST(TestValueIterator, TestContainerMixPath)
 
     {
         std::vector<std::pair<std::string, std::vector<std::string>>> values = {
-            {"value2_0", {"root", "key2", "key2_0"}},
-            {"value2_1", {"root", "key2", "key2_1"}},
+            {"value2_0", {"root", "key2", "key2_0"}}, {"value2_1", {"root", "key2", "key2_1"}},
             {"value2_2", {"root", "key2", "key2_2", "0"}},
-            {"value2_3", {"root", "key2", "key2_2", "1"}}
-        };
+            {"value2_3", {"root", "key2", "key2_2", "1"}}};
 
         ddwaf::object::value_iterator it(&object, {"root", "key2"});
 
@@ -834,7 +814,7 @@ TEST(TestValueIterator, TestInvalidMapKey)
     ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
 
-    free((void*)root.array[0].parameterName);
+    free((void *)root.array[0].parameterName);
     root.array[0].parameterName = nullptr;
 
     {
@@ -858,7 +838,7 @@ TEST(TestValueIterator, TestInvalidMapKeyWithPath)
     ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
 
-    free((void*)root.array[0].parameterName);
+    free((void *)root.array[0].parameterName);
     root.array[0].parameterName = nullptr;
 
     {
@@ -880,11 +860,11 @@ TEST(TestValueIterator, TestInvalidMapKeyWithPath)
 TEST(TestValueIterator, TestRecursiveMap)
 {
     ddwaf_object root;
-    root.nbEntries     = 1;
+    root.nbEntries = 1;
     root.parameterName = "Sqreen";
     root.parameterNameLength = sizeof("Sqreen") - 1;
-    root.type          = DDWAF_OBJ_MAP;
-    root.array         = &root;
+    root.type = DDWAF_OBJ_MAP;
+    root.array = &root;
 
     ddwaf::object::value_iterator it(&root);
     EXPECT_FALSE(it);

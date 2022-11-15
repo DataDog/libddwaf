@@ -17,11 +17,11 @@ TEST(TestPowerWAF, TestEmptyParameters)
 
     ddwaf_context context = ddwaf_context_init(handle);
 
-    //Setup the parameter structure
+    // Setup the parameter structure
     ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
     ddwaf_object_map_add(&parameter, "value", ddwaf_object_array(&tmp));
 
-    //Detect match in a substructure's key
+    // Detect match in a substructure's key
     EXPECT_EQ(ddwaf_run(context, &parameter, NULL, LONG_TIME), DDWAF_OK);
 
     ddwaf_context_destroy(context);
@@ -35,14 +35,13 @@ TEST(TestPowerWAF, TestLogging)
     static string lastFunction;
     static string lastMessage;
 
-    ddwaf_log_cb cb = [](DDWAF_LOG_LEVEL level, const char* function,
-                         const char* file, unsigned line, const char* message,
-                         uint64_t message_len) {
-        lastLevel    = level;
+    ddwaf_log_cb cb = [](DDWAF_LOG_LEVEL level, const char *function, const char *file,
+                          unsigned line, const char *message, uint64_t message_len) {
+        lastLevel = level;
         lastFunction = function;
-        lastFile     = file;
+        lastFile = file;
         EXPECT_GT(line, 0);
-        lastMessage = string { message, static_cast<size_t>(message_len) };
+        lastMessage = string{message, static_cast<size_t>(message_len)};
     };
 
     ddwaf_set_log_cb(cb, DDWAF_LOG_TRACE);
@@ -50,8 +49,8 @@ TEST(TestPowerWAF, TestLogging)
     DDWAF_TRACE("test message");
     EXPECT_EQ(lastLevel, DDWAF_LOG_TRACE);
     /*     the files emitting messages are expected to be in src/, so we*/
-    //remove the number of characters in the full path up to src/.
-    //But tests are in tests/, a sibling of src. Because tests is two chars
+    // remove the number of characters in the full path up to src/.
+    // But tests are in tests/, a sibling of src. Because tests is two chars
     /*longer than src, we get the "s/" in the beginning */
 #ifdef _WIN32
     EXPECT_EQ(lastFile, "TestPowerWAF.cpp");
@@ -169,11 +168,11 @@ TEST(TestPowerWAF, TestConfig)
 
     ddwaf_context context = ddwaf_context_init(handle);
 
-    //Setup the parameter structure
+    // Setup the parameter structure
     ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
     ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
-    //Detect match in a substructure's key
+    // Detect match in a substructure's key
     EXPECT_EQ(ddwaf_run(context, &parameter, NULL, LONG_TIME), DDWAF_MATCH);
 
     ddwaf_context_destroy(context);

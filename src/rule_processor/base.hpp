@@ -17,18 +17,20 @@
 
 namespace ddwaf::rule_processor {
 
-class base
-{
+class base {
 public:
     using shared = std::shared_ptr<base>;
 
-    base()          = default;
+    base() = default;
     virtual ~base() = default;
 
     virtual std::optional<event::match> match(std::string_view str) const = 0;
 
-    virtual std::optional<event::match> match_object(const ddwaf_object *obj) const {
-        if (obj->stringValue == nullptr) { return std::nullopt; }
+    virtual std::optional<event::match> match_object(const ddwaf_object *obj) const
+    {
+        if (obj->stringValue == nullptr) {
+            return std::nullopt;
+        }
         return match({obj->stringValue, static_cast<std::size_t>(obj->nbEntries)});
     }
 
@@ -41,12 +43,8 @@ public:
 
     event::match make_event(std::string_view resolved, std::string_view matched) const
     {
-        return {
-            std::string(resolved), std::string(matched),
-            name(), to_string(), {}, {}
-        };
+        return {std::string(resolved), std::string(matched), name(), to_string(), {}, {}};
     }
 };
 
-}
-
+} // namespace ddwaf::rule_processor

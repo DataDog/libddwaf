@@ -10,37 +10,26 @@
 #include <parameter.hpp>
 #include <string>
 
-namespace ddwaf::parser
+namespace ddwaf::parser {
+template <typename T> T at(parameter::map &map, const std::string &key)
 {
-template <typename T>
-T at(parameter::map& map, const std::string& key)
-{
-    try
-    {
+    try {
         return map.at(key);
-    }
-    catch (const std::out_of_range&)
-    {
+    } catch (const std::out_of_range &) {
         throw missing_key(key);
-    }
-    catch (const bad_cast& e)
-    {
+    } catch (const bad_cast &e) {
         throw invalid_type(key, e);
     }
 }
 
-template <typename T>
-T at(parameter::map& map, const std::string& key, const T& default_)
+template <typename T> T at(parameter::map &map, const std::string &key, const T &default_)
 {
-    try
-    {
+    try {
         auto it = map.find(key);
         return it == map.end() ? default_ : it->second;
-    }
-    catch (const bad_cast& e)
-    {
+    } catch (const bad_cast &e) {
         throw invalid_type(key, e);
     }
 }
 
-}
+} // namespace ddwaf::parser

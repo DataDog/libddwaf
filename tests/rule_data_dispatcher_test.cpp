@@ -8,43 +8,39 @@
 
 using namespace ddwaf;
 
-namespace ddwaf
-{
-namespace rule_processor
-{
-class mock_processor : public base
-{
+namespace ddwaf {
+namespace rule_processor {
+class mock_processor : public base {
 public:
     using rule_data_type = std::vector<std::string_view>;
 
     mock_processor() = default;
-    explicit mock_processor(const rule_data_type &list) {(void)list;}
+    explicit mock_processor(const rule_data_type &list) { (void)list; }
     ~mock_processor() override = default;
 
     std::string_view name() const override { return "mock_processor"; }
 
-    std::optional<event::match> match(std::string_view str) const override {
+    std::optional<event::match> match(std::string_view str) const override
+    {
         (void)str;
         return {};
     }
 };
 
-}
-namespace parser
-{
+} // namespace rule_processor
+namespace parser {
 
 using data_type = std::vector<std::string_view>;
 
-template <>
-data_type parse_rule_data<data_type>(std::string_view type, parameter &input)
+template <> data_type parse_rule_data<data_type>(std::string_view type, parameter &input)
 {
     (void)type;
     return input;
 }
 
-}
+} // namespace parser
 
-}
+} // namespace ddwaf
 
 TEST(TestRuleDataDispatcher, InterfaceNullHandle)
 {
@@ -130,7 +126,6 @@ TEST(TestRuleDataDispatcher, Interface)
         ddwaf_object_map_add(&ips, "type", ddwaf_object_string(&tmp, "ip_with_expiration"));
         ddwaf_object_map_add(&ips, "id", ddwaf_object_string(&tmp, "ip_data"));
         ddwaf_object_map_add(&ips, "data", &data);
-
 
         ddwaf_object_map(&data_point);
         ddwaf_object_map_add(&data_point, "value", ddwaf_object_string(&tmp, "paco"));
@@ -231,7 +226,6 @@ TEST(TestRuleDataDispatcher, InterfacePreloadData)
         ddwaf_object_map_add(&ips, "id", ddwaf_object_string(&tmp, "ip_data"));
         ddwaf_object_map_add(&ips, "data", &data);
 
-
         ddwaf_object_map(&data_point);
         ddwaf_object_map_add(&data_point, "value", ddwaf_object_string(&tmp, "pepe"));
         ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_string(&tmp, "0"));
@@ -331,7 +325,6 @@ TEST(TestRuleDataDispatcher, InterfaceInvalidUserData)
         ddwaf_object_map_add(&ips, "id", ddwaf_object_string(&tmp, "ip_data"));
         ddwaf_object_map_add(&ips, "data", &data);
 
-
         ddwaf_object_map(&data_point);
         ddwaf_object_map_add(&data_point, "value", ddwaf_object_string(&tmp, "paco"));
         ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_string(&tmp, "0"));
@@ -391,10 +384,9 @@ TEST(TestRuleDataDispatcher, Basic)
 
     auto manifest = mb.build_manifest();
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::ip_match>(),
-        ddwaf::object_limits(), condition::data_source::values, true);
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::make_unique<rule_processor::ip_match>(), ddwaf::object_limits(),
+        condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
 
@@ -458,16 +450,12 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
     auto usr_id_target = mb.insert("usr.id", {});
     auto manifest = mb.build_manifest();
 
-    auto cond1 = std::make_shared<condition>(
-        std::vector<manifest::target_type>{client_ip_target},
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::ip_match>(),
+    auto cond1 = std::make_shared<condition>(std::vector<manifest::target_type>{client_ip_target},
+        std::vector<PW_TRANSFORM_ID>{}, std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
-    auto cond2 = std::make_shared<condition>(
-        std::vector<manifest::target_type>{usr_id_target},
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::exact_match>(),
+    auto cond2 = std::make_shared<condition>(std::vector<manifest::target_type>{usr_id_target},
+        std::vector<PW_TRANSFORM_ID>{}, std::make_unique<rule_processor::exact_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
@@ -583,24 +571,18 @@ TEST(TestRuleDataDispatcher, MultipleProcessorTypesSameID)
     auto usr_id_target = mb.insert("usr.id", {});
     auto manifest = mb.build_manifest();
 
-    auto cond1 = std::make_shared<condition>(
-        std::vector<manifest::target_type>{client_ip_target},
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::ip_match>(),
+    auto cond1 = std::make_shared<condition>(std::vector<manifest::target_type>{client_ip_target},
+        std::vector<PW_TRANSFORM_ID>{}, std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
-    auto cond2 = std::make_shared<condition>(
-        std::vector<manifest::target_type>{usr_id_target},
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::exact_match>(),
+    auto cond2 = std::make_shared<condition>(std::vector<manifest::target_type>{usr_id_target},
+        std::vector<PW_TRANSFORM_ID>{}, std::make_unique<rule_processor::exact_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
 
-    EXPECT_NO_THROW(
-        dispatcher.register_condition<rule_processor::ip_match>("id", cond1));
-    EXPECT_NO_THROW(
-        dispatcher.register_condition<rule_processor::exact_match>("id", cond2));
+    EXPECT_NO_THROW(dispatcher.register_condition<rule_processor::ip_match>("id", cond1));
+    EXPECT_NO_THROW(dispatcher.register_condition<rule_processor::exact_match>("id", cond2));
 }
 
 TEST(TestRuleDataDispatcher, ConflictingProcessorTypesSameID)
@@ -609,24 +591,19 @@ TEST(TestRuleDataDispatcher, ConflictingProcessorTypesSameID)
     auto target = mb.insert("http.client_ip", {});
     auto manifest = mb.build_manifest();
 
-    auto cond1 = std::make_shared<condition>(
-        std::vector<manifest::target_type>{target},
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::ip_match>(),
+    auto cond1 = std::make_shared<condition>(std::vector<manifest::target_type>{target},
+        std::vector<PW_TRANSFORM_ID>{}, std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
-    auto cond2 = std::make_shared<condition>(
-        std::vector<manifest::target_type>{target},
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::mock_processor>(),
+    auto cond2 = std::make_shared<condition>(std::vector<manifest::target_type>{target},
+        std::vector<PW_TRANSFORM_ID>{}, std::make_unique<rule_processor::mock_processor>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
 
     dispatcher.register_condition<rule_processor::ip_match>("id", cond1);
     EXPECT_THROW(
-        dispatcher.register_condition<rule_processor::mock_processor>("id", cond2),
-        std::bad_cast);
+        dispatcher.register_condition<rule_processor::mock_processor>("id", cond2), std::bad_cast);
 }
 
 TEST(TestRuleDataDispatcher, UnkonwnID)
@@ -638,10 +615,9 @@ TEST(TestRuleDataDispatcher, UnkonwnID)
 
     auto manifest = mb.build_manifest();
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::ip_match>(),
-        ddwaf::object_limits(), condition::data_source::values, true);
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::make_unique<rule_processor::ip_match>(), ddwaf::object_limits(),
+        condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;
 
@@ -686,8 +662,7 @@ TEST(TestRuleDataDispatcher, ImmutableCondition)
 
     auto manifest = mb.build_manifest();
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>());
 
     rule_data::dispatcher dispatcher;
@@ -705,14 +680,11 @@ TEST(TestRuleDataDispatcher, ImmutableCondition)
         ddwaf_object_array_add(&data, &data_point);
 
         ddwaf::parameter param = data;
-        EXPECT_THROW(
-            dispatcher.dispatch("id", "ip_with_expiration", param),
-            std::runtime_error);
+        EXPECT_THROW(dispatcher.dispatch("id", "ip_with_expiration", param), std::runtime_error);
 
         ddwaf_object_free(&data);
     }
 }
-
 
 TEST(TestRuleDataDispatcherBuilder, Basic)
 {
@@ -721,16 +693,12 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
     auto usr_id_target = mb.insert("usr.id", {});
     auto manifest = mb.build_manifest();
 
-    auto cond1 = std::make_shared<condition>(
-        std::vector<manifest::target_type>{client_ip_target},
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::ip_match>(),
+    auto cond1 = std::make_shared<condition>(std::vector<manifest::target_type>{client_ip_target},
+        std::vector<PW_TRANSFORM_ID>{}, std::make_unique<rule_processor::ip_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
-    auto cond2 = std::make_shared<condition>(
-        std::vector<manifest::target_type>{usr_id_target},
-        std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::exact_match>(),
+    auto cond2 = std::make_shared<condition>(std::vector<manifest::target_type>{usr_id_target},
+        std::vector<PW_TRANSFORM_ID>{}, std::make_unique<rule_processor::exact_match>(),
         ddwaf::object_limits(), condition::data_source::values, true);
 
     rule_data::dispatcher dispatcher;

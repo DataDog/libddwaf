@@ -16,22 +16,20 @@
 
 #include <ddwaf.h>
 
+// NOLINTNEXTLINE(cert-dcl58-cpp)
 namespace std {
-template <>
-struct hash<std::vector<std::string>>
-{
-    std::size_t operator()(const std::vector<std::string>& k) const {
+// NOLINTNEXTLINE(cert-dcl58-cpp)
+template <> struct hash<std::vector<std::string>> {
+    std::size_t operator()(const std::vector<std::string> &k) const
+    {
         std::size_t hash = 0;
-        for (const auto &str : k) {
-            hash ^= std::hash<std::string>{}(str);
-        }
+        for (const auto &str : k) { hash ^= std::hash<std::string>{}(str); }
         return hash;
     }
 };
-}
+} // namespace std
 
-namespace ddwaf
-{
+namespace ddwaf {
 class manifest {
 public:
     using target_type = uint32_t;
@@ -42,26 +40,24 @@ public:
 
     manifest() = default;
     manifest(std::unordered_map<std::string, target_type> &&targets,
-        std::unordered_map<target_type, target_info> &&info):
-        targets_(std::move(targets)), info_(std::move(info))
+        std::unordered_map<target_type, target_info> &&info)
+        : targets_(std::move(targets)), info_(std::move(info))
     {
         root_addresses_.reserve(targets_.size());
-        for (auto &[k, v] : targets_) {
-            root_addresses_.push_back(k.c_str());
-        }
+        for (auto &[k, v] : targets_) { root_addresses_.push_back(k.c_str()); }
     }
+    ~manifest() = default;
 
-    manifest(manifest&&)      = default;
-    manifest(const manifest&) = delete;
-    manifest& operator=(manifest&&) = default;
-    manifest& operator=(const manifest&) = delete;
+    manifest(manifest &&) = default;
+    manifest(const manifest &) = delete;
+    manifest &operator=(manifest &&) = default;
+    manifest &operator=(const manifest &) = delete;
 
     bool empty() { return targets_.empty(); }
-    bool contains(const std::string& name) {
-        return targets_.find(name) != targets_.end();
-    }
+    bool contains(const std::string &name) { return targets_.find(name) != targets_.end(); }
 
-    std::pair<bool, target_type> get_target(const std::string& name) const {
+    std::pair<bool, target_type> get_target(const std::string &name) const
+    {
         auto it = targets_.find(name);
         if (it == targets_.end()) {
             return {false, 0};
@@ -69,8 +65,9 @@ public:
         return {true, it->second};
     }
 
-    const target_info& get_target_info(target_type target) const {
-        static target_info empty_info = {};
+    const target_info &get_target_info(target_type target) const
+    {
+        static const target_info empty_info = {};
         auto it = info_.find(target);
         if (it == info_.end()) {
             return empty_info;
@@ -78,26 +75,22 @@ public:
         return it->second;
     }
 
-    const std::vector<const char*>& get_root_addresses() const {
-        return root_addresses_;
-    }
+    const std::vector<const char *> &get_root_addresses() const { return root_addresses_; }
 
-    static target_type get_root(target_type target) {
-        return target & 0xFFFF0000;
-    }
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    static target_type get_root(target_type target) { return target & 0xFFFF0000; }
 
 protected:
     std::unordered_map<std::string, target_type> targets_{};
     std::unordered_map<target_type, target_info> info_{};
 
     // Root address memory to be returned to the API caller
-    std::vector<const char*> root_addresses_;
+    std::vector<const char *> root_addresses_;
 };
 
 class manifest_builder {
 public:
-    manifest::target_type insert(const std::string& root,
-        const std::vector<std::string>& key_path);
+    manifest::target_type insert(const std::string &root, const std::vector<std::string> &key_path);
 
     manifest build_manifest();
 
@@ -112,8 +105,9 @@ protected:
         std::unordered_map<std::vector<std::string>, uint16_t> derived;
     };
 
-    static constexpr manifest::target_type generate_target(
-        uint16_t root, uint16_t id) {
+    static constexpr manifest::target_type generate_target(uint16_t root, uint16_t id)
+    {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
         return static_cast<uint32_t>(root) << 16 | id;
     }
 
@@ -121,5 +115,4 @@ protected:
     uint16_t index_{0};
 };
 
-}
-
+} // namespace ddwaf
