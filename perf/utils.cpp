@@ -95,8 +95,8 @@ ddwaf_object object_dup(const ddwaf_object &o) noexcept
         ddwaf_object_map(&copy);
         for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) {
             ddwaf_object child_copy = object_dup(o.array[i]);
-            ddwaf_object_map_addl(&copy, o.array[i].parameterName,
-                o.array[i].parameterNameLength, &child_copy);
+            ddwaf_object_map_addl(
+                &copy, o.array[i].parameterName, o.array[i].parameterNameLength, &child_copy);
         }
         break;
     }

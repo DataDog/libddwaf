@@ -46,8 +46,7 @@ public:
     };
 
     object_generator() = default;
-    object_generator(const std::vector<std::string_view> &addresses,
-        const fs::path &rules_dir);
+    object_generator(const std::vector<std::string_view> &addresses, const fs::path &rules_dir);
 
     ~object_generator();
 

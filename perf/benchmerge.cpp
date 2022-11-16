@@ -18,8 +18,7 @@ struct benchmark {
     uint64_t iterations{0};
 };
 
-namespace YAML
-{
+namespace YAML {
 
 template <> struct as_if<benchmark, void> {
     explicit as_if(const Node &node_) : node(node_) {}
@@ -28,7 +27,7 @@ template <> struct as_if<benchmark, void> {
         auto results = node["results"].as<std::map<std::string, Node>>();
         std::map<std::string, std::vector<uint64_t>> samples;
 
-        for (auto &[key, value]: results) {
+        for (auto &[key, value] : results) {
             samples[key] = value["samples"].as<std::vector<uint64_t>>();
         }
         return {samples, node["iterations"].as<double>()};
@@ -37,7 +36,7 @@ template <> struct as_if<benchmark, void> {
     const Node &node;
 };
 
-}
+} // namespace YAML
 
 namespace {
 std::string read_file(const fs::path &filename)
@@ -74,7 +73,7 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
     exit(EXIT_SUCCESS);
 }
 
-std::pair<uint64_t, uint64_t>  average_and_sd(const std::vector<uint64_t> &values)
+std::pair<uint64_t, uint64_t> average_and_sd(const std::vector<uint64_t> &values)
 {
     double average = 0.0, sd = 0.0;
     for (auto v : values) { average += v; }
@@ -88,7 +87,7 @@ void output_json(std::ostream &o, const benchmark &res)
     // Lazy JSON
     bool start = false;
 
-    o  << R"({"iterations":)" << res.iterations << R"(,"results":{)";
+    o << R"({"iterations":)" << res.iterations << R"(,"results":{)";
     for (const auto &[k, v] : res.samples) {
         if (start) {
             o << ",";
@@ -100,12 +99,10 @@ void output_json(std::ostream &o, const benchmark &res)
 
         o << R"(")" << k << R"(":{)"
           << R"("average":)" << average << ","
-          << R"("sd":)" << sd
-          << "}";
+          << R"("sd":)" << sd << "}";
     }
     o << "}}" << std::endl;
 }
-
 
 } // namespace
 

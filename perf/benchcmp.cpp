@@ -22,8 +22,7 @@ struct benchmark {
     double iterations;
 };
 
-namespace YAML
-{
+namespace YAML {
 
 template <> struct as_if<benchmark::result, void> {
     explicit as_if(const Node &node_) : node(node_) {}
@@ -51,7 +50,7 @@ template <> struct as_if<benchmark, void> {
     const Node &node;
 };
 
-}
+} // namespace YAML
 
 namespace {
 std::string read_file(const fs::path &filename)
@@ -111,9 +110,7 @@ int main(int argc, char *argv[])
     auto latest = read_yaml(latest_file).as<benchmark>();
 
     std::size_t max_length = 0;
-    for (auto &[test, b] : baseline.tests) {
-        max_length = std::max(test.size(), max_length);
-    }
+    for (auto &[test, b] : baseline.tests) { max_length = std::max(test.size(), max_length); }
     ++max_length;
 
     for (auto &[test, b] : baseline.tests) {
@@ -126,14 +123,11 @@ int main(int argc, char *argv[])
         double avg_pct = 100.0 - ((l.average * 100.0) / b.average);
 
         double ztest = (l.average - b.average) /
-            sqrt(b.sd * b.sd / baseline.iterations +
-                 l.sd * l.sd / latest.iterations);
+                       sqrt(b.sd * b.sd / baseline.iterations + l.sd * l.sd / latest.iterations);
 
-        std::cout << std::setw(max_length) << std::setfill(' ') << std::left
-                  << test << ": "
-                  << std::fixed << std::setprecision(2)
-                  << avg_pct << "% " << (avg_pct < 0 ? "slower" : "faster")
-                  << " than baseline, ";
+        std::cout << std::setw(max_length) << std::setfill(' ') << std::left << test << ": "
+                  << std::fixed << std::setprecision(2) << avg_pct << "% "
+                  << (avg_pct < 0 ? "slower" : "faster") << " than baseline, ";
         if (abs(ztest) < 2.0) {
             std::cout << "NOT statistically significant ";
         }

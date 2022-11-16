@@ -14,8 +14,8 @@ namespace ddwaf::benchmark {
 
 namespace {
 
-using output_fn_type = void (*)(std::ostream &, const settings &,
-    const std::map<std::string_view, runner::test_result> &);
+using output_fn_type = void (*)(
+    std::ostream &, const settings &, const std::map<std::string_view, runner::test_result> &);
 
 static constexpr double MILLI = 1e3;
 static constexpr double MICRO = 1e6;
@@ -25,9 +25,8 @@ void output_csv(std::ostream &o, const settings &s [[maybe_unused]],
 {
     o << "name,average,p0,p75,p90,p95,p99,p100,sd" << std::endl;
     for (const auto &[k, v] : results) {
-        o << k << ", " << v.average << "," << v.p0 << "," << v.p50 << ","
-          << v.p75 << "," << v.p90 << "," << v.p95 << "," << v.p99 << ","
-          << v.p100 << "," << v.sd << std::endl;
+        o << k << ", " << v.average << "," << v.p0 << "," << v.p50 << "," << v.p75 << "," << v.p90
+          << "," << v.p95 << "," << v.p99 << "," << v.p100 << "," << v.sd << std::endl;
     }
 }
 
@@ -84,8 +83,8 @@ void output_human(std::ostream &o, const settings &s,
       << "Last Random Value : " << random::get() << std::endl;
     for (const auto &[k, v] : results) {
         o << "---- " << k << " ----" << std::endl
-          << std::fixed << std::setprecision(3)
-          << "  average      : " << v.average / MICRO << " ms" << std::endl
+          << std::fixed << std::setprecision(3) << "  average      : " << v.average / MICRO << " ms"
+          << std::endl
           << "  p0           : " << v.p0 / MICRO << " ms" << std::endl
           << "  p50          : " << v.p50 / MICRO << " ms" << std::endl
           << "  p75          : " << v.p75 / MICRO << " ms" << std::endl
@@ -99,8 +98,8 @@ void output_human(std::ostream &o, const settings &s,
 // NOLINTEND(*-narrowing-conversions)
 } // namespace
 
-void output_results(const benchmark::settings &s,
-    const std::map<std::string_view, runner::test_result> &results)
+void output_results(
+    const benchmark::settings &s, const std::map<std::string_view, runner::test_result> &results)
 {
     output_fn_type fn = output_json;
 

@@ -35,7 +35,7 @@ bool parse_ip(std::string_view ip, ipaddr &out)
     }
 
     // Assume the string has no '\0'
-    //char ip_cstr[INET6_ADDRSTRLEN] = {0};
+    // char ip_cstr[INET6_ADDRSTRLEN] = {0};
     std::array<char, INET6_ADDRSTRLEN> ip_cstr{0};
 
     memcpy(ip_cstr.data(), ip.data(), ip.size());

@@ -51,10 +51,7 @@ ddwaf_object node_to_arg(const Node &node)
 }
 } // namespace
 
-ddwaf_object as_if<ddwaf_object, void>::operator()() const
-{
-    return node_to_arg(node);
-}
+ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(node); }
 
 // NOLINTNEXTLINE(misc-no-recursion)
 YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
@@ -75,9 +72,7 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
         break;
     case DDWAF_OBJ_ARRAY:
         out << YAML::BeginSeq;
-        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) {
-            out << o.array[i];
-        }
+        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) { out << o.array[i]; }
         out << YAML::EndSeq;
         break;
     case DDWAF_OBJ_MAP:
