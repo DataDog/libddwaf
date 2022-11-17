@@ -260,6 +260,24 @@ std::set<rule::ptr> parse_rules_target(parameter::map &target, ddwaf::ruleset &r
     ;
 }
 
+void parse_input_filter(parameter::map &input, manifest_builder &mb,
+  exclusion_filter::input_set &inputs)
+{
+    auto address = at<std::string>(input, "address");
+    auto optional_target = mb.find(address);
+    if (!optional_target.has_value()) {
+        // This address isn't used by any rule so we skip it.
+        return;
+    }
+
+    auto key_path = at<std::vector<std::string>>(input, "key_path", {});
+    if (key_path.empty()) {
+        inputs.insert(*optional_target);
+    }
+
+    inputs.insert(*optional_target, std::move(key_path));
+}
+
 void parse_exclusion_filter(
     parameter::map &filter, manifest_builder &mb, ddwaf::ruleset &rs, ddwaf::config &cfg)
 {
@@ -285,12 +303,19 @@ void parse_exclusion_filter(
         }
     }
 
-    if (conditions.empty() && rules_target.empty()) {
+    exclusion_filter::input_set inputs; 
+    auto inputs_array = at<parameter::vector>(filter, "inputs", {});
+    for (parameter::map input_map : inputs_array) {
+        parse_input_filter(input_map, mb, inputs);
+    }
+
+    if (conditions.empty() && rules_target.empty() && inputs.empty()) {
         throw ddwaf::parsing_error("exclusion filter without conditions or targets");
     }
 
     rs.filters.emplace_back(
-        std::make_shared<exclusion_filter>(std::move(conditions), std::move(rules_target)));
+        std::make_shared<exclusion_filter>(
+            std::move(conditions), std::move(rules_target), std::move(inputs)));
 }
 
 } // namespace
