@@ -124,6 +124,27 @@ bool expression::eval(std::string_view key, ddwaf_object &value) {
     return result.BoolOrDie();
 }
 
+bool expression::eval(std::string_view key, std::string_view value) {
+    auto &expr = *expr_;
+    runtime::Activation activation;
+    auto cvalue = runtime::CelValue::CreateString(new std::string(value));
+    activation.InsertValue(key.data(), cvalue);
+
+    protobuf::Arena arena;
+    auto eval_status = expr->Evaluate(activation, &arena);
+    if (!eval_status.ok()) { 
+        std::cerr << "Error " << eval_status.status().ToString() << std::endl;
+        return false; 
+    }
+
+    runtime::CelValue result = eval_status.value();
+    if (!result.IsBool()) {
+        std::cerr << "Error " << result.ErrorOrDie()->ToString() << std::endl;
+        return false;
+    }
+
+    return result.BoolOrDie();
+}
 
 expression_builder::expression_builder():
     builder_(new std::unique_ptr<CelExpressionBuilder>(runtime::CreateCelExpressionBuilder({}))) {}
@@ -134,7 +155,7 @@ std::weak_ptr<expression> expression_builder::build(const std::string &expr_str)
     auto &builder = *builder_;
     auto parse_status = parser::Parse(expr_str);
     if (!parse_status.ok()) {
-        //std::cout << "Parsing failed " << parse_status.status().ToString() << '\n';
+        std::cerr << "Parsing failed " << parse_status.status().ToString() << '\n';
         throw;
     }
 
@@ -144,7 +165,7 @@ std::weak_ptr<expression> expression_builder::build(const std::string &expr_str)
     google::api::expr::v1alpha1::SourceInfo source_info;
     auto cel_expression_status = builder->CreateExpression(&parsed_expr.expr(), &source_info);
     if (!cel_expression_status.ok()) {
-        //std::cout << "expr_create compile error " << cel_expression_status.status().message() << '\n';
+        std::cerr << "Compile error " << cel_expression_status.status().message() << '\n';
         throw;
     }
 

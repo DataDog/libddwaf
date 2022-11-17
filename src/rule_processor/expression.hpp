@@ -17,7 +17,7 @@ namespace ddwaf::rule_processor {
 
 class expression : public base {
 public:
-    explicit expression(std::string &expr);
+    explicit expression(const std::string &expr);
 
     std::optional<event::match> match(std::string_view str) const override;
     std::string_view name() const override { return "expression"; }

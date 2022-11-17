@@ -25,6 +25,7 @@ class expression {
 public:
     ~expression();// { delete expr_; }
     bool eval(std::string_view key, ddwaf_object &value);
+    bool eval(std::string_view key, std::string_view value);
 protected:
     friend class expression_builder;
 

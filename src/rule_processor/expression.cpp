@@ -11,12 +11,17 @@ namespace ddwaf::rule_processor {
 // NOLINTNEXTLINE
 datadog::waf::expression_builder expression::builder{};
 
-expression::expression(std::string &expr):
+expression::expression(const std::string &expr):
     expr_(expression::builder.build(expr)) {}
 
 
 std::optional<event::match> expression::match(std::string_view str) const
 {
+    auto expression = expr_.lock();
+    if (expression->eval("input", str)) {
+        return make_event(str, str);
+    }
+
     return std::nullopt;
 }
 

@@ -17,6 +17,7 @@
 #include <rule_processor/is_xss.hpp>
 #include <rule_processor/phrase_match.hpp>
 #include <rule_processor/regex_match.hpp>
+#include <rule_processor/expression.hpp>
 #include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <set>
@@ -118,6 +119,10 @@ condition::ptr parse_condition(parameter::map &rule, rule_data::dispatcher &disp
         } else {
             processor = std::make_shared<rule_processor::exact_match>(it->second);
         }
+    } else if (operation == "expression") {
+        auto code = at<std::string>(params, "code");
+        processor =
+            std::make_shared<rule_processor::expression>(code);
     } else {
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
     }
