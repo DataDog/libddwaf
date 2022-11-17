@@ -187,4 +187,19 @@ ExternalProject_Add(proj_event_rules
     INSTALL_COMMAND "")
 
 set_target_properties(proj_event_rules PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+ExternalProject_Add(proj_cel_cpp_wrapper
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cel-cpp-wrapper
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND cd <SOURCE_DIR> && bazel build //main:cel-cpp-wrapper-static
+    INSTALL_COMMAND ""
+)
+ExternalProject_Get_property(proj_cel_cpp_wrapper SOURCE_DIR)
+
+add_library(lib_cel_cpp_wrapper STATIC IMPORTED GLOBAL)
+set_property(TARGET lib_cel_cpp_wrapper PROPERTY IMPORTED_LOCATION ${SOURCE_DIR}/bazel-bin/main/cel-cpp-wrapper-static.a)
+target_include_directories(lib_cel_cpp_wrapper INTERFACE ${SOURCE_DIR})
+
+add_dependencies(lib_cel_cpp_wrapper proj_cel_cpp_wrapper)
+
 # vim: et

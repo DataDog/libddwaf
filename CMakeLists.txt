@@ -92,6 +92,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule_processor/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/ip_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/exact_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/rule_processor/expression.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})
 
@@ -110,7 +111,7 @@ install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
 set(LIBDDWAF_PRIVATE_LIBRARIES 
-    lib_re2 lib_rapidjson lib_ac lib_injection lib_radix lib_utf8proc)
+    lib_re2 lib_rapidjson lib_ac lib_injection lib_radix lib_utf8proc lib_cel_cpp_wrapper)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 # needed for glibc <2.17. We compile with --as-needed so the library won't
