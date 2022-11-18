@@ -1,0 +1,13 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: expression
+        parameters:
+          inputs:
+            - address: server.request.headers.no_cookies
+          code: input.startsWith("Arachni") && input.endsWith("v1")
