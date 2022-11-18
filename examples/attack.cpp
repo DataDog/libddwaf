@@ -132,7 +132,7 @@ std::string read_rule_file(const std::string_view& filename)
 
 int main(int argc, char* argv[])
 {
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
+    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
 
     if (argc < 2) {
         DDWAF_ERROR("Usage: %s <json/yaml file>", argv[0]);
@@ -165,11 +165,11 @@ int main(int argc, char* argv[])
     ddwaf_object tmp;
     ddwaf_object useragent;
     ddwaf_object_map(&useragent);
-    ddwaf_object_map_add(&useragent, "user-agent", ddwaf_object_string(&tmp, "Arachni/v1"));
+    ddwaf_object_map_add(&useragent, "user_agent", ddwaf_object_string(&tmp, "Arachni/v1"));
 
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.headers.no_cookies", &useragent);
+    ddwaf_object_map_add(&root, "server_request_headers_no_cookies", &useragent);
 
     auto code = ddwaf_run(context, &root, &ret, LONG_TIME);
     if (code == DDWAF_MATCH && ret.data != nullptr) {

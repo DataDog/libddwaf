@@ -5,9 +5,7 @@ rules:
     tags:
       type: flow1
       category: category1
-    conditions:
-      - operator: expression
-        parameters:
-          inputs:
-            - address: server.request.headers.no_cookies
-          code: input.startsWith("Arachni") && input.endsWith("v1")
+    expression:
+      code: server_request_headers_no_cookies.user_agent == "Arachni/v1"
+      inputs:
+        - address: server_request_headers_no_cookies

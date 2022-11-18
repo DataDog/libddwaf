@@ -38,8 +38,8 @@ public:
 
     DDWAF_RET_CODE run(const ddwaf_object &, optional_ref<ddwaf_result> res, uint64_t);
 
-    std::set<rule::ptr> filter(ddwaf::timer &deadline);
-    std::vector<event> match(const std::set<rule::ptr> &exclude, ddwaf::timer &deadline);
+    std::set<rule_base::ptr> filter(ddwaf::timer &deadline);
+    std::vector<event> match(const std::set<rule_base::ptr> &exclude, ddwaf::timer &deadline);
 
 protected:
     bool is_first_run() const { return rule_cache_.empty(); }
@@ -51,7 +51,7 @@ protected:
     // Cache of filters and conditions
     std::unordered_map<exclusion_filter::ptr, exclusion_filter::cache_type> filter_cache_;
     // Cache of rules and conditions
-    std::unordered_map<rule::ptr, rule::cache_type> rule_cache_;
+    std::unordered_map<rule_base::ptr, rule::cache_type> rule_cache_;
     // Cache of collections to avoid processing once a result has been obtained
     std::unordered_set<std::string> collection_cache_;
 };

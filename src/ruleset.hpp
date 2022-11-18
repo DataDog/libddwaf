@@ -18,7 +18,7 @@
 namespace ddwaf {
 
 struct ruleset {
-    void insert_rule(rule::ptr rule)
+    void insert_rule(rule_base::ptr rule)
     {
         rules.emplace(rule->id, rule);
         collections[rule->type].emplace_back(rule);
@@ -26,7 +26,7 @@ struct ruleset {
         rules_by_category[rule->category].emplace(rule);
     }
 
-    std::set<rule::ptr> get_rules_by_type(std::string_view type) const
+    std::set<rule_base::ptr> get_rules_by_type(std::string_view type) const
     {
         auto it = rules_by_type.find(type);
         if (it == rules_by_type.end()) {
@@ -35,7 +35,7 @@ struct ruleset {
         return it->second;
     }
 
-    std::set<rule::ptr> get_rules_by_category(std::string_view category) const
+    std::set<rule_base::ptr> get_rules_by_category(std::string_view category) const
     {
         auto it = rules_by_category.find(category);
         if (it == rules_by_category.end()) {
@@ -44,7 +44,7 @@ struct ruleset {
         return it->second;
     }
 
-    std::set<rule::ptr> get_rules_by_type_and_category(
+    std::set<rule_base::ptr> get_rules_by_type_and_category(
         std::string_view type, std::string_view category) const
     {
         auto type_it = rules_by_type.find(type);
@@ -57,9 +57,9 @@ struct ruleset {
             return {};
         }
 
-        const std::set<rule::ptr> &type_set = type_it->second;
-        const std::set<rule::ptr> &category_set = category_it->second;
-        std::set<rule::ptr> intersection;
+        const std::set<rule_base::ptr> &type_set = type_it->second;
+        const std::set<rule_base::ptr> &category_set = category_it->second;
+        std::set<rule_base::ptr> intersection;
 
         std::set_intersection(type_set.begin(), type_set.end(), category_set.begin(),
             category_set.end(), std::inserter(intersection, intersection.begin()));
@@ -70,13 +70,13 @@ struct ruleset {
     ddwaf::manifest manifest;
     std::vector<exclusion_filter::ptr> filters;
     // Rules are ordered by ID
-    std::unordered_map<std::string, rule::ptr> rules;
+    std::unordered_map<std::string, rule_base::ptr> rules;
     // Collections are ordered by rule.type
-    std::unordered_map<std::string, std::vector<rule::ptr>> collections;
+    std::unordered_map<std::string, std::vector<rule_base::ptr>> collections;
     ddwaf::rule_data::dispatcher dispatcher;
 
-    std::unordered_map<std::string_view, std::set<rule::ptr>> rules_by_type;
-    std::unordered_map<std::string_view, std::set<rule::ptr>> rules_by_category;
+    std::unordered_map<std::string_view, std::set<rule_base::ptr>> rules_by_type;
+    std::unordered_map<std::string_view, std::set<rule_base::ptr>> rules_by_category;
 };
 
 } // namespace ddwaf

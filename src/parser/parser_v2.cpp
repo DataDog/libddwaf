@@ -168,8 +168,8 @@ condition::ptr parse_condition(parameter::map &rule, rule_data::dispatcher &disp
     return cond;
 }
 
-void parse_rule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builder &mb,
-    ddwaf::ruleset &rs, ddwaf::config &cfg)
+void parse_condition_rule(parameter::map &rule, ddwaf::ruleset_info &info,
+    manifest_builder &mb, ddwaf::ruleset &rs, ddwaf::config &cfg)
 {
     auto id = at<std::string>(rule, "id");
     if (rs.rules.find(id) != rs.rules.end()) {
@@ -221,7 +221,71 @@ void parse_rule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builde
     }
 }
 
-std::set<rule::ptr> parse_rules_target(parameter::map &target, ddwaf::ruleset &rs)
+void parse_expression_rule(parameter::map &rule, ddwaf::ruleset_info &info,
+    manifest_builder &mb, ddwaf::ruleset &rs)
+{
+    auto id = at<std::string>(rule, "id");
+    if (rs.rules.find(id) != rs.rules.end()) {
+        DDWAF_WARN("duplicate rule %s", id.c_str());
+        info.insert_error(id, "duplicate rule");
+        return;
+    }
+
+    try {
+        auto expression = at<parameter::map>(rule, "expression");
+        auto code = at<std::string>(expression, "code");
+        if (code.empty()) {
+            throw ddwaf::parsing_error("empty code");
+        }
+
+        auto inputs = at<parameter::vector>(expression, "inputs");
+        if (inputs.empty()) {
+            throw ddwaf::parsing_error("empty inputs");
+        }
+
+        std::vector<manifest::target_type> targets;
+        for (parameter::map input : inputs) {
+            auto address = at<std::string>(input, "address");
+            if (address.empty()) {
+                throw ddwaf::parsing_error("empty address");
+            }
+
+            auto target = mb.insert(address, {});
+            targets.push_back(target);
+        }
+
+
+        auto tags = at<parameter::map>(rule, "tags");
+        auto rule_ptr =
+            std::make_shared<ddwaf::expression_rule>(std::string(id), at<std::string>(rule, "name"),
+                at<std::string>(tags, "type"), at<std::string>(tags, "category", ""),
+                code, std::move(targets), at<std::vector<std::string>>(rule, "on_match", {}));
+
+        rs.insert_rule(rule_ptr);
+        info.add_loaded();
+    } catch (const std::exception &e) {
+        DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
+        info.insert_error(id, e.what());
+    }
+}
+
+void parse_rule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builder &mb,
+    ddwaf::ruleset &rs, ddwaf::config &cfg)
+{
+    if (rule.find("conditions") != rule.end()) {
+        parse_condition_rule(rule, info, mb, rs, cfg);
+        return;
+    }
+
+    if (rule.find("expression") != rule.end()) {
+        parse_expression_rule(rule, info, mb, rs);
+        return;
+    }
+
+    throw ddwaf::parsing_error("Unknown rule type");
+}
+
+std::set<rule_base::ptr> parse_rules_target(parameter::map &target, ddwaf::ruleset &rs)
 {
     auto rule_id = at<std::string>(target, "rule_id", {});
     if (!rule_id.empty()) {
@@ -279,7 +343,7 @@ void parse_exclusion_filter(
         }
     }
 
-    std::set<rule::ptr> rules_target;
+    std::set<rule_base::ptr> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
     if (rules_target_array.empty()) {
         for (const auto &[id, rule] : rs.rules) { rules_target.emplace(rule); }
