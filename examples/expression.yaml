@@ -6,7 +6,7 @@ rules:
       type: flow1
       category: category1
     expression:
-      code: headers.user_agent == "Arachni/v1" && query.endsWith("honeypot")
+      code: headers.user_agent == "Arachni/v1" && size(query.filter(x, x.endsWith("honeypot"))) > 0
       inputs:
         - address: headers
         - address: query

@@ -168,9 +168,13 @@ int main(int argc, char* argv[])
     ddwaf_object_map_add(&useragent, "user_agent", ddwaf_object_string(&tmp, "Arachni/v1"));
 
     ddwaf_object root;
+    ddwaf_object query_array;
+    ddwaf_object_array(&query_array);
+    ddwaf_object_array_add(&query_array, ddwaf_object_string(&tmp, "not a nice payload"));
+    ddwaf_object_array_add(&query_array, ddwaf_object_string(&tmp, "fake honeypot"));
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "headers", &useragent);
-    ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "/sql_honeypot"));
+    ddwaf_object_map_add(&root, "query", &query_array);
 
     auto code = ddwaf_run(context, &root, &ret, LONG_TIME);
     if (code == DDWAF_MATCH && ret.data != nullptr) {
