@@ -132,7 +132,7 @@ std::string read_rule_file(const std::string_view& filename)
 
 int main(int argc, char* argv[])
 {
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
+    ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
 
     if (argc < 2) {
         DDWAF_ERROR("Usage: %s <json/yaml file>", argv[0]);
@@ -169,7 +169,8 @@ int main(int argc, char* argv[])
 
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server_request_headers_no_cookies", &useragent);
+    ddwaf_object_map_add(&root, "headers", &useragent);
+    ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "/sql_honeypot"));
 
     auto code = ddwaf_run(context, &root, &ret, LONG_TIME);
     if (code == DDWAF_MATCH && ret.data != nullptr) {

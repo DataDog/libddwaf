@@ -70,14 +70,12 @@ namespace datadog::waf {
 runtime::CelValue object_to_celvalue(const ddwaf_object &obj) {
     switch(obj.type) {
     case DDWAF_OBJ_BOOL:
-        std::cout << "bool\n";
         return runtime::CelValue::CreateBool(obj.boolean);
     case DDWAF_OBJ_SIGNED:
         return runtime::CelValue::CreateDouble(obj.intValue);
     case DDWAF_OBJ_UNSIGNED:
         return runtime::CelValue::CreateDouble(obj.uintValue);
     case DDWAF_OBJ_STRING:
-        std::cout << "string\n";
         return runtime::CelValue::CreateString(new std::string{obj.stringValue, obj.nbEntries});
     case DDWAF_OBJ_ARRAY: {
           std::vector<runtime::CelValue> values;
@@ -94,7 +92,6 @@ runtime::CelValue object_to_celvalue(const ddwaf_object &obj) {
             const auto &child = obj.array[i];
             auto key = runtime::CelValue::CreateString(
                     new std::string{child.parameterName, child.parameterNameLength});
-            std::cout << child.parameterName << " - adding\n";
             auto value =  object_to_celvalue(child);
             map->Add(key, value);
         }
@@ -112,6 +109,30 @@ expression::expression(std::unique_ptr<CelExpression> &&expr):
     expr_(new std::unique_ptr<CelExpression>(std::move(expr))) {}
 
 expression::~expression() { delete expr_; }
+
+
+bool expression::eval(const std::map<std::string_view, ddwaf_object> &object_map)
+{
+    auto &expr = *expr_;
+    runtime::Activation activation;
+    for (const auto &[key, value] : object_map) {
+        activation.InsertValue(key.data(), object_to_celvalue(value));
+    }
+
+    protobuf::Arena arena;
+    auto eval_status = expr->Evaluate(activation, &arena);
+    if (!eval_status.ok()) {
+        std::cerr << "Error " << eval_status.status().ToString() << std::endl;
+        return false; }
+
+    runtime::CelValue result = eval_status.value();
+    if (!result.IsBool()) {
+        std::cerr << "Error " << result.ErrorOrDie()->ToString() << std::endl;
+        return false;
+    }
+
+    return result.BoolOrDie();
+}
 
 bool expression::eval(std::string_view key, const ddwaf_object &value) {
     auto &expr = *expr_;

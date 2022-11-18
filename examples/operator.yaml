@@ -9,5 +9,5 @@ rules:
       - operator: expression
         parameters:
           inputs:
-            - address: server_request_headers_no_cookies
+            - address: headers
           code: input.startsWith("Arachni") && input.endsWith("v1")

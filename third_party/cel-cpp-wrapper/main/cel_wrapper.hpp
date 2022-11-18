@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -24,6 +25,7 @@ class expression_builder;
 class expression {
 public:
     ~expression();// { delete expr_; }
+    bool eval(const std::map<std::string_view, ddwaf_object> &object_map);
     bool eval(std::string_view key, const ddwaf_object &value);
     bool eval(std::string_view key, std::string_view value);
 protected:

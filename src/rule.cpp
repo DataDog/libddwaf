@@ -80,17 +80,18 @@ std::optional<event> expression_rule::match(const object_store &store,
     const ddwaf::manifest &manifest, cache_type &cache,
     ddwaf::timer &deadline) const
 {
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
+
     // An event was already produced, so we skip the rule
     if (cache.result) {
         return std::nullopt;
     }
 
-    auto expression = expr_.lock();
+    std::map<std::string_view, ddwaf_object> object_map;
     for (const auto &target : targets) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
-
         if (!store.is_new_target(target)) {
             continue;
         }
@@ -102,20 +103,26 @@ std::optional<event> expression_rule::match(const object_store &store,
             continue;
         }
 
-        if (expression->eval(info.name, *const_cast<_ddwaf_object *>(object))) {
-            cache.result = true;
+        object_map.emplace(info.name, *object);
+    }
 
-            cache.event.id = id;
-            cache.event.name = name;
-            cache.event.type = type;
-            cache.event.category = category;
+    auto expression = expr_.lock();
 
-            cache.event.actions.reserve(actions.size());
-            for (const auto &action : actions) { cache.event.actions.push_back(action); }
+    if (expression->eval(object_map)) {
+        cache.result = true;
 
-            cache.event.matches.push_back({"", "", "expression", "", info.name, {}});
-            return {std::move(cache.event)};
+        cache.event.id = id;
+        cache.event.name = name;
+        cache.event.type = type;
+        cache.event.category = category;
+
+        cache.event.actions.reserve(actions.size());
+        for (const auto &action : actions) { cache.event.actions.push_back(action); }
+
+        for (const auto &[key, value] : object_map) {
+            cache.event.matches.push_back({"", "", "expression", "", key, {}});
         }
+        return {std::move(cache.event)};
     }
 
     return std::nullopt;

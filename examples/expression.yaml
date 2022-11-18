@@ -6,6 +6,7 @@ rules:
       type: flow1
       category: category1
     expression:
-      code: server_request_headers_no_cookies.user_agent == "Arachni/v1"
+      code: headers.user_agent == "Arachni/v1" && query.endsWith("honeypot")
       inputs:
-        - address: server_request_headers_no_cookies
+        - address: headers
+        - address: query
