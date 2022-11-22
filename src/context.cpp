@@ -65,9 +65,10 @@ DDWAF_RET_CODE context::run(
     return code;
 }
 
-std::set<rule::ptr> context::filter(ddwaf::timer &deadline)
+
+std::unordered_map<rule::ptr, input_filter> context::filter(ddwaf::timer &deadline)
 {
-    std::set<rule::ptr> rules_to_exclude;
+    std::unordered_map<rule::ptr, input_filter> rules_to_exclude;
     for (const auto &filter : ruleset_.filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while running exclusion filters");
@@ -82,14 +83,17 @@ std::set<rule::ptr> context::filter(ddwaf::timer &deadline)
 
         exclusion_filter::cache_type &cache = it->second;
         if (filter->match(store_, ruleset_.manifest, cache, deadline)) {
-            for (const auto &rule : filter->get_rule_targets()) { rules_to_exclude.emplace(rule); }
+            for (const auto &rule : filter->get_rule_targets()) { 
+                rules_to_exclude[rule].insert(filter->get_inputs());
+            }
         }
     }
 
     return rules_to_exclude;
 }
 
-std::vector<event> context::match(const std::set<rule::ptr> &exclude, ddwaf::timer &deadline)
+std::vector<event> context::match(
+            const std::unordered_map<rule::ptr, input_filter> &exclude, ddwaf::timer &deadline)
 {
     // Process each rule we have to run for this step of the collection
     std::vector<ddwaf::event> events;
@@ -106,10 +110,15 @@ std::vector<event> context::match(const std::set<rule::ptr> &exclude, ddwaf::tim
                 throw timeout_exception();
             }
 
-            if (!rule->is_enabled() || exclude.find(rule) != exclude.end()) {
+            if (!rule->is_enabled()) {
                 continue;
             }
 
+            auto exclude_it = exclude.find(rule);
+            if (exclude_it != exclude.end() && !exclude_it->second.valid()) { continue; }
+
+            const input_filter &filter = exclude_it != exclude.end() ?
+                exclude_it->second : input_filter();
             DDWAF_DEBUG("Running the WAF on rule %s", id.c_str());
 
             try {
@@ -120,7 +129,7 @@ std::vector<event> context::match(const std::set<rule::ptr> &exclude, ddwaf::tim
                 }
 
                 rule::cache_type &cache = it->second;
-                auto event = rule->match(store_, ruleset_.manifest, cache, deadline);
+                auto event = rule->match(store_, ruleset_.manifest, cache, filter, deadline);
                 if (event.has_value()) {
                     collection_cache_.emplace(rule->type);
                     events.emplace_back(std::move(*event));

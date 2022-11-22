@@ -31,7 +31,8 @@ bool exclusion_filter::match(const object_store &store, const ddwaf::manifest &m
         }
 
         // TODO: Condition interface without events
-        auto opt_match = cond->match(store, manifest, run_on_new, deadline);
+        input_filter filter;
+        auto opt_match = cond->match(store, manifest, filter, run_on_new, deadline);
         if (!opt_match.has_value()) {
             cached_result->second = false;
             return false;

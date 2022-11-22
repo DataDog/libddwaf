@@ -38,8 +38,9 @@ public:
 
     DDWAF_RET_CODE run(const ddwaf_object &, optional_ref<ddwaf_result> res, uint64_t);
 
-    std::set<rule::ptr> filter(ddwaf::timer &deadline);
-    std::vector<event> match(const std::set<rule::ptr> &exclude, ddwaf::timer &deadline);
+    std::unordered_map<rule::ptr, input_filter> filter(ddwaf::timer &deadline);
+    std::vector<event> match(
+            const std::unordered_map<rule::ptr, input_filter> &exclude, ddwaf::timer &deadline);
 
 protected:
     bool is_first_run() const { return rule_cache_.empty(); }

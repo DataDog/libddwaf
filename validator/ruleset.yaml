@@ -40,11 +40,15 @@ exclusions:
           inputs:
             - address: exclusion-filter-3-input
           regex: exclusion-filter-3
-    rule_targets:
+    rules_target:
       - tags:
           type: flow28
           category: category28
       - rule_id: 29
+  - rules_target:
+      - rule_id: 30
+    inputs:
+      - address: rule30-input2
 rules:
   - id: 1
     name: rule1-basic-single-input
@@ -438,3 +442,15 @@ rules:
           inputs:
             - address: rule29-input
           regex: rule29
+  - id: 30
+    name: rule30-input-excluded
+    tags:
+      type: flow30
+      category: category30
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule30-input1
+            - address: rule30-input2
+          regex: rule30

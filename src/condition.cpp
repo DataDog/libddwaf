@@ -91,7 +91,8 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
 }
 
 std::optional<event::match> condition::match(const object_store &store,
-    const ddwaf::manifest &manifest, bool run_on_new, ddwaf::timer &deadline) const
+    const ddwaf::manifest &manifest, const input_filter &filter,
+    bool run_on_new, ddwaf::timer &deadline) const
 {
     for (const auto &target : targets_) {
         if (deadline.expired()) {
@@ -104,10 +105,14 @@ std::optional<event::match> condition::match(const object_store &store,
             continue;
         }
 
+        auto filter_res = filter.find(target);
+        if (filter_res.has_value() && filter_res->skip) {
+            continue;
+        }
+
         const auto &info = manifest.get_target_info(target);
 
         // TODO: iterators could be cached to avoid reinitialisation
-
         const auto *object = store.get_target(target);
         if (object == nullptr) {
             continue;

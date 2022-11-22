@@ -261,18 +261,21 @@ std::set<rule::ptr> parse_rules_target(parameter::map &target, ddwaf::ruleset &r
 }
 
 void parse_input_filter(parameter::map &input, manifest_builder &mb,
-  exclusion_filter::input_set &inputs)
+  input_filter::input_set &inputs)
 {
     auto address = at<std::string>(input, "address");
     auto optional_target = mb.find(address);
+    DDWAF_DEBUG("Address %s", address.c_str());
     if (!optional_target.has_value()) {
         // This address isn't used by any rule so we skip it.
         return;
     }
 
+    DDWAF_DEBUG("Address is good %s", address.c_str());
     auto key_path = at<std::vector<std::string>>(input, "key_path", {});
     if (key_path.empty()) {
         inputs.insert(*optional_target);
+        return;
     }
 
     inputs.insert(*optional_target, std::move(key_path));
@@ -303,7 +306,7 @@ void parse_exclusion_filter(
         }
     }
 
-    exclusion_filter::input_set inputs; 
+    input_filter::input_set inputs; 
     auto inputs_array = at<parameter::vector>(filter, "inputs", {});
     for (parameter::map input_map : inputs_array) {
         parse_input_filter(input_map, mb, inputs);
