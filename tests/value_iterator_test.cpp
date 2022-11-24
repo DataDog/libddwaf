@@ -759,14 +759,14 @@ TEST(TestValueIterator, TestMapDepthLimitPath)
 
     {
         limits.max_container_depth = 3;
-        ddwaf::object::value_iterator it(&object, {"root", "child", "grandchild"}, limits);
+        ddwaf::object::value_iterator it(&object, {"root", "child", "grandchild"}, {}, limits);
 
         EXPECT_FALSE(it);
     }
 
     {
         limits.max_container_depth = 4;
-        ddwaf::object::value_iterator it(&object, {"root", "child", "grandchild"}, limits);
+        ddwaf::object::value_iterator it(&object, {"root", "child", "grandchild"}, {}, limits);
 
         auto it_path = it.get_current_path();
         std::vector<std::string> path = {"root", "child", "grandchild", "key"};

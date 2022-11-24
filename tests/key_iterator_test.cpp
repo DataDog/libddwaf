@@ -722,14 +722,14 @@ TEST(TestKeyIterator, TestMapDepthLimitPath)
 
     {
         limits.max_container_depth = 3;
-        ddwaf::object::key_iterator it(&object, {"root", "child", "grandchild"}, limits);
+        ddwaf::object::key_iterator it(&object, {"root", "child", "grandchild"}, {}, limits);
 
         EXPECT_FALSE(it);
     }
 
     {
         limits.max_container_depth = 4;
-        ddwaf::object::key_iterator it(&object, {"root", "child", "grandchild"}, limits);
+        ddwaf::object::key_iterator it(&object, {"root", "child", "grandchild"}, {}, limits);
 
         EXPECT_TRUE(it);
         {

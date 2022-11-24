@@ -37,8 +37,8 @@ public:
 
     exclusion_filter(std::vector<condition::ptr> &&conditions,
             std::set<rule::ptr> &&rule_targets,
-            std::unordered_set<manifest::target_type> &&input_targets,
-            std::optional<object_filter> &&filter)
+            std::unordered_set<manifest::target_type> &&input_targets = {},
+            std::optional<object_filter> &&filter = std::nullopt)
         : conditions_(std::move(conditions)), rule_targets_(std::move(rule_targets)),
         input_targets_(std::move(input_targets)), filter_(std::move(filter))
     {}

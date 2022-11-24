@@ -54,7 +54,9 @@ protected:
     std::vector<std::string> path_;
     std::vector<std::pair<const ddwaf_object *, std::size_t>> stack_;
     const ddwaf_object *current_{nullptr};
-    const std::unordered_set<ddwaf_object*> &excluded_;
+
+    //TODO reference somehow
+    const std::unordered_set<ddwaf_object*> excluded_;
 };
 
 class value_iterator : public iterator_base<value_iterator> {
