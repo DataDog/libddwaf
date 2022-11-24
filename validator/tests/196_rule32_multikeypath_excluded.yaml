@@ -1,0 +1,18 @@
+{
+  name: "Exclude match on multi key path",
+  runs: [
+    {
+      input: {
+        rule32-input: {
+          parent: {
+            sibling: rule32,
+            child: {
+              grandchild: rule32
+            },
+          }
+        }
+      },
+      code: ok
+    }
+  ],
+}

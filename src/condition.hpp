@@ -16,7 +16,6 @@
 #include <PWTransformer.h>
 #include <clock.hpp>
 #include <event.hpp>
-#include <input_filter.hpp>
 #include <iterator.hpp>
 #include <manifest.hpp>
 #include <object_store.hpp>
@@ -47,7 +46,9 @@ public:
     condition &operator=(const condition &) = delete;
 
     std::optional<event::match> match(const object_store &store, const ddwaf::manifest &manifest,
-        const input_filter &filter, bool run_on_new, ddwaf::timer &deadline) const;
+        const std::unordered_set<manifest::target_type> &inputs_excluded,
+        const std::unordered_set<ddwaf_object*> &objects_excluded,
+        bool run_on_new, ddwaf::timer &deadline) const;
 
     std::string_view processor_name()
     {

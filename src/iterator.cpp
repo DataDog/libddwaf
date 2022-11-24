@@ -30,7 +30,9 @@ bool is_scalar(const ddwaf_object *obj)
 
 } // namespace
 
-template <typename T> iterator_base<T>::iterator_base(const object_limits &limits) : limits_(limits)
+template <typename T>
+iterator_base<T>::iterator_base(const std::unordered_set<ddwaf_object*> &exclude,
+    const object_limits &limits) : limits_(limits), excluded_(exclude)
 {
     stack_.reserve(initial_stack_size);
 }
@@ -82,9 +84,9 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     return keys;
 }
 
-value_iterator::value_iterator(
-    const ddwaf_object *obj, const std::vector<std::string> &path, const object_limits &limits)
-    : iterator_base(limits)
+value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+    const std::unordered_set<ddwaf_object*> &exclude, const object_limits &limits)
+    : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
@@ -139,6 +141,8 @@ void value_iterator::initialise_cursor_with_path(
                 if (possible_child->parameterName == nullptr) {
                     continue;
                 }
+
+                if (should_exclude(possible_child)) { continue; }
 
                 const std::string_view child_key(
                     possible_child->parameterName, possible_child->parameterNameLength);
@@ -198,16 +202,18 @@ void value_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        if (is_container(&parent->array[index])) {
-            if (depth() < limits_.max_container_depth) {
-                // Push can invalidate the current references to the parent
-                // so we increment the index before a potential reallocation
-                // and prevent any further use of the references.
-                stack_.emplace_back(&parent->array[index++], 0);
-                continue;
+        if (!should_exclude(&parent->array[index])) {
+            if (is_container(&parent->array[index])) {
+                if (depth() < limits_.max_container_depth) {
+                    // Push can invalidate the current references to the parent
+                    // so we increment the index before a potential reallocation
+                    // and prevent any further use of the references.
+                    stack_.emplace_back(&parent->array[index++], 0);
+                    continue;
+                }
+            } else if (is_scalar(&parent->array[index])) {
+                current_ = &parent->array[index];
             }
-        } else if (is_scalar(&parent->array[index])) {
-            current_ = &parent->array[index];
         }
 
         ++index;
@@ -215,8 +221,9 @@ void value_iterator::set_cursor_to_next_object()
 }
 
 key_iterator::key_iterator(
-    const ddwaf_object *obj, const std::vector<std::string> &path, const object_limits &limits)
-    : iterator_base(limits)
+    const ddwaf_object *obj, const std::vector<std::string> &path,
+    const std::unordered_set<ddwaf_object*> &exclude, const object_limits &limits)
+    : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
@@ -259,6 +266,8 @@ void key_iterator::initialise_cursor_with_path(
                 if (possible_child->parameterName == nullptr) {
                     continue;
                 }
+
+                if (should_exclude(possible_child)) { continue; }
 
                 const std::string_view child_key(
                     possible_child->parameterName, possible_child->parameterNameLength);
@@ -306,24 +315,27 @@ void key_iterator::set_cursor_to_next_object()
         }
 
         ddwaf_object *child = &parent->array[index];
-        if (is_container(child)) {
-            if (previous != child && child->parameterName != nullptr) {
-                current_ = child;
-                // Break to ensure the index isn't increased and this container
-                // is fully iterated.
-                break;
-            }
 
-            if (depth() < limits_.max_container_depth) {
-                // Push can invalidate the current references to the parent
-                // so we increment the index before a potential reallocation
-                // and prevent any further use of the references.
-                ++index;
-                stack_.emplace_back(child, 0);
-                continue;
+        if (!should_exclude(child)) {
+            if (is_container(child)) {
+                if (previous != child && child->parameterName != nullptr) {
+                    current_ = child;
+                    // Break to ensure the index isn't increased and this container
+                    // is fully iterated.
+                    break;
+                }
+
+                if (depth() < limits_.max_container_depth) {
+                    // Push can invalidate the current references to the parent
+                    // so we increment the index before a potential reallocation
+                    // and prevent any further use of the references.
+                    ++index;
+                    stack_.emplace_back(child, 0);
+                    continue;
+                }
+            } else if (child->parameterName != nullptr) {
+                current_ = child;
             }
-        } else if (child->parameterName != nullptr) {
-            current_ = child;
         }
 
         ++index;

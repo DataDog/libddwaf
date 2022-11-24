@@ -11,8 +11,8 @@
 #include <vector>
 
 #include <clock.hpp>
-#include <input_filter.hpp>
 #include <manifest.hpp>
+#include <object_filter.hpp>
 #include <object_store.hpp>
 #include <rule.hpp>
 
@@ -22,27 +22,35 @@ class exclusion_filter {
 public:
     using ptr = std::shared_ptr<exclusion_filter>;
 
+    struct target_specification {
+        const std::set<rule::ptr> &rules;
+        const std::unordered_set<manifest::target_type> &inputs;
+        std::unordered_set<ddwaf_object*> objects;
+    };
+
     struct cache_type {
         bool result{false};
         std::unordered_map<condition::ptr, bool> conditions;
+        // inspected targets by the input filter
+        std::unordered_set<manifest::target_type> input_targets;
     };
 
-    exclusion_filter(std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets,
-      input_filter::input_set && inputs)
+    exclusion_filter(std::vector<condition::ptr> &&conditions,
+            std::set<rule::ptr> &&rule_targets,
+            std::unordered_set<manifest::target_type> &&input_targets,
+            std::optional<object_filter> &&filter)
         : conditions_(std::move(conditions)), rule_targets_(std::move(rule_targets)),
-          inputs_(std::move(inputs))
+        input_targets_(std::move(input_targets)), filter_(std::move(filter))
     {}
 
-    [[nodiscard]] const std::set<rule::ptr> &get_rule_targets() const { return rule_targets_; }
-    [[nodiscard]] const input_filter::input_set &get_inputs() const { return inputs_; }
-
-    bool match(const object_store &store, const ddwaf::manifest &manifest, cache_type &cache,
-        ddwaf::timer &deadline) const;
+    std::optional<target_specification> match(const object_store &store,
+        const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const;
 
 protected:
     std::vector<condition::ptr> conditions_;
-    std::set<rule::ptr> rule_targets_;
-    input_filter::input_set inputs_;
+    const std::set<rule::ptr> rule_targets_;
+    const std::unordered_set<manifest::target_type> input_targets_;
+    std::optional<object_filter> filter_;
 };
 
 

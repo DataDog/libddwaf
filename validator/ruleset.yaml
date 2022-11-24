@@ -49,6 +49,18 @@ exclusions:
       - rule_id: 30
     inputs:
       - address: rule30-input2
+  - rules_target:
+      - rule_id: 31
+    inputs:
+      - address: rule31-input
+        key_path: [parent]
+  - rules_target:
+      - rule_id: 32
+    inputs:
+      - address: rule32-input
+        key_path: [parent, child, grandchild]
+      - address: rule32-input
+        key_path: [parent, sibling]
 rules:
   - id: 1
     name: rule1-basic-single-input
@@ -454,3 +466,25 @@ rules:
             - address: rule30-input1
             - address: rule30-input2
           regex: rule30
+  - id: 31
+    name: rule31-key-path-excluded
+    tags:
+      type: flow31
+      category: category31
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule31-input
+          regex: rule31
+  - id: 32
+    name: rule32-multiple_key-path-excluded
+    tags:
+      type: flow32
+      category: category32
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule32-input
+          regex: rule32

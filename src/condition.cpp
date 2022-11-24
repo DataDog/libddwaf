@@ -90,8 +90,10 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
     return std::nullopt;
 }
 
-std::optional<event::match> condition::match(const object_store &store,
-    const ddwaf::manifest &manifest, const input_filter &filter,
+std::optional<event::match> condition::match(
+    const object_store &store, const ddwaf::manifest &manifest,
+    const std::unordered_set<manifest::target_type> &inputs_excluded,
+    const std::unordered_set<ddwaf_object*> & objects_excluded,
     bool run_on_new, ddwaf::timer &deadline) const
 {
     for (const auto &target : targets_) {
@@ -105,12 +107,11 @@ std::optional<event::match> condition::match(const object_store &store,
             continue;
         }
 
-        auto filter_res = filter.find(target);
-        if (filter_res.has_value() && filter_res->skip) {
+        const auto &info = manifest.get_target_info(target);
+        if (inputs_excluded.find(target) != inputs_excluded.end()) {
+            DDWAF_DEBUG("Excluding address: %s", info.name.c_str());
             continue;
         }
-
-        const auto &info = manifest.get_target_info(target);
 
         // TODO: iterators could be cached to avoid reinitialisation
         const auto *object = store.get_target(target);
@@ -120,10 +121,10 @@ std::optional<event::match> condition::match(const object_store &store,
 
         std::optional<event::match> optional_match;
         if (source_ == data_source::keys) {
-            object::key_iterator it(object, info.key_path, limits_);
+            object::key_iterator it(object, info.key_path, objects_excluded, limits_);
             optional_match = match_target(it, deadline);
         } else {
-            object::value_iterator it(object, info.key_path, limits_);
+            object::value_iterator it(object, info.key_path, objects_excluded, limits_);
             optional_match = match_target(it, deadline);
         }
 

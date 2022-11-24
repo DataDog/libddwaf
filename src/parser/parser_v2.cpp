@@ -8,6 +8,7 @@
 #include <exception.hpp>
 #include <log.hpp>
 #include <manifest.hpp>
+#include <object_filter.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <rule.hpp>
@@ -260,27 +261,6 @@ std::set<rule::ptr> parse_rules_target(parameter::map &target, ddwaf::ruleset &r
     ;
 }
 
-void parse_input_filter(parameter::map &input, manifest_builder &mb,
-  input_filter::input_set &inputs)
-{
-    auto address = at<std::string>(input, "address");
-    auto optional_target = mb.find(address);
-    DDWAF_DEBUG("Address %s", address.c_str());
-    if (!optional_target.has_value()) {
-        // This address isn't used by any rule so we skip it.
-        return;
-    }
-
-    DDWAF_DEBUG("Address is good %s", address.c_str());
-    auto key_path = at<std::vector<std::string>>(input, "key_path", {});
-    if (key_path.empty()) {
-        inputs.insert(*optional_target);
-        return;
-    }
-
-    inputs.insert(*optional_target, std::move(key_path));
-}
-
 void parse_exclusion_filter(
     parameter::map &filter, manifest_builder &mb, ddwaf::ruleset &rs, ddwaf::config &cfg)
 {
@@ -306,19 +286,37 @@ void parse_exclusion_filter(
         }
     }
 
-    input_filter::input_set inputs; 
+    std::optional<object_filter> obj_filter = std::nullopt;
+    std::unordered_set<manifest::target_type> input_targets;
     auto inputs_array = at<parameter::vector>(filter, "inputs", {});
     for (parameter::map input_map : inputs_array) {
-        parse_input_filter(input_map, mb, inputs);
+        auto address = at<std::string>(input_map, "address");
+        auto optional_target = mb.find(address);
+        if (!optional_target.has_value()) {
+            // This address isn't used by any rule so we skip it.
+            DDWAF_DEBUG("Address %s not used by any existing rule", address.c_str());
+            continue;
+        }
+
+        auto key_path = at<std::vector<std::string_view>>(input_map, "key_path", {});
+        if (key_path.empty()) {
+            input_targets.emplace(*optional_target);
+        } else {
+            if (!obj_filter.has_value()) {
+                obj_filter = object_filter{};
+            }
+
+            obj_filter->insert(*optional_target, key_path);
+        }
     }
 
-    if (conditions.empty() && rules_target.empty() && inputs.empty()) {
-        throw ddwaf::parsing_error("exclusion filter without conditions or targets");
+    if (conditions.empty() && rules_target.empty() && input_targets.empty() && !obj_filter.has_value()) {
+        throw ddwaf::parsing_error("empty exclusion filter");
     }
 
     rs.filters.emplace_back(
-        std::make_shared<exclusion_filter>(
-            std::move(conditions), std::move(rules_target), std::move(inputs)));
+        std::make_shared<exclusion_filter>(std::move(conditions), std::move(rules_target),
+            std::move(input_targets), std::move(obj_filter)));
 }
 
 } // namespace

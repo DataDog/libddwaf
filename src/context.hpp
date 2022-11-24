@@ -22,6 +22,12 @@ namespace ddwaf {
 
 class context {
 public:
+    struct exclusions {
+        std::unordered_set<manifest::target_type> inputs;
+        std::unordered_set<ddwaf_object *> objects;
+        bool exclude_rule() const { return inputs.empty() && objects.empty(); }
+    };
+
     context(ddwaf::ruleset &ruleset, const ddwaf::config &config)
         : ruleset_(ruleset), config_(config), store_(ruleset_.manifest, config_.free_fn)
     {
@@ -38,9 +44,9 @@ public:
 
     DDWAF_RET_CODE run(const ddwaf_object &, optional_ref<ddwaf_result> res, uint64_t);
 
-    std::unordered_map<rule::ptr, input_filter> filter(ddwaf::timer &deadline);
-    std::vector<event> match(
-            const std::unordered_map<rule::ptr, input_filter> &exclude, ddwaf::timer &deadline);
+    std::unordered_map<rule::ptr, context::exclusions> filter(ddwaf::timer &deadline);
+    std::vector<event> match(const std::unordered_map<rule::ptr, exclusions> &exclude,
+        ddwaf::timer &deadline);
 
 protected:
     bool is_first_run() const { return rule_cache_.empty(); }
