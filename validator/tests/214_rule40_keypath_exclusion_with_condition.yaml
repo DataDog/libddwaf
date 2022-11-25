@@ -1,5 +1,5 @@
 {
-  name: "Input exclusion with condition",
+  name: "Keypath exclusion with condition",
   runs: [
     {
       input: {
