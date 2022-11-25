@@ -1,10 +1,10 @@
 version: '2.1'
 rules:
-  - id: 1
-    name: rule1
+  - id: 70efd426-f942-464a-b0fd-90adafe57f7d
+    name: rule-expression
     tags:
-      type: flow1
-      category: category1
+      type: security_scanner
+      category: attack_attempt
     expression:
       code: headers.user_agent == "Arachni/v1" && size(query.filter(x, x.endsWith("honeypot"))) > 0
       inputs:

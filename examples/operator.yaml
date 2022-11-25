@@ -1,10 +1,10 @@
 version: '2.1'
 rules:
-  - id: 1
-    name: rule1
+  - id: ada54ac7-4cef-436c-9ea4-a47a35c6db40
+    name: operator-expression
     tags:
-      type: flow1
-      category: category1
+      type: security_scanner
+      category: attack_attempt
     conditions:
       - operator: expression
         parameters:
