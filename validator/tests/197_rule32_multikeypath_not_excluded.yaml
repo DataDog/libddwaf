@@ -1,0 +1,29 @@
+{
+  name: "Don't exclude multi key path",
+  runs: [
+    {
+      input: {
+        rule32-input: {
+          uncle: {
+            sibling: rule32,
+            child: {
+              grandchild: rule32
+            },
+          }
+        }
+      },
+      rules: [
+        {
+          32: [
+            {
+              address: rule32-input,
+              key_path: [uncle, sibling],
+              value: rule32
+            }
+          ]
+        },
+      ],
+      code: match
+    }
+  ],
+}

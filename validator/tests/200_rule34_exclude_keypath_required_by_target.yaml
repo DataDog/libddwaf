@@ -1,18 +1,17 @@
 {
-  name: "Exclude multi key path",
+  name: "Exclude on multi-key path on multiple inputs",
   runs: [
     {
       input: {
-        rule32-input: {
+        rule34-input: {
           parent: {
-            sibling: rule32,
             child: {
-              grandchild: rule32
+              grandchild: rule34
             },
           }
         }
       },
       code: ok
-    }
+    },
   ],
 }

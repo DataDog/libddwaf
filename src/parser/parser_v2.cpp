@@ -258,7 +258,6 @@ std::set<rule::ptr> parse_rules_target(parameter::map &target, ddwaf::ruleset &r
     }
 
     throw ddwaf::parsing_error("no supported tags in rules_target");
-    ;
 }
 
 void parse_exclusion_filter(
@@ -294,8 +293,7 @@ void parse_exclusion_filter(
         auto optional_target = mb.find(address);
         if (!optional_target.has_value()) {
             // This address isn't used by any rule so we skip it.
-            DDWAF_DEBUG("Address %s not used by any existing rule", address.c_str());
-            continue;
+            throw ddwaf::parsing_error("Address " + address + "not used by any existing rule");
         }
 
         auto key_path = at<std::vector<std::string_view>>(input_map, "key_path", {});

@@ -22,7 +22,7 @@ public:
     path_trie() = default;
 
     [[nodiscard]] path_trie find(std::string_view key) const;
-    
+
     template <typename T>
     [[nodiscard]] path_trie find(const std::vector<T> &path) const;
 
@@ -32,24 +32,7 @@ public:
     [[nodiscard]] bool is_terminal() const { return root && root->terminal; }
     [[nodiscard]] bool is_valid() const { return root && !root->values.empty(); }
 
-    std::string debug() const {
-        if (!root) { return "{}"; }
-
-        std::string out = "{";
-        out += "is_terminal: ";
-        if (root->terminal) {
-            out += "true, ";
-        } else {
-            out += "false, ";
-        }
-        out += "items: [";
-        for (const auto &[key, value] : root->values) {
-            if (out.back() != '[') { out += ", "; }
-            out += key;
-        }
-        out += "]}";
-        return out;
-    }
+    [[nodiscard]] std::string debug() const;
 
 protected:
     struct trie_node {
