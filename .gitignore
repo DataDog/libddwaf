@@ -29,3 +29,5 @@ perf/test_files/breakdown.numbers
 
 *.trace
 .vscode
+*.swp
+*.swo
