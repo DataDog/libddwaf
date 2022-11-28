@@ -53,4 +53,4 @@ protected:
 };
 
 
-} // namespace ddwaf
+} // namespace ddwaf::exclusion

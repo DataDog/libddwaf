@@ -21,33 +21,35 @@ std::unordered_set<rule::ptr> rule_filter::match(
     const object_store &store, const ddwaf::manifest &manifest,
     cache_type &cache, ddwaf::timer &deadline) const
 {
-    if (!conditions_.empty() && !cache.result) {
-        for (const auto &cond : conditions_) {
-            // If there's a (false) cache hit, we only need to run this condition
-            // on new parameters.
-            bool run_on_new = false;
-            auto cached_result = cache.conditions.find(cond);
-            if (cached_result != cache.conditions.end()) {
-                if (cached_result->second) {
-                    continue;
-                }
-                run_on_new = true;
-            } else {
-                auto [it, res] = cache.conditions.emplace(cond, false);
-                cached_result = it;
-            }
+    if (cache.result) {
+        return {};
+    }
 
-            // TODO: Condition interface without events
-            auto opt_match = cond->match(store, manifest, {}, {}, run_on_new, deadline);
-            if (!opt_match.has_value()) {
-                cached_result->second = false;
-                return {};
+    for (const auto &cond : conditions_) {
+        // If there's a (false) cache hit, we only need to run this condition
+        // on new parameters.
+        bool run_on_new = false;
+        auto cached_result = cache.conditions.find(cond);
+        if (cached_result != cache.conditions.end()) {
+            if (cached_result->second) {
+                continue;
             }
-            cached_result->second = true;
+            run_on_new = true;
+        } else {
+            auto [it, res] = cache.conditions.emplace(cond, false);
+            cached_result = it;
         }
 
-        cache.result = true;
+        // TODO: Condition interface without events
+        auto opt_match = cond->match(store, manifest, {}, {}, run_on_new, deadline);
+        if (!opt_match.has_value()) {
+            cached_result->second = false;
+            return {};
+        }
+        cached_result->second = true;
     }
+
+    cache.result = true;
 
     return rule_targets_;
 }

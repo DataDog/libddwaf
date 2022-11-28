@@ -34,7 +34,9 @@ using namespace std;
 #include <context.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>
-#include <exclusion_filter.hpp>
+#include <exclusion/rule_filter.hpp>
+#include <exclusion/input_filter.hpp>
+#include <exclusion/object_filter.hpp>
 #include <ip_utils.hpp>
 #include <log.hpp>
 #include <obfuscator.hpp>

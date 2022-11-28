@@ -49,7 +49,7 @@ std::optional<target_specification> input_filter::match(
         return {{rule_targets_, input_targets_, std::unordered_set<ddwaf_object*>{}}};
     }
 
-    auto objects_to_exclude = filter_->match(store, deadline);
+    auto objects_to_exclude = filter_->match(store, cache.object_filter_cache, deadline);
     if (objects_to_exclude.empty() && input_targets_.empty()) {
         return std::nullopt;
     }
@@ -57,4 +57,4 @@ std::optional<target_specification> input_filter::match(
     return {{rule_targets_, input_targets_, std::move(objects_to_exclude)}};
 }
 
-} // namespace ddwaf
+} // namespace ddwaf::exclusion

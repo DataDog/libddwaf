@@ -82,7 +82,8 @@ template void path_trie::insert<std::string_view>(const std::vector<std::string_
 
 namespace {
 void iterate_object(const path_trie &filter, const ddwaf_object *object, 
-    std::unordered_set<ddwaf_object*> &objects_to_exclude)
+    std::unordered_set<ddwaf_object*> &objects_to_exclude,
+    const object_limits &limits)
 {
     if (object == nullptr || object->type != DDWAF_OBJ_MAP) { return; }
 
@@ -101,7 +102,9 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
         }
 
         bool found_node{false};
-        for (; current_index < current_object->nbEntries; ++current_index) {
+        auto size = current_object->nbEntries > limits.max_container_size ?
+            limits.max_container_size : current_object->nbEntries;
+        for (; current_index < size; ++current_index) {
             ddwaf_object *child = &current_object->array[current_index];
 
             // Only consider children with keys
@@ -117,7 +120,7 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
                 continue;
             }
 
-            if (child->type == DDWAF_OBJ_MAP && child_trie.is_valid()) {
+            if (child->type == DDWAF_OBJ_MAP && child_trie.is_valid() && path_stack.size() < limits.max_container_depth ) {
                 ++current_index;
                 found_node = true;
                 path_stack.push({child, 0, child_trie});
@@ -136,7 +139,8 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
 
 } // namespace
 
-std::unordered_set<ddwaf_object*> object_filter::match(const object_store &store, ddwaf::timer &deadline) const
+std::unordered_set<ddwaf_object*> object_filter::match(const object_store &store,
+    cache_type &cache, ddwaf::timer &deadline) const
 {
     std::unordered_set<ddwaf_object*> objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
@@ -144,11 +148,15 @@ std::unordered_set<ddwaf_object*> object_filter::match(const object_store &store
             throw ddwaf::timeout_exception();
         }
 
+        if (cache.find(target) != cache.end()) {
+            continue;
+        }
+
         const auto *object = store.get_target(target);
-        iterate_object(filter, object, objects_to_exclude);
+        iterate_object(filter, object, objects_to_exclude, limits_);
     }
 
     return objects_to_exclude;
 }
 
-}
+} // namespace ddwaf::exclusion

@@ -301,7 +301,7 @@ void parse_input_filter(
             input_targets.emplace(*optional_target);
         } else {
             if (!obj_filter.has_value()) {
-                obj_filter = exclusion::object_filter{};
+                obj_filter = exclusion::object_filter{cfg.limits};
             }
 
             obj_filter->insert(*optional_target, key_path);

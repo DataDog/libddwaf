@@ -6,12 +6,13 @@
 
 #pragma once
 
-#include<map>
+#include <map>
 #include <set>
 #include <stack>
 #include <vector>
 
 #include <clock.hpp>
+#include <config.hpp>
 #include <manifest.hpp>
 #include <object_store.hpp>
 
@@ -49,24 +50,18 @@ protected:
 
 class object_filter {
 public:
-    struct cache_type {
-        std::unordered_set<manifest::target_type> inspected;
-    };
+    using cache_type = std::unordered_set<manifest::target_type>;
 
-    object_filter() = default;
-    ~object_filter() = default;
-    object_filter(const object_filter&) = default;
-    object_filter(object_filter&&) = default;
-    object_filter& operator=(const object_filter&) = default;
-    object_filter& operator=(object_filter&&) = default;
+    explicit object_filter(const ddwaf::object_limits &limits): limits_(limits) {}
 
     void insert(manifest::target_type target, const std::vector<std::string_view> &key_path) {
         target_paths_[target].insert(key_path);
     }
 
-    std::unordered_set<ddwaf_object*> match(const object_store &store, ddwaf::timer &deadline) const;
+    std::unordered_set<ddwaf_object*> match(const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 protected:
+    object_limits limits_;
     std::unordered_map<manifest::target_type, path_trie> target_paths_;
 };
 
-} // namespace ddwaf
+} // namespace ddwaf::exclusion

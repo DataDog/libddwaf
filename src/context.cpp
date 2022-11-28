@@ -50,9 +50,8 @@ DDWAF_RET_CODE context::run(
 
     std::vector<ddwaf::event> events;
     try {
-        // Get rule_ref array of rules to exclude.
-        auto rules_to_exclude = filter_rules(deadline);
-        auto inputs_to_exclude = filter_inputs(rules_to_exclude, deadline);
+        const auto &rules_to_exclude = filter_rules(deadline);
+        const auto &inputs_to_exclude = filter_inputs(rules_to_exclude, deadline);
         events = match(rules_to_exclude, inputs_to_exclude, deadline);
     } catch (const ddwaf::timeout_exception &) {}
 
@@ -67,9 +66,8 @@ DDWAF_RET_CODE context::run(
     return code;
 }
 
-std::unordered_set<rule::ptr> context::filter_rules(ddwaf::timer &deadline)
+const std::unordered_set<rule::ptr>& context::filter_rules(ddwaf::timer &deadline)
 {
-    std::unordered_set<rule::ptr> rules_to_exclude;
     for (const auto &filter : ruleset_.rule_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while running exclusion filters");
@@ -84,15 +82,14 @@ std::unordered_set<rule::ptr> context::filter_rules(ddwaf::timer &deadline)
 
         rule_filter::cache_type &cache = it->second;
         auto exclusion = filter->match(store_, ruleset_.manifest, cache, deadline);
-        rules_to_exclude.merge(exclusion);
+        rules_to_exclude_.merge(exclusion);
     }
-    return rules_to_exclude;
+    return rules_to_exclude_;
 }
 
-std::unordered_map<rule::ptr, context::input_exclusions> context::filter_inputs(
+const std::unordered_map<rule::ptr, context::input_exclusions>& context::filter_inputs(
     const std::unordered_set<rule::ptr> &rules_to_exclude, ddwaf::timer &deadline)
 {
-    std::unordered_map<rule::ptr, input_exclusions> inputs_to_exclude;
     for (const auto &filter : ruleset_.input_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while running exclusion filters");
@@ -113,7 +110,7 @@ std::unordered_map<rule::ptr, context::input_exclusions> context::filter_inputs(
                     continue;
                 }
 
-                auto &common_exclusion = inputs_to_exclude[rule];
+                auto &common_exclusion = inputs_to_exclude_[rule];
                 for (const auto &input : exclusion->inputs) {
                     common_exclusion.inputs.insert(input);
                 }
@@ -125,7 +122,7 @@ std::unordered_map<rule::ptr, context::input_exclusions> context::filter_inputs(
         }
     }
 
-    return inputs_to_exclude;
+    return inputs_to_exclude_;
 }
 
 std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_exclude,

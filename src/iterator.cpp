@@ -136,7 +136,9 @@ void value_iterator::initialise_cursor_with_path(
 
         ddwaf_object *child = nullptr;
         if (is_map(parent)) {
-            for (std::size_t j = 0; j < parent->nbEntries; j++) {
+            auto size = parent->nbEntries > limits_.max_container_size ?
+                    limits_.max_container_size : parent->nbEntries;
+            for (std::size_t j = 0; j < size; j++) {
                 auto *possible_child = &parent->array[j];
                 if (possible_child->parameterName == nullptr) {
                     continue;
@@ -261,7 +263,9 @@ void key_iterator::initialise_cursor_with_path(
 
         ddwaf_object *child = nullptr;
         if (parent->type == DDWAF_OBJ_MAP) {
-            for (std::size_t j = 0; j < parent->nbEntries; j++) {
+            auto size = parent->nbEntries > limits_.max_container_size ?
+                    limits_.max_container_size : parent->nbEntries;
+            for (std::size_t j = 0; j < size; j++) {
                 auto *possible_child = &parent->array[j];
                 if (possible_child->parameterName == nullptr) {
                     continue;
