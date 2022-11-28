@@ -263,7 +263,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     ddwaf::exclusion::rule_filter::cache_type cache;
 
     // In this test we validate that when a match has already occurred, the
-    // second run for the same rule also returns a match (regardless of input).
+    // second run for the same filter returns nothing.
     {
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
@@ -274,10 +274,10 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_TRUE(cache.result);
     }
 
     {
-        ddwaf::exclusion::rule_filter::cache_type cache;
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "random", ddwaf_object_string(&tmp, "random"));
@@ -285,7 +285,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
     }
 }
 

@@ -14,46 +14,47 @@ using target_specification = input_filter::target_specification;
 std::optional<target_specification> input_filter::match(const object_store &store,
     const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const
 {
-    if (!conditions_.empty() && !cache.result) {
-        for (const auto &cond : conditions_) {
-            // If there's a (false) cache hit, we only need to run this condition
-            // on new parameters.
-            bool run_on_new = false;
-            auto cached_result = cache.conditions.find(cond);
-            if (cached_result != cache.conditions.end()) {
-                if (cached_result->second) {
-                    continue;
-                }
-                run_on_new = true;
-            } else {
-                auto [it, res] = cache.conditions.emplace(cond, false);
-                cached_result = it;
+    for (const auto &cond : conditions_) {
+        // If there's a (false) cache hit, we only need to run this condition
+        // on new parameters.
+        bool run_on_new = false;
+        auto cached_result = cache.conditions.find(cond);
+        if (cached_result != cache.conditions.end()) {
+            if (cached_result->second) {
+                continue;
             }
-
-            // TODO: Condition interface without events
-            auto opt_match = cond->match(store, manifest, {}, {}, run_on_new, deadline);
-            if (!opt_match.has_value()) {
-                cached_result->second = false;
-                return std::nullopt;
-            }
-            cached_result->second = true;
+            run_on_new = true;
+        } else {
+            auto [it, res] = cache.conditions.emplace(cond, false);
+            cached_result = it;
         }
 
+        // TODO: Condition interface without events
+        auto opt_match = cond->match(store, manifest, {}, {}, run_on_new, deadline);
+        if (!opt_match.has_value()) {
+            cached_result->second = false;
+            return std::nullopt;
+        }
+        cached_result->second = true;
+    }
+
+    std::unordered_set<manifest::target_type> inputs;
+    std::unordered_set<ddwaf_object *> objects;
+
+    if (!cache.result) {
         cache.result = true;
+        inputs = input_targets_;
     }
 
-    // Reaching this point means all conditions have been satisfied
-
-    if (!filter_.has_value()) {
-        return {{rule_targets_, input_targets_, std::unordered_set<ddwaf_object *>{}}};
+    if (filter_.has_value()) {
+        objects = filter_->match(store, cache.object_filter_cache, deadline);
     }
 
-    auto objects_to_exclude = filter_->match(store, cache.object_filter_cache, deadline);
-    if (objects_to_exclude.empty() && input_targets_.empty()) {
+    if (objects.empty() && inputs.empty()) {
         return std::nullopt;
     }
 
-    return {{rule_targets_, input_targets_, std::move(objects_to_exclude)}};
+    return {{rule_targets_, std::move(inputs), std::move(objects)}};
 }
 
 } // namespace ddwaf::exclusion
