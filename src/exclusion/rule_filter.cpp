@@ -4,12 +4,20 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <exclusion_filter.hpp>
+#include <exclusion/rule_filter.hpp>
 #include <log.hpp>
 
-namespace ddwaf {
-using target_specification = exclusion_filter::target_specification;
-std::optional<target_specification> exclusion_filter::match(
+namespace ddwaf::exclusion {
+
+rule_filter::rule_filter(std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets)
+    : conditions_(std::move(conditions))
+{
+    rule_targets_.reserve(rule_targets.size());
+    for (auto it = rule_targets.begin(); it != rule_targets.end(); ) {
+        rule_targets_.emplace(std::move(rule_targets.extract(it++).value()));
+    }
+}
+std::unordered_set<rule::ptr> rule_filter::match(
     const object_store &store, const ddwaf::manifest &manifest,
     cache_type &cache, ddwaf::timer &deadline) const
 {
@@ -33,7 +41,7 @@ std::optional<target_specification> exclusion_filter::match(
             auto opt_match = cond->match(store, manifest, {}, {}, run_on_new, deadline);
             if (!opt_match.has_value()) {
                 cached_result->second = false;
-                return std::nullopt;
+                return {};
             }
             cached_result->second = true;
         }
@@ -41,18 +49,7 @@ std::optional<target_specification> exclusion_filter::match(
         cache.result = true;
     }
 
-    // Reaching this point means all conditions have been satisfied
-
-    if (!filter_.has_value()) {
-        return {{rule_targets_, input_targets_, std::unordered_set<ddwaf_object*>{}}};
-    }
-
-    auto objects_to_exclude = filter_->match(store, deadline);
-    if (objects_to_exclude.empty() && input_targets_.empty()) {
-        return std::nullopt;
-    }
-
-    return {{rule_targets_, input_targets_, std::move(objects_to_exclude)}};
+    return rule_targets_;
 }
 
-} // namespace ddwaf
+} // namespace ddwaf::exclusion

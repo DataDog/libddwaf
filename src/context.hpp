@@ -12,7 +12,8 @@
 #include <config.hpp>
 #include <ddwaf.h>
 #include <event.hpp>
-#include <exclusion_filter.hpp>
+#include <exclusion/input_filter.hpp>
+#include <exclusion/rule_filter.hpp>
 #include <obfuscator.hpp>
 #include <rule.hpp>
 #include <ruleset.hpp>
@@ -22,17 +23,17 @@ namespace ddwaf {
 
 class context {
 public:
-    struct exclusions {
+    struct input_exclusions {
         std::unordered_set<manifest::target_type> inputs;
         std::unordered_set<ddwaf_object *> objects;
-        bool exclude_rule() const { return inputs.empty() && objects.empty(); }
     };
 
     context(ddwaf::ruleset &ruleset, const ddwaf::config &config)
         : ruleset_(ruleset), config_(config), store_(ruleset_.manifest, config_.free_fn)
     {
         rule_cache_.reserve(ruleset_.rules.size());
-        filter_cache_.reserve(ruleset_.filters.size());
+        rule_filter_cache_.reserve(ruleset_.rule_filters.size());
+        input_filter_cache_.reserve(ruleset_.input_filters.size());
         collection_cache_.reserve(ruleset_.collections.size());
     }
 
@@ -44,8 +45,12 @@ public:
 
     DDWAF_RET_CODE run(const ddwaf_object &, optional_ref<ddwaf_result> res, uint64_t);
 
-    std::unordered_map<rule::ptr, context::exclusions> filter(ddwaf::timer &deadline);
-    std::vector<event> match(const std::unordered_map<rule::ptr, exclusions> &exclude,
+    std::unordered_set<rule::ptr> filter_rules(ddwaf::timer &deadline);
+    std::unordered_map<rule::ptr, input_exclusions> filter_inputs(
+        const std::unordered_set<rule::ptr> &rules_to_exclude, ddwaf::timer &deadline);
+
+    std::vector<event> match(const std::unordered_set<rule::ptr> &rules_to_exclude,
+        const std::unordered_map<rule::ptr, input_exclusions> &inputs_to_exclude,
         ddwaf::timer &deadline);
 
 protected:
@@ -55,8 +60,12 @@ protected:
     const ddwaf::config &config_;
     ddwaf::object_store store_;
 
+    using input_filter = exclusion::input_filter;
+    using rule_filter = exclusion::rule_filter;
+
     // Cache of filters and conditions
-    std::unordered_map<exclusion_filter::ptr, exclusion_filter::cache_type> filter_cache_;
+    std::unordered_map<rule_filter::ptr, rule_filter::cache_type> rule_filter_cache_;
+    std::unordered_map<input_filter::ptr, input_filter::cache_type> input_filter_cache_;
     // Cache of rules and conditions
     std::unordered_map<rule::ptr, rule::cache_type> rule_cache_;
     // Cache of collections to avoid processing once a result has been obtained

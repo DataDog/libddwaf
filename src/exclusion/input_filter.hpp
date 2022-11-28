@@ -11,16 +11,16 @@
 #include <vector>
 
 #include <clock.hpp>
+#include <exclusion/object_filter.hpp>
 #include <manifest.hpp>
-#include <object_filter.hpp>
 #include <object_store.hpp>
 #include <rule.hpp>
 
-namespace ddwaf {
+namespace ddwaf::exclusion {
 
-class exclusion_filter {
+class input_filter {
 public:
-    using ptr = std::shared_ptr<exclusion_filter>;
+    using ptr = std::shared_ptr<input_filter>;
 
     struct target_specification {
         const std::set<rule::ptr> &rules;
@@ -31,11 +31,10 @@ public:
     struct cache_type {
         bool result{false};
         std::unordered_map<condition::ptr, bool> conditions;
-        // inspected targets by the input filter
-        std::unordered_set<manifest::target_type> input_targets;
+        object_filter::cache_type object_filter_cache;
     };
 
-    exclusion_filter(std::vector<condition::ptr> &&conditions,
+    input_filter(std::vector<condition::ptr> &&conditions,
             std::set<rule::ptr> &&rule_targets,
             std::unordered_set<manifest::target_type> &&input_targets = {},
             std::optional<object_filter> &&filter = std::nullopt)

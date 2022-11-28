@@ -6,9 +6,9 @@
 
 #include <exception.hpp>
 #include <log.hpp>
-#include <object_filter.hpp>
+#include <exclusion/object_filter.hpp>
 
-namespace ddwaf {
+namespace ddwaf::exclusion {
 
 path_trie path_trie::find(std::string_view key) const {
     if (!root) { return {}; }

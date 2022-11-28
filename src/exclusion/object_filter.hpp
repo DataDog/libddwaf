@@ -15,7 +15,7 @@
 #include <manifest.hpp>
 #include <object_store.hpp>
 
-namespace ddwaf {
+namespace ddwaf::exclusion {
 
 class path_trie {
 public:
@@ -49,6 +49,10 @@ protected:
 
 class object_filter {
 public:
+    struct cache_type {
+        std::unordered_set<manifest::target_type> inspected;
+    };
+
     object_filter() = default;
     ~object_filter() = default;
     object_filter(const object_filter&) = default;

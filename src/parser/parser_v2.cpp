@@ -6,9 +6,9 @@
 
 #include <algorithm>
 #include <exception.hpp>
+#include <exclusion/object_filter.hpp>
 #include <log.hpp>
 #include <manifest.hpp>
-#include <object_filter.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <rule.hpp>
@@ -260,7 +260,7 @@ std::set<rule::ptr> parse_rules_target(parameter::map &target, ddwaf::ruleset &r
     throw ddwaf::parsing_error("no supported tags in rules_target");
 }
 
-void parse_exclusion_filter(
+void parse_input_filter(
     parameter::map &filter, manifest_builder &mb, ddwaf::ruleset &rs, ddwaf::config &cfg)
 {
     // Check for conditions first
@@ -285,7 +285,7 @@ void parse_exclusion_filter(
         }
     }
 
-    std::optional<object_filter> obj_filter = std::nullopt;
+    std::optional<exclusion::object_filter> obj_filter = std::nullopt;
     std::unordered_set<manifest::target_type> input_targets;
     auto inputs_array = at<parameter::vector>(filter, "inputs", {});
     for (parameter::map input_map : inputs_array) {
@@ -301,7 +301,7 @@ void parse_exclusion_filter(
             input_targets.emplace(*optional_target);
         } else {
             if (!obj_filter.has_value()) {
-                obj_filter = object_filter{};
+                obj_filter = exclusion::object_filter{};
             }
 
             obj_filter->insert(*optional_target, key_path);
@@ -312,9 +312,54 @@ void parse_exclusion_filter(
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 
-    rs.filters.emplace_back(
-        std::make_shared<exclusion_filter>(std::move(conditions), std::move(rules_target),
+    rs.input_filters.emplace_back(
+        std::make_shared<exclusion::input_filter>(std::move(conditions), std::move(rules_target),
             std::move(input_targets), std::move(obj_filter)));
+}
+
+void parse_rule_filter(
+    parameter::map &filter, manifest_builder &mb, ddwaf::ruleset &rs, ddwaf::config &cfg)
+{
+    // Check for conditions first
+    std::vector<condition::ptr> conditions;
+    auto conditions_array = at<parameter::vector>(filter, "conditions", {});
+    if (!conditions_array.empty()) {
+        conditions.reserve(conditions_array.size());
+
+        for (parameter::map cond : conditions_array) {
+            conditions.push_back(parse_condition(cond, rs.dispatcher, mb, cfg));
+        }
+    }
+
+    std::set<rule::ptr> rules_target;
+    auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
+    if (rules_target_array.empty()) {
+        for (const auto &[id, rule] : rs.rules) { rules_target.emplace(rule); }
+    } else {
+        for (parameter::map target : rules_target_array) {
+            auto rules_subset = parse_rules_target(target, rs);
+            rules_target.merge(rules_subset);
+        }
+    }
+
+    if (conditions.empty() && rules_target.empty()) {
+        throw ddwaf::parsing_error("empty exclusion filter");
+    }
+
+    rs.rule_filters.emplace_back(
+        std::make_shared<exclusion::rule_filter>(std::move(conditions), std::move(rules_target)));
+}
+
+void parse_exclusion_filter(
+    parameter::map &filter, manifest_builder &mb, ddwaf::ruleset &rs, ddwaf::config &cfg)
+{
+    if (filter.find("inputs") == filter.end()) {
+        // Rule filter
+        parse_rule_filter(filter, mb, rs, cfg);
+    } else {
+        // Input filter
+        parse_input_filter(filter, mb, rs, cfg);
+    }
 }
 
 } // namespace
