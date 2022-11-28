@@ -120,5 +120,3 @@ TEST(TestObjectFilter, MissingTarget)
     auto objects_filtered = filter.match(store, cache, deadline);
     EXPECT_EQ(objects_filtered.size(), 0);
 }
-
-

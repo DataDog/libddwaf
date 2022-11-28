@@ -27,7 +27,7 @@ jobs:
         run: |
           sudo apt-get -y update 
           sudo apt-get -y upgrade
-          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install python3 apt-transport-https build-essential wget cmake git clang libfuzzer-10-dev
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install python3 apt-transport-https build-essential wget cmake git clang libfuzzer-13-dev
 
       - name: Build
         run: ./fuzzing/build.sh
@@ -40,7 +40,7 @@ jobs:
         run: grep -v -f fuzzing/scripts/report-negative-patterns.txt fuzzing/fuzz-*.log
 
       - name: Show coverage
-        run: ./fuzzing/scripts/show_coverage.sh 55
+        run: ./fuzzing/scripts/show_coverage.sh 50
 
       - name: Compress artifact
         if: ${{ always() }}

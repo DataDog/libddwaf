@@ -64,7 +64,5 @@ TEST(TestPathTrie, Basic)
         auto object = to.find("object");
         EXPECT_FALSE(object.is_valid());
         EXPECT_TRUE(object.is_terminal());
-
     }
-
 }

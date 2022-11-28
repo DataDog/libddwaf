@@ -903,7 +903,6 @@ TEST(TestKeyIterator, TestExcludeMultipleObjects)
     ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
     ddwaf_object_map_add(&root, "other", &map);
 
-
     std::unordered_set<ddwaf_object *> exclude = {&root.array[0], &map.array[1]};
     ddwaf::object::key_iterator it(&root, {}, exclude);
 
@@ -962,4 +961,3 @@ TEST(TestKeyIterator, TestExcludeRootOfKeyPath)
 
     ddwaf_object_free(&root);
 }
-

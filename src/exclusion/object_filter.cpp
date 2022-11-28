@@ -105,7 +105,8 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
                 continue;
             }
 
-            std::string_view key{child->parameterName, child->parameterNameLength};
+            std::string_view key{
+                child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
             auto child_trie = current_trie.find(key);
 
             if (child_trie.is_terminal()) {

@@ -16,7 +16,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     auto manifest = mb.build_manifest();
     object_store store(manifest);
 
-    input_filter filter({}, {std::make_shared<rule>(rule("","", "", "", {}))}, {query});
+    input_filter filter({}, {std::make_shared<rule>(rule("", "", "", "", {}))}, {query});
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -47,7 +47,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
 
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
-    input_filter filter({}, {std::make_shared<rule>(rule("","", "", "", {}))}, {}, obj_filter);
+    input_filter filter({}, {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -79,7 +79,8 @@ TEST(TestInputFilter, InputExclusionWithCondition)
     ddwaf::object_store store(manifest);
     store.insert(root);
 
-    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("","", "", "", {}))}, {client_ip});
+    input_filter filter(
+        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {client_ip});
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -111,7 +112,8 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     ddwaf::object_store store(manifest);
     store.insert(root);
 
-    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("","", "", "", {}))}, {client_ip});
+    input_filter filter(
+        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {client_ip});
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -147,7 +149,8 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
 
-    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("","", "", "", {}))}, {}, obj_filter);
+    input_filter filter(
+        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -187,7 +190,8 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
 
-    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("","", "", "", {}))}, {}, obj_filter);
+    input_filter filter(
+        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -195,5 +199,3 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     auto opt_spec = filter.match(store, manifest, cache, deadline);
     ASSERT_FALSE(opt_spec.has_value());
 }
-
-
