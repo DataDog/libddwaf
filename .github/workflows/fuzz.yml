@@ -27,7 +27,7 @@ jobs:
         run: |
           sudo apt-get -y update 
           sudo apt-get -y upgrade
-          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install python3 apt-transport-https build-essential wget cmake git clang libfuzzer-13-dev
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install python3 apt-transport-https build-essential wget cmake git clang-15 libfuzzer-15-dev
 
       - name: Build
         run: ./fuzzing/build.sh

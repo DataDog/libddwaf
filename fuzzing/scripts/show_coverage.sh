@@ -3,13 +3,13 @@ set -eu
 
 cd fuzzing
 
-llvm-profdata-13 merge -sparse *.profraw -o default.profdata
-llvm-cov-13 show fuzzer -instr-profile=default.profdata -ignore-filename-regex="(fuzzing|third_party)" -format=html > coverage.html
-llvm-cov-13 report -instr-profile default.profdata fuzzer -ignore-filename-regex="(fuzzing|third_party)" -show-region-summary=false
+llvm-profdata-15 merge -sparse *.profraw -o default.profdata
+llvm-cov-15 show fuzzer -instr-profile=default.profdata -ignore-filename-regex="(fuzzing|third_party)" -format=html > coverage.html
+llvm-cov-15 report -instr-profile default.profdata fuzzer -ignore-filename-regex="(fuzzing|third_party)" -show-region-summary=false
 
 if [ ! -z ${1:-} ]; then 
     THRESHOLD=$1
-    TOTAL=$(llvm-cov-13 report -instr-profile default.profdata fuzzer -ignore-filename-regex="(fuzzing|third_party)" -show-region-summary=false | grep TOTAL)
+    TOTAL=$(llvm-cov-15 report -instr-profile default.profdata fuzzer -ignore-filename-regex="(fuzzing|third_party)" -show-region-summary=false | grep TOTAL)
     ARRAY=($TOTAL)
     COVERAGE=$(echo ${ARRAY[3]} | sed -e "s/\.[[:digit:]]*%//g")
 
