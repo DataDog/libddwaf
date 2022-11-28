@@ -148,7 +148,9 @@ std::unordered_set<ddwaf_object *> object_filter::match(
         }
 
         const auto *object = store.get_target(target);
-        if (object == nullptr) { continue; }
+        if (object == nullptr) {
+            continue;
+        }
         iterate_object(filter, object, objects_to_exclude, limits_);
 
         cache.emplace(target);

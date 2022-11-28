@@ -214,5 +214,3 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         EXPECT_TRUE(objects_filtered.empty());
     }
 }
-
-
