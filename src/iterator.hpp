@@ -22,7 +22,7 @@ namespace ddwaf::object {
 
 template <typename T> class iterator_base {
 public:
-    iterator_base(const std::unordered_set<ddwaf_object*> &exclude,
+    iterator_base(const std::unordered_set<ddwaf_object *> &exclude,
         const object_limits &limits = object_limits());
     ~iterator_base() = default;
 
@@ -40,8 +40,9 @@ public:
     [[nodiscard]] const ddwaf_object *get_underlying_object() { return current_; }
 
 protected:
-    bool should_exclude(const ddwaf_object *obj) const {
-        return excluded_.find(const_cast<ddwaf_object*>(obj)) != excluded_.end();
+    bool should_exclude(const ddwaf_object *obj) const
+    {
+        return excluded_.find(const_cast<ddwaf_object *>(obj)) != excluded_.end();
     }
 
     static constexpr std::size_t initial_stack_size = 32;
@@ -55,14 +56,13 @@ protected:
     std::vector<std::pair<const ddwaf_object *, std::size_t>> stack_;
     const ddwaf_object *current_{nullptr};
 
-    const std::unordered_set<ddwaf_object*> &excluded_;
+    const std::unordered_set<ddwaf_object *> &excluded_;
 };
 
 class value_iterator : public iterator_base<value_iterator> {
 public:
-    explicit value_iterator(const ddwaf_object *obj,
-        const std::vector<std::string> &path,
-        const std::unordered_set<ddwaf_object*> &exclude,
+    explicit value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+        const std::unordered_set<ddwaf_object *> &exclude,
         const object_limits &limits = object_limits());
 
     ~value_iterator() = default;
@@ -91,9 +91,8 @@ protected:
 
 class key_iterator : public iterator_base<key_iterator> {
 public:
-    explicit key_iterator(const ddwaf_object *obj,
-        const std::vector<std::string> &path,
-        const  std::unordered_set<ddwaf_object*> &exclude,
+    explicit key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+        const std::unordered_set<ddwaf_object *> &exclude,
         const object_limits &limits = object_limits());
 
     ~key_iterator() = default;

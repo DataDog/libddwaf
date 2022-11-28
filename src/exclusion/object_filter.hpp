@@ -24,11 +24,9 @@ public:
 
     [[nodiscard]] path_trie find(std::string_view key) const;
 
-    template <typename T>
-    [[nodiscard]] path_trie find(const std::vector<T> &path) const;
+    template <typename T> [[nodiscard]] path_trie find(const std::vector<T> &path) const;
 
-    template <typename T>
-    void insert(const std::vector<T> &path);
+    template <typename T> void insert(const std::vector<T> &path);
 
     [[nodiscard]] bool is_terminal() const { return root && root->terminal; }
     [[nodiscard]] bool is_valid() const { return root && !root->values.empty(); }
@@ -43,7 +41,7 @@ protected:
         bool terminal{false};
     };
 
-    explicit path_trie(std::shared_ptr<trie_node> node_): root(std::move(node_)) {}
+    explicit path_trie(std::shared_ptr<trie_node> node_) : root(std::move(node_)) {}
 
     std::shared_ptr<trie_node> root{nullptr};
 };
@@ -52,13 +50,16 @@ class object_filter {
 public:
     using cache_type = std::unordered_set<manifest::target_type>;
 
-    explicit object_filter(const ddwaf::object_limits &limits): limits_(limits) {}
+    explicit object_filter(const ddwaf::object_limits &limits) : limits_(limits) {}
 
-    void insert(manifest::target_type target, const std::vector<std::string_view> &key_path) {
+    void insert(manifest::target_type target, const std::vector<std::string_view> &key_path)
+    {
         target_paths_[target].insert(key_path);
     }
 
-    std::unordered_set<ddwaf_object*> match(const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
+    std::unordered_set<ddwaf_object *> match(
+        const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
+
 protected:
     object_limits limits_;
     std::unordered_map<manifest::target_type, path_trie> target_paths_;

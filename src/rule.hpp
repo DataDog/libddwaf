@@ -70,7 +70,7 @@ public:
 
     std::optional<event> match(const object_store &store, const ddwaf::manifest &manifest,
         cache_type &cache, const std::unordered_set<manifest::target_type> &inputs_excluded,
-        const std::unordered_set<ddwaf_object*> &objects_excluded, ddwaf::timer &deadline) const;
+        const std::unordered_set<ddwaf_object *> &objects_excluded, ddwaf::timer &deadline) const;
 
     bool is_enabled() const { return enabled.load(std::memory_order_relaxed); }
     void toggle(bool value) { enabled.store(value, std::memory_order_relaxed); }

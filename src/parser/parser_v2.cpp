@@ -308,13 +308,13 @@ void parse_input_filter(
         }
     }
 
-    if (conditions.empty() && rules_target.empty() && input_targets.empty() && !obj_filter.has_value()) {
+    if (conditions.empty() && rules_target.empty() && input_targets.empty() &&
+        !obj_filter.has_value()) {
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 
-    rs.input_filters.emplace_back(
-        std::make_shared<exclusion::input_filter>(std::move(conditions), std::move(rules_target),
-            std::move(input_targets), std::move(obj_filter)));
+    rs.input_filters.emplace_back(std::make_shared<exclusion::input_filter>(std::move(conditions),
+        std::move(rules_target), std::move(input_targets), std::move(obj_filter)));
 }
 
 void parse_rule_filter(

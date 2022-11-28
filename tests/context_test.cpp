@@ -413,8 +413,8 @@ TEST(TestContext, FilterWithCondition)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter = std::make_shared<rule_filter>(
-            std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
+        auto filter =
+            std::make_shared<rule_filter>(std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
         ruleset.rule_filters.emplace_back(filter);
     }
 
@@ -471,8 +471,8 @@ TEST(TestContext, FilterTimeout)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter = std::make_shared<rule_filter>(
-            std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
+        auto filter =
+            std::make_shared<rule_filter>(std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
         ruleset.rule_filters.emplace_back(filter);
     }
 
@@ -524,8 +524,8 @@ TEST(TestContext, NoFilterWithCondition)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter = std::make_shared<rule_filter>(
-            std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
+        auto filter =
+            std::make_shared<rule_filter>(std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
         ruleset.rule_filters.emplace_back(filter);
     }
 
@@ -640,9 +640,8 @@ TEST(TestContext, MultipleFiltersOverlappingRules)
         EXPECT_EQ(rules_to_exclude.size(), 0);
     }
 
-    ruleset.rule_filters.emplace_back(
-        std::make_shared<rule_filter>(std::vector<condition::ptr>{},
-            std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2], rules[3]}));
+    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(std::vector<condition::ptr>{},
+        std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2], rules[3]}));
 
     {
         auto rules_to_exclude = ctx.filter_rules(deadline);
@@ -696,10 +695,9 @@ TEST(TestContext, MultipleFiltersOverlappingRules)
         EXPECT_NE(rules_to_exclude.find(rules[7]), rules_to_exclude.end());
         EXPECT_NE(rules_to_exclude.find(rules[8]), rules_to_exclude.end());
     }
-    ruleset.rule_filters.emplace_back(
-        std::make_shared<rule_filter>(std::vector<condition::ptr>{},
-            std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2], rules[3], rules[4], rules[5],
-                rules[6], rules[7], rules[8]}));
+    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(std::vector<condition::ptr>{},
+        std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2], rules[3], rules[4], rules[5],
+            rules[6], rules[7], rules[8]}));
     {
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);

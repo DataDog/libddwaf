@@ -47,8 +47,8 @@ public:
 
     // These two functions below return references to internal objects,
     // however using them this way helps with testing
-    const std::unordered_set<rule::ptr>& filter_rules(ddwaf::timer &deadline);
-    const std::unordered_map<rule::ptr, input_exclusions>& filter_inputs(
+    const std::unordered_set<rule::ptr> &filter_rules(ddwaf::timer &deadline);
+    const std::unordered_map<rule::ptr, input_exclusions> &filter_inputs(
         const std::unordered_set<rule::ptr> &rules_to_exclude, ddwaf::timer &deadline);
 
     std::vector<event> match(const std::unordered_set<rule::ptr> &rules_to_exclude,

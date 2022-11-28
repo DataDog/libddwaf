@@ -9,17 +9,17 @@
 
 namespace ddwaf::exclusion {
 
-rule_filter::rule_filter(std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets)
+rule_filter::rule_filter(
+    std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets)
     : conditions_(std::move(conditions))
 {
     rule_targets_.reserve(rule_targets.size());
-    for (auto it = rule_targets.begin(); it != rule_targets.end(); ) {
+    for (auto it = rule_targets.begin(); it != rule_targets.end();) {
         rule_targets_.emplace(std::move(rule_targets.extract(it++).value()));
     }
 }
-std::unordered_set<rule::ptr> rule_filter::match(
-    const object_store &store, const ddwaf::manifest &manifest,
-    cache_type &cache, ddwaf::timer &deadline) const
+std::unordered_set<rule::ptr> rule_filter::match(const object_store &store,
+    const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (cache.result) {
         return {};

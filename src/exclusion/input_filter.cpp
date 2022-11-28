@@ -11,9 +11,8 @@ namespace ddwaf::exclusion {
 
 using target_specification = input_filter::target_specification;
 
-std::optional<target_specification> input_filter::match(
-    const object_store &store, const ddwaf::manifest &manifest,
-    cache_type &cache, ddwaf::timer &deadline) const
+std::optional<target_specification> input_filter::match(const object_store &store,
+    const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (!conditions_.empty() && !cache.result) {
         for (const auto &cond : conditions_) {
@@ -46,7 +45,7 @@ std::optional<target_specification> input_filter::match(
     // Reaching this point means all conditions have been satisfied
 
     if (!filter_.has_value()) {
-        return {{rule_targets_, input_targets_, std::unordered_set<ddwaf_object*>{}}};
+        return {{rule_targets_, input_targets_, std::unordered_set<ddwaf_object *>{}}};
     }
 
     auto objects_to_exclude = filter_->match(store, cache.object_filter_cache, deadline);

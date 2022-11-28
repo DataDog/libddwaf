@@ -31,8 +31,9 @@ bool is_scalar(const ddwaf_object *obj)
 } // namespace
 
 template <typename T>
-iterator_base<T>::iterator_base(const std::unordered_set<ddwaf_object*> &exclude,
-    const object_limits &limits) : limits_(limits), excluded_(exclude)
+iterator_base<T>::iterator_base(
+    const std::unordered_set<ddwaf_object *> &exclude, const object_limits &limits)
+    : limits_(limits), excluded_(exclude)
 {
     stack_.reserve(initial_stack_size);
 }
@@ -85,7 +86,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
 }
 
 value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
-    const std::unordered_set<ddwaf_object*> &exclude, const object_limits &limits)
+    const std::unordered_set<ddwaf_object *> &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
@@ -136,15 +137,17 @@ void value_iterator::initialise_cursor_with_path(
 
         ddwaf_object *child = nullptr;
         if (is_map(parent)) {
-            auto size = parent->nbEntries > limits_.max_container_size ?
-                    limits_.max_container_size : parent->nbEntries;
+            auto size = parent->nbEntries > limits_.max_container_size ? limits_.max_container_size
+                                                                       : parent->nbEntries;
             for (std::size_t j = 0; j < size; j++) {
                 auto *possible_child = &parent->array[j];
                 if (possible_child->parameterName == nullptr) {
                     continue;
                 }
 
-                if (should_exclude(possible_child)) { continue; }
+                if (should_exclude(possible_child)) {
+                    continue;
+                }
 
                 const std::string_view child_key(
                     possible_child->parameterName, possible_child->parameterNameLength);
@@ -222,9 +225,8 @@ void value_iterator::set_cursor_to_next_object()
     }
 }
 
-key_iterator::key_iterator(
-    const ddwaf_object *obj, const std::vector<std::string> &path,
-    const std::unordered_set<ddwaf_object*> &exclude, const object_limits &limits)
+key_iterator::key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+    const std::unordered_set<ddwaf_object *> &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
@@ -263,15 +265,17 @@ void key_iterator::initialise_cursor_with_path(
 
         ddwaf_object *child = nullptr;
         if (parent->type == DDWAF_OBJ_MAP) {
-            auto size = parent->nbEntries > limits_.max_container_size ?
-                    limits_.max_container_size : parent->nbEntries;
+            auto size = parent->nbEntries > limits_.max_container_size ? limits_.max_container_size
+                                                                       : parent->nbEntries;
             for (std::size_t j = 0; j < size; j++) {
                 auto *possible_child = &parent->array[j];
                 if (possible_child->parameterName == nullptr) {
                     continue;
                 }
 
-                if (should_exclude(possible_child)) { continue; }
+                if (should_exclude(possible_child)) {
+                    continue;
+                }
 
                 const std::string_view child_key(
                     possible_child->parameterName, possible_child->parameterNameLength);

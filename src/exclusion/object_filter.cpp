@@ -5,26 +5,35 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <exception.hpp>
-#include <log.hpp>
 #include <exclusion/object_filter.hpp>
+#include <log.hpp>
 
 namespace ddwaf::exclusion {
 
-path_trie path_trie::find(std::string_view key) const {
-    if (!root) { return {}; }
+path_trie path_trie::find(std::string_view key) const
+{
+    if (!root) {
+        return {};
+    }
     auto it = root->values.find(key);
-    if (it == root->values.end()) { return {}; }
+    if (it == root->values.end()) {
+        return {};
+    }
     return path_trie{it->second};
 }
 
-template <typename T>
-path_trie path_trie::find(const std::vector<T> &path) const {
-    if (!root) { return {}; }
+template <typename T> path_trie path_trie::find(const std::vector<T> &path) const
+{
+    if (!root) {
+        return {};
+    }
 
     std::shared_ptr<trie_node> current = root;
     for (const auto &key : path) {
         auto it = current->values.find(key);
-        if (it == current->values.end()) { return {}; }
+        if (it == current->values.end()) {
+            return {};
+        }
         current = it->second;
     }
     return path_trie{current};
@@ -32,8 +41,11 @@ path_trie path_trie::find(const std::vector<T> &path) const {
 
 const char *print(std::string_view str) { return str.data(); }
 
-std::string path_trie::debug() const {
-    if (!root) { return "{}"; }
+std::string path_trie::debug() const
+{
+    if (!root) {
+        return "{}";
+    }
 
     std::string out = "{";
     out += "is_terminal: ";
@@ -44,27 +56,32 @@ std::string path_trie::debug() const {
     }
     out += "items: [";
     for (const auto &[key, value] : root->values) {
-        if (out.back() != '[') { out += ", "; }
+        if (out.back() != '[') {
+            out += ", ";
+        }
         out += key;
     }
     out += "]}";
     return out;
 }
 
-template <typename T>
-void path_trie::insert(const std::vector<T> &path) {
-    if (!root) { root = std::make_shared<trie_node>(); }
+template <typename T> void path_trie::insert(const std::vector<T> &path)
+{
+    if (!root) {
+        root = std::make_shared<trie_node>();
+    }
 
     std::shared_ptr<trie_node> current = root;
     for (const auto &key : path) {
         // If the current node is terminal, the given path is already
         // partially or totally in the trie.
-        if (current->terminal) { break; }
+        if (current->terminal) {
+            break;
+        }
 
         auto it = current->values.find(key);
         if (it == current->values.end()) {
-            const auto &[new_it, res] =
-                current->values.emplace(key, std::make_shared<trie_node>());
+            const auto &[new_it, res] = current->values.emplace(key, std::make_shared<trie_node>());
             current = new_it->second;
 
         } else {
@@ -77,20 +94,22 @@ void path_trie::insert(const std::vector<T> &path) {
 // Instantiations
 template path_trie path_trie::find<std::string>(const std::vector<std::string> &path) const;
 template void path_trie::insert<std::string>(const std::vector<std::string> &path);
-template path_trie path_trie::find<std::string_view>(const std::vector<std::string_view> &path) const;
+template path_trie path_trie::find<std::string_view>(
+    const std::vector<std::string_view> &path) const;
 template void path_trie::insert<std::string_view>(const std::vector<std::string_view> &path);
 
 namespace {
-void iterate_object(const path_trie &filter, const ddwaf_object *object, 
-    std::unordered_set<ddwaf_object*> &objects_to_exclude,
-    const object_limits &limits)
+void iterate_object(const path_trie &filter, const ddwaf_object *object,
+    std::unordered_set<ddwaf_object *> &objects_to_exclude, const object_limits &limits)
 {
-    if (object == nullptr || object->type != DDWAF_OBJ_MAP) { return; }
+    if (object == nullptr || object->type != DDWAF_OBJ_MAP) {
+        return;
+    }
 
     // TODO take into account object limits (?)
     // TODO reserve stack size?
 
-    std::stack<std::tuple<const ddwaf_object *, unsigned,  path_trie>> path_stack;
+    std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie>> path_stack;
     path_stack.push({object, 0, filter});
 
     while (!path_stack.empty()) {
@@ -102,8 +121,9 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
         }
 
         bool found_node{false};
-        auto size = current_object->nbEntries > limits.max_container_size ?
-            limits.max_container_size : current_object->nbEntries;
+        auto size = current_object->nbEntries > limits.max_container_size
+                        ? limits.max_container_size
+                        : current_object->nbEntries;
         for (; current_index < size; ++current_index) {
             ddwaf_object *child = &current_object->array[current_index];
 
@@ -120,7 +140,8 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
                 continue;
             }
 
-            if (child->type == DDWAF_OBJ_MAP && child_trie.is_valid() && path_stack.size() < limits.max_container_depth ) {
+            if (child->type == DDWAF_OBJ_MAP && child_trie.is_valid() &&
+                path_stack.size() < limits.max_container_depth) {
                 ++current_index;
                 found_node = true;
                 path_stack.push({child, 0, child_trie});
@@ -139,10 +160,10 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
 
 } // namespace
 
-std::unordered_set<ddwaf_object*> object_filter::match(const object_store &store,
-    cache_type &cache, ddwaf::timer &deadline) const
+std::unordered_set<ddwaf_object *> object_filter::match(
+    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
-    std::unordered_set<ddwaf_object*> objects_to_exclude;
+    std::unordered_set<ddwaf_object *> objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

@@ -28,13 +28,12 @@ public:
 
     rule_filter(std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets);
 
-    std::unordered_set<rule::ptr> match(const object_store &store,
-        const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const;
+    std::unordered_set<rule::ptr> match(const object_store &store, const ddwaf::manifest &manifest,
+        cache_type &cache, ddwaf::timer &deadline) const;
 
 protected:
     std::vector<condition::ptr> conditions_;
     std::unordered_set<rule::ptr> rule_targets_;
 };
-
 
 } // namespace ddwaf::exclusion

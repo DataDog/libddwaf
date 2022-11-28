@@ -90,11 +90,11 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
     return std::nullopt;
 }
 
-std::optional<event::match> condition::match(
-    const object_store &store, const ddwaf::manifest &manifest,
+std::optional<event::match> condition::match(const object_store &store,
+    const ddwaf::manifest &manifest,
     const std::unordered_set<manifest::target_type> &inputs_excluded,
-    const std::unordered_set<ddwaf_object*> & objects_excluded,
-    bool run_on_new, ddwaf::timer &deadline) const
+    const std::unordered_set<ddwaf_object *> &objects_excluded, bool run_on_new,
+    ddwaf::timer &deadline) const
 {
     for (const auto &target : targets_) {
         if (deadline.expired()) {
