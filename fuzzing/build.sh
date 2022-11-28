@@ -1,8 +1,8 @@
 #!/bin/bash
 set -eu
 
-export CC=clang-15
-export CXX=clang++-15
+export CC=clang-14
+export CXX=clang++-14
 
 rm -rf build && mkdir build && cd build
 
