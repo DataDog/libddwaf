@@ -120,3 +120,99 @@ TEST(TestObjectFilter, MissingTarget)
     auto objects_filtered = filter.match(store, cache, deadline);
     EXPECT_EQ(objects_filtered.size(), 0);
 }
+
+TEST(TestObjectFilter, SingleTargetCache)
+{
+    ddwaf::manifest_builder mb;
+    auto query = mb.insert("query", {});
+    auto manifest = mb.build_manifest();
+    object_store store(manifest);
+
+    ddwaf_object root, child, tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+
+    store.insert(root);
+
+    object_filter filter;
+    filter.insert(query, {"params"});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+    {
+        auto objects_filtered = filter.match(store, cache, deadline);
+        EXPECT_EQ(objects_filtered.size(), 1);
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+    }
+
+    {
+        auto objects_filtered = filter.match(store, cache, deadline);
+        EXPECT_TRUE(objects_filtered.empty());
+    }
+}
+
+TEST(TestObjectFilter, MultipleTargetsCache)
+{
+    ddwaf::manifest_builder mb;
+    auto query = mb.insert("query", {});
+    auto path_params = mb.insert("path_params", {});
+    auto manifest = mb.build_manifest();
+    object_store store(manifest);
+
+    object_filter filter;
+    filter.insert(query, {"uri"});
+    filter.insert(path_params, {"token", "value"});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+    {
+        ddwaf_object root, child, tmp;
+        // Query
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        EXPECT_EQ(objects_filtered.size(), 1);
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+    }
+
+    {
+        ddwaf_object root, child, object, tmp;
+
+        // Path Params
+        ddwaf_object_map(&object);
+        ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
+        ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "token", &object);
+        ddwaf_object_map_add(&child, "username", ddwaf_object_string(&tmp, "Paco"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "path_params", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        EXPECT_EQ(objects_filtered.size(), 1);
+        EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
+    }
+
+    {
+        auto objects_filtered = filter.match(store, cache, deadline);
+        EXPECT_TRUE(objects_filtered.empty());
+    }
+}
+
+
