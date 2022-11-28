@@ -877,3 +877,89 @@ TEST(TestKeyIterator, TestRecursiveMap)
     EXPECT_TRUE(it);
     EXPECT_FALSE(++it);
 }
+
+TEST(TestKeyIterator, TestExcludeSingleObject)
+{
+    ddwaf_object object, tmp;
+    ddwaf_object_map(&object);
+    ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
+
+    std::unordered_set<ddwaf_object *> exclude = {&object.array[0]};
+    ddwaf::object::key_iterator it(&object, {}, exclude);
+
+    EXPECT_FALSE(it);
+
+    ddwaf_object_free(&object);
+}
+
+TEST(TestKeyIterator, TestExcludeMultipleObjects)
+{
+    ddwaf_object root, map, tmp;
+    ddwaf_object_map(&map);
+    ddwaf_object_map_add(&map, "hello_key", ddwaf_object_string(&tmp, "hello"));
+    ddwaf_object_map_add(&map, "bye_key", ddwaf_object_string(&tmp, "bye"));
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
+    ddwaf_object_map_add(&root, "other", &map);
+
+
+    std::unordered_set<ddwaf_object *> exclude = {&root.array[0], &map.array[1]};
+    ddwaf::object::key_iterator it(&root, {}, exclude);
+
+    EXPECT_TRUE(it);
+    EXPECT_STREQ((*it)->stringValue, "other");
+
+    auto path = it.get_current_path();
+    EXPECT_EQ(path.size(), 1);
+    EXPECT_STREQ(path[0].c_str(), "other");
+
+    EXPECT_STREQ((*it)->stringValue, "other");
+
+    EXPECT_TRUE(++it);
+    EXPECT_STREQ((*it)->stringValue, "hello_key");
+
+    path = it.get_current_path();
+    EXPECT_EQ(path.size(), 2);
+    EXPECT_STREQ(path[0].c_str(), "other");
+    EXPECT_STREQ(path[1].c_str(), "hello_key");
+
+    EXPECT_FALSE(++it);
+
+    ddwaf_object_free(&root);
+}
+
+TEST(TestKeyIterator, TestExcludeObjectInKeyPath)
+{
+    ddwaf_object root, child, tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "child", ddwaf_object_string(&tmp, "value"));
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "parent", &child);
+
+    std::unordered_set<ddwaf_object *> exclude = {&child.array[0]};
+    ddwaf::object::key_iterator it(&root, {"parent", "child"}, exclude);
+
+    EXPECT_FALSE(it);
+
+    ddwaf_object_free(&root);
+}
+
+TEST(TestKeyIterator, TestExcludeRootOfKeyPath)
+{
+    ddwaf_object root, child, tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "child", ddwaf_object_string(&tmp, "value"));
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "parent", &child);
+
+    std::unordered_set<ddwaf_object *> exclude = {&root.array[0]};
+    ddwaf::object::key_iterator it(&root, {"parent", "child"}, exclude);
+
+    EXPECT_FALSE(it);
+
+    ddwaf_object_free(&root);
+}
+

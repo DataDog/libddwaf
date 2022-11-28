@@ -41,30 +41,6 @@ template <typename T> path_trie path_trie::find(const std::vector<T> &path) cons
 
 const char *print(std::string_view str) { return str.data(); }
 
-std::string path_trie::debug() const
-{
-    if (!root) {
-        return "{}";
-    }
-
-    std::string out = "{";
-    out += "is_terminal: ";
-    if (root->terminal) {
-        out += "true, ";
-    } else {
-        out += "false, ";
-    }
-    out += "items: [";
-    for (const auto &[key, value] : root->values) {
-        if (out.back() != '[') {
-            out += ", ";
-        }
-        out += key;
-    }
-    out += "]}";
-    return out;
-}
-
 template <typename T> void path_trie::insert(const std::vector<T> &path)
 {
     if (!root) {
@@ -105,9 +81,6 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
     if (object == nullptr || object->type != DDWAF_OBJ_MAP) {
         return;
     }
-
-    // TODO take into account object limits (?)
-    // TODO reserve stack size?
 
     std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie>> path_stack;
     path_stack.push({object, 0, filter});

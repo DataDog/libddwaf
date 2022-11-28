@@ -379,7 +379,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
     }
 }
 
-TEST(TestContext, FilterWithCondition)
+TEST(TestContext, RuleFilterWithCondition)
 {
     ddwaf::ruleset ruleset;
     ddwaf::manifest_builder mb;
@@ -437,7 +437,7 @@ TEST(TestContext, FilterWithCondition)
     EXPECT_EQ(events.size(), 0);
 }
 
-TEST(TestContext, FilterTimeout)
+TEST(TestContext, RuleFilterTimeout)
 {
     ddwaf::ruleset ruleset;
     ddwaf::manifest_builder mb;
@@ -490,7 +490,7 @@ TEST(TestContext, FilterTimeout)
     EXPECT_THROW(ctx.filter_rules(deadline), ddwaf::timeout_exception);
 }
 
-TEST(TestContext, NoFilterWithCondition)
+TEST(TestContext, NoRuleFilterWithCondition)
 {
     ddwaf::ruleset ruleset;
     ddwaf::manifest_builder mb;
@@ -547,7 +547,7 @@ TEST(TestContext, NoFilterWithCondition)
     EXPECT_EQ(events.size(), 1);
 }
 
-TEST(TestContext, MultipleFiltersNonOverlappingRules)
+TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
 {
     ddwaf::ruleset ruleset;
 
@@ -615,7 +615,7 @@ TEST(TestContext, MultipleFiltersNonOverlappingRules)
     }
 }
 
-TEST(TestContext, MultipleFiltersOverlappingRules)
+TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 {
     ddwaf::ruleset ruleset;
 
@@ -713,7 +713,7 @@ TEST(TestContext, MultipleFiltersOverlappingRules)
     }
 }
 
-TEST(TestContext, MultipleFiltersNonOverlappingRulesWithConditions)
+TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 {
     ddwaf::ruleset ruleset;
     ddwaf::manifest_builder mb;
@@ -801,7 +801,7 @@ TEST(TestContext, MultipleFiltersNonOverlappingRulesWithConditions)
     }
 }
 
-TEST(TestContext, MultipleFiltersOverlappingRulesWithConditions)
+TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 {
     ddwaf::ruleset ruleset;
     ddwaf::manifest_builder mb;

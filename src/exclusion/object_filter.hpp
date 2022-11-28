@@ -31,13 +31,12 @@ public:
     [[nodiscard]] bool is_terminal() const { return root && root->terminal; }
     [[nodiscard]] bool is_valid() const { return root && !root->values.empty(); }
 
-    [[nodiscard]] std::string debug() const;
-
 protected:
     struct trie_node {
         // Heterogenous lookups required...
         // TODO: Change to unordered_map with C++20
         std::map<std::string, std::shared_ptr<trie_node>, std::less<>> values;
+        // TODO this shouldn't be necessary
         bool terminal{false};
     };
 
@@ -50,7 +49,7 @@ class object_filter {
 public:
     using cache_type = std::unordered_set<manifest::target_type>;
 
-    explicit object_filter(const ddwaf::object_limits &limits) : limits_(limits) {}
+    explicit object_filter(const ddwaf::object_limits &limits = {}) : limits_(limits) {}
 
     void insert(manifest::target_type target, const std::vector<std::string_view> &key_path)
     {
