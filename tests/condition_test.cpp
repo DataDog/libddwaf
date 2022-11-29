@@ -64,3 +64,56 @@ TEST(TestCondition, NoMatch)
     auto match = cond->match(store, manifest, {}, true, deadline);
     EXPECT_FALSE(match.has_value());
 }
+
+TEST(TestCondition, ExcludeInput)
+{
+    std::vector<ddwaf::manifest::target_type> targets;
+
+    ddwaf::manifest_builder mb;
+    targets.push_back(mb.insert("server.request.query", {}));
+
+    auto manifest = mb.build_manifest();
+
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::make_unique<rule_processor::regex_match>(".*", 0, true));
+
+    ddwaf_object root, tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
+
+    ddwaf::object_store store(manifest);
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    auto match = cond->match(store, manifest, {&root.array[0]}, true, deadline);
+    EXPECT_FALSE(match.has_value());
+}
+
+TEST(TestCondition, ExcludeKeyPath)
+{
+    std::vector<ddwaf::manifest::target_type> targets;
+
+    ddwaf::manifest_builder mb;
+    targets.push_back(mb.insert("server.request.query", {}));
+
+    auto manifest = mb.build_manifest();
+
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::make_unique<rule_processor::regex_match>(".*", 0, true));
+
+    ddwaf_object root, map, tmp;
+    ddwaf_object_map(&map);
+    ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "value"));
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", &map);
+
+    ddwaf::object_store store(manifest);
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    auto match = cond->match(store, manifest, {&map.array[0]}, true, deadline);
+    EXPECT_FALSE(match.has_value());
+}

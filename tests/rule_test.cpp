@@ -574,3 +574,36 @@ TEST(TestRule, ToggleWithInvalidHandle)
 {
     EXPECT_EQ(ddwaf_toggle_rules(nullptr, nullptr), DDWAF_ERR_INVALID_ARGUMENT);
 }
+
+TEST(TestRule, ExcludeObject)
+{
+    std::vector<ddwaf::manifest::target_type> targets;
+
+    ddwaf::manifest_builder mb;
+    targets.push_back(mb.insert("http.client_ip", {}));
+
+    auto manifest = mb.build_manifest();
+
+    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+
+    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+
+    ddwaf::rule rule(
+        "id", "name", "type", "category", std::move(conditions), {"update", "block", "passlist"});
+
+    ddwaf_object root, tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::object_store store(manifest);
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    rule::cache_type cache;
+    auto event = rule.match(store, manifest, cache, {&root.array[0]}, deadline);
+    EXPECT_FALSE(event.has_value());
+}
+
+
