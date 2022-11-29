@@ -605,5 +605,3 @@ TEST(TestRule, ExcludeObject)
     auto event = rule.match(store, manifest, cache, {&root.array[0]}, deadline);
     EXPECT_FALSE(event.has_value());
 }
-
-

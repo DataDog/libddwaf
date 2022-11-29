@@ -912,8 +912,8 @@ TEST(TestContext, InputFilterExclude)
 
     std::vector<condition::ptr> filter_conditions;
     std::set<rule::ptr> filter_rules{rule};
-    auto filter = std::make_shared<input_filter>(std::move(filter_conditions),
-            std::move(filter_rules), std::move(obj_filter));
+    auto filter = std::make_shared<input_filter>(
+        std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
 
     ddwaf::ruleset ruleset;
     ruleset.rules.emplace("id", rule);
@@ -953,8 +953,8 @@ TEST(TestContext, InputFilterExcludeRule)
 
     std::vector<condition::ptr> filter_conditions;
     std::set<rule::ptr> filter_rules{rule};
-    auto filter = std::make_shared<input_filter>(std::move(filter_conditions),
-            std::move(filter_rules), std::move(obj_filter));
+    auto filter = std::make_shared<input_filter>(
+        std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
 
     ddwaf::ruleset ruleset;
     ruleset.rules.emplace("id", rule);
@@ -974,5 +974,3 @@ TEST(TestContext, InputFilterExcludeRule)
     auto events = ctx.match({}, objects_to_exclude, deadline);
     EXPECT_EQ(events.size(), 1);
 }
-
-
