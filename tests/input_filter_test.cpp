@@ -16,7 +16,15 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     auto manifest = mb.build_manifest();
     object_store store(manifest);
 
-    input_filter filter({}, {std::make_shared<rule>(rule("", "", "", "", {}))}, {query});
+    ddwaf_object root, tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "value"));
+    store.insert(root);
+
+    object_filter obj_filter;
+    obj_filter.insert(query, {});
+    input_filter filter(
+        {}, {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -24,9 +32,8 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     auto opt_spec = filter.match(store, manifest, cache, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
-    EXPECT_EQ(opt_spec->inputs.size(), 1);
-    EXPECT_NE(opt_spec->inputs.find(query), opt_spec->inputs.end());
-    EXPECT_TRUE(opt_spec->objects.empty());
+    EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_NE(opt_spec->objects.find(&root.array[0]), opt_spec->objects.end());
 }
 
 TEST(TestInputFilter, ObjectExclusionNoConditions)
@@ -47,7 +54,8 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
 
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
-    input_filter filter({}, {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
+    input_filter filter(
+        {}, {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -55,7 +63,6 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     auto opt_spec = filter.match(store, manifest, cache, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
-    EXPECT_TRUE(opt_spec->inputs.empty());
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_NE(opt_spec->objects.find(&child.array[0]), opt_spec->objects.end());
 }
@@ -79,8 +86,10 @@ TEST(TestInputFilter, InputExclusionWithCondition)
     ddwaf::object_store store(manifest);
     store.insert(root);
 
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {client_ip});
+    object_filter obj_filter;
+    obj_filter.insert(client_ip, {});
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -88,9 +97,8 @@ TEST(TestInputFilter, InputExclusionWithCondition)
     auto opt_spec = filter.match(store, manifest, cache, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
-    EXPECT_EQ(opt_spec->inputs.size(), 1);
-    EXPECT_NE(opt_spec->inputs.find(client_ip), opt_spec->inputs.end());
-    EXPECT_TRUE(opt_spec->objects.empty());
+    EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_NE(opt_spec->objects.find(&root.array[0]), opt_spec->objects.end());
 }
 
 TEST(TestInputFilter, InputExclusionFailedCondition)
@@ -112,8 +120,10 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     ddwaf::object_store store(manifest);
     store.insert(root);
 
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {client_ip});
+    object_filter obj_filter;
+    obj_filter.insert(client_ip, {});
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -149,8 +159,8 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
 
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -158,7 +168,6 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     auto opt_spec = filter.match(store, manifest, cache, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
-    EXPECT_TRUE(opt_spec->inputs.empty());
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_NE(opt_spec->objects.find(&child.array[0]), opt_spec->objects.end());
 }
@@ -190,8 +199,8 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
 
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -223,8 +232,10 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     }
 
     auto manifest = mb.build_manifest();
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {client_ip});
+    object_filter obj_filter;
+    obj_filter.insert(usr_id);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
@@ -254,9 +265,8 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         auto opt_spec = filter.match(store, manifest, cache, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
-        EXPECT_EQ(opt_spec->inputs.size(), 1);
-        EXPECT_NE(opt_spec->inputs.find(client_ip), opt_spec->inputs.end());
-        EXPECT_TRUE(opt_spec->objects.empty());
+        EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_NE(opt_spec->objects.find(&root.array[0]), opt_spec->objects.end());
     }
 }
 
@@ -283,8 +293,10 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     }
 
     auto manifest = mb.build_manifest();
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {client_ip});
+    object_filter obj_filter;
+    obj_filter.insert(client_ip);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -338,8 +350,10 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     }
 
     auto manifest = mb.build_manifest();
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {client_ip});
+    object_filter obj_filter;
+    obj_filter.insert(client_ip);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -365,14 +379,15 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
         store.insert(root);
 
+        auto *client_ip_ptr = const_cast<ddwaf_object *>(store.get_target(client_ip));
+
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
         auto opt_spec = filter.match(store, manifest, cache, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
-        EXPECT_EQ(opt_spec->inputs.size(), 1);
-        EXPECT_NE(opt_spec->inputs.find(client_ip), opt_spec->inputs.end());
-        EXPECT_TRUE(opt_spec->objects.empty());
+        EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_NE(opt_spec->objects.find(client_ip_ptr), opt_spec->objects.end());
     }
 }
 
@@ -399,8 +414,10 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     }
 
     auto manifest = mb.build_manifest();
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {client_ip});
+    object_filter obj_filter;
+    obj_filter.insert(client_ip);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -420,9 +437,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
         auto opt_spec = filter.match(store, manifest, cache, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
-        EXPECT_EQ(opt_spec->inputs.size(), 1);
-        EXPECT_NE(opt_spec->inputs.find(client_ip), opt_spec->inputs.end());
-        EXPECT_TRUE(opt_spec->objects.empty());
+        EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_NE(opt_spec->objects.find(&root.array[0]), opt_spec->objects.end());
     }
 
     {
@@ -463,8 +479,8 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
     auto manifest = mb.build_manifest();
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
@@ -502,7 +518,6 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         auto opt_spec = filter.match(store, manifest, cache, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
-        EXPECT_TRUE(opt_spec->inputs.empty());
         EXPECT_EQ(opt_spec->objects.size(), 1);
     }
 }
@@ -533,8 +548,8 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
     auto manifest = mb.build_manifest();
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -563,7 +578,6 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&root, "query", &object);
-
 
         ddwaf::object_store store(manifest);
         store.insert(root);
@@ -600,8 +614,8 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     auto manifest = mb.build_manifest();
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -636,7 +650,6 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
         auto opt_spec = filter.match(store, manifest, cache, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
-        EXPECT_TRUE(opt_spec->inputs.empty());
         EXPECT_EQ(opt_spec->objects.size(), 1);
     }
 }
@@ -667,8 +680,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     auto manifest = mb.build_manifest();
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
-    input_filter filter(
-        std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))}, {}, obj_filter);
+    input_filter filter(std::move(conditions), {std::make_shared<rule>(rule("", "", "", "", {}))},
+        std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -692,7 +705,6 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
         auto opt_spec = filter.match(store, manifest, cache, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
-        EXPECT_TRUE(opt_spec->inputs.empty());
         EXPECT_EQ(opt_spec->objects.size(), 1);
     }
 

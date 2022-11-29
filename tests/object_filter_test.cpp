@@ -36,7 +36,6 @@ TEST(TestObjectFilter, RootTarget)
     EXPECT_NE(objects_filtered.find(&root.array[0]), objects_filtered.end());
 }
 
-
 TEST(TestObjectFilter, SingleTarget)
 {
     ddwaf::manifest_builder mb;

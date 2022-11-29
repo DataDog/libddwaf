@@ -26,7 +26,6 @@ public:
 
     struct target_specification {
         const std::set<rule::ptr> &rules;
-        std::unordered_set<manifest::target_type> inputs;
         std::unordered_set<ddwaf_object *> objects;
     };
 
@@ -37,10 +36,9 @@ public:
     };
 
     input_filter(std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets,
-        std::unordered_set<manifest::target_type> &&input_targets = {},
-        std::optional<object_filter> &&filter = std::nullopt)
+        object_filter &&filter)
         : conditions_(std::move(conditions)), rule_targets_(std::move(rule_targets)),
-          input_targets_(std::move(input_targets)), filter_(std::move(filter))
+          filter_(std::move(filter))
     {}
 
     std::optional<target_specification> match(const object_store &store,
@@ -49,8 +47,7 @@ public:
 protected:
     std::vector<condition::ptr> conditions_;
     const std::set<rule::ptr> rule_targets_;
-    const std::unordered_set<manifest::target_type> input_targets_;
-    std::optional<object_filter> filter_;
+    object_filter filter_;
 };
 
 } // namespace ddwaf::exclusion

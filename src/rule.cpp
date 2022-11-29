@@ -28,8 +28,8 @@ rule::rule(std::string &&id_, std::string &&name_, std::string &&type_, std::str
 }
 
 std::optional<event> rule::match(const object_store &store, const ddwaf::manifest &manifest,
-    cache_type &cache, const std::unordered_set<manifest::target_type> &inputs_excluded,
-    const std::unordered_set<ddwaf_object *> &objects_excluded, ddwaf::timer &deadline) const
+    cache_type &cache, const std::unordered_set<ddwaf_object *> &objects_excluded,
+    ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
     if (cache.result) {
@@ -49,8 +49,7 @@ std::optional<event> rule::match(const object_store &store, const ddwaf::manifes
             cached_result = it;
         }
 
-        auto opt_match =
-            cond->match(store, manifest, inputs_excluded, objects_excluded, run_on_new, deadline);
+        auto opt_match = cond->match(store, manifest, objects_excluded, run_on_new, deadline);
         if (!opt_match.has_value()) {
             cached_result->second = false;
             return std::nullopt;

@@ -52,7 +52,7 @@ public:
 
     explicit object_filter(const ddwaf::object_limits &limits = {}) : limits_(limits) {}
 
-    void insert(manifest::target_type target, const std::vector<std::string_view> &key_path)
+    void insert(manifest::target_type target, const std::vector<std::string_view> &key_path = {})
     {
         target_paths_[target].insert(key_path);
     }

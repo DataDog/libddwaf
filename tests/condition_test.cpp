@@ -29,7 +29,7 @@ TEST(TestCondition, Match)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, manifest, {}, {}, true, deadline);
+    auto match = cond->match(store, manifest, {}, true, deadline);
     EXPECT_TRUE(match.has_value());
 
     EXPECT_STREQ(match->resolved.c_str(), "value");
@@ -61,6 +61,6 @@ TEST(TestCondition, NoMatch)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, manifest, {}, {}, true, deadline);
+    auto match = cond->match(store, manifest, {}, true, deadline);
     EXPECT_FALSE(match.has_value());
 }

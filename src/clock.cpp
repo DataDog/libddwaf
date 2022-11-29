@@ -23,7 +23,8 @@ static clock_gettime_t clock_gettime = &::clock_gettime;
 
 monotonic_clock::time_point monotonic_clock::now() noexcept
 {
-    struct timespec ts {};
+    struct timespec ts {
+    };
     const int ret = ddwaf::clock_gettime(CLOCK_MONOTONIC, &ts);
     if (ret < 0) {
         bool expected = false;

@@ -51,9 +51,10 @@ DDWAF_RET_CODE context::run(
     std::vector<ddwaf::event> events;
     try {
         const auto &rules_to_exclude = filter_rules(deadline);
-        const auto &inputs_to_exclude = filter_inputs(rules_to_exclude, deadline);
-        events = match(rules_to_exclude, inputs_to_exclude, deadline);
-    } catch (const ddwaf::timeout_exception &) {}
+        const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
+        events = match(rules_to_exclude, objects_to_exclude, deadline);
+    } catch (const ddwaf::timeout_exception &) {
+    }
 
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
@@ -87,7 +88,7 @@ const std::unordered_set<rule::ptr> &context::filter_rules(ddwaf::timer &deadlin
     return rules_to_exclude_;
 }
 
-const std::unordered_map<rule::ptr, context::input_exclusions> &context::filter_inputs(
+const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs(
     const std::unordered_set<rule::ptr> &rules_to_exclude, ddwaf::timer &deadline)
 {
     for (const auto &filter : ruleset_.input_filters) {
@@ -110,24 +111,17 @@ const std::unordered_map<rule::ptr, context::input_exclusions> &context::filter_
                     continue;
                 }
 
-                auto &common_exclusion = inputs_to_exclude_[rule];
-                for (const auto &input : exclusion->inputs) {
-                    common_exclusion.inputs.insert(input);
-                }
-
-                for (auto *object : exclusion->objects) {
-                    common_exclusion.objects.emplace(object);
-                }
+                auto &common_exclusion = objects_to_exclude_[rule];
+                for (auto *object : exclusion->objects) { common_exclusion.emplace(object); }
             }
         }
     }
 
-    return inputs_to_exclude_;
+    return objects_to_exclude_;
 }
 
 std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, input_exclusions> &inputs_to_exclude,
-    ddwaf::timer &deadline)
+    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
     // Process each rule we have to run for this step of the collection
     std::vector<ddwaf::event> events;
@@ -164,13 +158,13 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
 
                 rule::cache_type &cache = it->second;
                 std::optional<event> event;
-                auto exclude_it = inputs_to_exclude.find(rule);
-                if (exclude_it != inputs_to_exclude.end()) {
-                    const auto &[inputs_excluded, objects_excluded] = exclude_it->second;
-                    event = rule->match(store_, ruleset_.manifest, cache, inputs_excluded,
-                        objects_excluded, deadline);
+                auto exclude_it = objects_to_exclude.find(rule);
+                if (exclude_it != objects_to_exclude.end()) {
+                    const auto &objects_excluded = exclude_it->second;
+                    event =
+                        rule->match(store_, ruleset_.manifest, cache, objects_excluded, deadline);
                 } else {
-                    event = rule->match(store_, ruleset_.manifest, cache, {}, {}, deadline);
+                    event = rule->match(store_, ruleset_.manifest, cache, {}, deadline);
                 }
 
                 if (event.has_value()) {

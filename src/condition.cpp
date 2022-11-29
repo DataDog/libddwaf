@@ -91,10 +91,8 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
 }
 
 std::optional<event::match> condition::match(const object_store &store,
-    const ddwaf::manifest &manifest,
-    const std::unordered_set<manifest::target_type> &inputs_excluded,
-    const std::unordered_set<ddwaf_object *> &objects_excluded, bool run_on_new,
-    ddwaf::timer &deadline) const
+    const ddwaf::manifest &manifest, const std::unordered_set<ddwaf_object *> &objects_excluded,
+    bool run_on_new, ddwaf::timer &deadline) const
 {
     for (const auto &target : targets_) {
         if (deadline.expired()) {
@@ -108,10 +106,6 @@ std::optional<event::match> condition::match(const object_store &store,
         }
 
         const auto &info = manifest.get_target_info(target);
-        if (inputs_excluded.find(target) != inputs_excluded.end()) {
-            DDWAF_DEBUG("Excluding address: %s", info.name.c_str());
-            continue;
-        }
 
         // TODO: iterators could be cached to avoid reinitialisation
         const auto *object = store.get_target(target);
