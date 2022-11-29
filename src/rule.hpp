@@ -69,7 +69,7 @@ public:
     ~rule() = default;
 
     std::optional<event> match(const object_store &store, const ddwaf::manifest &manifest,
-        cache_type &cache, const std::unordered_set<ddwaf_object *> &objects_excluded,
+        cache_type &cache, const std::unordered_set<const ddwaf_object *> &objects_excluded,
         ddwaf::timer &deadline) const;
 
     bool is_enabled() const { return enabled.load(std::memory_order_relaxed); }

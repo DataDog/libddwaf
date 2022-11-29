@@ -32,7 +32,7 @@ bool is_scalar(const ddwaf_object *obj)
 
 template <typename T>
 iterator_base<T>::iterator_base(
-    const std::unordered_set<ddwaf_object *> &exclude, const object_limits &limits)
+    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
     : limits_(limits), excluded_(exclude)
 {
     stack_.reserve(initial_stack_size);
@@ -86,7 +86,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
 }
 
 value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
-    const std::unordered_set<ddwaf_object *> &exclude, const object_limits &limits)
+    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
@@ -230,7 +230,7 @@ void value_iterator::set_cursor_to_next_object()
 }
 
 key_iterator::key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
-    const std::unordered_set<ddwaf_object *> &exclude, const object_limits &limits)
+    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);

@@ -46,7 +46,7 @@ public:
     condition &operator=(const condition &) = delete;
 
     std::optional<event::match> match(const object_store &store, const ddwaf::manifest &manifest,
-        const std::unordered_set<ddwaf_object *> &objects_excluded, bool run_on_new,
+        const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
         ddwaf::timer &deadline) const;
 
     std::string_view processor_name()

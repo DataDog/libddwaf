@@ -57,7 +57,7 @@ public:
         target_paths_[target].insert(key_path);
     }
 
-    std::unordered_set<ddwaf_object *> match(
+    std::unordered_set<const ddwaf_object *> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
 protected:

@@ -28,7 +28,7 @@ rule::rule(std::string &&id_, std::string &&name_, std::string &&type_, std::str
 }
 
 std::optional<event> rule::match(const object_store &store, const ddwaf::manifest &manifest,
-    cache_type &cache, const std::unordered_set<ddwaf_object *> &objects_excluded,
+    cache_type &cache, const std::unordered_set<const ddwaf_object *> &objects_excluded,
     ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule

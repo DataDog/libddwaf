@@ -23,7 +23,7 @@ namespace ddwaf {
 
 class context {
 public:
-    using object_set = std::unordered_set<ddwaf_object *>;
+    using object_set = std::unordered_set<const ddwaf_object *>;
 
     context(ddwaf::ruleset &ruleset, const ddwaf::config &config)
         : ruleset_(ruleset), config_(config), store_(ruleset_.manifest, config_.free_fn)

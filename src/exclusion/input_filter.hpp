@@ -26,7 +26,7 @@ public:
 
     struct target_specification {
         const std::set<rule::ptr> &rules;
-        std::unordered_set<ddwaf_object *> objects;
+        std::unordered_set<const ddwaf_object *> objects;
     };
 
     struct cache_type {

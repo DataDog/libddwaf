@@ -76,14 +76,14 @@ template void path_trie::insert<std::string_view>(const std::vector<std::string_
 
 namespace {
 void iterate_object(const path_trie &filter, const ddwaf_object *object,
-    std::unordered_set<ddwaf_object *> &objects_to_exclude, const object_limits &limits)
+    std::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
 {
     if (object == nullptr) {
         return;
     }
 
     if (filter.is_terminal()) {
-        objects_to_exclude.emplace(const_cast<ddwaf_object *>(object));
+        objects_to_exclude.emplace(object);
         return;
     }
 
@@ -142,10 +142,10 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
 
 } // namespace
 
-std::unordered_set<ddwaf_object *> object_filter::match(
+std::unordered_set<const ddwaf_object *> object_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
-    std::unordered_set<ddwaf_object *> objects_to_exclude;
+    std::unordered_set<const ddwaf_object *> objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
