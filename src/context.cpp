@@ -53,8 +53,7 @@ DDWAF_RET_CODE context::run(
         const auto &rules_to_exclude = filter_rules(deadline);
         const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
         events = match(rules_to_exclude, objects_to_exclude, deadline);
-    } catch (const ddwaf::timeout_exception &) {
-    }
+    } catch (const ddwaf::timeout_exception &) {}
 
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
