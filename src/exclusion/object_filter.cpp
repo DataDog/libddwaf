@@ -78,10 +78,14 @@ namespace {
 void iterate_object(const path_trie &filter, const ddwaf_object *object,
     std::unordered_set<ddwaf_object *> &objects_to_exclude, const object_limits &limits)
 {
-    if (object == nullptr || object->type != DDWAF_OBJ_MAP) {
+    if (object == nullptr) { return; }
+
+    if (filter.is_terminal()) {
+        objects_to_exclude.emplace(const_cast<ddwaf_object*>(object));
         return;
     }
 
+    if (object->type != DDWAF_OBJ_MAP) { return; }
     std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie>> path_stack;
     path_stack.push({object, 0, filter});
 

@@ -9,6 +9,34 @@
 using namespace ddwaf;
 using namespace ddwaf::exclusion;
 
+TEST(TestObjectFilter, RootTarget)
+{
+    ddwaf::manifest_builder mb;
+    auto query = mb.insert("query", {});
+    auto manifest = mb.build_manifest();
+    object_store store(manifest);
+
+    ddwaf_object root, child, tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+
+    store.insert(root);
+
+    object_filter filter;
+    filter.insert(query, {});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+    auto objects_filtered = filter.match(store, cache, deadline);
+
+    EXPECT_EQ(objects_filtered.size(), 1);
+    EXPECT_NE(objects_filtered.find(&root.array[0]), objects_filtered.end());
+}
+
+
 TEST(TestObjectFilter, SingleTarget)
 {
     ddwaf::manifest_builder mb;

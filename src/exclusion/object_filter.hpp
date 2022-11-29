@@ -13,6 +13,7 @@
 
 #include <clock.hpp>
 #include <config.hpp>
+#include <log.hpp>
 #include <manifest.hpp>
 #include <object_store.hpp>
 

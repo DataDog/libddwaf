@@ -285,11 +285,12 @@ void parse_input_filter(
         }
     }
 
-    std::optional<exclusion::object_filter> obj_filter = std::nullopt;
     std::unordered_set<manifest::target_type> input_targets;
-    auto inputs_array = at<parameter::vector>(filter, "inputs", {});
+    exclusion::object_filter obj_filter{cfg.limits};
+    auto inputs_array = at<parameter::vector>(filter, "inputs");
     for (parameter::map input_map : inputs_array) {
         auto address = at<std::string>(input_map, "address");
+
         auto optional_target = mb.find(address);
         if (!optional_target.has_value()) {
             // This address isn't used by any rule so we skip it.
@@ -297,24 +298,12 @@ void parse_input_filter(
         }
 
         auto key_path = at<std::vector<std::string_view>>(input_map, "key_path", {});
-        if (key_path.empty()) {
-            input_targets.emplace(*optional_target);
-        } else {
-            if (!obj_filter.has_value()) {
-                obj_filter = exclusion::object_filter{cfg.limits};
-            }
 
-            obj_filter->insert(*optional_target, key_path);
-        }
-    }
-
-    if (conditions.empty() && rules_target.empty() && input_targets.empty() &&
-        !obj_filter.has_value()) {
-        throw ddwaf::parsing_error("empty exclusion filter");
+        obj_filter.insert(*optional_target, key_path);
     }
 
     rs.input_filters.emplace_back(std::make_shared<exclusion::input_filter>(std::move(conditions),
-        std::move(rules_target), std::move(input_targets), std::move(obj_filter)));
+        std::move(rules_target), std::move(input_targets), std::make_optional(std::move(obj_filter))));
 }
 
 void parse_rule_filter(

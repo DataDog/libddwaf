@@ -95,6 +95,8 @@ value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::s
 void value_iterator::initialise_cursor(
     const ddwaf_object *obj, const std::vector<std::string> &path)
 {
+    if (should_exclude(obj)) { return; }
+
     if (path.empty()) {
         if (is_scalar(obj)) {
             current_ = obj;
@@ -234,6 +236,8 @@ key_iterator::key_iterator(const ddwaf_object *obj, const std::vector<std::strin
 
 void key_iterator::initialise_cursor(const ddwaf_object *obj, const std::vector<std::string> &path)
 {
+    if (should_exclude(obj)) { return; }
+
     if (!is_container(obj)) {
         return;
     }
