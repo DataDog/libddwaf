@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "exact_match.hpp"
 #include "test.h"
 
 using namespace ddwaf;
@@ -930,6 +931,7 @@ TEST(TestContext, InputFilterExclude)
     ctx.insert(root);
 
     auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+    EXPECT_EQ(objects_to_exclude.size(), 1);
     auto events = ctx.match({}, objects_to_exclude, deadline);
     EXPECT_EQ(events.size(), 0);
 }
@@ -970,7 +972,335 @@ TEST(TestContext, InputFilterExcludeRule)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
 
+    // The rule is added to the filter stage so that it's excluded from the
+    // final result, since we're not actually excluding the rule from the match
+    // stage we still get an event.
     auto objects_to_exclude = ctx.filter_inputs({rule}, deadline);
+    EXPECT_EQ(objects_to_exclude.size(), 0);
     auto events = ctx.match({}, objects_to_exclude, deadline);
     EXPECT_EQ(events.size(), 1);
+}
+
+TEST(TestContext, InputFilterWithCondition)
+{
+    ddwaf::manifest_builder mb;
+    auto client_ip = mb.insert("http.client_ip", {});
+    auto usr_id = mb.insert("usr.id", {});
+
+    ddwaf::ruleset ruleset;
+    {
+        std::vector<std::shared_ptr<condition>> conditions;
+        std::vector<ddwaf::manifest::target_type> targets{client_ip};
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        conditions.emplace_back(std::move(cond));
+
+        auto rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
+            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+
+        ruleset.rules.emplace("id", rule);
+        ruleset.collections["type"].emplace_back(rule);
+    }
+
+    {
+        object_filter obj_filter;
+        obj_filter.insert(client_ip);
+
+        std::vector<std::shared_ptr<condition>> conditions;
+        std::vector<ddwaf::manifest::target_type> targets{usr_id};
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+        conditions.emplace_back(std::move(cond));
+
+        std::set<rule::ptr> filter_rules{ruleset.rules["id"]};
+        auto filter = std::make_shared<input_filter>(
+            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+
+        ruleset.input_filters.emplace_back(filter);
+    }
+
+    ruleset.manifest = mb.build_manifest();
+
+    // Without usr.id, nothing should be excluded
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ctx.insert(root);
+
+        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        EXPECT_EQ(objects_to_exclude.size(), 0);
+        auto events = ctx.match({}, objects_to_exclude, deadline);
+        EXPECT_EQ(events.size(), 1);
+    }
+
+    // With usr.id != admin, nothing should be excluded
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
+        ctx.insert(root);
+
+        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        EXPECT_EQ(objects_to_exclude.size(), 0);
+        auto events = ctx.match({}, objects_to_exclude, deadline);
+        EXPECT_EQ(events.size(), 1);
+    }
+
+    // With usr.id == admin, there should be no matches
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ctx.insert(root);
+
+        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        EXPECT_EQ(objects_to_exclude.size(), 1);
+        auto events = ctx.match({}, objects_to_exclude, deadline);
+        EXPECT_EQ(events.size(), 0);
+    }
+}
+
+TEST(TestContext, InputFilterMultipleRules)
+{
+    ddwaf::manifest_builder mb;
+    auto client_ip = mb.insert("http.client_ip", {});
+    auto usr_id = mb.insert("usr.id", {});
+
+    ddwaf::ruleset ruleset;
+    {
+        std::vector<std::shared_ptr<condition>> conditions;
+        std::vector<ddwaf::manifest::target_type> targets{client_ip};
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        conditions.emplace_back(std::move(cond));
+
+        auto rule = std::make_shared<ddwaf::rule>("ip_id", "name", "ip_type", "category",
+            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+
+        ruleset.insert_rule(rule);
+    }
+
+    {
+        std::vector<std::shared_ptr<condition>> conditions;
+        std::vector<ddwaf::manifest::target_type> targets{usr_id};
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+        conditions.emplace_back(std::move(cond));
+
+        auto rule = std::make_shared<ddwaf::rule>("usr_id", "name", "usr_type", "category",
+            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+
+        ruleset.insert_rule(rule);
+    }
+
+    {
+        object_filter obj_filter;
+        obj_filter.insert(client_ip);
+        obj_filter.insert(usr_id);
+
+        std::vector<std::shared_ptr<condition>> conditions;
+        std::set<rule::ptr> filter_rules{ruleset.rules["usr_id"], ruleset.rules["ip_id"]};
+        auto filter = std::make_shared<input_filter>(
+            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+
+        ruleset.input_filters.emplace_back(filter);
+    }
+
+    ruleset.manifest = mb.build_manifest();
+
+    // Without usr.id, nothing should be excluded
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ctx.insert(root);
+
+        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        EXPECT_EQ(objects_to_exclude.size(), 2);
+        for (const auto &[rule, objects] : objects_to_exclude) {
+            EXPECT_EQ(objects.size(), 1);
+        }
+
+        auto events = ctx.match({}, objects_to_exclude, deadline);
+        EXPECT_EQ(events.size(), 0);
+    }
+
+    // With usr.id != admin, nothing should be excluded
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
+        ctx.insert(root);
+
+        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        EXPECT_EQ(objects_to_exclude.size(), 2);
+        for (const auto &[rule, objects] : objects_to_exclude) {
+            EXPECT_EQ(objects.size(), 2);
+        }
+
+        auto events = ctx.match({}, objects_to_exclude, deadline);
+        EXPECT_EQ(events.size(), 0);
+    }
+
+    // With usr.id == admin, there should be no matches
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ctx.insert(root);
+
+        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        EXPECT_EQ(objects_to_exclude.size(), 2);
+        for (const auto &[rule, objects] : objects_to_exclude) {
+            EXPECT_EQ(objects.size(), 2);
+        }
+
+        auto events = ctx.match({}, objects_to_exclude, deadline);
+        EXPECT_EQ(events.size(), 0);
+    }
+}
+
+TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
+{
+    ddwaf::manifest_builder mb;
+    auto client_ip = mb.insert("http.client_ip", {});
+    auto usr_id = mb.insert("usr.id", {});
+
+    ddwaf::ruleset ruleset;
+    {
+        std::vector<std::shared_ptr<condition>> conditions;
+        std::vector<ddwaf::manifest::target_type> targets{client_ip};
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        conditions.emplace_back(std::move(cond));
+
+        auto rule = std::make_shared<ddwaf::rule>("ip_id", "name", "ip_type", "category",
+            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+
+        ruleset.insert_rule(rule);
+    }
+
+    {
+        std::vector<std::shared_ptr<condition>> conditions;
+        std::vector<ddwaf::manifest::target_type> targets{usr_id};
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+        conditions.emplace_back(std::move(cond));
+
+        auto rule = std::make_shared<ddwaf::rule>("usr_id", "name", "usr_type", "category",
+            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+
+        ruleset.insert_rule(rule);
+    }
+
+    {
+        object_filter obj_filter;
+        obj_filter.insert(client_ip);
+
+        std::vector<std::shared_ptr<condition>> conditions;
+        std::set<rule::ptr> filter_rules{ruleset.rules["ip_id"]};
+        auto filter = std::make_shared<input_filter>(
+            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+
+        ruleset.input_filters.emplace_back(filter);
+    }
+
+    {
+        object_filter obj_filter;
+        obj_filter.insert(usr_id);
+
+        std::vector<std::shared_ptr<condition>> conditions;
+        std::set<rule::ptr> filter_rules{ruleset.rules["usr_id"]};
+        auto filter = std::make_shared<input_filter>(
+            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+
+        ruleset.input_filters.emplace_back(filter);
+    }
+
+    ruleset.manifest = mb.build_manifest();
+
+    // Without usr.id, nothing should be excluded
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ctx.insert(root);
+
+        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        EXPECT_EQ(objects_to_exclude.size(), 1);
+        for (const auto &[rule, objects] : objects_to_exclude) {
+            EXPECT_EQ(objects.size(), 1);
+        }
+
+        auto events = ctx.match({}, objects_to_exclude, deadline);
+        EXPECT_EQ(events.size(), 0);
+    }
+
+    // With usr.id != admin, nothing should be excluded
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
+        ctx.insert(root);
+
+        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        EXPECT_EQ(objects_to_exclude.size(), 2);
+        for (const auto &[rule, objects] : objects_to_exclude) {
+            EXPECT_EQ(objects.size(), 1);
+        }
+
+        auto events = ctx.match({}, objects_to_exclude, deadline);
+        EXPECT_EQ(events.size(), 0);
+    }
+
+    // With usr.id == admin, there should be no matches
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ctx.insert(root);
+
+        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        EXPECT_EQ(objects_to_exclude.size(), 2);
+        for (const auto &[rule, objects] : objects_to_exclude) {
+            EXPECT_EQ(objects.size(), 1);
+        }
+
+        auto events = ctx.match({}, objects_to_exclude, deadline);
+        EXPECT_EQ(events.size(), 0);
+    }
 }
