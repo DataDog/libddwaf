@@ -992,7 +992,8 @@ TEST(TestContext, InputFilterWithCondition)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::manifest::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
@@ -1083,7 +1084,8 @@ TEST(TestContext, InputFilterMultipleRules)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::manifest::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("ip_id", "name", "ip_type", "category",
@@ -1132,9 +1134,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
         auto objects_to_exclude = ctx.filter_inputs({}, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) {
-            EXPECT_EQ(objects.size(), 1);
-        }
+        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
 
         auto events = ctx.match({}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
@@ -1153,9 +1153,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
         auto objects_to_exclude = ctx.filter_inputs({}, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) {
-            EXPECT_EQ(objects.size(), 2);
-        }
+        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 2); }
 
         auto events = ctx.match({}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
@@ -1174,9 +1172,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
         auto objects_to_exclude = ctx.filter_inputs({}, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) {
-            EXPECT_EQ(objects.size(), 2);
-        }
+        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 2); }
 
         auto events = ctx.match({}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
@@ -1194,7 +1190,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::manifest::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("ip_id", "name", "ip_type", "category",
@@ -1254,9 +1251,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         auto objects_to_exclude = ctx.filter_inputs({}, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
-        for (const auto &[rule, objects] : objects_to_exclude) {
-            EXPECT_EQ(objects.size(), 1);
-        }
+        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
 
         auto events = ctx.match({}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
@@ -1275,9 +1270,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         auto objects_to_exclude = ctx.filter_inputs({}, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) {
-            EXPECT_EQ(objects.size(), 1);
-        }
+        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
 
         auto events = ctx.match({}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
@@ -1296,9 +1289,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         auto objects_to_exclude = ctx.filter_inputs({}, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) {
-            EXPECT_EQ(objects.size(), 1);
-        }
+        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
 
         auto events = ctx.match({}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
