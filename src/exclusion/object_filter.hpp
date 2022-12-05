@@ -9,6 +9,8 @@
 #include <map>
 #include <set>
 #include <stack>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <clock.hpp>
@@ -35,15 +37,18 @@ public:
 protected:
     struct trie_node {
         // Heterogenous lookups required...
-        // TODO: Change to unordered_map with C++20
-        std::map<std::string, std::shared_ptr<trie_node>, std::less<>> values;
+        std::unordered_map<std::string_view, std::shared_ptr<trie_node>> values;
         // TODO this shouldn't be necessary
         bool terminal{false};
     };
 
     explicit path_trie(std::shared_ptr<trie_node> node_) : root(std::move(node_)) {}
 
+    std::string_view get_stored_string(std::string_view str);
+
     std::shared_ptr<trie_node> root{nullptr};
+    // TODO: Remove storage with C++20
+    std::set<std::string, std::less<>> string_store;
 };
 
 class object_filter {

@@ -39,7 +39,15 @@ template <typename T> path_trie path_trie::find(const std::vector<T> &path) cons
     return path_trie{current};
 }
 
-const char *print(std::string_view str) { return str.data(); }
+std::string_view path_trie::get_stored_string(std::string_view str)
+{
+    auto it = string_store.find(str);
+    if (it == string_store.end()) {
+        auto [new_it, res] = string_store.emplace(str);
+        return *new_it;
+    }
+    return *it;
+}
 
 template <typename T> void path_trie::insert(const std::vector<T> &path)
 {
@@ -57,7 +65,9 @@ template <typename T> void path_trie::insert(const std::vector<T> &path)
 
         auto it = current->values.find(key);
         if (it == current->values.end()) {
-            const auto &[new_it, res] = current->values.emplace(key, std::make_shared<trie_node>());
+            auto stored_key = get_stored_string(key);
+            const auto &[new_it, res] =
+                current->values.emplace(stored_key, std::make_shared<trie_node>());
             current = new_it->second;
 
         } else {

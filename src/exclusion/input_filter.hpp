@@ -18,8 +18,6 @@
 
 namespace ddwaf::exclusion {
 
-// TODO: To simplify things, all filtering can be done using the
-// object filter only (to block an input, add the root object)
 class input_filter {
 public:
     using ptr = std::shared_ptr<input_filter>;
