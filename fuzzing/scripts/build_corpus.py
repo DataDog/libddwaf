@@ -5,9 +5,11 @@ import json
 import yaml
 import os
 from random import randint, random, choice, choices
-from string import printable as printable_chars
+# from string import printable as printable_chars
 import struct
 
+# No \n or \r
+printable_chars='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\x0b\x0c'
 
 class data():
     re2_regexs_with_metadata = json.load(open("fuzzing/data/regex.json", "r"))
@@ -185,14 +187,16 @@ def get_random_ip():
 
 
 class InitPayloadGenerator:
-    event_id_max_length = 32
-    address_name_length = 4
+    rule_id_max_length = 32
+    address_name_length = 32
 
     # Arrays max sizes
-    condition_max_count = 4
-    event_max_count = 100
+    condition_max_count = 8
+    rule_max_count = 100
+    filter_max_count = 100
+    key_path_max_count = 10
 
-    address_max_count = 4
+    address_max_count = 16
     transformation_max_count = 10
 
     ip_max_count = 100
@@ -208,7 +212,7 @@ class InitPayloadGenerator:
 
     def __init__(self):
         self.addresses = None
-        self.event_ids = None
+        self.rule_ids = None
 
         self.regexs = data.re2_regexs_with_metadata
 
@@ -250,28 +254,25 @@ class InitPayloadGenerator:
         self.used_operators = set()
 
         # At least one address with a ':'
-        self.addresses = ["".join(choices(printable_chars, k=self.address_name_length)) + ":x", ] + [
-            "".join(choices(printable_chars, k=self.address_name_length))
-            for _ in range(self.address_max_count)
-        ]
-
-        self.event_ids = []
+        self.rule_ids = []
         self.values = set()
         self.address_values = set()
 
-        def get_random_event_id():
-            result = "".join(choices(printable_chars, k=_lograndint(1, self.event_id_max_length)))
-            self.event_ids.append(result)
+        def get_random_rule_id():
+            result = "".join(choices(printable_chars, k=_lograndint(1, self.rule_id_max_length)))
+            while result in self.rule_ids:
+                result = "".join(choices(printable_chars, k=_lograndint(1, self.rule_id_max_length)))
+            self.rule_ids.append(result)
             return result
 
-        def get_random_event_name():
-            result = "".join(choices(printable_chars, k=_lograndint(1, self.event_id_max_length)))
+        def get_random_rule_name():
+            result = "".join(choices(printable_chars, k=_lograndint(1, self.rule_id_max_length)))
             return result
 
-        def get_random_event(i):
+        def get_random_rule():
             return {
-                "id": get_random_event_id(),
-                "name": get_random_event_name(),
+                "id": get_random_rule_id(),
+                "name": get_random_rule_name(),
                 "tags": {
                     "type": "".join(choices(printable_chars, k=10)),
                     "crs_id": "".join(choices(printable_chars, k=10)),
@@ -280,6 +281,25 @@ class InitPayloadGenerator:
                 "conditions": get_random_condition_array(),
                 "transformers": get_random_transformation_array(),
             }
+
+        def get_random_exclusion_filter(i):
+            # Conditions
+            ex_filter = {
+                "id": get_random_rule_id(),
+            }
+            if choice((True, False)):
+                ex_filter["conditions"] = get_random_condition_array();
+
+            # Rules
+            rules = _get_random_array2(self.rule_ids, 1, len(self.rule_ids), allow_none=True, unique=False)
+            if rules is not None:
+                ex_filter["rules_target"] =  [{"rule_id": value} for value in rules]
+
+            # Inputs
+            if choice((True, False)):
+                ex_filter["inputs"] = get_random_address_array()
+
+            return ex_filter;
 
         def get_random_condition_array():
             return _get_random_array(get_random_condition, 1, self.condition_max_count, allow_none=False)
@@ -294,10 +314,12 @@ class InitPayloadGenerator:
             addresses = _get_random_array2(self.addresses, 1, self.address_max_count, allow_none=False, unique=True)
             final_addresses = []
             for address in addresses:
-                comp = address.split(":")
-                if len(comp) == 2:
-                    key,path = comp
-                    final_addresses.append({"address": key, "key_path": path})
+                if choice((True, False)):
+                    key_path = ["".join(choices(printable_chars, k=_lograndint(1, self.address_name_length)))
+                        for _ in range(_lograndint(1, self.key_path_max_count))
+                    ]
+
+                    final_addresses.append({"address": address, "key_path": key_path})
                 else:
                     final_addresses.append({"address": address})
             return final_addresses
@@ -384,20 +406,40 @@ class InitPayloadGenerator:
             return result
 
         def get_random_rules():
-            return _get_random_array(get_random_event, 1, self.event_max_count, allow_none=False)
+            return [get_random_rule() for _ in range(self.rule_max_count)]
+
+        def get_random_exclusion_filters():
+            return _get_random_array(get_random_exclusion_filter, 1, self.filter_max_count, allow_none=True)
 
         def get_random_action_array():
             return [choice(self.possible_values, ) for _ in range(randint(0, 3))]
 
-        rules = get_random_rules()
+        def get_random_addresses():
+            return ["".join(choices(printable_chars, k=_lograndint(1, self.address_name_length)))
+                for _ in range(self.address_max_count)
+            ]
+
+        # Some of these inputs and rules will be excluded
+        self.addresses = get_random_addresses()
+        excluded_rules = get_random_rules()
+        filters = get_random_exclusion_filters()
+
+        all_addresses = self.addresses
+
+        # None of these inputs and rules should be excluded
+        self.addresses = get_random_addresses()
+        non_excluded_rules = get_random_rules()
+
+        all_addresses += self.addresses
 
         result = {
             "init_payload": {
                 "version": "2.1",
-                "rules": rules
+                "exclusions": filters,
+                "rules": excluded_rules + non_excluded_rules
             },
 
-            "addresses": self.addresses,
+            "addresses": all_addresses,
             "values": self.values,
             "address_values": self.address_values
         }
