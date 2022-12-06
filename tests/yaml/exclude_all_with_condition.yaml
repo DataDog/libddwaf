@@ -1,6 +1,7 @@
 version: '2.1'
 exclusions:
-  - conditions:
+  - id: 1
+    conditions:
       - operator: exact_match
         parameters:
           inputs:
