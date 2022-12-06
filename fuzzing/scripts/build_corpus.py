@@ -254,10 +254,6 @@ class InitPayloadGenerator:
         self.used_operators = set()
 
         # At least one address with a ':'
-        self.addresses = ["".join(choices(printable_chars, k=_lograndint(1, self.address_name_length)))
-            for _ in range(self.address_max_count)
-        ]
-
         self.rule_ids = []
         self.values = set()
         self.address_values = set()
@@ -410,8 +406,8 @@ class InitPayloadGenerator:
 
             return result
 
-        def get_random_rules(max_count):
-            return _get_random_array(get_random_rule, 1, max_count, allow_none=False)
+        def get_random_rules():
+            return _get_random_array(get_random_rule, 1, self.rule_max_count, allow_none=False)
 
         def get_random_exclusion_filters():
             return _get_random_array(get_random_exclusion_filter, 1, self.filter_max_count, allow_none=True)
@@ -419,13 +415,23 @@ class InitPayloadGenerator:
         def get_random_action_array():
             return [choice(self.possible_values, ) for _ in range(randint(0, 3))]
 
-        rules_per_batch = self.rule_max_count / 2
-        # Some of this first batch of rules will be excluded
-        excluded_rules = get_random_rules(rules_per_batch)
+        def get_random_addresses():
+            return ["".join(choices(printable_chars, k=_lograndint(1, self.address_name_length)))
+                for _ in range(self.address_max_count)
+            ]
+
+        # Some of these inputs and rules will be excluded
+        self.addresses = get_random_addresses()
+        excluded_rules = get_random_rules()
         filters = get_random_exclusion_filters()
 
-        # None of this batch should be excluded
-        non_excluded_rules = get_random_rules(rules_per_batch)
+        all_addresses = self.addresses
+
+        # None of these inputs and rules should be excluded
+        self.addresses = get_random_addresses()
+        non_excluded_rules = get_random_rules()
+
+        all_addresses += self.addresses
 
         result = {
             "init_payload": {
@@ -434,7 +440,7 @@ class InitPayloadGenerator:
                 "rules": excluded_rules + non_excluded_rules
             },
 
-            "addresses": self.addresses,
+            "addresses": all_addresses,
             "values": self.values,
             "address_values": self.address_values
         }
