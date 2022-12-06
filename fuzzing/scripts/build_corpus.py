@@ -410,8 +410,8 @@ class InitPayloadGenerator:
 
             return result
 
-        def get_random_rules():
-            return _get_random_array(get_random_rule, 1, self.rule_max_count, allow_none=False)
+        def get_random_rules(max_count):
+            return _get_random_array(get_random_rule, 1, max_count, allow_none=False)
 
         def get_random_exclusion_filters():
             return _get_random_array(get_random_exclusion_filter, 1, self.filter_max_count, allow_none=True)
@@ -419,14 +419,19 @@ class InitPayloadGenerator:
         def get_random_action_array():
             return [choice(self.possible_values, ) for _ in range(randint(0, 3))]
 
-        rules = get_random_rules()
+        rules_per_batch = self.rule_max_count / 2
+        # Some of this first batch of rules will be excluded
+        excluded_rules = get_random_rules(rules_per_batch)
         filters = get_random_exclusion_filters()
+
+        # None of this batch should be excluded
+        non_excluded_rules = get_random_rules(rules_per_batch)
 
         result = {
             "init_payload": {
                 "version": "2.1",
                 "exclusions": filters,
-                "rules": rules
+                "rules": excluded_rules + non_excluded_rules
             },
 
             "addresses": self.addresses,
