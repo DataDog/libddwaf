@@ -414,9 +414,9 @@ TEST(TestContext, RuleFilterWithCondition)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter =
-            std::make_shared<rule_filter>(std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
-        ruleset.rule_filters.emplace_back(filter);
+        auto filter = std::make_shared<rule_filter>(
+            "1", std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -472,9 +472,9 @@ TEST(TestContext, RuleFilterTimeout)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter =
-            std::make_shared<rule_filter>(std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
-        ruleset.rule_filters.emplace_back(filter);
+        auto filter = std::make_shared<rule_filter>(
+            "1", std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -525,9 +525,9 @@ TEST(TestContext, NoRuleFilterWithCondition)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter =
-            std::make_shared<rule_filter>(std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
-        ruleset.rule_filters.emplace_back(filter);
+        auto filter = std::make_shared<rule_filter>(
+            "1", std::move(conditions), std::set<ddwaf::rule::ptr>{rule});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -573,10 +573,11 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
         EXPECT_EQ(rules_to_exclude.size(), 0);
     }
 
-    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(
-        std::vector<condition::ptr>{}, std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2]}));
-
     {
+        auto filter = std::make_shared<rule_filter>("1", std::vector<condition::ptr>{},
+            std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
+
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 3);
         EXPECT_NE(rules_to_exclude.find(rules[0]), rules_to_exclude.end());
@@ -584,10 +585,11 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
         EXPECT_NE(rules_to_exclude.find(rules[2]), rules_to_exclude.end());
     }
 
-    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(
-        std::vector<condition::ptr>{}, std::set<ddwaf::rule::ptr>{rules[3], rules[4], rules[5]}));
-
     {
+        auto filter = std::make_shared<rule_filter>("2", std::vector<condition::ptr>{},
+            std::set<ddwaf::rule::ptr>{rules[3], rules[4], rules[5]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
+
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 6);
         EXPECT_NE(rules_to_exclude.find(rules[0]), rules_to_exclude.end());
@@ -598,10 +600,11 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
         EXPECT_NE(rules_to_exclude.find(rules[5]), rules_to_exclude.end());
     }
 
-    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(
-        std::vector<condition::ptr>{}, std::set<ddwaf::rule::ptr>{rules[6], rules[7], rules[8]}));
-
     {
+        auto filter = std::make_shared<rule_filter>("3", std::vector<condition::ptr>{},
+            std::set<ddwaf::rule::ptr>{rules[6], rules[7], rules[8]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
+
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
         EXPECT_NE(rules_to_exclude.find(rules[0]), rules_to_exclude.end());
@@ -641,10 +644,11 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         EXPECT_EQ(rules_to_exclude.size(), 0);
     }
 
-    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(std::vector<condition::ptr>{},
-        std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2], rules[3]}));
-
     {
+        auto filter = std::make_shared<rule_filter>("1", std::vector<condition::ptr>{},
+            std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2], rules[3]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
+
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 4);
         EXPECT_NE(rules_to_exclude.find(rules[0]), rules_to_exclude.end());
@@ -653,10 +657,11 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         EXPECT_NE(rules_to_exclude.find(rules[3]), rules_to_exclude.end());
     }
 
-    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(
-        std::vector<condition::ptr>{}, std::set<ddwaf::rule::ptr>{rules[2], rules[3], rules[4]}));
-
     {
+        auto filter = std::make_shared<rule_filter>("2", std::vector<condition::ptr>{},
+            std::set<ddwaf::rule::ptr>{rules[2], rules[3], rules[4]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
+
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 5);
         EXPECT_NE(rules_to_exclude.find(rules[0]), rules_to_exclude.end());
@@ -666,10 +671,11 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         EXPECT_NE(rules_to_exclude.find(rules[4]), rules_to_exclude.end());
     }
 
-    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(
-        std::vector<condition::ptr>{}, std::set<ddwaf::rule::ptr>{rules[0], rules[5], rules[6]}));
-
     {
+        auto filter = std::make_shared<rule_filter>("3", std::vector<condition::ptr>{},
+            std::set<ddwaf::rule::ptr>{rules[0], rules[5], rules[6]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
+
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 7);
         EXPECT_NE(rules_to_exclude.find(rules[0]), rules_to_exclude.end());
@@ -681,9 +687,11 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         EXPECT_NE(rules_to_exclude.find(rules[6]), rules_to_exclude.end());
     }
 
-    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(
-        std::vector<condition::ptr>{}, std::set<ddwaf::rule::ptr>{rules[7], rules[8], rules[6]}));
     {
+        auto filter = std::make_shared<rule_filter>("4", std::vector<condition::ptr>{},
+            std::set<ddwaf::rule::ptr>{rules[7], rules[8], rules[6]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
+
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
         EXPECT_NE(rules_to_exclude.find(rules[0]), rules_to_exclude.end());
@@ -696,10 +704,13 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         EXPECT_NE(rules_to_exclude.find(rules[7]), rules_to_exclude.end());
         EXPECT_NE(rules_to_exclude.find(rules[8]), rules_to_exclude.end());
     }
-    ruleset.rule_filters.emplace_back(std::make_shared<rule_filter>(std::vector<condition::ptr>{},
-        std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2], rules[3], rules[4], rules[5],
-            rules[6], rules[7], rules[8]}));
+
     {
+        auto filter = std::make_shared<rule_filter>("5", std::vector<condition::ptr>{},
+            std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2], rules[3], rules[4], rules[5],
+                rules[6], rules[7], rules[8]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
+
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
         EXPECT_NE(rules_to_exclude.find(rules[0]), rules_to_exclude.end());
@@ -745,9 +756,9 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter = std::make_shared<rule_filter>(std::move(conditions),
+        auto filter = std::make_shared<rule_filter>("1", std::move(conditions),
             std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2], rules[3], rules[4]});
-        ruleset.rule_filters.emplace_back(filter);
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
     }
 
     {
@@ -759,9 +770,9 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter = std::make_shared<rule_filter>(std::move(conditions),
+        auto filter = std::make_shared<rule_filter>("2", std::move(conditions),
             std::set<ddwaf::rule::ptr>{rules[5], rules[6], rules[7], rules[8], rules[9]});
-        ruleset.rule_filters.emplace_back(filter);
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -833,10 +844,10 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter = std::make_shared<rule_filter>(
-            std::move(conditions), std::set<ddwaf::rule::ptr>{rules[0], rules[1], rules[2],
-                                       rules[3], rules[4], rules[5], rules[6]});
-        ruleset.rule_filters.emplace_back(filter);
+        auto filter = std::make_shared<rule_filter>("1", std::move(conditions),
+            std::set<ddwaf::rule::ptr>{
+                rules[0], rules[1], rules[2], rules[3], rules[4], rules[5], rules[6]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
     }
 
     {
@@ -848,10 +859,10 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto filter = std::make_shared<rule_filter>(
-            std::move(conditions), std::set<ddwaf::rule::ptr>{rules[3], rules[4], rules[5],
-                                       rules[6], rules[7], rules[8], rules[9]});
-        ruleset.rule_filters.emplace_back(filter);
+        auto filter = std::make_shared<rule_filter>("2", std::move(conditions),
+            std::set<ddwaf::rule::ptr>{
+                rules[3], rules[4], rules[5], rules[6], rules[7], rules[8], rules[9]});
+        ruleset.rule_filters.emplace(filter->get_id(), filter);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -914,13 +925,13 @@ TEST(TestContext, InputFilterExclude)
     std::vector<condition::ptr> filter_conditions;
     std::set<rule::ptr> filter_rules{rule};
     auto filter = std::make_shared<input_filter>(
-        std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
+        "1", std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
 
     ddwaf::ruleset ruleset;
     ruleset.rules.emplace("id", rule);
     ruleset.collections["type"].emplace_back(rule);
     ruleset.manifest = mb.build_manifest();
-    ruleset.input_filters.emplace_back(filter);
+    ruleset.input_filters.emplace(filter->get_id(), filter);
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset, ddwaf::config());
@@ -956,13 +967,13 @@ TEST(TestContext, InputFilterExcludeRule)
     std::vector<condition::ptr> filter_conditions;
     std::set<rule::ptr> filter_rules{rule};
     auto filter = std::make_shared<input_filter>(
-        std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
+        "1", std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
 
     ddwaf::ruleset ruleset;
     ruleset.rules.emplace("id", rule);
     ruleset.collections["type"].emplace_back(rule);
     ruleset.manifest = mb.build_manifest();
-    ruleset.input_filters.emplace_back(filter);
+    ruleset.input_filters.emplace(filter->get_id(), filter);
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset, ddwaf::config());
@@ -1015,9 +1026,9 @@ TEST(TestContext, InputFilterWithCondition)
 
         std::set<rule::ptr> filter_rules{ruleset.rules["id"]};
         auto filter = std::make_shared<input_filter>(
-            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset.input_filters.emplace_back(filter);
+        ruleset.input_filters.emplace(filter->get_id(), filter);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -1115,9 +1126,9 @@ TEST(TestContext, InputFilterMultipleRules)
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{ruleset.rules["usr_id"], ruleset.rules["ip_id"]};
         auto filter = std::make_shared<input_filter>(
-            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset.input_filters.emplace_back(filter);
+        ruleset.input_filters.emplace(filter->get_id(), filter);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -1220,9 +1231,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{ruleset.rules["ip_id"]};
         auto filter = std::make_shared<input_filter>(
-            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset.input_filters.emplace_back(filter);
+        ruleset.input_filters.emplace(filter->get_id(), filter);
     }
 
     {
@@ -1232,9 +1243,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{ruleset.rules["usr_id"]};
         auto filter = std::make_shared<input_filter>(
-            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "2", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset.input_filters.emplace_back(filter);
+        ruleset.input_filters.emplace(filter->get_id(), filter);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -1244,7 +1255,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         ddwaf::timer deadline{2s};
         ddwaf::test::context ctx(ruleset, ddwaf::config());
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -1262,7 +1274,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         ddwaf::timer deadline{2s};
         ddwaf::test::context ctx(ruleset, ddwaf::config());
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
@@ -1281,7 +1294,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         ddwaf::timer deadline{2s};
         ddwaf::test::context ctx(ruleset, ddwaf::config());
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -1355,9 +1369,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{ip_rule, cookie_rule};
         auto filter = std::make_shared<input_filter>(
-            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset.input_filters.emplace_back(filter);
+        ruleset.input_filters.emplace(filter->get_id(), filter);
     }
 
     {
@@ -1368,9 +1382,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{usr_rule, ip_rule};
         auto filter = std::make_shared<input_filter>(
-            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "2", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset.input_filters.emplace_back(filter);
+        ruleset.input_filters.emplace(filter->get_id(), filter);
     }
 
     {
@@ -1381,9 +1395,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{usr_rule, cookie_rule};
         auto filter = std::make_shared<input_filter>(
-            std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "3", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset.input_filters.emplace_back(filter);
+        ruleset.input_filters.emplace(filter->get_id(), filter);
     }
 
     ruleset.manifest = mb.build_manifest();

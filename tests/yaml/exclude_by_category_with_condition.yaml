@@ -1,6 +1,7 @@
 version: '2.1'
 exclusions:
-  - rules_target:
+  - id: 1
+    rules_target:
       - tags:
           category: category
     conditions:

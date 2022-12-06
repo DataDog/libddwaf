@@ -1,29 +1,36 @@
 version: '2.1'
 exclusions:
-  - rules_target:
+  - id: 1
+    rules_target:
       - rule_id: 20
-  - rules_target:
+  - id: 2
+    rules_target:
       - tags:
           type: flow21
-  - rules_target:
+  - id: 3
+    rules_target:
       - tags:
           category: category22
-  - rules_target:
+  - id: 4
+    rules_target:
       - tags:
           type: flow23-5
           category: category23-5
-  - rules_target:
+  - id: 5
+    rules_target:
       - tags:
           type: flow26
           category: category26
       - rule_id: 27
-  - conditions:
+  - id: 6
+    conditions:
       - operator: match_regex
         parameters:
           inputs:
             - address: exclusion-filter-1-input
           regex: exclusion-filter-1
-  - conditions:
+  - id: 7
+    conditions:
       - operator: match_regex
         parameters:
           inputs:
@@ -34,7 +41,8 @@ exclusions:
           inputs:
             - address: exclusion-filter-2-input2
           regex: exclusion-filter-2
-  - conditions:
+  - id: 8
+    conditions:
       - operator: match_regex
         parameters:
           inputs:
@@ -45,54 +53,63 @@ exclusions:
           type: flow28
           category: category28
       - rule_id: 29
-  - rules_target:
+  - id: 9
+    rules_target:
       - rule_id: 30
     inputs:
       - address: rule30-input2
-  - rules_target:
+  - id: 10
+    rules_target:
       - rule_id: 31
     inputs:
       - address: rule31-input
         key_path: [parent]
-  - rules_target:
+  - id: 11
+    rules_target:
       - rule_id: 32
     inputs:
       - address: rule32-input
         key_path: [parent, child, grandchild]
       - address: rule32-input
         key_path: [parent, sibling]
-  - rules_target:
+  - id: 12
+    rules_target:
       - rule_id: 33
     inputs:
       - address: rule33-input1
         key_path: [parent, child, grandchild]
       - address: rule33-input2
         key_path: [parent, sibling]
-  - rules_target:
+  - id: 13
+    rules_target:
       - rule_id: 34
     inputs:
       - address: rule34-input
         key_path: [parent, child, grandchild]
-  - rules_target:
+  - id: 14
+    rules_target:
       - rule_id: 35
     inputs:
       - address: rule35-input1
         key_path: [parent]
       - address: rule35-input2
-  - rules_target:
+  - id: 15
+    rules_target:
       - rule_id: 36
     inputs:
       - address: nonexistent-input
         key_path: [parent]
       - address: nonexistent-input
-  - rules_target:
+  - id: 16
+    rules_target:
       - tags:
           type: flow37-9
     inputs:
       - address: rule37-9-input1
         key_path: [parent]
       - address: rule37-9-input2
-  - rules_target:
+  - id: 17
+    rules_target:
       - rule_id: 40
     conditions:
       - operator: match_regex
