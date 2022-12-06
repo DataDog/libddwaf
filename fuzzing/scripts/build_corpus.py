@@ -315,7 +315,7 @@ class InitPayloadGenerator:
             addresses = _get_random_array2(self.addresses, 1, self.address_max_count, allow_none=False, unique=True)
             final_addresses = []
             for address in addresses:
-                if choices((True, False)):
+                if choice((True, False)):
                     key_path = ["".join(choices(printable_chars, k=_lograndint(1, self.address_name_length)))
                         for _ in range(_lograndint(1, self.key_path_max_count))
                     ]
@@ -436,7 +436,7 @@ class InitPayloadGenerator:
         result = {
             "init_payload": {
                 "version": "2.1",
-                # "exclusions": filters,
+                "exclusions": filters,
                 "rules": excluded_rules + non_excluded_rules
             },
 
