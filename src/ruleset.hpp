@@ -10,7 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <exclusion_filter.hpp>
+#include <exclusion/input_filter.hpp>
+#include <exclusion/rule_filter.hpp>
 #include <manifest.hpp>
 #include <rule.hpp>
 #include <rule_data_dispatcher.hpp>
@@ -68,7 +69,8 @@ struct ruleset {
     }
 
     ddwaf::manifest manifest;
-    std::vector<exclusion_filter::ptr> filters;
+    std::vector<exclusion::rule_filter::ptr> rule_filters;
+    std::vector<exclusion::input_filter::ptr> input_filters;
     // Rules are ordered by ID
     std::unordered_map<std::string, rule::ptr> rules;
     // Collections are ordered by rule.type

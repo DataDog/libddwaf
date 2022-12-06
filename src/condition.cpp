@@ -91,7 +91,9 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
 }
 
 std::optional<event::match> condition::match(const object_store &store,
-    const ddwaf::manifest &manifest, bool run_on_new, ddwaf::timer &deadline) const
+    const ddwaf::manifest &manifest,
+    const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
+    ddwaf::timer &deadline) const
 {
     for (const auto &target : targets_) {
         if (deadline.expired()) {
@@ -107,7 +109,6 @@ std::optional<event::match> condition::match(const object_store &store,
         const auto &info = manifest.get_target_info(target);
 
         // TODO: iterators could be cached to avoid reinitialisation
-
         const auto *object = store.get_target(target);
         if (object == nullptr) {
             continue;
@@ -115,10 +116,10 @@ std::optional<event::match> condition::match(const object_store &store,
 
         std::optional<event::match> optional_match;
         if (source_ == data_source::keys) {
-            object::key_iterator it(object, info.key_path, limits_);
+            object::key_iterator it(object, info.key_path, objects_excluded, limits_);
             optional_match = match_target(it, deadline);
         } else {
-            object::value_iterator it(object, info.key_path, limits_);
+            object::value_iterator it(object, info.key_path, objects_excluded, limits_);
             optional_match = match_target(it, deadline);
         }
 

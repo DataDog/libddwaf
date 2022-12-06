@@ -7,6 +7,7 @@
 #pragma once
 
 #include <set>
+#include <stack>
 #include <vector>
 
 #include <clock.hpp>
@@ -14,29 +15,25 @@
 #include <object_store.hpp>
 #include <rule.hpp>
 
-namespace ddwaf {
-
-class exclusion_filter {
+namespace ddwaf::exclusion {
+class rule_filter {
 public:
-    using ptr = std::shared_ptr<exclusion_filter>;
+    using ptr = std::shared_ptr<rule_filter>;
+    using optional_set = std::optional<std::reference_wrapper<const std::set<rule::ptr>>>;
 
     struct cache_type {
         bool result{false};
         std::unordered_map<condition::ptr, bool> conditions;
     };
 
-    exclusion_filter(std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets)
-        : conditions_(std::move(conditions)), rule_targets_(std::move(rule_targets))
-    {}
+    rule_filter(std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets);
 
-    [[nodiscard]] const std::set<rule::ptr> &get_rule_targets() const { return rule_targets_; }
-
-    bool match(const object_store &store, const ddwaf::manifest &manifest, cache_type &cache,
-        ddwaf::timer &deadline) const;
+    std::unordered_set<rule::ptr> match(const object_store &store, const ddwaf::manifest &manifest,
+        cache_type &cache, ddwaf::timer &deadline) const;
 
 protected:
     std::vector<condition::ptr> conditions_;
-    std::set<rule::ptr> rule_targets_;
+    std::unordered_set<rule::ptr> rule_targets_;
 };
 
-} // namespace ddwaf
+} // namespace ddwaf::exclusion

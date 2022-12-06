@@ -9,6 +9,7 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -45,7 +46,8 @@ public:
     condition &operator=(const condition &) = delete;
 
     std::optional<event::match> match(const object_store &store, const ddwaf::manifest &manifest,
-        bool run_on_new, ddwaf::timer &deadline) const;
+        const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
+        ddwaf::timer &deadline) const;
 
     std::string_view processor_name()
     {

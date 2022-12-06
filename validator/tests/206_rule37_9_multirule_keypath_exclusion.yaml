@@ -1,0 +1,13 @@
+{
+  name: "Multirule input and keypath exclusion",
+  runs: [
+    {
+      input: {
+        rule37-9-input1: {
+          parent: rule37-9
+        }
+      },
+      code: ok
+    },
+  ],
+}

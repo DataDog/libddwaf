@@ -40,11 +40,71 @@ exclusions:
           inputs:
             - address: exclusion-filter-3-input
           regex: exclusion-filter-3
-    rule_targets:
+    rules_target:
       - tags:
           type: flow28
           category: category28
       - rule_id: 29
+  - rules_target:
+      - rule_id: 30
+    inputs:
+      - address: rule30-input2
+  - rules_target:
+      - rule_id: 31
+    inputs:
+      - address: rule31-input
+        key_path: [parent]
+  - rules_target:
+      - rule_id: 32
+    inputs:
+      - address: rule32-input
+        key_path: [parent, child, grandchild]
+      - address: rule32-input
+        key_path: [parent, sibling]
+  - rules_target:
+      - rule_id: 33
+    inputs:
+      - address: rule33-input1
+        key_path: [parent, child, grandchild]
+      - address: rule33-input2
+        key_path: [parent, sibling]
+  - rules_target:
+      - rule_id: 34
+    inputs:
+      - address: rule34-input
+        key_path: [parent, child, grandchild]
+  - rules_target:
+      - rule_id: 35
+    inputs:
+      - address: rule35-input1
+        key_path: [parent]
+      - address: rule35-input2
+  - rules_target:
+      - rule_id: 36
+    inputs:
+      - address: nonexistent-input
+        key_path: [parent]
+      - address: nonexistent-input
+  - rules_target:
+      - tags:
+          type: flow37-9
+    inputs:
+      - address: rule37-9-input1
+        key_path: [parent]
+      - address: rule37-9-input2
+  - rules_target:
+      - rule_id: 40
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-4-input
+          regex: exclusion-filter-4
+    inputs:
+      - address: rule40-input1
+        key_path: [parent]
+      - address: rule40-input2
+
 rules:
   - id: 1
     name: rule1-basic-single-input
@@ -438,3 +498,136 @@ rules:
           inputs:
             - address: rule29-input
           regex: rule29
+  - id: 30
+    name: rule30-input-excluded
+    tags:
+      type: flow30
+      category: category30
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule30-input1
+            - address: rule30-input2
+          regex: rule30
+  - id: 31
+    name: rule31-key-path-excluded
+    tags:
+      type: flow31
+      category: category31
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule31-input
+          regex: rule31
+  - id: 32
+    name: rule32-multiple-key-path-excluded
+    tags:
+      type: flow32
+      category: category32
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule32-input
+          regex: rule32
+  - id: 33
+    name: rule33-multiple-key-path-excluded-multiple-input
+    tags:
+      type: flow33
+      category: category33
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule33-input1
+            - address: rule33-input2
+          regex: rule33
+  - id: 34
+    name: rule34-excluded-key-path-matches-required-input-key-path
+    tags:
+      type: flow34
+      category: category34
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule34-input
+              key_path: [parent, child, grandchild]
+            - address: rule34-input
+              key_path: [parent, child, friend]
+          regex: rule34
+  - id: 35
+    name: rule35-input-and-key-path-exclusion
+    tags:
+      type: flow35
+      category: category35
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule35-input1
+              key_path: [parent]
+            - address: rule35-input2
+            - address: rule35-input3
+          regex: rule35
+  - id: 36
+    name: rule36-input-excluded-as-input-and-key-path
+    tags:
+      type: flow36
+      category: category36
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule36-input
+          regex: rule36
+  - id: 37
+    name: rule37
+    tags:
+      type: flow37-9
+      category: category37-9
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule37-9-input
+            - address: rule37-input
+          regex: rule37-9
+  - id: 38
+    name: rule37
+    tags:
+      type: flow37-9
+      category: category37-9
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule37-9-input
+            - address: rule38-input
+          regex: rule37-9
+  - id: 39
+    name: rule37
+    tags:
+      type: flow37-9
+      category: category37-9
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule37-9-input
+            - address: rule39-input
+          regex: rule37-9
+  - id: 40
+    name: rule40
+    tags:
+      type: flow40
+      category: category40
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule40-input1
+            - address: rule40-input2
+          regex: rule40

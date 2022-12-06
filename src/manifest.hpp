@@ -94,6 +94,15 @@ public:
 
     manifest build_manifest();
 
+    std::optional<manifest::target_type> find(const std::string &root)
+    {
+        auto it = targets_.find(root);
+        if (it == targets_.end()) {
+            return std::nullopt;
+        }
+        return generate_target(it->second.root_id, 0);
+    }
+
 protected:
     // The spec allows keeping track of targets which share the same root
     // address, but a different key_path. The root target ID is always

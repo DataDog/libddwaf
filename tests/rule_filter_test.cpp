@@ -8,7 +8,7 @@
 
 using namespace ddwaf;
 
-TEST(TestExclusionFilter, Match)
+TEST(TestRuleFilter, Match)
 {
     std::vector<ddwaf::manifest::target_type> targets;
 
@@ -22,7 +22,8 @@ TEST(TestExclusionFilter, Match)
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-    ddwaf::exclusion_filter filter{std::move(conditions), {}};
+    ddwaf::exclusion::rule_filter filter{
+        std::move(conditions), {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -33,11 +34,12 @@ TEST(TestExclusionFilter, Match)
 
     ddwaf::timer deadline{2s};
 
-    ddwaf::exclusion_filter::cache_type cache;
-    EXPECT_TRUE(filter.match(store, manifest, cache, deadline));
+    ddwaf::exclusion::rule_filter::cache_type cache;
+    auto rules = filter.match(store, manifest, cache, deadline);
+    EXPECT_FALSE(rules.empty());
 }
 
-TEST(TestExclusionFilter, NoMatch)
+TEST(TestRuleFilter, NoMatch)
 {
     std::vector<ddwaf::manifest::target_type> targets;
 
@@ -51,7 +53,7 @@ TEST(TestExclusionFilter, NoMatch)
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-    ddwaf::exclusion_filter filter{std::move(conditions), {}};
+    ddwaf::exclusion::rule_filter filter{std::move(conditions), {}};
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -62,11 +64,11 @@ TEST(TestExclusionFilter, NoMatch)
 
     ddwaf::timer deadline{2s};
 
-    ddwaf::exclusion_filter::cache_type cache;
-    EXPECT_FALSE(filter.match(store, manifest, cache, deadline));
+    ddwaf::exclusion::rule_filter::cache_type cache;
+    EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
 }
 
-TEST(TestExclusionFilter, ValidateCachedMatch)
+TEST(TestRuleFilter, ValidateCachedMatch)
 {
     ddwaf::manifest_builder mb;
     std::vector<std::shared_ptr<condition>> conditions;
@@ -89,9 +91,10 @@ TEST(TestExclusionFilter, ValidateCachedMatch)
     }
 
     auto manifest = mb.build_manifest();
-    ddwaf::exclusion_filter filter{std::move(conditions), {}};
+    ddwaf::exclusion::rule_filter filter{
+        std::move(conditions), {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
 
-    ddwaf::exclusion_filter::cache_type cache;
+    ddwaf::exclusion::rule_filter::cache_type cache;
 
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
@@ -105,7 +108,7 @@ TEST(TestExclusionFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, manifest, cache, deadline));
+        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
     }
 
     {
@@ -117,11 +120,11 @@ TEST(TestExclusionFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, manifest, cache, deadline));
+        EXPECT_FALSE(filter.match(store, manifest, cache, deadline).empty());
     }
 }
 
-TEST(TestExclusionFilter, MatchWithoutCache)
+TEST(TestRuleFilter, MatchWithoutCache)
 {
     ddwaf::manifest_builder mb;
     std::vector<std::shared_ptr<condition>> conditions;
@@ -144,14 +147,15 @@ TEST(TestExclusionFilter, MatchWithoutCache)
     }
 
     auto manifest = mb.build_manifest();
-    ddwaf::exclusion_filter filter{std::move(conditions), {}};
+    ddwaf::exclusion::rule_filter filter{
+        std::move(conditions), {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
     ddwaf::object_store store(manifest);
     {
-        ddwaf::exclusion_filter::cache_type cache;
+        ddwaf::exclusion::rule_filter::cache_type cache;
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
@@ -159,11 +163,11 @@ TEST(TestExclusionFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, manifest, cache, deadline));
+        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
     }
 
     {
-        ddwaf::exclusion_filter::cache_type cache;
+        ddwaf::exclusion::rule_filter::cache_type cache;
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -171,11 +175,11 @@ TEST(TestExclusionFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, manifest, cache, deadline));
+        EXPECT_FALSE(filter.match(store, manifest, cache, deadline).empty());
     }
 }
 
-TEST(TestExclusionFilter, NoMatchWithoutCache)
+TEST(TestRuleFilter, NoMatchWithoutCache)
 {
     ddwaf::manifest_builder mb;
     std::vector<std::shared_ptr<condition>> conditions;
@@ -198,12 +202,12 @@ TEST(TestExclusionFilter, NoMatchWithoutCache)
     }
 
     auto manifest = mb.build_manifest();
-    ddwaf::exclusion_filter filter{std::move(conditions), {}};
+    ddwaf::exclusion::rule_filter filter{std::move(conditions), {}};
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
     {
-        ddwaf::exclusion_filter::cache_type cache;
+        ddwaf::exclusion::rule_filter::cache_type cache;
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
@@ -212,11 +216,11 @@ TEST(TestExclusionFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, manifest, cache, deadline));
+        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
     }
 
     {
-        ddwaf::exclusion_filter::cache_type cache;
+        ddwaf::exclusion::rule_filter::cache_type cache;
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -225,11 +229,11 @@ TEST(TestExclusionFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, manifest, cache, deadline));
+        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
     }
 }
 
-TEST(TestExclusionFilter, FullCachedMatchSecondRun)
+TEST(TestRuleFilter, FullCachedMatchSecondRun)
 {
     ddwaf::manifest_builder mb;
     std::vector<std::shared_ptr<condition>> conditions;
@@ -252,13 +256,14 @@ TEST(TestExclusionFilter, FullCachedMatchSecondRun)
     }
 
     auto manifest = mb.build_manifest();
-    ddwaf::exclusion_filter filter{std::move(conditions), {}};
+    ddwaf::exclusion::rule_filter filter{
+        std::move(conditions), {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
 
     ddwaf::object_store store(manifest);
-    ddwaf::exclusion_filter::cache_type cache;
+    ddwaf::exclusion::rule_filter::cache_type cache;
 
     // In this test we validate that when a match has already occurred, the
-    // second run for the same rule also returns a match (regardless of input).
+    // second run for the same filter returns nothing.
     {
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
@@ -268,11 +273,11 @@ TEST(TestExclusionFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, manifest, cache, deadline));
+        EXPECT_FALSE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_TRUE(cache.result);
     }
 
     {
-        ddwaf::exclusion_filter::cache_type cache;
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "random", ddwaf_object_string(&tmp, "random"));
@@ -280,11 +285,11 @@ TEST(TestExclusionFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, manifest, cache, deadline));
+        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
     }
 }
 
-TEST(TestExclusionFilter, ExcludeSingleRule)
+TEST(TestRuleFilter, ExcludeSingleRule)
 {
     auto rule = readFile("exclude_one_rule.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -315,7 +320,7 @@ TEST(TestExclusionFilter, ExcludeSingleRule)
     ddwaf_destroy(handle);
 }
 
-TEST(TestExclusionFilter, ExcludeByType)
+TEST(TestRuleFilter, ExcludeByType)
 {
     auto rule = readFile("exclude_by_type.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -346,7 +351,7 @@ TEST(TestExclusionFilter, ExcludeByType)
     ddwaf_destroy(handle);
 }
 
-TEST(TestExclusionFilter, ExcludeByCategory)
+TEST(TestRuleFilter, ExcludeByCategory)
 {
     auto rule = readFile("exclude_by_category.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -370,7 +375,7 @@ TEST(TestExclusionFilter, ExcludeByCategory)
     ddwaf_destroy(handle);
 }
 
-TEST(TestExclusionFilter, ExcludeByTags)
+TEST(TestRuleFilter, ExcludeByTags)
 {
     auto rule = readFile("exclude_by_tags.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -401,7 +406,7 @@ TEST(TestExclusionFilter, ExcludeByTags)
     ddwaf_destroy(handle);
 }
 
-TEST(TestExclusionFilter, ExcludeAllWithCondition)
+TEST(TestRuleFilter, ExcludeAllWithCondition)
 {
     auto rule = readFile("exclude_all_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -459,7 +464,7 @@ TEST(TestExclusionFilter, ExcludeAllWithCondition)
     ddwaf_destroy(handle);
 }
 
-TEST(TestExclusionFilter, ExcludeSingleRuleWithCondition)
+TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
 {
     auto rule = readFile("exclude_one_rule_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -525,7 +530,7 @@ TEST(TestExclusionFilter, ExcludeSingleRuleWithCondition)
     ddwaf_destroy(handle);
 }
 
-TEST(TestExclusionFilter, ExcludeByTypeWithCondition)
+TEST(TestRuleFilter, ExcludeByTypeWithCondition)
 {
     auto rule = readFile("exclude_by_type_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -591,7 +596,7 @@ TEST(TestExclusionFilter, ExcludeByTypeWithCondition)
     ddwaf_destroy(handle);
 }
 
-TEST(TestExclusionFilter, ExcludeByCategoryWithCondition)
+TEST(TestRuleFilter, ExcludeByCategoryWithCondition)
 {
     auto rule = readFile("exclude_by_category_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -649,7 +654,7 @@ TEST(TestExclusionFilter, ExcludeByCategoryWithCondition)
     ddwaf_destroy(handle);
 }
 
-TEST(TestExclusionFilter, ExcludeByTagsWithCondition)
+TEST(TestRuleFilter, ExcludeByTagsWithCondition)
 {
     auto rule = readFile("exclude_by_tags_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);

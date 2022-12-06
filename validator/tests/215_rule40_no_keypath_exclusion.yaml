@@ -1,0 +1,24 @@
+{
+  name: "No keypath exclusion with condition",
+  runs: [
+    {
+      input: {
+        rule40-input1: {
+            parent: rule40
+        }
+      },
+      rules: [
+        {
+          40: [
+            {
+              address: rule40-input1,
+              key_path: [parent],
+              value: rule40
+            }
+          ]
+        }
+      ],
+      code: match
+    },
+  ],
+}

@@ -402,7 +402,7 @@ TEST(TestRuleDataDispatcher, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond->match(store, manifest, true, deadline);
+        auto match = cond->match(store, manifest, {}, true, deadline);
         EXPECT_FALSE(match.has_value());
     }
 
@@ -432,7 +432,7 @@ TEST(TestRuleDataDispatcher, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond->match(store, manifest, true, deadline);
+        auto match = cond->match(store, manifest, {}, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "192.168.1.1");
@@ -473,7 +473,7 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond1->match(store, manifest, true, deadline);
+        auto match = cond1->match(store, manifest, {}, true, deadline);
         EXPECT_FALSE(match.has_value());
     }
 
@@ -487,7 +487,7 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond2->match(store, manifest, true, deadline);
+        auto match = cond2->match(store, manifest, {}, true, deadline);
         EXPECT_FALSE(match.has_value());
     }
 
@@ -533,7 +533,7 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond1->match(store, manifest, true, deadline);
+        auto match = cond1->match(store, manifest, {}, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "192.168.1.1");
@@ -553,7 +553,7 @@ TEST(TestRuleDataDispatcher, MultipleProcessors)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond2->match(store, manifest, true, deadline);
+        auto match = cond2->match(store, manifest, {}, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "paco");
@@ -648,7 +648,7 @@ TEST(TestRuleDataDispatcher, UnkonwnID)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond->match(store, manifest, true, deadline);
+        auto match = cond->match(store, manifest, {}, true, deadline);
         EXPECT_FALSE(match.has_value());
     }
 }
@@ -747,7 +747,7 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond1->match(store, manifest, true, deadline);
+        auto match = cond1->match(store, manifest, {}, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "192.168.1.1");
@@ -767,7 +767,7 @@ TEST(TestRuleDataDispatcherBuilder, Basic)
 
         ddwaf::timer deadline{2s};
 
-        auto match = cond2->match(store, manifest, true, deadline);
+        auto match = cond2->match(store, manifest, {}, true, deadline);
         EXPECT_TRUE(match.has_value());
 
         EXPECT_STREQ(match->resolved.c_str(), "paco");

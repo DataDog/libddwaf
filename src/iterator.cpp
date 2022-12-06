@@ -30,7 +30,10 @@ bool is_scalar(const ddwaf_object *obj)
 
 } // namespace
 
-template <typename T> iterator_base<T>::iterator_base(const object_limits &limits) : limits_(limits)
+template <typename T>
+iterator_base<T>::iterator_base(
+    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
+    : limits_(limits), excluded_(exclude)
 {
     stack_.reserve(initial_stack_size);
 }
@@ -82,9 +85,9 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     return keys;
 }
 
-value_iterator::value_iterator(
-    const ddwaf_object *obj, const std::vector<std::string> &path, const object_limits &limits)
-    : iterator_base(limits)
+value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
+    : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
@@ -92,6 +95,10 @@ value_iterator::value_iterator(
 void value_iterator::initialise_cursor(
     const ddwaf_object *obj, const std::vector<std::string> &path)
 {
+    if (should_exclude(obj)) {
+        return;
+    }
+
     if (path.empty()) {
         if (is_scalar(obj)) {
             current_ = obj;
@@ -134,9 +141,15 @@ void value_iterator::initialise_cursor_with_path(
 
         ddwaf_object *child = nullptr;
         if (is_map(parent)) {
-            for (std::size_t j = 0; j < parent->nbEntries; j++) {
+            auto size = parent->nbEntries > limits_.max_container_size ? limits_.max_container_size
+                                                                       : parent->nbEntries;
+            for (std::size_t j = 0; j < size; j++) {
                 auto *possible_child = &parent->array[j];
                 if (possible_child->parameterName == nullptr) {
+                    continue;
+                }
+
+                if (should_exclude(possible_child)) {
                     continue;
                 }
 
@@ -198,6 +211,11 @@ void value_iterator::set_cursor_to_next_object()
             continue;
         }
 
+        if (should_exclude(&parent->array[index])) {
+            ++index;
+            continue;
+        }
+
         if (is_container(&parent->array[index])) {
             if (depth() < limits_.max_container_depth) {
                 // Push can invalidate the current references to the parent
@@ -214,15 +232,19 @@ void value_iterator::set_cursor_to_next_object()
     }
 }
 
-key_iterator::key_iterator(
-    const ddwaf_object *obj, const std::vector<std::string> &path, const object_limits &limits)
-    : iterator_base(limits)
+key_iterator::key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
+    : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
 void key_iterator::initialise_cursor(const ddwaf_object *obj, const std::vector<std::string> &path)
 {
+    if (should_exclude(obj)) {
+        return;
+    }
+
     if (!is_container(obj)) {
         return;
     }
@@ -254,9 +276,15 @@ void key_iterator::initialise_cursor_with_path(
 
         ddwaf_object *child = nullptr;
         if (parent->type == DDWAF_OBJ_MAP) {
-            for (std::size_t j = 0; j < parent->nbEntries; j++) {
+            auto size = parent->nbEntries > limits_.max_container_size ? limits_.max_container_size
+                                                                       : parent->nbEntries;
+            for (std::size_t j = 0; j < size; j++) {
                 auto *possible_child = &parent->array[j];
                 if (possible_child->parameterName == nullptr) {
+                    continue;
+                }
+
+                if (should_exclude(possible_child)) {
                     continue;
                 }
 
@@ -306,6 +334,12 @@ void key_iterator::set_cursor_to_next_object()
         }
 
         ddwaf_object *child = &parent->array[index];
+
+        if (should_exclude(child)) {
+            ++index;
+            continue;
+        }
+
         if (is_container(child)) {
             if (previous != child && child->parameterName != nullptr) {
                 current_ = child;

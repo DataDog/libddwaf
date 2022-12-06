@@ -22,22 +22,29 @@ namespace ddwaf::object {
 
 template <typename T> class iterator_base {
 public:
-    explicit iterator_base(const object_limits &limits = object_limits());
+    explicit iterator_base(const std::unordered_set<const ddwaf_object *> &exclude,
+        const object_limits &limits = object_limits());
     ~iterator_base() = default;
 
     iterator_base(const iterator_base &) = default;
     iterator_base(iterator_base &&) noexcept = default;
 
-    iterator_base &operator=(const iterator_base &) = default;
-    iterator_base &operator=(iterator_base &&) noexcept = default;
+    iterator_base &operator=(const iterator_base &) = delete;
+    iterator_base &operator=(iterator_base &&) noexcept = delete;
 
     bool operator++();
 
     [[nodiscard]] explicit operator bool() const { return current_ != nullptr; }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
+    [[nodiscard]] const ddwaf_object *get_underlying_object() { return current_; }
 
 protected:
+    bool should_exclude(const ddwaf_object *obj) const
+    {
+        return excluded_.find(obj) != excluded_.end();
+    }
+
     static constexpr std::size_t initial_stack_size = 32;
 
     object_limits limits_;
@@ -48,11 +55,14 @@ protected:
     std::vector<std::string> path_;
     std::vector<std::pair<const ddwaf_object *, std::size_t>> stack_;
     const ddwaf_object *current_{nullptr};
+
+    const std::unordered_set<const ddwaf_object *> &excluded_;
 };
 
 class value_iterator : public iterator_base<value_iterator> {
 public:
-    explicit value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path = {},
+    explicit value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+        const std::unordered_set<const ddwaf_object *> &exclude,
         const object_limits &limits = object_limits());
 
     ~value_iterator() = default;
@@ -60,8 +70,8 @@ public:
     value_iterator(const value_iterator &) = default;
     value_iterator(value_iterator &&) = default;
 
-    value_iterator &operator=(const value_iterator &) = default;
-    value_iterator &operator=(value_iterator &&) = default;
+    value_iterator &operator=(const value_iterator &) = delete;
+    value_iterator &operator=(value_iterator &&) = delete;
 
     [[nodiscard]] const ddwaf_object *operator*() { return current_; }
 
@@ -81,7 +91,8 @@ protected:
 
 class key_iterator : public iterator_base<key_iterator> {
 public:
-    explicit key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path = {},
+    explicit key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+        const std::unordered_set<const ddwaf_object *> &exclude,
         const object_limits &limits = object_limits());
 
     ~key_iterator() = default;
@@ -89,7 +100,7 @@ public:
     key_iterator(const key_iterator &) = default;
     key_iterator(key_iterator &&) = delete;
 
-    key_iterator &operator=(const key_iterator &) = default;
+    key_iterator &operator=(const key_iterator &) = delete;
     key_iterator &operator=(key_iterator &&) = delete;
 
     [[nodiscard]] DDWAF_OBJ_TYPE type() const

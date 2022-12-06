@@ -22,6 +22,12 @@ TEST(TestManifest, TestBasic)
     ddwaf::manifest_builder mb;
     auto target = mb.insert("path", {});
 
+    {
+        auto opt_target = mb.find("path");
+        EXPECT_TRUE(opt_target.has_value());
+        EXPECT_EQ(*opt_target, target);
+    }
+
     // Test double insertion
     EXPECT_EQ(target, mb.insert("path", {}));
 
@@ -55,6 +61,10 @@ TEST(TestManifest, TestMultipleAddrs)
 
         // Test double insertion
         EXPECT_EQ(target, mb.insert(str, {}));
+
+        auto opt_target = mb.find(str);
+        EXPECT_TRUE(opt_target.has_value());
+        EXPECT_EQ(*opt_target, target);
     }
 
     auto manifest = mb.build_manifest();
