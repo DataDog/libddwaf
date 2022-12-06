@@ -269,7 +269,7 @@ class InitPayloadGenerator:
             result = "".join(choices(printable_chars, k=_lograndint(1, self.rule_id_max_length)))
             return result
 
-        def get_random_rule(i):
+        def get_random_rule():
             return {
                 "id": get_random_rule_id(),
                 "name": get_random_rule_name(),
@@ -407,7 +407,7 @@ class InitPayloadGenerator:
             return result
 
         def get_random_rules():
-            return _get_random_array(get_random_rule, 1, self.rule_max_count, allow_none=False)
+            return [get_random_rule() for _ in range(self.rule_max_count)]
 
         def get_random_exclusion_filters():
             return _get_random_array(get_random_exclusion_filter, 1, self.filter_max_count, allow_none=True)
