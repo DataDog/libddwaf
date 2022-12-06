@@ -291,10 +291,9 @@ class InitPayloadGenerator:
                 ex_filter["conditions"] = get_random_condition_array();
 
             # Rules
-            if choice((True, False)):
-                rules = _get_random_array2(self.rule_ids, 1, len(self.rule_ids), allow_none=False, unique=True)
-                if rules is not None:
-                    ex_filter["rules_target"] =  [{"rule_id": value} for value in rules]
+            rules = _get_random_array2(self.rule_ids, 1, len(self.rule_ids), allow_none=True, unique=False)
+            if rules is not None:
+                ex_filter["rules_target"] =  [{"rule_id": value} for value in rules]
 
             # Inputs
             if choice((True, False)):
