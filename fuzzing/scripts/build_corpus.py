@@ -436,7 +436,7 @@ class InitPayloadGenerator:
         result = {
             "init_payload": {
                 "version": "2.1",
-                "exclusions": filters,
+                # "exclusions": filters,
                 "rules": excluded_rules + non_excluded_rules
             },
 
