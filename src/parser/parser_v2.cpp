@@ -260,94 +260,60 @@ std::set<rule::ptr> parse_rules_target(parameter::map &target, ddwaf::ruleset &r
     throw ddwaf::parsing_error("no supported tags in rules_target");
 }
 
-void parse_input_filter(
-    parameter::map &filter, manifest_builder &mb, ddwaf::ruleset &rs, ddwaf::config &cfg)
-{
-    // Check for conditions first
-    std::vector<condition::ptr> conditions;
-    auto conditions_array = at<parameter::vector>(filter, "conditions", {});
-    if (!conditions_array.empty()) {
-        conditions.reserve(conditions_array.size());
-
-        for (parameter::map cond : conditions_array) {
-            conditions.push_back(parse_condition(cond, rs.dispatcher, mb, cfg));
-        }
-    }
-
-    std::set<rule::ptr> rules_target;
-    auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
-    if (rules_target_array.empty()) {
-        for (const auto &[id, rule] : rs.rules) { rules_target.emplace(rule); }
-    } else {
-        for (parameter::map target : rules_target_array) {
-            auto rules_subset = parse_rules_target(target, rs);
-            rules_target.merge(rules_subset);
-        }
-    }
-
-    std::unordered_set<manifest::target_type> input_targets;
-    exclusion::object_filter obj_filter{cfg.limits};
-    auto inputs_array = at<parameter::vector>(filter, "inputs");
-    for (parameter::map input_map : inputs_array) {
-        auto address = at<std::string>(input_map, "address");
-
-        auto optional_target = mb.find(address);
-        if (!optional_target.has_value()) {
-            // This address isn't used by any rule so we skip it.
-            throw ddwaf::parsing_error("Address " + address + "not used by any existing rule");
-        }
-
-        auto key_path = at<std::vector<std::string_view>>(input_map, "key_path", {});
-
-        obj_filter.insert(*optional_target, key_path);
-    }
-
-    rs.input_filters.emplace_back(std::make_shared<exclusion::input_filter>(
-        std::move(conditions), std::move(rules_target), std::move(obj_filter)));
-}
-
-void parse_rule_filter(
-    parameter::map &filter, manifest_builder &mb, ddwaf::ruleset &rs, ddwaf::config &cfg)
-{
-    // Check for conditions first
-    std::vector<condition::ptr> conditions;
-    auto conditions_array = at<parameter::vector>(filter, "conditions", {});
-    if (!conditions_array.empty()) {
-        conditions.reserve(conditions_array.size());
-
-        for (parameter::map cond : conditions_array) {
-            conditions.push_back(parse_condition(cond, rs.dispatcher, mb, cfg));
-        }
-    }
-
-    std::set<rule::ptr> rules_target;
-    auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
-    if (rules_target_array.empty()) {
-        for (const auto &[id, rule] : rs.rules) { rules_target.emplace(rule); }
-    } else {
-        for (parameter::map target : rules_target_array) {
-            auto rules_subset = parse_rules_target(target, rs);
-            rules_target.merge(rules_subset);
-        }
-    }
-
-    if (conditions.empty() && rules_target.empty()) {
-        throw ddwaf::parsing_error("empty exclusion filter");
-    }
-
-    rs.rule_filters.emplace_back(
-        std::make_shared<exclusion::rule_filter>(std::move(conditions), std::move(rules_target)));
-}
-
 void parse_exclusion_filter(
     parameter::map &filter, manifest_builder &mb, ddwaf::ruleset &rs, ddwaf::config &cfg)
 {
+    // Check for conditions first
+    std::vector<condition::ptr> conditions;
+    auto conditions_array = at<parameter::vector>(filter, "conditions", {});
+    if (!conditions_array.empty()) {
+        conditions.reserve(conditions_array.size());
+
+        for (parameter::map cond : conditions_array) {
+            conditions.push_back(parse_condition(cond, rs.dispatcher, mb, cfg));
+        }
+    }
+
+    std::set<rule::ptr> rules_target;
+    auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
+    if (rules_target_array.empty()) {
+        for (const auto &[id, rule] : rs.rules) { rules_target.emplace(rule); }
+    } else {
+        for (parameter::map target : rules_target_array) {
+            auto rules_subset = parse_rules_target(target, rs);
+            rules_target.merge(rules_subset);
+        }
+    }
+
     if (filter.find("inputs") == filter.end()) {
         // Rule filter
-        parse_rule_filter(filter, mb, rs, cfg);
+        if (conditions.empty() && rules_target.empty()) {
+            throw ddwaf::parsing_error("empty exclusion filter");
+        }
+
+        rs.rule_filters.emplace_back(std::make_shared<exclusion::rule_filter>(
+            std::move(conditions), std::move(rules_target)));
     } else {
         // Input filter
-        parse_input_filter(filter, mb, rs, cfg);
+        std::unordered_set<manifest::target_type> input_targets;
+        exclusion::object_filter obj_filter{cfg.limits};
+        auto inputs_array = at<parameter::vector>(filter, "inputs");
+        for (parameter::map input_map : inputs_array) {
+            auto address = at<std::string>(input_map, "address");
+
+            auto optional_target = mb.find(address);
+            if (!optional_target.has_value()) {
+                // This address isn't used by any rule so we skip it.
+                throw ddwaf::parsing_error("Address " + address + " not used by any existing rule");
+            }
+
+            auto key_path = at<std::vector<std::string_view>>(input_map, "key_path", {});
+
+            obj_filter.insert(*optional_target, key_path);
+        }
+
+        rs.input_filters.emplace_back(std::make_shared<exclusion::input_filter>(
+            std::move(conditions), std::move(rules_target), std::move(obj_filter)));
     }
 }
 

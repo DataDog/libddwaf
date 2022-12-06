@@ -111,7 +111,7 @@ const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs
                 }
 
                 auto &common_exclusion = objects_to_exclude_[rule];
-                for (auto *object : exclusion->objects) { common_exclusion.emplace(object); }
+                common_exclusion.insert(exclusion->objects.begin(), exclusion->objects.end());
             }
         }
     }

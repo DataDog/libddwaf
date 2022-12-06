@@ -22,15 +22,15 @@ namespace ddwaf::object {
 
 template <typename T> class iterator_base {
 public:
-    iterator_base(const std::unordered_set<const ddwaf_object *> &exclude,
+    explicit iterator_base(const std::unordered_set<const ddwaf_object *> &exclude,
         const object_limits &limits = object_limits());
     ~iterator_base() = default;
 
     iterator_base(const iterator_base &) = default;
     iterator_base(iterator_base &&) noexcept = default;
 
-    iterator_base &operator=(const iterator_base &) = default;
-    iterator_base &operator=(iterator_base &&) noexcept = default;
+    iterator_base &operator=(const iterator_base &) = delete;
+    iterator_base &operator=(iterator_base &&) noexcept = delete;
 
     bool operator++();
 
@@ -70,8 +70,8 @@ public:
     value_iterator(const value_iterator &) = default;
     value_iterator(value_iterator &&) = default;
 
-    value_iterator &operator=(const value_iterator &) = default;
-    value_iterator &operator=(value_iterator &&) = default;
+    value_iterator &operator=(const value_iterator &) = delete;
+    value_iterator &operator=(value_iterator &&) = delete;
 
     [[nodiscard]] const ddwaf_object *operator*() { return current_; }
 
@@ -100,7 +100,7 @@ public:
     key_iterator(const key_iterator &) = default;
     key_iterator(key_iterator &&) = delete;
 
-    key_iterator &operator=(const key_iterator &) = default;
+    key_iterator &operator=(const key_iterator &) = delete;
     key_iterator &operator=(key_iterator &&) = delete;
 
     [[nodiscard]] DDWAF_OBJ_TYPE type() const

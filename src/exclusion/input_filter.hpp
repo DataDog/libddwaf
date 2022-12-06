@@ -22,7 +22,7 @@ class input_filter {
 public:
     using ptr = std::shared_ptr<input_filter>;
 
-    struct target_specification {
+    struct excluded_set {
         const std::set<rule::ptr> &rules;
         std::unordered_set<const ddwaf_object *> objects;
     };
@@ -39,8 +39,8 @@ public:
           filter_(std::move(filter))
     {}
 
-    std::optional<target_specification> match(const object_store &store,
-        const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const;
+    std::optional<excluded_set> match(const object_store &store, const ddwaf::manifest &manifest,
+        cache_type &cache, ddwaf::timer &deadline) const;
 
 protected:
     std::vector<condition::ptr> conditions_;

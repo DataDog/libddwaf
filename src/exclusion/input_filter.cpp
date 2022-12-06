@@ -9,9 +9,9 @@
 
 namespace ddwaf::exclusion {
 
-using target_specification = input_filter::target_specification;
+using excluded_set = input_filter::excluded_set;
 
-std::optional<target_specification> input_filter::match(const object_store &store,
+std::optional<excluded_set> input_filter::match(const object_store &store,
     const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (!cache.result) {
