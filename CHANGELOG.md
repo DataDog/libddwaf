@@ -1,6 +1,18 @@
 # libddwaf release
 
-### v1.6.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/11/11
+### v1.6.0-beta0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/12/07
+
+#### Changes
+- Exclusion filters: inputs ([#117](https://github.com/DataDog/libddwaf/pull/117))
+- Add ID to exclusion filters ([#120](https://github.com/DataDog/libddwaf/pull/120))
+
+#### Miscellaneous
+- Upgrade deprecated actions ([#114](https://github.com/DataDog/libddwaf/pull/114))
+- Include mac arm binaries in nuget ([#115](https://github.com/DataDog/libddwaf/pull/115))
+- Run clang tidy / format on CI ([#116](https://github.com/DataDog/libddwaf/pull/116))
+- Exclusion filters on fuzzer ([#118](https://github.com/DataDog/libddwaf/pull/118))
+
+### v1.6.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/11/11
 
 #### Changes
 - Exclusion filters: targets and conditions ([#110](https://github.com/DataDog/libddwaf/pull/110))
