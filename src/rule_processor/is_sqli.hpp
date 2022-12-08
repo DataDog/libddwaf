@@ -14,8 +14,11 @@ namespace ddwaf::rule_processor {
 class is_sqli : public base {
 public:
     is_sqli() = default;
-    std::string_view name() const override { return "is_sqli"; }
-    std::optional<event::match> match(std::string_view pattern) const override;
+    [[nodiscard]] std::string_view name() const override { return "is_sqli"; }
+    [[nodiscard]] std::optional<event::match> match(std::string_view pattern) const override;
+
+protected:
+    static constexpr unsigned fingerprint_length = 16;
 };
 
 } // namespace ddwaf::rule_processor

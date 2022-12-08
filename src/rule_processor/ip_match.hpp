@@ -21,12 +21,16 @@ public:
     explicit ip_match(const std::vector<std::string_view> &ip_list);
     explicit ip_match(const rule_data_type &ip_list);
     ~ip_match() override = default;
+    ip_match(const ip_match &) = delete;
+    ip_match(ip_match &&) = default;
+    ip_match &operator=(const ip_match &) = delete;
+    ip_match &operator=(ip_match &&) = default;
 
-    std::string_view name() const override { return "ip_match"; }
-
-    std::optional<event::match> match(std::string_view str) const override;
+    [[nodiscard]] std::string_view name() const override { return "ip_match"; }
+    [[nodiscard]] std::optional<event::match> match(std::string_view str) const override;
 
 protected:
+    static constexpr unsigned radix_tree_bits = 128; // IPv6
     std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_{nullptr, nullptr};
 };
 
