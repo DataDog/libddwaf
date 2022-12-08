@@ -23,7 +23,11 @@ struct ruleset {
     void insert_rule(rule::ptr rule)
     {
         rules.emplace(rule->id, rule);
-        collections[rule->type].insert(rule);
+        if (rule->actions.empty()) {
+            collections[rule->type].insert(rule);
+        } else {
+            priority_collections[rule->type].insert(rule);
+        }
         rules_by_type[rule->type].emplace(rule);
         rules_by_category[rule->category].emplace(rule);
     }
@@ -77,7 +81,8 @@ struct ruleset {
     std::unordered_map<std::string, rule::ptr> rules;
 
     // Collections
-    std::unordered_map<std::string, collection> collections;
+    std::unordered_map<std::string_view, priority_collection> priority_collections;
+    std::unordered_map<std::string_view, collection> collections;
     ddwaf::rule_data::dispatcher dispatcher;
 
     std::unordered_map<std::string_view, std::set<rule::ptr>> rules_by_type;

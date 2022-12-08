@@ -122,8 +122,21 @@ const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs
 std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_exclude,
     const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
-    // Process each rule we have to run for this step of the collection
     std::vector<ddwaf::event> events;
+
+    // Evaluate priority collections first
+    for (auto &[type, collection] : ruleset_.priority_collections) {
+        auto it = collection_cache_.find(type);
+        if (it == collection_cache_.end()) {
+            auto [new_it, res] = collection_cache_.emplace(type, collection::cache_type{});
+            it = new_it;
+        }
+        DDWAF_DEBUG("Evaluating priority collection %s", type.data());
+        collection.match(events, seen_actions_, store_, ruleset_.manifest, it->second,
+            rules_to_exclude, objects_to_exclude, deadline);
+    }
+
+    // Evalaute regular collection after
     for (auto &[type, collection] : ruleset_.collections) {
         auto it = collection_cache_.find(type);
         if (it == collection_cache_.end()) {
@@ -131,7 +144,7 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
             it = new_it;
         }
 
-        DDWAF_DEBUG("Running the WAF on collection %s", type.c_str());
+        DDWAF_DEBUG("Evaluating collection %s", type.data());
         collection.match(events, store_, ruleset_.manifest, it->second, rules_to_exclude,
             objects_to_exclude, deadline);
     }
