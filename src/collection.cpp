@@ -69,8 +69,8 @@ void collection::match(std::vector<event> &events, const object_store &store,
     }
 
     for (const auto &rule : rules_) {
-        auto event = match_rule(rule, store, manifest, cache.rule_cache,
-                rules_to_exclude, objects_to_exclude, deadline);
+        auto event = match_rule(rule, store, manifest, cache.rule_cache, rules_to_exclude,
+            objects_to_exclude, deadline);
         if (event.has_value()) {
             cache.result = true;
             events.emplace_back(std::move(*event));
@@ -81,11 +81,10 @@ void collection::match(std::vector<event> &events, const object_store &store,
 }
 
 void priority_collection::match(std::vector<event> &events,
-    std::unordered_set<std::string_view> &seen_actions,
-    const object_store &store, const ddwaf::manifest &manifest, collection_cache &cache,
+    std::unordered_set<std::string_view> &seen_actions, const object_store &store,
+    const ddwaf::manifest &manifest, collection_cache &cache,
     const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
-    ddwaf::timer &deadline)
+    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
     auto &remaining_actions = cache.remaining_actions;
     for (auto it = remaining_actions.begin(); it != remaining_actions.end();) {
@@ -98,15 +97,15 @@ void priority_collection::match(std::vector<event> &events,
 
     // If there are no remaining actions, we treat this collection as a regular one
     if (remaining_actions.empty()) {
-        collection::match(events, store, manifest, cache, rules_to_exclude,
-                objects_to_exclude, deadline);
+        collection::match(
+            events, store, manifest, cache, rules_to_exclude, objects_to_exclude, deadline);
         return;
     }
 
     // If there are still remaining actions, we treat this collection as a priority tone
     for (const auto &rule : rules_) {
-        auto event = match_rule(rule, store, manifest, cache.rule_cache,
-                rules_to_exclude, objects_to_exclude, deadline);
+        auto event = match_rule(rule, store, manifest, cache.rule_cache, rules_to_exclude,
+            objects_to_exclude, deadline);
         if (event.has_value()) {
             // If there has been a match, we set the result to true to ensure
             // that the equivalent regular collection doesn't attempt to match
@@ -120,7 +119,9 @@ void priority_collection::match(std::vector<event> &events,
             }
             events.emplace_back(std::move(*event));
             DDWAF_DEBUG("Found event on rule %s", rule->id.c_str());
-            if (remaining_actions.empty()) { break; }
+            if (remaining_actions.empty()) {
+                break;
+            }
         }
     }
 }

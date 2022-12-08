@@ -15,7 +15,7 @@
 
 namespace ddwaf {
 
-// The collection cache is shared by both priority and regular collections, 
+// The collection cache is shared by both priority and regular collections,
 // this ensures that regular collections aren't processed when the respective
 // priority collection has already had a match.
 struct collection_cache {
@@ -45,11 +45,12 @@ public:
         ddwaf::timer &deadline);
 
     virtual collection_cache get_cache() { return collection_cache{}; }
+
 protected:
     static std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
         const ddwaf::manifest &manifest, std::unordered_map<rule::ptr, rule::cache_type> &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
-        const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, 
+        const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
         ddwaf::timer &deadline);
 
     std::vector<rule::ptr> rules_{};
@@ -64,21 +65,20 @@ public:
     priority_collection &operator=(const priority_collection &) = default;
     priority_collection &operator=(priority_collection &&) = default;
 
-    void insert(rule::ptr rule) override {
+    void insert(rule::ptr rule) override
+    {
         actions_.insert(rule->actions.begin(), rule->actions.end());
         rules_.emplace_back(std::move(rule));
     }
 
-    void match(std::vector<event> &events,
-        std::unordered_set<std::string_view> &seen_actions,
+    void match(std::vector<event> &events, std::unordered_set<std::string_view> &seen_actions,
         const object_store &store, const ddwaf::manifest &manifest, collection_cache &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
         ddwaf::timer &deadline);
 
-    collection_cache get_cache() override {
-        return collection_cache{false, {}, actions_};
-    }
+    collection_cache get_cache() override { return collection_cache{false, {}, actions_}; }
+
 protected:
     std::unordered_set<std::string_view> actions_;
 };
