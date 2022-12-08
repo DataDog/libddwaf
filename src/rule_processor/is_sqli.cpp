@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <array>
 #include <libinjection.h>
 #include <rule_processor/is_sqli.hpp>
 #include <utils.h>

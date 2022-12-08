@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <array>
 #include <exception.hpp>
 #include <rule_processor/regex_match.hpp>
 
