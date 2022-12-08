@@ -6,4 +6,4 @@
 
 #pragma once
 
-#define LIBDDWAF_VERSION "${CMAKE_PROJECT_VERSION}"
+constexpr const char *LIBDDWAF_VERSION="${CMAKE_PROJECT_VERSION}";
