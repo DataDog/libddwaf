@@ -28,7 +28,6 @@ public:
     context(ddwaf::ruleset &ruleset, const ddwaf::config &config)
         : ruleset_(ruleset), config_(config), store_(ruleset_.manifest, config_.free_fn)
     {
-        rule_cache_.reserve(ruleset_.rules.size());
         rule_filter_cache_.reserve(ruleset_.rule_filters.size());
         input_filter_cache_.reserve(ruleset_.input_filters.size());
         collection_cache_.reserve(ruleset_.collections.size());
@@ -53,7 +52,7 @@ public:
         ddwaf::timer &deadline);
 
 protected:
-    bool is_first_run() const { return rule_cache_.empty(); }
+    bool is_first_run() const { return collection_cache_.empty(); }
 
     ddwaf::ruleset &ruleset_;
     const ddwaf::config &config_;
@@ -70,9 +69,8 @@ protected:
     std::unordered_map<rule::ptr, object_set> objects_to_exclude_;
 
     // Cache of rules and conditions
-    std::unordered_map<rule::ptr, rule::cache_type> rule_cache_;
     // Cache of collections to avoid processing once a result has been obtained
-    std::unordered_set<std::string> collection_cache_;
+    std::unordered_map<std::string, collection::cache_type> collection_cache_;
 };
 
 } // namespace ddwaf

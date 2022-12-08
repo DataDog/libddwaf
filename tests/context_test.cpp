@@ -37,8 +37,7 @@ TEST(TestContext, MatchTimeout)
         std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
     ddwaf::ruleset ruleset;
-    ruleset.rules.emplace("id", rule);
-    ruleset.collections["type"].emplace_back(rule);
+    ruleset.insert_rule(rule);
     ruleset.manifest = mb.build_manifest();
 
     ddwaf::timer deadline{0s};
@@ -68,8 +67,7 @@ TEST(TestContext, NoMatch)
         std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
     ddwaf::ruleset ruleset;
-    ruleset.rules.emplace("id", rule);
-    ruleset.collections["type"].emplace_back(rule);
+    ruleset.insert_rule(rule);
     ruleset.manifest = mb.build_manifest();
 
     ddwaf::timer deadline{2s};
@@ -100,8 +98,7 @@ TEST(TestContext, Match)
         std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
     ddwaf::ruleset ruleset;
-    ruleset.rules.emplace("id", rule);
-    ruleset.collections["type"].emplace_back(rule);
+    ruleset.insert_rule(rule);
     ruleset.manifest = mb.build_manifest();
 
     ddwaf::timer deadline{2s};
@@ -133,8 +130,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id1", rule);
-        ruleset.collections["type"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     {
@@ -149,8 +145,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id2", rule);
-        ruleset.collections["type"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -202,8 +197,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id1", rule);
-        ruleset.collections["type"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     {
@@ -218,8 +212,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id2", rule);
-        ruleset.collections["type"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -282,8 +275,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type1", "category1",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id1", rule);
-        ruleset.collections["type1"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     {
@@ -298,8 +290,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type2", "category2",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id2", rule);
-        ruleset.collections["type2"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -334,8 +325,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type1", "category1",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id1", rule);
-        ruleset.collections["type1"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     {
@@ -350,8 +340,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type2", "category2",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id2", rule);
-        ruleset.collections["type2"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     ruleset.manifest = mb.build_manifest();
@@ -399,8 +388,7 @@ TEST(TestContext, RuleFilterWithCondition)
         rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id", rule);
-        ruleset.collections["type"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     // Generate filter
@@ -457,8 +445,7 @@ TEST(TestContext, RuleFilterTimeout)
         rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id", rule);
-        ruleset.collections["type"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     // Generate filter
@@ -510,8 +497,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
         rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id", rule);
-        ruleset.collections["type"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     // Generate filter
@@ -557,12 +543,10 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     std::vector<ddwaf::rule::ptr> rules;
     rules.reserve(num_rules);
     for (unsigned i = 0; i < num_rules; i++) {
-        std::string id = "id" + std::to_string(i);
-        rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", "type",
+        rules.emplace_back(std::make_shared<ddwaf::rule>("id" + std::to_string(i), "name", "type",
             "category", std::vector<ddwaf::condition::ptr>{}, std::vector<std::string>{}));
 
-        ruleset.rules.emplace(id, rules[i]);
-        ruleset.collections["type"].emplace_back(rules[i]);
+        ruleset.insert_rule(rules.back());
     }
 
     ddwaf::timer deadline{2s};
@@ -632,8 +616,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", "type",
             "category", std::vector<ddwaf::condition::ptr>{}, std::vector<std::string>{}));
 
-        ruleset.rules.emplace(id, rules[i]);
-        ruleset.collections["type"].emplace_back(rules[i]);
+        ruleset.insert_rule(rules.back());
     }
 
     ddwaf::timer deadline{2s};
@@ -739,8 +722,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", "type",
             "category", std::vector<ddwaf::condition::ptr>{}, std::vector<std::string>{}));
 
-        ruleset.rules.emplace(id, rules[i]);
-        ruleset.collections["type"].emplace_back(rules[i]);
+        ruleset.insert_rule(rules.back());
     }
 
     ddwaf::timer deadline{2s};
@@ -827,8 +809,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", "type",
             "category", std::vector<ddwaf::condition::ptr>{}, std::vector<std::string>{}));
 
-        ruleset.rules.emplace(id, rules[i]);
-        ruleset.collections["type"].emplace_back(rules[i]);
+        ruleset.insert_rule(rules.back());
     }
 
     ddwaf::timer deadline{2s};
@@ -928,8 +909,7 @@ TEST(TestContext, InputFilterExclude)
         "1", std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
 
     ddwaf::ruleset ruleset;
-    ruleset.rules.emplace("id", rule);
-    ruleset.collections["type"].emplace_back(rule);
+    ruleset.insert_rule(rule);
     ruleset.manifest = mb.build_manifest();
     ruleset.input_filters.emplace(filter->get_id(), filter);
 
@@ -970,8 +950,7 @@ TEST(TestContext, InputFilterExcludeRule)
         "1", std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
 
     ddwaf::ruleset ruleset;
-    ruleset.rules.emplace("id", rule);
-    ruleset.collections["type"].emplace_back(rule);
+    ruleset.insert_rule(rule);
     ruleset.manifest = mb.build_manifest();
     ruleset.input_filters.emplace(filter->get_id(), filter);
 
@@ -1010,8 +989,7 @@ TEST(TestContext, InputFilterWithCondition)
         auto rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
             std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
 
-        ruleset.rules.emplace("id", rule);
-        ruleset.collections["type"].emplace_back(rule);
+        ruleset.insert_rule(rule);
     }
 
     {

@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <collection.hpp>
 #include <exclusion/input_filter.hpp>
 #include <exclusion/rule_filter.hpp>
 #include <manifest.hpp>
@@ -22,11 +23,12 @@ struct ruleset {
     void insert_rule(rule::ptr rule)
     {
         rules.emplace(rule->id, rule);
-        collections[rule->type].emplace_back(rule);
+        collections[rule->type].insert(rule);
         rules_by_type[rule->type].emplace(rule);
         rules_by_category[rule->category].emplace(rule);
     }
 
+    // TODO use unordered sets for these functions
     std::set<rule::ptr> get_rules_by_type(std::string_view type) const
     {
         auto it = rules_by_type.find(type);
@@ -73,8 +75,9 @@ struct ruleset {
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
     // Rules are ordered by ID
     std::unordered_map<std::string, rule::ptr> rules;
-    // Collections are ordered by rule.type
-    std::unordered_map<std::string, std::vector<rule::ptr>> collections;
+
+    // Collections
+    std::unordered_map<std::string, collection> collections;
     ddwaf::rule_data::dispatcher dispatcher;
 
     std::unordered_map<std::string_view, std::set<rule::ptr>> rules_by_type;
