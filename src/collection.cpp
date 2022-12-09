@@ -10,10 +10,12 @@
 
 namespace ddwaf {
 
-std::optional<event> collection::match_rule(const rule::ptr &rule, const object_store &store,
+namespace {
+std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
     const ddwaf::manifest &manifest, std::unordered_map<rule::ptr, rule::cache_type> &cache,
     const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, ddwaf::timer &deadline)
+    const std::unordered_map<rule::ptr, collection::object_set> &objects_to_exclude,
+    ddwaf::timer &deadline)
 {
     const auto &id = rule->id;
 
@@ -58,12 +60,14 @@ std::optional<event> collection::match_rule(const rule::ptr &rule, const object_
 
     return std::nullopt;
 }
+} // namespace
 
 void collection::match(std::vector<event> &events,
     std::unordered_set<std::string_view> & /*seen_actions*/, const object_store &store,
     const ddwaf::manifest &manifest, collection_cache &cache,
     const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, ddwaf::timer &deadline)
+    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
+    ddwaf::timer &deadline) const
 {
     if (cache.result) {
         return;
@@ -85,7 +89,8 @@ void priority_collection::match(std::vector<event> &events,
     std::unordered_set<std::string_view> &seen_actions, const object_store &store,
     const ddwaf::manifest &manifest, collection_cache &cache,
     const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, ddwaf::timer &deadline)
+    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
+    ddwaf::timer &deadline) const
 {
     auto &remaining_actions = cache.remaining_actions;
     for (auto it = remaining_actions.begin(); it != remaining_actions.end();) {

@@ -124,29 +124,26 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
 {
     std::vector<ddwaf::event> events;
 
-    // Evaluate priority collections first
-    for (auto &[type, collection] : ruleset_.priority_collections) {
+    auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);
         if (it == collection_cache_.end()) {
             auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache());
             it = new_it;
         }
-        DDWAF_DEBUG("Evaluating priority collection %s", type.data());
         collection.match(events, seen_actions_, store_, ruleset_.manifest, it->second,
             rules_to_exclude, objects_to_exclude, deadline);
+    };
+
+    // Evaluate priority collections first
+    for (auto &[type, collection] : ruleset_.priority_collections) {
+        DDWAF_DEBUG("Evaluating priority collection %s", type.data());
+        eval_collection(type, collection);
     }
 
     // Evalaute regular collection after
     for (auto &[type, collection] : ruleset_.collections) {
-        auto it = collection_cache_.find(type);
-        if (it == collection_cache_.end()) {
-            auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache());
-            it = new_it;
-        }
-
         DDWAF_DEBUG("Evaluating collection %s", type.data());
-        collection.match(events, seen_actions_, store_, ruleset_.manifest, it->second,
-            rules_to_exclude, objects_to_exclude, deadline);
+        eval_collection(type, collection);
     }
 
     return events;

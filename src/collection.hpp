@@ -43,17 +43,11 @@ public:
         const ddwaf::manifest &manifest, collection_cache &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
-        ddwaf::timer &deadline);
+        ddwaf::timer &deadline) const;
 
-    virtual collection_cache get_cache() { return {}; }
+    [[nodiscard]] virtual collection_cache get_cache() const { return {}; }
 
 protected:
-    static std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
-        const ddwaf::manifest &manifest, std::unordered_map<rule::ptr, rule::cache_type> &cache,
-        const std::unordered_set<rule::ptr> &rules_to_exclude,
-        const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
-        ddwaf::timer &deadline);
-
     std::vector<rule::ptr> rules_{};
 };
 
@@ -76,9 +70,9 @@ public:
         const object_store &store, const ddwaf::manifest &manifest, collection_cache &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
-        ddwaf::timer &deadline) override;
+        ddwaf::timer &deadline) const override;
 
-    collection_cache get_cache() override { return {false, {}, actions_}; }
+    [[nodiscard]] collection_cache get_cache() const override { return {false, {}, actions_}; }
 
 protected:
     std::unordered_set<std::string_view> actions_;
