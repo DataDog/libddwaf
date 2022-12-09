@@ -145,8 +145,8 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
         }
 
         DDWAF_DEBUG("Evaluating collection %s", type.data());
-        collection.match(events, store_, ruleset_.manifest, it->second, rules_to_exclude,
-            objects_to_exclude, deadline);
+        collection.match(events, seen_actions_, store_, ruleset_.manifest, it->second,
+            rules_to_exclude, objects_to_exclude, deadline);
     }
 
     return events;

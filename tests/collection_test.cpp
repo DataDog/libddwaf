@@ -8,9 +8,15 @@
 
 using namespace ddwaf;
 
+template <typename T> struct TestCollection : public testing::Test {};
+
+using CollectionTypes = ::testing::Types<ddwaf::collection, ddwaf::priority_collection>;
+TYPED_TEST_SUITE(TestCollection, CollectionTypes);
+
 // Validate that a rule within the collection matches only once
-TEST(TestCollection, SingleRuleMatch)
+TYPED_TEST(TestCollection, SingleRuleMatch)
 {
+    std::unordered_set<std::string_view> seen_actions;
     std::vector<ddwaf::manifest::target_type> targets;
 
     ddwaf::manifest_builder mb;
@@ -25,7 +31,7 @@ TEST(TestCollection, SingleRuleMatch)
     auto rule = std::make_shared<ddwaf::rule>(
         "id", "name", "type", "category", std::move(conditions), std::vector<std::string>{});
 
-    ddwaf::collection rule_collection;
+    TypeParam rule_collection;
     rule_collection.insert(rule);
 
     auto cache = rule_collection.get_cache();
@@ -40,7 +46,7 @@ TEST(TestCollection, SingleRuleMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -54,16 +60,17 @@ TEST(TestCollection, SingleRuleMatch)
         store.insert(root);
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
 }
 
 // Validate that once there's a match for a collection, a second match isn't possible
-TEST(TestCollection, MultipleRuleCachedMatch)
+TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 {
-    ddwaf::collection rule_collection;
+    std::unordered_set<std::string_view> seen_actions;
+    TypeParam rule_collection;
     ddwaf::manifest_builder mb;
     {
         std::vector<ddwaf::manifest::target_type> targets;
@@ -111,7 +118,7 @@ TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -125,16 +132,17 @@ TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
 }
 
 // Validate that after a failed match, the collection can still produce a match
-TEST(TestCollection, MultipleRuleFailAndMatch)
+TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 {
-    ddwaf::collection rule_collection;
+    std::unordered_set<std::string_view> seen_actions;
+    TypeParam rule_collection;
     ddwaf::manifest_builder mb;
     {
         std::vector<ddwaf::manifest::target_type> targets;
@@ -182,7 +190,7 @@ TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -196,15 +204,16 @@ TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
 }
 
 // Validate that the rule cache is acted on
-TEST(TestCollection, SingleRuleMultipleCalls)
+TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 {
+    std::unordered_set<std::string_view> seen_actions;
     ddwaf::manifest_builder mb;
     std::vector<condition::ptr> conditions;
     {
@@ -231,7 +240,7 @@ TEST(TestCollection, SingleRuleMultipleCalls)
     auto rule = std::make_shared<ddwaf::rule>(
         "id", "name", "type", "category", std::move(conditions), std::vector<std::string>{});
 
-    ddwaf::collection rule_collection;
+    TypeParam rule_collection;
     rule_collection.insert(rule);
 
     auto cache = rule_collection.get_cache();
@@ -246,7 +255,7 @@ TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -262,7 +271,7 @@ TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }

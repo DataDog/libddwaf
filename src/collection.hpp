@@ -38,7 +38,8 @@ public:
 
     virtual void insert(rule::ptr rule) { rules_.emplace_back(std::move(rule)); }
 
-    void match(std::vector<event> &events, const object_store &store,
+    virtual void match(std::vector<event> &events,
+        std::unordered_set<std::string_view> &seen_actions, const object_store &store,
         const ddwaf::manifest &manifest, collection_cache &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
@@ -75,7 +76,7 @@ public:
         const object_store &store, const ddwaf::manifest &manifest, collection_cache &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
-        ddwaf::timer &deadline);
+        ddwaf::timer &deadline) override;
 
     collection_cache get_cache() override { return {false, {}, actions_}; }
 
