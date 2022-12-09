@@ -21,10 +21,10 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
 
     {
         const auto filter_state = filter.get_state();
-        if (filter_state == state::NOT_FOUND) {
+        if (filter_state == state::not_found) {
             return;
         }
-        if (filter_state == state::FOUND) {
+        if (filter_state == state::found) {
             objects_to_exclude.emplace(object);
             return;
         }
@@ -61,11 +61,11 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
             auto child_traverser = current_trie.descend(key);
             const auto filter_state = child_traverser.get_state();
 
-            if (filter_state == state::FOUND) {
+            if (filter_state == state::found) {
                 objects_to_exclude.emplace(child);
                 continue;
             }
-            if (filter_state == state::NOT_FOUND) {
+            if (filter_state == state::not_found) {
                 continue;
             }
 
