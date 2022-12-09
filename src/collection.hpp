@@ -44,7 +44,7 @@ public:
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
         ddwaf::timer &deadline);
 
-    virtual collection_cache get_cache() { return collection_cache{}; }
+    virtual collection_cache get_cache() { return {}; }
 
 protected:
     static std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
@@ -77,7 +77,7 @@ public:
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
         ddwaf::timer &deadline);
 
-    collection_cache get_cache() override { return collection_cache{false, {}, actions_}; }
+    collection_cache get_cache() override { return {false, {}, actions_}; }
 
 protected:
     std::unordered_set<std::string_view> actions_;

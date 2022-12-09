@@ -58,7 +58,7 @@ DDWAF_RET_CODE context::run(
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
         ddwaf_result &output = *res;
-        serializer.serialize(events, output);
+        serializer.serialize(events, seen_actions_, output);
         output.total_runtime = deadline.elapsed().count();
         output.timeout = deadline.expired_before();
     }
@@ -128,7 +128,7 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
     for (auto &[type, collection] : ruleset_.priority_collections) {
         auto it = collection_cache_.find(type);
         if (it == collection_cache_.end()) {
-            auto [new_it, res] = collection_cache_.emplace(type, collection::cache_type{});
+            auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache());
             it = new_it;
         }
         DDWAF_DEBUG("Evaluating priority collection %s", type.data());
@@ -140,7 +140,7 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
     for (auto &[type, collection] : ruleset_.collections) {
         auto it = collection_cache_.find(type);
         if (it == collection_cache_.end()) {
-            auto [new_it, res] = collection_cache_.emplace(type, collection::cache_type{});
+            auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache());
             it = new_it;
         }
 

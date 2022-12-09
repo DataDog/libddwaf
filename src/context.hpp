@@ -68,7 +68,6 @@ protected:
     std::unordered_set<rule::ptr> rules_to_exclude_;
     std::unordered_map<rule::ptr, object_set> objects_to_exclude_;
 
-    // Cache of rules and conditions
     // Cache of collections to avoid processing once a result has been obtained
     std::unordered_map<std::string_view, collection::cache_type> collection_cache_;
     std::unordered_set<std::string_view> seen_actions_;

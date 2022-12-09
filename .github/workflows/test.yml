@@ -167,7 +167,7 @@ jobs:
           CXX: clang++-15
           CC: clang-15
         run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/clang-tidy-15 \
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/run-clang-tidy-15 \
             -DCLANG_FORMAT=/usr/bin/clang-format-15
         working-directory: Debug
 

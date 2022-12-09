@@ -84,15 +84,14 @@ void serialize_match(rapidjson::Value &output, rapidjson::Document::AllocatorTyp
 
 } // namespace
 
-void event_serializer::serialize(const std::vector<event> &events, ddwaf_result &output) const
+void event_serializer::serialize(const std::vector<event> &events,
+    const std::unordered_set<std::string_view> &actions, ddwaf_result &output) const
 {
     rapidjson::Document doc;
     auto &allocator = doc.GetAllocator();
 
     output.data = nullptr;
     output.actions = {nullptr, 0};
-
-    std::unordered_set<std::string_view> actions;
 
     doc.SetArray();
     for (const auto &event : events) {
@@ -132,8 +131,6 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         map.SetObject();
         map.AddMember("rule", rule, allocator);
         map.AddMember("rule_matches", match_array, allocator);
-
-        for (const std::string_view &action : event.actions) { actions.emplace(action); }
 
         doc.PushBack(map, allocator);
     }
