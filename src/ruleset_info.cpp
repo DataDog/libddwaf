@@ -32,7 +32,8 @@ void ruleset_info::insert_error(std::string_view rule_id, std::string_view error
     if (it == error_obj_cache.end()) {
         ddwaf_object tmp_array;
         ddwaf_object_array(&tmp_array);
-        const bool res = ddwaf_object_map_addl(&info->errors, error.data(), error.size(), &tmp_array);
+        const bool res =
+            ddwaf_object_map_addl(&info->errors, error.data(), error.size(), &tmp_array);
         if (!res) {
             return;
         }
