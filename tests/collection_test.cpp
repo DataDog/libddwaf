@@ -294,9 +294,8 @@ TEST(TestPriorityCollection, MatchBothActions)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", "type", "category1", std::move(conditions),
-            std::vector<std::string>{"block"});
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
+            std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
@@ -310,9 +309,8 @@ TEST(TestPriorityCollection, MatchBothActions)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", "type", "category2", std::move(conditions),
-            std::vector<std::string>{"redirect"});
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
+            std::move(conditions), std::vector<std::string>{"redirect"});
 
         rule_collection.insert(rule);
     }
@@ -362,9 +360,8 @@ TEST(TestPriorityCollection, MatchOneAction)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", "type", "category1", std::move(conditions),
-            std::vector<std::string>{"block"});
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
+            std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
@@ -378,9 +375,8 @@ TEST(TestPriorityCollection, MatchOneAction)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", "type", "category2", std::move(conditions),
-            std::vector<std::string>{"block"});
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
+            std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
@@ -428,9 +424,8 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", "type", "category1", std::move(conditions),
-            std::vector<std::string>{"block"});
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
+            std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
@@ -444,9 +439,8 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", "type", "category2", std::move(conditions),
-            std::vector<std::string>{"block"});
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
+            std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
@@ -479,5 +473,3 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
         EXPECT_NE(seen_actions.find("block"), seen_actions.end());
     }
 }
-
-
