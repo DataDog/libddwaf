@@ -70,7 +70,7 @@ const std::unordered_set<rule::ptr> &context::filter_rules(ddwaf::timer &deadlin
 {
     for (const auto &[id, filter] : ruleset_.rule_filters) {
         if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while running exclusion filters");
+            DDWAF_INFO("Ran out of time while evaluating rule filters");
             throw timeout_exception();
         }
 
@@ -92,7 +92,7 @@ const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs
 {
     for (const auto &[id, filter] : ruleset_.input_filters) {
         if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while running exclusion filters");
+            DDWAF_INFO("Ran out of time while evaluating input filters");
             throw timeout_exception();
         }
 

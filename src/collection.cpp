@@ -94,7 +94,7 @@ void priority_collection::match(std::vector<event> &events,
 {
     auto &remaining_actions = cache.remaining_actions;
     for (auto it = remaining_actions.begin(); it != remaining_actions.end();) {
-        if (seen_actions.find(*it) == seen_actions.end()) {
+        if (seen_actions.find(*it) != seen_actions.end()) {
             it = remaining_actions.erase(it);
         } else {
             ++it;
