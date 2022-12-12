@@ -63,9 +63,14 @@ class path_trie {
 
         [[nodiscard]] bool is_terminal() const { return children.empty(); }
 
+#ifdef HAS_NONRECURSIVE_UNORDERED_MAP
         // unordered_map doesn't allow trie_node as the value of the map
         // because trie_node is an incomplete type at this point
-        std::map<std::string_view, trie_node> children{};
+        template <typename K, typename V> using MapType = std::map<K, V>;
+#else
+        template <typename K, typename V> using MapType = std::unordered_map<K, V>;
+#endif
+        MapType<std::string_view, trie_node> children{};
     };
     static_assert(std::is_move_assignable_v<trie_node>);
     static_assert(std::is_move_constructible_v<trie_node>);
