@@ -33,7 +33,7 @@ TEST(TestContext, MatchTimeout)
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
-        std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+        std::move(conditions), std::vector<std::string>{});
 
     ddwaf::ruleset ruleset;
     ruleset.insert_rule(rule);
@@ -63,7 +63,7 @@ TEST(TestContext, NoMatch)
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
-        std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+        std::move(conditions), std::vector<std::string>{});
 
     ddwaf::ruleset ruleset;
     ruleset.insert_rule(rule);
@@ -94,7 +94,7 @@ TEST(TestContext, Match)
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
-        std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+        std::move(conditions), std::vector<std::string>{});
 
     ddwaf::ruleset ruleset;
     ruleset.insert_rule(rule);
@@ -127,7 +127,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -142,7 +142,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -166,7 +166,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_STREQ(event.name.data(), "name1");
     EXPECT_STREQ(event.type.data(), "type");
     EXPECT_STREQ(event.category.data(), "category1");
-    std::vector<std::string_view> expected_actions{"update", "block", "passlist"};
+    std::vector<std::string_view> expected_actions{};
     EXPECT_EQ(event.actions, expected_actions);
     EXPECT_EQ(event.matches.size(), 1);
 
@@ -177,6 +177,84 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_STREQ(match.operator_value.data(), "");
     EXPECT_STREQ(match.source.data(), "http.client_ip");
     EXPECT_TRUE(match.key_path.empty());
+}
+
+TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
+{
+    ddwaf::ruleset ruleset;
+    ddwaf::manifest_builder mb;
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("http.client_ip", {}));
+
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
+
+        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
+            std::move(conditions), std::vector<std::string>{});
+
+        ruleset.insert_rule(rule);
+    }
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("usr.id", {}));
+
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+
+        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+
+        // This rule has actions, so it'll be have priority
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
+            std::move(conditions), std::vector<std::string>{"block"});
+
+        ruleset.insert_rule(rule);
+    }
+
+    ruleset.manifest = mb.build_manifest();
+
+
+    {
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ctx.insert(root);
+
+        ddwaf::timer deadline{2s};
+        auto events = ctx.match({}, {}, deadline);
+        EXPECT_EQ(events.size(), 1);
+
+        auto event = events[0];
+        EXPECT_STREQ(event.id.data(), "id2");
+        EXPECT_EQ(event.actions.size(), 1);
+        EXPECT_STREQ(event.actions[0].data(), "block");
+    }
+
+    {
+        ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ctx.insert(root);
+
+        ddwaf::timer deadline{2s};
+        auto events = ctx.match({}, {}, deadline);
+        EXPECT_EQ(events.size(), 1);
+
+        auto event = events[0];
+        EXPECT_STREQ(event.id.data(), "id2");
+        EXPECT_EQ(event.actions.size(), 1);
+        EXPECT_STREQ(event.actions[0].data(), "block");
+    }
 }
 
 TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
@@ -194,7 +272,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -209,7 +287,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -233,7 +311,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         EXPECT_STREQ(event.name.data(), "name1");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category1");
-        std::vector<std::string_view> expected_actions{"update", "block", "passlist"};
+        std::vector<std::string_view> expected_actions{};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -257,6 +335,106 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
     }
 }
 
+TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRun)
+{
+    ddwaf::ruleset ruleset;
+    ddwaf::manifest_builder mb;
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("http.client_ip", {}));
+
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::ip_match>(
+                std::vector<std::string_view>{"192.168.0.1"}));
+
+        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
+            std::move(conditions), std::vector<std::string>{});
+
+        ruleset.insert_rule(rule);
+    }
+
+    {
+        std::vector<ddwaf::manifest::target_type> targets;
+        targets.push_back(mb.insert("usr.id", {}));
+
+        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+
+        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
+            std::move(conditions), std::vector<std::string>{"block"});
+
+        ruleset.insert_rule(rule);
+    }
+
+    ruleset.manifest = mb.build_manifest();
+
+    ddwaf::timer deadline{2s};
+    ddwaf::test::context ctx(ruleset, ddwaf::config());
+
+    {
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ctx.insert(root);
+
+        auto events = ctx.match({}, {}, deadline);
+        EXPECT_EQ(events.size(), 1);
+
+        auto &event = events[0];
+        EXPECT_STREQ(event.id.data(), "id1");
+        EXPECT_STREQ(event.name.data(), "name1");
+        EXPECT_STREQ(event.type.data(), "type");
+        EXPECT_STREQ(event.category.data(), "category1");
+        std::vector<std::string_view> expected_actions{};
+        EXPECT_EQ(event.actions, expected_actions);
+        EXPECT_EQ(event.matches.size(), 1);
+
+        auto &match = event.matches[0];
+        EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.operator_name.data(), "ip_match");
+        EXPECT_STREQ(match.operator_value.data(), "");
+        EXPECT_STREQ(match.source.data(), "http.client_ip");
+        EXPECT_TRUE(match.key_path.empty());
+    }
+
+    {
+        // An existing match in a collection will not inhibit a match in a
+        // priority collection.
+        ddwaf_object root, tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ctx.insert(root);
+
+        auto events = ctx.match({}, {}, deadline);
+        EXPECT_EQ(events.size(), 1);
+
+        auto &event = events[0];
+        EXPECT_EQ(events.size(), 1);
+        EXPECT_STREQ(event.id.data(), "id2");
+        EXPECT_STREQ(event.name.data(), "name2");
+        EXPECT_STREQ(event.type.data(), "type");
+        EXPECT_STREQ(event.category.data(), "category2");
+        std::vector<std::string_view> expected_actions{"block"};
+        EXPECT_EQ(event.actions, expected_actions);
+        EXPECT_EQ(event.matches.size(), 1);
+
+        auto &match = event.matches[0];
+        EXPECT_STREQ(match.resolved.c_str(), "admin");
+        EXPECT_STREQ(match.matched.c_str(), "admin");
+        EXPECT_STREQ(match.operator_name.data(), "exact_match");
+        EXPECT_STREQ(match.operator_value.data(), "");
+        EXPECT_STREQ(match.source.data(), "usr.id");
+        EXPECT_TRUE(match.key_path.empty());
+
+    }
+}
+
+
 TEST(TestContext, MatchMultipleCollectionsSingleRun)
 {
     ddwaf::ruleset ruleset;
@@ -272,7 +450,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type1", "category1",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -287,7 +465,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type2", "category2",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -322,7 +500,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type1", "category1",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -337,7 +515,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type2", "category2",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -385,7 +563,7 @@ TEST(TestContext, RuleFilterWithCondition)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -442,7 +620,7 @@ TEST(TestContext, RuleFilterTimeout)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -494,7 +672,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -897,7 +1075,7 @@ TEST(TestContext, InputFilterExclude)
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
-        std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+        std::move(conditions), std::vector<std::string>{});
 
     object_filter obj_filter;
     obj_filter.insert(client_ip);
@@ -938,7 +1116,7 @@ TEST(TestContext, InputFilterExcludeRule)
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
-        std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+        std::move(conditions), std::vector<std::string>{});
 
     object_filter obj_filter;
     obj_filter.insert(client_ip);
@@ -986,7 +1164,7 @@ TEST(TestContext, InputFilterWithCondition)
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("id", "name", "type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -1077,7 +1255,7 @@ TEST(TestContext, InputFilterMultipleRules)
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("ip_id", "name", "ip_type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -1090,7 +1268,7 @@ TEST(TestContext, InputFilterMultipleRules)
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("usr_id", "name", "usr_type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -1183,7 +1361,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("ip_id", "name", "ip_type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -1196,7 +1374,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("usr_id", "name", "usr_type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -1304,7 +1482,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("ip_id", "name", "ip_type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -1317,7 +1495,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("usr_id", "name", "usr_type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
@@ -1330,7 +1508,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         conditions.emplace_back(std::move(cond));
 
         auto rule = std::make_shared<ddwaf::rule>("cookie_id", "name", "cookie_type", "category",
-            std::move(conditions), std::vector<std::string>{"update", "block", "passlist"});
+            std::move(conditions), std::vector<std::string>{});
 
         ruleset.insert_rule(rule);
     }
