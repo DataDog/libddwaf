@@ -7,62 +7,66 @@
 #include "test.h"
 #include <gtest/gtest.h>
 
+using state = ddwaf::exclusion::path_trie::traverser::state;
+
 TEST(TestPathTrie, Basic)
 {
     ddwaf::exclusion::path_trie trie;
     trie.insert<std::string>({"path", "to", "object"});
     trie.insert<std::string_view>({"path", "to", "another", "object"});
 
+    auto it = trie.get_traverser();
     {
-        auto path = trie.find("path");
-        EXPECT_TRUE(path.is_valid());
-        EXPECT_FALSE(path.is_terminal());
+        auto path = it.descend("path");
+        EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.find("to");
-        EXPECT_TRUE(to.is_valid());
-        EXPECT_FALSE(to.is_terminal());
+        auto to = path.descend("to");
+        EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto object = to.find("object");
-        EXPECT_FALSE(object.is_valid());
-        EXPECT_TRUE(object.is_terminal());
+        auto object = to.descend("object");
+        EXPECT_EQ(object.get_state(), state::found);
     }
 
     {
-        auto subtrie = trie.find<std::string_view>({"path", "to", "another", "object"});
-        EXPECT_FALSE(subtrie.is_valid());
-        EXPECT_TRUE(subtrie.is_terminal());
+        auto an_obj = it.descend("path").descend("to").descend("another").descend("object");
+        EXPECT_EQ(an_obj.get_state(), state::found);
     }
 
     trie.insert<std::string>({"path", "to"});
     {
-        auto path = trie.find("path");
-        EXPECT_TRUE(path.is_valid());
-        EXPECT_FALSE(path.is_terminal());
+        auto path = trie.get_traverser().descend("path");
+        EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.find("to");
-        EXPECT_TRUE(to.is_valid());
-        EXPECT_TRUE(to.is_terminal());
+        auto to = path.descend("to");
+        EXPECT_EQ(to.get_state(), state::found);
 
-        auto object = to.find("object");
-        EXPECT_FALSE(object.is_valid());
-        EXPECT_TRUE(object.is_terminal());
+        auto object = to.descend("object");
+        EXPECT_EQ(object.get_state(), state::found);
+
+        auto object2 = to.descend("object2");
+        EXPECT_EQ(object2.get_state(), state::found);
     }
+}
 
-    {
-        auto path = trie.find("path");
-        EXPECT_TRUE(path.is_valid());
-        EXPECT_FALSE(path.is_terminal());
+TEST(TestPathTrie, Empty)
+{
+    ddwaf::exclusion::path_trie trie;
 
-        auto to = path.find("to");
-        EXPECT_TRUE(to.is_valid());
-        EXPECT_TRUE(to.is_terminal());
+    auto it = trie.get_traverser();
+    EXPECT_EQ(it.get_state(), state::not_found);
 
-        auto another = to.find("another");
-        EXPECT_TRUE(another.is_valid());
-        EXPECT_FALSE(another.is_terminal());
+    auto path = it.descend("path");
+    EXPECT_EQ(path.get_state(), state::not_found);
+}
 
-        auto object = to.find("object");
-        EXPECT_FALSE(object.is_valid());
-        EXPECT_TRUE(object.is_terminal());
-    }
+TEST(TestPathTrie, SetIsFullDomain)
+{
+    ddwaf::exclusion::path_trie trie;
+    trie.insert<std::string_view>({});
+
+    auto it = trie.get_traverser();
+    EXPECT_EQ(it.get_state(), state::found);
+
+    auto path = it.descend("path");
+    EXPECT_EQ(path.get_state(), state::found);
 }

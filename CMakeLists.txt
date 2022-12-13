@@ -103,6 +103,14 @@ set_target_properties(libddwaf_objects PROPERTIES
     CXX_EXTENSIONS NO
     POSITION_INDEPENDENT_CODE 1)
 
+
+try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp
+    CXX_STANDARD 17)
+if(NOT STDLIB_MAP_RECURSIVE)
+	target_compile_definitions(libddwaf_objects PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
+endif()
+
 target_include_directories(libddwaf_objects PUBLIC ${libddwaf_SOURCE_DIR}/include)
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src)
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/rule_processor)
