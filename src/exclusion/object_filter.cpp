@@ -10,97 +10,30 @@
 
 namespace ddwaf::exclusion {
 
-path_trie path_trie::find(std::string_view key) const
-{
-    if (!root) {
-        return {};
-    }
-    auto it = root->values.find(key);
-    if (it == root->values.end()) {
-        return {};
-    }
-    return path_trie{it->second};
-}
-
-template <typename T> path_trie path_trie::find(const std::vector<T> &path) const
-{
-    if (!root) {
-        return {};
-    }
-
-    std::shared_ptr<trie_node> current = root;
-    for (const auto &key : path) {
-        auto it = current->values.find(key);
-        if (it == current->values.end()) {
-            return {};
-        }
-        current = it->second;
-    }
-    return path_trie{current};
-}
-
-std::string_view path_trie::get_stored_string(std::string_view str)
-{
-    auto it = string_store.find(str);
-    if (it == string_store.end()) {
-        auto [new_it, res] = string_store.emplace(str);
-        return *new_it;
-    }
-    return *it;
-}
-
-template <typename T> void path_trie::insert(const std::vector<T> &path)
-{
-    if (!root) {
-        root = std::make_shared<trie_node>();
-    }
-
-    std::shared_ptr<trie_node> current = root;
-    for (const auto &key : path) {
-        // If the current node is terminal, the given path is already
-        // partially or totally in the trie.
-        if (current->terminal) {
-            break;
-        }
-
-        auto it = current->values.find(key);
-        if (it == current->values.end()) {
-            auto stored_key = get_stored_string(key);
-            const auto &[new_it, res] =
-                current->values.emplace(stored_key, std::make_shared<trie_node>());
-            current = new_it->second;
-
-        } else {
-            current = it->second;
-        }
-    }
-    current->terminal = true;
-}
-
-// Instantiations
-template path_trie path_trie::find<std::string>(const std::vector<std::string> &path) const;
-template void path_trie::insert<std::string>(const std::vector<std::string> &path);
-template path_trie path_trie::find<std::string_view>(
-    const std::vector<std::string_view> &path) const;
-template void path_trie::insert<std::string_view>(const std::vector<std::string_view> &path);
-
 namespace {
-void iterate_object(const path_trie &filter, const ddwaf_object *object,
+void iterate_object(const path_trie::traverser &filter, const ddwaf_object *object,
     std::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
 {
+    using state = path_trie::traverser::state;
     if (object == nullptr) {
         return;
     }
 
-    if (filter.is_terminal()) {
-        objects_to_exclude.emplace(object);
-        return;
+    {
+        const auto filter_state = filter.get_state();
+        if (filter_state == state::not_found) {
+            return;
+        }
+        if (filter_state == state::found) {
+            objects_to_exclude.emplace(object);
+            return;
+        }
     }
 
     if (object->type != DDWAF_OBJ_MAP) {
         return;
     }
-    std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie>> path_stack;
+    std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie::traverser>> path_stack;
     path_stack.push({object, 0, filter});
 
     while (!path_stack.empty()) {
@@ -125,18 +58,21 @@ void iterate_object(const path_trie &filter, const ddwaf_object *object,
 
             std::string_view key{
                 child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
-            auto child_trie = current_trie.find(key);
+            auto child_traverser = current_trie.descend(key);
+            const auto filter_state = child_traverser.get_state();
 
-            if (child_trie.is_terminal()) {
+            if (filter_state == state::found) {
                 objects_to_exclude.emplace(child);
                 continue;
             }
+            if (filter_state == state::not_found) {
+                continue;
+            }
 
-            if (child->type == DDWAF_OBJ_MAP && child_trie.is_valid() &&
-                path_stack.size() < limits.max_container_depth) {
+            if (child->type == DDWAF_OBJ_MAP && path_stack.size() < limits.max_container_depth) {
                 ++current_index;
                 found_node = true;
-                path_stack.push({child, 0, child_trie});
+                path_stack.push({child, 0, child_traverser});
                 break;
             }
         }
@@ -169,7 +105,7 @@ std::unordered_set<const ddwaf_object *> object_filter::match(
         if (object == nullptr) {
             continue;
         }
-        iterate_object(filter, object, objects_to_exclude, limits_);
+        iterate_object(filter.get_traverser(), object, objects_to_exclude, limits_);
 
         cache.emplace(target);
     }
