@@ -1060,7 +1060,7 @@ bool PWTransformer::transformRemoveComments(ddwaf_object *parameter, bool readOn
 
                     } else if (type == CommentType::C &&
                                ((token = memchr(&array[read], '*', remaining)) != nullptr)) {
-                        read = static_cast<uint64_t>(reinterpret_cast<char *>(token) - array);
+                        read = static_cast<uint64_t>(static_cast<char *>(token) - array);
                         if (read + 1 < length && array[read + 1] == '/') {
                             read += 2;
                             break;

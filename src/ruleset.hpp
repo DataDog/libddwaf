@@ -77,12 +77,14 @@ struct ruleset {
     ddwaf::manifest manifest;
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
-    // Rules are ordered by ID
+
+    // Rules are ordered by rule.id
     std::unordered_map<std::string, rule::ptr> rules;
 
-    // Collections
+    // Both collections are ordered by rule.type
     std::unordered_map<std::string_view, priority_collection> priority_collections;
     std::unordered_map<std::string_view, collection> collections;
+
     ddwaf::rule_data::dispatcher dispatcher;
 
     std::unordered_map<std::string_view, std::set<rule::ptr>> rules_by_type;

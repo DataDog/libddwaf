@@ -15,8 +15,19 @@
 
 namespace ddwaf {
 
+// Collections are used to organize rules depending on their rule.type field. The overall goal
+// behind the collection concept is to group rules of a similar nature and only evaluate as many of
+// those rules as required to satisfy the criteria defined by the type of collection. For example,
+// regular collections stop evaluating rules when there is one match, while priority collections
+// stop evaluating rules when all the actions available in the collection have been seen at least
+// once (through a match). Priority collections only store rules with actions while regular
+// collections only store rules without actions, as a consequence it is possible for both a regular
+// collection and a priority collection to exist for the same rule type. Finally, as the suggests,
+// priority collections are usually evaluated before regular collections.
+
 // The collection cache is shared by both priority and regular collections,
-// this ensures that regular collections aren't processed when the respective
+// this ensures that regular collections for which there is an equivalent
+// priority collection of the same type, aren't processed when the respective
 // priority collection has already had a match.
 struct collection_cache {
     bool result{false};
@@ -38,9 +49,9 @@ public:
 
     virtual void insert(rule::ptr rule) { rules_.emplace_back(std::move(rule)); }
 
-    virtual void match(std::vector<event> &events,
-        std::unordered_set<std::string_view> &seen_actions, const object_store &store,
-        const ddwaf::manifest &manifest, collection_cache &cache,
+    virtual void match(std::vector<event> &events /* output */,
+        std::unordered_set<std::string_view> &seen_actions /* input & output */,
+        const object_store &store, const ddwaf::manifest &manifest, collection_cache &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
         ddwaf::timer &deadline) const;
@@ -66,7 +77,8 @@ public:
         rules_.emplace_back(std::move(rule));
     }
 
-    void match(std::vector<event> &events, std::unordered_set<std::string_view> &seen_actions,
+    void match(std::vector<event> &events /* output */,
+        std::unordered_set<std::string_view> &seen_actions /* input & output */,
         const object_store &store, const ddwaf::manifest &manifest, collection_cache &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
