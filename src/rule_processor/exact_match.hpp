@@ -22,6 +22,10 @@ public:
     explicit exact_match(std::vector<std::string> &&data);
     explicit exact_match(const rule_data_type &data);
     ~exact_match() override = default;
+    exact_match(const exact_match &) = default;
+    exact_match(exact_match &&) = default;
+    exact_match &operator=(const exact_match &) = default;
+    exact_match &operator=(exact_match &&) = default;
 
     std::optional<event::match> match(std::string_view str) const override;
     std::string_view name() const override { return "exact_match"; }

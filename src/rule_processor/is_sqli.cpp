@@ -4,24 +4,26 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <array>
 #include <libinjection.h>
 #include <rule_processor/is_sqli.hpp>
 #include <utils.h>
 
 namespace ddwaf::rule_processor {
 
-std::optional<event::match> is_sqli::match(std::string_view str) const
+std::optional<event::match> is_sqli::match(std::string_view pattern) const
 {
-    if (str.empty() || str.data() == nullptr) {
-        return std::nullopt;
-    }
-    // The mandated length is 8
-    char fingerprint[16] = {0};
-    if (!libinjection_sqli(str.data(), str.size(), fingerprint)) {
+    if (pattern.empty() || pattern.data() == nullptr) {
         return std::nullopt;
     }
 
-    return make_event(str, fingerprint);
+    // NOLINTNEXTLINE(hicpp-avoid-c-arrays)
+    std::array<char, fingerprint_length> fingerprint{0};
+    if (libinjection_sqli(pattern.data(), pattern.size(), fingerprint.data()) == 0) {
+        return std::nullopt;
+    }
+
+    return make_event(pattern, fingerprint.data());
 }
 
 } // namespace ddwaf::rule_processor

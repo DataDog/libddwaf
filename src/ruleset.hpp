@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <collection.hpp>
 #include <exclusion/input_filter.hpp>
 #include <exclusion/rule_filter.hpp>
 #include <manifest.hpp>
@@ -22,11 +23,16 @@ struct ruleset {
     void insert_rule(rule::ptr rule)
     {
         rules.emplace(rule->id, rule);
-        collections[rule->type].emplace_back(rule);
+        if (rule->actions.empty()) {
+            collections[rule->type].insert(rule);
+        } else {
+            priority_collections[rule->type].insert(rule);
+        }
         rules_by_type[rule->type].emplace(rule);
         rules_by_category[rule->category].emplace(rule);
     }
 
+    // TODO use unordered sets for these functions
     std::set<rule::ptr> get_rules_by_type(std::string_view type) const
     {
         auto it = rules_by_type.find(type);
@@ -71,10 +77,14 @@ struct ruleset {
     ddwaf::manifest manifest;
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
-    // Rules are ordered by ID
+
+    // Rules are ordered by rule.id
     std::unordered_map<std::string, rule::ptr> rules;
-    // Collections are ordered by rule.type
-    std::unordered_map<std::string, std::vector<rule::ptr>> collections;
+
+    // Both collections are ordered by rule.type
+    std::unordered_map<std::string_view, priority_collection> priority_collections;
+    std::unordered_map<std::string_view, collection> collections;
+
     ddwaf::rule_data::dispatcher dispatcher;
 
     std::unordered_map<std::string_view, std::set<rule::ptr>> rules_by_type;

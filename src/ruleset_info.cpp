@@ -25,21 +25,23 @@ void ruleset_info::insert_error(std::string_view rule_id, std::string_view error
         return;
     }
 
-    ddwaf_object *rule_array, id_str;
+    ddwaf_object *rule_array;
+    ddwaf_object id_str;
 
     auto it = error_obj_cache.find(error);
     if (it == error_obj_cache.end()) {
         ddwaf_object tmp_array;
         ddwaf_object_array(&tmp_array);
-        bool res = ddwaf_object_map_addl(&info->errors, error.data(), error.size(), &tmp_array);
+        const bool res =
+            ddwaf_object_map_addl(&info->errors, error.data(), error.size(), &tmp_array);
         if (!res) {
             return;
         }
 
         // Get the map element we just added
-        uint64_t index = info->errors.nbEntries - 1;
+        const uint64_t index = info->errors.nbEntries - 1;
         rule_array = &info->errors.array[index];
-        std::string_view key(rule_array->parameterName, rule_array->parameterNameLength);
+        const std::string_view key(rule_array->parameterName, rule_array->parameterNameLength);
         error_obj_cache[key] = index;
     } else {
         rule_array = &info->errors.array[it->second];

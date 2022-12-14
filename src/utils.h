@@ -12,6 +12,10 @@
 #include <optional>
 #include <unordered_map>
 
+// Convert numbers to strings
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
 
 size_t find_string_cutoff(
@@ -21,7 +25,9 @@ size_t find_string_cutoff(
 #define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
 #define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
 
+
 namespace ddwaf::object {
+
 inline bool is_container(const ddwaf_object *obj)
 {
     return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
@@ -36,4 +42,5 @@ inline bool is_scalar(const ddwaf_object *obj)
 {
     return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
 }
+
 } // namespace ddwaf::object

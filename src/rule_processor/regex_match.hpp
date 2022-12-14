@@ -15,12 +15,16 @@ namespace ddwaf::rule_processor {
 
 class regex_match : public base {
 public:
-    regex_match(const std::string &regex_str, std::size_t minLength, bool caseSensitive);
-    ~regex_match() = default;
+    regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive);
+    ~regex_match() override = default;
+    regex_match(const regex_match &) = delete;
+    regex_match(regex_match &&) = default;
+    regex_match &operator=(const regex_match &) = delete;
+    regex_match &operator=(regex_match &&) = default;
 
-    std::string_view to_string() const override { return regex->pattern(); }
-    std::string_view name() const override { return "match_regex"; }
-    std::optional<event::match> match(std::string_view pattern) const override;
+    [[nodiscard]] std::string_view to_string() const override { return regex->pattern(); }
+    [[nodiscard]] std::string_view name() const override { return "match_regex"; }
+    [[nodiscard]] std::optional<event::match> match(std::string_view pattern) const override;
 
 protected:
     static constexpr int max_match_count = 16;

@@ -13,10 +13,6 @@
 #include <log.hpp>
 #include <utils.h>
 
-// Convert numbers to strings
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
-
 extern "C" {
 ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
 {
