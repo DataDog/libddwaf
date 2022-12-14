@@ -12,24 +12,6 @@
 
 namespace ddwaf::object {
 
-namespace {
-bool is_container(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
-}
-
-bool is_map(const ddwaf_object *obj)
-{
-    return obj != nullptr && obj->type == DDWAF_OBJ_MAP && obj->array != nullptr;
-}
-
-bool is_scalar(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
-}
-
-} // namespace
-
 template <typename T>
 iterator_base<T>::iterator_base(
     const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)

@@ -103,6 +103,58 @@ public:
         trie_node const *const cur_node{};
     };
 
+    class multitraverser {
+    public:
+        explicit multitraverser(trie_node const *root) : traversers_({traverser{root}}) {}
+        [[nodiscard]] multitraverser descend(std::string_view next_key) const
+        {
+            std::vector<traverser> new_traversers;
+            new_traversers.reserve(traversers_.size());
+
+            for (const auto &t : traversers_) {
+                {
+                    auto new_t = t.descend(next_key);
+                    auto new_state = new_t.get_state();
+
+                    if (new_state == traverser::state::found) {
+                        return multitraverser({new_t});
+                    }
+
+                    if (new_state != traverser::state::not_found) {
+                        new_traversers.emplace_back(new_t);
+                    }
+                }
+
+                {
+                    auto new_t = t.descend("*");
+                    auto new_state = new_t.get_state();
+
+                    if (new_state == traverser::state::found) {
+                        return multitraverser({new_t});
+                    }
+
+                    if (new_state != traverser::state::not_found) {
+                        new_traversers.emplace_back(new_t);
+                    }
+                }
+            }
+
+            return multitraverser(std::move(new_traversers));
+        }
+
+        [[nodiscard]] traverser::state get_state() const
+        {
+            if (traversers_.empty()) { return traverser::state::not_found; }
+            if (traversers_.size() == 1) { return traversers_.back().get_state(); }
+
+            return traverser::state::intermediate_node;
+        }
+    protected:
+        explicit multitraverser(std::vector<traverser> &&traversers): traversers_(traversers) {}
+
+        std::vector<traverser> traversers_;
+    };
+
     template <typename StringType,
         typename = std::enable_if<std::is_constructible<std::string, StringType>::value>>
     void insert(const std::vector<StringType> &path)
@@ -139,6 +191,15 @@ public:
         return traverser{&root.value()};
     }
 
+    [[nodiscard]] multitraverser get_multitraverser() const
+    {
+        if (!root) {
+            return multitraverser{nullptr};
+        }
+        return multitraverser{&root.value()};
+    }
+
+
 private:
     std::string_view intern_string(std::string_view orig_sv)
     {
@@ -168,6 +229,8 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
     case state::intermediate_node:
         return os << std::string_view{"intermediate_node"};
     }
+    // Suppress warning
+    return os;
 }
 
 class object_filter {

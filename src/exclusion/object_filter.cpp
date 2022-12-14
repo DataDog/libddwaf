@@ -7,11 +7,12 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <log.hpp>
+#include <utils.h>
 
 namespace ddwaf::exclusion {
 
 namespace {
-void iterate_object(const path_trie::traverser &filter, const ddwaf_object *object,
+void iterate_object(const path_trie::multitraverser &filter, const ddwaf_object *object,
     std::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
 {
     using state = path_trie::traverser::state;
@@ -33,12 +34,12 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
     if (object->type != DDWAF_OBJ_MAP) {
         return;
     }
-    std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie::traverser>> path_stack;
+    std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie::multitraverser>> path_stack;
     path_stack.push({object, 0, filter});
 
     while (!path_stack.empty()) {
         auto &[current_object, current_index, current_trie] = path_stack.top();
-        if (current_object->type != DDWAF_OBJ_MAP) {
+        if (!object::is_map(current_object)) {
             DDWAF_DEBUG("This is a bug, the object in the stack is not a map");
             path_stack.pop();
             continue;
@@ -105,7 +106,7 @@ std::unordered_set<const ddwaf_object *> object_filter::match(
         if (object == nullptr) {
             continue;
         }
-        iterate_object(filter.get_traverser(), object, objects_to_exclude, limits_);
+        iterate_object(filter.get_multitraverser(), object, objects_to_exclude, limits_);
 
         cache.emplace(target);
     }
