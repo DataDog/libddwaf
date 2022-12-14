@@ -4,10 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef IPWRuleTransformer_h
-#define IPWRuleTransformer_h
+#pragma once
 
 #include <functional>
+#include <string_view>
 
 #include <ddwaf.h>
 
@@ -79,4 +79,3 @@ public:
     static bool doesNeedTransform(
         const std::vector<PW_TRANSFORM_ID> &transformIDs, ddwaf_object *parameter);
 };
-#endif /* IPWRuleTransformer_h */

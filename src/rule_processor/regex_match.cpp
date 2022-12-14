@@ -4,18 +4,21 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <array>
 #include <exception.hpp>
 #include <rule_processor/regex_match.hpp>
 
 namespace ddwaf::rule_processor {
 
-regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bool caseSensitive)
+regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive)
     : min_length(minLength)
 {
+    constexpr unsigned regex_max_mem = 512 * 1024;
+
     re2::RE2::Options options;
-    options.set_max_mem(512 * 1024);
+    options.set_max_mem(regex_max_mem);
     options.set_log_errors(false);
-    options.set_case_sensitive(caseSensitive);
+    options.set_case_sensitive(case_sensitive);
 
     regex = std::make_unique<re2::RE2>(regex_str, options);
 
@@ -24,21 +27,21 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
     }
 }
 
-std::optional<event::match> regex_match::match(std::string_view str) const
+std::optional<event::match> regex_match::match(std::string_view pattern) const
 {
-    if (str.data() == nullptr || !regex->ok() || str.size() < min_length) {
+    if (pattern.data() == nullptr || !regex->ok() || pattern.size() < min_length) {
         return std::nullopt;
     }
 
-    const re2::StringPiece ref(str.data(), str.size());
-    re2::StringPiece match[max_match_count];
-    bool didMatch = regex->Match(ref, 0, str.size(), re2::RE2::UNANCHORED, match, 1);
+    const re2::StringPiece ref(pattern.data(), pattern.size());
+    std::array<re2::StringPiece, max_match_count> match;
+    bool didMatch = regex->Match(ref, 0, pattern.size(), re2::RE2::UNANCHORED, match.data(), 1);
 
     if (!didMatch) {
         return std::nullopt;
     }
 
-    return make_event(str, {match[0].data(), match[0].size()});
+    return make_event(pattern, {match[0].data(), match[0].size()});
 }
 
 } // namespace ddwaf::rule_processor

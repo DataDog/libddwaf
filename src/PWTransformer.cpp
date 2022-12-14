@@ -24,14 +24,16 @@ static bool decodeBase64(char *array, uint64_t &length);
 bool PWTransformer::runTransform(
     ddwaf_object *parameter, const std::function<transformer> &transformer, bool readOnly)
 {
-    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == nullptr)
+    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == nullptr) {
         return false;
+    }
 
     uint64_t newLength = parameter->nbEntries;
-    bool success = transformer((char *)parameter->stringValue, newLength, readOnly);
+    bool const success = transformer((char *)parameter->stringValue, newLength, readOnly);
 
-    if (!readOnly)
+    if (!readOnly) {
         parameter->nbEntries = newLength;
+    }
 
     return success;
 }
@@ -48,13 +50,15 @@ bool PWTransformer::transformLowerCase(ddwaf_object *parameter, bool readOnly)
 
             //  If we're checking whether we need to do change, finding such a char mean we need to
             //  do so (we return true if we need to update)
-            if (readOnly)
+            if (readOnly) {
                 return pos != length;
+            }
 
             //  If we're mutating the string, then we have the starting offset
             for (; pos < length; ++pos) {
-                if (array[pos] >= 'A' && array[pos] <= 'Z')
+                if (array[pos] >= 'A' && array[pos] <= 'Z') {
                     array[pos] += 'a' - 'A';
+                }
             }
 
             return true;
@@ -69,18 +73,20 @@ bool PWTransformer::transformNoNull(ddwaf_object *parameter, bool readOnly)
         [](char *array, uint64_t &length, bool readOnly) -> bool {
             // First loop looking for the first null char
             uint64_t read = 0;
-            for (; read < length && array[read]; ++read) {}
+            for (; read < length && array[read] != '\0'; ++read) {}
 
             //  If we're checking whether we need to do change, finding such a char mean we need to
             //  do so (we return true if we need to update)
-            if (readOnly)
+            if (readOnly) {
                 return read != length;
+            }
 
             //  If we're mutating the string, then we have the starting offset
             uint64_t write = read;
             for (; read < length; ++read) {
-                if (!array[read])
+                if (array[read] == 0) {
                     continue;
+                }
 
                 array[write++] = array[read];
             }
@@ -106,8 +112,9 @@ bool PWTransformer::transformCompressWhiteSpace(ddwaf_object *parameter, bool re
 
             //  If we're checking whether we need to do change, finding such a chain mean we need to
             //  do so (we return true if we need to update)
-            if (readOnly)
+            if (readOnly) {
                 return read < length;
+            }
 
             //  If we're mutating the string, then we have the starting offset
             uint64_t write = read;
@@ -119,8 +126,9 @@ bool PWTransformer::transformCompressWhiteSpace(ddwaf_object *parameter, bool re
                     while (++read < length && array[read] == ' ') {}
 
                     // Should we run the end of the loop?
-                    if (read == length)
+                    if (read == length) {
                         break;
+                    }
                 }
 
                 array[write++] = array[read++];
@@ -138,8 +146,9 @@ bool PWTransformer::transformCompressWhiteSpace(ddwaf_object *parameter, bool re
 
 bool PWTransformer::transformLength(ddwaf_object *parameter, bool readOnly)
 {
-    if (parameter->type != DDWAF_OBJ_STRING)
+    if (parameter->type != DDWAF_OBJ_STRING) {
         return false;
+    }
 
     // We simply convert the string into a ddwaf_object with its length
     if (!readOnly) {
@@ -160,7 +169,8 @@ bool PWTransformer::transformNormalize(ddwaf_object *parameter, bool readOnly)
     return runTransform(
         parameter,
         [](char *array, uint64_t &length, bool readOnly) -> bool {
-            uint64_t read = 0, write = 0;
+            uint64_t read = 0;
+            uint64_t write = 0;
 
             // Our algorithm is quite simple: we look for `./`. If we find that, we check if the
             // preceeding char is:
@@ -176,16 +186,18 @@ bool PWTransformer::transformNormalize(ddwaf_object *parameter, bool readOnly)
                 // We handle both the `./script` and `bla/./bla` here by ignoring the next two
                 // characters
                 if (read == 0 || array[read - 1] == '/') {
-                    if (readOnly)
+                    if (readOnly) {
                         return true;
+                    }
 
                     read += 2;
                 }
 
                 // We handle /../ by moving the write head back to the previous `/`
                 else if (read > 1 && array[read - 1] == '.' && array[read - 2] == '/') {
-                    if (readOnly)
+                    if (readOnly) {
                         return true;
+                    }
 
                     // The write head already wrote /., we need to move it back by three
                     //  MIN make sure we can't underflow although I don't really see how that could
@@ -205,8 +217,9 @@ bool PWTransformer::transformNormalize(ddwaf_object *parameter, bool readOnly)
                 }
             }
 
-            if (readOnly)
+            if (readOnly) {
                 return false;
+            }
 
             if (write < length) {
                 array[write] = 0;
@@ -225,8 +238,9 @@ bool PWTransformer::transformNormalize(ddwaf_object *parameter, bool readOnly)
 bool PWTransformer::transformNormalizeWin(ddwaf_object *parameter, bool readOnly)
 {
     // This sanitization is usually handled by runTransform but we want to chain two transforms here
-    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == nullptr)
+    if (parameter->type != DDWAF_OBJ_STRING || parameter->stringValue == nullptr) {
         return false;
+    }
 
     // Look for any backslash
     uint64_t pos = 0;
@@ -234,14 +248,16 @@ bool PWTransformer::transformNormalizeWin(ddwaf_object *parameter, bool readOnly
 
     // If it found one, then that mean we will need to transform this string
     if (pos < parameter->nbEntries) {
-        if (readOnly)
+        if (readOnly) {
             return true;
+        }
 
         // That's quite a blunt conversion but that's what ModSecurity is doing so ¯\_(ツ)_/¯
         //  https://github.com/SpiderLabs/ModSecurity/blob/b66224853b4e9d30e0a44d16b29d5ed3842a6b11/src/actions/transformations/normalise_path.cc#L64
         do {
-            if (parameter->stringValue[pos] == '\\')
+            if (parameter->stringValue[pos] == '\\') {
                 ((char *)parameter->stringValue)[pos] = '/';
+            }
 
         } while (++pos < parameter->nbEntries);
     }
@@ -267,20 +283,22 @@ bool PWTransformer::transformDecodeURL(ddwaf_object *parameter, bool readOnly, b
             // Fast forward to a space or an hex encode char
             for (; read < length && array[read] != '+'; ++read) {
                 // Is there an hex encoded char?
-                if (read + 2 < length && array[read] == '%' && isxdigit(array[read + 1]) &&
-                    isxdigit(array[read + 2]))
+                if (read + 2 < length && array[read] == '%' && (isxdigit(array[read + 1]) != 0) &&
+                    (isxdigit(array[read + 2]) != 0)) {
                     break;
+                }
 
                 if (readIIS && read + 5 < length && array[read] == '%' &&
-                    (array[read + 1] | 0x20) == 'u' && isxdigit(array[read + 2]) &&
-                    isxdigit(array[read + 3]) && isxdigit(array[read + 4]) &&
-                    isxdigit(array[read + 5])) {
+                    (array[read + 1] | 0x20) == 'u' && (isxdigit(array[read + 2]) != 0) &&
+                    (isxdigit(array[read + 3]) != 0) && (isxdigit(array[read + 4]) != 0) &&
+                    (isxdigit(array[read + 5]) != 0)) {
                     break;
                 }
             }
 
-            if (readOnly)
+            if (readOnly) {
                 return read != length;
+            }
 
             uint64_t write = read;
 
@@ -290,23 +308,23 @@ bool PWTransformer::transformDecodeURL(ddwaf_object *parameter, bool readOnly, b
                     read += 1;
                 } else if (array[read] == '%') {
                     // Normal URL encoding
-                    if (read + 2 < length && isxdigit(array[read + 1]) &&
-                        isxdigit(array[read + 2])) {
+                    if (read + 2 < length && (isxdigit(array[read + 1]) != 0) &&
+                        (isxdigit(array[read + 2]) != 0)) {
                         // TODO: we'll need to perform normalization here too
                         const uint8_t highBits = fromHex(array[read + 1]);
                         const uint8_t lowBits = fromHex(array[read + 2]);
-                        array[write++] = (char)(highBits << 4u | lowBits);
+                        array[write++] = (char)(highBits << 4U | lowBits);
                         read += 3;
                     }
                     // IIS-encoded wide characters
                     else if (readIIS && read + 5 < length && (array[read + 1] | 0x20) == 'u' &&
-                             isxdigit(array[read + 2]) && isxdigit(array[read + 3]) &&
-                             isxdigit(array[read + 4]) && isxdigit(array[read + 5])) {
+                             (isxdigit(array[read + 2]) != 0) && (isxdigit(array[read + 3]) != 0) &&
+                             (isxdigit(array[read + 4]) != 0) && (isxdigit(array[read + 5]) != 0)) {
                         // Rebuild the codepoint from the hex
-                        const uint16_t codepoint =
-                            (uint16_t)(fromHex(array[read + 2]) << 12u |
-                                       fromHex(array[read + 3]) << 8u |
-                                       fromHex(array[read + 4]) << 4u | fromHex(array[read + 5]));
+                        const auto codepoint =
+                            (uint16_t)(fromHex(array[read + 2]) << 12U |
+                                       fromHex(array[read + 3]) << 8U |
+                                       fromHex(array[read + 4]) << 4U | fromHex(array[read + 5]));
 
                         read += 6;
 
@@ -346,8 +364,9 @@ bool PWTransformer::transformDecodeCSS(ddwaf_object *parameter, bool readOnly)
             // As soon as we find a backslash, we know the string will need to change somehow
             for (; read < length && array[read] != '\\'; ++read) {}
 
-            if (readOnly)
+            if (readOnly) {
                 return read != length;
+            }
 
             uint64_t write = read;
 
@@ -362,13 +381,13 @@ bool PWTransformer::transformDecodeCSS(ddwaf_object *parameter, bool readOnly)
 
                 // Count the number of hex characters following the \, with a maximum of 6
                 uint8_t countHex = 0;
-                while (
-                    countHex < 6 && read + countHex < length && isxdigit(array[read + countHex])) {
+                while (countHex < 6 && read + countHex < length &&
+                       (isxdigit(array[read + countHex]) != 0)) {
                     countHex += 1;
                 }
 
                 // We need to decode
-                if (countHex) {
+                if (countHex != 0u) {
                     // Turn the hex sequence into an uint32_t
                     uint32_t assembledValue = 0;
                     for (uint8_t count = countHex; count != 0; --count) {
@@ -382,15 +401,17 @@ bool PWTransformer::transformDecodeCSS(ddwaf_object *parameter, bool readOnly)
                         ddwaf::utf8::write_codepoint(assembledValue, &array[write], read - write);
 
                     // If a whitespace follow an escape, it's swallowed
-                    if (read < length && isspace(array[read]))
+                    if (read < length && (isspace(array[read]) != 0)) {
                         read += 1;
+                    }
                 }
                 // Simple escape
                 else if (read < length) {
                     // A \n following a \\ is ignored
                     const char nextChar = array[read++];
-                    if (nextChar != '\n')
+                    if (nextChar != '\n') {
                         array[write++] = nextChar;
+                    }
                 }
             }
 
@@ -414,8 +435,9 @@ bool PWTransformer::transformDecodeJS(ddwaf_object *parameter, bool readOnly)
             // As soon as we find a backslash, we know the string will need to change somehow
             for (; read < length && array[read] != '\\'; ++read) {}
 
-            if (readOnly)
+            if (readOnly) {
                 return read + 1 < length;
+            }
 
             uint64_t write = read;
             // There are three kinds of escape in JS:
@@ -441,7 +463,8 @@ bool PWTransformer::transformDecodeJS(ddwaf_object *parameter, bool readOnly)
                 // Hex sequence, we're fairly permissive and invalid hex sequences are simply
                 // ignored
                 if (escapeControl == 'x') {
-                    if (read + 1 < length && isxdigit(array[read]) && isxdigit(array[read + 1])) {
+                    if (read + 1 < length && (isxdigit(array[read]) != 0) &&
+                        (isxdigit(array[read + 1]) != 0)) {
                         array[write++] =
                             (char)(fromHex(array[read]) << 4 | fromHex(array[read + 1]));
                         read += 2;
@@ -451,10 +474,11 @@ bool PWTransformer::transformDecodeJS(ddwaf_object *parameter, bool readOnly)
                 // Convert UTF-16-BE to UTF-8
                 else if (escapeControl == 'u') {
                     // Check that the next four bytes are hex
-                    if (read + 3 < length && isxdigit(array[read]) && isxdigit(array[read + 1]) &&
-                        isxdigit(array[read + 2]) && isxdigit(array[read + 3])) {
+                    if (read + 3 < length && (isxdigit(array[read]) != 0) &&
+                        (isxdigit(array[read + 1]) != 0) && (isxdigit(array[read + 2]) != 0) &&
+                        (isxdigit(array[read + 3]) != 0)) {
                         // Assume UTF-16 big endian as this is what Node is giving me
-                        const uint16_t word =
+                        const auto word =
                             (uint16_t)(fromHex(array[read]) << 12 | fromHex(array[read + 1]) << 8 |
                                        fromHex(array[read + 2]) << 4 | fromHex(array[read + 3]));
                         read += 4;
@@ -465,22 +489,22 @@ bool PWTransformer::transformDecodeJS(ddwaf_object *parameter, bool readOnly)
                         }
                         // The word is a surrogate, lets see if the other half is there
                         else if (read + 5 < length && array[read] == '\\' &&
-                                 array[read + 1] == 'u' && isxdigit(array[read + 2]) &&
-                                 isxdigit(array[read + 3]) && isxdigit(array[read + 4]) &&
-                                 isxdigit(array[read + 5])) {
-                            const uint16_t lowSurrogate =
-                                (uint16_t)(fromHex(array[read + 2]) << 12 |
-                                           fromHex(array[read + 3]) << 8 |
-                                           fromHex(array[read + 4]) << 4 |
-                                           fromHex(array[read + 5]));
+                                 array[read + 1] == 'u' && (isxdigit(array[read + 2]) != 0) &&
+                                 (isxdigit(array[read + 3]) != 0) &&
+                                 (isxdigit(array[read + 4]) != 0) &&
+                                 (isxdigit(array[read + 5]) != 0)) {
+                            const auto lowSurrogate = (uint16_t)(fromHex(array[read + 2]) << 12 |
+                                                                 fromHex(array[read + 3]) << 8 |
+                                                                 fromHex(array[read + 4]) << 4 |
+                                                                 fromHex(array[read + 5]));
 
                             // Correct surrogate sequence?
                             if (lowSurrogate >= 0xdc00 && lowSurrogate <= 0xdfff) {
                                 // Good, now let's rebuild the codepoint
                                 // Implementing the algorithm from
                                 // https://en.wikipedia.org/wiki/UTF-16#Examples
-                                uint32_t codepoint =
-                                    0x10000u + ((word - 0xd800u) << 10u) + (lowSurrogate - 0xdc00u);
+                                uint32_t const codepoint =
+                                    0x10000U + ((word - 0xd800U) << 10U) + (lowSurrogate - 0xdc00U);
                                 write += ddwaf::utf8::codepoint_to_bytes(codepoint, &array[write]);
                                 read += 6;
                             }
@@ -551,8 +575,9 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object *parameter, bool readOnly)
         parameter,
         [](char *array, uint64_t &length, bool readOnly) -> bool {
             // If the string is too short
-            if (length < 3)
-                return readOnly ? 0 : length;
+            if (length < 3) {
+                return readOnly ? false : length != 0u;
+            }
 
             uint64_t read = 0;
 
@@ -568,12 +593,12 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object *parameter, bool readOnly)
                 for (; read < length - 2; ++read) {
                     if (array[read] == '&' && array[read + 1] == '#') {
                         if (array[read + 2] == 'x' || array[read + 2] == 'X') {
-                            if (read + 3 < length && isxdigit(array[read + 3])) {
+                            if (read + 3 < length && (isxdigit(array[read + 3]) != 0)) {
                                 return true;
                             }
 
                             read += 1;
-                        } else if (isdigit(array[read + 2])) {
+                        } else if (isdigit(array[read + 2]) != 0) {
                             return true;
                         }
 
@@ -584,8 +609,7 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object *parameter, bool readOnly)
 
             // We skip ahead looking for a `&`. That's not enough to know for sure if we need to
             // edit but it's a decent shortcut nonetheless
-            for (read = 0; read < length && array[read] != '&'; ++read)
-                ;
+            for (read = 0; read < length && array[read] != '&'; ++read) { ; }
 
             uint64_t write = read;
 
@@ -604,34 +628,34 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object *parameter, bool readOnly)
 
                     // Hexadecimal codepoint
                     if (read < length - 1 && (array[read] == 'x' || array[read] == 'X') &&
-                        isxdigit(array[read + 1])) {
+                        (isxdigit(array[read + 1]) != 0)) {
                         read += 1; // Skip the x
 
                         // Compute the codepoint. We need to compute an arbitrary number of hex
                         // chars because browsers do too :(
-                        while (read < length && isxdigit(array[read])) {
+                        while (read < length && (isxdigit(array[read]) != 0)) {
                             codePoint <<= 4;
                             codePoint |= fromHex(array[read++]);
 
                             // If we go out of range, move the read head to the end and abort
                             // immediately. We don't want to risk an overflow
                             if (codePoint > 0x10ffff) {
-                                for (; read < length && isxdigit(array[read]); read += 1) {}
+                                for (; read < length && (isxdigit(array[read]) != 0); read += 1) {}
                             }
                         }
                     }
                     // Numeric codepoint
-                    else if (read < length && isdigit(array[read])) {
+                    else if (read < length && (isdigit(array[read]) != 0)) {
                         // Compute the codepoint. We need to compute an arbitrary number of digits
                         // because browsers do too :(
-                        while (read < length && isdigit(array[read])) {
+                        while (read < length && (isdigit(array[read]) != 0)) {
                             codePoint *= 10;
                             codePoint += (uint32_t)array[read++] - '0';
 
                             // If we go out of range, move the read head to the end and abort
                             // immediately. We don't want to risk an overflow
                             if (codePoint > 0x10ffff) {
-                                for (; read < length && isdigit(array[read]); read += 1) {}
+                                for (; read < length && (isdigit(array[read]) != 0); read += 1) {}
                             }
                         }
                     }
@@ -645,11 +669,12 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object *parameter, bool readOnly)
                     // We extracted the codepoint (or bailed out). Now, we can transcribe it
                     write += ddwaf::utf8::write_codepoint(codePoint, &array[write], read - write);
 
-                    if (read < length && array[read] == ';')
+                    if (read < length && array[read] == ';') {
                         read += 1;
+                    }
                 }
                 // Named character references
-                else if (isalnum(array[read])) {
+                else if (isalnum(array[read]) != 0) {
                     const uint64_t lengthLeft = length - read;
                     const char oldWriteChar = array[write];
 
@@ -676,8 +701,9 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object *parameter, bool readOnly)
                 }
             }
 
-            if (readOnly)
+            if (readOnly) {
                 return false;
+            }
 
             if (write < length) {
                 array[write] = 0;
@@ -696,12 +722,13 @@ bool PWTransformer::transformDecodeBase64RFC4648(ddwaf_object *parameter, bool r
     return runTransform(
         parameter,
         [](char *array, uint64_t &length, bool readOnly) -> bool {
-            if (!readOnly)
+            if (!readOnly) {
                 return decodeBase64(array, length);
+            }
 
             // All characters must be valid
             for (uint64_t pos = 0; pos < length; ++pos) {
-                if (!isalnum(array[pos]) && array[pos] != '+' && array[pos] != '/') {
+                if ((isalnum(array[pos]) == 0) && array[pos] != '+' && array[pos] != '/') {
                     // If it's not a valid base64, it must be the trailing =
                     if (array[pos] == '=') {
                         uint64_t equalCount = 0;
@@ -712,8 +739,9 @@ bool PWTransformer::transformDecodeBase64RFC4648(ddwaf_object *parameter, bool r
                         // The = must go to the end, and there musn't be too many
                         const uint64_t maxPaddingNeeded = 4 - (pos % 4);
                         if (pos + equalCount == length && equalCount <= 3 &&
-                            equalCount <= maxPaddingNeeded)
+                            equalCount <= maxPaddingNeeded) {
                             continue;
+                        }
                     }
 
                     // Anything wrong -> nope
@@ -731,13 +759,14 @@ bool PWTransformer::transformDecodeBase64RFC2045(ddwaf_object *parameter, bool r
     return runTransform(
         parameter,
         [](char *array, uint64_t &length, bool readOnly) -> bool {
-            if (!readOnly)
+            if (!readOnly) {
                 return decodeBase64(array, length);
+            }
 
             uint64_t validChars = 0;
             for (uint64_t pos = 0; pos < length; ++pos) {
                 // Something outside the valid range?
-                if (!isalnum(array[pos]) && array[pos] != '+' && array[pos] != '/') {
+                if ((isalnum(array[pos]) == 0) && array[pos] != '+' && array[pos] != '/') {
                     // Let's count the equals
                     if (array[pos] == '=') {
                         uint64_t equalCount = 0;
@@ -749,13 +778,13 @@ bool PWTransformer::transformDecodeBase64RFC2045(ddwaf_object *parameter, bool r
                         // Otherwise we ignore it
                         if (pos + equalCount == length) {
                             const uint64_t minPaddingNeeded = 4 - (validChars % 4);
-                            if (minPaddingNeeded == 4 || minPaddingNeeded <= equalCount)
+                            if (minPaddingNeeded == 4 || minPaddingNeeded <= equalCount) {
                                 validChars += equalCount;
+                            }
 
                             break;
-                        } else {
-                            pos += equalCount - 1;
                         }
+                        pos += equalCount - 1;
                     }
                 } else {
                     // We want to make sure there is at least something to decode
@@ -764,7 +793,7 @@ bool PWTransformer::transformDecodeBase64RFC2045(ddwaf_object *parameter, bool r
             }
 
             // Virtually the only constraint is that it needs to be properly padded
-            return validChars && validChars % 4 == 0;
+            return (validChars != 0u) && validChars % 4 == 0;
         },
         readOnly);
 }
@@ -778,25 +807,28 @@ bool PWTransformer::transformEncodeBase64(ddwaf_object *parameter, bool readOnly
         return false;
     }
 
-    if (readOnly)
+    if (readOnly) {
         return true;
+    }
 
     // We need to allocate a buffer to contain the base64 encoded string
     const uint64_t originalLength = parameter->nbEntries;
     const uint64_t encodedLength = (originalLength + 2) / 3 * 4;
-    const uint8_t *oldString = reinterpret_cast<const uint8_t *>(parameter->stringValue);
+    const auto *oldString = reinterpret_cast<const uint8_t *>(parameter->stringValue);
     char *newString = (char *)malloc((size_t)encodedLength + 1);
 
     // We don't have a good way to make this test fail in the CI, thus crapping on the coverage
-    if (newString == nullptr)
+    if (newString == nullptr) {
         return false;
+    }
 
     const static char b64Encoding[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
         'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',
         'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
         'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-'};
 
-    uint64_t read = 0, write = 0;
+    uint64_t read = 0;
+    uint64_t write = 0;
 
     for (; read + 2 < originalLength; read += 3) {
         const uint8_t quartet[4] = {static_cast<uint8_t>(oldString[read] >> 2),
@@ -884,24 +916,27 @@ bool PWTransformer::transformCmdLine(ddwaf_object *parameter, bool readOnly)
                     // Character we need to trandform (7) or multiple spaces/space equivalent
                     // characters? (5, 6 and 8)
                     if (c == ',' || c == ';' ||
-                        (isspace(c) && (isspace(nextC) || nextC == ',' || nextC == ';' ||
-                                           nextC == '(' || nextC == '/'))) {
-                        if (readOnly)
+                        ((isspace(c) != 0) && ((isspace(nextC) != 0) || nextC == ',' ||
+                                                  nextC == ';' || nextC == '(' || nextC == '/'))) {
+                        if (readOnly) {
                             return true;
+                        }
                         break;
                     }
                 }
 
                 // Remove 1, 2, 3 and 4, and detect 9
                 if (c == '\\' || c == '"' || c == '\'' || c == '^' || (c >= 'A' && c <= 'Z')) {
-                    if (readOnly)
+                    if (readOnly) {
                         return true;
+                    }
                     break;
                 }
             }
 
-            if (readOnly)
+            if (readOnly) {
                 return false;
+            }
 
             uint64_t write = read;
             // Actually perform the update
@@ -911,7 +946,8 @@ bool PWTransformer::transformCmdLine(ddwaf_object *parameter, bool readOnly)
                 // Remove 1, 2, 3 and 4
                 if (c == '\\' || c == '"' || c == '\'' || c == '^') {
                     continue;
-                } else if (isspace(c) || c == ',' || c == ';') {
+                }
+                if (isspace(c) || c == ',' || c == ';') {
                     // We're doing all the space trimming here:
                     //  We only copy the last space (or space terminator) character
 
@@ -969,7 +1005,8 @@ bool PWTransformer::transformRemoveComments(ddwaf_object *parameter, bool readOn
         parameter,
         [](char *array, uint64_t &length, bool readOnly) -> bool {
             enum class CommentType { UNKNOWN, HTML, SHELL, SQL, C } type;
-            uint64_t read = 0, write = 0;
+            uint64_t read = 0;
+            uint64_t write = 0;
             while (read < length) {
                 type = CommentType::UNKNOWN;
                 while (read < length) {
@@ -978,7 +1015,8 @@ bool PWTransformer::transformRemoveComments(ddwaf_object *parameter, bool readOn
                         read += 4;
                         type = CommentType::HTML;
                         break;
-                    } else if (array[read] == '-' && read + 1 < length && array[read] == '-') {
+                    }
+                    if (array[read] == '-' && read + 1 < length && array[read] == '-') {
                         // Don't bother updating the read index since we'll exit anyway
                         type = CommentType::SQL;
                         break;
@@ -1010,25 +1048,25 @@ bool PWTransformer::transformRemoveComments(ddwaf_object *parameter, bool readOn
 
                 while (read < length) {
                     void *token = nullptr;
-                    size_t remaining = (size_t)(length - read);
+                    auto const remaining = (size_t)(length - read);
                     if (type == CommentType::HTML &&
-                        (token = memchr(&array[read], '-', remaining))) {
+                        ((token = memchr(&array[read], '-', remaining)) != nullptr)) {
                         read = static_cast<uint64_t>(reinterpret_cast<char *>(token) - array);
                         if (read + 2 < length && array[read + 1] == '-' && array[read + 2] == '>') {
                             read += 3;
                             break;
-                        } else {
-                            ++read;
                         }
+                        ++read;
+
                     } else if (type == CommentType::C &&
-                               (token = memchr(&array[read], '*', remaining))) {
-                        read = static_cast<uint64_t>(reinterpret_cast<char *>(token) - array);
+                               ((token = memchr(&array[read], '*', remaining)) != nullptr)) {
+                        read = static_cast<uint64_t>(static_cast<char *>(token) - array);
                         if (read + 1 < length && array[read + 1] == '/') {
                             read += 2;
                             break;
-                        } else {
-                            ++read;
                         }
+                        ++read;
+
                     } else {
                         // If we reach this point we have found no comment terminator
                         // so we set read to length in order to exit.
@@ -1053,18 +1091,21 @@ bool PWTransformer::transformRemoveComments(ddwaf_object *parameter, bool readOn
 
 bool PWTransformer::transformNumerize(ddwaf_object *parameter, bool readOnly)
 {
-    if (parameter->type != DDWAF_OBJ_STRING)
+    if (parameter->type != DDWAF_OBJ_STRING) {
         return false;
+    }
 
-    if (parameter->stringValue == nullptr || parameter->nbEntries == 0)
+    if (parameter->stringValue == nullptr || parameter->nbEntries == 0) {
         return false;
+    }
 
-    bool isNegative = parameter->nbEntries > 0 && parameter->stringValue[0] == '-';
+    bool const isNegative = parameter->nbEntries > 0 && parameter->stringValue[0] == '-';
     uint64_t value = 0;
 
     for (uint64_t read = isNegative ? 1 : 0; read < parameter->nbEntries; ++read) {
-        if (!isdigit(parameter->stringValue[read]))
+        if (isdigit(parameter->stringValue[read]) == 0) {
             return false;
+        }
 
         value *= 10;
         value += (uint64_t)(parameter->stringValue[read] - '0');
@@ -1072,16 +1113,18 @@ bool PWTransformer::transformNumerize(ddwaf_object *parameter, bool readOnly)
 
     // Check if the value can be represented as a negative 64bit
     //  Also reject `-`
-    if (isNegative && (value > INT64_MAX || parameter->nbEntries == 1))
+    if (isNegative && (value > INT64_MAX || parameter->nbEntries == 1)) {
         return false;
+    }
 
-    if (readOnly)
+    if (readOnly) {
         return true;
+    }
 
     ddwaf_object_free(parameter);
 
     if (isNegative) {
-        ddwaf_object_signed_force(parameter, static_cast<int64_t>(value) * -1ll);
+        ddwaf_object_signed_force(parameter, static_cast<int64_t>(value) * -1LL);
     } else {
         ddwaf_object_unsigned_force(parameter, value);
     }
@@ -1091,11 +1134,13 @@ bool PWTransformer::transformNumerize(ddwaf_object *parameter, bool readOnly)
 
 bool PWTransformer::transformUnicodeNormalize(ddwaf_object *parameter, bool readOnly)
 {
-    if (parameter->type != DDWAF_OBJ_STRING)
+    if (parameter->type != DDWAF_OBJ_STRING) {
         return false;
+    }
 
-    if (parameter->stringValue == nullptr || parameter->nbEntries == 0)
+    if (parameter->stringValue == nullptr || parameter->nbEntries == 0) {
         return false;
+    }
 
     uint32_t codepoint;
     uint64_t position = 0;
@@ -1108,7 +1153,7 @@ bool PWTransformer::transformUnicodeNormalize(ddwaf_object *parameter, bool read
             }
 
             int32_t decomposedCodepoint = 0;
-            size_t decomposedLength =
+            size_t const decomposedLength =
                 ddwaf::utf8::normalize_codepoint(codepoint, &decomposedCodepoint, 1);
 
             // If the glyph needed decomposition, we flag the string
@@ -1140,7 +1185,8 @@ bool PWTransformer::transformURLBaseName(ddwaf_object *parameter, bool readOnly)
     return runTransform(
         parameter,
         [](char *array, uint64_t &length, bool) -> bool {
-            size_t endOfPath = 0, lastSlash = 0;
+            size_t endOfPath = 0;
+            size_t lastSlash = 0;
 
             // Look for the end of the path, and tag the slashes along the way
             while (endOfPath < length && array[endOfPath] != '?' && array[endOfPath] != '#') {
@@ -1156,7 +1202,8 @@ bool PWTransformer::transformURLBaseName(ddwaf_object *parameter, bool readOnly)
                 (lastSlash != 0 || array[0] == '/') ? lastSlash + 1 : lastSlash;
 
             // Copy between the last slash and the end of the path
-            size_t write = 0, read = firstAfterSlash;
+            size_t write = 0;
+            size_t read = firstAfterSlash;
             while (read < endOfPath) { array[write++] = array[read++]; }
 
             if (write < length) {
@@ -1181,7 +1228,7 @@ bool PWTransformer::transformURLFilename(ddwaf_object *parameter, bool readOnly)
 
     return runTransform(
         parameter,
-        [](char *array, uint64_t &length, bool) -> bool {
+        [](const char *array, uint64_t &length, bool) -> bool {
             size_t pos = 0;
 
             while (pos < length && array[pos] != '?' && array[pos] != '#') { pos += 1; }
@@ -1312,9 +1359,10 @@ bool PWTransformer::transform(PW_TRANSFORM_ID transformID, ddwaf_object *paramet
 
 PW_TRANSFORM_ID PWTransformer::getIDForString(std::string_view str)
 {
-    if (str == "urlDecodeUni")
+    if (str == "urlDecodeUni") {
         return PWT_DECODE_URL_IIS;
-    else if (str == "htmlEntityDecode")
+    }
+    if (str == "htmlEntityDecode")
         return PWT_DECODE_HTML;
     else if (str == "jsDecode")
         return PWT_DECODE_JS;
@@ -1365,12 +1413,14 @@ PW_TRANSFORM_ID PWTransformer::getIDForString(std::string_view str)
 bool PWTransformer::doesNeedTransform(
     const std::vector<PW_TRANSFORM_ID> &transformIDs, ddwaf_object *parameter)
 {
-    if (parameter == nullptr)
+    if (parameter == nullptr) {
         return false;
+    }
 
     for (const PW_TRANSFORM_ID &transformID : transformIDs) {
-        if (transform(transformID, parameter, true))
+        if (transform(transformID, parameter, true)) {
             return true;
+        }
     }
 
     return false;
@@ -1378,8 +1428,9 @@ bool PWTransformer::doesNeedTransform(
 
 static uint8_t fromHex(char c)
 {
-    if (isdigit(c))
+    if (isdigit(c) != 0) {
         return (uint8_t)c - '0';
+    }
 
     return (uint8_t)(c | 0x20) - 'a' + 0xa;
 }
@@ -1387,13 +1438,15 @@ static uint8_t fromHex(char c)
 static bool replaceIfMatch(char *array, uint64_t &readHead, uint64_t &writeHead,
     uint64_t readLengthLeft, const char *token, uint32_t tokenLength, char decodedToken)
 {
-    if (readLengthLeft < tokenLength)
+    if (readLengthLeft < tokenLength) {
         return false;
+    }
 
     // Case incensitive match (assume the token is lowercase)
     for (uint32_t pos = 0; pos < tokenLength; ++pos) {
-        if ((array[readHead + pos] | 0x20) != *token++)
+        if ((array[readHead + pos] | 0x20) != *token++) {
             return false;
+        }
     }
 
     array[writeHead++] = decodedToken;
@@ -1421,7 +1474,8 @@ static bool decodeBase64(char *array, uint64_t &length)
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-    uint64_t read = 0, write = 0;
+    uint64_t read = 0;
+    uint64_t write = 0;
 
     while (read < length) {
         // Read the next 4 b64 bytes
@@ -1430,12 +1484,13 @@ static bool decodeBase64(char *array, uint64_t &length)
 
         for (char c; pos < 4 && read < length; ++read) {
             // If a valid base64 character
-            if (((c = b64Reverse[(uint8_t)array[read]]) & 0x40) == 0)
+            if (((c = b64Reverse[(uint8_t)array[read]]) & 0x40) == 0) {
                 quartet[pos++] = c;
+            }
         }
 
         // Coalesce 4x 6 bits into 3x 8 bits
-        const uint32_t coalescedValue =
+        const auto coalescedValue =
             (uint32_t)(quartet[0] << 18 | quartet[1] << 12 | quartet[2] << 6 | quartet[3]);
 
         // Convert to bytes
@@ -1448,7 +1503,7 @@ static bool decodeBase64(char *array, uint64_t &length)
             ((uint8_t *)array)[write++] = bytes[0];
             ((uint8_t *)array)[write++] = bytes[1];
             ((uint8_t *)array)[write++] = bytes[2];
-        } else if (pos) {
+        } else if (pos != 0u) {
             // This is the final write, we shouldn't write every byte
             // We match CRS behavior of partially decoding a character
             //
@@ -1459,12 +1514,14 @@ static bool decodeBase64(char *array, uint64_t &length)
             ((uint8_t *)array)[write++] = bytes[0];
 
             // At least 12 bits of content, only write if either this of the next byte isn't empty
-            if (pos > 1 && (bytes[1] || bytes[2]))
+            if (pos > 1 && ((bytes[1] != 0u) || (bytes[2] != 0u))) {
                 ((uint8_t *)array)[write++] = bytes[1];
+            }
 
             // At least 18 bits of content and non-null
-            if (pos > 2 && bytes[2] != 0)
+            if (pos > 2 && bytes[2] != 0) {
                 ((uint8_t *)array)[write++] = bytes[2];
+            }
         }
     }
 

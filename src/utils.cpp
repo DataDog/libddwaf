@@ -10,8 +10,9 @@
 size_t find_string_cutoff(const char *str, size_t length, uint32_t max_string_length)
 {
     // If the string is shorter than our cap, then fine
-    if (length <= max_string_length)
+    if (length <= max_string_length) {
         return length;
+    }
 
     // If it's longer, we need to truncate it. However, we don't want to cut a UTF-8 byte sequence
     // in the middle of it! Valid UTF8 has a specific binary format. 	If it's a single byte UTF8
@@ -27,6 +28,7 @@ size_t find_string_cutoff(const char *str, size_t length, uint32_t max_string_le
     //  We therefore loop as long as we see the '10' sequence
 
     size_t pos = max_string_length;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     while (pos != 0 && (str[pos] & 0xC0) == 0x80) { pos -= 1; }
 
     return pos;

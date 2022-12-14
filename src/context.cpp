@@ -58,7 +58,7 @@ DDWAF_RET_CODE context::run(
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
         ddwaf_result &output = *res;
-        serializer.serialize(events, output);
+        serializer.serialize(events, seen_actions_, output);
         output.total_runtime = deadline.elapsed().count();
         output.timeout = deadline.expired_before();
     }
@@ -70,7 +70,7 @@ const std::unordered_set<rule::ptr> &context::filter_rules(ddwaf::timer &deadlin
 {
     for (const auto &[id, filter] : ruleset_.rule_filters) {
         if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while running exclusion filters");
+            DDWAF_INFO("Ran out of time while evaluating rule filters");
             throw timeout_exception();
         }
 
@@ -92,7 +92,7 @@ const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs
 {
     for (const auto &[id, filter] : ruleset_.input_filters) {
         if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while running exclusion filters");
+            DDWAF_INFO("Ran out of time while evaluating input filters");
             throw timeout_exception();
         }
 
@@ -122,61 +122,28 @@ const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs
 std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_exclude,
     const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
-    // Process each rule we have to run for this step of the collection
     std::vector<ddwaf::event> events;
+
+    auto eval_collection = [&](const auto &type, const auto &collection) {
+        auto it = collection_cache_.find(type);
+        if (it == collection_cache_.end()) {
+            auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache());
+            it = new_it;
+        }
+        collection.match(events, seen_actions_, store_, ruleset_.manifest, it->second,
+            rules_to_exclude, objects_to_exclude, deadline);
+    };
+
+    // Evaluate priority collections first
+    for (auto &[type, collection] : ruleset_.priority_collections) {
+        DDWAF_DEBUG("Evaluating priority collection %s", type.data());
+        eval_collection(type, collection);
+    }
+
+    // Evalaute regular collection after
     for (auto &[type, collection] : ruleset_.collections) {
-        if (collection_cache_.find(type) != collection_cache_.end()) {
-            continue;
-        }
-
-        for (const auto &rule : collection) {
-            const auto &id = rule->id;
-
-            if (deadline.expired()) {
-                DDWAF_INFO("Ran out of time while running rule %s", id.c_str());
-                throw timeout_exception();
-            }
-
-            if (!rule->is_enabled()) {
-                continue;
-            }
-
-            if (rules_to_exclude.find(rule) != rules_to_exclude.end()) {
-                DDWAF_DEBUG("Excluding Rule %s", id.c_str());
-                continue;
-            }
-
-            DDWAF_DEBUG("Running the WAF on rule %s", id.c_str());
-
-            try {
-                auto it = rule_cache_.find(rule);
-                if (it == rule_cache_.end()) {
-                    auto [new_it, res] = rule_cache_.emplace(rule, rule::cache_type{});
-                    it = new_it;
-                }
-
-                rule::cache_type &cache = it->second;
-                std::optional<event> event;
-                auto exclude_it = objects_to_exclude.find(rule);
-                if (exclude_it != objects_to_exclude.end()) {
-                    const auto &objects_excluded = exclude_it->second;
-                    event =
-                        rule->match(store_, ruleset_.manifest, cache, objects_excluded, deadline);
-                } else {
-                    event = rule->match(store_, ruleset_.manifest, cache, {}, deadline);
-                }
-
-                if (event.has_value()) {
-                    collection_cache_.emplace(rule->type);
-                    events.emplace_back(std::move(*event));
-                    DDWAF_DEBUG("Found event on rule %s", id.c_str());
-                    break;
-                }
-            } catch (const ddwaf::timeout_exception &) {
-                DDWAF_INFO("Ran out of time while processing %s", id.c_str());
-                throw;
-            }
-        }
+        DDWAF_DEBUG("Evaluating collection %s", type.data());
+        eval_collection(type, collection);
     }
 
     return events;

@@ -10,17 +10,17 @@
 
 namespace ddwaf::rule_processor {
 
-std::optional<event::match> is_xss::match(std::string_view str) const
+std::optional<event::match> is_xss::match(std::string_view pattern) const
 {
-    if (str.empty() || str.data() == nullptr) {
+    if (pattern.empty() || pattern.data() == nullptr) {
         return std::nullopt;
     }
 
-    if (!libinjection_xss(str.data(), str.size())) {
+    if (libinjection_xss(pattern.data(), pattern.size()) == 0) {
         return std::nullopt;
     }
 
-    return make_event(str, {});
+    return make_event(pattern, {});
 }
 
 } // namespace ddwaf::rule_processor

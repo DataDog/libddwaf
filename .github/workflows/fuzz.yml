@@ -40,7 +40,7 @@ jobs:
         run: grep -v -f fuzzing/scripts/report-negative-patterns.txt fuzzing/fuzz-*.log
 
       - name: Show coverage
-        run: ./fuzzing/scripts/show_coverage.sh 50
+        run: ./fuzzing/scripts/show_coverage.sh 40
 
       - name: Compress artifact
         if: ${{ always() }}

@@ -25,14 +25,15 @@ phrase_match::phrase_match(std::vector<const char *> pattern, std::vector<uint32
     ac = std::unique_ptr<ac_t, void (*)(void *)>(ac_, ac_free);
 }
 
-std::optional<event::match> phrase_match::match(std::string_view str) const
+std::optional<event::match> phrase_match::match(std::string_view pattern) const
 {
     ac_t *acStructure = ac.get();
-    if (str.empty() || str.data() == nullptr || acStructure == nullptr) {
+    if (pattern.empty() || pattern.data() == nullptr || acStructure == nullptr) {
         return std::nullopt;
     }
 
-    ac_result_t result = ac_match(acStructure, str.data(), static_cast<uint32_t>(str.size()));
+    ac_result_t result =
+        ac_match(acStructure, pattern.data(), static_cast<uint32_t>(pattern.size()));
 
     bool didMatch =
         result.match_begin >= 0 && result.match_end >= 0 && result.match_begin < result.match_end;
@@ -41,11 +42,12 @@ std::optional<event::match> phrase_match::match(std::string_view str) const
     }
 
     std::string_view matched_value;
-    if (str.size() > (uint32_t)result.match_end) {
-        matched_value = str.substr(result.match_begin, (result.match_end - result.match_begin + 1));
+    if (pattern.size() > (uint32_t)result.match_end) {
+        matched_value =
+            pattern.substr(result.match_begin, (result.match_end - result.match_begin + 1));
     }
 
-    return make_event(str, matched_value);
+    return make_event(pattern, matched_value);
 }
 
 } // namespace ddwaf::rule_processor
