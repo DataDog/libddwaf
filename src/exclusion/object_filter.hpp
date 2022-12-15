@@ -111,30 +111,30 @@ public:
             std::vector<traverser> new_traversers;
             new_traversers.reserve(traversers_.size());
 
-            for (const auto &t : traversers_) {
+            for (const auto &traverser : traversers_) {
                 {
-                    auto new_t = t.descend(next_key);
-                    auto new_state = new_t.get_state();
+                    auto new_traverser = traverser.descend(next_key);
+                    auto new_state = new_traverser.get_state();
 
                     if (new_state == traverser::state::found) {
-                        return multitraverser({new_t});
+                        return multitraverser({new_traverser});
                     }
 
                     if (new_state != traverser::state::not_found) {
-                        new_traversers.emplace_back(new_t);
+                        new_traversers.emplace_back(new_traverser);
                     }
                 }
 
                 {
-                    auto new_t = t.descend("*");
-                    auto new_state = new_t.get_state();
+                    auto new_traverser = traverser.descend("*");
+                    auto new_state = new_traverser.get_state();
 
                     if (new_state == traverser::state::found) {
-                        return multitraverser({new_t});
+                        return multitraverser({new_traverser});
                     }
 
                     if (new_state != traverser::state::not_found) {
-                        new_traversers.emplace_back(new_t);
+                        new_traversers.emplace_back(new_traverser);
                     }
                 }
             }
@@ -144,13 +144,18 @@ public:
 
         [[nodiscard]] traverser::state get_state() const
         {
-            if (traversers_.empty()) { return traverser::state::not_found; }
-            if (traversers_.size() == 1) { return traversers_.back().get_state(); }
+            if (traversers_.empty()) {
+                return traverser::state::not_found;
+            }
+            if (traversers_.size() == 1) {
+                return traversers_.back().get_state();
+            }
 
             return traverser::state::intermediate_node;
         }
+
     protected:
-        explicit multitraverser(std::vector<traverser> &&traversers): traversers_(traversers) {}
+        explicit multitraverser(std::vector<traverser> &&traversers) : traversers_(traversers) {}
 
         std::vector<traverser> traversers_;
     };
@@ -198,7 +203,6 @@ public:
         }
         return multitraverser{&root.value()};
     }
-
 
 private:
     std::string_view intern_string(std::string_view orig_sv)

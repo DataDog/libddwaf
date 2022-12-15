@@ -5,7 +5,7 @@
       input: {
         exclusion-filter-4-input: exclusion-filter-4,
         rule40-input1: {
-          a: {d: {c: {d: rule40}}}
+          a: {b: {c: {d: rule40}}}
         }
       },
       code: ok
