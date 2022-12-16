@@ -25,6 +25,9 @@ size_t find_string_cutoff(
 #define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
 #define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
 
+
+namespace ddwaf::object {
+
 inline bool is_container(const ddwaf_object *obj)
 {
     return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
@@ -39,3 +42,5 @@ inline bool is_scalar(const ddwaf_object *obj)
 {
     return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
 }
+
+} // namespace ddwaf::object

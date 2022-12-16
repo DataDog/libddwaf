@@ -320,7 +320,7 @@ DDWAF_OBJ_TYPE ddwaf_object_type(ddwaf_object *object)
 
 size_t ddwaf_object_size(ddwaf_object *object)
 {
-    if (object == nullptr || !is_container(object)) {
+    if (object == nullptr || !ddwaf::object::is_container(object)) {
         return 0;
     }
 
@@ -382,7 +382,7 @@ int64_t ddwaf_object_get_signed(ddwaf_object *object)
 
 ddwaf_object *ddwaf_object_get_index(ddwaf_object *object, size_t index)
 {
-    if (object == nullptr || !is_container(object) || index >= object->nbEntries) {
+    if (object == nullptr || !ddwaf::object::is_container(object) || index >= object->nbEntries) {
         return nullptr;
     }
 

@@ -37,8 +37,8 @@ class path_trie {
 
         [[nodiscard]] trie_node const *get_child(std::string_view key) const
         {
-            auto it = children.find(key);
-            if (it == children.end()) {
+            auto it = children_.find(key);
+            if (it == children_.end()) {
                 return nullptr;
             }
             return &it->second;
@@ -49,20 +49,23 @@ class path_trie {
             std::string_view key, InternString &&intern_str_fun)
         {
             {
-                auto it = children.find(key);
-                if (it != children.end()) {
+                auto it = children_.find(key);
+                if (it != children_.end()) {
                     return {it->second, false};
                 }
             }
 
             auto interned_str = std::forward<InternString>(intern_str_fun)(key);
-            auto [it, is_new] = children.emplace(std::piecewise_construct,
+            auto [it, is_new] = children_.emplace(std::piecewise_construct,
                 std::forward_as_tuple(interned_str), std::forward_as_tuple());
             return {std::reference_wrapper{it->second}, true};
         }
 
-        [[nodiscard]] bool is_terminal() const { return children.empty(); }
+        [[nodiscard]] bool is_terminal() const { return children_.empty(); }
 
+        void clear() { children_.clear(); }
+
+    protected:
 #ifdef HAS_NONRECURSIVE_UNORDERED_MAP
         // unordered_map doesn't allow trie_node as the value of the map
         // because trie_node is an incomplete type at this point
@@ -70,7 +73,7 @@ class path_trie {
 #else
         template <typename K, typename V> using MapType = std::unordered_map<K, V>;
 #endif
-        MapType<std::string_view, trie_node> children{};
+        MapType<std::string_view, trie_node> children_{};
     };
     static_assert(std::is_move_assignable_v<trie_node>);
     static_assert(std::is_move_constructible_v<trie_node>);
@@ -82,25 +85,85 @@ public:
     public:
         enum class state { not_found, found, intermediate_node };
 
-        explicit traverser(trie_node const *root) : cur_node{root} {}
+        explicit traverser(trie_node const *root)
+        {
+            if (root != nullptr) {
+                cur_nodes_.emplace_back(root);
+            }
+        }
+
         [[nodiscard]] traverser descend(std::string_view next_key) const
         {
             if (get_state() != state::intermediate_node) {
                 // once found/not_found, as we descend we keep the state
                 return *this;
             }
-            return traverser{cur_node->get_child(next_key)};
+
+            std::vector<const trie_node *> next_nodes;
+            next_nodes.reserve(cur_nodes_.size());
+
+            for (const auto *cur_node : cur_nodes_) {
+                const auto *next_node = cur_node->get_child(next_key);
+                if (next_node != nullptr) {
+                    if (next_node->is_terminal()) {
+                        return traverser{next_node};
+                    }
+
+                    next_nodes.emplace_back(next_node);
+                }
+
+                const auto *glob_node = cur_node->get_child("*");
+                if (glob_node != nullptr) {
+                    if (glob_node->is_terminal()) {
+                        return traverser{glob_node};
+                    }
+
+                    next_nodes.emplace_back(glob_node);
+                }
+            }
+
+            return traverser{std::move(next_nodes)};
         }
+
+        [[nodiscard]] traverser descend_wildcard() const
+        {
+            if (get_state() != state::intermediate_node) {
+                return *this;
+            }
+
+            std::vector<const trie_node *> next_nodes;
+            next_nodes.reserve(cur_nodes_.size());
+
+            for (const auto *cur_node : cur_nodes_) {
+                const auto *glob_node = cur_node->get_child("*");
+                if (glob_node != nullptr) {
+                    if (glob_node->is_terminal()) {
+                        return traverser{glob_node};
+                    }
+
+                    next_nodes.emplace_back(glob_node);
+                }
+            }
+
+            return traverser{std::move(next_nodes)};
+        }
+
         [[nodiscard]] state get_state() const
         {
-            if (cur_node == nullptr) {
+            if (cur_nodes_.empty()) {
                 return state::not_found;
             }
-            return cur_node->is_terminal() ? state::found : state::intermediate_node;
+
+            if (cur_nodes_.size() == 1 && cur_nodes_.back()->is_terminal()) {
+                return state::found;
+            }
+
+            return state::intermediate_node;
         }
 
     private:
-        trie_node const *const cur_node{};
+        explicit traverser(std::vector<const trie_node *> &&nodes) : cur_nodes_(std::move(nodes)) {}
+        std::vector<const trie_node *> cur_nodes_;
     };
 
     template <typename StringType,
@@ -127,7 +190,7 @@ public:
         }
         if (!last_is_new) {
             // already existed. If it had children, make it a terminal node
-            cur->children.clear();
+            cur->clear();
         }
     }
 
@@ -168,6 +231,8 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
     case state::intermediate_node:
         return os << std::string_view{"intermediate_node"};
     }
+    // Suppress warning
+    return os;
 }
 
 class object_filter {

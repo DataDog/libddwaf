@@ -121,6 +121,12 @@ exclusions:
       - address: rule40-input1
         key_path: [parent]
       - address: rule40-input2
+  - id: 19
+    inputs:
+      - address: rule40-input1
+        key_path: [a, b, c, d]
+      - address: rule40-input1
+        key_path: [a,"*", c, e]
 
 rules:
   - id: 1

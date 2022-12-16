@@ -7,6 +7,7 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <log.hpp>
+#include <utils.h>
 
 namespace ddwaf::exclusion {
 
@@ -30,16 +31,17 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
         }
     }
 
-    if (object->type != DDWAF_OBJ_MAP) {
+    if (!object::is_container(object)) {
         return;
     }
+
     std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie::traverser>> path_stack;
     path_stack.push({object, 0, filter});
 
     while (!path_stack.empty()) {
         auto &[current_object, current_index, current_trie] = path_stack.top();
-        if (current_object->type != DDWAF_OBJ_MAP) {
-            DDWAF_DEBUG("This is a bug, the object in the stack is not a map");
+        if (!object::is_container(current_object)) {
+            DDWAF_DEBUG("This is a bug, the object in the stack is not a container");
             path_stack.pop();
             continue;
         }
@@ -51,14 +53,15 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
         for (; current_index < size; ++current_index) {
             ddwaf_object *child = &current_object->array[current_index];
 
+            path_trie::traverser child_traverser{nullptr};
             // Only consider children with keys
             if (child->parameterName == nullptr || child->parameterNameLength == 0) {
-                continue;
+                child_traverser = current_trie.descend_wildcard();
+            } else {
+                std::string_view key{
+                    child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
+                child_traverser = current_trie.descend(key);
             }
-
-            std::string_view key{
-                child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
-            auto child_traverser = current_trie.descend(key);
             const auto filter_state = child_traverser.get_state();
 
             if (filter_state == state::found) {
@@ -69,7 +72,7 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
                 continue;
             }
 
-            if (child->type == DDWAF_OBJ_MAP && path_stack.size() < limits.max_container_depth) {
+            if (object::is_container(child) && path_stack.size() < limits.max_container_depth) {
                 ++current_index;
                 found_node = true;
                 path_stack.push({child, 0, child_traverser});

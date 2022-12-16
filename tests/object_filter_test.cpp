@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test.h"
+#include "test_utils.hpp"
 
 using namespace ddwaf;
 using namespace ddwaf::exclusion;
@@ -32,7 +33,7 @@ TEST(TestObjectFilter, RootTarget)
     object_filter::cache_type cache;
     auto objects_filtered = filter.match(store, cache, deadline);
 
-    EXPECT_EQ(objects_filtered.size(), 1);
+    ASSERT_EQ(objects_filtered.size(), 1);
     EXPECT_NE(objects_filtered.find(&root.array[0]), objects_filtered.end());
 }
 
@@ -59,7 +60,7 @@ TEST(TestObjectFilter, SingleTarget)
     object_filter::cache_type cache;
     auto objects_filtered = filter.match(store, cache, deadline);
 
-    EXPECT_EQ(objects_filtered.size(), 1);
+    ASSERT_EQ(objects_filtered.size(), 1);
     EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
 }
 
@@ -102,7 +103,7 @@ TEST(TestObjectFilter, MultipleTargets)
     object_filter::cache_type cache;
     auto objects_filtered = filter.match(store, cache, deadline);
 
-    EXPECT_EQ(objects_filtered.size(), 2);
+    ASSERT_EQ(objects_filtered.size(), 2);
     EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
     EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
 }
@@ -145,7 +146,7 @@ TEST(TestObjectFilter, MissingTarget)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
     auto objects_filtered = filter.match(store, cache, deadline);
-    EXPECT_EQ(objects_filtered.size(), 0);
+    ASSERT_EQ(objects_filtered.size(), 0);
 }
 
 TEST(TestObjectFilter, SingleTargetCache)
@@ -171,7 +172,7 @@ TEST(TestObjectFilter, SingleTargetCache)
     object_filter::cache_type cache;
     {
         auto objects_filtered = filter.match(store, cache, deadline);
-        EXPECT_EQ(objects_filtered.size(), 1);
+        ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
     }
 
@@ -209,7 +210,7 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
-        EXPECT_EQ(objects_filtered.size(), 1);
+        ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
     }
 
@@ -232,12 +233,461 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
-        EXPECT_EQ(objects_filtered.size(), 1);
+        ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
     }
 
     {
         auto objects_filtered = filter.match(store, cache, deadline);
         EXPECT_TRUE(objects_filtered.empty());
+    }
+}
+
+TEST(TestObjectFilter, SingleGlobTarget)
+{
+    ddwaf::manifest_builder mb;
+    auto query = mb.insert("query", {});
+    auto manifest = mb.build_manifest();
+
+    object_filter filter;
+    filter.insert(query, {"*"});
+
+    ddwaf::timer deadline{2s};
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, tmp;
+        // Query
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 2);
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+    }
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, grandchild, tmp;
+        // Query
+        ddwaf_object_map(&grandchild);
+        ddwaf_object_map_add(&grandchild, "value", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", &grandchild);
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 2);
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+    }
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, tmp;
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", ddwaf_object_invalid(&tmp));
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 0);
+    }
+}
+
+TEST(TestObjectFilter, GlobAndKeyTarget)
+{
+    ddwaf::manifest_builder mb;
+    auto query = mb.insert("query", {});
+    auto manifest = mb.build_manifest();
+
+    object_filter filter;
+    filter.insert(query, {"*"});
+    filter.insert(query, {"uri"});
+
+    ddwaf::timer deadline{2s};
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, tmp;
+        // Query
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 2);
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+    }
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, grandchild, tmp;
+        // Query
+        ddwaf_object_map(&grandchild);
+        ddwaf_object_map_add(&grandchild, "value", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", &grandchild);
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 2);
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+    }
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, tmp;
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", ddwaf_object_invalid(&tmp));
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 0);
+    }
+}
+
+TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
+{
+    ddwaf::manifest_builder mb;
+    auto query = mb.insert("query", {});
+    auto manifest = mb.build_manifest();
+
+    object_filter filter;
+    filter.insert(query, {"*", "value"});
+    filter.insert(query, {"uri", "other"});
+
+    ddwaf::timer deadline{2s};
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, grandchild, grandnephew, tmp;
+        // Query
+        ddwaf_object_map(&grandchild);
+        ddwaf_object_map_add(&grandchild, "other", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&grandnephew);
+        ddwaf_object_map_add(&grandnephew, "other", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", &grandchild);
+        ddwaf_object_map_add(&child, "uri", &grandnephew);
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_NE(objects_filtered.find(&grandnephew.array[0]), objects_filtered.end());
+    }
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, grandchild, grandnephew, tmp;
+        // Query
+        ddwaf_object_map(&grandchild);
+        ddwaf_object_map_add(&grandchild, "value", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&grandnephew);
+        ddwaf_object_map_add(&grandnephew, "value", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", &grandchild);
+        ddwaf_object_map_add(&child, "uri", &grandnephew);
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 2);
+        EXPECT_NE(objects_filtered.find(&grandnephew.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&grandchild.array[0]), objects_filtered.end());
+    }
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, grandchild, grandnephew, tmp;
+        // Query
+        ddwaf_object_map(&grandchild);
+        ddwaf_object_map_add(&grandchild, "whatever", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&grandnephew);
+        ddwaf_object_map_add(&grandnephew, "random", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "value", &grandchild);
+        ddwaf_object_map_add(&child, "other", &grandnephew);
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 0);
+    }
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, tmp;
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "value", ddwaf_object_string(&tmp, "value"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 0);
+    }
+}
+
+TEST(TestObjectFilter, MultipleGlobsTargets)
+{
+    ddwaf::manifest_builder mb;
+    auto query = mb.insert("query", {});
+    auto manifest = mb.build_manifest();
+
+    object_filter filter;
+    filter.insert(query, {"*", "*", "*"});
+
+    ddwaf::timer deadline{2s};
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, grandchild, grandnephew, greatgrandchild, greatgrandnephew, tmp;
+
+        ddwaf_object_map(&greatgrandchild);
+        ddwaf_object_map_add(&greatgrandchild, "other", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(
+            &greatgrandchild, "somethingelse", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&grandchild);
+        ddwaf_object_map_add(&grandchild, "something", &greatgrandchild);
+
+        ddwaf_object_map(&greatgrandnephew);
+        ddwaf_object_map_add(&greatgrandnephew, "other", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(
+            &greatgrandnephew, "somethingelse", ddwaf_object_string(&tmp, "paramsvalue"));
+
+        ddwaf_object_map(&grandnephew);
+        ddwaf_object_map_add(&grandnephew, "random", &greatgrandnephew);
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", &grandchild);
+        ddwaf_object_map_add(&child, "uri", &grandnephew);
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 4);
+        EXPECT_NE(objects_filtered.find(&greatgrandchild.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&greatgrandchild.array[1]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&greatgrandnephew.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&greatgrandnephew.array[1]), objects_filtered.end());
+    }
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, grandchild, grandnephew, tmp;
+
+        ddwaf_object_map(&grandchild);
+        ddwaf_object_map_add(&grandchild, "something", ddwaf_object_string(&tmp, "value"));
+
+        ddwaf_object_map(&grandnephew);
+        ddwaf_object_map_add(&grandnephew, "random", ddwaf_object_string(&tmp, "value"));
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", &grandchild);
+        ddwaf_object_map_add(&child, "uri", &grandnephew);
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 0);
+    }
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, child, tmp;
+
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "value"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "value"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 0);
+    }
+}
+
+TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
+{
+    ddwaf::manifest_builder mb;
+    auto query = mb.insert("query", {});
+    auto manifest = mb.build_manifest();
+
+    object_filter filter;
+    filter.insert(query, {"a", "b", "c"});
+    filter.insert(query, {"a", "*", "d", "e"});
+    filter.insert(query, {"a", "*", "e", "*"});
+    filter.insert(query, {"a", "*", "f", "*", "g"});
+
+    // Successful tests
+    {
+        std::vector<std::pair<std::string, std::string>> tests{
+            {"{query: {a: {b: {c: hello}}}}", "c"},
+            {"{query: {a: {b: {c: {e: hello}}}}}", "c"},
+            {"{query: {a: {b: {d: {e: hello}}}}}", "e"},
+            {"{query: {a: {h: {d: {e: hello}}}}}", "e"},
+            {"{query: {a: {g: {d: {e: {f: [hello, bye]}}}}}}", "e"},
+            {"{query: {a: {n: {e: {f: [hello, bye]}}}}}", "f"},
+            {"{query: {a: {n: {e: {x: [hello, bye]}}}}}", "x"},
+            {"{query: {a: {n: {e: {x: {f: [hello, bye]}}}}}}", "x"},
+            {"{query: {a: {p: {f: {x: {g: [hello, bye]}}}}}}", "g"},
+            {"{query: {a: {a: {f: {e: {g: {k: [hello, bye]}}}}}}}", "g"},
+        };
+
+        for (auto &[object, result] : tests) {
+            object_store store(manifest);
+            object_filter::cache_type cache;
+            ddwaf_object root = json_to_object(object);
+            store.insert(root);
+
+            ddwaf::timer deadline{2s};
+            auto objects_filtered = filter.match(store, cache, deadline);
+            ASSERT_EQ(objects_filtered.size(), 1);
+            EXPECT_STREQ((*objects_filtered.begin())->parameterName, result.c_str());
+        }
+    }
+
+    // Failure tests
+    {
+        std::vector<std::string> tests{
+            "{query: [a, b, c, d]}",
+            "{query: hello}",
+            "{query: {a: hello}}",
+            "{query: {a: {b: hello}}}",
+            "{query: {a: {b: {e: hello}}}}",
+            "{query: {a: {b: [c]}}}",
+            "{query: {a: {b: {g: {e: hello}}}}}",
+            "{query: {a: {b: {f: {e: {h: hello}}}}}}",
+        };
+
+        for (auto &object : tests) {
+            object_store store(manifest);
+            object_filter::cache_type cache;
+            ddwaf_object root = json_to_object(object);
+            store.insert(root);
+
+            ddwaf::timer deadline{2s};
+            auto objects_filtered = filter.match(store, cache, deadline);
+            ASSERT_EQ(objects_filtered.size(), 0);
+        }
+    }
+}
+
+TEST(TestObjectFilter, ArrayWithGlobTargets)
+{
+    ddwaf::manifest_builder mb;
+    auto query = mb.insert("query", {});
+    auto manifest = mb.build_manifest();
+
+    object_filter filter;
+    filter.insert(query, {"a", "*", "c", "d"});
+
+    {
+        object_store store(manifest);
+        object_filter::cache_type cache;
+        ddwaf_object root, a, b, c, d, tmp;
+
+        ddwaf_object_map(&d);
+        ddwaf_object_map_add(&d, "d", ddwaf_object_string(&tmp, "value"));
+
+        ddwaf_object_map(&c);
+        ddwaf_object_map_add(&c, "c", &d);
+
+        ddwaf_object_array(&b);
+        ddwaf_object_array_add(&b, &c);
+
+        ddwaf_object_map(&a);
+        ddwaf_object_map_add(&a, "a", &b);
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &a);
+
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 1);
     }
 }

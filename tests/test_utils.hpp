@@ -142,3 +142,5 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
 
 ddwaf_object readFile(const char *filename);
 ddwaf_object readRule(const char *rule);
+
+inline ddwaf_object json_to_object(std::string_view data) { return readRule(data.data()); }
