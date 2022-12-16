@@ -1,5 +1,12 @@
 # libddwaf release
 
+### v1.6.0-beta1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/12/16
+
+#### Changes
+- Rework path trie for exclusion ([#122](https://github.com/DataDog/libddwaf/pull/122))
+- Priority collections ([#123](https://github.com/DataDog/libddwaf/pull/123))
+- Support for glob component and arrays on object filter ([#124](https://github.com/DataDog/libddwaf/pull/124))
+
 ### v1.6.0-beta0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/12/07
 
 #### Changes
