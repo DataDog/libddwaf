@@ -82,7 +82,6 @@ TEST(TestPathTrie, Glob)
     }
 }
 
-
 TEST(TestPathTrie, MultipleGlobsAndPaths)
 {
     ddwaf::exclusion::path_trie trie;

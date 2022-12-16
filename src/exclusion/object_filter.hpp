@@ -85,8 +85,11 @@ public:
     public:
         enum class state { not_found, found, intermediate_node };
 
-        explicit traverser(trie_node const *root) {
-            if (root != nullptr) { cur_nodes_.emplace_back(root); }
+        explicit traverser(trie_node const *root)
+        {
+            if (root != nullptr) {
+                cur_nodes_.emplace_back(root);
+            }
         }
 
         [[nodiscard]] traverser descend(std::string_view next_key) const
@@ -158,7 +161,7 @@ public:
         }
 
     private:
-        explicit traverser(std::vector<const trie_node*> && nodes): cur_nodes_(std::move(nodes)) {}
+        explicit traverser(std::vector<const trie_node *> &&nodes) : cur_nodes_(std::move(nodes)) {}
         std::vector<const trie_node *> cur_nodes_;
     };
 
