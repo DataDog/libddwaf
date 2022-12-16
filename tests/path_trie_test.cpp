@@ -69,7 +69,7 @@ TEST(TestPathTrie, Glob)
         auto path = it.descend("path");
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.descend();
+        auto to = path.descend_wildcard();
         EXPECT_EQ(to.get_state(), state::intermediate_node);
 
         auto object = to.descend("object");
@@ -77,7 +77,7 @@ TEST(TestPathTrie, Glob)
     }
 
     {
-        auto path = it.descend();
+        auto path = it.descend_wildcard();
         EXPECT_EQ(path.get_state(), state::not_found);
     }
 }
@@ -159,13 +159,13 @@ TEST(TestPathTrie, MultipleGlobsAndPaths)
         auto path = it.descend("path");
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.descend();
+        auto to = path.descend_wildcard();
         EXPECT_EQ(to.get_state(), state::intermediate_node);
 
         auto object = to.descend("object");
         EXPECT_EQ(object.get_state(), state::intermediate_node);
 
-        auto in = object.descend();
+        auto in = object.descend_wildcard();
         EXPECT_EQ(in.get_state(), state::intermediate_node);
 
         auto box = in.descend("box");

@@ -41,7 +41,7 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
     while (!path_stack.empty()) {
         auto &[current_object, current_index, current_trie] = path_stack.top();
         if (!object::is_container(current_object)) {
-            DDWAF_DEBUG("This is a bug, the object in the stack is not a map");
+            DDWAF_DEBUG("This is a bug, the object in the stack is not a container");
             path_stack.pop();
             continue;
         }
@@ -56,7 +56,7 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
             path_trie::traverser child_traverser{nullptr};
             // Only consider children with keys
             if (child->parameterName == nullptr || child->parameterNameLength == 0) {
-                child_traverser = current_trie.descend();
+                child_traverser = current_trie.descend_wildcard();
             } else {
                 std::string_view key{
                     child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};

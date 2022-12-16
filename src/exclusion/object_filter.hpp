@@ -95,6 +95,7 @@ public:
         [[nodiscard]] traverser descend(std::string_view next_key) const
         {
             if (get_state() != state::intermediate_node) {
+                // once found/not_found, as we descend we keep the state
                 return *this;
             }
 
@@ -124,7 +125,7 @@ public:
             return traverser{std::move(next_nodes)};
         }
 
-        [[nodiscard]] traverser descend() const
+        [[nodiscard]] traverser descend_wildcard() const
         {
             if (get_state() != state::intermediate_node) {
                 return *this;
