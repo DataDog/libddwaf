@@ -89,7 +89,8 @@ public:
             : cur_node{root}, seen_globs(std::move(globs)), key_stack(std::move(stack))
         {}
 
-        static const trie_node *backtrack(std::vector<std::string_view> &stack,
+        static const trie_node *backtrack(std::string_view next_key,
+            const std::vector<std::string_view> &stack,
             std::list<std::pair<const trie_node *, unsigned>> &globs)
         {
             // We have reached this point with a null node, which means
@@ -100,8 +101,10 @@ public:
                 for (auto i = it->second; root != nullptr && i < stack.size(); i++) {
                     root = root->get_child(stack[i]);
                 }
+                root = root->get_child(next_key);
 
-                // This glob will not yield a valid path so we remove it
+                // We remove the glob from the list as we're either following it
+                // or it's not a valid path
                 it = globs.erase(it);
 
                 if (root != nullptr) {
@@ -124,17 +127,17 @@ public:
                 return traverser{nullptr};
             }
 
-            auto new_stack = key_stack;
-            new_stack.emplace_back("*");
-
             auto globs = seen_globs;
             if (next_node == nullptr) {
-                next_node = backtrack(new_stack, globs);
-                if (next_node == nullptr) {
-                    return traverser{nullptr};
-                }
+                next_node = backtrack("*", key_stack, globs);
             }
 
+            if (next_node == nullptr || globs.empty()) {
+                return traverser{next_node};
+            }
+
+            auto new_stack = key_stack;
+            new_stack.emplace_back("*");
             return {next_node, std::move(globs), std::move(new_stack)};
         }
 
@@ -154,21 +157,22 @@ public:
                 next_node = glob_node;
             }
 
-            auto new_stack = key_stack;
-            new_stack.emplace_back(next_key);
-
             auto globs = seen_globs;
             if (next_node == nullptr) {
-                next_node = backtrack(new_stack, globs);
-                if (next_node == nullptr) {
-                    return traverser{nullptr};
-                }
+                next_node = backtrack(next_key, key_stack, globs);
             } else {
                 // Find the next glob, the depth should be current + 1
                 if (glob_node != nullptr && glob_node != next_node) {
-                    globs.emplace_front(glob_node, new_stack.size());
+                    globs.emplace_front(glob_node, key_stack.size() + 1);
                 }
             }
+
+            if (next_node == nullptr || globs.empty()) {
+                return traverser{next_node};
+            }
+
+            auto new_stack = key_stack;
+            new_stack.emplace_back(next_key);
 
             return {next_node, std::move(globs), std::move(new_stack)};
         }
