@@ -4,10 +4,45 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "exclusion/object_filter.hpp"
 #include "test.h"
 #include <gtest/gtest.h>
 
 using state = ddwaf::exclusion::path_trie::traverser::state;
+using path = ddwaf::exclusion::path_trie::path;
+
+struct mpath {
+    path *p{};
+    const path *stop_p{};
+    ~mpath() {
+        path *prev = p;
+        while (prev != stop_p) {
+            path *cur = prev;
+            prev = cur->prev;
+            delete cur;
+        }
+    }
+    mpath() = default;
+    mpath(const mpath&) = delete;
+    mpath(mpath&&) = delete;
+    mpath& operator=(const mpath&) = delete;
+    mpath& operator=(mpath&&) = delete;
+
+    operator const path*() { // NOLINT
+        return p;
+    }
+
+    mpath& operator[](std::string_view sv) {
+        p = new path(p, sv);
+        return *this;
+    }
+    [[nodiscard]] mpath derive() const {
+        return mpath{p};
+    };
+
+private:
+    explicit mpath(path *p) : p{p}, stop_p{p} {}
+};
 
 TEST(TestPathTrie, Basic)
 {
@@ -17,33 +52,38 @@ TEST(TestPathTrie, Basic)
 
     auto it = trie.get_traverser();
     {
-        auto path = it.descend("path");
+        mpath mp;
+        auto path = it.descend(mp["path"]);
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.descend("to");
+        auto to = path.descend(mp["to"]);
         EXPECT_EQ(to.get_state(), state::intermediate_node);
 
-        auto object = to.descend("object");
+        auto object = to.descend(mp["object"]);
         EXPECT_EQ(object.get_state(), state::found);
     }
 
     {
-        auto an_obj = it.descend("path").descend("to").descend("another").descend("object");
+        mpath mp;
+        auto an_obj =
+            it.descend(mp["path"]).descend(mp["to"]).descend(mp["another"]).descend(mp["object"]);
         EXPECT_EQ(an_obj.get_state(), state::found);
     }
 
     trie.insert<std::string>({"path", "to"});
     {
-        auto path = trie.get_traverser().descend("path");
+        mpath mp;
+        auto path = trie.get_traverser().descend(mp["path"]);
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.descend("to");
+        auto to = path.descend(mp["to"]);
         EXPECT_EQ(to.get_state(), state::found);
 
-        auto object = to.descend("object");
+        mpath mp_to = mp.derive();
+        auto object = to.descend(mp["object"]);
         EXPECT_EQ(object.get_state(), state::found);
 
-        auto object2 = to.descend("object2");
+        auto object2 = to.descend(mp_to["object2"]);
         EXPECT_EQ(object2.get_state(), state::found);
     }
 }
@@ -55,29 +95,32 @@ TEST(TestPathTrie, Glob)
 
     auto it = trie.get_traverser();
     {
-        auto path = it.descend("path");
+        mpath mp;
+        auto path = it.descend(mp["path"]);
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.descend("to");
+        auto to = path.descend(mp["to"]);
         EXPECT_EQ(to.get_state(), state::intermediate_node);
 
-        auto object = to.descend("object");
+        auto object = to.descend(mp["object"]);
         EXPECT_EQ(object.get_state(), state::found);
     }
 
     {
-        auto path = it.descend("path");
+        mpath mp;
+        auto path = it.descend(mp["path"]);
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.descend_wildcard();
+        auto to = path.descend(mp[""]);
         EXPECT_EQ(to.get_state(), state::intermediate_node);
 
-        auto object = to.descend("object");
+        auto object = to.descend(mp["object"]);
         EXPECT_EQ(object.get_state(), state::found);
     }
 
     {
-        auto path = it.descend_wildcard();
+        path empty_path{""};
+        auto path = it.descend(&empty_path);
         EXPECT_EQ(path.get_state(), state::not_found);
     }
 }
@@ -91,84 +134,92 @@ TEST(TestPathTrie, MultipleGlobsAndPaths)
 
     auto it = trie.get_traverser();
     {
-        auto path = it.descend("path");
+        mpath mp;
+        auto path = it.descend(mp["path"]);
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.descend("to");
+        auto to = path.descend(mp["to"]);
         EXPECT_EQ(to.get_state(), state::intermediate_node);
 
-        auto object = to.descend("object");
+        auto object = to.descend(mp["object"]);
         EXPECT_EQ(object.get_state(), state::intermediate_node);
 
-        auto in = object.descend("in");
+        auto in = object.descend(mp["in"]);
         EXPECT_EQ(in.get_state(), state::intermediate_node);
 
-        auto box = in.descend("box");
+        auto box = in.descend(mp["box"]);
         EXPECT_EQ(box.get_state(), state::found);
     }
 
     {
-        auto path = it.descend("path");
+        mpath mp;
+        auto path = it.descend(mp["path"]);
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto was = path.descend("was");
+        auto was = path.descend(mp["was"]);
         EXPECT_EQ(was.get_state(), state::intermediate_node);
 
         {
-            auto object = was.descend("object");
+            mpath mpi = mp.derive();
+            auto object = was.descend(mpi["object"]);
             EXPECT_EQ(object.get_state(), state::intermediate_node);
 
-            auto in = object.descend("in");
+            auto in = object.descend(mpi["in"]);
             EXPECT_EQ(in.get_state(), state::intermediate_node);
 
-            auto box = in.descend("box");
+            auto box = in.descend(mpi["box"]);
             EXPECT_EQ(box.get_state(), state::found);
         }
 
         {
-            auto closed = was.descend("closed");
+            mpath mpi = mp.derive();
+            auto closed = was.descend(mpi["closed"]);
             EXPECT_EQ(closed.get_state(), state::found);
         }
     }
 
     {
-        auto path = it.descend("path");
+        mpath mp;
+        auto path = it.descend(mp["path"]);
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto was = path.descend("was");
+        auto was = path.descend(mp["was"]);
         EXPECT_EQ(was.get_state(), state::intermediate_node);
 
-        auto object = was.descend("object");
+        auto object = was.descend(mp["object"]);
         EXPECT_EQ(object.get_state(), state::intermediate_node);
 
-        auto but = object.descend("but");
+        auto but = object.descend(mp["but"]);
         EXPECT_EQ(but.get_state(), state::intermediate_node);
 
         {
-            auto box = but.descend("box");
+            mpath mp2 = mp.derive();
+            auto box = but.descend(mp2["box"]);
             EXPECT_EQ(box.get_state(), state::found);
         }
 
         {
-            auto empty = but.descend("empty");
+            mpath mp2 = mp.derive();
+            auto empty = but.descend(mp2["empty"]);
             EXPECT_EQ(empty.get_state(), state::found);
         }
     }
 
     {
-        auto path = it.descend("path");
+        mpath mp;
+        auto path = it.descend(mp["path"]);
         EXPECT_EQ(path.get_state(), state::intermediate_node);
 
-        auto to = path.descend_wildcard();
+        auto to = path.descend(mp[""]);
         EXPECT_EQ(to.get_state(), state::intermediate_node);
 
-        auto object = to.descend("object");
+        auto object = to.descend(mp["object"]);
         EXPECT_EQ(object.get_state(), state::intermediate_node);
 
-        auto in = object.descend_wildcard();
+        auto in = object.descend(mp[""]);
         EXPECT_EQ(in.get_state(), state::intermediate_node);
 
-        auto box = in.descend("box");
+        auto box = in.descend(mp["box"]);
         EXPECT_EQ(box.get_state(), state::found);
     }
 }
@@ -179,7 +230,8 @@ TEST(TestPathTrie, Empty)
     auto it = trie.get_traverser();
     EXPECT_EQ(it.get_state(), state::not_found);
 
-    auto path = it.descend("path");
+    mpath mp;
+    auto path = it.descend(mp["path"]);
     EXPECT_EQ(path.get_state(), state::not_found);
 }
 
@@ -191,6 +243,7 @@ TEST(TestPathTrie, SetIsFullDomain)
     auto it = trie.get_traverser();
     EXPECT_EQ(it.get_state(), state::found);
 
-    auto path = it.descend("path");
+    mpath mp;
+    auto path = it.descend(mp["path"]);
     EXPECT_EQ(path.get_state(), state::found);
 }

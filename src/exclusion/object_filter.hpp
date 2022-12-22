@@ -26,6 +26,21 @@
 namespace ddwaf::exclusion {
 
 class path_trie {
+public:
+    struct path {
+        explicit path(std::string_view component) noexcept : component{component} {}
+        path(path *prev, std::string_view component) noexcept : component{component}, prev{prev} {}
+
+        std::string_view component;
+        path *prev{};
+        // for tracking when we can dispose of the object
+        // we iterate depth-first, first nodes last
+        bool first_child{};
+
+        [[nodiscard]] bool is_nameless() const noexcept { return component.empty(); }
+    };
+
+private:
     class trie_node {
     public:
         trie_node() {} // NOLINT
@@ -79,102 +94,54 @@ class path_trie {
 
 public:
     class traverser {
+        struct backtrack_info {
+            backtrack_info(const trie_node *alternative_node, const path *path)
+                : alternative_node{alternative_node}, path{path}
+            {}
+            const trie_node *alternative_node;
+            const path *path;
+        };
+
     public:
         enum class state { not_found, found, intermediate_node };
 
         explicit traverser(trie_node const *root) : cur_node{root} {}
-
-        traverser(trie_node const *root, std::list<std::pair<trie_node const *, unsigned>> &&globs,
-            std::vector<std::string_view> &&stack)
-            : cur_node{root}, seen_globs(std::move(globs)), key_stack(std::move(stack))
+        traverser(trie_node const *root, std::stack<backtrack_info> btinfo)
+            : cur_node{root}, backtrack_data{std::move(btinfo)}
         {}
 
-        static const trie_node *backtrack(std::string_view next_key,
-            const std::vector<std::string_view> &stack,
-            std::list<std::pair<const trie_node *, unsigned>> &globs)
-        {
-            // We have reached this point with a null node, which means
-            // there is no glob node available, but we still have previously
-            // seen globs, so we backtrack
-            for (auto it = globs.begin(); it != globs.end();) {
-                const trie_node *root = it->first;
-                for (auto i = it->second; root != nullptr && i < stack.size(); i++) {
-                    root = root->get_child(stack[i]);
-                }
-                root = root->get_child(next_key);
+        [[nodiscard]] bool can_backtrack() const { return !backtrack_data.empty(); }
 
-                // We remove the glob from the list as we're either following it
-                // or it's not a valid path
-                it = globs.erase(it);
-
-                if (root != nullptr) {
-                    return root;
-                }
-            }
-
-            return nullptr;
-        }
-
-        [[nodiscard]] traverser descend_wildcard() const
+        // descend only on the final component
+        [[nodiscard]] traverser descend(const path *p) const // NOLINT(misc-no-recursion)
         {
             if (get_state() != state::intermediate_node) {
                 // once found/not_found, as we descend we keep the state
-                return *this;
+                return traverser{cur_node};
             }
-
-            const auto *next_node = cur_node->get_child("*");
-            if (next_node == nullptr && seen_globs.empty()) {
-                return traverser{nullptr};
-            }
-
-            auto globs = seen_globs;
-            if (next_node == nullptr) {
-                next_node = backtrack("*", key_stack, globs);
-            }
-
-            if (next_node == nullptr || globs.empty()) {
-                return traverser{next_node};
-            }
-
-            auto new_stack = key_stack;
-            new_stack.emplace_back("*");
-            return {next_node, std::move(globs), std::move(new_stack)};
-        }
-
-        [[nodiscard]] traverser descend(std::string_view next_key) const
-        {
-            if (get_state() != state::intermediate_node) {
-                // once found/not_found, as we descend we keep the state
-                return *this;
-            }
+            auto next_key = p->component;
 
             const auto *glob_node = cur_node->get_child("*");
-            const auto *next_node = cur_node->get_child(next_key);
-            if (next_node == nullptr) {
-                if (glob_node == nullptr && seen_globs.empty()) {
-                    return traverser{nullptr};
+            const auto *next_node = p->is_nameless() ? nullptr : cur_node->get_child(next_key);
+
+            // exactly one node available
+            if (glob_node != nullptr && next_node == nullptr) {
+                return traverser{glob_node, backtrack_data};
+            }
+            if (next_node != nullptr && glob_node == nullptr) {
+                return traverser{next_node, backtrack_data};
+            }
+            // both nodes unavailable
+            if (glob_node == nullptr && next_node == nullptr) {
+                if (can_backtrack()) {
+                    return backtrack_and_move(p);
                 }
-                next_node = glob_node;
+                return traverser{nullptr}; // not found
             }
-
-            auto globs = seen_globs;
-            if (next_node == nullptr) {
-                next_node = backtrack(next_key, key_stack, globs);
-            } else {
-                // Find the next glob, the depth should be current + 1
-                if (glob_node != nullptr && glob_node != next_node) {
-                    globs.emplace_front(glob_node, key_stack.size() + 1);
-                }
-            }
-
-            if (next_node == nullptr || globs.empty()) {
-                return traverser{next_node};
-            }
-
-            auto new_stack = key_stack;
-            new_stack.emplace_back(next_key);
-
-            return {next_node, std::move(globs), std::move(new_stack)};
+            // both nodes available
+            auto bt_data = backtrack_data;
+            bt_data.emplace(next_node, p);
+            return traverser{glob_node, std::move(bt_data)};
         }
 
         [[nodiscard]] state get_state() const
@@ -186,9 +153,40 @@ public:
         }
 
     private:
+        // NOLINTNEXTLINE(misc-no-recursion)
+        [[nodiscard]] traverser backtrack_and_move(const path *p) const
+        {
+            traverser cur_traverser = *this;
+            while (cur_traverser.can_backtrack()) {
+                auto bt_data_stack = cur_traverser.backtrack_data;
+                const backtrack_info &bt_info = bt_data_stack.top();
+                bt_data_stack.pop();
+                cur_traverser =
+                    traverser{bt_info.alternative_node, std::move(bt_data_stack)};
+                auto components = components_between(bt_info.path, p);
+                while (cur_traverser.get_state() == state::intermediate_node) {
+                    const auto *comp = components.top();
+                    components.pop();
+                    cur_traverser = cur_traverser.descend(comp);
+                }
+                if (cur_traverser.get_state() != state::not_found) {
+                    return cur_traverser;
+                }
+            }
+            return traverser{nullptr};
+        }
+
+        static std::stack<const path *> components_between(
+            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+            const path *start_excl, const path *end_incl)
+        {
+            std::stack<const path *> ret;
+            for (const auto *p = end_incl; p != start_excl; p = p->prev) { ret.push(p); }
+            return ret;
+        }
+
         trie_node const *cur_node{};
-        std::list<std::pair<trie_node const *, unsigned>> seen_globs{};
-        std::vector<std::string_view> key_stack{};
+        std::stack<backtrack_info> backtrack_data{};
     };
 
     template <typename StringType,

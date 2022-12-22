@@ -7,6 +7,7 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <log.hpp>
+#include <tuple>
 #include <utils.h>
 
 namespace ddwaf::exclusion {
@@ -35,58 +36,76 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
         return;
     }
 
-    std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie::traverser>> path_stack;
-    path_stack.push({object, 0, filter});
+    using stack_elem = std::tuple<const ddwaf_object *, path_trie::path*, unsigned, path_trie::traverser>;
+
+    std::stack<stack_elem> path_stack;
+    path_stack.emplace(object, nullptr, 0, filter);
 
     while (!path_stack.empty()) {
-        auto &[current_object, current_index, current_trie] = path_stack.top();
+        auto &top = path_stack.top();
+        const ddwaf_object *current_object = std::get<0>(top);
+        path_trie::path *current_path = std::get<1>(top);
+        const unsigned current_depth = std::get<2>(top);
+        const auto current_trie{std::move(std::get<3>(top))};
+        path_stack.pop();
+
         if (!object::is_container(current_object)) {
             DDWAF_DEBUG("This is a bug, the object in the stack is not a container");
-            path_stack.pop();
             continue;
         }
 
-        bool found_node{false};
         auto size = current_object->nbEntries > limits.max_container_size
                         ? limits.max_container_size
                         : current_object->nbEntries;
-        for (; current_index < size; ++current_index) {
-            ddwaf_object *child = &current_object->array[current_index];
+        bool first_child = true;
+        for (unsigned i = 0; i < size; i++) {
+            ddwaf_object *child = &current_object->array[i];
 
             path_trie::traverser child_traverser{nullptr};
-            // Only consider children with keys
+            std::string_view component;
             if (child->parameterName == nullptr || child->parameterNameLength == 0) {
-                child_traverser = current_trie.descend_wildcard();
+               component = {};
             } else {
-                std::string_view key{
+                component = {
                     child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
-                child_traverser = current_trie.descend(key);
             }
+            auto *p = new path_trie::path(current_path, component);
+
+            child_traverser = current_trie.descend(p);
+
             const auto filter_state = child_traverser.get_state();
 
             if (filter_state == state::found) {
                 objects_to_exclude.emplace(child);
-                continue;
-            }
-            if (filter_state == state::not_found) {
-                continue;
-            }
-
-            if (object::is_container(child) && path_stack.size() < limits.max_container_depth) {
-                ++current_index;
-                found_node = true;
-                path_stack.push({child, 0, child_traverser});
-                break;
+                delete p;
+            } else if (filter_state == state::not_found) {
+                delete p;
+            } else if (object::is_container(child) && current_depth < limits.max_container_depth) {
+                if (first_child) {
+                    p->first_child = true;
+                    first_child = false;
+                } else {
+                    p->first_child = false;
+                }
+                path_stack.push({child, p, i + 1, std::move(child_traverser)});
             }
         }
 
-        if (!found_node) {
-            // We reached the end of the container, so we pop it and continue
-            // iterating the parent.
-            // Note that this invalidates all references to top()
-            path_stack.pop();
+        bool no_children = first_child;
+        if (no_children && current_path != nullptr /* not root node */) {
+            // if we have no children, delete our path component
+            // and delete also the path component of the parent if
+            // we are the first child (and thus the last visited)
+            bool cur_first_child{true};
+            path_trie::path *prev = current_path;
+            do {
+                path_trie::path *cur = prev;
+                prev = cur->prev;
+                cur_first_child = cur->first_child;
+                delete cur;
+            } while (prev != nullptr && cur_first_child);
         }
-    }
+    } // while (!path_stack.empty())
 }
 
 } // namespace
