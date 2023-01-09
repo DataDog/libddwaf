@@ -1,34 +1,24 @@
 # libddwaf release
 
-### v1.6.0-beta1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/12/16
-
-#### Changes
-- Rework path trie for exclusion ([#122](https://github.com/DataDog/libddwaf/pull/122))
-- Priority collections ([#123](https://github.com/DataDog/libddwaf/pull/123))
-- Support for glob component and arrays on object filter ([#124](https://github.com/DataDog/libddwaf/pull/124))
-
-### v1.6.0-beta0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/12/07
-
-#### Changes
-- Exclusion filters: inputs ([#117](https://github.com/DataDog/libddwaf/pull/117))
-- Add ID to exclusion filters ([#120](https://github.com/DataDog/libddwaf/pull/120))
-
-#### Miscellaneous
-- Upgrade deprecated actions ([#114](https://github.com/DataDog/libddwaf/pull/114))
-- Include mac arm binaries in nuget ([#115](https://github.com/DataDog/libddwaf/pull/115))
-- Run clang tidy / format on CI ([#116](https://github.com/DataDog/libddwaf/pull/116))
-- Exclusion filters on fuzzer ([#118](https://github.com/DataDog/libddwaf/pull/118))
-
-### v1.6.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/11/11
+### v1.6.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/10
 
 #### Changes
 - Exclusion filters: targets and conditions ([#110](https://github.com/DataDog/libddwaf/pull/110))
+- Exclusion filters: inputs ([#117](https://github.com/DataDog/libddwaf/pull/117))
+- Add ID to exclusion filters ([#120](https://github.com/DataDog/libddwaf/pull/120))
+- Rework path trie for exclusion ([#122](https://github.com/DataDog/libddwaf/pull/122))
+- Priority collections ([#123](https://github.com/DataDog/libddwaf/pull/123))
+- Support for glob component and arrays on object filter ([#124](https://github.com/DataDog/libddwaf/pull/124))
 
 #### Miscellaneous
 - Experiment building libddwaf on the oldest available macos target ([#111](https://github.com/DataDog/libddwaf/pull/111))
 - Strip libddwaf.a for darwin/linux release ([#107](https://github.com/DataDog/libddwaf/pull/107))
 - linux/aarch64: add missing libunwind.a artefact ([#109](https://github.com/DataDog/libddwaf/pull/109))
 - Add option to prevent loading test targets ([#108](https://github.com/DataDog/libddwaf/pull/108))
+- Upgrade deprecated actions ([#114](https://github.com/DataDog/libddwaf/pull/114))
+- Include mac arm binaries in nuget ([#115](https://github.com/DataDog/libddwaf/pull/115))
+- Run clang tidy / format on CI ([#116](https://github.com/DataDog/libddwaf/pull/116))
+- Exclusion filters on fuzzer ([#118](https://github.com/DataDog/libddwaf/pull/118))
 
 ### v1.5.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/22
 
