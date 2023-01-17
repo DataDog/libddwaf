@@ -40,7 +40,7 @@ jobs:
         working-directory: ${{ github.workspace }}/packages
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
-        run: for %v in (*.tar.gz) do certutil -hashfile "%v" sha256 | find /i /v "sha256" | find /i /v "certutil" > "%v".sha256
+        run: for %%v in (*.tar.gz) do certutil -hashfile "%%v" sha256 | find /i /v "sha256" | find /i /v "certutil" > "%%v".sha256
       - uses: actions/upload-artifact@v3
         with:
           name: libddwaf-windows-${{ matrix.arch }}
