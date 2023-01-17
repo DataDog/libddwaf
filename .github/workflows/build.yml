@@ -226,8 +226,8 @@ jobs:
         run: find
       - name: Release
         uses: softprops/action-gh-release@v1
-        draft: true
         with:
+          draft: true
           files: |
             /artifacts/**.tar.gz
             /artifacts/**.sha256
