@@ -1,5 +1,11 @@
 # libddwaf release
 
+### v1.6.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/17
+
+#### Miscellaneous
+- Add SHA256 to packages ([#128](https://github.com/DataDog/libddwaf/pull/128))
+- Automatic draft release on tag ([#129](https://github.com/DataDog/libddwaf/pull/129))
+
 ### v1.6.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/10
 
 #### Changes
