@@ -318,6 +318,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "DataDog WAF Library")
 set(CPACK_RESOURCE_FILE_README "${libddwaf_SOURCE_DIR}/README.md")
 set(CPACK_GENERATOR "TGZ")
 set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_PACKAGE_CHECKSUM "SHA256")
 
 ## Package name
 execute_process(COMMAND git describe --exact-match --tags HEAD
