@@ -14,6 +14,7 @@ jobs:
   windows-builds:
     runs-on: windows-2019
     strategy:
+      fail-fast: false
       matrix:
         arch:
           - Win32
@@ -72,7 +73,7 @@ jobs:
         working-directory: ${{ github.workspace }}/packages
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
-        run: for file in *.tar.gz; do sha256sum "$file" > "$(basename $file .tar.gz).sha256"; done
+        run: for file in *.tar.gz; do shasum -a 256 "$file" > "$(basename $file .tar.gz).sha256"; done
       - uses: actions/upload-artifact@v3
         with:
           name: libddwaf-macos-x86_64
@@ -102,7 +103,7 @@ jobs:
         working-directory: ${{ github.workspace }}/packages
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
-        run: for file in *.tar.gz; do sha256sum "$file" > "$(basename $file .tar.gz).sha256"; done
+        run: for file in *.tar.gz; do shasum -a 256 "$file" > "$(basename $file .tar.gz).sha256"; done
       - uses: actions/upload-artifact@v3
         with:
           name: libddwaf-macos-arm64
@@ -113,6 +114,7 @@ jobs:
   docker-builds:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         target:
           - name: mingw64
