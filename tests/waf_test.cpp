@@ -191,5 +191,3 @@ TEST(TestWaf, RuleDisabledInRuleset)
         EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
     }
 }
-
-
