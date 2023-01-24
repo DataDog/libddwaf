@@ -33,6 +33,37 @@ TEST(TestParameter, ToBool)
 
         ddwaf_object_free(&root);
     }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "TrUe");
+
+        bool value = ddwaf::parameter(root);
+        EXPECT_TRUE(value);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "false");
+
+        bool value = ddwaf::parameter(root);
+        EXPECT_FALSE(value);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "FaLsE");
+
+        bool value = ddwaf::parameter(root);
+        EXPECT_FALSE(value);
+
+        ddwaf_object_free(&root);
+    }
+
     {
         ddwaf_object root;
         ddwaf_object_map(&root);
