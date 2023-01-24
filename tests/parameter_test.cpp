@@ -30,6 +30,8 @@ TEST(TestParameter, ToBool)
 
         bool value = ddwaf::parameter(root);
         EXPECT_TRUE(value);
+
+        ddwaf_object_free(&root);
     }
     {
         ddwaf_object root;

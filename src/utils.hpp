@@ -22,9 +22,10 @@ size_t find_string_cutoff(
     const char *str, size_t length, uint32_t max_string_length = DDWAF_MAX_STRING_LENGTH);
 
 // Internals
+// clang-format off
 #define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
 #define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
-
+// clang-format on
 
 namespace ddwaf {
 
