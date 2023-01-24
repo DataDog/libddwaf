@@ -18,7 +18,7 @@ namespace {
 // Maximum number of characters required to represent a 64 bit integer as a string
 // 20 bytes for UINT64_MAX or INT64_MIN + null byte
 constexpr size_t UINT64_CHARS = 21;
-}
+} // namespace
 
 ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
 {

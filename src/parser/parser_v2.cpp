@@ -187,11 +187,10 @@ void parse_rule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builde
         }
 
         auto tags = at<parameter::map>(rule, "tags");
-        auto rule_ptr =
-            std::make_shared<ddwaf::rule>(std::string(id), at<std::string>(rule, "name"),
-                at<std::string>(tags, "type"), at<std::string>(tags, "category", ""),
-                std::move(conditions), at<std::vector<std::string>>(rule, "on_match", {}),
-                at<bool>(rule, "enabled", true));
+        auto rule_ptr = std::make_shared<ddwaf::rule>(std::string(id),
+            at<std::string>(rule, "name"), at<std::string>(tags, "type"),
+            at<std::string>(tags, "category", ""), std::move(conditions),
+            at<std::vector<std::string>>(rule, "on_match", {}), at<bool>(rule, "enabled", true));
 
         rs.insert_rule(rule_ptr);
         info.add_loaded();

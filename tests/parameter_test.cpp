@@ -115,7 +115,6 @@ TEST(TestParameter, ToInt64)
     }
 }
 
-
 TEST(TestParameter, ToString)
 {
     {

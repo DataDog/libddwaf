@@ -195,7 +195,6 @@ parameter::operator int64_t()
     throw bad_cast("signed", strtype(type));
 }
 
-
 parameter::operator bool()
 {
     if (type == DDWAF_OBJ_BOOL) {
@@ -204,8 +203,7 @@ parameter::operator bool()
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
         std::string_view str_bool{stringValue, nbEntries};
-        if (str_bool.size() == (sizeof("true") - 1) &&
-            (str_bool[0] == 'T' || str_bool[0] == 't') &&
+        if (str_bool.size() == (sizeof("true") - 1) && (str_bool[0] == 'T' || str_bool[0] == 't') &&
             (str_bool[1] == 'R' || str_bool[1] == 'r') &&
             (str_bool[2] == 'U' || str_bool[2] == 'u') &&
             (str_bool[3] == 'E' || str_bool[3] == 'e')) {
