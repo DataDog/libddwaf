@@ -14,7 +14,7 @@
 #include <PWTransformer.h>
 
 #include <utf8.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 static uint8_t fromHex(char c);
 static bool replaceIfMatch(char *array, uint64_t &readHead, uint64_t &writeHead,
@@ -598,7 +598,7 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object *parameter, bool readOnly)
                             }
 
                             read += 1;
-                        } else if (isdigit(array[read + 2]) != 0) {
+                        } else if (ddwaf::isdigit(array[read + 2])) {
                             return true;
                         }
 
@@ -645,17 +645,17 @@ bool PWTransformer::transformDecodeHTML(ddwaf_object *parameter, bool readOnly)
                         }
                     }
                     // Numeric codepoint
-                    else if (read < length && (isdigit(array[read]) != 0)) {
+                    else if (read < length && ddwaf::isdigit(array[read])) {
                         // Compute the codepoint. We need to compute an arbitrary number of digits
                         // because browsers do too :(
-                        while (read < length && (isdigit(array[read]) != 0)) {
+                        while (read < length && ddwaf::isdigit(array[read])) {
                             codePoint *= 10;
                             codePoint += (uint32_t)array[read++] - '0';
 
                             // If we go out of range, move the read head to the end and abort
                             // immediately. We don't want to risk an overflow
                             if (codePoint > 0x10ffff) {
-                                for (; read < length && (isdigit(array[read]) != 0); read += 1) {}
+                                for (; read < length && ddwaf::isdigit(array[read]); read += 1) {}
                             }
                         }
                     }
@@ -1103,7 +1103,7 @@ bool PWTransformer::transformNumerize(ddwaf_object *parameter, bool readOnly)
     uint64_t value = 0;
 
     for (uint64_t read = isNegative ? 1 : 0; read < parameter->nbEntries; ++read) {
-        if (isdigit(parameter->stringValue[read]) == 0) {
+        if (!ddwaf::isdigit(parameter->stringValue[read])) {
             return false;
         }
 
@@ -1428,7 +1428,7 @@ bool PWTransformer::doesNeedTransform(
 
 static uint8_t fromHex(char c)
 {
-    if (isdigit(c) != 0) {
+    if (ddwaf::isdigit(c)) {
         return (uint8_t)c - '0';
     }
 

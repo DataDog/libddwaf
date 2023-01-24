@@ -7,7 +7,7 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <log.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 namespace ddwaf::exclusion {
 

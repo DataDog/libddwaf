@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <log.hpp>
 #include <obfuscator.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 namespace ddwaf {
 

@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cstddef>
-#include <utils.h>
+#include <utils.hpp>
 
 size_t find_string_cutoff(const char *str, size_t length, uint32_t max_string_length)
 {

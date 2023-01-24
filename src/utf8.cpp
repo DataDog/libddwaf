@@ -12,7 +12,7 @@
 #include <vector>
 
 #include <utf8.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 extern "C" {
 #include <stdint.h>

@@ -6,7 +6,7 @@
 
 #include <libinjection.h>
 #include <rule_processor/is_xss.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 namespace ddwaf::rule_processor {
 

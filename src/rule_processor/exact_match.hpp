@@ -10,7 +10,7 @@
 #include <rule_processor/base.hpp>
 #include <string_view>
 #include <unordered_map>
-#include <utils.h>
+#include <utils.hpp>
 
 namespace ddwaf::rule_processor {
 

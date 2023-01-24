@@ -7,7 +7,7 @@
 #include <array>
 #include <libinjection.h>
 #include <rule_processor/is_sqli.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 namespace ddwaf::rule_processor {
 

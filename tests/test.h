@@ -44,7 +44,7 @@ using namespace std;
 #include <parser/common.hpp>
 #include <rule_data_dispatcher.hpp>
 #include <ruleset_info.hpp>
-#include <utils.h>
+#include <utils.hpp>
 #include <waf.hpp>
 #include <yaml-cpp/yaml.h>
 
