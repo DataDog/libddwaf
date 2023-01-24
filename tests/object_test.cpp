@@ -83,6 +83,7 @@ TEST(TestObject, TestCreateInt)
         EXPECT_STREQ(ddwaf_object_get_string(&object, NULL), "-9223372036854775808");
         EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
         EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
+        EXPECT_EQ(ddwaf_object_get_bool(&object), false);
 
         ddwaf_object_free(&object);
     }
@@ -102,6 +103,7 @@ TEST(TestObject, TestCreateInt)
         EXPECT_STREQ(ddwaf_object_get_string(&object, NULL), "9223372036854775807");
         EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
         EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
+        EXPECT_EQ(ddwaf_object_get_bool(&object), false);
 
         ddwaf_object_free(&object);
     }
@@ -119,6 +121,7 @@ TEST(TestObject, TestCreateIntForce)
     EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_SIGNED);
     EXPECT_EQ(ddwaf_object_get_signed(&object), INT64_MIN);
     EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
+    EXPECT_EQ(ddwaf_object_get_bool(&object), false);
 
     ddwaf_object_free(&object);
 }
@@ -139,6 +142,7 @@ TEST(TestObject, TestCreateUint)
     EXPECT_STREQ(ddwaf_object_get_string(&object, NULL), "18446744073709551615");
     EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
     EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
+    EXPECT_EQ(ddwaf_object_get_bool(&object), false);
 
     ddwaf_object_free(&object);
 }
@@ -155,8 +159,44 @@ TEST(TestObject, TestCreateUintForce)
     EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_UNSIGNED);
     EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
     EXPECT_EQ(ddwaf_object_get_unsigned(&object), UINT64_MAX);
+    EXPECT_EQ(ddwaf_object_get_bool(&object), false);
 
     ddwaf_object_free(&object);
+}
+
+TEST(TestObject, TestCreateBool)
+{
+    {
+        ddwaf_object object;
+        ddwaf_object_bool(&object, true);
+
+        EXPECT_EQ(object.type, DDWAF_OBJ_BOOL);
+        EXPECT_EQ(object.boolean, true);
+
+        // Getters
+        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_BOOL);
+        EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
+        EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
+        EXPECT_EQ(ddwaf_object_get_bool(&object), true);
+
+        ddwaf_object_free(&object);
+    }
+
+    {
+        ddwaf_object object;
+        ddwaf_object_bool(&object, false);
+
+        EXPECT_EQ(object.type, DDWAF_OBJ_BOOL);
+        EXPECT_EQ(object.boolean, false);
+
+        // Getters
+        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_BOOL);
+        EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
+        EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
+        EXPECT_EQ(ddwaf_object_get_bool(&object), false);
+
+        ddwaf_object_free(&object);
+    }
 }
 
 TEST(TestObject, TestCreateArray)

@@ -380,6 +380,15 @@ int64_t ddwaf_object_get_signed(ddwaf_object *object)
     return object->intValue;
 }
 
+bool ddwaf_object_get_bool(ddwaf_object *object)
+{
+    if (object == nullptr || object->type != DDWAF_OBJ_BOOL) {
+        return false;
+    }
+
+    return object->boolean;
+}
+
 ddwaf_object *ddwaf_object_get_index(ddwaf_object *object, size_t index)
 {
     if (object == nullptr || !ddwaf::object::is_container(object) || index >= object->nbEntries) {
