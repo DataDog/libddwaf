@@ -623,6 +623,17 @@ uint64_t ddwaf_object_get_unsigned(ddwaf_object *object);
 int64_t ddwaf_object_get_signed(ddwaf_object *object);
 
 /**
+ * ddwaf_object_get_bool
+ *
+ * Returns the boolean contained within the object.
+ *
+ * @param object The object from which to get the boolean.
+ *
+ * @return The boolean or false if the object is not a boolean.
+ **/
+bool ddwaf_object_get_bool(ddwaf_object *object);
+
+/**
  * ddwaf_object_get_index
  *
  * Returns the object contained in the container at the given index.
