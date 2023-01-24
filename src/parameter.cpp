@@ -147,7 +147,7 @@ parameter::operator std::string_view()
         throw bad_cast("string", strtype(type));
     }
 
-    return {stringValue, nbEntries};
+    return {stringValue, static_cast<size_t>(nbEntries)};
 }
 
 parameter::operator std::string()
@@ -156,7 +156,7 @@ parameter::operator std::string()
         throw bad_cast("string", strtype(type));
     }
 
-    return {stringValue, nbEntries};
+    return {stringValue, static_cast<size_t>(nbEntries)};
 }
 
 parameter::operator uint64_t()
@@ -202,7 +202,7 @@ parameter::operator bool()
     }
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        std::string_view str_bool{stringValue, nbEntries};
+        std::string_view str_bool{stringValue, static_cast<size_t>(nbEntries)};
         if (str_bool.size() == (sizeof("true") - 1) && (str_bool[0] == 'T' || str_bool[0] == 't') &&
             (str_bool[1] == 'R' || str_bool[1] == 'r') &&
             (str_bool[2] == 'U' || str_bool[2] == 'u') &&
