@@ -13,7 +13,7 @@
 #include <rule.hpp>
 #include <string_view>
 #include <type_traits>
-#include <utils.h>
+#include <utils.hpp>
 #include <vector>
 
 namespace ddwaf::rule_data {

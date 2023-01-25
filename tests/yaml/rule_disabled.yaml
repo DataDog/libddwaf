@@ -1,0 +1,14 @@
+version: '2.1'
+rules:
+  - id: id-rule-1
+    name: rule1
+    enabled: false
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: rule1

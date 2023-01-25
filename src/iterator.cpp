@@ -7,7 +7,7 @@
 #include <ddwaf.h>
 #include <iterator.hpp>
 #include <log.hpp>
-#include <utils.h>
+#include <utils.hpp>
 #include <vector>
 
 namespace ddwaf::object {

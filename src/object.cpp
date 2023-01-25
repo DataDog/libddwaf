@@ -11,9 +11,15 @@
 #include <cstdlib>
 #include <cstring>
 #include <log.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 extern "C" {
+namespace {
+// Maximum number of characters required to represent a 64 bit integer as a string
+// 20 bytes for UINT64_MAX or INT64_MIN + null byte
+constexpr size_t UINT64_CHARS = 21;
+} // namespace
+
 ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
 {
     if (object == nullptr) {
@@ -96,7 +102,7 @@ ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
     }
 
     // INT64_MIN is 20 char long
-    char container[sizeof(STR(INT64_MIN))] = {0};
+    char container[UINT64_CHARS] = {0};
     size_t length = (size_t)snprintf(container, sizeof(container), "%" PRId64, value);
 
     return ddwaf_object_stringl(object, container, length);
@@ -109,7 +115,7 @@ ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
     }
 
     // UINT64_MAX is 20 char long
-    char container[sizeof(STR(UINT64_MAX))] = {0};
+    char container[UINT64_CHARS] = {0};
     size_t length = (size_t)snprintf(container, sizeof(container), "%" PRIu64, value);
 
     return ddwaf_object_stringl(object, container, length);

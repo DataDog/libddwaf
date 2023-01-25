@@ -37,7 +37,8 @@ public:
     //       move condition matching from context.
 
     rule(std::string &&id_, std::string &&name_, std::string &&type_, std::string &&category_,
-        std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_ = {});
+        std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_ = {},
+        bool enabled_ = true);
 
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;

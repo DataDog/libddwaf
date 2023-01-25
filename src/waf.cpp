@@ -14,7 +14,7 @@
 #include <parameter.hpp>
 #include <parser/parser.hpp>
 #include <stdexcept>
-#include <utils.h>
+#include <utils.hpp>
 #include <waf.hpp>
 
 using namespace std::literals;

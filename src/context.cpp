@@ -10,7 +10,7 @@
 #include <exception.hpp>
 #include <tuple>
 #include <unordered_set>
-#include <utils.h>
+#include <utils.hpp>
 #include <waf.hpp>
 
 namespace ddwaf {

@@ -9,7 +9,7 @@
 #include <context.hpp>
 #include <ruleset.hpp>
 #include <ruleset_info.hpp>
-#include <utils.h>
+#include <utils.hpp>
 #include <version.hpp>
 
 namespace ddwaf {

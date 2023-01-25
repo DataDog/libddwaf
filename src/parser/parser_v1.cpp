@@ -62,29 +62,10 @@ condition::ptr parseCondition(parameter::map &rule, manifest_builder &mb,
         auto regex = at<std::string>(params, "regex");
         options = at<parameter::map>(params, "options", options);
 
-        bool case_sensitive = false;
-        if (options.find("case_sensitive") != options.end()) {
-            std::string case_opt = options["case_sensitive"];
-            std::transform(case_opt.begin(), case_opt.end(), case_opt.begin(), ::tolower);
-            if (case_opt == "true") {
-                case_sensitive = true;
-            }
-        }
-
-        int min_length = 0;
-        if (options.find("min_length") != options.end()) {
-            std::string length_opt = options["min_length"];
-            try {
-                min_length = std::stoi(length_opt);
-            } catch (const std::out_of_range &e) {
-                throw ddwaf::parsing_error("min_length value too large");
-            } catch (const std::invalid_argument &e) {
-                throw ddwaf::parsing_error("min_length not a valid number");
-            }
-
-            if (min_length < 0) {
-                throw ddwaf::parsing_error("min_length is a negative number");
-            }
+        auto case_sensitive = at<bool>(options, "case_sensitive", false);
+        auto min_length = at<int64_t>(options, "min_length", 0);
+        if (min_length < 0) {
+            throw ddwaf::parsing_error("min_length is a negative number");
         }
 
         processor =

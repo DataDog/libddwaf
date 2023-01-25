@@ -22,11 +22,14 @@ size_t find_string_cutoff(
     const char *str, size_t length, uint32_t max_string_length = DDWAF_MAX_STRING_LENGTH);
 
 // Internals
+// clang-format off
 #define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
 #define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
+// clang-format on
 
+namespace ddwaf {
 
-namespace ddwaf::object {
+namespace object {
 
 inline bool is_container(const ddwaf_object *obj)
 {
@@ -43,4 +46,8 @@ inline bool is_scalar(const ddwaf_object *obj)
     return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
 }
 
-} // namespace ddwaf::object
+} // namespace object
+
+inline bool isdigit(char c) { return (c >= '0' && c <= '9'); }
+
+} // namespace ddwaf
