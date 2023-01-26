@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "ddwaf.h"
 #include <charconv>
 #include <cinttypes>
 #include <exception.hpp>
@@ -11,7 +12,7 @@
 
 namespace {
 
-const std::string strtype(int type)
+std::string strtype(int type)
 {
     switch (type) {
     case DDWAF_OBJ_MAP:
@@ -20,6 +21,14 @@ const std::string strtype(int type)
         return "array";
     case DDWAF_OBJ_STRING:
         return "string";
+    case DDWAF_OBJ_BOOL:
+        return "bool";
+    case DDWAF_OBJ_UNSIGNED:
+        return "unsigned";
+    case DDWAF_OBJ_SIGNED:
+        return "signed";
+    default:
+        break;
     }
     return "unknown";
 }
