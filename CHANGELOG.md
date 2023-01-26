@@ -2,7 +2,7 @@
 
 ### v1.6.2  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/26
 #### Changes
-- Add boolean getter (#132)
+- Add boolean getter ([#132](https://github.com/DataDog/libddwaf/pull/132))
 - Add support for converting string to bool in parameter bool cast operator ([#133](https://github.com/DataDog/libddwaf/pull/133))
 - Add parameter `int64_t` cast operator ([#133](https://github.com/DataDog/libddwaf/pull/133))
 - Add support for `enabled` flag on ruleset parser ([#133](https://github.com/DataDog/libddwaf/pull/133))
