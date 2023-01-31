@@ -39,6 +39,7 @@ public:
     context &operator=(context &&) = delete;
     ~context() = default;
 
+    void set_waf(std::shared_ptr<waf> &waf) { waf_reference_ = waf; }
     DDWAF_RET_CODE run(const ddwaf_object &, optional_ref<ddwaf_result> res, uint64_t);
 
     // These two functions below return references to internal objects,
@@ -71,6 +72,8 @@ protected:
     // Cache of collections to avoid processing once a result has been obtained
     std::unordered_map<std::string_view, collection::cache_type> collection_cache_;
     std::unordered_set<std::string_view> seen_actions_;
+    
+    std::shared_ptr<waf> waf_reference_;
 };
 
 } // namespace ddwaf

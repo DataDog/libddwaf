@@ -7,6 +7,7 @@
 
 #include <config.hpp>
 #include <context.hpp>
+#include <memory>
 #include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <utils.hpp>
@@ -16,6 +17,8 @@ namespace ddwaf {
 
 class waf {
 public:
+    using ptr = std::shared_ptr<waf>;
+
     waf(ddwaf::ruleset &&ruleset, ddwaf::config &&config)
         : ruleset_(std::move(ruleset)), config_(std::move(config))
     {}
