@@ -8,10 +8,7 @@
 #define DDWAF_H
 
 #ifdef __cplusplus
-namespace std {
-template <typename T>
-class shared_ptr;
-} // namespace std
+#include <memory>
 namespace ddwaf{
 class waf;
 class context;
