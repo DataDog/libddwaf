@@ -14,7 +14,7 @@ TEST(TestWaf, RootAddresses)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    auto instance = waf::from_config(rule, nullptr, info);
     ddwaf_object_free(&rule);
 
     std::set<std::string_view> available_addresses{"value1", "value2"};
@@ -29,7 +29,7 @@ TEST(TestWaf, RuleDatIDs)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    auto instance = waf::from_config(rule, nullptr, info);
     ddwaf_object_free(&rule);
 
     std::set<std::string_view> available_ids{"usr_data", "ip_data"};
@@ -44,7 +44,7 @@ TEST(TestWaf, EmptyRuleDatIDs)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    auto instance = waf::from_config(rule, nullptr, info);
     ddwaf_object_free(&rule);
 
     EXPECT_TRUE(instance->get_rule_data_ids().empty());
@@ -56,7 +56,7 @@ TEST(TestWaf, BasicContextRun)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    auto instance = waf::from_config(rule, nullptr, info);
     ddwaf_object_free(&rule);
 
     ddwaf_object root, tmp;
@@ -73,7 +73,7 @@ TEST(TestWaf, ToggleRule)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    auto instance = waf::from_config(rule, nullptr, info);
     ddwaf_object_free(&rule);
 
     {
@@ -111,7 +111,7 @@ TEST(TestWaf, ToggleNonExistentRules)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    auto instance = waf::from_config(rule, nullptr, info);
     ddwaf_object_free(&rule);
 
     ddwaf_object root, tmp;
@@ -129,7 +129,7 @@ TEST(TestWaf, ToggleWithInvalidObject)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    auto instance = waf::from_config(rule, nullptr, info);
     ASSERT_NE(instance.get(), nullptr);
     ddwaf_object_free(&rule);
 
@@ -160,7 +160,7 @@ TEST(TestWaf, RuleDisabledInRuleset)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    std::unique_ptr<ddwaf::waf> instance(waf::from_config(rule, nullptr, info));
+    auto instance = waf::from_config(rule, nullptr, info);
     ddwaf_object_free(&rule);
 
     {

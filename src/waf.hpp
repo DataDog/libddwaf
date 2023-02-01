@@ -7,6 +7,7 @@
 
 #include <config.hpp>
 #include <context.hpp>
+#include <memory>
 #include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <utils.hpp>
@@ -14,16 +15,14 @@
 
 namespace ddwaf {
 
-class waf {
+class waf : public std::enable_shared_from_this<waf> {
 public:
-    waf(ddwaf::ruleset &&ruleset, ddwaf::config &&config)
-        : ruleset_(std::move(ruleset)), config_(std::move(config))
-    {}
+    using ptr = std::shared_ptr<waf>;
 
-    static waf *from_config(
+    static waf::ptr from_config(
         const ddwaf_object &rules, const ddwaf_config *config, ddwaf::ruleset_info &info);
 
-    ddwaf::context create_context() { return {ruleset_, config_}; }
+    ddwaf::context create_context() { return {ruleset_, config_, shared_from_this()}; }
 
     void update_rule_data(ddwaf::parameter::vector &&input) { ruleset_.dispatcher.dispatch(input); }
 
@@ -39,6 +38,10 @@ public:
     }
 
 protected:
+    waf(ddwaf::ruleset &&ruleset, ddwaf::config &&config)
+        : ruleset_(std::move(ruleset)), config_(std::move(config))
+    {}
+
     ddwaf::ruleset ruleset_;
     ddwaf::config config_;
 };
