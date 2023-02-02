@@ -147,7 +147,7 @@ jobs:
         working-directory: ${{ github.workspace }}/packages
         run: |
           brew install coreutils
-          for file in *.nupkg; do sha256sum "$file" > "$file.sha256"; done
+          for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
 
       - uses: actions/upload-artifact@v3
         with:
