@@ -144,17 +144,17 @@ jobs:
           # Create the universal binary for the shared library: libddwaf.dylib
           lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.dylib ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.dylib -create -output ./pack-temp/osx/$universalName/lib/libddwaf.dylib
           # Check the universal binary
-          lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.dylib | grep -q 'x86_64 arm64' && echo 'archs ok'
+          (lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.dylib | grep -q 'x86_64 arm64') && echo 'archs ok'
 
           # Create the universal binary for the static library: libddwaf.a.stripped
           lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.a.stripped ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.a.stripped -create -output ./pack-temp/osx/$universalName/lib/libddwaf.a.stripped
           # Check the universal binary
-          lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.a.stripped | grep -q 'x86_64 arm64' && echo 'archs ok'
+          (lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.a.stripped | grep -q 'x86_64 arm64') && echo 'archs ok'
 
           # Create the universal binary for the static library: libddwaf.a
           lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.a ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.a -create -output ./pack-temp/osx/$universalName/lib/libddwaf.a
           # Check the universal binary
-          lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.a | grep -q 'x86_64 arm64' && echo 'archs ok'
+          (lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.a | grep -q 'x86_64 arm64') && echo 'archs ok'
 
           # Create final tar preserving the same folder structure
           mkdir -p ./packages
