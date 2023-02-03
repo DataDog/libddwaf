@@ -158,7 +158,7 @@ jobs:
 
           # Create final tar preserving the same folder structure
           mkdir -p ./packages
-          tar -czvf ./packages/$universalName.tar.gz -C ./pack-temp/osx/ .
+          tar -czvf ./packages/$universalName.tar.gz -C ./pack-temp/osx/ $universalName
 
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
