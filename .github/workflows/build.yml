@@ -123,25 +123,42 @@ jobs:
 
       - name: Create universal binary
         run: |
-          function extract_file {
-            local -r arch=$1 filepat=$2 dest=$3
-            local -r file_in_arch=$(bsdtar -tf "$arch" | grep "$filepat" | head -1)
-            bsdtar -xOf "$arch" "$file_in_arch" > "$dest"/"$(basename "$file_in_arch")"
-          }
+          # Create temporal folders
+          mkdir -p ./pack-temp/{osx-x64,osx-arm64,osx}
 
-          mkdir -p ./pack-temp/{osx-x64,osx-arm64}
+          # Extract x86_64 and arm64 artifacts
+          tar -zxf ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.tar.gz -C ./pack-temp/osx-x64
+          tar -zxf ./artifacts/libddwaf-macos-arm64/libddwaf-*-darwin-arm64*.tar.gz -C ./pack-temp/osx-arm64
 
-          extract_file ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.tar.gz \
-            '/libddwaf\.dylib$' ./pack-temp/osx-x64
-          extract_file ./artifacts/libddwaf-macos-arm64/libddwaf-*-darwin-arm64*.tar.gz \
-            '/libddwaf\.dylib$' ./pack-temp/osx-arm64
+          # Copy one as a base for the universal artifact (headers and cmake files doesn't contains any arch data, so it's safe to use for the universal package)
+          cp -R ./pack-temp/osx-x64/* ./pack-temp/osx
 
-          lipo ./pack-temp/osx-x64/libddwaf.dylib ./pack-temp/osx-arm64/libddwaf.dylib -create -output ./pack-temp/libddwaf.dylib
-          lipo -archs ./pack-temp/libddwaf.dylib | grep -q 'x86_64 arm64' && echo 'archs ok'
+          # Declare names vars
+          x64Name=$(cd ./pack-temp/osx-x64 && ls)
+          arm64Name=$(cd ./pack-temp/osx-arm64 && ls)
+          universalName=$((cd ./pack-temp/osx && ls) | sed 's/x86_64/universal/g')
 
-          fileName=$((cd ./artifacts/libddwaf-macos-arm64 && ls *.tar.gz) | sed 's/arm64/universal/g')
+          # Change the current folder name with the universal name
+          mv ./pack-temp/osx/libddwaf-*-darwin-* ./pack-temp/osx/$universalName
+
+          # Create the universal binary for the shared library: libddwaf.dylib
+          lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.dylib ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.dylib -create -output ./pack-temp/osx/$universalName/lib/libddwaf.dylib
+          # Check the universal binary
+          lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.dylib | grep -q 'x86_64 arm64' && echo 'archs ok'
+
+          # Create the universal binary for the static library: libddwaf.a.stripped
+          lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.a.stripped ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.a.stripped -create -output ./pack-temp/osx/$universalName/lib/libddwaf.a.stripped
+          # Check the universal binary
+          lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.a.stripped | grep -q 'x86_64 arm64' && echo 'archs ok'
+
+          # Create the universal binary for the static library: libddwaf.a
+          lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.a ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.a -create -output ./pack-temp/osx/$universalName/lib/libddwaf.a
+          # Check the universal binary
+          lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.a | grep -q 'x86_64 arm64' && echo 'archs ok'
+
+          # Create final tar preserving the same folder structure
           mkdir -p ./packages
-          tar -czvf ./packages/$fileName ./pack-temp/libddwaf.dylib
+          tar -czvf ./packages/$universalName.tar.gz -C ./pack-temp/osx/ .
 
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
