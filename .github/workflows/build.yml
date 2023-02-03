@@ -112,6 +112,67 @@ jobs:
             ${{ github.workspace }}/packages/*.tar.gz
             ${{ github.workspace }}/packages/*.sha256
 
+  macos-universal-package:
+    runs-on: macos-11
+    needs: [macos-build, macos-cross-build]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Create universal binary
+        run: |
+          # Create temporal folders
+          mkdir -p ./pack-temp/{osx-x64,osx-arm64,osx}
+
+          # Extract x86_64 and arm64 artifacts
+          tar -zxf ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.tar.gz -C ./pack-temp/osx-x64
+          tar -zxf ./artifacts/libddwaf-macos-arm64/libddwaf-*-darwin-arm64*.tar.gz -C ./pack-temp/osx-arm64
+
+          # Copy one as a base for the universal artifact (headers and cmake files doesn't contains any arch data, so it's safe to use for the universal package)
+          cp -R ./pack-temp/osx-x64/* ./pack-temp/osx
+
+          # Declare names vars
+          x64Name=$(cd ./pack-temp/osx-x64 && ls)
+          arm64Name=$(cd ./pack-temp/osx-arm64 && ls)
+          universalName=$((cd ./pack-temp/osx && ls) | sed 's/x86_64/universal/g')
+
+          # Change the current folder name with the universal name
+          mv ./pack-temp/osx/libddwaf-*-darwin-* ./pack-temp/osx/$universalName
+
+          # Create the universal binary for the shared library: libddwaf.dylib
+          lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.dylib ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.dylib -create -output ./pack-temp/osx/$universalName/lib/libddwaf.dylib
+          # Check the universal binary
+          (lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.dylib | grep -q 'x86_64 arm64') && echo 'archs ok'
+
+          # Create the universal binary for the static library: libddwaf.a.stripped
+          lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.a.stripped ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.a.stripped -create -output ./pack-temp/osx/$universalName/lib/libddwaf.a.stripped
+          # Check the universal binary
+          (lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.a.stripped | grep -q 'x86_64 arm64') && echo 'archs ok'
+
+          # Create the universal binary for the static library: libddwaf.a
+          lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.a ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.a -create -output ./pack-temp/osx/$universalName/lib/libddwaf.a
+          # Check the universal binary
+          (lipo -archs ./pack-temp/osx/$universalName/lib/libddwaf.a | grep -q 'x86_64 arm64') && echo 'archs ok'
+
+          # Create final tar preserving the same folder structure
+          mkdir -p ./packages
+          tar -czvf ./packages/$universalName.tar.gz -C ./pack-temp/osx/ $universalName
+
+      - name: Generate Package sha256
+        working-directory: ${{ github.workspace }}/packages
+        run: |
+          brew install coreutils
+          for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: libddwaf-macos-universal
+          path: |
+            ${{ github.workspace }}/packages/*.tar.gz
+            ${{ github.workspace }}/packages/*.sha256
+
   docker-builds:
     runs-on: ubuntu-latest
     strategy:
@@ -158,7 +219,7 @@ jobs:
             /tmp/packages/*.sha256
 
   package-nuget:
-    needs: [ windows-builds, macos-build, macos-cross-build, docker-builds ]
+    needs: [ windows-builds, macos-build, macos-cross-build, macos-universal-package, docker-builds]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -183,20 +244,19 @@ jobs:
             bsdtar -xOf "$arch" "$file_in_arch" > "$dest"/"$(basename "$file_in_arch")"
           }
 
-          mkdir -p ./packages/nuget/runtimes/{linux-x64,linux-arm64,osx-x64,osx-arm64,win-x86,win-x64}/native
+          mkdir -p ./packages/nuget/runtimes/{linux-x64,linux-arm64,osx,win-x86,win-x64}/native
 
           extract_file ./artifacts/libddwaf-linux-x86_64/libddwaf-*-linux-x86_64*.tar.gz \
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-x64/native
           extract_file ./artifacts/libddwaf-linux-aarch64/libddwaf-*-linux-aarch64*.tar.gz \
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-arm64/native
-          extract_file ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.tar.gz \
-            '/libddwaf\.dylib$' ./packages/nuget/runtimes/osx-x64/native
-          extract_file ./artifacts/libddwaf-macos-arm64/libddwaf-*-darwin-arm64*.tar.gz \
-            '/libddwaf\.dylib$' ./packages/nuget/runtimes/osx-arm64/native
           extract_file ./artifacts/libddwaf-windows-Win32/libddwaf-*-windows-win32*.tar.gz \
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x86/native
           extract_file ./artifacts/libddwaf-windows-x64/libddwaf-*-windows-x64*.tar.gz \
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x64/native
+
+          extract_file ./artifacts/libddwaf-macos-universal/libddwaf-*-darwin-universal*.tar.gz \
+            '/libddwaf\.dylib$' ./packages/nuget/runtimes/osx/native
 
           # create nuget
           version=`cat ./version`
