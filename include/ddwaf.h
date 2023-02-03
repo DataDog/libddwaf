@@ -4,10 +4,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef pw_h
-#define pw_h
+#ifndef DDWAF_H
+#define DDWAF_H
 
 #ifdef __cplusplus
+#include <memory>
+namespace ddwaf{
+class waf;
+class context;
+} // namespace ddwaf
+using ddwaf_handle = std::shared_ptr<ddwaf::waf> *;
+using ddwaf_context = ddwaf::context *;
+
 extern "C"
 {
 #endif
@@ -72,14 +80,7 @@ typedef enum
     DDWAF_LOG_OFF,
 } DDWAF_LOG_LEVEL;
 
-#ifdef __cplusplus
-namespace ddwaf{
-class waf;
-class context;
-}
-using ddwaf_handle = ddwaf::waf *;
-using ddwaf_context = ddwaf::context *;
-#else
+#ifndef __cplusplus
 typedef struct _ddwaf_handle* ddwaf_handle;
 typedef struct _ddwaf_context* ddwaf_context;
 #endif
@@ -623,6 +624,17 @@ uint64_t ddwaf_object_get_unsigned(ddwaf_object *object);
 int64_t ddwaf_object_get_signed(ddwaf_object *object);
 
 /**
+ * ddwaf_object_get_bool
+ *
+ * Returns the boolean contained within the object.
+ *
+ * @param object The object from which to get the boolean.
+ *
+ * @return The boolean or false if the object is not a boolean.
+ **/
+bool ddwaf_object_get_bool(ddwaf_object *object);
+
+/**
  * ddwaf_object_get_index
  *
  * Returns the object contained in the container at the given index.
@@ -668,4 +680,4 @@ bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level);
 }
 #endif /* __cplusplus */
 
-#endif /* pw_h */
+#endif /*DDWAF_H */

@@ -17,7 +17,7 @@
 #include <obfuscator.hpp>
 #include <rule.hpp>
 #include <ruleset.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 namespace ddwaf {
 
@@ -25,8 +25,10 @@ class context {
 public:
     using object_set = std::unordered_set<const ddwaf_object *>;
 
-    context(ddwaf::ruleset &ruleset, const ddwaf::config &config)
-        : ruleset_(ruleset), config_(config), store_(ruleset_.manifest, config_.free_fn)
+    context(
+        ddwaf::ruleset &ruleset, const ddwaf::config &config, std::shared_ptr<waf> handle = nullptr)
+        : ruleset_(ruleset), config_(config), store_(ruleset_.manifest, config_.free_fn),
+          handle_(std::move(handle))
     {
         rule_filter_cache_.reserve(ruleset_.rule_filters.size());
         input_filter_cache_.reserve(ruleset_.input_filters.size());
@@ -71,6 +73,8 @@ protected:
     // Cache of collections to avoid processing once a result has been obtained
     std::unordered_map<std::string_view, collection::cache_type> collection_cache_;
     std::unordered_set<std::string_view> seen_actions_;
+
+    std::shared_ptr<waf> handle_;
 };
 
 } // namespace ddwaf

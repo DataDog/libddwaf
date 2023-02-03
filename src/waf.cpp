@@ -14,7 +14,7 @@
 #include <parameter.hpp>
 #include <parser/parser.hpp>
 #include <stdexcept>
-#include <utils.h>
+#include <utils.hpp>
 #include <waf.hpp>
 
 using namespace std::literals;
@@ -63,7 +63,7 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
 
 } // namespace
 
-waf *waf::from_config(
+waf::ptr waf::from_config(
     const ddwaf_object &ruleset, const ddwaf_config *config, ddwaf::ruleset_info &info)
 {
     try {
@@ -75,7 +75,7 @@ waf *waf::from_config(
 
         ddwaf::ruleset rs;
         parser::parse(ruleset, info, rs, cfg);
-        return new waf(std::move(rs), std::move(cfg));
+        return std::shared_ptr<waf>(new waf(std::move(rs), std::move(cfg)));
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
     }

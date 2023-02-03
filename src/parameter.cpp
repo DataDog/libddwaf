@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "ddwaf.h"
 #include <charconv>
 #include <cinttypes>
 #include <exception.hpp>
@@ -11,7 +12,7 @@
 
 namespace {
 
-const std::string strtype(int type)
+std::string strtype(int type)
 {
     switch (type) {
     case DDWAF_OBJ_MAP:
@@ -20,6 +21,14 @@ const std::string strtype(int type)
         return "array";
     case DDWAF_OBJ_STRING:
         return "string";
+    case DDWAF_OBJ_BOOL:
+        return "bool";
+    case DDWAF_OBJ_UNSIGNED:
+        return "unsigned";
+    case DDWAF_OBJ_SIGNED:
+        return "signed";
+    default:
+        break;
     }
     return "unknown";
 }
@@ -113,7 +122,7 @@ parameter::operator parameter::vector()
     }
 
     if (array == nullptr || nbEntries == 0) {
-        return parameter::vector();
+        return {};
     }
     return std::vector<parameter>(array, array + nbEntries);
 }
@@ -125,7 +134,7 @@ parameter::operator parameter::string_set()
     }
 
     if (array == nullptr || nbEntries == 0) {
-        return parameter::string_set();
+        return {};
     }
 
     parameter::string_set set;
@@ -147,7 +156,7 @@ parameter::operator std::string_view()
         throw bad_cast("string", strtype(type));
     }
 
-    return std::string_view(stringValue, nbEntries);
+    return {stringValue, static_cast<size_t>(nbEntries)};
 }
 
 parameter::operator std::string()
@@ -156,16 +165,18 @@ parameter::operator std::string()
         throw bad_cast("string", strtype(type));
     }
 
-    return std::string(stringValue, nbEntries);
+    return {stringValue, static_cast<size_t>(nbEntries)};
 }
 
 parameter::operator uint64_t()
 {
     if (type == DDWAF_OBJ_UNSIGNED) {
         return uintValue;
-    } else if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
+    }
+
+    if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
         uint64_t result;
-        auto end{&stringValue[nbEntries]};
+        const auto *end{&stringValue[nbEntries]};
         auto [endConv, err] = std::from_chars(stringValue, end, result);
         if (err == std::errc{} && endConv == end) {
             return result;
@@ -175,10 +186,47 @@ parameter::operator uint64_t()
     throw bad_cast("unsigned", strtype(type));
 }
 
+parameter::operator int64_t()
+{
+    if (type == DDWAF_OBJ_SIGNED) {
+        return intValue;
+    }
+
+    if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
+        int64_t result;
+        const auto *end{&stringValue[nbEntries]};
+        auto [endConv, err] = std::from_chars(stringValue, end, result);
+        if (err == std::errc{} && endConv == end) {
+            return result;
+        }
+    }
+
+    throw bad_cast("signed", strtype(type));
+}
+
 parameter::operator bool()
 {
     if (type == DDWAF_OBJ_BOOL) {
         return boolean;
+    }
+
+    if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
+        std::string_view str_bool{stringValue, static_cast<size_t>(nbEntries)};
+        if (str_bool.size() == (sizeof("true") - 1) && (str_bool[0] == 'T' || str_bool[0] == 't') &&
+            (str_bool[1] == 'R' || str_bool[1] == 'r') &&
+            (str_bool[2] == 'U' || str_bool[2] == 'u') &&
+            (str_bool[3] == 'E' || str_bool[3] == 'e')) {
+            return true;
+        }
+
+        if (str_bool.size() == (sizeof("false") - 1) &&
+            (str_bool[0] == 'F' || str_bool[0] == 'f') &&
+            (str_bool[1] == 'A' || str_bool[1] == 'a') &&
+            (str_bool[2] == 'L' || str_bool[2] == 'l') &&
+            (str_bool[3] == 'S' || str_bool[3] == 's') &&
+            (str_bool[4] == 'E' || str_bool[4] == 'e')) {
+            return false;
+        }
     }
 
     throw bad_cast("bool", strtype(type));

@@ -26,6 +26,46 @@ TEST(TestParameter, ToBool)
 
     {
         ddwaf_object root;
+        ddwaf_object_string(&root, "true");
+
+        bool value = ddwaf::parameter(root);
+        EXPECT_TRUE(value);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "TrUe");
+
+        bool value = ddwaf::parameter(root);
+        EXPECT_TRUE(value);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "false");
+
+        bool value = ddwaf::parameter(root);
+        EXPECT_FALSE(value);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "FaLsE");
+
+        bool value = ddwaf::parameter(root);
+        EXPECT_FALSE(value);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
         ddwaf_object_map(&root);
 
         EXPECT_THROW(static_cast<bool>(ddwaf::parameter(root)), ddwaf::bad_cast);
@@ -48,6 +88,54 @@ TEST(TestParameter, ToUint64)
 
         uint64_t value = ddwaf::parameter(root);
         EXPECT_EQ(value, 2123);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "2123");
+
+        uint64_t value = ddwaf::parameter(root);
+        EXPECT_EQ(value, 2123);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_map(&root);
+
+        EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+    }
+}
+
+TEST(TestParameter, ToInt64)
+{
+    {
+        ddwaf_object root;
+        ddwaf_object_signed_force(&root, -2123);
+
+        int64_t value = ddwaf::parameter(root);
+        EXPECT_EQ(value, -2123);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_signed(&root, -2123);
+
+        int64_t value = ddwaf::parameter(root);
+        EXPECT_EQ(value, -2123);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "-2123");
+
+        int64_t value = ddwaf::parameter(root);
+        EXPECT_EQ(value, -2123);
 
         ddwaf_object_free(&root);
     }

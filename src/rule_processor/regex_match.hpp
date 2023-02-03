@@ -9,7 +9,7 @@
 #include <memory>
 #include <re2/re2.h>
 #include <rule_processor/base.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 namespace ddwaf::rule_processor {
 

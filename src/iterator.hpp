@@ -14,7 +14,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <utils.h>
+#include <utils.hpp>
 #include <vector>
 
 // Eventually object will be a class rather than a namespace

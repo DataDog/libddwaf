@@ -16,8 +16,8 @@
 namespace ddwaf {
 
 rule::rule(std::string &&id_, std::string &&name_, std::string &&type_, std::string &&category_,
-    std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_)
-    : id(std::move(id_)), name(std::move(name_)), type(std::move(type_)),
+    std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_, bool enabled_)
+    : enabled(enabled_), id(std::move(id_)), name(std::move(name_)), type(std::move(type_)),
       category(std::move(category_)), conditions(std::move(conditions_)),
       actions(std::move(actions_))
 {

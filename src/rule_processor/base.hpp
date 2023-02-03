@@ -13,7 +13,7 @@
 
 #include <ddwaf.h>
 #include <event.hpp>
-#include <utils.h>
+#include <utils.hpp>
 
 namespace ddwaf::rule_processor {
 

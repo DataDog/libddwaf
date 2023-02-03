@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
-#include <utils.h>
+#include <utils.hpp>
 #include <vector>
 
 #include <ddwaf.h>

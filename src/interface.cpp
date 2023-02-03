@@ -47,7 +47,10 @@ ddwaf_handle ddwaf_init(
     try {
         if (rule != nullptr) {
             ddwaf::ruleset_info ri(info);
-            return ddwaf::waf::from_config(*rule, config, ri);
+            auto waf_ptr = ddwaf::waf::from_config(*rule, config, ri);
+            if (waf_ptr) {
+                return new std::shared_ptr<ddwaf::waf>(std::move(waf_ptr));
+            }
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
@@ -75,13 +78,13 @@ void ddwaf_destroy(ddwaf_handle handle)
 
 DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data)
 {
-    if (handle == nullptr || data == nullptr) {
+    if (handle == nullptr || *handle == nullptr || data == nullptr) {
         return DDWAF_ERR_INVALID_ARGUMENT;
     }
 
     try {
         ddwaf::parameter param = *data;
-        handle->update_rule_data(param);
+        (*handle)->update_rule_data(param);
     } catch (const ddwaf::bad_cast &e) {
         DDWAF_ERROR("%s", e.what());
         return DDWAF_ERR_INVALID_OBJECT;
@@ -98,13 +101,13 @@ DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data)
 
 DDWAF_RET_CODE ddwaf_toggle_rules(ddwaf_handle handle, ddwaf_object *rule_map)
 {
-    if (handle == nullptr || rule_map == nullptr) {
+    if (handle == nullptr || *handle == nullptr || rule_map == nullptr) {
         return DDWAF_ERR_INVALID_ARGUMENT;
     }
 
     try {
         ddwaf::parameter param = *rule_map;
-        handle->toggle_rules(param);
+        (*handle)->toggle_rules(param);
     } catch (const ddwaf::bad_cast &e) {
         DDWAF_ERROR("%s", e.what());
         return DDWAF_ERR_INVALID_OBJECT;
@@ -119,14 +122,14 @@ DDWAF_RET_CODE ddwaf_toggle_rules(ddwaf_handle handle, ddwaf_object *rule_map)
     return DDWAF_OK;
 }
 
-const char *const *ddwaf_required_addresses(ddwaf::waf *const handle, uint32_t *size)
+const char *const *ddwaf_required_addresses(ddwaf::waf::ptr *handle, uint32_t *size)
 {
-    if (handle == nullptr) {
+    if (handle == nullptr || *handle == nullptr) {
         *size = 0;
         return nullptr;
     }
 
-    const auto &addresses = handle->get_root_addresses();
+    const auto &addresses = (*handle)->get_root_addresses();
     if (addresses.empty() || addresses.size() > std::numeric_limits<uint32_t>::max()) {
         *size = 0;
         return nullptr;
@@ -136,14 +139,14 @@ const char *const *ddwaf_required_addresses(ddwaf::waf *const handle, uint32_t *
     return addresses.data();
 }
 
-const char *const *ddwaf_required_rule_data_ids(ddwaf::waf *const handle, uint32_t *size)
+const char *const *ddwaf_required_rule_data_ids(ddwaf::waf::ptr *handle, uint32_t *size)
 {
-    if (handle == nullptr) {
+    if (handle == nullptr || *handle == nullptr) {
         *size = 0;
         return nullptr;
     }
 
-    const auto &ids = handle->get_rule_data_ids();
+    const auto &ids = (*handle)->get_rule_data_ids();
     if (ids.empty() || ids.size() > std::numeric_limits<uint32_t>::max()) {
         *size = 0;
         return nullptr;
@@ -153,20 +156,18 @@ const char *const *ddwaf_required_rule_data_ids(ddwaf::waf *const handle, uint32
     return ids.data();
 }
 
-ddwaf_context ddwaf_context_init(ddwaf::waf *const handle)
+ddwaf_context ddwaf_context_init(ddwaf::waf::ptr *handle)
 {
-    ddwaf_context output = nullptr;
-
     try {
-        if (handle != nullptr) {
-            output = new ddwaf::context(handle->create_context());
+        if (handle != nullptr && *handle != nullptr) {
+            return new ddwaf::context((*handle)->create_context());
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
     }
-    return output;
+    return nullptr;
 }
 
 DDWAF_RET_CODE ddwaf_run(
