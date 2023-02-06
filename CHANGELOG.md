@@ -1,5 +1,10 @@
 # libddwaf release
 
+### v1.7.0  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/02/06
+#### Changes
+- Handle lifetime extension ([#135](https://github.com/DataDog/libddwaf/pull/135))
+- Create macos universal binary ([#136](https://github.com/DataDog/libddwaf/pull/136))
+
 ### v1.6.2  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/26
 #### Changes
 - Add boolean getter ([#132](https://github.com/DataDog/libddwaf/pull/132))
