@@ -23,7 +23,7 @@ TEST(TestRuleFilter, Match)
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
     ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions),
-        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
+        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}))}};
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -92,7 +92,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
     auto manifest = mb.build_manifest();
     ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions),
-        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
+        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}))}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
 
@@ -148,7 +148,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
 
     auto manifest = mb.build_manifest();
     ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions),
-        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
+        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}))}};
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -257,7 +257,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
 
     auto manifest = mb.build_manifest();
     ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions),
-        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
+        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}))}};
 
     ddwaf::object_store store(manifest);
     ddwaf::exclusion::rule_filter::cache_type cache;

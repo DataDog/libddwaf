@@ -159,7 +159,7 @@ parameter::operator std::string_view()
     return {stringValue, static_cast<size_t>(nbEntries)};
 }
 
-parameter::operator std::string()
+parameter::operator std::string() const
 {
     if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
         throw bad_cast("string", strtype(type));

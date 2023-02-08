@@ -36,9 +36,10 @@ public:
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
 
-    rule(std::string &&id_, std::string &&name_, std::string &&type_, std::string &&category_,
-        std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_ = {},
-        bool enabled_ = true);
+    rule(std::string &&id_, std::string &&name_,
+        std::unordered_map<std::string, std::string> &&tags_,
+        std::vector<condition::ptr> &&conditions_,
+        std::vector<std::string> &&actions_ = {}, bool enabled_ = true);
 
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;
@@ -48,7 +49,7 @@ public:
     // any relevant atomic member does not behave as such.
     rule(rule &&rhs) noexcept
         : enabled(rhs.enabled.load(std::memory_order_relaxed)), id(std::move(rhs.id)),
-          name(std::move(rhs.name)), type(std::move(rhs.type)), category(std::move(rhs.category)),
+          name(std::move(rhs.name)), tags(std::move(rhs.tags)),
           conditions(std::move(rhs.conditions)), targets(std::move(rhs.targets)),
           actions(std::move(rhs.actions))
     {}
@@ -58,8 +59,7 @@ public:
         enabled = rhs.enabled.load(std::memory_order_relaxed);
         id = std::move(rhs.id);
         name = std::move(rhs.name);
-        type = std::move(rhs.type);
-        category = std::move(rhs.category);
+        tags = std::move(rhs.tags);
         conditions = std::move(rhs.conditions);
         targets = std::move(rhs.targets);
         actions = std::move(rhs.actions);
@@ -76,11 +76,15 @@ public:
     bool is_enabled() const { return enabled.load(std::memory_order_relaxed); }
     void toggle(bool value) { enabled.store(value, std::memory_order_relaxed); }
 
+    std::string_view get_tag(const std::string &tag) const {
+        auto it = tags.find(tag);
+        return it == tags.end() ? std::string_view() : it->second;
+    }
+
     std::atomic<bool> enabled{true};
     std::string id;
     std::string name;
-    std::string type;
-    std::string category;
+    std::unordered_map<std::string, std::string> tags;
     std::vector<condition::ptr> conditions;
     std::unordered_set<ddwaf::manifest::target_type> targets;
     std::vector<std::string> actions;

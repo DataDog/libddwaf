@@ -14,25 +14,37 @@
 #include <exclusion/input_filter.hpp>
 #include <exclusion/rule_filter.hpp>
 #include <manifest.hpp>
+#include <mkmap.hpp>
+#include <obfuscator.hpp>
 #include <rule.hpp>
 #include <rule_data_dispatcher.hpp>
 
 namespace ddwaf {
+
+using sv_pair = std::pair<std::string_view, std::string_view>;
+
+struct sv_pair_hash {
+    std::size_t operator()(const sv_pair &t) const noexcept
+    {
+        return std::hash<std::string_view>()(t.first) ^ std::hash<std::string_view>()(t.second);
+    }
+};
+
+using rule_tag_map = ddwaf::multi_key_map<sv_pair, rule::ptr, sv_pair_hash>;
 
 struct ruleset {
     void insert_rule(rule::ptr rule)
     {
         rules.emplace(rule->id, rule);
         if (rule->actions.empty()) {
-            collections[rule->type].insert(rule);
+            collections[rule->get_tag("type")].insert(rule);
         } else {
-            priority_collections[rule->type].insert(rule);
+            priority_collections[rule->get_tag("type")].insert(rule);
         }
-        rules_by_type[rule->type].emplace(rule);
-        rules_by_category[rule->category].emplace(rule);
+        rules_by_type[rule->get_tag("type")].emplace(rule);
+        rules_by_category[rule->get_tag("category")].emplace(rule);
     }
 
-    // TODO use unordered sets for these functions
     std::set<rule::ptr> get_rules_by_type(std::string_view type) const
     {
         auto it = rules_by_type.find(type);
@@ -73,6 +85,9 @@ struct ruleset {
 
         return intersection;
     }
+
+    ddwaf_object_free_fn free_fn{ddwaf_object_free};
+    ddwaf::obfuscator event_obfuscator;
 
     ddwaf::manifest manifest;
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;

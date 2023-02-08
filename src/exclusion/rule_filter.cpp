@@ -18,6 +18,7 @@ rule_filter::rule_filter(
         rule_targets_.emplace(std::move(rule_targets.extract(it++).value()));
     }
 }
+
 std::unordered_set<rule::ptr> rule_filter::match(const object_store &store,
     const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const
 {

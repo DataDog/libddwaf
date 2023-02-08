@@ -21,10 +21,6 @@
 #include <unordered_map>
 #include <vector>
 
-using ddwaf::manifest;
-using ddwaf::manifest_builder;
-using ddwaf::parameter;
-using ddwaf::parser::at;
 using ddwaf::rule_processor::base;
 
 namespace ddwaf::parser::v1 {
@@ -32,7 +28,7 @@ namespace ddwaf::parser::v1 {
 namespace {
 
 condition::ptr parseCondition(parameter::map &rule, manifest_builder &mb,
-    std::vector<PW_TRANSFORM_ID> transformers, ddwaf::config &cfg)
+    std::vector<PW_TRANSFORM_ID> transformers, ddwaf::object_limits limits)
 {
     auto operation = at<std::string_view>(rule, "operation");
     auto params = at<parameter::map>(rule, "parameters");
@@ -85,7 +81,8 @@ condition::ptr parseCondition(parameter::map &rule, manifest_builder &mb,
             throw ddwaf::parsing_error("empty address");
         }
 
-        std::string root, key_path;
+        std::string root;
+        std::string key_path;
         size_t pos = input.find(':', 0);
         if (pos == std::string::npos || pos + 1 >= input.size()) {
             root = input;
@@ -104,11 +101,11 @@ condition::ptr parseCondition(parameter::map &rule, manifest_builder &mb,
     }
 
     return std::make_shared<condition>(
-        std::move(targets), std::move(transformers), std::move(processor), cfg.limits);
+        std::move(targets), std::move(transformers), std::move(processor), limits);
 }
 
 void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builder &mb,
-    ddwaf::ruleset &rs, ddwaf::config &cfg)
+    ddwaf::ruleset &rs, ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
     if (rs.rules.find(id) != rs.rules.end()) {
@@ -130,14 +127,27 @@ void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builder
 
         std::vector<condition::ptr> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
+        conditions.reserve(conditions_array.size());
         for (parameter::map cond : conditions_array) {
-            conditions.push_back(parseCondition(cond, mb, rule_transformers, cfg));
+            conditions.push_back(parseCondition(cond, mb, rule_transformers, limits));
         }
 
-        auto tags = at<parameter::map>(rule, "tags");
+
+        std::unordered_map<std::string, std::string> tags;
+        for (auto &[key, value]: at<parameter::map>(rule, "tags")) {
+            try {
+                tags.emplace(key, std::string(value));
+            } catch (const bad_cast &e) {
+                throw invalid_type(std::string(key), e);
+            }
+        }
+
+        if (tags.find("type") == tags.end()) {
+            throw ddwaf::parsing_error("missing key 'type'");
+        }
+
         auto rule_ptr = std::make_shared<ddwaf::rule>(std::string(id),
-            at<std::string>(rule, "name"), at<std::string>(tags, "type"),
-            at<std::string>(tags, "category", ""), std::move(conditions));
+            at<std::string>(rule, "name"), std::move(tags), std::move(conditions));
 
         rs.insert_rule(rule_ptr);
         info.add_loaded();
@@ -149,7 +159,7 @@ void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builder
 
 } // namespace
 
-void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, ddwaf::config &cfg)
+void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, object_limits limits)
 {
     auto rules_array = at<parameter::vector>(ruleset, "events");
     rs.rules.reserve(rules_array.size());
@@ -157,7 +167,7 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, ddwa
     ddwaf::manifest_builder mb;
     for (parameter::map rule : rules_array) {
         try {
-            parseRule(rule, info, mb, rs, cfg);
+            parseRule(rule, info, mb, rs, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("%s", e.what());
             info.add_failed();

@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include "clock.hpp"
+#include <clock.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>
 #include <log.hpp>
@@ -22,7 +22,7 @@ using namespace std::literals;
 namespace ddwaf {
 
 namespace {
-obfuscator obfuscator_from_config(const ddwaf_config *config)
+ddwaf::obfuscator obfuscator_from_config(const ddwaf_config *config)
 {
     std::string_view key_regex;
     std::string_view value_regex;
@@ -67,15 +67,10 @@ waf::ptr waf::from_config(
     const ddwaf_object &ruleset, const ddwaf_config *config, ddwaf::ruleset_info &info)
 {
     try {
-        ddwaf::config cfg{
+        return std::shared_ptr<waf>(new waf(ruleset, info,
             limits_from_config(config),
-            obfuscator_from_config(config),
             config != nullptr ? config->free_fn : ddwaf_object_free,
-        };
-
-        ddwaf::ruleset rs;
-        parser::parse(ruleset, info, rs, cfg);
-        return std::shared_ptr<waf>(new waf(std::move(rs), std::move(cfg)));
+            obfuscator_from_config(config)));
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
     }
@@ -83,12 +78,22 @@ waf::ptr waf::from_config(
     return nullptr;
 }
 
+waf::waf(ddwaf::parameter input, ddwaf::ruleset_info &info,
+    ddwaf::object_limits limits, ddwaf_object_free_fn free_fn,
+    ddwaf::obfuscator &&event_obfuscator)
+{
+    ruleset_ = builder::build(input, info, limits);
+    ruleset_->free_fn = free_fn;
+    ruleset_->event_obfuscator = std::move(event_obfuscator);
+}
+
+
 void waf::toggle_rules(ddwaf::parameter::map &&input)
 {
     for (auto &[key, value] : input) {
-        auto it = ruleset_.rules.find(std::string(key));
+        auto it = ruleset_->rules.find(std::string(key));
 
-        if (it == ruleset_.rules.end()) {
+        if (it == ruleset_->rules.end()) {
             DDWAF_WARN("Attempting to toggle an unknown rule %s", key.data());
             continue;
         }

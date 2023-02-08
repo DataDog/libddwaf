@@ -17,6 +17,7 @@
 #include <obfuscator.hpp>
 #include <rule.hpp>
 #include <ruleset.hpp>
+#include <utility>
 #include <utils.hpp>
 
 namespace ddwaf {
@@ -25,14 +26,12 @@ class context {
 public:
     using object_set = std::unordered_set<const ddwaf_object *>;
 
-    context(
-        ddwaf::ruleset &ruleset, const ddwaf::config &config, std::shared_ptr<waf> handle = nullptr)
-        : ruleset_(ruleset), config_(config), store_(ruleset_.manifest, config_.free_fn),
-          handle_(std::move(handle))
+    explicit context(std::shared_ptr<ruleset> ruleset)
+        : ruleset_(std::move(ruleset)), store_(ruleset_->manifest, ruleset_->free_fn)
     {
-        rule_filter_cache_.reserve(ruleset_.rule_filters.size());
-        input_filter_cache_.reserve(ruleset_.input_filters.size());
-        collection_cache_.reserve(ruleset_.collections.size());
+        rule_filter_cache_.reserve(ruleset_->rule_filters.size());
+        input_filter_cache_.reserve(ruleset_->input_filters.size());
+        collection_cache_.reserve(ruleset_->collections.size());
     }
 
     context(const context &) = delete;
@@ -56,8 +55,7 @@ public:
 protected:
     bool is_first_run() const { return collection_cache_.empty(); }
 
-    ddwaf::ruleset &ruleset_;
-    const ddwaf::config &config_;
+    std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
 
     using input_filter = exclusion::input_filter;

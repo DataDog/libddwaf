@@ -38,6 +38,7 @@ using namespace std;
 #include <exclusion/input_filter.hpp>
 #include <exclusion/object_filter.hpp>
 #include <ip_utils.hpp>
+#include <mkmap.hpp>
 #include <log.hpp>
 #include <obfuscator.hpp>
 #include <parameter.hpp>

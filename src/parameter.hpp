@@ -37,7 +37,7 @@ public:
     operator vector();
     operator string_set();
     operator std::string_view();
-    operator std::string();
+    operator std::string() const;
     operator uint64_t();
     operator int64_t();
     operator bool();

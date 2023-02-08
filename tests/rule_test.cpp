@@ -22,8 +22,11 @@ TEST(TestRule, Match)
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
+    std::unordered_map<std::string, std::string> tags {
+        {"type", "type"}, {"category", "category"}
+    };
     ddwaf::rule rule(
-        "id", "name", "type", "category", std::move(conditions), {"update", "block", "passlist"});
+        "id", "name", std::move(tags), std::move(conditions), {"update", "block", "passlist"});
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -68,8 +71,10 @@ TEST(TestRule, NoMatch)
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
-
-    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
+    std::unordered_map<std::string, std::string> tags {
+        {"type", "type"}, {"category", "category"}
+    };
+    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -108,7 +113,11 @@ TEST(TestRule, ValidateCachedMatch)
     }
 
     auto manifest = mb.build_manifest();
-    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
+    std::unordered_map<std::string, std::string> tags {
+        {"type", "type"}, {"category", "category"}
+    };
+
+    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
     ddwaf::rule::cache_type cache;
 
     // To validate that the cache works, we pass an object store containing
@@ -189,7 +198,11 @@ TEST(TestRule, MatchWithoutCache)
     }
 
     auto manifest = mb.build_manifest();
-    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
+    std::unordered_map<std::string, std::string> tags {
+        {"type", "type"}, {"category", "category"}
+    };
+
+    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -264,7 +277,11 @@ TEST(TestRule, NoMatchWithoutCache)
     }
 
     auto manifest = mb.build_manifest();
-    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
+    std::unordered_map<std::string, std::string> tags {
+        {"type", "type"}, {"category", "category"}
+    };
+
+    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -320,7 +337,11 @@ TEST(TestRule, FullCachedMatchSecondRun)
     }
 
     auto manifest = mb.build_manifest();
-    ddwaf::rule rule("id", "name", "type", "category", std::move(conditions));
+    std::unordered_map<std::string, std::string> tags {
+        {"type", "type"}, {"category", "category"}
+    };
+
+    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
 
     // In this test we validate that when a match has already occurred, the
     // second run for the same rule returns no events regardless of input.
@@ -588,9 +609,12 @@ TEST(TestRule, ExcludeObject)
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+    std::unordered_map<std::string, std::string> tags {
+        {"type", "type"}, {"category", "category"}
+    };
 
     ddwaf::rule rule(
-        "id", "name", "type", "category", std::move(conditions), {"update", "block", "passlist"});
+        "id", "name", std::move(tags), std::move(conditions), {"update", "block", "passlist"});
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);

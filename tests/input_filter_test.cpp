@@ -24,7 +24,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     object_filter obj_filter;
     obj_filter.insert(query, {});
     input_filter filter(
-        "filter", {}, {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        "filter", {}, {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -55,7 +55,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
     input_filter filter(
-        "filter", {}, {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        "filter", {}, {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -89,7 +89,7 @@ TEST(TestInputFilter, InputExclusionWithCondition)
     object_filter obj_filter;
     obj_filter.insert(client_ip, {});
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -123,7 +123,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     object_filter obj_filter;
     obj_filter.insert(client_ip, {});
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -160,7 +160,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     obj_filter.insert(query, {"params"});
 
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -200,7 +200,7 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     obj_filter.insert(query, {"params"});
 
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -235,7 +235,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     object_filter obj_filter;
     obj_filter.insert(usr_id);
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
@@ -296,7 +296,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     object_filter obj_filter;
     obj_filter.insert(client_ip);
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -353,7 +353,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     object_filter obj_filter;
     obj_filter.insert(client_ip);
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -417,7 +417,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     object_filter obj_filter;
     obj_filter.insert(client_ip);
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -480,7 +480,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
@@ -549,7 +549,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -615,7 +615,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -681,7 +681,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     object_filter obj_filter;
     obj_filter.insert(query, {"params"});
     input_filter filter("filter", std::move(conditions),
-        {std::make_shared<rule>(rule("", "", "", "", {}))}, std::move(obj_filter));
+        {std::make_shared<rule>(rule("", "", {}, {}))}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
