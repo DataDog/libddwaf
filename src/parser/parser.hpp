@@ -28,9 +28,9 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
 namespace v2 {
 void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, object_limits limits);
 
-std::unordered_map<std::string_view, rule::ptr> parse_rules(
-    ddwaf::parameter::vector &rules_array, ddwaf::ruleset_info &info,
-    manifest_builder &mb, rule_data::dispatcher &dispatcher, object_limits limits);
+std::unordered_map<std::string_view, rule::ptr> parse_rules(ddwaf::parameter::vector &rules_array,
+    ddwaf::ruleset_info &info, manifest_builder &mb, rule_data::dispatcher &dispatcher,
+    object_limits limits);
 
 } // namespace v2
 

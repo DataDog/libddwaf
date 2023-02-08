@@ -38,8 +38,8 @@ public:
 
     rule(std::string &&id_, std::string &&name_,
         std::unordered_map<std::string, std::string> &&tags_,
-        std::vector<condition::ptr> &&conditions_,
-        std::vector<std::string> &&actions_ = {}, bool enabled_ = true);
+        std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_ = {},
+        bool enabled_ = true);
 
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;
@@ -76,7 +76,8 @@ public:
     bool is_enabled() const { return enabled.load(std::memory_order_relaxed); }
     void toggle(bool value) { enabled.store(value, std::memory_order_relaxed); }
 
-    std::string_view get_tag(const std::string &tag) const {
+    std::string_view get_tag(const std::string &tag) const
+    {
         auto it = tags.find(tag);
         return it == tags.end() ? std::string_view() : it->second;
     }

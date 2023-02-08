@@ -21,6 +21,8 @@ TEST(TestWaf, RootAddresses)
     for (auto address : instance->get_root_addresses()) {
         EXPECT_NE(available_addresses.find(address), available_addresses.end());
     }
+
+    delete instance;
 }
 
 TEST(TestWaf, RuleDatIDs)
@@ -36,6 +38,8 @@ TEST(TestWaf, RuleDatIDs)
     for (auto id : instance->get_rule_data_ids()) {
         EXPECT_NE(available_ids.find(id), available_ids.end());
     }
+
+    delete instance;
 }
 
 TEST(TestWaf, EmptyRuleDatIDs)
@@ -48,6 +52,8 @@ TEST(TestWaf, EmptyRuleDatIDs)
     ddwaf_object_free(&rule);
 
     EXPECT_TRUE(instance->get_rule_data_ids().empty());
+
+    delete instance;
 }
 
 TEST(TestWaf, BasicContextRun)
@@ -65,6 +71,8 @@ TEST(TestWaf, BasicContextRun)
 
     auto ctx = instance->create_context();
     EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
+
+    delete instance;
 }
 
 TEST(TestWaf, ToggleRule)
@@ -103,6 +111,8 @@ TEST(TestWaf, ToggleRule)
         auto ctx = instance->create_context();
         EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_OK);
     }
+
+    delete instance;
 }
 
 TEST(TestWaf, ToggleNonExistentRules)
@@ -121,6 +131,8 @@ TEST(TestWaf, ToggleNonExistentRules)
     EXPECT_NO_THROW(instance->toggle_rules(parameter(root)));
 
     ddwaf_object_free(&root);
+
+    delete instance;
 }
 
 TEST(TestWaf, ToggleWithInvalidObject)
@@ -130,7 +142,7 @@ TEST(TestWaf, ToggleWithInvalidObject)
 
     ddwaf::ruleset_info info;
     auto instance = waf::from_config(rule, nullptr, info);
-    ASSERT_NE(instance.get(), nullptr);
+    ASSERT_NE(instance, nullptr);
     ddwaf_object_free(&rule);
 
     {
@@ -152,6 +164,8 @@ TEST(TestWaf, ToggleWithInvalidObject)
 
         ddwaf_object_free(&root);
     }
+
+    delete instance;
 }
 
 TEST(TestWaf, RuleDisabledInRuleset)
@@ -190,4 +204,6 @@ TEST(TestWaf, RuleDisabledInRuleset)
         auto ctx = instance->create_context();
         EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
     }
+
+    delete instance;
 }

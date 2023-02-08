@@ -63,14 +63,13 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
 
 } // namespace
 
-waf::ptr waf::from_config(
+waf *waf::from_config(
     const ddwaf_object &ruleset, const ddwaf_config *config, ddwaf::ruleset_info &info)
 {
     try {
-        return std::shared_ptr<waf>(new waf(ruleset, info,
-            limits_from_config(config),
+        return new waf(ruleset, info, limits_from_config(config),
             config != nullptr ? config->free_fn : ddwaf_object_free,
-            obfuscator_from_config(config)));
+            obfuscator_from_config(config));
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
     }
@@ -78,15 +77,13 @@ waf::ptr waf::from_config(
     return nullptr;
 }
 
-waf::waf(ddwaf::parameter input, ddwaf::ruleset_info &info,
-    ddwaf::object_limits limits, ddwaf_object_free_fn free_fn,
-    ddwaf::obfuscator &&event_obfuscator)
+waf::waf(ddwaf::parameter input, ddwaf::ruleset_info &info, ddwaf::object_limits limits,
+    ddwaf_object_free_fn free_fn, ddwaf::obfuscator &&event_obfuscator)
 {
     ruleset_ = builder::build(input, info, limits);
     ruleset_->free_fn = free_fn;
     ruleset_->event_obfuscator = std::move(event_obfuscator);
 }
-
 
 void waf::toggle_rules(ddwaf::parameter::map &&input)
 {

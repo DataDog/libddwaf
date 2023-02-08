@@ -8,12 +8,11 @@
 #define DDWAF_H
 
 #ifdef __cplusplus
-#include <memory>
 namespace ddwaf{
 class waf;
 class context;
 } // namespace ddwaf
-using ddwaf_handle = std::shared_ptr<ddwaf::waf> *;
+using ddwaf_handle = ddwaf::waf *;
 using ddwaf_context = ddwaf::context *;
 
 extern "C"

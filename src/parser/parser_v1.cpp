@@ -132,9 +132,8 @@ void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builder
             conditions.push_back(parseCondition(cond, mb, rule_transformers, limits));
         }
 
-
         std::unordered_map<std::string, std::string> tags;
-        for (auto &[key, value]: at<parameter::map>(rule, "tags")) {
+        for (auto &[key, value] : at<parameter::map>(rule, "tags")) {
             try {
                 tags.emplace(key, std::string(value));
             } catch (const bad_cast &e) {
@@ -146,8 +145,8 @@ void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builder
             throw ddwaf::parsing_error("missing key 'type'");
         }
 
-        auto rule_ptr = std::make_shared<ddwaf::rule>(std::string(id),
-            at<std::string>(rule, "name"), std::move(tags), std::move(conditions));
+        auto rule_ptr = std::make_shared<ddwaf::rule>(
+            std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(conditions));
 
         rs.insert_rule(rule_ptr);
         info.add_loaded();

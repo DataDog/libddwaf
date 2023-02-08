@@ -12,8 +12,7 @@
 #include <parser/parser.hpp>
 #include <string_view>
 
-namespace ddwaf
-{
+namespace ddwaf {
 
 std::shared_ptr<ruleset> builder::build(parameter object, ruleset_info &info, object_limits limits)
 {

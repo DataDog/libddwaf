@@ -15,23 +15,21 @@
 #include <unordered_map>
 #include <vector>
 
-
-namespace ddwaf
-{
+namespace ddwaf {
 
 class builder {
 public:
-/*    builder() = default;*/
+    /*    builder() = default;*/
     /*~builder() = default;*/
     /*builder(builder&&) = default;*/
     /*builder(const builder&) = delete;*/
     /*builder& operator=(builder&&) = default;*/
     /*builder& operator=(const builder&) = delete;*/
 
-    static std::shared_ptr<ruleset> build(parameter object, ruleset_info &info, object_limits limits);
+    static std::shared_ptr<ruleset> build(
+        parameter object, ruleset_info &info, object_limits limits);
 
 protected:
-
 };
 
 } // namespace ddwaf

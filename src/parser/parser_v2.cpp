@@ -176,7 +176,7 @@ rule::ptr parse_rule(parameter::map &rule, std::string &&id, manifest_builder &m
     }
 
     std::unordered_map<std::string, std::string> tags;
-    for (auto &[key, value]: at<parameter::map>(rule, "tags")) {
+    for (auto &[key, value] : at<parameter::map>(rule, "tags")) {
         try {
             tags.emplace(key, std::string(value));
         } catch (const bad_cast &e) {
@@ -188,13 +188,12 @@ rule::ptr parse_rule(parameter::map &rule, std::string &&id, manifest_builder &m
         throw ddwaf::parsing_error("missing key 'type'");
     }
 
-    return std::make_shared<ddwaf::rule>(std::string(id),
-        at<std::string>(rule, "name"), std::move(tags), std::move(conditions),
-        at<std::vector<std::string>>(rule, "on_match", {}),
+    return std::make_shared<ddwaf::rule>(std::string(id), at<std::string>(rule, "name"),
+        std::move(tags), std::move(conditions), at<std::vector<std::string>>(rule, "on_match", {}),
         at<bool>(rule, "enabled", true));
 }
 
-//std::unordered_map<std::string_view, rule::ptr
+// std::unordered_map<std::string_view, rule::ptr
 std::set<rule::ptr> parse_rules_target(parameter::map &target, ddwaf::ruleset &rs)
 {
     auto rule_id = at<std::string>(target, "rule_id", {});
@@ -310,9 +309,9 @@ void parse_exclusion_filter(
 
 } // namespace
 
-std::unordered_map<std::string_view, rule::ptr> parse_rules(
-    ddwaf::parameter::vector &rules_array, ddwaf::ruleset_info &info,
-    manifest_builder &mb, rule_data::dispatcher &dispatcher, object_limits limits)
+std::unordered_map<std::string_view, rule::ptr> parse_rules(ddwaf::parameter::vector &rules_array,
+    ddwaf::ruleset_info &info, manifest_builder &mb, rule_data::dispatcher &dispatcher,
+    object_limits limits)
 {
     std::unordered_map<std::string_view, rule::ptr> rules;
     for (parameter::map rule_map : rules_array) {
@@ -359,9 +358,7 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
 
     ddwaf::manifest_builder mb;
     auto rules = parse_rules(rules_array, info, mb, rs.dispatcher, limits);
-    for (auto &[id, rule] : rules) {
-        rs.insert_rule(rule);
-    }
+    for (auto &[id, rule] : rules) { rs.insert_rule(rule); }
 
     auto filters_array = at<parameter::vector>(ruleset, "exclusions", {});
     for (parameter::map filter : filters_array) {

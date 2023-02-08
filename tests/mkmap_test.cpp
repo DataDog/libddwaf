@@ -17,26 +17,22 @@ TEST(TestMultiKeyMap, Find)
         std::unordered_map<std::string, std::string> tags;
     };
 
-    std::vector<rule_spec> specs{
-        {"id0", "type0", "category0", {{"key", "value0"}}},
+    std::vector<rule_spec> specs{{"id0", "type0", "category0", {{"key", "value0"}}},
         {"id1", "type0", "category0", {{"key", "value1"}}},
         {"id2", "type0", "category1", {{"key", "value0"}}},
         {"id3", "type0", "category1", {{"key", "value1"}}},
         {"id4", "type1", "category0", {{"key", "value0"}}},
         {"id5", "type1", "category0", {{"key", "value1"}}},
         {"id6", "type1", "category1", {{"key", "value0"}}},
-        {"id7", "type1", "category1", {{"key", "value1"}}}
-    };
-
+        {"id7", "type1", "category1", {{"key", "value1"}}}};
 
     for (const auto &spec : specs) {
-        std::unordered_map<std::string, std::string> tags  = spec.tags;
+        std::unordered_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
         tags.emplace("category", spec.category);
 
         auto rule_ptr = std::make_shared<ddwaf::rule>(
-            std::string(spec.id), "name",
-            decltype(tags)(tags), std::vector<condition::ptr>{});
+            std::string(spec.id), "name", decltype(tags)(tags), std::vector<condition::ptr>{});
         ruledb.insert(rule_ptr->tags, rule_ptr);
     }
 
@@ -67,25 +63,22 @@ TEST(TestMultiKeyMap, Multifind)
         std::unordered_map<std::string, std::string> tags;
     };
 
-    std::vector<rule_spec> specs{
-        {"id0", "type0", "category0", {{"key", "value0"}}},
+    std::vector<rule_spec> specs{{"id0", "type0", "category0", {{"key", "value0"}}},
         {"id1", "type0", "category0", {{"key", "value1"}}},
         {"id2", "type0", "category1", {{"key", "value0"}}},
         {"id3", "type0", "category1", {{"key", "value1"}}},
         {"id4", "type1", "category0", {{"key", "value0"}}},
         {"id5", "type1", "category0", {{"key", "value1"}}},
         {"id6", "type1", "category1", {{"key", "value0"}}},
-        {"id7", "type1", "category1", {{"key", "value1"}}}
-    };
+        {"id7", "type1", "category1", {{"key", "value1"}}}};
 
     for (const auto &spec : specs) {
-        std::unordered_map<std::string, std::string> tags  = spec.tags;
+        std::unordered_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
         tags.emplace("category", spec.category);
 
         auto rule_ptr = std::make_shared<ddwaf::rule>(
-            std::string(spec.id), "name",
-            decltype(tags)(tags), std::vector<condition::ptr>{});
+            std::string(spec.id), "name", decltype(tags)(tags), std::vector<condition::ptr>{});
         ruledb.insert(rule_ptr->tags, rule_ptr);
     }
 
@@ -120,7 +113,8 @@ TEST(TestMultiKeyMap, Multifind)
     }
 
     {
-        auto rules = ruledb.multifind({{"type", "type0"}, {"category", "category0"}, {"key", "value0"}});
+        auto rules =
+            ruledb.multifind({{"type", "type0"}, {"category", "category0"}, {"key", "value0"}});
         EXPECT_EQ(rules.size(), 1);
     }
 }

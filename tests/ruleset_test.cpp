@@ -12,27 +12,27 @@ namespace {
 std::vector<rule::ptr> test_rules()
 {
     return {std::make_shared<ddwaf::rule>("id0", "name",
-            std::unordered_map<std::string, std::string> {
-                {"type", "type0"}, {"category", "category0"}},
+                std::unordered_map<std::string, std::string>{
+                    {"type", "type0"}, {"category", "category0"}},
                 std::vector<condition::ptr>{}, std::vector<std::string>{}),
         std::make_shared<ddwaf::rule>("id1", "name",
-            std::unordered_map<std::string, std::string> {
+            std::unordered_map<std::string, std::string>{
                 {"type", "type1"}, {"category", "category0"}},
             std::vector<condition::ptr>{}, std::vector<std::string>{}),
         std::make_shared<ddwaf::rule>("id2", "name",
-            std::unordered_map<std::string, std::string> {
+            std::unordered_map<std::string, std::string>{
                 {"type", "type1"}, {"category", "category0"}},
             std::vector<condition::ptr>{}, std::vector<std::string>{}),
         std::make_shared<ddwaf::rule>("id3", "name",
-            std::unordered_map<std::string, std::string> {
+            std::unordered_map<std::string, std::string>{
                 {"type", "type2"}, {"category", "category0"}},
             std::vector<condition::ptr>{}, std::vector<std::string>{}),
         std::make_shared<ddwaf::rule>("id4", "name",
-            std::unordered_map<std::string, std::string> {
+            std::unordered_map<std::string, std::string>{
                 {"type", "type2"}, {"category", "category1"}},
             std::vector<condition::ptr>{}, std::vector<std::string>{}),
         std::make_shared<ddwaf::rule>("id5", "name",
-            std::unordered_map<std::string, std::string> {
+            std::unordered_map<std::string, std::string>{
                 {"type", "type2"}, {"category", "category1"}},
             std::vector<condition::ptr>{}, std::vector<std::string>{})};
 }
