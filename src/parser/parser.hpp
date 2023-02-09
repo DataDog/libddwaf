@@ -44,7 +44,7 @@ public:
     {}
 
     rule_spec_container parse_rules(parameter::vector &rule_array);
-    static override_spec_container parse_overrides(parameter::vector &override_array);
+    override_spec_container parse_overrides(parameter::vector &override_array);
     filter_spec_container parse_filters(parameter::vector &filter_array);
 
 protected:
@@ -54,7 +54,7 @@ protected:
 
     rule_spec parse_rule(parameter::map &rule);
 
-    static std::pair<override_spec, target_type> parse_override(parameter::map &node);
+    std::pair<override_spec, target_type> parse_override(parameter::map &node);
 
     input_filter_spec parse_input_filter(parameter::map &filter);
     rule_filter_spec parse_rule_filter(parameter::map &filter);

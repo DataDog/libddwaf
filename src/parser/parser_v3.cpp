@@ -215,10 +215,6 @@ rule_spec_container parser::parse_rules(parameter::vector &rule_array)
         }
     }
 
-    if (rules.empty()) {
-        throw ddwaf::parsing_error("no valid rules found");
-    }
-
     return rules;
 }
 
@@ -240,6 +236,7 @@ rule_target_spec parse_rules_target(parameter::map &target)
     return {target_type::tags, {}, std::move(tags)};
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<override_spec, target_type> parser::parse_override(parameter::map &node)
 {
     // Note that ID is a duplicate field and will be deprecated at some point
@@ -250,7 +247,10 @@ std::pair<override_spec, target_type> parser::parse_override(parameter::map &nod
         current.enabled = it->second;
     }
 
-    current.actions = at<std::vector<std::string>>(node, "on_match", {});
+    it = node.find("on_match");
+    if (it != node.end()) {
+        current.actions = it->second;
+    }
 
     target_type type = target_type::none;
 
@@ -275,7 +275,7 @@ std::pair<override_spec, target_type> parser::parse_override(parameter::map &nod
         type = target_type::id;
     }
 
-    if (current.actions.empty() && !current.enabled.has_value()) {
+    if (!current.actions.has_value() && !current.enabled.has_value()) {
         throw ddwaf::parsing_error("rules_override without side-effects");
     }
 

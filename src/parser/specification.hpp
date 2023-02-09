@@ -6,11 +6,10 @@
 
 #pragma once
 
+#include <condition.hpp>
 #include <exception.hpp>
-#include <exclusion/input_filter.hpp>
-#include <exclusion/rule_filter.hpp>
+#include <exclusion/object_filter.hpp>
 #include <parameter.hpp>
-#include <rule.hpp>
 
 #include <string>
 
@@ -34,7 +33,7 @@ struct rule_target_spec {
 
 struct override_spec {
     std::optional<bool> enabled;
-    std::vector<std::string> actions;
+    std::optional<std::vector<std::string>> actions;
     std::vector<rule_target_spec> targets;
 };
 
@@ -53,6 +52,7 @@ struct input_filter_spec {
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
 
 struct override_spec_container {
+    [[nodiscard]] bool empty() const { return by_ids.empty() && by_tags.empty(); }
     // The distinction is only necessary due to the restriction that
     // overrides by ID are to be considered a priority over overrides by tags
     std::vector<override_spec> by_ids;
@@ -60,6 +60,10 @@ struct override_spec_container {
 };
 
 struct filter_spec_container {
+    [[nodiscard]] bool empty() const
+    {
+        return unconditional_rule_filters.empty() && rule_filters.empty() && input_filters.empty();
+    }
     std::unordered_map<std::string, rule_filter_spec> unconditional_rule_filters;
     std::unordered_map<std::string, rule_filter_spec> rule_filters;
     std::unordered_map<std::string, input_filter_spec> input_filters;

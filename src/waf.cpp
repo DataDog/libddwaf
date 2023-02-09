@@ -80,7 +80,8 @@ waf *waf::from_config(
 waf::waf(ddwaf::parameter input, ddwaf::ruleset_info &info, ddwaf::object_limits limits,
     ddwaf_object_free_fn free_fn, ddwaf::obfuscator &&event_obfuscator)
 {
-    ruleset_ = builder::build(input, info, limits);
+    ddwaf::builder builder;
+    ruleset_ = builder.build(input, info, limits);
     ruleset_->free_fn = free_fn;
     ruleset_->event_obfuscator = std::move(event_obfuscator);
 }
