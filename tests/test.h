@@ -43,6 +43,7 @@ using namespace std;
 #include <obfuscator.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
+#include <parser/parser.hpp>
 #include <rule_data_dispatcher.hpp>
 #include <ruleset_info.hpp>
 #include <utils.hpp>

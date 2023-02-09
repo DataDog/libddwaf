@@ -89,6 +89,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/parser_v3.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/phrase_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/regex_match.cpp

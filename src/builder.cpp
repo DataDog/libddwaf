@@ -28,6 +28,8 @@ std::shared_ptr<ruleset> builder::build(parameter object, ruleset_info &info, ob
     case 2:
         parser::v2::parse(ruleset, info, rs, limits);
         break;
+    case 3: // Experimental
+        break;
     default:
         DDWAF_ERROR("incompatible ruleset version %u.x", version);
         throw unsupported_version();

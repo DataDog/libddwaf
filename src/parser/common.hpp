@@ -8,9 +8,11 @@
 
 #include <exception.hpp>
 #include <parameter.hpp>
+
 #include <string>
 
 namespace ddwaf::parser {
+
 template <typename T> T at(parameter::map &map, const std::string &key)
 {
     try {
