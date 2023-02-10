@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "parser/specification.hpp"
 #include <builder.hpp>
 #include <charconv>
 #include <exception.hpp>
@@ -14,14 +15,14 @@
 
 namespace ddwaf {
 
-builder::change_state operator|(builder::change_state lhs, builder::change_state rhs)
+constexpr builder::change_state operator|(builder::change_state lhs, builder::change_state rhs)
 {
     return static_cast<builder::change_state>(
         static_cast<std::underlying_type<builder::change_state>::type>(lhs) |
         static_cast<std::underlying_type<builder::change_state>::type>(rhs));
 }
 
-builder::change_state operator&(builder::change_state lhs, builder::change_state rhs)
+constexpr builder::change_state operator&(builder::change_state lhs, builder::change_state rhs)
 {
     return static_cast<builder::change_state>(
         static_cast<std::underlying_type<builder::change_state>::type>(lhs) &
@@ -52,125 +53,135 @@ std::shared_ptr<ruleset> builder::build(parameter object, ruleset_info &info, ob
     return std::make_shared<ddwaf::ruleset>(std::move(rs));
 }
 
+namespace {
+
+std::set<rule::ptr> target_to_rules(const std::vector<parser::rule_target_spec> &targets,
+    const std::unordered_map<std::string_view, rule::ptr> &rules,
+    const rule_tag_map &rules_by_tags)
+{
+    std::set<rule::ptr> rule_targets;
+    if (!targets.empty()) {
+        for (const auto &target : targets) {
+            if (target.type == parser::target_type::id) {
+                auto rule_it = rules.find(target.rule_id);
+                if (rule_it == rules.end()) {
+                    continue;
+                }
+                rule_targets.emplace(rule_it->second);
+            } else if (target.type == parser::target_type::tags) {
+                auto current_targets = rules_by_tags.multifind(target.tags);
+                rule_targets.merge(current_targets);
+            }
+        }
+    } else {
+        // An empty rules target applies to all rules
+        for (const auto &[id, rule] : rules) {
+            rule_targets.emplace(rule);
+        }
+    }
+    return rule_targets;
+}
+
+} // namespace
+
 std::shared_ptr<ruleset> builder::build_helper(
     parameter::map root, ruleset_info &info, object_limits limits)
 {
     manifest_builder mb;
     rule_data::dispatcher dispatcher;
 
-    // First stage: load new rules, overrides and exclusions
+    // Load new rules, overrides and exclusions
+    auto state = load(root, info, mb, dispatcher, limits);
 
-    // TODO generating rule_spec is extra overhead, we can just generate the pointers
-    auto state = load(root, info, limits);
+    constexpr change_state rule_update = change_state::rules | change_state::overrides;
+    constexpr change_state filters_update = rule_update | change_state::filters;
 
-    // Second stage: regenerate intermediate structures
-    if ((state & change_state::rules) != change_state::none) {
-        // If the rules have changed, regenerate the rule_specs_by_tag_ mkmap
-        for (auto &[id, rule] : base_rules_) { rule_specs_by_tag_.insert(rule.tags, id); }
-    }
-
-    // If rules have changed or overrides have changed...
-    if ((state & (change_state::rules | change_state::overrides)) != change_state::none) {
-        // Third stage: Apply overrides
-
-        // Invalidate any existing overrides
-        overridden_rules_.clear();
-
-        // First apply overrides by ID
-        for (const auto &ovrd : overrides_.by_ids) {
-            for (const auto &target : ovrd.targets) {
-                auto rule_it = base_rules_.find(target.rule_id);
-
-                // Sanity check
-                if (rule_it == base_rules_.end() ||
-                    overridden_rules_.find(target.rule_id) != overridden_rules_.end()) {
-                    continue;
-                }
-
-                auto [new_rule_it, res] =
-                    overridden_rules_.emplace(target.rule_id, rule_it->second);
-
-                auto &new_rule = new_rule_it->second;
-                if (ovrd.enabled.has_value()) {
-                    new_rule.enabled = *ovrd.enabled;
-                }
-
-                if (ovrd.actions.has_value()) {
-                    new_rule.actions = *ovrd.actions;
-                }
-            }
-        }
-
-        for (const auto &ovrd : overrides_.by_tags) {
-            std::set<std::string> rules_targets;
-
-            // This is far from ideal...
-            for (const auto &target : ovrd.targets) {
-                std::vector<std::pair<std::string_view, std::string_view>> tags;
-                tags.reserve(target.tags.size());
-                for (const auto &[k, v] : target.tags) { tags.emplace_back(k, v); }
-                auto current_targets = rule_specs_by_tag_.multifind(tags);
-                rules_targets.merge(current_targets);
-            }
-
-            for (const auto &id : rules_targets) {
-                if (overridden_rules_.find(id) != overridden_rules_.end()) {
-                    // We can't override twice!
-                    continue;
-                }
-
-                // If the ID is in the container, it means the rule exists,
-                // but we can check anyway
-                auto rule_it = base_rules_.find(id);
-                if (rule_it == base_rules_.end()) {
-                    continue;
-                }
-
-                auto [new_rule_it, res] = overridden_rules_.emplace(id, rule_it->second);
-
-                auto &new_rule = new_rule_it->second;
-                if (ovrd.enabled.has_value()) {
-                    new_rule.enabled = *ovrd.enabled;
-                }
-
-                if (ovrd.actions.has_value()) {
-                    new_rule.actions = *ovrd.actions;
-                }
-            }
-        }
-
-        // Fourth stage: regenerate rules, we should only need to do this if
-        final_rules_.clear();
-        final_rules_.reserve(base_rules_.size());
-
+    if ((state & rule_update) != change_state::none) {
+        // A new ruleset or a new set of overrides requires a new ruleset
         for (const auto &[id, spec] : base_rules_) {
-            auto override_it = overridden_rules_.find(id);
-            if (override_it != overridden_rules_.end()) {
-                final_rules_.emplace(id, std::make_shared<ddwaf::rule>(id, override_it->second));
-            } else {
-                final_rules_.emplace(id, std::make_shared<ddwaf::rule>(id, spec));
+            auto rule_ptr = std::make_shared<ddwaf::rule>(id, spec);
+            final_rules_.emplace(id, rule_ptr);
+            rules_by_tags_.insert(rule_ptr->tags, rule_ptr);
+        }
+
+        // Apply overrides by ID
+        std::unordered_set<rule*> overridden_rules;
+        for (const auto &ovrd : overrides_.by_ids) {
+            auto rule_targets = target_to_rules(ovrd.targets, final_rules_, rules_by_tags_);
+            for (const auto &rule_ptr : rule_targets) {
+                if (overridden_rules.find(rule_ptr.get()) != overridden_rules.end()) { continue; }
+
+                if (ovrd.enabled.has_value()) {
+                    rule_ptr->toggle(*ovrd.enabled);
+                }
+
+                if (ovrd.actions.has_value()) {
+                    rule_ptr->actions = *ovrd.actions;
+                }
+
+                overridden_rules.emplace(rule_ptr.get());
+            }
+        }
+
+        // Apply overrides by tag
+        for (const auto &ovrd : overrides_.by_tags) {
+            auto rule_targets = target_to_rules(ovrd.targets, final_rules_, rules_by_tags_);
+            for (const auto &rule_ptr : rule_targets) {
+                if (overridden_rules.find(rule_ptr.get()) != overridden_rules.end()) { continue; }
+
+                if (ovrd.enabled.has_value()) {
+                    rule_ptr->toggle(*ovrd.enabled);
+                }
+
+                if (ovrd.actions.has_value()) {
+                    rule_ptr->actions = *ovrd.actions;
+                }
             }
         }
     }
 
-    // Fifth stage: generate intermediate structures
-    /*    for (const auto &[id, rule] : final_rules_) {*/
-    /*rules_by_tags_.insert(rule->tags, rule);*/
-    /*}*/
+    // Generate exclusion filters
+    if ((state & filters_update) != change_state::none) {
+        // First apply unconditional_rule_filters
+        for (const auto &[id, filter] : exclusions_.unconditional_rule_filters) {
+           auto rule_targets = target_to_rules(filter.targets, final_rules_, rules_by_tags_);
+            for (const auto &rule_ptr : rule_targets) {
+                rule_ptr->toggle(false);
+            }
+        }
 
-    // Sixth stage: generate exclusion filters
+        // Then rule filters
+        for (const auto &[id, filter] : exclusions_.rule_filters) {
+            auto rule_targets = target_to_rules(filter.targets, final_rules_, rules_by_tags_);
+            auto filter_ptr = std::make_shared<exclusion::rule_filter>(
+                id, filter.conditions, std::move(rule_targets));
+            rule_filters_.emplace(filter_ptr->get_id(), filter_ptr);
+        }
+
+        // Finally input filters
+        for (auto &[id, filter] : exclusions_.input_filters) {
+            auto rule_targets = target_to_rules(filter.targets, final_rules_, rules_by_tags_);
+
+           // TODO Fix uncopyable path_trie
+            auto filter_ptr = std::make_shared<exclusion::input_filter>(
+                id, filter.conditions, std::move(rule_targets), std::move(filter.filter));
+            input_filters_.emplace(filter_ptr->get_id(), filter_ptr);
+        }
+    }
 
     ddwaf::ruleset rs;
     for (auto &[id, rule] : final_rules_) { rs.insert_rule(rule); }
+    rs.dispatcher = std::move(dispatcher);
+    rs.manifest = mb.build_manifest();
+    rs.rule_filters = std::move(rule_filters_);
+    rs.input_filters = std::move(input_filters_);
 
     return std::make_shared<ddwaf::ruleset>(std::move(rs));
 }
 
-builder::change_state builder::load(parameter::map &root, ruleset_info &info, object_limits limits)
+builder::change_state builder::load(parameter::map &root, ruleset_info &info,
+        manifest_builder &mb, rule_data::dispatcher &dispatcher, object_limits limits)
 {
-    manifest_builder mb;
-    rule_data::dispatcher dispatcher;
-
     parser::v3::parser p(info, mb, dispatcher, limits);
 
     change_state state = change_state::none;

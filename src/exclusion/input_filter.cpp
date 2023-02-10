@@ -11,6 +11,17 @@ namespace ddwaf::exclusion {
 
 using excluded_set = input_filter::excluded_set;
 
+input_filter::input_filter(std::string id, std::vector<condition::ptr> conditions,
+    std::set<rule::ptr> rule_targets, object_filter filter)
+    : id_(std::move(id)), conditions_(std::move(conditions)),
+      rule_targets_(std::move(rule_targets)), filter_(std::move(filter))
+{
+    for (auto &cond : conditions_) {
+        const auto &cond_targets = cond->get_targets();
+        targets_.insert(cond_targets.begin(), cond_targets.end());
+    }
+}
+
 std::optional<excluded_set> input_filter::match(const object_store &store,
     const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const
 {

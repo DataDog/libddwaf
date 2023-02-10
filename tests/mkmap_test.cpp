@@ -36,20 +36,38 @@ TEST(TestMultiKeyMap, Find)
         ruledb.insert(rule_ptr->tags, rule_ptr);
     }
 
+    using sv_pair = std::pair<std::string_view, std::string_view>;
     {
-        auto rules = ruledb.find({"type", "type0"});
+        auto rules = ruledb.find(sv_pair{"type"sv, "type0"});
         EXPECT_EQ(rules.size(), 4);
     }
 
     {
-        auto rules = ruledb.find({"category", "category0"});
+        auto rules = ruledb.find(sv_pair{"category", "category0"});
         EXPECT_EQ(rules.size(), 4);
     }
 
     {
-        auto rules = ruledb.find({"key", "value0"});
+        auto rules = ruledb.find(sv_pair{"key"sv, "value0"sv});
         EXPECT_EQ(rules.size(), 4);
     }
+
+    using s_pair = std::pair<std::string, std::string>;
+    {
+        auto rules = ruledb.find(s_pair{"type"sv, "type1"});
+        EXPECT_EQ(rules.size(), 4);
+    }
+
+    {
+        auto rules = ruledb.find(s_pair{"category", "category1"});
+        EXPECT_EQ(rules.size(), 4);
+    }
+
+    {
+        auto rules = ruledb.find(s_pair{"key"sv, "value1"sv});
+        EXPECT_EQ(rules.size(), 4);
+    }
+
 }
 
 TEST(TestMultiKeyMap, Multifind)
@@ -82,39 +100,40 @@ TEST(TestMultiKeyMap, Multifind)
         ruledb.insert(rule_ptr->tags, rule_ptr);
     }
 
+    using sv_pair_vec = std::vector<std::pair<std::string, std::string>>;
     {
-        auto rules = ruledb.multifind({{"type", "type0"}});
+        auto rules = ruledb.multifind(sv_pair_vec{{"type", "type0"}});
         EXPECT_EQ(rules.size(), 4);
     }
 
     {
-        auto rules = ruledb.multifind({{"category", "category0"}});
+        auto rules = ruledb.multifind(sv_pair_vec{{"category", "category0"}});
         EXPECT_EQ(rules.size(), 4);
     }
 
     {
-        auto rules = ruledb.multifind({{"type", "type0"}, {"category", "category0"}});
+        auto rules = ruledb.multifind(sv_pair_vec{{"type", "type0"}, {"category", "category0"}});
         EXPECT_EQ(rules.size(), 2);
     }
 
     {
-        auto rules = ruledb.multifind({{"key", "value0"}});
+        auto rules = ruledb.multifind(sv_pair_vec{{"key", "value0"}});
         EXPECT_EQ(rules.size(), 4);
     }
 
     {
-        auto rules = ruledb.multifind({{"type", "type0"}, {"key", "value0"}});
+        auto rules = ruledb.multifind(sv_pair_vec{{"type", "type0"}, {"key", "value0"}});
         EXPECT_EQ(rules.size(), 2);
     }
 
     {
-        auto rules = ruledb.multifind({{"category", "category0"}, {"key", "value0"}});
+        auto rules = ruledb.multifind(sv_pair_vec{{"category", "category0"}, {"key", "value0"}});
         EXPECT_EQ(rules.size(), 2);
     }
 
     {
         auto rules =
-            ruledb.multifind({{"type", "type0"}, {"category", "category0"}, {"key", "value0"}});
+            ruledb.multifind(sv_pair_vec{{"type", "type0"}, {"category", "category0"}, {"key", "value0"}});
         EXPECT_EQ(rules.size(), 1);
     }
 }

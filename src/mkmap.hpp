@@ -14,77 +14,104 @@
 #include <type_traits.hpp>
 
 namespace ddwaf {
-
+// TODO SFINAE everything
 template <typename Key, typename T, class Compare = std::less<Key>,
     typename = std::enable_if_t<std::is_copy_constructible_v<std::remove_cv_t<std::decay_t<T>>>>>
 class multi_key_map {
 public:
+    // TODO Check that Key can be constructed from each type within the pair
     template <typename U,
         typename = typename std::enable_if_t<is_pair<typename U::iterator::value_type>::value,
             typename U::iterator>>
     void insert(const U &keys, const T &value)
     {
-        for (const auto &key : keys) { data_[key].emplace(value); }
+        for (const auto &key : keys) { data_[key.first][key.second].emplace(value); }
     }
 
-    std::set<T> find(const Key &key) const
+    // Check that Key can be constructed from CompatKey
+    template <typename CompatKey>
+    std::set<T> find(const std::pair<CompatKey, CompatKey> &key) const
     {
-        auto it = data_.find(key);
-        if (it == data_.end()) {
+        auto first_it = data_.find(key.first);
+        if (first_it == data_.end()) {
             return {};
         }
-        return it->second;
+
+        const auto &second_data = first_it->second;
+        auto second_it = second_data.find(key.second);
+        if (second_it == second_data.end()) {
+            return {};
+        }
+
+        return second_it->second;
     }
 
-    std::set<T> find2(const Key &key0, const Key &key1) const
+    template <typename CompatKey>
+    const std::set<T>& find_ref(const std::pair<CompatKey, CompatKey> &key) const
     {
+        static std::set<T> empty;
+        auto first_it = data_.find(Key(key.first));
+        if (first_it == data_.end()) {
+            return empty;
+        }
+
+        const auto &second_data = first_it->second;
+        auto second_it = second_data.find(Key(key.second));
+        if (second_it == second_data.end()) {
+            return empty;
+        }
+
+        return second_it->second;
+    }
+
+    template <typename CompatKey>
+    std::set<T> find2(const std::pair<CompatKey,CompatKey> &key0,
+        const std::pair<CompatKey, CompatKey> &key1) const
+    {
+        const auto &set0 = find_ref(key0);
+        if (set0.empty()) {
+            return {};
+        }
+
+        const auto &set1 = find_ref(key1);
+        if (set1.empty()) {
+            return {};
+        }
+
         std::set<T> result;
-        auto it = data_.find(key0);
-        if (it == data_.end() || it->second.empty()) {
-            return {};
-        }
-        const auto &left = it->second;
-
-        it = data_.find(key1);
-        if (it == data_.end() || it->second.empty()) {
-            return {};
-        }
-        const auto &right = it->second;
-
-        std::set_intersection(left.begin(), left.end(), right.begin(), right.end(),
+        std::set_intersection(set0.begin(), set0.end(), set1.begin(), set1.end(),
             std::inserter(result, result.begin()));
-
         return result;
     }
 
-    std::set<T> multifind(const std::vector<Key> &keys) const
+    template <typename U>
+    std::set<T> multifind(const U &keys) const
     {
+        // TODO fix this part
         // Since this function is quite inefficient, avoid it when possible
-        switch (keys.size()) {
-        case 0:
-            return {};
-        case 1:
-            return find(keys[0]);
-        case 2:
-            return find2(keys[0], keys[1]);
-        }
+/*        switch (keys.size()) {*/
+        /*case 0:*/
+            /*return {};*/
+        /*case 1:*/
+            /*return find(*keys.begin());*/
+        /*case 2:*/
+            /*return find2(keys.begin(), (keys.begin() + 1));*/
+        /*}*/
 
-        Key first = keys[0];
+        std::pair<Key, Key> first = *keys.begin();
         std::set<T> latest = find(first);
         if (latest.empty()) {
             return {};
         }
 
         std::set<T> current;
-        for (unsigned i = 1; i < keys.size(); i++) {
-            const auto &key = keys[i];
-            auto it = data_.find(key);
-            if (it == data_.end() || it->second.empty()) {
+        for (const std::pair<Key, Key> key : keys) {
+            const auto &next = find_ref(key);
+            if (next.empty()) {
                 return {};
             }
 
-            const std::set<T> &new_set = it->second;
-            std::set_intersection(latest.begin(), latest.end(), new_set.begin(), new_set.end(),
+            std::set_intersection(latest.begin(), latest.end(), next.begin(), next.end(),
                 std::inserter(current, current.begin()));
             std::swap(latest, current);
             current.clear();
@@ -94,7 +121,7 @@ public:
     }
 
 protected:
-    std::unordered_map<Key, std::set<T>, Compare> data_;
+    std::unordered_map<Key, std::unordered_map<Key, std::set<T>>> data_;
 };
 
 } // namespace ddwaf

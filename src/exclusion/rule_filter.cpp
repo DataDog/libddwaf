@@ -10,12 +10,17 @@
 namespace ddwaf::exclusion {
 
 rule_filter::rule_filter(
-    std::string &&id, std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets)
+    std::string id, std::vector<condition::ptr> conditions, std::set<rule::ptr> rule_targets)
     : id_(std::move(id)), conditions_(std::move(conditions))
 {
     rule_targets_.reserve(rule_targets.size());
     for (auto it = rule_targets.begin(); it != rule_targets.end();) {
         rule_targets_.emplace(std::move(rule_targets.extract(it++).value()));
+    }
+
+    for (auto &cond : conditions) {
+        const auto &cond_targets = cond->get_targets();
+        targets_.insert(cond_targets.begin(), cond_targets.end());
     }
 }
 

@@ -21,16 +21,7 @@
 
 namespace ddwaf {
 
-using sv_pair = std::pair<std::string_view, std::string_view>;
-
-struct sv_pair_hash {
-    std::size_t operator()(const sv_pair &t) const noexcept
-    {
-        return std::hash<std::string_view>()(t.first) ^ std::hash<std::string_view>()(t.second);
-    }
-};
-
-using rule_tag_map = ddwaf::multi_key_map<sv_pair, rule::ptr, sv_pair_hash>;
+using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule::ptr>;
 
 struct ruleset {
     void insert_rule(rule::ptr rule)

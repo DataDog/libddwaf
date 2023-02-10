@@ -15,6 +15,16 @@
 
 namespace ddwaf {
 
+rule::rule(std::string id_, const parser::rule_spec &spec)
+    : enabled(spec.enabled), id(std::move(id_)), name(spec.name), tags(spec.tags),
+      conditions(spec.conditions), actions(spec.actions)
+{
+    for (auto &cond : conditions) {
+        const auto &cond_targets = cond->get_targets();
+        targets.insert(cond_targets.begin(), cond_targets.end());
+    }
+}
+
 rule::rule(std::string &&id_, std::string &&name_,
     std::unordered_map<std::string, std::string> &&tags_, std::vector<condition::ptr> &&conditions_,
     std::vector<std::string> &&actions_, bool enabled_)

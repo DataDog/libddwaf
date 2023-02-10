@@ -33,11 +33,8 @@ public:
         object_filter::cache_type object_filter_cache;
     };
 
-    input_filter(std::string &&id, std::vector<condition::ptr> &&conditions,
-        std::set<rule::ptr> &&rule_targets, object_filter &&filter)
-        : id_(std::move(id)), conditions_(std::move(conditions)),
-          rule_targets_(std::move(rule_targets)), filter_(std::move(filter))
-    {}
+    input_filter(std::string id, std::vector<condition::ptr> conditions,
+        std::set<rule::ptr> rule_targets, object_filter filter);
 
     std::optional<excluded_set> match(const object_store &store, const ddwaf::manifest &manifest,
         cache_type &cache, ddwaf::timer &deadline) const;
@@ -49,6 +46,7 @@ protected:
     std::vector<condition::ptr> conditions_;
     const std::set<rule::ptr> rule_targets_;
     object_filter filter_;
+    std::unordered_set<ddwaf::manifest::target_type> targets_;
 };
 
 } // namespace ddwaf::exclusion

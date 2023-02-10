@@ -37,10 +37,7 @@ public:
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
 
-    rule(std::string id_, const parser::rule_spec &spec)
-        : enabled(spec.enabled), id(std::move(id_)), name(spec.name), tags(spec.tags),
-          conditions(spec.conditions), actions(spec.actions)
-    {}
+    rule(std::string id_, const parser::rule_spec &spec);
 
     rule(std::string &&id_, std::string &&name_,
         std::unordered_map<std::string, std::string> &&tags_,
