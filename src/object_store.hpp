@@ -25,7 +25,7 @@ public:
 
     bool is_new_target(const manifest::target_type target) const
     {
-        return latest_batch_.find(manifest::get_root(target)) != latest_batch_.cend();
+        return latest_batch_.find(target) != latest_batch_.cend();
     }
 
     bool has_new_targets() const { return !latest_batch_.empty(); }

@@ -11,7 +11,6 @@
 #include <vector>
 
 #include <clock.hpp>
-#include <manifest.hpp>
 #include <object_store.hpp>
 #include <rule.hpp>
 
@@ -29,7 +28,7 @@ public:
     rule_filter(std::string id, std::vector<condition::ptr> conditions,
         std::set<rule::ptr> rule_targets);
 
-    std::unordered_set<rule::ptr> match(const object_store &store, const ddwaf::manifest &manifest,
+    std::unordered_set<rule::ptr> match(const object_store &store,
         cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
@@ -38,7 +37,6 @@ protected:
     std::string id_;
     std::vector<condition::ptr> conditions_;
     std::unordered_set<rule::ptr> rule_targets_;
-    std::unordered_set<ddwaf::manifest::target_type> targets_;
 };
 
 } // namespace ddwaf::exclusion

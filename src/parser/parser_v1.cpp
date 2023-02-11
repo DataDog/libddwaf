@@ -27,7 +27,7 @@ namespace ddwaf::parser::v1 {
 
 namespace {
 
-condition::ptr parseCondition(parameter::map &rule, manifest_builder &mb,
+condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
     std::vector<PW_TRANSFORM_ID> transformers, ddwaf::object_limits limits)
 {
     auto operation = at<std::string_view>(rule, "operation");
@@ -74,7 +74,7 @@ condition::ptr parseCondition(parameter::map &rule, manifest_builder &mb,
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
     }
 
-    std::vector<manifest::target_type> targets;
+    std::vector<condition::target_type> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
     for (std::string input : inputs) {
         if (input.empty()) {
@@ -91,11 +91,11 @@ condition::ptr parseCondition(parameter::map &rule, manifest_builder &mb,
             key_path = input.substr(pos + 1, input.size());
         }
 
-        manifest::target_type target;
-        if (key_path.empty()) {
-            target = mb.insert(root, {});
-        } else {
-            target = mb.insert(root, {key_path});
+        condition::target_type target;
+        target.root = target_manifest.insert(root);
+        target.name = std::move(root);
+        if (!key_path.empty()) {
+            target.key_path = {key_path};
         }
         targets.push_back(target);
     }
@@ -104,7 +104,7 @@ condition::ptr parseCondition(parameter::map &rule, manifest_builder &mb,
         std::move(targets), std::move(transformers), std::move(processor), limits);
 }
 
-void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builder &mb,
+void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest &target_manifest,
     ddwaf::ruleset &rs, ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
@@ -129,7 +129,7 @@ void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest_builder
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         conditions.reserve(conditions_array.size());
         for (parameter::map cond : conditions_array) {
-            conditions.push_back(parseCondition(cond, mb, rule_transformers, limits));
+            conditions.push_back(parseCondition(cond, target_manifest, rule_transformers, limits));
         }
 
         std::unordered_map<std::string, std::string> tags;
@@ -163,10 +163,10 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
     auto rules_array = at<parameter::vector>(ruleset, "events");
     rs.rules.reserve(rules_array.size());
 
-    ddwaf::manifest_builder mb;
+    manifest target_manifest;
     for (parameter::map rule : rules_array) {
         try {
-            parseRule(rule, info, mb, rs, limits);
+            parseRule(rule, info, target_manifest, rs, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("%s", e.what());
             info.add_failed();
@@ -176,8 +176,6 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
     if (rs.rules.empty()) {
         throw ddwaf::parsing_error("no valid rules found");
     }
-
-    rs.manifest = mb.build_manifest();
 
     DDWAF_DEBUG("Loaded %zu rules out of %zu available in the ruleset", rs.rules.size(),
         rules_array.size());

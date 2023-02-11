@@ -17,7 +17,6 @@
 #include <condition.hpp>
 #include <event.hpp>
 #include <iterator.hpp>
-#include <manifest.hpp>
 #include <object_store.hpp>
 #include <parser/specification.hpp>
 #include <rule_processor/base.hpp>
@@ -53,7 +52,7 @@ public:
     rule(rule &&rhs) noexcept
         : enabled(rhs.enabled.load(std::memory_order_relaxed)), id(std::move(rhs.id)),
           name(std::move(rhs.name)), tags(std::move(rhs.tags)),
-          conditions(std::move(rhs.conditions)), targets(std::move(rhs.targets)),
+          conditions(std::move(rhs.conditions)),
           actions(std::move(rhs.actions))
     {}
 
@@ -64,7 +63,6 @@ public:
         name = std::move(rhs.name);
         tags = std::move(rhs.tags);
         conditions = std::move(rhs.conditions);
-        targets = std::move(rhs.targets);
         actions = std::move(rhs.actions);
 
         return *this;
@@ -72,8 +70,8 @@ public:
 
     ~rule() = default;
 
-    std::optional<event> match(const object_store &store, const ddwaf::manifest &manifest,
-        cache_type &cache, const std::unordered_set<const ddwaf_object *> &objects_excluded,
+    std::optional<event> match(const object_store &store, cache_type &cache,
+        const std::unordered_set<const ddwaf_object *> &objects_excluded,
         ddwaf::timer &deadline) const;
 
     bool is_enabled() const { return enabled.load(std::memory_order_relaxed); }
@@ -90,7 +88,6 @@ public:
     std::string name;
     std::unordered_map<std::string, std::string> tags;
     std::vector<condition::ptr> conditions;
-    std::unordered_set<ddwaf::manifest::target_type> targets;
     std::vector<std::string> actions;
 };
 

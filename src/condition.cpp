@@ -91,11 +91,10 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
 }
 
 std::optional<event::match> condition::match(const object_store &store,
-    const ddwaf::manifest &manifest,
     const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
     ddwaf::timer &deadline) const
 {
-    for (const auto &target : targets_) {
+    for (const auto &[target, name, key_path] : targets_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
@@ -106,8 +105,6 @@ std::optional<event::match> condition::match(const object_store &store,
             continue;
         }
 
-        const auto &info = manifest.get_target_info(target);
-
         // TODO: iterators could be cached to avoid reinitialisation
         const auto *object = store.get_target(target);
         if (object == nullptr) {
@@ -116,17 +113,17 @@ std::optional<event::match> condition::match(const object_store &store,
 
         std::optional<event::match> optional_match;
         if (source_ == data_source::keys) {
-            object::key_iterator it(object, info.key_path, objects_excluded, limits_);
+            object::key_iterator it(object, key_path, objects_excluded, limits_);
             optional_match = match_target(it, deadline);
         } else {
-            object::value_iterator it(object, info.key_path, objects_excluded, limits_);
+            object::value_iterator it(object, key_path, objects_excluded, limits_);
             optional_match = match_target(it, deadline);
         }
 
         if (optional_match.has_value()) {
-            optional_match->source = info.name;
+            optional_match->source = name;
 
-            DDWAF_TRACE("Target %s matched parameter value %s", info.name.c_str(),
+            DDWAF_TRACE("Target %s matched parameter value %s", name.c_str(),
                 optional_match->resolved.c_str());
             return optional_match;
         }

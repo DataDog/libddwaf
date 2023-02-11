@@ -81,7 +81,7 @@ const std::unordered_set<rule::ptr> &context::filter_rules(ddwaf::timer &deadlin
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, ruleset_->manifest, cache, deadline);
+        auto exclusion = filter->match(store_, cache, deadline);
         rules_to_exclude_.merge(exclusion);
     }
     return rules_to_exclude_;
@@ -103,7 +103,7 @@ const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, ruleset_->manifest, cache, deadline);
+        auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 if (rules_to_exclude.find(rule) != rules_to_exclude.end()) {
@@ -130,7 +130,7 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
             auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache());
             it = new_it;
         }
-        collection.match(events, seen_actions_, store_, ruleset_->manifest, it->second,
+        collection.match(events, seen_actions_, store_, it->second,
             rules_to_exclude, objects_to_exclude, deadline);
     };
 

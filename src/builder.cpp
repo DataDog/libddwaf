@@ -33,24 +33,19 @@ std::shared_ptr<ruleset> builder::build(parameter object, ruleset_info &info, ob
 {
     parameter::map ruleset = object;
 
-    ddwaf::ruleset rs;
-
     auto version = parser::parse_schema_version(ruleset);
-    switch (version) {
-    case 1:
+    if (version == 1) {
+        ddwaf::ruleset rs;
         parser::v1::parse(ruleset, info, rs, limits);
-        break;
-    case 2:
-        parser::v2::parse(ruleset, info, rs, limits);
-        break;
-    case 3: // Experimental
-        return build_helper(ruleset, info, limits);
-    default:
+        return std::make_shared<ddwaf::ruleset>(std::move(rs));
+    }
+
+    if (version != 2) {
         DDWAF_ERROR("incompatible ruleset version %u.x", version);
         throw unsupported_version();
     }
 
-    return std::make_shared<ddwaf::ruleset>(std::move(rs));
+    return build_helper(ruleset, info, limits);
 }
 
 namespace {
@@ -87,11 +82,11 @@ std::set<rule::ptr> target_to_rules(const std::vector<parser::rule_target_spec> 
 std::shared_ptr<ruleset> builder::build_helper(
     parameter::map root, ruleset_info &info, object_limits limits)
 {
-    manifest_builder mb;
+    manifest target_manifest;
     rule_data::dispatcher dispatcher;
 
     // Load new rules, overrides and exclusions
-    auto state = load(root, info, mb, dispatcher, limits);
+    auto state = load(root, info, target_manifest, dispatcher, limits);
 
     constexpr change_state rule_update = change_state::rules | change_state::overrides;
     constexpr change_state filters_update = rule_update | change_state::filters;
@@ -172,7 +167,7 @@ std::shared_ptr<ruleset> builder::build_helper(
     ddwaf::ruleset rs;
     for (auto &[id, rule] : final_rules_) { rs.insert_rule(rule); }
     rs.dispatcher = std::move(dispatcher);
-    rs.manifest = mb.build_manifest();
+    rs.manifest = target_manifest;
     rs.rule_filters = std::move(rule_filters_);
     rs.input_filters = std::move(input_filters_);
 
@@ -180,9 +175,9 @@ std::shared_ptr<ruleset> builder::build_helper(
 }
 
 builder::change_state builder::load(parameter::map &root, ruleset_info &info,
-        manifest_builder &mb, rule_data::dispatcher &dispatcher, object_limits limits)
+        manifest &target_manifest, rule_data::dispatcher &dispatcher, object_limits limits)
 {
-    parser::v3::parser p(info, mb, dispatcher, limits);
+    parser::v2::parser p(info, target_manifest, dispatcher, limits);
 
     change_state state = change_state::none;
 

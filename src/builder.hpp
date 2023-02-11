@@ -39,7 +39,8 @@ protected:
         parameter::map root, ruleset_info &info, object_limits limits);
 
     change_state load(parameter::map &root, ruleset_info &info,
-            manifest_builder &mb, rule_data::dispatcher &dispatcher, object_limits limits);
+            manifest &target_manifest, rule_data::dispatcher &dispatcher,
+            object_limits limits);
 
     parser::rule_spec_container base_rules_;
     parser::override_spec_container overrides_;

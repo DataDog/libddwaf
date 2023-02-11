@@ -15,15 +15,10 @@ input_filter::input_filter(std::string id, std::vector<condition::ptr> condition
     std::set<rule::ptr> rule_targets, object_filter filter)
     : id_(std::move(id)), conditions_(std::move(conditions)),
       rule_targets_(std::move(rule_targets)), filter_(std::move(filter))
-{
-    for (auto &cond : conditions_) {
-        const auto &cond_targets = cond->get_targets();
-        targets_.insert(cond_targets.begin(), cond_targets.end());
-    }
-}
+{}
 
 std::optional<excluded_set> input_filter::match(const object_store &store,
-    const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const
+    cache_type &cache, ddwaf::timer &deadline) const
 {
     if (!cache.result) {
         for (const auto &cond : conditions_) {
@@ -42,7 +37,7 @@ std::optional<excluded_set> input_filter::match(const object_store &store,
             }
 
             // TODO: Condition interface without events
-            auto opt_match = cond->match(store, manifest, {}, run_on_new, deadline);
+            auto opt_match = cond->match(store, {}, run_on_new, deadline);
             if (!opt_match.has_value()) {
                 cached_result->second = false;
                 return std::nullopt;

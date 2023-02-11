@@ -12,7 +12,6 @@
 
 #include <clock.hpp>
 #include <exclusion/object_filter.hpp>
-#include <manifest.hpp>
 #include <object_store.hpp>
 #include <rule.hpp>
 
@@ -36,7 +35,7 @@ public:
     input_filter(std::string id, std::vector<condition::ptr> conditions,
         std::set<rule::ptr> rule_targets, object_filter filter);
 
-    std::optional<excluded_set> match(const object_store &store, const ddwaf::manifest &manifest,
+    std::optional<excluded_set> match(const object_store &store,
         cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
@@ -46,7 +45,6 @@ protected:
     std::vector<condition::ptr> conditions_;
     const std::set<rule::ptr> rule_targets_;
     object_filter filter_;
-    std::unordered_set<ddwaf::manifest::target_type> targets_;
 };
 
 } // namespace ddwaf::exclusion

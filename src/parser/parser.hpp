@@ -18,8 +18,6 @@
 
 namespace ddwaf::parser {
 
-void parse(parameter object, ruleset_info &info, ddwaf::ruleset &rs, object_limits limits);
-
 unsigned parse_schema_version(parameter::map &ruleset);
 
 namespace v1 {
@@ -27,21 +25,12 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
 } // namespace v1
 
 namespace v2 {
-void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, object_limits limits);
-
-std::unordered_map<std::string_view, rule::ptr> parse_rules(ddwaf::parameter::vector &rules_array,
-    ddwaf::ruleset_info &info, manifest_builder &mb, rule_data::dispatcher &dispatcher,
-    object_limits limits);
-
-} // namespace v2
-
-namespace v3 {
 class parser {
 public:
-    parser(ddwaf::ruleset_info &info, manifest_builder &mb, rule_data::dispatcher &dispatcher,
-        object_limits limits)
-        : info_(info), mb_(mb), dispatcher_(dispatcher), limits_(limits)
-    {}
+    parser(ddwaf::ruleset_info &info, manifest &target_manifest,
+        rule_data::dispatcher &dispatcher, object_limits limits)
+        : info_(info), target_manifest_(target_manifest),
+        dispatcher_(dispatcher), limits_(limits){}
 
     rule_spec_container parse_rules(parameter::vector &rule_array);
     override_spec_container parse_overrides(parameter::vector &override_array);
@@ -60,10 +49,10 @@ protected:
     rule_filter_spec parse_rule_filter(parameter::map &filter);
 
     ddwaf::ruleset_info &info_;
-    manifest_builder &mb_;
+    manifest &target_manifest_;
     rule_data::dispatcher &dispatcher_;
     object_limits limits_;
 };
 
-} // namespace v3
+} // namespace v2
 } // namespace ddwaf::parser

@@ -12,7 +12,7 @@ namespace ddwaf {
 
 namespace {
 std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
-    const ddwaf::manifest &manifest, std::unordered_map<rule::ptr, rule::cache_type> &cache,
+    std::unordered_map<rule::ptr, rule::cache_type> &cache,
     const std::unordered_set<rule::ptr> &rules_to_exclude,
     const std::unordered_map<rule::ptr, collection::object_set> &objects_to_exclude,
     ddwaf::timer &deadline)
@@ -47,9 +47,9 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
         auto exclude_it = objects_to_exclude.find(rule);
         if (exclude_it != objects_to_exclude.end()) {
             const auto &objects_excluded = exclude_it->second;
-            event = rule->match(store, manifest, rule_cache, objects_excluded, deadline);
+            event = rule->match(store, rule_cache, objects_excluded, deadline);
         } else {
-            event = rule->match(store, manifest, rule_cache, {}, deadline);
+            event = rule->match(store, rule_cache, {}, deadline);
         }
 
         return event;
@@ -64,7 +64,7 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
 
 void collection::match(std::vector<event> &events,
     std::unordered_set<std::string_view> & /*seen_actions*/, const object_store &store,
-    const ddwaf::manifest &manifest, collection_cache &cache,
+    collection_cache &cache,
     const std::unordered_set<rule::ptr> &rules_to_exclude,
     const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
     ddwaf::timer &deadline) const
@@ -74,7 +74,7 @@ void collection::match(std::vector<event> &events,
     }
 
     for (const auto &rule : rules_) {
-        auto event = match_rule(rule, store, manifest, cache.rule_cache, rules_to_exclude,
+        auto event = match_rule(rule, store, cache.rule_cache, rules_to_exclude,
             objects_to_exclude, deadline);
         if (event.has_value()) {
             cache.result = true;
@@ -87,7 +87,7 @@ void collection::match(std::vector<event> &events,
 
 void priority_collection::match(std::vector<event> &events,
     std::unordered_set<std::string_view> &seen_actions, const object_store &store,
-    const ddwaf::manifest &manifest, collection_cache &cache,
+    collection_cache &cache,
     const std::unordered_set<rule::ptr> &rules_to_exclude,
     const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
     ddwaf::timer &deadline) const
@@ -103,14 +103,14 @@ void priority_collection::match(std::vector<event> &events,
 
     // If there are no remaining actions, we treat this collection as a regular one
     if (remaining_actions.empty()) {
-        collection::match(events, seen_actions, store, manifest, cache, rules_to_exclude,
+        collection::match(events, seen_actions, store, cache, rules_to_exclude,
             objects_to_exclude, deadline);
         return;
     }
 
     // If there are still remaining actions, we treat this collection as a priority tone
     for (const auto &rule : rules_) {
-        auto event = match_rule(rule, store, manifest, cache.rule_cache, rules_to_exclude,
+        auto event = match_rule(rule, store, cache.rule_cache, rules_to_exclude,
             objects_to_exclude, deadline);
         if (event.has_value()) {
             // If there has been a match, we set the result to true to ensure

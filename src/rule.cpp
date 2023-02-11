@@ -18,27 +18,17 @@ namespace ddwaf {
 rule::rule(std::string id_, const parser::rule_spec &spec)
     : enabled(spec.enabled), id(std::move(id_)), name(spec.name), tags(spec.tags),
       conditions(spec.conditions), actions(spec.actions)
-{
-    for (auto &cond : conditions) {
-        const auto &cond_targets = cond->get_targets();
-        targets.insert(cond_targets.begin(), cond_targets.end());
-    }
-}
+{}
 
 rule::rule(std::string &&id_, std::string &&name_,
     std::unordered_map<std::string, std::string> &&tags_, std::vector<condition::ptr> &&conditions_,
     std::vector<std::string> &&actions_, bool enabled_)
     : enabled(enabled_), id(std::move(id_)), name(std::move(name_)), tags(std::move(tags_)),
       conditions(std::move(conditions_)), actions(std::move(actions_))
-{
-    for (auto &cond : conditions) {
-        const auto &cond_targets = cond->get_targets();
-        targets.insert(cond_targets.begin(), cond_targets.end());
-    }
-}
+{}
 
-std::optional<event> rule::match(const object_store &store, const ddwaf::manifest &manifest,
-    cache_type &cache, const std::unordered_set<const ddwaf_object *> &objects_excluded,
+std::optional<event> rule::match(const object_store &store, cache_type &cache,
+    const std::unordered_set<const ddwaf_object *> &objects_excluded,
     ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
@@ -59,7 +49,7 @@ std::optional<event> rule::match(const object_store &store, const ddwaf::manifes
             cached_result = it;
         }
 
-        auto opt_match = cond->match(store, manifest, objects_excluded, run_on_new, deadline);
+        auto opt_match = cond->match(store, objects_excluded, run_on_new, deadline);
         if (!opt_match.has_value()) {
             cached_result->second = false;
             return std::nullopt;

@@ -26,10 +26,15 @@ namespace ddwaf {
 class condition {
 public:
     using ptr = std::shared_ptr<condition>;
+    struct target_type {
+        manifest::target_type root;
+        std::string name;
+        std::vector<std::string> key_path;
+    };
 
     enum class data_source : uint8_t { values, keys };
 
-    condition(std::vector<ddwaf::manifest::target_type> &&targets,
+    condition(std::vector<target_type> &&targets,
         std::vector<PW_TRANSFORM_ID> &&transformers,
         std::shared_ptr<rule_processor::base> &&processor,
         ddwaf::object_limits limits = ddwaf::object_limits(),
@@ -45,9 +50,9 @@ public:
     condition(const condition &) = delete;
     condition &operator=(const condition &) = delete;
 
-    std::optional<event::match> match(const object_store &store, const ddwaf::manifest &manifest,
-        const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
-        ddwaf::timer &deadline) const;
+    std::optional<event::match> match(const object_store &store,
+        const std::unordered_set<const ddwaf_object *> &objects_excluded,
+        bool run_on_new, ddwaf::timer &deadline) const;
 
     std::string_view processor_name()
     {
@@ -69,15 +74,13 @@ public:
         std::atomic_store(&processor_, proc);
     }
 
-    const std::vector<ddwaf::manifest::target_type> &get_targets() { return targets_; }
-
 protected:
     std::optional<event::match> match_object(const ddwaf_object *object) const;
 
     template <typename T>
     std::optional<event::match> match_target(T &it, ddwaf::timer &deadline) const;
 
-    std::vector<ddwaf::manifest::target_type> targets_;
+    std::vector<target_type> targets_;
     std::vector<PW_TRANSFORM_ID> transformers_;
     std::shared_ptr<rule_processor::base> processor_;
     ddwaf::object_limits limits_;
