@@ -15,21 +15,14 @@
 
 namespace ddwaf {
 
-rule::rule(std::string id_, const parser::rule_spec &spec)
-    : enabled(spec.enabled), id(std::move(id_)), name(spec.name), tags(spec.tags),
-      conditions(spec.conditions), actions(spec.actions)
-{}
-
-rule::rule(std::string &&id_, std::string &&name_,
-    std::unordered_map<std::string, std::string> &&tags_, std::vector<condition::ptr> &&conditions_,
-    std::vector<std::string> &&actions_, bool enabled_)
+rule::rule(std::string id_, std::string name_, std::unordered_map<std::string, std::string> tags_,
+    std::vector<condition::ptr> conditions_, std::vector<std::string> actions_, bool enabled_)
     : enabled(enabled_), id(std::move(id_)), name(std::move(name_)), tags(std::move(tags_)),
       conditions(std::move(conditions_)), actions(std::move(actions_))
 {}
 
 std::optional<event> rule::match(const object_store &store, cache_type &cache,
-    const std::unordered_set<const ddwaf_object *> &objects_excluded,
-    ddwaf::timer &deadline) const
+    const std::unordered_set<const ddwaf_object *> &objects_excluded, ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
     if (cache.result) {

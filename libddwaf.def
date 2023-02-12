@@ -1,9 +1,8 @@
 LIBRARY ddwaf
 EXPORTS
   ddwaf_init
+  ddwaf_update
   ddwaf_destroy
-  ddwaf_update_rule_data
-  ddwaf_toggle_rules
   ddwaf_ruleset_info_free
   ddwaf_required_addresses
   ddwaf_required_rule_data_ids

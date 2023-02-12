@@ -29,6 +29,7 @@ public:
 
     // TODO root address generation
     const std::vector<const char *> &get_root_addresses() const { return root_addresses_; }
+
 protected:
     std::unordered_map<std::string, target_type> targets_;
     target_type index_{0};

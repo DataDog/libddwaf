@@ -19,8 +19,8 @@ rule_filter::rule_filter(
     }
 }
 
-std::unordered_set<rule::ptr> rule_filter::match(const object_store &store,
-    cache_type &cache, ddwaf::timer &deadline) const
+std::unordered_set<rule::ptr> rule_filter::match(
+    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (cache.result) {
         return {};

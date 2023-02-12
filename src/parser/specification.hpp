@@ -15,11 +15,20 @@
 
 namespace ddwaf::parser {
 
+struct condition_spec {
+    condition::data_source source;
+    std::vector<condition::target_type> targets;
+    std::vector<PW_TRANSFORM_ID> transformers;
+
+    std::string data_id;
+    std::shared_ptr<rule_processor::base> processor;
+};
+
 struct rule_spec {
     bool enabled;
     std::string name;
     std::unordered_map<std::string, std::string> tags;
-    std::vector<condition::ptr> conditions;
+    std::vector<condition_spec> conditions;
     std::vector<std::string> actions;
 };
 
@@ -37,6 +46,8 @@ struct override_spec {
     std::vector<rule_target_spec> targets;
 };
 
+// Filter conditions don't need to be regenerated, so we don't need to use
+// the condition_spec
 struct rule_filter_spec {
     std::vector<condition::ptr> conditions;
     std::vector<rule_target_spec> targets;
@@ -50,9 +61,15 @@ struct input_filter_spec {
 
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
+using rule_data_container = std::unordered_map<std::string, rule_processor::base::ptr>;
 
 struct override_spec_container {
     [[nodiscard]] bool empty() const { return by_ids.empty() && by_tags.empty(); }
+    void clear()
+    {
+        by_ids.clear();
+        by_tags.clear();
+    }
     // The distinction is only necessary due to the restriction that
     // overrides by ID are to be considered a priority over overrides by tags
     std::vector<override_spec> by_ids;
@@ -64,6 +81,14 @@ struct filter_spec_container {
     {
         return unconditional_rule_filters.empty() && rule_filters.empty() && input_filters.empty();
     }
+
+    void clear()
+    {
+        unconditional_rule_filters.clear();
+        rule_filters.clear();
+        input_filters.clear();
+    }
+
     std::unordered_map<std::string, rule_filter_spec> unconditional_rule_filters;
     std::unordered_map<std::string, rule_filter_spec> rule_filters;
     std::unordered_map<std::string, input_filter_spec> input_filters;

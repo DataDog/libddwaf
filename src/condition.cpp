@@ -17,13 +17,6 @@ namespace ddwaf {
 
 std::optional<event::match> condition::match_object(const ddwaf_object *object) const
 {
-    decltype(processor_) processor;
-    if (mutable_) {
-        processor = std::atomic_load(&processor_);
-    } else {
-        processor = processor_;
-    }
-
     const bool has_transform = !transformers_.empty();
     bool transform_required = false;
 
@@ -40,7 +33,7 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object) 
     // If we don't have transform to perform, or if they're irrelevant, no need to waste time
     // copying and allocating data
     if (!has_transform || !transform_required) {
-        return processor->match({object->stringValue, length});
+        return processor_->match({object->stringValue, length});
     }
 
     ddwaf_object copy;
@@ -59,10 +52,10 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object) 
     }
 
     if (transformFailed) {
-        return processor->match({object->stringValue, length});
+        return processor_->match({object->stringValue, length});
     }
 
-    return processor->match_object(&copy);
+    return processor_->match_object(&copy);
 }
 
 template <typename T>
@@ -94,6 +87,11 @@ std::optional<event::match> condition::match(const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
     ddwaf::timer &deadline) const
 {
+    if (!processor_) {
+        DDWAF_DEBUG("Condition doesn't have a valid processor");
+        return std::nullopt;
+    }
+
     for (const auto &[target, name, key_path] : targets_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

@@ -13,6 +13,7 @@
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <parser/parser.hpp>
+#include <parser/rule_data_parser.hpp>
 #include <parser/specification.hpp>
 #include <rule.hpp>
 #include <rule_processor/exact_match.hpp>
@@ -32,16 +33,14 @@ using ddwaf::rule_processor::base;
 
 namespace ddwaf::parser::v2 {
 
-condition::ptr parser::parse_condition(
-    parameter::map &root, condition::data_source source, std::vector<PW_TRANSFORM_ID> transformers)
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+std::pair<std::string, rule_processor::base::ptr> parser::parse_processor(
+    std::string_view operation, parameter::map &params)
 {
-    auto operation = at<std::string_view>(root, "operator");
-    auto params = at<parameter::map>(root, "parameters");
-    bool is_mutable = false;
-
     parameter::map options;
     std::shared_ptr<base> processor;
-    std::optional<std::string> rule_data_id = std::nullopt;
+    std::string rule_data_id;
+
     if (operation == "phrase_match") {
         auto list = at<parameter::vector>(params, "list");
 
@@ -81,8 +80,6 @@ condition::ptr parser::parse_condition(
         auto it = params.find("list");
         if (it == params.end()) {
             rule_data_id = at<std::string>(params, "data");
-            processor = std::make_shared<rule_processor::ip_match>();
-            is_mutable = true;
         } else {
             processor = std::make_shared<rule_processor::ip_match>(it->second);
         }
@@ -90,13 +87,25 @@ condition::ptr parser::parse_condition(
         auto it = params.find("list");
         if (it == params.end()) {
             rule_data_id = at<std::string>(params, "data");
-            processor = std::make_shared<rule_processor::exact_match>();
-            is_mutable = true;
         } else {
             processor = std::make_shared<rule_processor::exact_match>(it->second);
         }
     } else {
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
+    }
+
+    return {std::move(rule_data_id), std::move(processor)};
+}
+
+condition_spec parser::parse_rule_condition(
+    parameter::map &root, condition::data_source source, std::vector<PW_TRANSFORM_ID> transformers)
+{
+    auto operation = at<std::string_view>(root, "operator");
+    auto params = at<parameter::map>(root, "parameters");
+
+    auto [rule_data_id, processor] = parse_processor(operation, params);
+    if (!processor && !rule_data_id.empty()) {
+        dynamic_processors_.emplace(rule_data_id, operation);
     }
 
     std::vector<condition::target_type> targets;
@@ -130,18 +139,53 @@ condition::ptr parser::parse_condition(
         targets.emplace_back(target);
     }
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::move(transformers),
-        std::move(processor), limits_, source, is_mutable);
+    return {source, std::move(targets), std::move(transformers), std::move(rule_data_id),
+        std::move(processor)};
+}
 
-    if (rule_data_id.has_value()) {
-        if (operation == "ip_match") {
-            dispatcher_.register_condition<rule_processor::ip_match>(*rule_data_id, cond);
-        } else if (operation == "exact_match") {
-            dispatcher_.register_condition<rule_processor::exact_match>(*rule_data_id, cond);
-        }
+condition::ptr parser::parse_filter_condition(parameter::map &root)
+{
+    auto operation = at<std::string_view>(root, "operator");
+    auto params = at<parameter::map>(root, "parameters");
+
+    auto [rule_data_id, processor] = parse_processor(operation, params);
+    if (!rule_data_id.empty()) {
+        throw ddwaf::parsing_error("filter conditions don't support dynamic data");
     }
 
-    return cond;
+    std::vector<condition::target_type> targets;
+    auto inputs = at<parameter::vector>(params, "inputs");
+    if (inputs.empty()) {
+        throw ddwaf::parsing_error("empty inputs");
+    }
+
+    for (parameter::map input : inputs) {
+        auto address = at<std::string>(input, "address");
+        auto key_paths = at<parameter::vector>(input, "key_path", parameter::vector());
+
+        if (address.empty()) {
+            throw ddwaf::parsing_error("empty address");
+        }
+
+        std::vector<std::string> kp;
+        for (std::string path : key_paths) {
+            if (path.empty()) {
+                throw ddwaf::parsing_error("empty key_path");
+            }
+
+            kp.push_back(std::move(path));
+        }
+
+        condition::target_type target;
+        target.root = target_manifest_.insert(address);
+        target.name = address;
+        target.key_path = std::move(kp);
+
+        targets.emplace_back(target);
+    }
+
+    return std::make_shared<condition>(
+        std::move(targets), std::vector<PW_TRANSFORM_ID>{}, std::move(processor), limits_);
 }
 
 rule_spec parser::parse_rule(parameter::map &rule)
@@ -167,12 +211,12 @@ rule_spec parser::parse_rule(parameter::map &rule)
         }
     }
 
-    std::vector<condition::ptr> conditions;
+    std::vector<condition_spec> conditions;
     auto conditions_array = at<parameter::vector>(rule, "conditions");
     conditions.reserve(conditions_array.size());
 
     for (parameter::map cond : conditions_array) {
-        conditions.push_back(parse_condition(cond, source, rule_transformers));
+        conditions.push_back(parse_rule_condition(cond, source, rule_transformers));
     }
 
     std::unordered_map<std::string, std::string> tags;
@@ -220,6 +264,50 @@ rule_spec_container parser::parse_rules(parameter::vector &rule_array)
     }
 
     return rules;
+}
+
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+rule_data_container parser::parse_rule_data(parameter::vector &rule_data)
+{
+    rule_data_container processors;
+    for (ddwaf::parameter object : rule_data) {
+        std::string id;
+        try {
+            ddwaf::parameter::map entry = object;
+
+            id = at<std::string>(entry, "id");
+
+            auto it = dynamic_processors_.find(id);
+            if (it == dynamic_processors_.end()) {
+                DDWAF_WARN("Rule data id '%s' has no associated rule", id.c_str());
+                continue;
+            }
+
+            auto type = at<std::string_view>(entry, "type");
+
+            DDWAF_DEBUG("Updating rules with id '%s' and type '%s'", id.c_str(), type.data());
+
+            auto data = at<parameter>(entry, "data");
+
+            rule_processor::base::ptr processor;
+            if (it->second == "ip_match") {
+                using rule_data_type = rule_processor::ip_match::rule_data_type;
+                auto parsed_data = ::ddwaf::parser::parse_rule_data<rule_data_type>(type, data);
+                processor = std::make_shared<rule_processor::ip_match>(parsed_data);
+            } else if (it->second == "exact_match") {
+                using rule_data_type = rule_processor::exact_match::rule_data_type;
+                auto parsed_data = ::ddwaf::parser::parse_rule_data<rule_data_type>(type, data);
+                processor = std::make_shared<rule_processor::exact_match>(parsed_data);
+            }
+
+            processors.emplace(std::move(id), std::move(processor));
+        } catch (const ddwaf::exception &e) {
+            DDWAF_ERROR("Failed to parse data id '%s': %s",
+                (!id.empty() ? id.c_str() : "(unknown)"), e.what());
+        }
+    }
+
+    return processors;
 }
 
 rule_target_spec parse_rules_target(parameter::map &target)
@@ -317,7 +405,7 @@ input_filter_spec parser::parse_input_filter(parameter::map &filter)
         conditions.reserve(conditions_array.size());
 
         for (parameter::map cond : conditions_array) {
-            conditions.push_back(parse_condition(cond));
+            conditions.push_back(parse_filter_condition(cond));
         }
     }
 
@@ -360,7 +448,7 @@ rule_filter_spec parser::parse_rule_filter(parameter::map &filter)
         conditions.reserve(conditions_array.size());
 
         for (parameter::map cond : conditions_array) {
-            conditions.push_back(parse_condition(cond));
+            conditions.push_back(parse_filter_condition(cond));
         }
     }
 

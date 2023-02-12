@@ -24,21 +24,18 @@ public:
 
     ddwaf::context create_context() { return context{ruleset_}; }
 
-    void update_rule_data(ddwaf::parameter::vector &&input)
-    {
-        ruleset_->dispatcher.dispatch(input);
-    }
-
-    void toggle_rules(ddwaf::parameter::map &&input);
-
     [[nodiscard]] const std::vector<const char *> &get_root_addresses() const
     {
-        return ruleset_->manifest.get_root_addresses();
+        // TODO
+        static const std::vector<const char *> empty;
+        return empty;
     }
 
     const std::vector<const char *> &get_rule_data_ids()
     {
-        return ruleset_->dispatcher.get_rule_data_ids();
+        // TODO
+        static const std::vector<const char *> empty;
+        return empty;
     }
 
 protected:

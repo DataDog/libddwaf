@@ -219,6 +219,22 @@ ddwaf_handle ddwaf_init(const ddwaf_object *rule,
     const ddwaf_config* config, ddwaf_ruleset_info *info);
 
 /**
+ * ddwaf_update
+ *
+ * Update a ddwaf instance
+ *
+ * @param rule ddwaf::object containing the patterns to be used by the WAF. (nonnull)
+ * @param info Optional ruleset parsing diagnostics. (nullable)
+ *
+ * @return Handle to the WAF instance.
+ *
+ * @note If config is NULL, default values will be used, including the default
+ *       free function (ddwaf_object_free).
+ **/
+void ddwaf_update(const ddwaf_object *rule, ddwaf_ruleset_info *info);
+
+
+/**
  * ddwaf_destroy
  *
  * Destroy a WAF instance.
@@ -226,26 +242,6 @@ ddwaf_handle ddwaf_init(const ddwaf_object *rule,
  * @param Handle to the WAF instance.
  */
 void ddwaf_destroy(ddwaf_handle handle);
-
-/**
- * ddwaf_update_rule_data
- *
- * Update existing rules with new rule data.
- *
- * @param handle to the WAF instance.
- * @param data A ddwaf_object with the format [{id, type, [data]}].
- */
-DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data);
-
-/**
- * ddwaf_toggle_rules
- *
- * Enable or disable rules (true -> rule enabled, false -> rule disabled).
- *
- * @param handle to the WAF instance.
- * @param data A ddwaf_object with the format {rule_id : boolean}.
- */
-DDWAF_RET_CODE ddwaf_toggle_rules(ddwaf_handle handle, ddwaf_object *rule_map);
 
 /**
  * ddwaf_ruleset_info_free

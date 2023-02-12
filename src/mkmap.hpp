@@ -29,8 +29,7 @@ public:
     }
 
     // Check that Key can be constructed from CompatKey
-    template <typename CompatKey>
-    std::set<T> find(const std::pair<CompatKey, CompatKey> &key) const
+    template <typename CompatKey> std::set<T> find(const std::pair<CompatKey, CompatKey> &key) const
     {
         auto first_it = data_.find(key.first);
         if (first_it == data_.end()) {
@@ -47,7 +46,7 @@ public:
     }
 
     template <typename CompatKey>
-    const std::set<T>& find_ref(const std::pair<CompatKey, CompatKey> &key) const
+    const std::set<T> &find_ref(const std::pair<CompatKey, CompatKey> &key) const
     {
         static std::set<T> empty;
         auto first_it = data_.find(Key(key.first));
@@ -65,7 +64,7 @@ public:
     }
 
     template <typename CompatKey>
-    std::set<T> find2(const std::pair<CompatKey,CompatKey> &key0,
+    std::set<T> find2(const std::pair<CompatKey, CompatKey> &key0,
         const std::pair<CompatKey, CompatKey> &key1) const
     {
         const auto &set0 = find_ref(key0);
@@ -84,18 +83,17 @@ public:
         return result;
     }
 
-    template <typename U>
-    std::set<T> multifind(const U &keys) const
+    template <typename U> std::set<T> multifind(const U &keys) const
     {
         // TODO fix this part
         // Since this function is quite inefficient, avoid it when possible
-/*        switch (keys.size()) {*/
+        /*        switch (keys.size()) {*/
         /*case 0:*/
-            /*return {};*/
+        /*return {};*/
         /*case 1:*/
-            /*return find(*keys.begin());*/
+        /*return find(*keys.begin());*/
         /*case 2:*/
-            /*return find2(keys.begin(), (keys.begin() + 1));*/
+        /*return find2(keys.begin(), (keys.begin() + 1));*/
         /*}*/
 
         std::pair<Key, Key> first = *keys.begin();

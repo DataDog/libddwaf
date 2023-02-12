@@ -67,7 +67,6 @@ TEST(TestMultiKeyMap, Find)
         auto rules = ruledb.find(s_pair{"key"sv, "value1"sv});
         EXPECT_EQ(rules.size(), 4);
     }
-
 }
 
 TEST(TestMultiKeyMap, Multifind)
@@ -132,8 +131,8 @@ TEST(TestMultiKeyMap, Multifind)
     }
 
     {
-        auto rules =
-            ruledb.multifind(sv_pair_vec{{"type", "type0"}, {"category", "category0"}, {"key", "value0"}});
+        auto rules = ruledb.multifind(
+            sv_pair_vec{{"type", "type0"}, {"category", "category0"}, {"key", "value0"}});
         EXPECT_EQ(rules.size(), 1);
     }
 }

@@ -35,8 +35,8 @@ public:
     input_filter(std::string id, std::vector<condition::ptr> conditions,
         std::set<rule::ptr> rule_targets, object_filter filter);
 
-    std::optional<excluded_set> match(const object_store &store,
-        cache_type &cache, ddwaf::timer &deadline) const;
+    std::optional<excluded_set> match(
+        const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
 

@@ -79,25 +79,11 @@ waf *waf::from_config(
 
 waf::waf(ddwaf::parameter input, ddwaf::ruleset_info &info, ddwaf::object_limits limits,
     ddwaf_object_free_fn free_fn, ddwaf::obfuscator &&event_obfuscator)
+    : builder_(limits)
 {
-    ddwaf::builder builder;
-    ruleset_ = builder.build(input, info, limits);
+    ruleset_ = builder_.build(input, info);
     ruleset_->free_fn = free_fn;
     ruleset_->event_obfuscator = std::move(event_obfuscator);
-}
-
-void waf::toggle_rules(ddwaf::parameter::map &&input)
-{
-    for (auto &[key, value] : input) {
-        auto it = ruleset_->rules.find(std::string(key));
-
-        if (it == ruleset_->rules.end()) {
-            DDWAF_WARN("Attempting to toggle an unknown rule %s", key.data());
-            continue;
-        }
-
-        it->second->toggle(value);
-    }
 }
 
 } // namespace ddwaf

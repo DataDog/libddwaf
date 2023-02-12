@@ -28,18 +28,25 @@ namespace v2 {
 class parser {
 public:
     parser(ddwaf::ruleset_info &info, manifest &target_manifest,
-        rule_data::dispatcher &dispatcher, object_limits limits)
-        : info_(info), target_manifest_(target_manifest),
-        dispatcher_(dispatcher), limits_(limits){}
+        std::unordered_map<std::string, std::string> &dynamic_processors, object_limits limits)
+        : info_(info), target_manifest_(target_manifest), dynamic_processors_(dynamic_processors),
+          limits_(limits)
+    {}
 
     rule_spec_container parse_rules(parameter::vector &rule_array);
+    rule_data_container parse_rule_data(parameter::vector &rule_data);
     override_spec_container parse_overrides(parameter::vector &override_array);
     filter_spec_container parse_filters(parameter::vector &filter_array);
 
 protected:
-    condition::ptr parse_condition(parameter::map &root,
+    std::pair<std::string, rule_processor::base::ptr> parse_processor(
+        std::string_view operation, parameter::map &params);
+
+    condition_spec parse_rule_condition(parameter::map &root,
         condition::data_source source = condition::data_source::values,
         std::vector<PW_TRANSFORM_ID> transformers = {});
+
+    condition::ptr parse_filter_condition(parameter::map &root);
 
     rule_spec parse_rule(parameter::map &rule);
 
@@ -50,7 +57,7 @@ protected:
 
     ddwaf::ruleset_info &info_;
     manifest &target_manifest_;
-    rule_data::dispatcher &dispatcher_;
+    std::unordered_map<std::string, std::string> dynamic_processors_;
     object_limits limits_;
 };
 

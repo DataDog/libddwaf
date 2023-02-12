@@ -34,13 +34,12 @@ public:
 
     enum class data_source : uint8_t { values, keys };
 
-    condition(std::vector<target_type> &&targets,
-        std::vector<PW_TRANSFORM_ID> &&transformers,
-        std::shared_ptr<rule_processor::base> &&processor,
+    condition(std::vector<target_type> targets, std::vector<PW_TRANSFORM_ID> transformers,
+        std::shared_ptr<rule_processor::base> processor,
         ddwaf::object_limits limits = ddwaf::object_limits(),
-        data_source source = data_source::values, bool is_mutable = false)
+        data_source source = data_source::values)
         : targets_(std::move(targets)), transformers_(std::move(transformers)),
-          processor_(std::move(processor)), limits_(limits), source_(source), mutable_(is_mutable)
+          processor_(std::move(processor)), limits_(limits), source_(source)
     {}
 
     ~condition() = default;
@@ -51,28 +50,8 @@ public:
     condition &operator=(const condition &) = delete;
 
     std::optional<event::match> match(const object_store &store,
-        const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        bool run_on_new, ddwaf::timer &deadline) const;
-
-    std::string_view processor_name()
-    {
-        if (mutable_) {
-            return std::atomic_load(&processor_)->name();
-        }
-
-        return processor_->name();
-    }
-
-    void reset_processor(std::shared_ptr<rule_processor::base> &proc)
-    {
-        if (!mutable_) {
-            throw std::runtime_error("Attempting to mutate an immutable "
-                                     "condition with processor " +
-                                     std::string(processor_->name()));
-        }
-
-        std::atomic_store(&processor_, proc);
-    }
+        const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
+        ddwaf::timer &deadline) const;
 
 protected:
     std::optional<event::match> match_object(const ddwaf_object *object) const;
@@ -85,7 +64,6 @@ protected:
     std::shared_ptr<rule_processor::base> processor_;
     ddwaf::object_limits limits_;
     data_source source_;
-    bool mutable_;
 };
 
 } // namespace ddwaf

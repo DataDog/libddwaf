@@ -17,7 +17,6 @@
 #include <mkmap.hpp>
 #include <obfuscator.hpp>
 #include <rule.hpp>
-#include <rule_data_dispatcher.hpp>
 
 namespace ddwaf {
 
@@ -47,8 +46,6 @@ struct ruleset {
     // Both collections are ordered by rule.type
     std::unordered_map<std::string_view, priority_collection> priority_collections;
     std::unordered_map<std::string_view, collection> collections;
-
-    ddwaf::rule_data::dispatcher dispatcher;
 };
 
 } // namespace ddwaf

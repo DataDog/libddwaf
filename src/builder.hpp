@@ -20,29 +20,38 @@ namespace ddwaf {
 
 class builder {
 public:
-    builder() = default;
+    explicit builder(object_limits limits) : limits_(limits) {}
     ~builder() = default;
     builder(builder &&) = default;
     builder(const builder &) = delete;
     builder &operator=(builder &&) = default;
     builder &operator=(const builder &) = delete;
 
-    std::shared_ptr<ruleset> build(parameter object, ruleset_info &info, object_limits limits);
+    std::shared_ptr<ruleset> build(parameter object, ruleset_info &info);
 
 protected:
-    enum class change_state : uint32_t { none = 0, rules = 1, overrides = 2, filters = 4, data = 8 };
+    enum class change_state : uint32_t {
+        none = 0,
+        rules = 1,
+        overrides = 2,
+        filters = 4,
+        data = 8
+    };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
     friend constexpr change_state operator&(change_state lhs, change_state rhs);
 
-    std::shared_ptr<ruleset> build_helper(
-        parameter::map root, ruleset_info &info, object_limits limits);
+    change_state load(parameter::map &root, ruleset_info &info);
 
-    change_state load(parameter::map &root, ruleset_info &info,
-            manifest &target_manifest, rule_data::dispatcher &dispatcher,
-            object_limits limits);
+    std::shared_ptr<ruleset> build_helper(parameter::map &root, ruleset_info &info);
+
+    object_limits limits_;
+
+    manifest target_manifest_;
+    std::unordered_map<std::string, std::string> dynamic_processors_;
 
     parser::rule_spec_container base_rules_;
+    parser::rule_data_container rule_data_;
     parser::override_spec_container overrides_;
     parser::filter_spec_container exclusions_;
 

@@ -17,8 +17,8 @@ input_filter::input_filter(std::string id, std::vector<condition::ptr> condition
       rule_targets_(std::move(rule_targets)), filter_(std::move(filter))
 {}
 
-std::optional<excluded_set> input_filter::match(const object_store &store,
-    cache_type &cache, ddwaf::timer &deadline) const
+std::optional<excluded_set> input_filter::match(
+    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (!cache.result) {
         for (const auto &cond : conditions_) {

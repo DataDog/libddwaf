@@ -36,11 +36,8 @@ public:
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
 
-    rule(std::string id_, const parser::rule_spec &spec);
-
-    rule(std::string &&id_, std::string &&name_,
-        std::unordered_map<std::string, std::string> &&tags_,
-        std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_ = {},
+    rule(std::string id_, std::string name_, std::unordered_map<std::string, std::string> tags_,
+        std::vector<condition::ptr> conditions_, std::vector<std::string> actions_ = {},
         bool enabled_ = true);
 
     rule(const rule &) = delete;
@@ -52,8 +49,7 @@ public:
     rule(rule &&rhs) noexcept
         : enabled(rhs.enabled.load(std::memory_order_relaxed)), id(std::move(rhs.id)),
           name(std::move(rhs.name)), tags(std::move(rhs.tags)),
-          conditions(std::move(rhs.conditions)),
-          actions(std::move(rhs.actions))
+          conditions(std::move(rhs.conditions)), actions(std::move(rhs.actions))
     {}
 
     rule &operator=(rule &&rhs) noexcept

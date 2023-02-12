@@ -130,8 +130,8 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
             auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache());
             it = new_it;
         }
-        collection.match(events, seen_actions_, store_, it->second,
-            rules_to_exclude, objects_to_exclude, deadline);
+        collection.match(events, seen_actions_, store_, it->second, rules_to_exclude,
+            objects_to_exclude, deadline);
     };
 
     // Evaluate priority collections first
