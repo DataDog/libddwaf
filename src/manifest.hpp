@@ -18,6 +18,7 @@
 
 namespace ddwaf {
 
+// TODO bring back manifest builder?
 class manifest {
 public:
     using target_type = uint32_t;
@@ -27,8 +28,20 @@ public:
     // Remove unused targets
     void update_targets(const std::unordered_set<target_type> &valid_targets);
 
-    // TODO root address generation
-    const std::vector<const char *> &get_root_addresses() const { return root_addresses_; }
+    // TODO This is problematic because if the manifest is modified after the
+    //      first call to this function, the array will be out-of-sync. At the
+    //      same time we can't invalidate it.
+    //      This is not really a problem in practice since each ruleset has its
+    //      own manifest copy, but it would be better to avoid an inconsistent
+    //      interface that could be misused.
+    const std::vector<const char *> &get_root_addresses() {
+        if (root_addresses_.empty()) {
+            for (const auto &[id, target] : targets_) {
+                root_addresses_.emplace_back(id.c_str());
+            }
+        }
+        return root_addresses_;
+    }
 
 protected:
     std::unordered_map<std::string, target_type> targets_;

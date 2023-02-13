@@ -55,7 +55,7 @@ struct rule_filter_spec {
 
 struct input_filter_spec {
     std::vector<condition::ptr> conditions;
-    ddwaf::exclusion::object_filter filter;
+    std::shared_ptr<exclusion::object_filter> filter;
     std::vector<rule_target_spec> targets;
 };
 
@@ -93,7 +93,5 @@ struct filter_spec_container {
     std::unordered_map<std::string, rule_filter_spec> rule_filters;
     std::unordered_map<std::string, input_filter_spec> input_filters;
 };
-
-// TODO include rule_data?
 
 } // namespace ddwaf::parser

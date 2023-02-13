@@ -43,18 +43,15 @@ public:
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;
 
-    // Atomics aren't movable so the default move constructor and move
-    // assignment operator can't be used. With this constructor and operator
-    // any relevant atomic member does not behave as such.
     rule(rule &&rhs) noexcept
-        : enabled(rhs.enabled.load(std::memory_order_relaxed)), id(std::move(rhs.id)),
+        : enabled(rhs.enabled), id(std::move(rhs.id)),
           name(std::move(rhs.name)), tags(std::move(rhs.tags)),
           conditions(std::move(rhs.conditions)), actions(std::move(rhs.actions))
     {}
 
     rule &operator=(rule &&rhs) noexcept
     {
-        enabled = rhs.enabled.load(std::memory_order_relaxed);
+        enabled = rhs.enabled;
         id = std::move(rhs.id);
         name = std::move(rhs.name);
         tags = std::move(rhs.tags);
@@ -70,8 +67,8 @@ public:
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
         ddwaf::timer &deadline) const;
 
-    bool is_enabled() const { return enabled.load(std::memory_order_relaxed); }
-    void toggle(bool value) { enabled.store(value, std::memory_order_relaxed); }
+    [[nodiscard]] bool is_enabled() const { return enabled; }
+    void toggle(bool value) { enabled = value; }
 
     std::string_view get_tag(const std::string &tag) const
     {
@@ -79,7 +76,7 @@ public:
         return it == tags.end() ? std::string_view() : it->second;
     }
 
-    std::atomic<bool> enabled{true};
+    bool enabled{true};
     std::string id;
     std::string name;
     std::unordered_map<std::string, std::string> tags;

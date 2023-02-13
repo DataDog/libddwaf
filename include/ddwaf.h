@@ -215,7 +215,7 @@ typedef void (*ddwaf_log_cb)(
  * @note If config is NULL, default values will be used, including the default
  *       free function (ddwaf_object_free).
  **/
-ddwaf_handle ddwaf_init(const ddwaf_object *rule,
+ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
     const ddwaf_config* config, ddwaf_ruleset_info *info);
 
 /**
@@ -231,8 +231,8 @@ ddwaf_handle ddwaf_init(const ddwaf_object *rule,
  * @note If config is NULL, default values will be used, including the default
  *       free function (ddwaf_object_free).
  **/
-void ddwaf_update(const ddwaf_object *rule, ddwaf_ruleset_info *info);
-
+void ddwaf_update(ddwaf_handle handle, const ddwaf_object *rule,
+    ddwaf_ruleset_info *info);
 
 /**
  * ddwaf_destroy
@@ -263,18 +263,6 @@ void ddwaf_ruleset_info_free(ddwaf_ruleset_info *info);
  * @return NULL if empty, otherwise a pointer to an array with size elements.
  **/
 const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size);
-/**
- * ddwaf_required_rule_data_ids
- *
- * Get a list of required rule data IDs (if any). The memory is owned by the
- * WAF and should not be freed.
- *
- * @param Handle to the WAF instance.
- * @param size Output parameter in which the size will be returned. The value of
- *             size will be 0 if the return value is NULL.
- * @return NULL if empty, otherwise a pointer to an array with size elements.
- **/
-const char* const* ddwaf_required_rule_data_ids(const ddwaf_handle handle, uint32_t *size);
 
 /**
  * ddwaf_context_init

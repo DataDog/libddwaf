@@ -65,7 +65,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/builder.cpp
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
-    ${libddwaf_SOURCE_DIR}/src/waf.cpp
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
     ${libddwaf_SOURCE_DIR}/src/context.cpp
     ${libddwaf_SOURCE_DIR}/src/event.cpp

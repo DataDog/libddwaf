@@ -33,6 +33,19 @@ struct ruleset {
         }
     }
 
+    void insert_rules(std::unordered_map<std::string_view, rule::ptr> rules_)
+    {
+        rules = std::move(rules_);
+
+        for (const auto &[id, rule] : rules) {
+            if (rule->actions.empty()) {
+                collections[rule->get_tag("type")].insert(rule);
+            } else {
+                priority_collections[rule->get_tag("type")].insert(rule);
+            }
+        }
+    }
+
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     ddwaf::obfuscator event_obfuscator;
 
@@ -41,7 +54,7 @@ struct ruleset {
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
 
     // Rules are ordered by rule.id
-    std::unordered_map<std::string, rule::ptr> rules;
+    std::unordered_map<std::string_view, rule::ptr> rules;
 
     // Both collections are ordered by rule.type
     std::unordered_map<std::string_view, priority_collection> priority_collections;

@@ -31,14 +31,14 @@ obfuscator::obfuscator(std::string_view key_regex_str, std::string_view value_re
 
     if (!key_regex_str.empty()) {
         re2::StringPiece sp(key_regex_str.data(), key_regex_str.size());
-        key_regex = std::make_unique<re2::RE2>(sp, options);
+        key_regex = std::make_shared<re2::RE2>(sp, options);
 
         if (!key_regex->ok()) {
             DDWAF_ERROR(
                 "invalid obfuscator key regex: %s - using default", key_regex->error_arg().c_str());
 
             sp = re2::StringPiece(default_key_regex_str.data(), default_key_regex_str.size());
-            key_regex = std::make_unique<re2::RE2>(sp, options);
+            key_regex = std::make_shared<re2::RE2>(sp, options);
 
             if (!key_regex->ok()) {
                 throw std::runtime_error(
@@ -49,7 +49,7 @@ obfuscator::obfuscator(std::string_view key_regex_str, std::string_view value_re
 
     if (!value_regex_str.empty()) {
         const re2::StringPiece sp(value_regex_str.data(), value_regex_str.size());
-        value_regex = std::make_unique<re2::RE2>(sp, options);
+        value_regex = std::make_shared<re2::RE2>(sp, options);
 
         if (!value_regex->ok()) {
             DDWAF_ERROR("invalid obfuscator value regex: %s", value_regex->error_arg().c_str());

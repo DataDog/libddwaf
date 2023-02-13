@@ -25,41 +25,17 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
 } // namespace v1
 
 namespace v2 {
-class parser {
-public:
-    parser(ddwaf::ruleset_info &info, manifest &target_manifest,
-        std::unordered_map<std::string, std::string> &dynamic_processors, object_limits limits)
-        : info_(info), target_manifest_(target_manifest), dynamic_processors_(dynamic_processors),
-          limits_(limits)
-    {}
+rule_spec_container parse_rules(parameter::vector &rule_array,
+    ddwaf::ruleset_info &info, manifest &target_manifest,
+    std::unordered_map<std::string, std::string> &rule_data_ids);
 
-    rule_spec_container parse_rules(parameter::vector &rule_array);
-    rule_data_container parse_rule_data(parameter::vector &rule_data);
-    override_spec_container parse_overrides(parameter::vector &override_array);
-    filter_spec_container parse_filters(parameter::vector &filter_array);
+rule_data_container parse_rule_data(parameter::vector &rule_data,
+    std::unordered_map<std::string, std::string> &rule_data_ids);
 
-protected:
-    std::pair<std::string, rule_processor::base::ptr> parse_processor(
-        std::string_view operation, parameter::map &params);
+override_spec_container parse_overrides(parameter::vector &override_array);
 
-    condition_spec parse_rule_condition(parameter::map &root,
-        condition::data_source source = condition::data_source::values,
-        std::vector<PW_TRANSFORM_ID> transformers = {});
-
-    condition::ptr parse_filter_condition(parameter::map &root);
-
-    rule_spec parse_rule(parameter::map &rule);
-
-    std::pair<override_spec, target_type> parse_override(parameter::map &node);
-
-    input_filter_spec parse_input_filter(parameter::map &filter);
-    rule_filter_spec parse_rule_filter(parameter::map &filter);
-
-    ddwaf::ruleset_info &info_;
-    manifest &target_manifest_;
-    std::unordered_map<std::string, std::string> dynamic_processors_;
-    object_limits limits_;
-};
+filter_spec_container parse_filters(parameter::vector &filter_array,
+    manifest &target_manifest, const object_limits &limits);
 
 } // namespace v2
 } // namespace ddwaf::parser

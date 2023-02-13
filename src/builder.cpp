@@ -81,11 +81,12 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
 
-    constexpr change_state rule_update = change_state::rules | change_state::overrides;
+    constexpr change_state rule_update = change_state::rules |
+        change_state::data | change_state::overrides;
     constexpr change_state filters_update = rule_update | change_state::filters;
 
     if ((state & rule_update) != change_state::none) {
-        // A new ruleset or a new set of overrides requires a new ruleset
+        // A new ruleset, new rule data or a new set of overrides requires a new ruleset
         for (const auto &[id, spec] : base_rules_) {
             std::vector<condition::ptr> conditions;
             conditions.reserve(spec.conditions.size());
@@ -93,8 +94,8 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
             for (const auto &cond_spec : spec.conditions) {
                 std::shared_ptr<rule_processor::base> processor;
                 if (!cond_spec.data_id.empty() && !cond_spec.processor) {
-                    auto it = rule_data_.find(cond_spec.data_id);
-                    if (it != rule_data_.end()) {
+                    auto it = dynamic_processors_.find(cond_spec.data_id);
+                    if (it != dynamic_processors_.end()) {
                         processor = it->second;
                     }
                 } else {
@@ -170,33 +171,33 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
         for (auto &[id, filter] : exclusions_.input_filters) {
             auto rule_targets = target_to_rules(filter.targets, final_rules_, rules_by_tags_);
 
-            // TODO Fix uncopyable path_trie
             auto filter_ptr = std::make_shared<exclusion::input_filter>(
-                id, filter.conditions, std::move(rule_targets), std::move(filter.filter));
+                id, filter.conditions, std::move(rule_targets), filter.filter);
             input_filters_.emplace(filter_ptr->get_id(), filter_ptr);
         }
     }
 
-    ddwaf::ruleset rs;
-    for (auto &[id, rule] : final_rules_) { rs.insert_rule(rule); }
-    rs.manifest = target_manifest_;
-    rs.rule_filters = std::move(rule_filters_);
-    rs.input_filters = std::move(input_filters_);
+    auto rs = std::make_shared<ddwaf::ruleset>();
+    rs->insert_rules(final_rules_);
+    rs->manifest = target_manifest_;
+    rs->rule_filters = std::move(rule_filters_);
+    rs->input_filters = std::move(input_filters_);
+    rs->free_fn = free_fn_;
+    rs->event_obfuscator = event_obfuscator_;
 
-    return std::make_shared<ddwaf::ruleset>(std::move(rs));
+    return rs;
 }
 
 builder::change_state builder::load(parameter::map &root, ruleset_info &info)
 {
-    decltype(dynamic_processors_) dynamic_processors;
-    parser::v2::parser p(info, target_manifest_, dynamic_processors, limits_);
+    decltype(rule_data_ids_) rule_data_ids;
 
     change_state state = change_state::none;
 
     auto it = root.find("rules");
     if (it != root.end()) {
         parameter::vector rules = it->second;
-        auto new_base_rules = p.parse_rules(rules);
+        auto new_base_rules = parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids_);
 
         if (new_base_rules.empty()) {
             throw ddwaf::parsing_error("no valid rules found");
@@ -204,28 +205,23 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
 
         // Upon reaching this stage, we know our base ruleset is valid
         base_rules_ = std::move(new_base_rules);
-        dynamic_processors_ = std::move(dynamic_processors);
+        rule_data_ids_ = std::move(rule_data_ids);
         state = state | change_state::rules;
-    } else {
-        if (base_rules_.empty()) {
-            // A ruleset has been provided as part of ddwaf_init without any rules
-            throw std::runtime_error("no rules available");
-        }
     }
 
     it = root.find("rules_data");
     if (it != root.end()) {
         parameter::vector rules_data = it->second;
         if (!rules_data.empty()) {
-            auto new_rule_data = p.parse_rule_data(rules_data);
-            if (new_rule_data.empty()) {
+            auto new_processors = parser::v2::parse_rule_data(rules_data, rule_data_ids_);
+            if (new_processors.empty()) {
                 DDWAF_WARN("No valid rule data provided");
             } else {
-                rule_data_ = std::move(new_rule_data);
+                dynamic_processors_ = std::move(new_processors);
                 state = state | change_state::data;
             }
         } else {
-            rule_data_.clear();
+            dynamic_processors_.clear();
             state = state | change_state::data;
         }
     }
@@ -234,7 +230,7 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
     if (it != root.end()) {
         parameter::vector overrides = it->second;
         if (!overrides.empty()) {
-            auto new_overrides = p.parse_overrides(overrides);
+            auto new_overrides = parser::v2::parse_overrides(overrides);
 
             if (new_overrides.empty()) {
                 // We can continue whilst ignoring the lack of overrides
@@ -252,7 +248,7 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
     if (it != root.end()) {
         parameter::vector exclusions = it->second;
         if (!exclusions.empty()) {
-            auto new_exclusions = p.parse_filters(exclusions);
+            auto new_exclusions = parser::v2::parse_filters(exclusions, target_manifest_, limits_);
 
             if (new_exclusions.empty()) {
                 // Ignore a non-critical error
@@ -267,6 +263,7 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
         }
     }
 
+    // TODO cleanup manifest
     return state;
 }
 

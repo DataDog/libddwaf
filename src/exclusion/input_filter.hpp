@@ -33,7 +33,7 @@ public:
     };
 
     input_filter(std::string id, std::vector<condition::ptr> conditions,
-        std::set<rule::ptr> rule_targets, object_filter filter);
+        std::set<rule::ptr> rule_targets, std::shared_ptr<object_filter> filter);
 
     std::optional<excluded_set> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
@@ -44,7 +44,7 @@ protected:
     std::string id_;
     std::vector<condition::ptr> conditions_;
     const std::set<rule::ptr> rule_targets_;
-    object_filter filter_;
+    std::shared_ptr<object_filter> filter_;
 };
 
 } // namespace ddwaf::exclusion

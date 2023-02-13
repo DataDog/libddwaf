@@ -20,7 +20,10 @@ namespace ddwaf {
 
 class builder {
 public:
-    explicit builder(object_limits limits) : limits_(limits) {}
+    builder(object_limits limits, ddwaf_object_free_fn free_fn,
+        ddwaf::obfuscator event_obfuscator)
+        : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator)) {}
+
     ~builder() = default;
     builder(builder &&) = default;
     builder(const builder &) = delete;
@@ -46,12 +49,14 @@ protected:
     std::shared_ptr<ruleset> build_helper(parameter::map &root, ruleset_info &info);
 
     object_limits limits_;
+    ddwaf_object_free_fn free_fn_;
+    ddwaf::obfuscator event_obfuscator_;
 
     manifest target_manifest_;
-    std::unordered_map<std::string, std::string> dynamic_processors_;
+    std::unordered_map<std::string, std::string> rule_data_ids_;
 
     parser::rule_spec_container base_rules_;
-    parser::rule_data_container rule_data_;
+    parser::rule_data_container dynamic_processors_;
     parser::override_spec_container overrides_;
     parser::filter_spec_container exclusions_;
 

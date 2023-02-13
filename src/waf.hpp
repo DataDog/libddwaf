@@ -19,29 +19,30 @@ namespace ddwaf {
 
 class waf {
 public:
-    static waf *from_config(
-        const ddwaf_object &rules, const ddwaf_config *config, ddwaf::ruleset_info &info);
+    waf(ddwaf::parameter input, ddwaf::ruleset_info &info, ddwaf::object_limits limits,
+        ddwaf_object_free_fn free_fn, ddwaf::obfuscator event_obfuscator)
+        : builder_(limits, free_fn, std::move(event_obfuscator))
+    {
+        ruleset_ = builder_.build(input, info);
+    }
+
+
+    void update(ddwaf::parameter input, ddwaf::ruleset_info &info)
+    {
+        auto new_ruleset = builder_.build(input, info);
+        if (new_ruleset) {
+            ruleset_ = new_ruleset;
+        }
+    }
 
     ddwaf::context create_context() { return context{ruleset_}; }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses() const
     {
-        // TODO
-        static const std::vector<const char *> empty;
-        return empty;
-    }
-
-    const std::vector<const char *> &get_rule_data_ids()
-    {
-        // TODO
-        static const std::vector<const char *> empty;
-        return empty;
+        return ruleset_->manifest.get_root_addresses();
     }
 
 protected:
-    waf(ddwaf::parameter input, ddwaf::ruleset_info &info, ddwaf::object_limits limits,
-        ddwaf_object_free_fn free_fn, ddwaf::obfuscator &&event_obfuscator);
-
     ddwaf::builder builder_;
     std::shared_ptr<ruleset> ruleset_;
 };
