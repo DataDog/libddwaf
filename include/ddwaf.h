@@ -231,7 +231,7 @@ ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
  * @note If config is NULL, default values will be used, including the default
  *       free function (ddwaf_object_free).
  **/
-void ddwaf_update(ddwaf_handle handle, const ddwaf_object *rule,
+ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *rule,
     ddwaf_ruleset_info *info);
 
 /**

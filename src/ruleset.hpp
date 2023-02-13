@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <memory>
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -23,6 +24,8 @@ namespace ddwaf {
 using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule::ptr>;
 
 struct ruleset {
+    using ptr = std::shared_ptr<ruleset>;
+
     void insert_rule(rule::ptr rule)
     {
         rules.emplace(rule->id, rule);

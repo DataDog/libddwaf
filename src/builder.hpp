@@ -8,6 +8,7 @@
 
 #include "parser/specification.hpp"
 #include <manifest.hpp>
+#include <memory>
 #include <parameter.hpp>
 #include <rule.hpp>
 #include <ruleset.hpp>
@@ -20,6 +21,8 @@ namespace ddwaf {
 
 class builder {
 public:
+    using ptr = std::shared_ptr<builder>;
+
     builder(object_limits limits, ddwaf_object_free_fn free_fn, ddwaf::obfuscator event_obfuscator)
         : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
     {}

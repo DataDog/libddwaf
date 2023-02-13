@@ -103,19 +103,20 @@ ddwaf::waf *ddwaf_init(
     return nullptr;
 }
 
-void ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_ruleset_info *info)
+ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_ruleset_info *info)
 {
     try {
         if (handle != nullptr && ruleset != nullptr) {
             ddwaf::ruleset_info ri(info);
             ddwaf::parameter input = *ruleset;
-            handle->update(input, ri);
+            return handle->update(input, ri);
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
     }
+    return nullptr;
 }
 
 void ddwaf_destroy(ddwaf::waf *handle)
