@@ -45,6 +45,7 @@ using namespace std;
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <parser/parser.hpp>
+#include <parser/specification.hpp>
 #include <ruleset_info.hpp>
 #include <utils.hpp>
 #include <waf.hpp>
@@ -90,3 +91,8 @@ using namespace ddwaf;
   {                                                                                                \
     NULL, 0, {string}, length, DDWAF_OBJ_STRING                                                    \
   }
+
+#define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), b)
+#define EXPECT_STRV(a, b) EXPECT_STREQ(a.data(), b)
+
+
