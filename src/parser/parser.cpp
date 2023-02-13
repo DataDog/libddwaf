@@ -24,7 +24,9 @@ unsigned parse_schema_version(parameter::map &ruleset)
     version.remove_suffix(version.size() - dot_pos);
 
     unsigned major;
-    if (std::from_chars(version.begin(), version.end(), major).ec != std::errc{}) {
+    const char *data = version.data();
+    const char *end = data + version.size();
+    if (std::from_chars(data, end, major).ec != std::errc{}) {
         throw parsing_error("invalid version format, expected major.minor");
     }
 

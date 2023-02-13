@@ -44,9 +44,9 @@ public:
     rule &operator=(const rule &) = delete;
 
     rule(rule &&rhs) noexcept
-        : enabled(rhs.enabled), id(std::move(rhs.id)),
-          name(std::move(rhs.name)), tags(std::move(rhs.tags)),
-          conditions(std::move(rhs.conditions)), actions(std::move(rhs.actions))
+        : enabled(rhs.enabled), id(std::move(rhs.id)), name(std::move(rhs.name)),
+          tags(std::move(rhs.tags)), conditions(std::move(rhs.conditions)),
+          actions(std::move(rhs.actions))
     {}
 
     rule &operator=(rule &&rhs) noexcept

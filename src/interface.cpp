@@ -83,8 +83,8 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
 #endif
 // explicit instantiation declaration to suppress warning
 extern "C" {
-ddwaf::waf * ddwaf_init(const ddwaf_object *ruleset, const ddwaf_config *config,
-    ddwaf_ruleset_info *info)
+ddwaf::waf *ddwaf_init(
+    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_ruleset_info *info)
 {
     try {
         if (ruleset != nullptr) {
@@ -103,8 +103,7 @@ ddwaf::waf * ddwaf_init(const ddwaf_object *ruleset, const ddwaf_config *config,
     return nullptr;
 }
 
-void ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset,
-    ddwaf_ruleset_info *info)
+void ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_ruleset_info *info)
 {
     try {
         if (handle != nullptr && ruleset != nullptr) {

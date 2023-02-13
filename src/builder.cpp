@@ -81,8 +81,8 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
 
-    constexpr change_state rule_update = change_state::rules |
-        change_state::data | change_state::overrides;
+    constexpr change_state rule_update =
+        change_state::rules | change_state::data | change_state::overrides;
     constexpr change_state filters_update = rule_update | change_state::filters;
 
     if ((state & rule_update) != change_state::none) {
@@ -197,7 +197,8 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
     auto it = root.find("rules");
     if (it != root.end()) {
         parameter::vector rules = it->second;
-        auto new_base_rules = parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids_);
+        auto new_base_rules =
+            parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids_);
 
         if (new_base_rules.empty()) {
             throw ddwaf::parsing_error("no valid rules found");

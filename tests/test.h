@@ -44,7 +44,6 @@ using namespace std;
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <parser/parser.hpp>
-#include <rule_data_dispatcher.hpp>
 #include <ruleset_info.hpp>
 #include <utils.hpp>
 #include <waf.hpp>

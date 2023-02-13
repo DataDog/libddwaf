@@ -28,7 +28,7 @@ public:
         for (const auto &key : keys) { data_[key.first][key.second].emplace(value); }
     }
 
-    // Check that Key can be constructed from CompatKey
+    // TODO Check that Key can be constructed from CompatKey
     template <typename CompatKey> std::set<T> find(const std::pair<CompatKey, CompatKey> &key) const
     {
         auto first_it = data_.find(key.first);
@@ -45,6 +45,7 @@ public:
         return second_it->second;
     }
 
+    // TODO Check that Key can be constructed from CompatKey
     template <typename CompatKey>
     const std::set<T> &find_ref(const std::pair<CompatKey, CompatKey> &key) const
     {
@@ -63,6 +64,7 @@ public:
         return second_it->second;
     }
 
+    // TODO Check that Key can be constructed from CompatKey
     template <typename CompatKey>
     std::set<T> find2(const std::pair<CompatKey, CompatKey> &key0,
         const std::pair<CompatKey, CompatKey> &key1) const
@@ -83,20 +85,23 @@ public:
         return result;
     }
 
+    // TODO Check that the container iterator contains a pair
+    //      Check that Key can be constructed from each type within the pair
     template <typename U> std::set<T> multifind(const U &keys) const
     {
-        // TODO fix this part
-        // Since this function is quite inefficient, avoid it when possible
-        /*        switch (keys.size()) {*/
-        /*case 0:*/
-        /*return {};*/
-        /*case 1:*/
-        /*return find(*keys.begin());*/
-        /*case 2:*/
-        /*return find2(keys.begin(), (keys.begin() + 1));*/
-        /*}*/
-
         std::pair<Key, Key> first = *keys.begin();
+
+        switch (keys.size()) {
+        case 0:
+            return {};
+        case 1:
+            return find(first);
+        case 2: {
+            std::pair<Key, Key> second = *(++keys.begin());
+            return find2(first, second);
+        }
+        }
+
         std::set<T> latest = find(first);
         if (latest.empty()) {
             return {};

@@ -25,17 +25,16 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
 } // namespace v1
 
 namespace v2 {
-rule_spec_container parse_rules(parameter::vector &rule_array,
-    ddwaf::ruleset_info &info, manifest &target_manifest,
-    std::unordered_map<std::string, std::string> &rule_data_ids);
+rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_info &info,
+    manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids);
 
-rule_data_container parse_rule_data(parameter::vector &rule_data,
-    std::unordered_map<std::string, std::string> &rule_data_ids);
+rule_data_container parse_rule_data(
+    parameter::vector &rule_data, std::unordered_map<std::string, std::string> &rule_data_ids);
 
 override_spec_container parse_overrides(parameter::vector &override_array);
 
-filter_spec_container parse_filters(parameter::vector &filter_array,
-    manifest &target_manifest, const object_limits &limits);
+filter_spec_container parse_filters(
+    parameter::vector &filter_array, manifest &target_manifest, const object_limits &limits);
 
 } // namespace v2
 } // namespace ddwaf::parser

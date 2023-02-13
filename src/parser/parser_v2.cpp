@@ -173,8 +173,8 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
     conditions.reserve(conditions_array.size());
 
     for (parameter::map cond : conditions_array) {
-        conditions.push_back(parse_rule_condition(cond, target_manifest,
-                rule_data_ids, source, rule_transformers));
+        conditions.push_back(
+            parse_rule_condition(cond, target_manifest, rule_data_ids, source, rule_transformers));
     }
 
     std::unordered_map<std::string, std::string> tags;
@@ -224,7 +224,7 @@ std::pair<override_spec, target_type> parse_override(parameter::map &node)
 
     it = node.find("on_match");
     if (it != node.end()) {
-        current.actions = it->second;
+        current.actions = decltype(current.actions)(it->second);
     }
 
     target_type type = target_type::none;
@@ -257,8 +257,8 @@ std::pair<override_spec, target_type> parse_override(parameter::map &node)
     return {current, type};
 }
 
-condition::ptr parse_filter_condition(parameter::map &root, manifest &target_manifest,
-    object_limits limits)
+condition::ptr parse_filter_condition(
+    parameter::map &root, manifest &target_manifest, object_limits limits)
 {
     auto operation = at<std::string_view>(root, "operator");
     auto params = at<parameter::map>(root, "parameters");
@@ -303,8 +303,8 @@ condition::ptr parse_filter_condition(parameter::map &root, manifest &target_man
         std::move(targets), std::vector<PW_TRANSFORM_ID>{}, std::move(processor), limits);
 }
 
-input_filter_spec parse_input_filter(parameter::map &filter, manifest& target_manifest,
-    const object_limits &limits)
+input_filter_spec parse_input_filter(
+    parameter::map &filter, manifest &target_manifest, const object_limits &limits)
 
 {
     // Check for conditions first
@@ -348,8 +348,8 @@ input_filter_spec parse_input_filter(parameter::map &filter, manifest& target_ma
     return {std::move(conditions), std::move(obj_filter), std::move(rules_target)};
 }
 
-rule_filter_spec parse_rule_filter(parameter::map &filter, manifest& target_manifest,
-    const object_limits &limits)
+rule_filter_spec parse_rule_filter(
+    parameter::map &filter, manifest &target_manifest, const object_limits &limits)
 {
     // Check for conditions first
     std::vector<condition::ptr> conditions;
@@ -381,9 +381,8 @@ rule_filter_spec parse_rule_filter(parameter::map &filter, manifest& target_mani
 
 } // namespace
 
-rule_spec_container parse_rules(parameter::vector &rule_array,
-        ddwaf::ruleset_info &info, manifest &target_manifest,
-        std::unordered_map<std::string, std::string> &rule_data_ids)
+rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_info &info,
+    manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids)
 {
     rule_spec_container rules;
     for (parameter::map rule_map : rule_array) {
@@ -413,8 +412,8 @@ rule_spec_container parse_rules(parameter::vector &rule_array,
     return rules;
 }
 
-rule_data_container parse_rule_data(parameter::vector &rule_data,
-    std::unordered_map<std::string, std::string> &rule_data_ids)
+rule_data_container parse_rule_data(
+    parameter::vector &rule_data, std::unordered_map<std::string, std::string> &rule_data_ids)
 {
     rule_data_container processors;
     for (ddwaf::parameter object : rule_data) {
@@ -479,8 +478,8 @@ override_spec_container parse_overrides(parameter::vector &override_array)
     return overrides;
 }
 
-filter_spec_container parse_filters(parameter::vector &filter_array,
-    manifest &target_manifest, const object_limits &limits)
+filter_spec_container parse_filters(
+    parameter::vector &filter_array, manifest &target_manifest, const object_limits &limits)
 {
     filter_spec_container filters;
     for (parameter::map node : filter_array) {

@@ -20,9 +20,9 @@ namespace ddwaf {
 
 class builder {
 public:
-    builder(object_limits limits, ddwaf_object_free_fn free_fn,
-        ddwaf::obfuscator event_obfuscator)
-        : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator)) {}
+    builder(object_limits limits, ddwaf_object_free_fn free_fn, ddwaf::obfuscator event_obfuscator)
+        : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
+    {}
 
     ~builder() = default;
     builder(builder &&) = default;

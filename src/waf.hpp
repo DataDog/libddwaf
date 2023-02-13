@@ -26,7 +26,6 @@ public:
         ruleset_ = builder_.build(input, info);
     }
 
-
     void update(ddwaf::parameter input, ddwaf::ruleset_info &info)
     {
         auto new_ruleset = builder_.build(input, info);

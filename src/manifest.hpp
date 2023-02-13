@@ -34,11 +34,10 @@ public:
     //      This is not really a problem in practice since each ruleset has its
     //      own manifest copy, but it would be better to avoid an inconsistent
     //      interface that could be misused.
-    const std::vector<const char *> &get_root_addresses() {
+    const std::vector<const char *> &get_root_addresses()
+    {
         if (root_addresses_.empty()) {
-            for (const auto &[id, target] : targets_) {
-                root_addresses_.emplace_back(id.c_str());
-            }
+            for (const auto &[id, target] : targets_) { root_addresses_.emplace_back(id.c_str()); }
         }
         return root_addresses_;
     }
