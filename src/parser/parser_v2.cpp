@@ -224,7 +224,8 @@ std::pair<override_spec, target_type> parse_override(parameter::map &node)
 
     it = node.find("on_match");
     if (it != node.end()) {
-        current.actions = decltype(current.actions)(it->second);
+        std::vector<std::string> actions = it->second;
+        current.actions = std::move(actions);
     }
 
     target_type type = target_type::none;
