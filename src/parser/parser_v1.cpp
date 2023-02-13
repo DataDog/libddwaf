@@ -76,6 +76,7 @@ condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
 
     std::vector<condition::target_type> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
+    targets.reserve(inputs.size());
     for (std::string input : inputs) {
         if (input.empty()) {
             throw ddwaf::parsing_error("empty address");
@@ -95,9 +96,9 @@ condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
         target.root = target_manifest.insert(root);
         target.name = std::move(root);
         if (!key_path.empty()) {
-            target.key_path = {key_path};
+            target.key_path.emplace_back(key_path);
         }
-        targets.push_back(target);
+        targets.emplace_back(std::move(target));
     }
 
     return std::make_shared<condition>(
@@ -163,10 +164,9 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
     auto rules_array = at<parameter::vector>(ruleset, "events");
     rs.rules.reserve(rules_array.size());
 
-    manifest target_manifest;
     for (parameter::map rule : rules_array) {
         try {
-            parseRule(rule, info, target_manifest, rs, limits);
+            parseRule(rule, info, rs.manifest, rs, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("%s", e.what());
             info.add_failed();

@@ -14,46 +14,13 @@ TEST(TestWaf, RootAddresses)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    auto instance = waf::from_config(rule, nullptr, info);
+    ddwaf::waf instance{rule, info, ddwaf::object_limits(), ddwaf_object_free, ddwaf::obfuscator()};
     ddwaf_object_free(&rule);
 
     std::set<std::string_view> available_addresses{"value1", "value2"};
-    for (auto address : instance->get_root_addresses()) {
+    for (auto address : instance.get_root_addresses()) {
         EXPECT_NE(available_addresses.find(address), available_addresses.end());
     }
-
-    delete instance;
-}
-
-TEST(TestWaf, RuleDatIDs)
-{
-    auto rule = readFile("rule_data.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf::ruleset_info info;
-    auto instance = waf::from_config(rule, nullptr, info);
-    ddwaf_object_free(&rule);
-
-    std::set<std::string_view> available_ids{"usr_data", "ip_data"};
-    for (auto id : instance->get_rule_data_ids()) {
-        EXPECT_NE(available_ids.find(id), available_ids.end());
-    }
-
-    delete instance;
-}
-
-TEST(TestWaf, EmptyRuleDatIDs)
-{
-    auto rule = readFile("interface.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf::ruleset_info info;
-    auto instance = waf::from_config(rule, nullptr, info);
-    ddwaf_object_free(&rule);
-
-    EXPECT_TRUE(instance->get_rule_data_ids().empty());
-
-    delete instance;
 }
 
 TEST(TestWaf, BasicContextRun)
@@ -62,110 +29,15 @@ TEST(TestWaf, BasicContextRun)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    auto instance = waf::from_config(rule, nullptr, info);
+    ddwaf::waf instance{rule, info, ddwaf::object_limits(), ddwaf_object_free, ddwaf::obfuscator()};
     ddwaf_object_free(&rule);
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-    auto ctx = instance->create_context();
+    auto ctx = instance.create_context();
     EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
-
-    delete instance;
-}
-
-TEST(TestWaf, ToggleRule)
-{
-    auto rule = readFile("toggle_rules.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf::ruleset_info info;
-    auto instance = waf::from_config(rule, nullptr, info);
-    ddwaf_object_free(&rule);
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-
-        auto ctx = instance->create_context();
-        EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
-    }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "id-rule-1", ddwaf_object_bool(&tmp, false));
-
-        EXPECT_NO_THROW(instance->toggle_rules(parameter(root)));
-
-        ddwaf_object_free(&root);
-    }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-
-        auto ctx = instance->create_context();
-        EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_OK);
-    }
-
-    delete instance;
-}
-
-TEST(TestWaf, ToggleNonExistentRules)
-{
-    auto rule = readFile("toggle_rules.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf::ruleset_info info;
-    auto instance = waf::from_config(rule, nullptr, info);
-    ddwaf_object_free(&rule);
-
-    ddwaf_object root, tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "id-rule-4", ddwaf_object_bool(&tmp, false));
-
-    EXPECT_NO_THROW(instance->toggle_rules(parameter(root)));
-
-    ddwaf_object_free(&root);
-
-    delete instance;
-}
-
-TEST(TestWaf, ToggleWithInvalidObject)
-{
-    auto rule = readFile("toggle_rules.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf::ruleset_info info;
-    auto instance = waf::from_config(rule, nullptr, info);
-    ASSERT_NE(instance, nullptr);
-    ddwaf_object_free(&rule);
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_array(&root);
-        ddwaf_object_array_add(&root, ddwaf_object_bool(&tmp, false));
-
-        EXPECT_THROW(instance->toggle_rules(parameter(root)), ddwaf::bad_cast);
-
-        ddwaf_object_free(&root);
-    }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "id-rule-1", ddwaf_object_unsigned(&tmp, 5));
-
-        EXPECT_THROW(instance->toggle_rules(parameter(root)), ddwaf::bad_cast);
-
-        ddwaf_object_free(&root);
-    }
-
-    delete instance;
 }
 
 TEST(TestWaf, RuleDisabledInRuleset)
@@ -174,7 +46,7 @@ TEST(TestWaf, RuleDisabledInRuleset)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    auto instance = waf::from_config(rule, nullptr, info);
+    ddwaf::waf instance{rule, info, ddwaf::object_limits(), ddwaf_object_free, ddwaf::obfuscator()};
     ddwaf_object_free(&rule);
 
     {
@@ -182,28 +54,7 @@ TEST(TestWaf, RuleDisabledInRuleset)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        auto ctx = instance->create_context();
+        auto ctx = instance.create_context();
         EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_OK);
     }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "id-rule-1", ddwaf_object_bool(&tmp, true));
-
-        EXPECT_NO_THROW(instance->toggle_rules(parameter(root)));
-
-        ddwaf_object_free(&root);
-    }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-
-        auto ctx = instance->create_context();
-        EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
-    }
-
-    delete instance;
 }

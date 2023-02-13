@@ -10,12 +10,10 @@ using namespace ddwaf;
 
 TEST(TestRule, Match)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
-
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
@@ -36,7 +34,7 @@ TEST(TestRule, Match)
     ddwaf::timer deadline{2s};
 
     rule::cache_type cache;
-    auto event = rule.match(store, manifest, cache, {}, deadline);
+    auto event = rule.match(store, cache, {}, deadline);
     EXPECT_TRUE(event.has_value());
 
     EXPECT_STREQ(event->id.data(), "id");
@@ -58,12 +56,10 @@ TEST(TestRule, Match)
 
 TEST(TestRule, NoMatch)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
-
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
@@ -82,18 +78,18 @@ TEST(TestRule, NoMatch)
     ddwaf::timer deadline{2s};
 
     rule::cache_type cache;
-    auto match = rule.match(store, manifest, cache, {}, deadline);
+    auto match = rule.match(store, cache, {}, deadline);
     EXPECT_FALSE(match.has_value());
 }
 
 TEST(TestRule, ValidateCachedMatch)
 {
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -101,14 +97,13 @@ TEST(TestRule, ValidateCachedMatch)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
-    auto manifest = mb.build_manifest();
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
@@ -126,7 +121,7 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, manifest, cache, {}, deadline);
+        auto event = rule.match(store, cache, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 
@@ -139,7 +134,7 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, manifest, cache, {}, deadline);
+        auto event = rule.match(store, cache, {}, deadline);
         EXPECT_TRUE(event.has_value());
         EXPECT_STREQ(event->id.data(), "id");
         EXPECT_STREQ(event->name.data(), "name");
@@ -171,12 +166,12 @@ TEST(TestRule, ValidateCachedMatch)
 
 TEST(TestRule, MatchWithoutCache)
 {
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -184,14 +179,13 @@ TEST(TestRule, MatchWithoutCache)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
-    auto manifest = mb.build_manifest();
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
@@ -209,7 +203,7 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         ddwaf::rule::cache_type cache;
-        auto event = rule.match(store, manifest, cache, {}, deadline);
+        auto event = rule.match(store, cache, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 
@@ -222,7 +216,7 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         ddwaf::rule::cache_type cache;
-        auto event = rule.match(store, manifest, cache, {}, deadline);
+        auto event = rule.match(store, cache, {}, deadline);
         EXPECT_TRUE(event.has_value());
 
         {
@@ -248,12 +242,12 @@ TEST(TestRule, MatchWithoutCache)
 
 TEST(TestRule, NoMatchWithoutCache)
 {
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -261,14 +255,13 @@ TEST(TestRule, NoMatchWithoutCache)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
-    auto manifest = mb.build_manifest();
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
@@ -285,7 +278,7 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         ddwaf::rule::cache_type cache;
-        auto event = rule.match(store, manifest, cache, {}, deadline);
+        auto event = rule.match(store, cache, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 
@@ -299,19 +292,19 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         ddwaf::rule::cache_type cache;
-        auto event = rule.match(store, manifest, cache, {}, deadline);
+        auto event = rule.match(store, cache, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 }
 
 TEST(TestRule, FullCachedMatchSecondRun)
 {
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -319,14 +312,13 @@ TEST(TestRule, FullCachedMatchSecondRun)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
-    auto manifest = mb.build_manifest();
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
@@ -345,7 +337,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, manifest, cache, {}, deadline);
+        auto event = rule.match(store, cache, {}, deadline);
         EXPECT_TRUE(event.has_value());
     }
 
@@ -359,239 +351,17 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, manifest, cache, {}, deadline);
+        auto event = rule.match(store, cache, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 }
 
-TEST(TestRule, ToggleSingleRule)
-{
-    auto rule = readFile("toggle_rules.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    {
-        ddwaf_context context = ddwaf_context_init(handle);
-        ASSERT_NE(context, nullptr);
-
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-
-        EXPECT_EQ(ddwaf_run(context, &root, NULL, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_context_destroy(context);
-    }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "id-rule-1", ddwaf_object_bool(&tmp, false));
-
-        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
-
-        ddwaf_object_free(&root);
-    }
-
-    {
-        ddwaf_context context = ddwaf_context_init(handle);
-        ASSERT_NE(context, nullptr);
-
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-
-        EXPECT_EQ(ddwaf_run(context, &root, NULL, LONG_TIME), DDWAF_OK);
-
-        ddwaf_context_destroy(context);
-    }
-
-    ddwaf_destroy(handle);
-}
-
-TEST(TestRule, ToggleRuleInCollection)
-{
-    auto rule = readFile("toggle_rules.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    std::unordered_map<std::string, ddwaf::test::event> events = {
-        {"id-rule-3", ddwaf::test::event{.id = "id-rule-3",
-                          .name = "rule3",
-                          .type = "flow2",
-                          .category = "category3",
-                          .matches = {{.op = "match_regex",
-                              .op_value = "rule2",
-                              .address = "value2",
-                              .value = "rule2",
-                              .highlight = "rule2"}}}},
-        {"id-rule-2", ddwaf::test::event{.id = "id-rule-2",
-                          .name = "rule2",
-                          .type = "flow2",
-                          .category = "category2",
-                          .matches = {{.op = "match_regex",
-                              .op_value = "rule2",
-                              .address = "value2",
-                              .value = "rule2",
-                              .highlight = "rule2"}}}}};
-
-    // Due to the use of unordered structures we can't really know which rule
-    // will match first as it's implementation dependent, so we keep track of
-    // which one matched first.
-    std::string first_id;
-    std::string second_id;
-
-    {
-        ddwaf_context context = ddwaf_context_init(handle);
-        ASSERT_NE(context, nullptr);
-
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
-
-        ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_NE(res.data, nullptr);
-
-        if (strstr(res.data, "id-rule-3") != nullptr) {
-            first_id = "id-rule-3";
-            second_id = "id-rule-2";
-        } else {
-            first_id = "id-rule-2";
-            second_id = "id-rule-3";
-        }
-
-        EXPECT_EVENTS(res, events[first_id]);
-
-        ddwaf_result_free(&res);
-        ddwaf_context_destroy(context);
-    }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, first_id.c_str(), ddwaf_object_bool(&tmp, false));
-
-        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
-
-        ddwaf_object_free(&root);
-    }
-
-    {
-        ddwaf_context context = ddwaf_context_init(handle);
-        ASSERT_NE(context, nullptr);
-
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
-
-        ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context, &root, &res, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(res, events[second_id]);
-
-        ddwaf_result_free(&res);
-        ddwaf_context_destroy(context);
-    }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, second_id.c_str(), ddwaf_object_bool(&tmp, false));
-
-        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
-
-        ddwaf_object_free(&root);
-    }
-
-    {
-        ddwaf_context context = ddwaf_context_init(handle);
-        ASSERT_NE(context, nullptr);
-
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
-
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_context_destroy(context);
-    }
-
-    ddwaf_destroy(handle);
-}
-
-TEST(TestRule, ToggleNonExistentRules)
-{
-    auto rule = readFile("toggle_rules.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_object root, tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "id-rule-4", ddwaf_object_bool(&tmp, false));
-
-    EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_OK);
-
-    ddwaf_object_free(&root);
-
-    ddwaf_destroy(handle);
-}
-
-TEST(TestRule, ToggleWithInvalidObject)
-{
-    auto rule = readFile("toggle_rules.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_array(&root);
-        ddwaf_object_array_add(&root, ddwaf_object_bool(&tmp, false));
-
-        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_ERR_INVALID_OBJECT);
-
-        ddwaf_object_free(&root);
-    }
-
-    {
-        ddwaf_object root, tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "id-rule-1", ddwaf_object_unsigned(&tmp, 5));
-
-        EXPECT_EQ(ddwaf_toggle_rules(handle, &root), DDWAF_ERR_INVALID_OBJECT);
-
-        ddwaf_object_free(&root);
-    }
-
-    EXPECT_EQ(ddwaf_toggle_rules(handle, nullptr), DDWAF_ERR_INVALID_ARGUMENT);
-
-    ddwaf_destroy(handle);
-}
-
-TEST(TestRule, ToggleWithInvalidHandle)
-{
-    EXPECT_EQ(ddwaf_toggle_rules(nullptr, nullptr), DDWAF_ERR_INVALID_ARGUMENT);
-}
-
 TEST(TestRule, ExcludeObject)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
-
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
@@ -612,6 +382,6 @@ TEST(TestRule, ExcludeObject)
     ddwaf::timer deadline{2s};
 
     rule::cache_type cache;
-    auto event = rule.match(store, manifest, cache, {&root.array[0]}, deadline);
+    auto event = rule.match(store, cache, {&root.array[0]}, deadline);
     EXPECT_FALSE(event.has_value());
 }

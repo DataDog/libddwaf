@@ -10,17 +10,16 @@ using namespace ddwaf;
 
 TEST(TestCondition, Match)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("server.request.query", {}));
-
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::regex_match>(".*", 0, true));
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
@@ -29,7 +28,7 @@ TEST(TestCondition, Match)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, manifest, {}, true, deadline);
+    auto match = cond->match(store, {}, true, deadline);
     EXPECT_TRUE(match.has_value());
 
     EXPECT_STREQ(match->resolved.c_str(), "value");
@@ -42,17 +41,16 @@ TEST(TestCondition, Match)
 
 TEST(TestCondition, NoMatch)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
-
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -61,23 +59,22 @@ TEST(TestCondition, NoMatch)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, manifest, {}, true, deadline);
+    auto match = cond->match(store, {}, true, deadline);
     EXPECT_FALSE(match.has_value());
 }
 
 TEST(TestCondition, ExcludeInput)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("server.request.query", {}));
-
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::regex_match>(".*", 0, true));
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
@@ -86,23 +83,23 @@ TEST(TestCondition, ExcludeInput)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, manifest, {&root.array[0]}, true, deadline);
+    auto match = cond->match(store, {&root.array[0]}, true, deadline);
     EXPECT_FALSE(match.has_value());
 }
 
 TEST(TestCondition, ExcludeKeyPath)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("server.request.query", {}));
-
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::regex_match>(".*", 0, true));
 
-    ddwaf_object root, map, tmp;
+    ddwaf_object root;
+    ddwaf_object map;
+    ddwaf_object tmp;
     ddwaf_object_map(&map);
     ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "value"));
 
@@ -114,6 +111,6 @@ TEST(TestCondition, ExcludeKeyPath)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, manifest, {&map.array[0]}, true, deadline);
+    auto match = cond->match(store, {&map.array[0]}, true, deadline);
     EXPECT_FALSE(match.has_value());
 }

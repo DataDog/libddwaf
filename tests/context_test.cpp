@@ -12,7 +12,8 @@ using namespace ddwaf::exclusion;
 namespace ddwaf::test {
 class context : public ddwaf::context {
 public:
-    context(std::shared_ptr<ddwaf::ruleset> ruleset) : ddwaf::context(ruleset) {}
+    explicit context(std::shared_ptr<ddwaf::ruleset> ruleset) : ddwaf::context(std::move(ruleset))
+    {}
 
     bool insert(const ddwaf_object &object) { return store_.insert(object); }
 };
@@ -21,10 +22,10 @@ public:
 
 TEST(TestContext, MatchTimeout)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
@@ -38,12 +39,13 @@ TEST(TestContext, MatchTimeout)
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{0s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
@@ -53,10 +55,10 @@ TEST(TestContext, MatchTimeout)
 
 TEST(TestContext, NoMatch)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
@@ -70,12 +72,13 @@ TEST(TestContext, NoMatch)
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
     ctx.insert(root);
@@ -86,10 +89,10 @@ TEST(TestContext, NoMatch)
 
 TEST(TestContext, Match)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
@@ -103,12 +106,13 @@ TEST(TestContext, Match)
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
@@ -120,10 +124,10 @@ TEST(TestContext, Match)
 TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -141,8 +145,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -158,12 +162,13 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -193,10 +198,10 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
 TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -214,8 +219,8 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -232,12 +237,13 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     {
         ddwaf::test::context ctx(ruleset);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
@@ -256,7 +262,8 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
     {
         ddwaf::test::context ctx(ruleset);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -276,10 +283,10 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
 TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -297,8 +304,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -314,13 +321,14 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -347,7 +355,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
@@ -360,10 +369,10 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
 TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -381,8 +390,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -398,13 +407,14 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -433,7 +443,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
     {
         // An existing match in a collection will not inhibit a match in a
         // priority collection.
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
@@ -464,10 +475,10 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -485,8 +496,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -502,13 +513,14 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -537,7 +549,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
     {
         // An existing match in a collection will not inhibit a match in a
         // priority collection.
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
@@ -550,10 +563,10 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -571,8 +584,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -588,13 +601,14 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -623,7 +637,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
     {
         // An existing match in a collection will not inhibit a match in a
         // priority collection.
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
@@ -654,10 +669,10 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
 TEST(TestContext, MatchMultipleCollectionsSingleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -675,8 +690,8 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -692,12 +707,13 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -710,10 +726,10 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
 TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -731,8 +747,8 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -748,12 +764,13 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -766,10 +783,10 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
 TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -787,8 +804,8 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -804,13 +821,14 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
@@ -820,7 +838,8 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -833,10 +852,10 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -854,8 +873,8 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -871,13 +890,14 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         ruleset->insert_rule(rule);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
@@ -887,7 +907,8 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -900,13 +921,13 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
 TEST(TestContext, RuleFilterWithCondition)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
 
     // Generate rule
     ddwaf::rule::ptr rule;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -924,8 +945,8 @@ TEST(TestContext, RuleFilterWithCondition)
 
     // Generate filter
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -938,12 +959,13 @@ TEST(TestContext, RuleFilterWithCondition)
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
@@ -960,13 +982,13 @@ TEST(TestContext, RuleFilterWithCondition)
 TEST(TestContext, RuleFilterTimeout)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
 
     // Generate rule
     ddwaf::rule::ptr rule;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -984,8 +1006,8 @@ TEST(TestContext, RuleFilterTimeout)
 
     // Generate filter
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -998,12 +1020,13 @@ TEST(TestContext, RuleFilterTimeout)
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{0s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
@@ -1015,13 +1038,13 @@ TEST(TestContext, RuleFilterTimeout)
 TEST(TestContext, NoRuleFilterWithCondition)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
 
     // Generate rule
     ddwaf::rule::ptr rule;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -1039,8 +1062,8 @@ TEST(TestContext, NoRuleFilterWithCondition)
 
     // Generate filter
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -1053,12 +1076,13 @@ TEST(TestContext, NoRuleFilterWithCondition)
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
@@ -1256,7 +1280,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
 
     // Generate rule
     constexpr unsigned num_rules = 10;
@@ -1278,8 +1302,8 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     ddwaf::test::context ctx(ruleset);
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -1293,8 +1317,8 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -1306,10 +1330,11 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
@@ -1324,7 +1349,8 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -1347,7 +1373,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
 
     // Generate rule
     constexpr unsigned num_rules = 10;
@@ -1369,8 +1395,8 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     ddwaf::test::context ctx(ruleset);
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -1385,8 +1411,8 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -1399,10 +1425,11 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -1419,7 +1446,8 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
@@ -1441,10 +1469,10 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 
 TEST(TestContext, InputFilterExclude)
 {
-    ddwaf::manifest_builder mb;
-    auto client_ip = mb.insert("http.client_ip", {});
+    ddwaf::manifest manifest;
+    condition::target_type client_ip{manifest.insert("http.client_ip"), "http.client_ip", {}};
 
-    std::vector<ddwaf::manifest::target_type> targets{client_ip};
+    std::vector<ddwaf::condition::target_type> targets{client_ip};
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
@@ -1455,8 +1483,8 @@ TEST(TestContext, InputFilterExclude)
     auto rule = std::make_shared<ddwaf::rule>(
         "id", "name", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
-    object_filter obj_filter;
-    obj_filter.insert(client_ip);
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(client_ip.root);
 
     std::vector<condition::ptr> filter_conditions;
     std::set<rule::ptr> filter_rules{rule};
@@ -1465,13 +1493,14 @@ TEST(TestContext, InputFilterExclude)
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
     ruleset->input_filters.emplace(filter->get_id(), filter);
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
@@ -1484,10 +1513,10 @@ TEST(TestContext, InputFilterExclude)
 
 TEST(TestContext, InputFilterExcludeRule)
 {
-    ddwaf::manifest_builder mb;
-    auto client_ip = mb.insert("http.client_ip", {});
+    ddwaf::manifest manifest;
+    condition::target_type client_ip{manifest.insert("http.client_ip"), "http.client_ip", {}};
 
-    std::vector<ddwaf::manifest::target_type> targets{client_ip};
+    std::vector<ddwaf::condition::target_type> targets{client_ip};
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
@@ -1498,8 +1527,8 @@ TEST(TestContext, InputFilterExcludeRule)
     auto rule = std::make_shared<ddwaf::rule>(
         "id", "name", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
-    object_filter obj_filter;
-    obj_filter.insert(client_ip);
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(client_ip.root);
 
     std::vector<condition::ptr> filter_conditions;
     std::set<rule::ptr> filter_rules{rule};
@@ -1508,13 +1537,14 @@ TEST(TestContext, InputFilterExcludeRule)
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
     ruleset->input_filters.emplace(filter->get_id(), filter);
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
@@ -1530,14 +1560,14 @@ TEST(TestContext, InputFilterExcludeRule)
 
 TEST(TestContext, InputFilterWithCondition)
 {
-    ddwaf::manifest_builder mb;
-    auto client_ip = mb.insert("http.client_ip", {});
-    auto usr_id = mb.insert("usr.id", {});
+    ddwaf::manifest manifest;
+    condition::target_type client_ip{manifest.insert("http.client_ip"), "http.client_ip", {}};
+    condition::target_type usr_id{manifest.insert("usr.id"), "usr.id", {}};
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
         std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::manifest::target_type> targets{client_ip};
+        std::vector<ddwaf::condition::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -1553,11 +1583,11 @@ TEST(TestContext, InputFilterWithCondition)
     }
 
     {
-        object_filter obj_filter;
-        obj_filter.insert(client_ip);
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(client_ip.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::manifest::target_type> targets{usr_id};
+        std::vector<ddwaf::condition::target_type> targets{usr_id};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
@@ -1569,14 +1599,15 @@ TEST(TestContext, InputFilterWithCondition)
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     // Without usr.id, nothing should be excluded
     {
         ddwaf::timer deadline{2s};
         ddwaf::test::context ctx(ruleset);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
@@ -1592,7 +1623,8 @@ TEST(TestContext, InputFilterWithCondition)
         ddwaf::timer deadline{2s};
         ddwaf::test::context ctx(ruleset);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
@@ -1609,7 +1641,8 @@ TEST(TestContext, InputFilterWithCondition)
         ddwaf::timer deadline{2s};
         ddwaf::test::context ctx(ruleset);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -1624,14 +1657,14 @@ TEST(TestContext, InputFilterWithCondition)
 
 TEST(TestContext, InputFilterMultipleRules)
 {
-    ddwaf::manifest_builder mb;
-    auto client_ip = mb.insert("http.client_ip", {});
-    auto usr_id = mb.insert("usr.id", {});
+    ddwaf::manifest manifest;
+    condition::target_type client_ip{manifest.insert("http.client_ip"), "http.client_ip", {}};
+    condition::target_type usr_id{manifest.insert("usr.id"), "usr.id", {}};
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
         std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::manifest::target_type> targets{client_ip};
+        std::vector<ddwaf::condition::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -1648,7 +1681,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
     {
         std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::manifest::target_type> targets{usr_id};
+        std::vector<ddwaf::condition::target_type> targets{usr_id};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
@@ -1663,9 +1696,9 @@ TEST(TestContext, InputFilterMultipleRules)
     }
 
     {
-        object_filter obj_filter;
-        obj_filter.insert(client_ip);
-        obj_filter.insert(usr_id);
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(client_ip.root);
+        obj_filter->insert(usr_id.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{ruleset->rules["usr_id"], ruleset->rules["ip_id"]};
@@ -1675,7 +1708,7 @@ TEST(TestContext, InputFilterMultipleRules)
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     // Without usr.id, nothing should be excluded
     {
@@ -1739,14 +1772,14 @@ TEST(TestContext, InputFilterMultipleRules)
 
 TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 {
-    ddwaf::manifest_builder mb;
-    auto client_ip = mb.insert("http.client_ip", {});
-    auto usr_id = mb.insert("usr.id", {});
+    ddwaf::manifest manifest;
+    condition::target_type client_ip{manifest.insert("http.client_ip"), "http.client_ip", {}};
+    condition::target_type usr_id{manifest.insert("usr.id"), "usr.id", {}};
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
         std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::manifest::target_type> targets{client_ip};
+        std::vector<ddwaf::condition::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -1763,7 +1796,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
     {
         std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::manifest::target_type> targets{usr_id};
+        std::vector<ddwaf::condition::target_type> targets{usr_id};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
@@ -1778,8 +1811,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
     }
 
     {
-        object_filter obj_filter;
-        obj_filter.insert(client_ip);
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(client_ip.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{ruleset->rules["ip_id"]};
@@ -1790,8 +1823,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
     }
 
     {
-        object_filter obj_filter;
-        obj_filter.insert(usr_id);
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(usr_id.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{ruleset->rules["usr_id"]};
@@ -1801,7 +1834,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     // Without usr.id, nothing should be excluded
     {
@@ -1865,15 +1898,16 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
 TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 {
-    ddwaf::manifest_builder mb;
-    auto client_ip = mb.insert("http.client_ip", {});
-    auto usr_id = mb.insert("usr.id", {});
-    auto cookie_header = mb.insert("server.request.headers", {"cookie"});
+    ddwaf::manifest manifest;
+    condition::target_type client_ip{manifest.insert("http.client_ip"), "http.client_ip", {}};
+    condition::target_type usr_id{manifest.insert("usr.id"), "usr.id", {}};
+    condition::target_type cookie_header{
+        manifest.insert("server.request.headers"), "server.request.headers", {"cookie"}};
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
         std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::manifest::target_type> targets{client_ip};
+        std::vector<ddwaf::condition::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -1890,7 +1924,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
     {
         std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::manifest::target_type> targets{usr_id};
+        std::vector<ddwaf::condition::target_type> targets{usr_id};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
@@ -1906,7 +1940,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
     {
         std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::manifest::target_type> targets{cookie_header};
+        std::vector<ddwaf::condition::target_type> targets{cookie_header};
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"mycookie"}));
         conditions.emplace_back(std::move(cond));
@@ -1924,9 +1958,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
     auto usr_rule = ruleset->rules["usr_id"];
     auto cookie_rule = ruleset->rules["cookie_id"];
     {
-        object_filter obj_filter;
-        obj_filter.insert(client_ip);
-        obj_filter.insert(cookie_header);
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(client_ip.root);
+        obj_filter->insert(cookie_header.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{ip_rule, cookie_rule};
@@ -1937,9 +1971,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
     }
 
     {
-        object_filter obj_filter;
-        obj_filter.insert(usr_id);
-        obj_filter.insert(client_ip);
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(usr_id.root);
+        obj_filter->insert(client_ip.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{usr_rule, ip_rule};
@@ -1950,9 +1984,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
     }
 
     {
-        object_filter obj_filter;
-        obj_filter.insert(usr_id);
-        obj_filter.insert(cookie_header);
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(usr_id.root);
+        obj_filter->insert(cookie_header.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
         std::set<rule::ptr> filter_rules{usr_rule, cookie_rule};
@@ -1962,7 +1996,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
 
-    ruleset->manifest = mb.build_manifest();
+    ruleset->manifest = manifest;
 
     {
         ddwaf::timer deadline{2s};

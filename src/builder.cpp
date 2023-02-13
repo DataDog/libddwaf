@@ -106,7 +106,7 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
             }
 
             auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, std::move(conditions), spec.actions);
+                id, spec.name, spec.tags, std::move(conditions), spec.actions, spec.enabled);
             final_rules_.emplace(id, rule_ptr);
             rules_by_tags_.insert(rule_ptr->tags, rule_ptr);
         }
@@ -193,6 +193,12 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
     decltype(rule_data_ids_) rule_data_ids;
 
     change_state state = change_state::none;
+
+    auto metadata = parser::at<parameter::map>(root, "metadata", {});
+    auto rules_version = metadata.find("rules_version");
+    if (rules_version != metadata.end()) {
+        info.set_version(rules_version->second);
+    }
 
     auto it = root.find("rules");
     if (it != root.end()) {

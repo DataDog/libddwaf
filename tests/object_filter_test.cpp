@@ -12,9 +12,9 @@ using namespace ddwaf::exclusion;
 
 TEST(TestObjectFilter, RootTarget)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+
     object_store store(manifest);
 
     ddwaf_object root, child, tmp;
@@ -39,9 +39,9 @@ TEST(TestObjectFilter, RootTarget)
 
 TEST(TestObjectFilter, SingleTarget)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+
     object_store store(manifest);
 
     ddwaf_object root, child, tmp;
@@ -66,10 +66,10 @@ TEST(TestObjectFilter, SingleTarget)
 
 TEST(TestObjectFilter, MultipleTargets)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto path_params = mb.insert("path_params", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+    auto path_params = manifest.insert("path_params");
+
     object_store store(manifest);
 
     ddwaf_object root, child, sibling, object, tmp;
@@ -110,11 +110,11 @@ TEST(TestObjectFilter, MultipleTargets)
 
 TEST(TestObjectFilter, MissingTarget)
 {
-    ddwaf::manifest_builder mb;
-    mb.insert("query", {});
-    mb.insert("path_params", {});
-    auto status = mb.insert("status", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    manifest.insert("query");
+    manifest.insert("path_params");
+    auto status = manifest.insert("status");
+
     object_store store(manifest);
 
     ddwaf_object root, child, sibling, object, tmp;
@@ -151,9 +151,9 @@ TEST(TestObjectFilter, MissingTarget)
 
 TEST(TestObjectFilter, SingleTargetCache)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+
     object_store store(manifest);
 
     ddwaf_object root, child, tmp;
@@ -184,10 +184,10 @@ TEST(TestObjectFilter, SingleTargetCache)
 
 TEST(TestObjectFilter, MultipleTargetsCache)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto path_params = mb.insert("path_params", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+    auto path_params = manifest.insert("path_params");
+
     object_store store(manifest);
 
     object_filter filter;
@@ -245,9 +245,8 @@ TEST(TestObjectFilter, MultipleTargetsCache)
 
 TEST(TestObjectFilter, SingleGlobTarget)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
 
     object_filter filter;
     filter.insert(query, {"*"});
@@ -315,9 +314,8 @@ TEST(TestObjectFilter, SingleGlobTarget)
 
 TEST(TestObjectFilter, GlobAndKeyTarget)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
 
     object_filter filter;
     filter.insert(query, {"*"});
@@ -386,9 +384,8 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
 
 TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
 
     object_filter filter;
     filter.insert(query, {"*", "value"});
@@ -495,9 +492,8 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 
 TEST(TestObjectFilter, MultipleGlobsTargets)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
 
     object_filter filter;
     filter.insert(query, {"*", "*", "*"});
@@ -590,9 +586,8 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
 
 TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
 
     object_filter filter;
     filter.insert(query, {"a", "b", "c"});
@@ -656,9 +651,8 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
 
 TEST(TestObjectFilter, ArrayWithGlobTargets)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
 
     object_filter filter;
     filter.insert(query, {"a", "*", "c", "d"});
