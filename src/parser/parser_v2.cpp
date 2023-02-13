@@ -108,7 +108,6 @@ condition_spec parse_rule_condition(parameter::map &root, manifest &target_manif
     if (!processor && !rule_data_id.empty()) {
         rule_data_ids.emplace(rule_data_id, operation);
     }
-
     std::vector<condition::target_type> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
     if (inputs.empty()) {

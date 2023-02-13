@@ -190,8 +190,6 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
 
 builder::change_state builder::load(parameter::map &root, ruleset_info &info)
 {
-    decltype(rule_data_ids_) rule_data_ids;
-
     change_state state = change_state::none;
 
     auto metadata = parser::at<parameter::map>(root, "metadata", {});
@@ -202,9 +200,11 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
 
     auto it = root.find("rules");
     if (it != root.end()) {
+        decltype(rule_data_ids_) rule_data_ids;
+
         parameter::vector rules = it->second;
         auto new_base_rules =
-            parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids_);
+            parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids);
 
         if (new_base_rules.empty()) {
             throw ddwaf::parsing_error("no valid rules found");

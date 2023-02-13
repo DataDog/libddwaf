@@ -654,3 +654,20 @@ rules:
             - address: rule40-input1
             - address: rule40-input2
           regex: rule40
+  - id: 41
+    name: rule41-ip-match-dynamic
+    tags:
+      type: flow41
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: rule41-input
+          data: rule_41_data
+rules_data:
+  - id: rule_41_data
+    type: ip_with_expiration
+    data:
+      - value: 192.168.1.1
+        expiration: 0
