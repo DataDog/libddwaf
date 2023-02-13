@@ -203,8 +203,7 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
         decltype(rule_data_ids_) rule_data_ids;
 
         parameter::vector rules = it->second;
-        auto new_base_rules =
-            parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids);
+        auto new_base_rules = parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids);
 
         if (new_base_rules.empty()) {
             throw ddwaf::parsing_error("no valid rules found");
