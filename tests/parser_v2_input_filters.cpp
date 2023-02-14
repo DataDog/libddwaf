@@ -40,3 +40,31 @@ TEST(TestParserV2InputFilters, ParseDuplicateFilters)
     EXPECT_EQ(exclusions.rule_filters.size(), 0);
     EXPECT_EQ(exclusions.input_filters.size(), 1);
 }
+
+TEST(TestParserV2InputFilters, ParseNoConditionsOrTargets)
+{
+    ddwaf::manifest manifest;
+    ddwaf::object_limits limits;
+    manifest.insert("http.client_ip");
+    manifest.insert("usr.id");
+
+    auto object = readRule(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
+
+    parameter::vector exclusions_array = parameter(object);
+    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf_object_free(&object);
+
+    EXPECT_EQ(exclusions.unconditional_rule_filters.size(), 0);
+    EXPECT_EQ(exclusions.rule_filters.size(), 0);
+    EXPECT_EQ(exclusions.input_filters.size(), 1);
+
+    const auto &exclusion_it = exclusions.input_filters.begin();
+    EXPECT_STR(exclusion_it->first, "1");
+
+    const auto &exclusion = exclusion_it->second;
+    EXPECT_EQ(exclusion.conditions.size(), 0);
+    EXPECT_EQ(exclusion.targets.size(), 0);
+    EXPECT_TRUE(exclusion.filter);
+}
+
+// TODO more tests

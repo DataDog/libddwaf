@@ -49,7 +49,8 @@ TEST(TestInterface, HandleLifetime)
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+    ddwaf_object parameter = DDWAF_OBJECT_MAP;
+    ddwaf_object tmp;
     ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
 
     ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
@@ -60,7 +61,7 @@ TEST(TestInterface, HandleLifetime)
     ddwaf_object_map_add(&parameter, "value1", &param_key);
     ddwaf_object_map_add(&parameter, "value2", &param_val);
 
-    EXPECT_EQ(ddwaf_run(context, &parameter, NULL, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
 
     ddwaf_object_free(&parameter);
     ddwaf_context_destroy(context);
@@ -86,51 +87,6 @@ TEST(TestInterface, HandleLifetimeMultipleContexts)
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-    ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
-
-    ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
-    ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
-
-    ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));
-
-    ddwaf_object_map_add(&parameter, "value1", &param_key);
-    ddwaf_object_map_add(&parameter, "value2", &param_val);
-
-    EXPECT_EQ(ddwaf_run(context1, &parameter, NULL, LONG_TIME), DDWAF_MATCH);
-    ddwaf_context_destroy(context1);
-
-    EXPECT_EQ(ddwaf_run(context2, &parameter, NULL, LONG_TIME), DDWAF_MATCH);
-    ddwaf_context_destroy(context2);
-
-    ddwaf_object_free(&parameter);
-}
-
-TEST(TestInterface, UpdateRules)
-{
-    auto rule = readFile("interface.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ASSERT_NE(handle, nullptr);
-
-    ddwaf_context context1 = ddwaf_context_init(handle);
-    ASSERT_NE(context1, nullptr);
-
-    ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);
-    ASSERT_NE(new_handle, nullptr);
-
-    ddwaf_object_free(&rule);
-
-    ddwaf_context context2 = ddwaf_context_init(new_handle);
-    ASSERT_NE(context2, nullptr);
-
-    // Destroying the handle should not invalidate it
-    ddwaf_destroy(handle);
-    ddwaf_destroy(new_handle);
-
     ddwaf_object parameter = DDWAF_OBJECT_MAP;
     ddwaf_object tmp;
     ddwaf_object param_key = DDWAF_OBJECT_ARRAY;
@@ -151,4 +107,189 @@ TEST(TestInterface, UpdateRules)
     ddwaf_context_destroy(context2);
 
     ddwaf_object_free(&parameter);
+}
+
+TEST(TestInterface, UpdateRules)
+{
+    auto rule = readFile("interface.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context1 = ddwaf_context_init(handle);
+    ASSERT_NE(context1, nullptr);
+
+    rule = readFile("interface3.yaml");
+    ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);
+    ASSERT_NE(new_handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context2 = ddwaf_context_init(new_handle);
+    ASSERT_NE(context2, nullptr);
+
+    // Destroying the handle should not invalidate it
+    ddwaf_destroy(handle);
+    ddwaf_destroy(new_handle);
+
+    ddwaf_object tmp;
+    {
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+    }
+
+    {
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+        ;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_object_free(&parameter);
+    }
+
+    ddwaf_context_destroy(context2);
+    ddwaf_context_destroy(context1);
+}
+
+TEST(TestInterface, UpdateDisableEnableRule)
+{
+    auto rule = readFile("interface.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle1, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ASSERT_NE(context1, nullptr);
+
+    ddwaf_handle handle2;
+    {
+        auto overrides =
+            readRule(R"({rules_override: [{rules_target: [{rule_id: 1}], enabled: false}]})");
+        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ASSERT_NE(context2, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_object_free(&parameter);
+    }
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+        ;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+    }
+
+    ddwaf_context_destroy(context1);
+    ddwaf_destroy(handle1);
+
+    ddwaf_handle handle3;
+    {
+        auto overrides = readRule(R"({rules_override: []})");
+        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ASSERT_NE(context3, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ;
+
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+    }
+
+    ddwaf_context_destroy(context2);
+    ddwaf_context_destroy(context3);
+    ddwaf_destroy(handle2);
+    ddwaf_destroy(handle3);
+}
+
+TEST(TestInterface, UpdateActions)
+{
+    auto rule = readFile("interface.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context1 = ddwaf_context_init(handle);
+    ASSERT_NE(context1, nullptr);
+
+    ddwaf_handle new_handle;
+    {
+        auto overrides =
+            readRule(R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [block]}]})");
+        new_handle = ddwaf_update(handle, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    ddwaf_context context2 = ddwaf_context_init(new_handle);
+    ASSERT_NE(context2, nullptr);
+
+    ddwaf_object tmp;
+    ddwaf_object parameter = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+    ;
+
+    ddwaf_result result1;
+    ddwaf_result result2;
+
+    EXPECT_EQ(ddwaf_run(context1, &parameter, &result1, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context2, &parameter, &result2, LONG_TIME), DDWAF_MATCH);
+
+    ddwaf_object_free(&parameter);
+
+    EXPECT_EQ(result1.actions.size, 0);
+    EXPECT_EQ(result2.actions.size, 1);
+    EXPECT_STREQ(result2.actions.array[0], "block");
+
+    ddwaf_result_free(&result1);
+    ddwaf_result_free(&result2);
+
+    ddwaf_context_destroy(context2);
+    ddwaf_context_destroy(context1);
+
+    ddwaf_destroy(new_handle);
+    ddwaf_destroy(handle);
 }

@@ -33,7 +33,7 @@ std::shared_ptr<ruleset> builder::build(parameter object, ruleset_info &info)
 {
     parameter::map ruleset = object;
 
-    auto version = parser::parse_schema_version(ruleset);
+    unsigned version = parser::parse_schema_version(ruleset);
     if (version == 1) {
         ddwaf::ruleset rs;
         parser::v1::parse(ruleset, info, rs, limits_);
@@ -86,6 +86,9 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
     constexpr change_state filters_update = rule_update | change_state::filters;
 
     if ((state & rule_update) != change_state::none) {
+        final_rules_.clear();
+        rules_by_tags_.clear();
+
         // A new ruleset, new rule data or a new set of overrides requires a new ruleset
         for (const auto &[id, spec] : base_rules_) {
             std::vector<condition::ptr> conditions;
@@ -155,6 +158,9 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
 
     // Generate exclusion filters
     if ((state & filters_update) != change_state::none) {
+        rule_filters_.clear();
+        input_filters_.clear();
+
         // First apply unconditional_rule_filters
         for (const auto &[id, filter] : exclusions_.unconditional_rule_filters) {
             auto rule_targets = target_to_rules(filter.targets, final_rules_, rules_by_tags_);
@@ -180,10 +186,10 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
     }
 
     auto rs = std::make_shared<ddwaf::ruleset>();
-    rs->insert_rules(final_rules_);
     rs->manifest = target_manifest_;
-    rs->rule_filters = std::move(rule_filters_);
-    rs->input_filters = std::move(input_filters_);
+    rs->insert_rules(final_rules_);
+    rs->rule_filters = rule_filters_;
+    rs->input_filters = input_filters_;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
@@ -239,7 +245,6 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
         parameter::vector overrides = it->second;
         if (!overrides.empty()) {
             auto new_overrides = parser::v2::parse_overrides(overrides);
-
             if (new_overrides.empty()) {
                 // We can continue whilst ignoring the lack of overrides
                 DDWAF_WARN("No valid overrides provided");
@@ -249,6 +254,7 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
             }
         } else {
             overrides_.clear();
+            state = state | change_state::overrides;
         }
     }
 

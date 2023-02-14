@@ -123,6 +123,8 @@ public:
         return latest;
     }
 
+    void clear() { data_.clear(); }
+
 protected:
     std::unordered_map<Key, std::unordered_map<Key, std::set<T>>> data_;
 };
