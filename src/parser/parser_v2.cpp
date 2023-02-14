@@ -33,6 +33,8 @@ using ddwaf::rule_processor::base;
 
 namespace ddwaf::parser::v2 {
 
+namespace {
+
 std::pair<std::string, rule_processor::base::ptr> parse_processor(
     std::string_view operation, parameter::map &params)
 {
@@ -330,13 +332,20 @@ input_filter_spec parse_input_filter(
     std::unordered_set<manifest::target_type> input_targets;
     auto obj_filter = std::make_shared<exclusion::object_filter>(limits);
     auto inputs_array = at<parameter::vector>(filter, "inputs");
+
+    // TODO: add empty method to object filter and check after
+    if (conditions.empty() && inputs_array.empty() && rules_target.empty()) {
+        throw ddwaf::parsing_error("empty exclusion filter");
+    }
+
     for (parameter::map input_map : inputs_array) {
         auto address = at<std::string>(input_map, "address");
 
         auto optional_target = target_manifest.find(address);
         if (!optional_target.has_value()) {
             // This address isn't used by any rule so we skip it.
-            throw ddwaf::parsing_error("Address " + address + " not used by any existing rule");
+            DDWAF_DEBUG("Address %s not used by any existing rule", address.c_str());
+            continue;
         }
 
         auto key_path = at<std::vector<std::string_view>>(input_map, "key_path", {});
@@ -377,6 +386,8 @@ rule_filter_spec parse_rule_filter(
 
     return {std::move(conditions), std::move(rules_target)};
 }
+
+} // namespace
 
 rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_info &info,
     manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids)
@@ -486,17 +497,18 @@ filter_spec_container parse_filters(
         std::string id;
         try {
             id = at<std::string>(node, "id");
-            if (filters.rule_filters.find(id) != filters.rule_filters.end() ||
-                filters.input_filters.find(id) != filters.input_filters.end()) {
+            if (filters.ids.find(id) != filters.ids.end()) {
                 DDWAF_WARN("duplicate filter: %s", id.c_str());
                 continue;
             }
 
             if (node.find("inputs") != node.end()) {
                 auto filter = parse_input_filter(node, target_manifest, limits);
-                filters.input_filters.emplace(id, std::move(filter));
+                filters.ids.emplace(id);
+                filters.input_filters.emplace(std::move(id), std::move(filter));
             } else {
                 auto filter = parse_rule_filter(node, target_manifest, limits);
+                filters.ids.emplace(id);
                 if (filter.conditions.empty()) {
                     filters.unconditional_rule_filters.emplace(std::move(id), std::move(filter));
                 } else {
