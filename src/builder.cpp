@@ -81,6 +81,10 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
 
+    if (state == change_state::none) {
+        return {};
+    }
+
     constexpr change_state rule_update =
         change_state::rules | change_state::data | change_state::overrides;
     constexpr change_state filters_update = rule_update | change_state::filters;
@@ -229,7 +233,10 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
         if (!rules_data.empty()) {
             auto new_processors = parser::v2::parse_rule_data(rules_data, rule_data_ids_);
             if (new_processors.empty()) {
-                DDWAF_WARN("No valid rule data provided");
+                // The rules_data array might have unrelated IDs, so we need
+                // to consider "no valid IDs" as an empty rules_data
+                dynamic_processors_.clear();
+                state = state | change_state::data;
             } else {
                 dynamic_processors_ = std::move(new_processors);
                 state = state | change_state::data;

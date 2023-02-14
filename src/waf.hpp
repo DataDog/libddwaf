@@ -28,7 +28,8 @@ public:
 
     waf *update(ddwaf::parameter input, ddwaf::ruleset_info &info)
     {
-        return new waf{builder_, builder_->build(input, info)};
+        auto ruleset = builder_->build(input, info);
+        return ruleset ? new waf{builder_, std::move(ruleset)} : nullptr;
     }
 
     ddwaf::context create_context() { return context{ruleset_}; }
