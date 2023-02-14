@@ -27,7 +27,7 @@ std::optional<manifest::target_type> manifest::find(const std::string &root) con
     return {it->second};
 }
 
-void manifest::update_targets(const std::unordered_set<target_type> &valid_targets)
+void manifest::remove_unused(const std::unordered_set<target_type> &valid_targets)
 {
     for (auto it = targets_.begin(); it != targets_.end();) {
         if (valid_targets.find(it->second) == valid_targets.end()) {

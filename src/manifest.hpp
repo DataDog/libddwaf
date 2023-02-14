@@ -26,7 +26,7 @@ public:
     std::optional<target_type> find(const std::string &root) const;
 
     // Remove unused targets
-    void update_targets(const std::unordered_set<target_type> &valid_targets);
+    void remove_unused(const std::unordered_set<target_type> &valid_targets);
 
     // TODO This is problematic because if the manifest is modified after the
     //      first call to this function, the array will be out-of-sync. At the

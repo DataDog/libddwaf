@@ -49,10 +49,86 @@ TEST(TestManifest, TestMultipleAddrs)
         EXPECT_EQ(*opt_target, target);
     }
 
-    const auto &addresses = manifest.get_root_addresses();
-    EXPECT_EQ(addresses.size(), 4);
+    {
+        // The first call should generate the root addresses
+        const auto &addresses = manifest.get_root_addresses();
+        EXPECT_EQ(addresses.size(), 4);
 
-    for (const std::string str : {"path0", "path1", "path2", "path3"}) {
-        EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
+        for (const std::string str : {"path0", "path1", "path2", "path3"}) {
+            EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
+        }
+    }
+}
+
+TEST(TestManifest, TestUpdateTargets)
+{
+    ddwaf::manifest manifest;
+    for (const std::string str : {"path0", "path1", "path2", "path3"}) { manifest.insert(str); }
+
+    {
+        std::unordered_set<manifest::target_type> targets;
+        targets.emplace(*manifest.find("path0"));
+        targets.emplace(*manifest.find("path1"));
+        targets.emplace(*manifest.find("path2"));
+        targets.emplace(*manifest.find("path3"));
+
+        // After this, no targets should be removed
+        manifest.remove_unused(targets);
+
+        EXPECT_TRUE(manifest.find("path0"));
+        EXPECT_TRUE(manifest.find("path1"));
+        EXPECT_TRUE(manifest.find("path2"));
+        EXPECT_TRUE(manifest.find("path3"));
+    }
+
+    {
+        std::unordered_set<manifest::target_type> targets;
+        targets.emplace(*manifest.find("path0"));
+        targets.emplace(*manifest.find("path2"));
+
+        // After this, only path0 and path2 should be in the manifest
+        manifest.remove_unused(targets);
+
+        EXPECT_TRUE(manifest.find("path0"));
+        EXPECT_FALSE(manifest.find("path1"));
+        EXPECT_TRUE(manifest.find("path2"));
+        EXPECT_FALSE(manifest.find("path3"));
+    }
+
+    {
+        // After this, the manifest should be empty
+        manifest.remove_unused({});
+
+        EXPECT_FALSE(manifest.find("path0"));
+        EXPECT_FALSE(manifest.find("path1"));
+        EXPECT_FALSE(manifest.find("path2"));
+        EXPECT_FALSE(manifest.find("path3"));
+    }
+}
+
+TEST(TestManifest, TestRootAddresses)
+{
+    ddwaf::manifest manifest;
+
+    for (const std::string str : {"path0", "path1", "path2", "path3"}) { manifest.insert(str); }
+
+    {
+        // The first call should generate the root addresses
+        const auto &addresses = manifest.get_root_addresses();
+        EXPECT_EQ(addresses.size(), 4);
+
+        for (const std::string str : {"path0", "path1", "path2", "path3"}) {
+            EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
+        }
+    }
+
+    {
+        // The second call should reuse the generated array
+        const auto &addresses = manifest.get_root_addresses();
+        EXPECT_EQ(addresses.size(), 4);
+
+        for (const std::string str : {"path0", "path1", "path2", "path3"}) {
+            EXPECT_NE(find(addresses.begin(), addresses.end(), str), addresses.end());
+        }
     }
 }

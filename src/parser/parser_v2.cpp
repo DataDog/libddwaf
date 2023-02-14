@@ -33,7 +33,6 @@ using ddwaf::rule_processor::base;
 
 namespace ddwaf::parser::v2 {
 
-namespace {
 std::pair<std::string, rule_processor::base::ptr> parse_processor(
     std::string_view operation, parameter::map &params)
 {
@@ -258,7 +257,7 @@ std::pair<override_spec, target_type> parse_override(parameter::map &node)
 }
 
 condition::ptr parse_filter_condition(
-    parameter::map &root, manifest &target_manifest, object_limits limits)
+    parameter::map &root, manifest &target_manifest, const object_limits &limits)
 {
     auto operation = at<std::string_view>(root, "operator");
     auto params = at<parameter::map>(root, "parameters");
@@ -379,8 +378,6 @@ rule_filter_spec parse_rule_filter(
     return {std::move(conditions), std::move(rules_target)};
 }
 
-} // namespace
-
 rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_info &info,
     manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids)
 {
@@ -444,6 +441,9 @@ rule_data_container parse_rule_data(
                 using rule_data_type = rule_processor::exact_match::rule_data_type;
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
                 processor = std::make_shared<rule_processor::exact_match>(parsed_data);
+            } else {
+                DDWAF_WARN("Processor %s doesn't support dynamic rule data", it->second.c_str());
+                continue;
             }
 
             processors.emplace(std::move(id), std::move(processor));

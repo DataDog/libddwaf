@@ -107,7 +107,9 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
 
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, std::move(conditions), spec.actions, spec.enabled);
-            final_rules_.emplace(id, rule_ptr);
+
+            // Don't insert id as it's own by the builder
+            final_rules_.emplace(rule_ptr->id, rule_ptr);
             rules_by_tags_.insert(rule_ptr->tags, rule_ptr);
         }
 
