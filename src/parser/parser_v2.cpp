@@ -509,11 +509,7 @@ filter_spec_container parse_filters(
             } else {
                 auto filter = parse_rule_filter(node, target_manifest, limits);
                 filters.ids.emplace(id);
-                if (filter.conditions.empty()) {
-                    filters.unconditional_rule_filters.emplace(std::move(id), std::move(filter));
-                } else {
-                    filters.rule_filters.emplace(std::move(id), std::move(filter));
-                }
+                filters.rule_filters.emplace(std::move(id), std::move(filter));
             }
         } catch (const std::exception &e) {
             if (!id.empty()) {

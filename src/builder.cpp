@@ -165,12 +165,6 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
         rule_filters_.clear();
         input_filters_.clear();
 
-        // First apply unconditional_rule_filters
-        for (const auto &[id, filter] : exclusions_.unconditional_rule_filters) {
-            auto rule_targets = target_to_rules(filter.targets, final_rules_, rules_by_tags_);
-            for (const auto &rule_ptr : rule_targets) { rule_ptr->toggle(false); }
-        }
-
         // Then rule filters
         for (const auto &[id, filter] : exclusions_.rule_filters) {
             auto rule_targets = target_to_rules(filter.targets, final_rules_, rules_by_tags_);

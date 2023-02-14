@@ -77,20 +77,15 @@ struct override_spec_container {
 };
 
 struct filter_spec_container {
-    [[nodiscard]] bool empty() const
-    {
-        return unconditional_rule_filters.empty() && rule_filters.empty() && input_filters.empty();
-    }
+    [[nodiscard]] bool empty() const { return rule_filters.empty() && input_filters.empty(); }
 
     void clear()
     {
-        unconditional_rule_filters.clear();
         rule_filters.clear();
         input_filters.clear();
     }
 
     std::unordered_set<std::string> ids;
-    std::unordered_map<std::string, rule_filter_spec> unconditional_rule_filters;
     std::unordered_map<std::string, rule_filter_spec> rule_filters;
     std::unordered_map<std::string, input_filter_spec> input_filters;
 };

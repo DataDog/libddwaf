@@ -17,7 +17,6 @@ TEST(TestParserV2InputFilters, ParseFilterWithoutID)
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.unconditional_rule_filters.size(), 0);
     EXPECT_EQ(exclusions.rule_filters.size(), 0);
     EXPECT_EQ(exclusions.input_filters.size(), 0);
 }
@@ -36,7 +35,6 @@ TEST(TestParserV2InputFilters, ParseDuplicateFilters)
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.unconditional_rule_filters.size(), 0);
     EXPECT_EQ(exclusions.rule_filters.size(), 0);
     EXPECT_EQ(exclusions.input_filters.size(), 1);
 }
@@ -54,7 +52,6 @@ TEST(TestParserV2InputFilters, ParseNoConditionsOrTargets)
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.unconditional_rule_filters.size(), 0);
     EXPECT_EQ(exclusions.rule_filters.size(), 0);
     EXPECT_EQ(exclusions.input_filters.size(), 1);
 
