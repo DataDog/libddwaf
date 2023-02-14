@@ -109,6 +109,18 @@ TEST(TestInterface, HandleLifetimeMultipleContexts)
     ddwaf_object_free(&parameter);
 }
 
+TEST(TestInterface, InvalidVersion)
+{
+    auto rule = readRule("{version: 3.0, rules: []}");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_EQ(handle1, nullptr);
+    ddwaf_object_free(&rule);
+}
+
 TEST(TestInterface, UpdateEmpty)
 {
     auto rule = readFile("interface.yaml");
@@ -653,6 +665,78 @@ TEST(TestInterface, UpdateRuleData)
     ddwaf_context_destroy(context1);
     ddwaf_context_destroy(context2);
     ddwaf_context_destroy(context3);
+
+    ddwaf_destroy(handle1);
+    ddwaf_destroy(handle2);
+    ddwaf_destroy(handle3);
+}
+
+TEST(TestInterface, UpdateAndRevertRuleData)
+{
+    auto rule = readFile("rule_data.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle1, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_handle handle2;
+    {
+        auto data = readRule(
+            R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]}]})");
+        handle2 = ddwaf_update(handle1, &data, nullptr);
+        ddwaf_object_free(&data);
+    }
+
+    ddwaf_object tmp;
+    {
+        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ASSERT_NE(context1, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_context_destroy(context1);
+        ddwaf_context_destroy(context2);
+    }
+
+    ddwaf_handle handle3;
+    {
+        auto data = readRule(R"({rules_data: []})");
+        handle3 = ddwaf_update(handle2, &data, nullptr);
+        ddwaf_object_free(&data);
+    }
+
+    {
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ASSERT_NE(context3, nullptr);
+
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context3);
+    }
 
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);

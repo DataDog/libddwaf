@@ -46,3 +46,14 @@ TEST(TestRuleset, Insert)
     EXPECT_EQ(ruleset.rules.size(), 6);
     EXPECT_EQ(ruleset.collections.size(), 3);
 }
+
+TEST(TestRuleset, InsertContainer)
+{
+    ddwaf::ruleset ruleset;
+    std::unordered_map<std::string_view, rule::ptr> rules;
+    for (const auto &rule : test_rules()) { rules.emplace(rule->id, rule); }
+    ruleset.insert_rules(rules);
+
+    EXPECT_EQ(ruleset.rules.size(), 6);
+    EXPECT_EQ(ruleset.collections.size(), 3);
+}
