@@ -450,3 +450,170 @@ TEST(TestInterface, UpdateActionsByID)
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
 }
+
+TEST(TestInterface, UpdateActionsByTags)
+{
+    auto rule = readFile("interface.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle1, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_handle handle2;
+    {
+        auto overrides = readRule(
+            R"({rules_override: [{rules_target: [{tags: {confidence: 1}}], on_match: [block]}]})");
+        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    {
+        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ASSERT_NE(context1, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+
+        ddwaf_result result1;
+        ddwaf_result result2;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, &result2, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result1.actions.size, 0);
+        EXPECT_EQ(result2.actions.size, 1);
+        EXPECT_STREQ(result2.actions.array[0], "block");
+
+        ddwaf_result_free(&result1);
+        ddwaf_result_free(&result2);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context1);
+    }
+
+    {
+        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ASSERT_NE(context1, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+
+        ddwaf_result result1;
+        ddwaf_result result2;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, &result2, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result1.actions.size, 0);
+        EXPECT_EQ(result2.actions.size, 0);
+
+        ddwaf_result_free(&result1);
+        ddwaf_result_free(&result2);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context1);
+    }
+
+    ddwaf_destroy(handle1);
+    ddwaf_destroy(handle2);
+}
+
+/*TEST(TestInterface, UpdateRuleData)*/
+/*{*/
+/*auto rule = readFile("rule_data.yaml");*/
+/*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
+
+/*ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};*/
+
+/*ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);*/
+/*ASSERT_NE(handle1, nullptr);*/
+/*ddwaf_object_free(&rule);*/
+
+/*ddwaf_handle handle2;*/
+/*{*/
+/*auto data =*/
+/*readRule(R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1,
+ * expiration: 0}]}, {id: usr_data, type: data_with_expiration, data: [{value: paco, expiration:
+ * 0}]}]})");*/
+
+/*handle2 = ddwaf_update(handle1, &data, nullptr);*/
+/*ddwaf_object_free(&data);*/
+/*}*/
+
+/*{*/
+/*ddwaf_context context1 = ddwaf_context_init(handle1);*/
+/*ASSERT_NE(context1, nullptr);*/
+
+/*ddwaf_context context2 = ddwaf_context_init(handle2);*/
+/*ASSERT_NE(context2, nullptr);*/
+
+/*ddwaf_object tmp;*/
+/*ddwaf_object parameter = DDWAF_OBJECT_MAP;*/
+/*ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));*/
+
+/*ddwaf_result result1;*/
+/*ddwaf_result result2;*/
+
+/*EXPECT_EQ(ddwaf_run(context1, &parameter, &result1, LONG_TIME), DDWAF_MATCH);*/
+/*EXPECT_EQ(ddwaf_run(context2, &parameter, &result2, LONG_TIME), DDWAF_MATCH);*/
+
+/*ddwaf_object_free(&parameter);*/
+
+/*EXPECT_EQ(result1.actions.size, 0);*/
+/*EXPECT_EQ(result2.actions.size, 1);*/
+/*EXPECT_STREQ(result2.actions.array[0], "block");*/
+
+/*ddwaf_result_free(&result1);*/
+/*ddwaf_result_free(&result2);*/
+
+/*ddwaf_context_destroy(context2);*/
+/*ddwaf_context_destroy(context1);*/
+/*}*/
+
+/*{*/
+/*ddwaf_context context1 = ddwaf_context_init(handle1);*/
+/*ASSERT_NE(context1, nullptr);*/
+
+/*ddwaf_context context2 = ddwaf_context_init(handle2);*/
+/*ASSERT_NE(context2, nullptr);*/
+
+/*ddwaf_object tmp;*/
+/*ddwaf_object parameter = DDWAF_OBJECT_MAP;*/
+/*ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));*/
+
+/*ddwaf_result result1;*/
+/*ddwaf_result result2;*/
+
+/*EXPECT_EQ(ddwaf_run(context1, &parameter, &result1, LONG_TIME), DDWAF_MATCH);*/
+/*EXPECT_EQ(ddwaf_run(context2, &parameter, &result2, LONG_TIME), DDWAF_MATCH);*/
+
+/*ddwaf_object_free(&parameter);*/
+
+/*EXPECT_EQ(result1.actions.size, 0);*/
+/*EXPECT_EQ(result2.actions.size, 0);*/
+
+/*ddwaf_result_free(&result1);*/
+/*ddwaf_result_free(&result2);*/
+
+/*ddwaf_context_destroy(context2);*/
+/*ddwaf_context_destroy(context1);*/
+/*}*/
+
+/*ddwaf_destroy(handle1);*/
+/*ddwaf_destroy(handle2);*/
+/*}*/
