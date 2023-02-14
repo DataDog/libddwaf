@@ -53,13 +53,15 @@ public:
         const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
         ddwaf::timer &deadline) const;
 
+    const std::vector<condition::target_type> &get_targets() const { return targets_; }
+
 protected:
     std::optional<event::match> match_object(const ddwaf_object *object) const;
 
     template <typename T>
     std::optional<event::match> match_target(T &it, ddwaf::timer &deadline) const;
 
-    std::vector<target_type> targets_;
+    std::vector<condition::target_type> targets_;
     std::vector<PW_TRANSFORM_ID> transformers_;
     std::shared_ptr<rule_processor::base> processor_;
     ddwaf::object_limits limits_;

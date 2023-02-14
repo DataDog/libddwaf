@@ -88,10 +88,12 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
     constexpr change_state rule_update =
         change_state::rules | change_state::data | change_state::overrides;
     constexpr change_state filters_update = rule_update | change_state::filters;
+    constexpr change_state manifest_update = change_state::rules | change_state::filters;
 
     if ((state & rule_update) != change_state::none) {
         final_rules_.clear();
         rules_by_tags_.clear();
+        targets_from_rules_.clear();
 
         // A new ruleset, new rule data or a new set of overrides requires a new ruleset
         for (const auto &[id, spec] : base_rules_) {
@@ -108,6 +110,11 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
                 } else {
                     processor = cond_spec.processor;
                 }
+
+                for (const auto &target : cond_spec.targets) {
+                    targets_from_rules_.emplace(target.root);
+                }
+
                 conditions.emplace_back(std::make_shared<condition>(cond_spec.targets,
                     cond_spec.transformers, std::move(processor), limits_, cond_spec.source));
             }
@@ -164,6 +171,7 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
     if ((state & filters_update) != change_state::none) {
         rule_filters_.clear();
         input_filters_.clear();
+        targets_from_filters_.clear();
 
         // Then rule filters
         for (const auto &[id, filter] : exclusions_.rule_filters) {
@@ -171,16 +179,36 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
             auto filter_ptr = std::make_shared<exclusion::rule_filter>(
                 id, filter.conditions, std::move(rule_targets));
             rule_filters_.emplace(filter_ptr->get_id(), filter_ptr);
+
+            for (const auto &cond : filter.conditions) {
+                for (const auto &target : cond->get_targets()) {
+                    targets_from_filters_.emplace(target.root);
+                }
+            }
         }
 
         // Finally input filters
         for (auto &[id, filter] : exclusions_.input_filters) {
             auto rule_targets = target_to_rules(filter.targets, final_rules_, rules_by_tags_);
-
             auto filter_ptr = std::make_shared<exclusion::input_filter>(
                 id, filter.conditions, std::move(rule_targets), filter.filter);
             input_filters_.emplace(filter_ptr->get_id(), filter_ptr);
+
+            for (const auto &cond : filter.conditions) {
+                for (const auto &target : cond->get_targets()) {
+                    targets_from_filters_.emplace(target.root);
+                }
+            }
         }
+    }
+
+    if ((state & manifest_update) != change_state::none) {
+        // Remove unnecessary targets
+        std::unordered_set<manifest::target_type> all_targets;
+        all_targets.insert(targets_from_rules_.begin(), targets_from_rules_.end());
+        all_targets.insert(targets_from_filters_.begin(), targets_from_filters_.end());
+
+        target_manifest_.remove_unused(all_targets);
     }
 
     auto rs = std::make_shared<ddwaf::ruleset>();
@@ -278,7 +306,6 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
         }
     }
 
-    // TODO cleanup manifest
     return state;
 }
 

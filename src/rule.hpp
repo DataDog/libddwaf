@@ -57,7 +57,6 @@ public:
         tags = std::move(rhs.tags);
         conditions = std::move(rhs.conditions);
         actions = std::move(rhs.actions);
-
         return *this;
     }
 

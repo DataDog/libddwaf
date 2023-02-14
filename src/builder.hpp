@@ -65,9 +65,11 @@ protected:
 
     std::unordered_map<std::string_view, rule::ptr> final_rules_;
     rule_tag_map rules_by_tags_;
+    std::unordered_set<manifest::target_type> targets_from_rules_;
 
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters_;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters_;
+    std::unordered_set<manifest::target_type> targets_from_filters_;
 };
 
 } // namespace ddwaf
