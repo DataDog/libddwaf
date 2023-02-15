@@ -2,20 +2,66 @@
 
 ### Upgrading from `1.7.x` to `1.8.0`
 
-Version `1.8.0` introduces the WAF builder, a new module which provides the user with the ability to generate a new WAF instance from an existing one. This new module works transparently through the `ddwaf_update` function, which allows the user to update one, some or all of the following:
+Version `1.8.0` introduces the WAF builder, a new module with the ability to generate a new WAF instance from an existing one. This new module works transparently through the `ddwaf_update` function, which allows the user to update one, some or all of the following:
 - The complete ruleset through the `rules` key.
 - The `on_match` or `enabled` field of specific rules through the `rules_override` key.
 - Exclusion filters through the `exclusions` key.
 - Rule data through the `rules_data` key.
+
+The WAF builder has a number of objectives:
+- Provide a mechanism to generate and update the WAF as needed.
+- Remove all existing mutexes.
+- Remove all side-effects on running contexts.
+- __Potentially__ provide efficiency gains: 
+  - Avoiding the need to parse a whole ruleset on every update.
+  - Reusing internal structures, objects and containers whenever possible.
 
 With the introduction of `ddwaf_update`, the following functions have been deprecated and removed:
 - `ddwaf_toggle_rules`
 - `ddwaf_update_rule_data`
 - `ddwaf_required_rule_data_ids`
 
-The first two function have been removed due to the added complexity of supporting multiple interfaces. On the other hand, the last function was simply removed in favour of letting the WAF handle unexpected rule data IDs more gracefully.
+The first two functions have been removed due to the added complexity of supporting multiple interfaces with a similar outcome but different inputs. On the other hand, the last function was simply removed in favour of letting the WAF handle unexpected rule data IDs more gracefully, however this function can be reintroduced later if deemed necessary.
 
+Typically, the new interface will be used as follows on all instances:
 
+```c
+    ddwaf_handle old_handle = ddwaf_init(&ruleset, &config, &info);
+    ddwaf_object_free(&ruleset);
+
+    ddwaf_handle new_handle = ddwaf_update(old_handle, &update, &new_info);
+    ddwaf_object_free(&update);
+    if (new_handle != NULL) {
+        ddwaf_destroy(old_handle);
+    }
+```
+
+The `ddwaf_update` function returns a new `ddwaf_handle` which will be a valid pointer if the update succeeded, or `NULL` if there was nothing to update or there was an error. Creating contexts while calling `ddwaf_update` is, in theory, perfectly legal as well as destroying a handle while associated contexts are still in use, for example:
+
+```c
+    ddwaf_handle old_handle = ddwaf_init(&ruleset, &config, &info);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(old_handle);
+
+    ddwaf_handle new_handle = ddwaf_update(old_handle, &new_ruleset, &new_info);
+    ddwaf_object_free(&new_rule);
+    if (new_handle != NULL) {
+        // Destroying the handle should not invalidate the context
+        ddwaf_destroy(old_handle);
+    }
+    
+    // Both the context and the handle are destroyed here
+    ddwaf_context_destroy(context);
+```
+
+Note that the `ddwaf_update` function also has an optional input parameter for the `ruleset_info` structure, this will only provide useful diagnostics when the update provided contains new rules (within the `rules` key), also note that the `ruleset_info` should either be a fresh new structure or the previously used after calling `ddwaf_ruleset_info_free`.
+
+#### Things to consider, caveats and limitations
+- You can call `ddwaf_init` with all previously mentioned keys, or a combination of them, however the `rules` key is mandatory. This does not apply to `ddwaf_update.
+- It's generally recommended to combine `rules`, `rules_data` and `rules_override` into one `ddwaf_object` whenever possible as it will be more efficient, however this is not necessary.
+- In addition to the point above, generally batching all changes whenever possible is still the best approach, albeit this might change in the future.
+- When providing `rules_data`, the current loaded ruleset (provided through `rules`) should contain all the _necessary_ rule data IDs, otherwise any unknown ID contained in `rules_data` will be discarded. For example, assuming we're providing a `rules_data` object containing the rule data ID `ip_data`, but the currently loaded ruleset doesn't contain a rule requiring `ip_data`, the WAF won't have enough information to generate the relevant processor and will discard the contents of `ip_data`. In this scenario, a subequent update of the rules expecting the aforementioned rule data ID won't have a processor and consequently won't work as expected.
 
 ### Upgrading from `1.6.x` to `1.7.0`
 
