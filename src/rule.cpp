@@ -22,7 +22,9 @@ rule::rule(std::string id_, std::string name_, std::unordered_map<std::string, s
 {}
 
 std::optional<event> rule::match(const object_store &store, cache_type &cache,
-    const std::unordered_set<const ddwaf_object *> &objects_excluded, ddwaf::timer &deadline) const
+    const std::unordered_set<const ddwaf_object *> &objects_excluded,
+    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
+    ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
     if (cache.result) {
@@ -42,7 +44,8 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
             cached_result = it;
         }
 
-        auto opt_match = cond->match(store, objects_excluded, run_on_new, deadline);
+        auto opt_match =
+            cond->match(store, objects_excluded, run_on_new, dynamic_processors, deadline);
         if (!opt_match.has_value()) {
             cached_result->second = false;
             return std::nullopt;

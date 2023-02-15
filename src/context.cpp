@@ -124,6 +124,9 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
 {
     std::vector<ddwaf::event> events;
 
+    for (const auto &[id, proc] : ruleset_->dynamic_processors) {
+        DDWAF_DEBUG("PROCESSORS: %s", id.c_str());
+    }
     auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);
         if (it == collection_cache_.end()) {
@@ -131,7 +134,7 @@ std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_
             it = new_it;
         }
         collection.match(events, seen_actions_, store_, it->second, rules_to_exclude,
-            objects_to_exclude, deadline);
+            objects_to_exclude, ruleset_->dynamic_processors, deadline);
     };
 
     // Evaluate priority collections first

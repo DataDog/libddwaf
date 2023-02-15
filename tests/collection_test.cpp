@@ -48,7 +48,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -62,7 +62,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
         store.insert(root);
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -124,7 +124,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -138,7 +138,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -198,7 +198,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -212,7 +212,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -263,7 +263,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -279,7 +279,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -346,7 +346,7 @@ TEST(TestPriorityCollection, MatchBothActions)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 2);
         EXPECT_EQ(seen_actions.size(), 2);
@@ -415,7 +415,7 @@ TEST(TestPriorityCollection, MatchOneAction)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
         EXPECT_EQ(seen_actions.size(), 1);
@@ -484,7 +484,7 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 2);
         EXPECT_EQ(seen_actions.size(), 1);

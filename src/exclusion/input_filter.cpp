@@ -37,7 +37,7 @@ std::optional<excluded_set> input_filter::match(
             }
 
             // TODO: Condition interface without events
-            auto opt_match = cond->match(store, {}, run_on_new, deadline);
+            auto opt_match = cond->match(store, {}, run_on_new, {}, deadline);
             if (!opt_match.has_value()) {
                 cached_result->second = false;
                 return std::nullopt;

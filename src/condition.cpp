@@ -15,7 +15,8 @@
 
 namespace ddwaf {
 
-std::optional<event::match> condition::match_object(const ddwaf_object *object) const
+std::optional<event::match> condition::match_object(
+    const ddwaf_object *object, const rule_processor::base::ptr &processor) const
 {
     const bool has_transform = !transformers_.empty();
     bool transform_required = false;
@@ -33,7 +34,7 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object) 
     // If we don't have transform to perform, or if they're irrelevant, no need to waste time
     // copying and allocating data
     if (!has_transform || !transform_required) {
-        return processor_->match({object->stringValue, length});
+        return processor->match({object->stringValue, length});
     }
 
     ddwaf_object copy;
@@ -52,14 +53,15 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object) 
     }
 
     if (transformFailed) {
-        return processor_->match({object->stringValue, length});
+        return processor->match({object->stringValue, length});
     }
 
-    return processor_->match_object(&copy);
+    return processor->match_object(&copy);
 }
 
 template <typename T>
-std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadline) const
+std::optional<event::match> condition::match_target(
+    T &it, const rule_processor::base::ptr &processor, ddwaf::timer &deadline) const
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -70,7 +72,7 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
             continue;
         }
 
-        auto optional_match = match_object(*it);
+        auto optional_match = match_object(*it, processor);
         if (!optional_match.has_value()) {
             continue;
         }
@@ -83,11 +85,28 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
     return std::nullopt;
 }
 
+const rule_processor::base::ptr &condition::get_processor(
+    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors) const
+{
+    if (processor_ || data_id_.empty()) {
+        return processor_;
+    }
+
+    auto it = dynamic_processors.find(data_id_);
+    if (it == dynamic_processors.end()) {
+        return processor_;
+    }
+
+    return it->second;
+}
+
 std::optional<event::match> condition::match(const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
+    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
-    if (!processor_) {
+    const auto &processor = get_processor(dynamic_processors);
+    if (!processor) {
         DDWAF_DEBUG("Condition doesn't have a valid processor");
         return std::nullopt;
     }
@@ -112,10 +131,10 @@ std::optional<event::match> condition::match(const object_store &store,
         std::optional<event::match> optional_match;
         if (source_ == data_source::keys) {
             object::key_iterator it(object, key_path, objects_excluded, limits_);
-            optional_match = match_target(it, deadline);
+            optional_match = match_target(it, processor, deadline);
         } else {
             object::value_iterator it(object, key_path, objects_excluded, limits_);
-            optional_match = match_target(it, deadline);
+            optional_match = match_target(it, processor, deadline);
         }
 
         if (optional_match.has_value()) {

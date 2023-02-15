@@ -35,11 +35,12 @@ public:
     enum class data_source : uint8_t { values, keys };
 
     condition(std::vector<target_type> targets, std::vector<PW_TRANSFORM_ID> transformers,
-        std::shared_ptr<rule_processor::base> processor,
+        std::shared_ptr<rule_processor::base> processor, std::string data_id = {},
         ddwaf::object_limits limits = ddwaf::object_limits(),
         data_source source = data_source::values)
         : targets_(std::move(targets)), transformers_(std::move(transformers)),
-          processor_(std::move(processor)), limits_(limits), source_(source)
+          processor_(std::move(processor)), data_id_(std::move(data_id)), limits_(limits),
+          source_(source)
     {}
 
     ~condition() = default;
@@ -51,19 +52,28 @@ public:
 
     std::optional<event::match> match(const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
+        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
-    const std::vector<condition::target_type> &get_targets() const { return targets_; }
+    [[nodiscard]] const std::vector<condition::target_type> &get_targets() const
+    {
+        return targets_;
+    }
 
 protected:
-    std::optional<event::match> match_object(const ddwaf_object *object) const;
+    std::optional<event::match> match_object(
+        const ddwaf_object *object, const rule_processor::base::ptr &processor) const;
 
     template <typename T>
-    std::optional<event::match> match_target(T &it, ddwaf::timer &deadline) const;
+    std::optional<event::match> match_target(
+        T &it, const rule_processor::base::ptr &processor, ddwaf::timer &deadline) const;
 
+    [[nodiscard]] const rule_processor::base::ptr &get_processor(
+        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors) const;
     std::vector<condition::target_type> targets_;
     std::vector<PW_TRANSFORM_ID> transformers_;
     std::shared_ptr<rule_processor::base> processor_;
+    std::string data_id_;
     ddwaf::object_limits limits_;
     data_source source_;
 };

@@ -103,7 +103,7 @@ condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
     }
 
     return std::make_shared<condition>(
-        std::move(targets), std::move(transformers), std::move(processor), limits);
+        std::move(targets), std::move(transformers), std::move(processor), std::string{}, limits);
 }
 
 void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest &target_manifest,

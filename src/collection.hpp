@@ -54,6 +54,7 @@ public:
         const object_store &store, collection_cache &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
+        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] virtual collection_cache get_cache() const { return {}; }
@@ -82,6 +83,7 @@ public:
         const object_store &store, collection_cache &cache,
         const std::unordered_set<rule::ptr> &rules_to_exclude,
         const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
+        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const override;
 
     [[nodiscard]] collection_cache get_cache() const override { return {false, {}, actions_}; }

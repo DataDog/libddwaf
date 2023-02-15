@@ -68,8 +68,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
         return {};
     }
 
-    constexpr static change_state rule_update =
-        change_state::rules | change_state::data | change_state::overrides;
+    constexpr static change_state rule_update = change_state::rules | change_state::overrides;
     constexpr static change_state filters_update = rule_update | change_state::filters;
     constexpr static change_state manifest_update = change_state::rules | change_state::filters;
 
@@ -83,35 +82,14 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : base_rules_) {
-            std::vector<condition::ptr> conditions;
-            conditions.reserve(spec.conditions.size());
-
-            for (const auto &cond_spec : spec.conditions) {
-                std::shared_ptr<rule_processor::base> processor;
-                if (!cond_spec.data_id.empty() && !cond_spec.processor) {
-                    // When generating a condition with a rule data ID, the
-                    // relevant processor should be available in dynamic_processors_.
-                    //
-                    // Note: if the base ruleset used when parsing 'rules_data' didn't
-                    // contain the relevant rule data IDs, the processors won't exist.
-                    auto it = dynamic_processors_.find(cond_spec.data_id);
-                    if (it != dynamic_processors_.end()) {
-                        processor = it->second;
-                    }
-                } else {
-                    processor = cond_spec.processor;
-                }
-
-                for (const auto &target : cond_spec.targets) {
+            for (const auto &cond : spec.conditions) {
+                for (const auto &target : cond->get_targets()) {
                     targets_from_rules_.emplace(target.root);
                 }
-
-                conditions.emplace_back(std::make_shared<condition>(cond_spec.targets,
-                    cond_spec.transformers, std::move(processor), limits_, cond_spec.source));
             }
 
             auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, std::move(conditions), spec.actions, spec.enabled);
+                id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled);
 
             // The string_view should be owned by the rule_ptr
             final_rules_.emplace(rule_ptr->id, rule_ptr);
@@ -213,6 +191,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
     auto rs = std::make_shared<ddwaf::ruleset>();
     rs->manifest = target_manifest_;
     rs->insert_rules(final_rules_);
+    rs->dynamic_processors = dynamic_processors_;
     rs->rule_filters = rule_filters_;
     rs->input_filters = input_filters_;
     rs->free_fn = free_fn_;
@@ -236,7 +215,8 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
         decltype(rule_data_ids_) rule_data_ids;
 
         auto rules = static_cast<parameter::vector>(it->second);
-        auto new_base_rules = parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids);
+        auto new_base_rules =
+            parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids, limits_);
 
         if (new_base_rules.empty()) {
             throw ddwaf::parsing_error("no valid rules found");

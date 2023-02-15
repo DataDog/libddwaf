@@ -58,6 +58,7 @@ struct ruleset {
 
     // Rules are ordered by rule.id
     std::unordered_map<std::string_view, rule::ptr> rules;
+    std::unordered_map<std::string, rule_processor::base::ptr> dynamic_processors;
 
     // Both collections are ordered by rule.type
     std::unordered_map<std::string_view, priority_collection> priority_collections;

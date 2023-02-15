@@ -28,7 +28,7 @@ TEST(TestCondition, Match)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, {}, true, deadline);
+    auto match = cond->match(store, {}, true, {}, deadline);
     EXPECT_TRUE(match.has_value());
 
     EXPECT_STREQ(match->resolved.c_str(), "value");
@@ -59,7 +59,7 @@ TEST(TestCondition, NoMatch)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, {}, true, deadline);
+    auto match = cond->match(store, {}, true, {}, deadline);
     EXPECT_FALSE(match.has_value());
 }
 
@@ -83,7 +83,7 @@ TEST(TestCondition, ExcludeInput)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, {&root.array[0]}, true, deadline);
+    auto match = cond->match(store, {&root.array[0]}, true, {}, deadline);
     EXPECT_FALSE(match.has_value());
 }
 
@@ -111,6 +111,6 @@ TEST(TestCondition, ExcludeKeyPath)
 
     ddwaf::timer deadline{2s};
 
-    auto match = cond->match(store, {&map.array[0]}, true, deadline);
+    auto match = cond->match(store, {&map.array[0]}, true, {}, deadline);
     EXPECT_FALSE(match.has_value());
 }

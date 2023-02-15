@@ -15,20 +15,11 @@
 
 namespace ddwaf::parser {
 
-struct condition_spec {
-    condition::data_source source;
-    std::vector<condition::target_type> targets;
-    std::vector<PW_TRANSFORM_ID> transformers;
-
-    std::string data_id;
-    std::shared_ptr<rule_processor::base> processor;
-};
-
 struct rule_spec {
     bool enabled;
     std::string name;
     std::unordered_map<std::string, std::string> tags;
-    std::vector<condition_spec> conditions;
+    std::vector<condition::ptr> conditions;
     std::vector<std::string> actions;
 };
 

@@ -100,9 +100,9 @@ std::pair<std::string, rule_processor::base::ptr> parse_processor(
     return {std::move(rule_data_id), std::move(processor)};
 }
 
-condition_spec parse_rule_condition(const parameter::map &root, manifest &target_manifest,
+condition::ptr parse_rule_condition(const parameter::map &root, manifest &target_manifest,
     std::unordered_map<std::string, std::string> &rule_data_ids, condition::data_source source,
-    std::vector<PW_TRANSFORM_ID> transformers)
+    std::vector<PW_TRANSFORM_ID> transformers, const object_limits &limits)
 {
     auto operation = at<std::string_view>(root, "operator");
     auto params = at<parameter::map>(root, "parameters");
@@ -140,12 +140,12 @@ condition_spec parse_rule_condition(const parameter::map &root, manifest &target
         targets.emplace_back(target);
     }
 
-    return {source, std::move(targets), std::move(transformers), std::move(rule_data_id),
-        std::move(processor)};
+    return std::make_shared<condition>(std::move(targets), std::move(transformers),
+        std::move(processor), std::move(rule_data_id), limits, source);
 }
 
 rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
-    std::unordered_map<std::string, std::string> &rule_data_ids)
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits)
 {
     std::vector<PW_TRANSFORM_ID> rule_transformers;
     auto source = ddwaf::condition::data_source::values;
@@ -169,14 +169,14 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
         }
     }
 
-    std::vector<condition_spec> conditions;
+    std::vector<condition::ptr> conditions;
     auto conditions_array = at<parameter::vector>(rule, "conditions");
     conditions.reserve(conditions_array.size());
 
     for (const auto &cond_param : conditions_array) {
         auto cond = static_cast<parameter::map>(cond_param);
-        conditions.push_back(
-            parse_rule_condition(cond, target_manifest, rule_data_ids, source, rule_transformers));
+        conditions.push_back(parse_rule_condition(
+            cond, target_manifest, rule_data_ids, source, rule_transformers, limits));
     }
 
     std::unordered_map<std::string, std::string> tags;
@@ -300,8 +300,8 @@ condition::ptr parse_filter_condition(
         targets.emplace_back(target);
     }
 
-    return std::make_shared<condition>(
-        std::move(targets), std::vector<PW_TRANSFORM_ID>{}, std::move(processor), limits);
+    return std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::move(processor), std::string{}, limits);
 }
 
 input_filter_spec parse_input_filter(
@@ -393,7 +393,8 @@ rule_filter_spec parse_rule_filter(
 } // namespace
 
 rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_info &info,
-    manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids)
+    manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids,
+    const object_limits &limits)
 {
     rule_spec_container rules;
     for (const auto &rule_param : rule_array) {
@@ -407,7 +408,7 @@ rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_in
                 continue;
             }
 
-            auto rule = parse_rule(rule_map, target_manifest, rule_data_ids);
+            auto rule = parse_rule(rule_map, target_manifest, rule_data_ids, limits);
             rules.emplace(std::move(id), std::move(rule));
             info.add_loaded();
         } catch (const std::exception &e) {
