@@ -1094,11 +1094,11 @@ TEST(TestInterface, UpdateEverything)
     // After this update:
     //   - No rule will match server.request.query
     //   - Rules with confidence=1 will provide a block action
-    //   - Rules with ip_data will now match
+    //   - Rules with ip_data or usr_data will now match
     ddwaf_handle handle4;
     {
         auto data = readRule(
-            R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]}]})");
+            R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]},{id: usr_data, type: data_with_expiration, data: [{value: admin, expiration 0}]}]})");
         handle4 = ddwaf_update(handle3, &data, nullptr);
         ddwaf_object_free(&data);
     }
@@ -1155,7 +1155,7 @@ TEST(TestInterface, UpdateEverything)
     // After this update:
     //   - No rule will match server.request.query
     //   - Rules with confidence=1 will provide a block action
-    //   - Rules with ip_data will now match
+    //   - Rules with ip_data or usr_data will now match
     //   - The following rules will be removed: rule3, rule4, rule5
     ddwaf_handle handle5;
     {
@@ -1207,6 +1207,26 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object tmp;
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_context_destroy(context4);
+        ddwaf_context_destroy(context5);
+    }
+
+    {
+        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ASSERT_NE(context4, nullptr);
+
+        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ASSERT_NE(context5, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(
             &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
 
@@ -1232,7 +1252,7 @@ TEST(TestInterface, UpdateEverything)
     // After this update:
     //   - No rule will match server.request.query
     //   - Rules with confidence=1 will provide a block action
-    //   - Rules with ip_data will now match
+    //   - Rules with ip_data or usr_data will now match
     //   - The following rules be back: rule3, rule4, rule5
     ddwaf_handle handle6;
     {
@@ -1324,7 +1344,7 @@ TEST(TestInterface, UpdateEverything)
 
     // After this update:
     //   - Rules with confidence=1 will provide a block action
-    //   - Rules with ip_data will now match
+    //   - Rules with ip_data or usr_data will now match
     ddwaf_handle handle7;
     {
         auto exclusions = readRule(R"({exclusions: []})");
@@ -1366,7 +1386,7 @@ TEST(TestInterface, UpdateEverything)
     }
 
     // After this update:
-    //   - Rules with ip_data will now match
+    //   - Rules with ip_data or usr_data will now match
     ddwaf_handle handle8;
     {
         auto exclusions = readRule(R"({rules_override: []})");
@@ -1510,10 +1530,10 @@ TEST(TestInterface, UpdateEverything)
     for (auto *handle : {handle1, handle2, handle3, handle4, handle6, handle7, handle8, handle9}) {
         uint32_t size;
         const char *const *addresses = ddwaf_required_addresses(handle, &size);
-        EXPECT_EQ(size, 5);
+        EXPECT_EQ(size, 4);
 
-        std::set<std::string_view> available_addresses{"http.client_ip", "usr.id",
-            "server.request.query", "server.request.params", "server.response.status"};
+        std::set<std::string_view> available_addresses{"http.client_ip", "server.request.query",
+            "server.request.params", "server.response.status"};
         while ((size--) != 0U) {
             EXPECT_NE(available_addresses.find(addresses[size]), available_addresses.end());
         }
