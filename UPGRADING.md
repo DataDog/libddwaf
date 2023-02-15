@@ -1,5 +1,22 @@
 # Upgrading libddwaf
 
+### Upgrading from `1.7.x` to `1.8.0`
+
+Version `1.8.0` introduces the WAF builder, a new module which provides the user with the ability to generate a new WAF instance from an existing one. This new module works transparently through the `ddwaf_update` function, which allows the user to update one, some or all of the following:
+- The complete ruleset through the `rules` key.
+- The `on_match` or `enabled` field of specific rules through the `rules_override` key.
+- Exclusion filters through the `exclusions` key.
+- Rule data through the `rules_data` key.
+
+With the introduction of `ddwaf_update`, the following functions have been deprecated and removed:
+- `ddwaf_toggle_rules`
+- `ddwaf_update_rule_data`
+- `ddwaf_required_rule_data_ids`
+
+The first two function have been removed due to the added complexity of supporting multiple interfaces. On the other hand, the last function was simply removed in favour of letting the WAF handle unexpected rule data IDs more gracefully.
+
+
+
 ### Upgrading from `1.6.x` to `1.7.0`
 
 There are no API changes in 1.7.0, however `ddwaf_handle` is now reference-counted and shared between the user and each `ddwaf_context`. This means that it is now possible to call `ddwaf_destroy` on a `ddwaf_handle` without invalidating any `ddwaf_context` in use instantiated from said `ddwaf_handle`. For example, the following snippet is now perfectly legal and will work as expected (note that any checks have been omitted for brevity):

@@ -433,7 +433,7 @@ rule_data_container parse_rule_data(
 
             auto it = rule_data_ids.find(id);
             if (it == rule_data_ids.end()) {
-                DDWAF_WARN("Rule data id '%s' has no associated rule", id.c_str());
+                DDWAF_DEBUG("Rule data id '%s' has no associated rule", id.c_str());
                 continue;
             }
 
