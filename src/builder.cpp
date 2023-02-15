@@ -29,25 +29,6 @@ constexpr builder::change_state operator&(builder::change_state lhs, builder::ch
         static_cast<std::underlying_type<builder::change_state>::type>(rhs));
 }
 
-std::shared_ptr<ruleset> builder::build(parameter object, ruleset_info &info)
-{
-    parameter::map ruleset = object;
-
-    unsigned version = parser::parse_schema_version(ruleset);
-    if (version == 1) {
-        ddwaf::ruleset rs;
-        parser::v1::parse(ruleset, info, rs, limits_);
-        return std::make_shared<ddwaf::ruleset>(std::move(rs));
-    }
-
-    if (version != 2) {
-        DDWAF_ERROR("incompatible ruleset version %u.x", version);
-        throw unsupported_version();
-    }
-
-    return build_helper(ruleset, info);
-}
-
 namespace {
 
 std::set<rule::ptr> target_to_rules(const std::vector<parser::rule_target_spec> &targets,
@@ -76,7 +57,7 @@ std::set<rule::ptr> target_to_rules(const std::vector<parser::rule_target_spec> 
 
 } // namespace
 
-std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_info &info)
+std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info)
 {
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
@@ -193,6 +174,10 @@ std::shared_ptr<ruleset> builder::build_helper(parameter::map &root, ruleset_inf
             auto filter_ptr = std::make_shared<exclusion::input_filter>(
                 id, filter.conditions, std::move(rule_targets), filter.filter);
             input_filters_.emplace(filter_ptr->get_id(), filter_ptr);
+
+            for (const auto &target : filter.filter->get_targets()) {
+                targets_from_filters_.emplace(target);
+            }
 
             for (const auto &cond : filter.conditions) {
                 for (const auto &target : cond->get_targets()) {

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "ddwaf.h"
+#include "parser/parser.hpp"
 #include <builder.hpp>
 #include <config.hpp>
 #include <context.hpp>
@@ -21,15 +22,41 @@ class waf {
 public:
     waf(ddwaf::parameter input, ddwaf::ruleset_info &info, ddwaf::object_limits limits,
         ddwaf_object_free_fn free_fn, ddwaf::obfuscator event_obfuscator)
-        : builder_(std::make_shared<builder>(limits, free_fn, std::move(event_obfuscator)))
     {
+        parameter::map input_map = input;
+
+        unsigned version = 2;
+
+        auto it = input_map.find("version");
+        if (it != input_map.end()) {
+            try {
+                version = parser::parse_schema_version(input_map);
+            } catch (const std::exception &e) {
+                DDWAF_DEBUG("Failed to parse version (defaulting to 2): %s", e.what());
+            }
+        }
+
+        // Prevent combining version 1 of the ruleset and the builder
+        if (version == 1) {
+            ddwaf::ruleset rs;
+            parser::v1::parse(input_map, info, rs, limits);
+            ruleset_ = std::make_shared<ddwaf::ruleset>(std::move(rs));
+            return;
+        }
+
+        builder_ = std::make_shared<builder>(limits, free_fn, std::move(event_obfuscator));
         ruleset_ = builder_->build(input, info);
     }
 
     waf *update(ddwaf::parameter input, ddwaf::ruleset_info &info)
     {
-        auto ruleset = builder_->build(input, info);
-        return ruleset ? new waf{builder_, std::move(ruleset)} : nullptr;
+        if (builder_) {
+            auto ruleset = builder_->build(input, info);
+            if (ruleset) {
+                return new waf{builder_, std::move(ruleset)};
+            }
+        }
+        return nullptr;
     }
 
     ddwaf::context create_context() { return context{ruleset_}; }

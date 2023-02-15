@@ -15,13 +15,7 @@ namespace ddwaf::parser {
 
 unsigned parse_schema_version(parameter::map &ruleset)
 {
-    auto it = ruleset.find("version");
-    if (it == ruleset.end()) {
-        // By default assume the rulesetis version 2
-        return 2;
-    }
-
-    std::string_view version = it->second;
+    auto version = at<std::string_view>(ruleset, "version");
 
     auto dot_pos = version.find('.');
     if (dot_pos == std::string_view::npos) {

@@ -244,14 +244,18 @@ public:
     void insert(manifest::target_type target, const std::vector<std::string_view> &key_path = {})
     {
         target_paths_[target].insert(key_path);
+        targets_.emplace(target);
     }
 
     std::unordered_set<const ddwaf_object *> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
+    const std::unordered_set<manifest::target_type> &get_targets() const { return targets_; }
+
 protected:
     object_limits limits_;
     std::unordered_map<manifest::target_type, path_trie> target_paths_;
+    std::unordered_set<manifest::target_type> targets_;
 };
 
 } // namespace ddwaf::exclusion

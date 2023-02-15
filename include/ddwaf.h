@@ -206,11 +206,11 @@ typedef void (*ddwaf_log_cb)(
  *
  * Initialize a ddwaf instance
  *
- * @param rule ddwaf::object containing the patterns to be used by the WAF. (nonnull)
+ * @param rule ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
  * @param config Optional configuration of the WAF. (nullable)
  * @param info Optional ruleset parsing diagnostics. (nullable)
  *
- * @return Handle to the WAF instance.
+ * @return Handle to the WAF instance or NULL on error.
  *
  * @note If config is NULL, default values will be used, including the default
  *       free function (ddwaf_object_free).
@@ -223,15 +223,13 @@ ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
  *
  * Update a ddwaf instance
  *
- * @param rule ddwaf::object containing the patterns to be used by the WAF. (nonnull)
+ * @param rule ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
  * @param info Optional ruleset parsing diagnostics. (nullable)
  *
- * @return Handle to the WAF instance.
- *
- * @note If config is NULL, default values will be used, including the default
- *       free function (ddwaf_object_free).
+ * @return Handle to the new WAF instance or NULL if there were no new updates
+ *         or there was an error processing the ruleset.
  **/
-ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *rule,
+ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
     ddwaf_ruleset_info *info);
 
 /**

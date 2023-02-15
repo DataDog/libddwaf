@@ -964,3 +964,556 @@ TEST(TestInterface, UpdateInputExclusions)
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
 }
+
+TEST(TestInterface, UpdateEverything)
+{
+    auto rule = readFile("interface_with_data.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle1, nullptr);
+    ddwaf_object_free(&rule);
+
+    // After this update:
+    //   - No rule will match server.request.query
+    ddwaf_handle handle2;
+    {
+        auto exclusions =
+            readRule(R"({exclusions: [{id: 1, inputs: [{address: server.request.query}]}]})");
+        handle2 = ddwaf_update(handle1, &exclusions, nullptr);
+        ddwaf_object_free(&exclusions);
+    }
+
+    {
+        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ASSERT_NE(context1, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context1);
+    }
+
+    {
+        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ASSERT_NE(context1, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.request.params", ddwaf_object_string(&tmp, "rule4"));
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context1);
+    }
+
+    // After this update:
+    //   - No rule will match server.request.query
+    //   - Rules with confidence=1 will provide a block action
+    ddwaf_handle handle3;
+    {
+        auto overrides = readRule(
+            R"({rules_override: [{rules_target: [{tags: {confidence: 1}}], on_match: [block]}]})");
+        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    {
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ASSERT_NE(context3, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
+
+        ddwaf_result result2;
+        ddwaf_result result3;
+
+        EXPECT_EQ(ddwaf_run(context2, &parameter, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context3, &parameter, &result3, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result2.actions.size, 0);
+        EXPECT_EQ(result3.actions.size, 1);
+        EXPECT_STREQ(result3.actions.array[0], "block");
+
+        ddwaf_result_free(&result2);
+        ddwaf_result_free(&result3);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context3);
+    }
+
+    {
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ASSERT_NE(context3, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context3);
+    }
+
+    // After this update:
+    //   - No rule will match server.request.query
+    //   - Rules with confidence=1 will provide a block action
+    //   - Rules with ip_data will now match
+    ddwaf_handle handle4;
+    {
+        auto data = readRule(
+            R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]}]})");
+        handle4 = ddwaf_update(handle3, &data, nullptr);
+        ddwaf_object_free(&data);
+    }
+
+    ASSERT_NE(handle4, nullptr);
+
+    {
+        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ASSERT_NE(context3, nullptr);
+
+        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ASSERT_NE(context4, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        ddwaf_result result3;
+        ddwaf_result result4;
+
+        EXPECT_EQ(ddwaf_run(context3, &parameter, &result3, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context4, &parameter, &result4, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result3.actions.size, 0);
+        EXPECT_EQ(result4.actions.size, 1);
+        EXPECT_STREQ(result4.actions.array[0], "block");
+
+        ddwaf_result_free(&result3);
+        ddwaf_result_free(&result4);
+
+        ddwaf_context_destroy(context3);
+        ddwaf_context_destroy(context4);
+    }
+
+    {
+        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ASSERT_NE(context4, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+
+        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_context_destroy(context4);
+    }
+
+    // After this update:
+    //   - No rule will match server.request.query
+    //   - Rules with confidence=1 will provide a block action
+    //   - Rules with ip_data will now match
+    //   - The following rules will be removed: rule3, rule4, rule5
+    ddwaf_handle handle5;
+    {
+        auto data = readFile("rule_data.yaml");
+        handle5 = ddwaf_update(handle4, &data, nullptr);
+        ddwaf_object_free(&data);
+    }
+
+    ASSERT_NE(handle5, nullptr);
+
+    {
+        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ASSERT_NE(context4, nullptr);
+
+        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ASSERT_NE(context5, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        ddwaf_result result4;
+        ddwaf_result result5;
+
+        EXPECT_EQ(ddwaf_run(context4, &parameter, &result4, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context5, &parameter, &result5, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result4.actions.size, 1);
+        EXPECT_STREQ(result4.actions.array[0], "block");
+        EXPECT_EQ(result5.actions.size, 1);
+        EXPECT_STREQ(result5.actions.array[0], "block");
+
+        ddwaf_result_free(&result4);
+        ddwaf_result_free(&result5);
+
+        ddwaf_context_destroy(context4);
+        ddwaf_context_destroy(context5);
+    }
+
+    {
+        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ASSERT_NE(context4, nullptr);
+
+        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ASSERT_NE(context5, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
+
+        ddwaf_result result4;
+        ddwaf_result result5;
+
+        EXPECT_EQ(ddwaf_run(context4, &parameter, &result4, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context5, &parameter, &result5, LONG_TIME), DDWAF_OK);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result4.actions.size, 1);
+        EXPECT_STREQ(result4.actions.array[0], "block");
+        EXPECT_EQ(result5.actions.size, 0);
+
+        ddwaf_result_free(&result4);
+        ddwaf_result_free(&result5);
+
+        ddwaf_context_destroy(context4);
+        ddwaf_context_destroy(context5);
+    }
+
+    // After this update:
+    //   - No rule will match server.request.query
+    //   - Rules with confidence=1 will provide a block action
+    //   - Rules with ip_data will now match
+    //   - The following rules be back: rule3, rule4, rule5
+    ddwaf_handle handle6;
+    {
+        auto data = readFile("interface_with_data.yaml");
+        handle6 = ddwaf_update(handle5, &data, nullptr);
+        ddwaf_object_free(&data);
+    }
+
+    ASSERT_NE(handle6, nullptr);
+
+    {
+        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ASSERT_NE(context5, nullptr);
+
+        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ASSERT_NE(context6, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
+
+        ddwaf_result result5;
+        ddwaf_result result6;
+
+        EXPECT_EQ(ddwaf_run(context5, &parameter, &result5, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context6, &parameter, &result6, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result5.actions.size, 0);
+        EXPECT_EQ(result6.actions.size, 1);
+        EXPECT_STREQ(result6.actions.array[0], "block");
+
+        ddwaf_result_free(&result5);
+        ddwaf_result_free(&result6);
+
+        ddwaf_context_destroy(context5);
+        ddwaf_context_destroy(context6);
+    }
+
+    {
+        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ASSERT_NE(context5, nullptr);
+
+        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ASSERT_NE(context6, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        ddwaf_result result5;
+        ddwaf_result result6;
+
+        EXPECT_EQ(ddwaf_run(context5, &parameter, &result5, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context6, &parameter, &result6, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result5.actions.size, 1);
+        EXPECT_STREQ(result5.actions.array[0], "block");
+        EXPECT_EQ(result6.actions.size, 1);
+        EXPECT_STREQ(result6.actions.array[0], "block");
+
+        ddwaf_result_free(&result5);
+        ddwaf_result_free(&result6);
+
+        ddwaf_context_destroy(context5);
+        ddwaf_context_destroy(context6);
+    }
+
+    {
+        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ASSERT_NE(context6, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+
+        EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_context_destroy(context6);
+    }
+
+    // After this update:
+    //   - Rules with confidence=1 will provide a block action
+    //   - Rules with ip_data will now match
+    ddwaf_handle handle7;
+    {
+        auto exclusions = readRule(R"({exclusions: []})");
+        handle7 = ddwaf_update(handle6, &exclusions, nullptr);
+        ddwaf_object_free(&exclusions);
+    }
+
+    ASSERT_NE(handle7, nullptr);
+
+    {
+        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ASSERT_NE(context6, nullptr);
+
+        ddwaf_context context7 = ddwaf_context_init(handle7);
+        ASSERT_NE(context7, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+
+        ddwaf_result result6;
+        ddwaf_result result7;
+
+        EXPECT_EQ(ddwaf_run(context6, &parameter, &result6, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context7, &parameter, &result7, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result6.actions.size, 0);
+        EXPECT_EQ(result7.actions.size, 1);
+        EXPECT_STREQ(result7.actions.array[0], "block");
+
+        ddwaf_result_free(&result6);
+        ddwaf_result_free(&result7);
+
+        ddwaf_context_destroy(context6);
+        ddwaf_context_destroy(context7);
+    }
+
+    // After this update:
+    //   - Rules with ip_data will now match
+    ddwaf_handle handle8;
+    {
+        auto exclusions = readRule(R"({rules_override: []})");
+        handle8 = ddwaf_update(handle7, &exclusions, nullptr);
+        ddwaf_object_free(&exclusions);
+    }
+
+    ASSERT_NE(handle8, nullptr);
+
+    {
+        ddwaf_context context7 = ddwaf_context_init(handle7);
+        ASSERT_NE(context7, nullptr);
+
+        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ASSERT_NE(context8, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+
+        ddwaf_result result7;
+        ddwaf_result result8;
+
+        EXPECT_EQ(ddwaf_run(context7, &parameter, &result7, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context8, &parameter, &result8, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result7.actions.size, 1);
+        EXPECT_STREQ(result7.actions.array[0], "block");
+        EXPECT_EQ(result8.actions.size, 0);
+
+        ddwaf_result_free(&result7);
+        ddwaf_result_free(&result8);
+
+        ddwaf_context_destroy(context7);
+        ddwaf_context_destroy(context8);
+    }
+
+    {
+        ddwaf_context context7 = ddwaf_context_init(handle7);
+        ASSERT_NE(context7, nullptr);
+
+        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ASSERT_NE(context8, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        ddwaf_result result7;
+        ddwaf_result result8;
+
+        EXPECT_EQ(ddwaf_run(context7, &parameter, &result7, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context8, &parameter, &result8, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result7.actions.size, 1);
+        EXPECT_STREQ(result7.actions.array[0], "block");
+        EXPECT_EQ(result8.actions.size, 0);
+
+        ddwaf_result_free(&result7);
+        ddwaf_result_free(&result8);
+
+        ddwaf_context_destroy(context7);
+        ddwaf_context_destroy(context8);
+    }
+
+    // After this update, back to the original behaviour
+    ddwaf_handle handle9;
+    {
+        auto exclusions = readRule(R"({rules_data: []})");
+        handle9 = ddwaf_update(handle8, &exclusions, nullptr);
+        ddwaf_object_free(&exclusions);
+    }
+
+    ASSERT_NE(handle9, nullptr);
+
+    {
+        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ASSERT_NE(context8, nullptr);
+
+        ddwaf_context context9 = ddwaf_context_init(handle9);
+        ASSERT_NE(context9, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+
+        ddwaf_result result8;
+        ddwaf_result result9;
+
+        EXPECT_EQ(ddwaf_run(context8, &parameter, &result8, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context9, &parameter, &result9, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result8.actions.size, 0);
+        EXPECT_EQ(result9.actions.size, 0);
+
+        ddwaf_result_free(&result8);
+        ddwaf_result_free(&result9);
+
+        ddwaf_context_destroy(context8);
+        ddwaf_context_destroy(context9);
+    }
+
+    {
+        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ASSERT_NE(context8, nullptr);
+
+        ddwaf_context context9 = ddwaf_context_init(handle9);
+        ASSERT_NE(context9, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(
+            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        ddwaf_result result8;
+        ddwaf_result result9;
+
+        EXPECT_EQ(ddwaf_run(context8, &parameter, &result8, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context9, &parameter, &result9, LONG_TIME), DDWAF_OK);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EQ(result9.actions.size, 0);
+
+        ddwaf_result_free(&result8);
+        ddwaf_result_free(&result9);
+
+        ddwaf_context_destroy(context8);
+        ddwaf_context_destroy(context9);
+    }
+
+    ddwaf_destroy(handle9);
+    ddwaf_destroy(handle8);
+    ddwaf_destroy(handle7);
+    ddwaf_destroy(handle6);
+    ddwaf_destroy(handle5);
+    ddwaf_destroy(handle4);
+    ddwaf_destroy(handle3);
+    ddwaf_destroy(handle2);
+    ddwaf_destroy(handle1);
+}
