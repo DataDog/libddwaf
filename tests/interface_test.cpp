@@ -1507,6 +1507,32 @@ TEST(TestInterface, UpdateEverything)
         ddwaf_context_destroy(context9);
     }
 
+    for (auto *handle : {handle1, handle2, handle3, handle4, handle6, handle7, handle8, handle9}) {
+        uint32_t size;
+        const char *const *addresses = ddwaf_required_addresses(handle, &size);
+        EXPECT_EQ(size, 5);
+
+        std::set<std::string_view> available_addresses{"http.client_ip", "usr.id",
+            "server.request.query", "server.request.params", "server.response.status"};
+        while ((size--) != 0U) {
+            EXPECT_NE(available_addresses.find(addresses[size]), available_addresses.end());
+        }
+    }
+
+    for (auto *handle : {handle5}) {
+        uint32_t size;
+        const char *const *addresses = ddwaf_required_addresses(handle, &size);
+        EXPECT_EQ(size, 3);
+
+        // While the ruleset contains 2 addresses, an existing object filter
+        // forces server.request.query to be kept
+        std::set<std::string_view> available_addresses{
+            "http.client_ip", "usr.id", "server.request.query"};
+        while ((size--) != 0U) {
+            EXPECT_NE(available_addresses.find(addresses[size]), available_addresses.end());
+        }
+    }
+
     ddwaf_destroy(handle9);
     ddwaf_destroy(handle8);
     ddwaf_destroy(handle7);

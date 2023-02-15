@@ -1,5 +1,15 @@
 # libddwaf release
 
+### v1.8.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### API \& Breaking Changes
+- Add `ddwaf_update` for all-in-one ruleset updates ([#138](https://github.com/DataDog/libddwaf/pull/138))
+- Remove `ddwaf_required_rule_data_ids` ([#138](https://github.com/DataDog/libddwaf/pull/138))
+- Remove `ddwaf_update_rule_data` ([#138](https://github.com/DataDog/libddwaf/pull/138))
+- Remove `ddwaf_toggle_rules` ([#138](https://github.com/DataDog/libddwaf/pull/138))
+
+### Changes
+- Add WAF Builder ([#138](https://github.com/DataDog/libddwaf/pull/138))
+
 ### v1.7.0  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/02/06
 #### Changes
 - Handle lifetime extension ([#135](https://github.com/DataDog/libddwaf/pull/135))

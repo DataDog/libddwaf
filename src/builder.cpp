@@ -71,12 +71,15 @@ std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info
     constexpr change_state filters_update = rule_update | change_state::filters;
     constexpr change_state manifest_update = change_state::rules | change_state::filters;
 
+    // When a configuration with 'rules', 'rules_data' or 'rules_override' is
+    // received, we need to regenerate the ruleset from the base rules as we
+    // want to ensure that there are no side-effects on running contexts.
     if ((state & rule_update) != change_state::none) {
         final_rules_.clear();
         rules_by_tags_.clear();
         targets_from_rules_.clear();
 
-        // A new ruleset, new rule data or a new set of overrides requires a new ruleset
+        // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : base_rules_) {
             std::vector<condition::ptr> conditions;
             conditions.reserve(spec.conditions.size());
@@ -84,6 +87,11 @@ std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info
             for (const auto &cond_spec : spec.conditions) {
                 std::shared_ptr<rule_processor::base> processor;
                 if (!cond_spec.data_id.empty() && !cond_spec.processor) {
+                    // When generating a condition with a rule data ID, the
+                    // relevant processor should be available in dynamic_processors_.
+                    //
+                    // Note: if the base ruleset used when parsing 'rules_data' didn't
+                    // contain the relevant rule data IDs, the processors won't exist.
                     auto it = dynamic_processors_.find(cond_spec.data_id);
                     if (it != dynamic_processors_.end()) {
                         processor = it->second;
@@ -103,14 +111,15 @@ std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, std::move(conditions), spec.actions, spec.enabled);
 
-            // Don't insert id as it's own by the builder
+            // The string_view should be owned by the rule_ptr
             final_rules_.emplace(rule_ptr->id, rule_ptr);
             rules_by_tags_.insert(rule_ptr->tags, rule_ptr);
         }
 
-        // Apply overrides by ID
+        // Old or new overrides are applied on the new rules
         std::unordered_set<rule *> overridden_rules;
         for (const auto &ovrd : overrides_.by_ids) {
+            // Overrides by ID
             auto rule_targets = target_to_rules(ovrd.targets, final_rules_, rules_by_tags_);
             for (const auto &rule_ptr : rule_targets) {
                 if (overridden_rules.find(rule_ptr.get()) != overridden_rules.end()) {
@@ -133,6 +142,8 @@ std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info
         for (const auto &ovrd : overrides_.by_tags) {
             auto rule_targets = target_to_rules(ovrd.targets, final_rules_, rules_by_tags_);
             for (const auto &rule_ptr : rule_targets) {
+                // If a rule has been overridden by ID, it shouldn't be overridden
+                // by tag.
                 if (overridden_rules.find(rule_ptr.get()) != overridden_rules.end()) {
                     continue;
                 }
@@ -148,13 +159,13 @@ std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info
         }
     }
 
-    // Generate exclusion filters
+    // Generate exclusion filters targetting final_rules_
     if ((state & filters_update) != change_state::none) {
         rule_filters_.clear();
         input_filters_.clear();
         targets_from_filters_.clear();
 
-        // Then rule filters
+        // First generate rule filters
         for (const auto &[id, filter] : exclusions_.rule_filters) {
             auto rule_targets = target_to_rules(filter.targets, final_rules_, rules_by_tags_);
             auto filter_ptr = std::make_shared<exclusion::rule_filter>(
@@ -188,7 +199,8 @@ std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info
     }
 
     if ((state & manifest_update) != change_state::none) {
-        // Remove unnecessary targets
+        // Remove unnecessary targets using all the targets contained within
+        // rule conditions, filter conditions and object filters
         std::unordered_set<manifest::target_type> all_targets;
         all_targets.insert(targets_from_rules_.begin(), targets_from_rules_.end());
         all_targets.insert(targets_from_filters_.begin(), targets_from_filters_.end());
@@ -279,7 +291,7 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
             auto new_exclusions = parser::v2::parse_filters(exclusions, target_manifest_, limits_);
 
             if (new_exclusions.empty()) {
-                // Ignore a non-critical error
+                // We can continue whilst ignoring the lack of exclusions
                 DDWAF_WARN("No valid exclusion filters provided");
             } else {
                 exclusions_ = std::move(new_exclusions);
