@@ -62,7 +62,7 @@ include(GNUInstallDirs)
 add_subdirectory(third_party)
 
 set(LIBDDWAF_SOURCE
-    ${libddwaf_SOURCE_DIR}/src/builder.cpp
+    ${libddwaf_SOURCE_DIR}/src/ruleset_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
     ${libddwaf_SOURCE_DIR}/src/interface.cpp

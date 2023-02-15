@@ -13,10 +13,10 @@
 
 namespace ddwaf::parser {
 
-template <typename T> T at(parameter::map &map, const std::string &key)
+template <typename T> T at(const parameter::map &map, const std::string &key)
 {
     try {
-        return map.at(key);
+        return static_cast<T>(map.at(key));
     } catch (const std::out_of_range &) {
         throw missing_key(key);
     } catch (const bad_cast &e) {
@@ -24,11 +24,11 @@ template <typename T> T at(parameter::map &map, const std::string &key)
     }
 }
 
-template <typename T> T at(parameter::map &map, const std::string &key, const T &default_)
+template <typename T> T at(const parameter::map &map, const std::string &key, const T &default_)
 {
     try {
         auto it = map.find(key);
-        return it == map.end() ? default_ : it->second;
+        return it == map.end() ? default_ : static_cast<T>(it->second);
     } catch (const bad_cast &e) {
         throw invalid_type(key, e);
     }

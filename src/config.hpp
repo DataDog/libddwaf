@@ -17,10 +17,4 @@ struct object_limits {
     uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
 };
 
-struct config {
-    ddwaf::object_limits limits;
-    ddwaf::obfuscator event_obfuscator;
-    ddwaf_object_free_fn free_fn{ddwaf_object_free};
-};
-
 } // namespace ddwaf

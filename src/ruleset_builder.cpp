@@ -5,28 +5,30 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "parser/specification.hpp"
-#include <builder.hpp>
 #include <charconv>
 #include <exception.hpp>
 #include <log.hpp>
 #include <parser/common.hpp>
 #include <parser/parser.hpp>
+#include <ruleset_builder.hpp>
 #include <string_view>
 
 namespace ddwaf {
 
-constexpr builder::change_state operator|(builder::change_state lhs, builder::change_state rhs)
+constexpr ruleset_builder::change_state operator|(
+    ruleset_builder::change_state lhs, ruleset_builder::change_state rhs)
 {
-    return static_cast<builder::change_state>(
-        static_cast<std::underlying_type<builder::change_state>::type>(lhs) |
-        static_cast<std::underlying_type<builder::change_state>::type>(rhs));
+    return static_cast<ruleset_builder::change_state>(
+        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(lhs) |
+        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(rhs));
 }
 
-constexpr builder::change_state operator&(builder::change_state lhs, builder::change_state rhs)
+constexpr ruleset_builder::change_state operator&(
+    ruleset_builder::change_state lhs, ruleset_builder::change_state rhs)
 {
-    return static_cast<builder::change_state>(
-        static_cast<std::underlying_type<builder::change_state>::type>(lhs) &
-        static_cast<std::underlying_type<builder::change_state>::type>(rhs));
+    return static_cast<ruleset_builder::change_state>(
+        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(lhs) &
+        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(rhs));
 }
 
 namespace {
@@ -57,7 +59,7 @@ std::set<rule::ptr> target_to_rules(const std::vector<parser::rule_target_spec> 
 
 } // namespace
 
-std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info)
+std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_info &info)
 {
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
@@ -66,10 +68,10 @@ std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info
         return {};
     }
 
-    constexpr change_state rule_update =
+    constexpr static change_state rule_update =
         change_state::rules | change_state::data | change_state::overrides;
-    constexpr change_state filters_update = rule_update | change_state::filters;
-    constexpr change_state manifest_update = change_state::rules | change_state::filters;
+    constexpr static change_state filters_update = rule_update | change_state::filters;
+    constexpr static change_state manifest_update = change_state::rules | change_state::filters;
 
     // When a configuration with 'rules', 'rules_data' or 'rules_override' is
     // received, we need to regenerate the ruleset from the base rules as we
@@ -219,21 +221,21 @@ std::shared_ptr<ruleset> builder::build(parameter::map &root, ruleset_info &info
     return rs;
 }
 
-builder::change_state builder::load(parameter::map &root, ruleset_info &info)
+ruleset_builder::change_state ruleset_builder::load(parameter::map &root, ruleset_info &info)
 {
     change_state state = change_state::none;
 
     auto metadata = parser::at<parameter::map>(root, "metadata", {});
     auto rules_version = metadata.find("rules_version");
     if (rules_version != metadata.end()) {
-        info.set_version(rules_version->second);
+        info.set_version(static_cast<std::string_view>(rules_version->second));
     }
 
     auto it = root.find("rules");
     if (it != root.end()) {
         decltype(rule_data_ids_) rule_data_ids;
 
-        parameter::vector rules = it->second;
+        auto rules = static_cast<parameter::vector>(it->second);
         auto new_base_rules = parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids);
 
         if (new_base_rules.empty()) {
@@ -248,7 +250,7 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
 
     it = root.find("rules_data");
     if (it != root.end()) {
-        parameter::vector rules_data = it->second;
+        auto rules_data = static_cast<parameter::vector>(it->second);
         if (!rules_data.empty()) {
             auto new_processors = parser::v2::parse_rule_data(rules_data, rule_data_ids_);
             if (new_processors.empty()) {
@@ -268,7 +270,7 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
 
     it = root.find("rules_override");
     if (it != root.end()) {
-        parameter::vector overrides = it->second;
+        auto overrides = static_cast<parameter::vector>(it->second);
         if (!overrides.empty()) {
             auto new_overrides = parser::v2::parse_overrides(overrides);
             if (new_overrides.empty()) {
@@ -286,7 +288,7 @@ builder::change_state builder::load(parameter::map &root, ruleset_info &info)
 
     it = root.find("exclusions");
     if (it != root.end()) {
-        parameter::vector exclusions = it->second;
+        auto exclusions = static_cast<parameter::vector>(it->second);
         if (!exclusions.empty()) {
             auto new_exclusions = parser::v2::parse_filters(exclusions, target_manifest_, limits_);
 

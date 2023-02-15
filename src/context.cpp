@@ -46,7 +46,7 @@ DDWAF_RET_CODE context::run(
         return DDWAF_OK;
     }
 
-    const event_serializer serializer(ruleset_->event_obfuscator);
+    const event_serializer serializer(*ruleset_->event_obfuscator);
 
     std::vector<ddwaf::event> events;
     try {

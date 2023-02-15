@@ -19,24 +19,25 @@
 
 namespace ddwaf {
 
-class builder {
+class ruleset_builder {
 public:
-    using ptr = std::shared_ptr<builder>;
+    using ptr = std::shared_ptr<ruleset_builder>;
 
-    builder(object_limits limits, ddwaf_object_free_fn free_fn, ddwaf::obfuscator event_obfuscator)
+    ruleset_builder(object_limits limits, ddwaf_object_free_fn free_fn,
+        std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
         : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
     {}
 
-    ~builder() = default;
-    builder(builder &&) = default;
-    builder(const builder &) = delete;
-    builder &operator=(builder &&) = delete;
-    builder &operator=(const builder &) = delete;
+    ~ruleset_builder() = default;
+    ruleset_builder(ruleset_builder &&) = default;
+    ruleset_builder(const ruleset_builder &) = delete;
+    ruleset_builder &operator=(ruleset_builder &&) = delete;
+    ruleset_builder &operator=(const ruleset_builder &) = delete;
 
-    std::shared_ptr<ruleset> build(parameter root, ruleset_info &info)
+    std::shared_ptr<ruleset> build(parameter root_map, ruleset_info &info)
     {
-        parameter::map input = root;
-        return build(input, info);
+        auto root = static_cast<parameter::map>(root_map);
+        return build(root, info);
     }
 
     std::shared_ptr<ruleset> build(parameter::map &root, ruleset_info &info);
@@ -59,7 +60,7 @@ protected:
     // all updates.
     const object_limits limits_;
     const ddwaf_object_free_fn free_fn_;
-    const ddwaf::obfuscator event_obfuscator_;
+    std::shared_ptr<ddwaf::obfuscator> event_obfuscator_;
 
     // The same manifest is used across updates, so we need to ensure that
     // unused targets are regularly cleaned up.

@@ -14,11 +14,12 @@ TEST(TestWaf, RootAddresses)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    ddwaf::waf instance{rule, info, ddwaf::object_limits(), ddwaf_object_free, ddwaf::obfuscator()};
+    ddwaf::waf instance{
+        rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf_object_free(&rule);
 
     std::set<std::string_view> available_addresses{"value1", "value2"};
-    for (auto address : instance.get_root_addresses()) {
+    for (const auto *address : instance.get_root_addresses()) {
         EXPECT_NE(available_addresses.find(address), available_addresses.end());
     }
 }
@@ -29,10 +30,12 @@ TEST(TestWaf, BasicContextRun)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    ddwaf::waf instance{rule, info, ddwaf::object_limits(), ddwaf_object_free, ddwaf::obfuscator()};
+    ddwaf::waf instance{
+        rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf_object_free(&rule);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
 
@@ -46,11 +49,13 @@ TEST(TestWaf, RuleDisabledInRuleset)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::ruleset_info info;
-    ddwaf::waf instance{rule, info, ddwaf::object_limits(), ddwaf_object_free, ddwaf::obfuscator()};
+    ddwaf::waf instance{
+        rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf_object_free(&rule);
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
 

@@ -7,11 +7,11 @@
 
 #include "ddwaf.h"
 #include "parser/parser.hpp"
-#include <builder.hpp>
 #include <config.hpp>
 #include <context.hpp>
 #include <memory>
 #include <ruleset.hpp>
+#include <ruleset_builder.hpp>
 #include <ruleset_info.hpp>
 #include <utils.hpp>
 #include <version.hpp>
@@ -21,9 +21,9 @@ namespace ddwaf {
 class waf {
 public:
     waf(ddwaf::parameter input, ddwaf::ruleset_info &info, ddwaf::object_limits limits,
-        ddwaf_object_free_fn free_fn, ddwaf::obfuscator event_obfuscator)
+        ddwaf_object_free_fn free_fn, std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
     {
-        parameter::map input_map = input;
+        auto input_map = static_cast<parameter::map>(input);
 
         unsigned version = 2;
 
@@ -39,12 +39,14 @@ public:
         // Prevent combining version 1 of the ruleset and the builder
         if (version == 1) {
             ddwaf::ruleset rs;
+            rs.free_fn = free_fn;
+            rs.event_obfuscator = event_obfuscator;
             parser::v1::parse(input_map, info, rs, limits);
             ruleset_ = std::make_shared<ddwaf::ruleset>(std::move(rs));
             return;
         }
 
-        builder_ = std::make_shared<builder>(limits, free_fn, std::move(event_obfuscator));
+        builder_ = std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
         ruleset_ = builder_->build(input, info);
     }
 
@@ -67,11 +69,11 @@ public:
     }
 
 protected:
-    waf(ddwaf::builder::ptr builder, ddwaf::ruleset::ptr ruleset)
+    waf(ddwaf::ruleset_builder::ptr builder, ddwaf::ruleset::ptr ruleset)
         : builder_(std::move(builder)), ruleset_(std::move(ruleset))
     {}
 
-    ddwaf::builder::ptr builder_;
+    ddwaf::ruleset_builder::ptr builder_;
     ddwaf::ruleset::ptr ruleset_;
 };
 

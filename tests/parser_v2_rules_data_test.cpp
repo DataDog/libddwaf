@@ -13,7 +13,7 @@ TEST(TestParserV2RuleData, ParseIPData)
 
     auto object = readRule(
         R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    parameter::vector input = parameter(object);
+    auto input = static_cast<parameter::vector>(parameter(object));
 
     auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
     ddwaf_object_free(&object);
@@ -28,7 +28,7 @@ TEST(TestParserV2RuleData, ParseStringData)
 
     auto object = readRule(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
-    parameter::vector input = parameter(object);
+    auto input = static_cast<parameter::vector>(parameter(object));
 
     auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
     ddwaf_object_free(&object);
@@ -44,7 +44,7 @@ TEST(TestParserV2RuleData, ParseMultipleRuleData)
 
     auto object = readRule(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    parameter::vector input = parameter(object);
+    auto input = static_cast<parameter::vector>(parameter(object));
 
     auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
     ddwaf_object_free(&object);
@@ -60,12 +60,13 @@ TEST(TestParserV2RuleData, ParseUnknownRuleData)
 
     auto object = readRule(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    parameter::vector input = parameter(object);
+    auto input = static_cast<parameter::vector>(parameter(object));
 
     auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(rule_data.size(), 1);
+    EXPECT_EQ(rule_data.size(), 2);
+    EXPECT_STRV(rule_data["ip_data"]->name(), "ip_match");
     EXPECT_STRV(rule_data["usr_data"]->name(), "exact_match");
 }
 
@@ -76,7 +77,7 @@ TEST(TestParserV2RuleData, ParseUnsupportedProcessor)
 
     auto object = readRule(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    parameter::vector input = parameter(object);
+    auto input = static_cast<parameter::vector>(parameter(object));
 
     auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
     ddwaf_object_free(&object);
@@ -89,7 +90,7 @@ TEST(TestParserV2RuleData, ParseMissingType)
     std::unordered_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
 
     auto object = readRule(R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    parameter::vector input = parameter(object);
+    auto input = static_cast<parameter::vector>(parameter(object));
 
     auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
     ddwaf_object_free(&object);
@@ -103,7 +104,7 @@ TEST(TestParserV2RuleData, ParseMissingID)
 
     auto object =
         readRule(R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    parameter::vector input = parameter(object);
+    auto input = static_cast<parameter::vector>(parameter(object));
 
     auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
     ddwaf_object_free(&object);
@@ -116,7 +117,7 @@ TEST(TestParserV2RuleData, ParseMissingData)
     std::unordered_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
 
     auto object = readRule(R"([{id: ip_data, type: ip_with_expiration}])");
-    parameter::vector input = parameter(object);
+    auto input = static_cast<parameter::vector>(parameter(object));
 
     auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
     ddwaf_object_free(&object);

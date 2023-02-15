@@ -50,7 +50,7 @@ struct ruleset {
     }
 
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
-    ddwaf::obfuscator event_obfuscator;
+    std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
     ddwaf::manifest manifest;
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;

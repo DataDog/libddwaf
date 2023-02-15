@@ -13,7 +13,7 @@ TEST(TestParserV2RuleFilters, ParseEmptyFilter)
 
     auto object = readRule(R"([{id: 1}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -28,7 +28,7 @@ TEST(TestParserV2RuleFilters, ParseFilterWithoutID)
 
     auto object = readRule(R"([{rules_target: [{rule_id: 2939}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -44,7 +44,7 @@ TEST(TestParserV2RuleFilters, ParseDuplicateUnconditionalRuleFilters)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}]},{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -59,7 +59,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetID)
 
     auto object = readRule(R"([{id: 1, rules_target: [{rule_id: 2939}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -86,7 +86,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetTags)
 
     auto object = readRule(R"([{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -116,7 +116,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetPriority)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -144,7 +144,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterMultipleTargets)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939},{tags: {type: rule, category: unknown}}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -183,7 +183,7 @@ TEST(TestParserV2RuleFilters, ParseMultipleUnconditionalRuleFilters)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}]},{id: 2, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -229,7 +229,7 @@ TEST(TestParserV2RuleFilters, ParseDuplicateConditionalRuleFilters)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]},{id: 1, rules_target: [{tags: {type: rule, category: unknown}}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -245,7 +245,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterSingleCondition)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -273,7 +273,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterGlobal)
     auto object = readRule(
         R"([{id: 1, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -295,7 +295,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterMultipleConditions)
 
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 

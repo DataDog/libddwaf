@@ -57,11 +57,7 @@ The `ddwaf_update` function returns a new `ddwaf_handle` which will be a valid p
 
 Note that the `ddwaf_update` function also has an optional input parameter for the `ruleset_info` structure, this will only provide useful diagnostics when the update provided contains new rules (within the `rules` key), also note that the `ruleset_info` should either be a fresh new structure or the previously used after calling `ddwaf_ruleset_info_free`.
 
-#### Things to consider, caveats and limitations
-- You can call `ddwaf_init` with all previously mentioned keys, or a combination of them, however the `rules` key is mandatory. This does not apply to `ddwaf_update.
-- It's generally recommended to combine `rules`, `rules_data` and `rules_override` into one `ddwaf_object` whenever possible as it will be more efficient, however this is not necessary.
-- In addition to the point above, generally batching all changes whenever possible is still the best approach, albeit this might change in the future.
-- When providing `rules_data`, the current loaded ruleset (provided through `rules`) should contain all the _necessary_ rule data IDs, otherwise any unknown ID contained in `rules_data` will be discarded. For example, assuming we're providing a `rules_data` object containing the rule data ID `ip_data`, but the currently loaded ruleset doesn't contain a rule requiring `ip_data`, the WAF won't have enough information to generate the relevant processor and will discard the contents of `ip_data`. In this scenario, a subequent update of the rules expecting the aforementioned rule data ID won't have a processor and consequently won't work as expected.
+Finally, you can call `ddwaf_init` with all previously mentioned keys, or a combination of them, however the `rules` key is mandatory. This does not apply to `ddwaf_update.
 
 ### Upgrading from `1.6.x` to `1.7.0`
 

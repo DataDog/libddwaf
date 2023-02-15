@@ -13,7 +13,7 @@ TEST(TestParserV2InputFilters, ParseFilterWithoutID)
 
     auto object = readRule(R"([{inputs: [{address: http.client_ip}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -31,7 +31,7 @@ TEST(TestParserV2InputFilters, ParseDuplicateFilters)
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}]}, {id: 1, inputs: [{address: usr.id}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 
@@ -48,7 +48,7 @@ TEST(TestParserV2InputFilters, ParseNoConditionsOrTargets)
 
     auto object = readRule(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
 
-    parameter::vector exclusions_array = parameter(object);
+    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
     auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
     ddwaf_object_free(&object);
 

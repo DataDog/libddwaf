@@ -77,7 +77,8 @@ condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
     std::vector<condition::target_type> targets;
     auto inputs = at<parameter::vector>(params, "inputs");
     targets.reserve(inputs.size());
-    for (std::string input : inputs) {
+    for (const auto &input_param : inputs) {
+        auto input = static_cast<std::string>(input_param);
         if (input.empty()) {
             throw ddwaf::parsing_error("empty address");
         }
@@ -118,7 +119,8 @@ void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest &target
     try {
         std::vector<PW_TRANSFORM_ID> rule_transformers;
         auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
-        for (std::string_view transformer : transformers) {
+        for (const auto &transformer_param : transformers) {
+            auto transformer = static_cast<std::string_view>(transformer_param);
             PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
             if (transform_id == PWT_INVALID) {
                 throw ddwaf::parsing_error("invalid transformer" + std::string(transformer));
@@ -129,7 +131,8 @@ void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest &target
         std::vector<condition::ptr> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         conditions.reserve(conditions_array.size());
-        for (parameter::map cond : conditions_array) {
+        for (const auto &cond_param : conditions_array) {
+            auto cond = static_cast<parameter::map>(cond_param);
             conditions.push_back(parseCondition(cond, target_manifest, rule_transformers, limits));
         }
 
@@ -164,8 +167,9 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
     auto rules_array = at<parameter::vector>(ruleset, "events");
     rs.rules.reserve(rules_array.size());
 
-    for (parameter::map rule : rules_array) {
+    for (const auto &rule_param : rules_array) {
         try {
+            auto rule = static_cast<parameter::map>(rule_param);
             parseRule(rule, info, rs.manifest, rs, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("%s", e.what());
