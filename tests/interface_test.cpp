@@ -143,6 +143,24 @@ TEST(TestInterface, InvalidVersionNoRules)
     ddwaf_object_free(&rule);
 }
 
+TEST(TestInterface, UpdateWithNullObject)
+{
+    EXPECT_EQ(ddwaf_update(nullptr, nullptr, nullptr), nullptr);
+}
+
+TEST(TestInterface, UpdateWithNullHandle)
+{
+    auto rule = readFile("rule_data.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    EXPECT_EQ(ddwaf_update(handle, nullptr, nullptr), nullptr);
+    ddwaf_destroy(handle);
+}
+
 TEST(TestInterface, UpdateEmpty)
 {
     auto rule = readFile("interface.yaml");
@@ -158,6 +176,86 @@ TEST(TestInterface, UpdateEmpty)
     ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);
     ASSERT_EQ(new_handle, nullptr);
     ddwaf_object_free(&rule);
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestInterface, PreloadRuleData)
+{
+    auto rule = readFile("rule_data_with_data.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "paco"));
+
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        auto root = readRule(
+            R"({rules_data: [{id: usr_data, type: data_with_expiration, data: [{value: pepe, expiration: 0}]}, {id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.2, expiration: 0}]}]})");
+
+        ddwaf_handle new_handle = ddwaf_update(handle, &root, nullptr);
+        ASSERT_NE(new_handle, nullptr);
+        ddwaf_object_free(&root);
+        ddwaf_destroy(handle);
+
+        handle = new_handle;
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "paco"));
+
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, LONG_TIME), DDWAF_OK);
+
+        ddwaf_context_destroy(context);
+    }
 
     ddwaf_destroy(handle);
 }
