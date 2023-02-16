@@ -226,6 +226,10 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
         base_rules_ = std::move(new_base_rules);
         rule_data_ids_ = std::move(rule_data_ids);
         state = state | change_state::rules;
+    } else if (base_rules_.empty()) {
+        // If we haven't received rules and our base ruleset is empty, the
+        // WAF can't proceed.
+        throw ddwaf::parsing_error("no valid rules found");
     }
 
     it = root.find("rules_data");
