@@ -464,7 +464,8 @@ rule_data_container parse_rule_data(
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
                 processor = std::make_shared<rule_processor::exact_match>(parsed_data);
             } else {
-                DDWAF_WARN("Processor %s doesn't support dynamic rule data", operation.data());
+                DDWAF_WARN("Processor %.*s doesn't support dynamic rule data",
+                    static_cast<int>(operation.length()), operation.data());
                 continue;
             }
 
