@@ -54,10 +54,16 @@ The `ddwaf_update` function returns a new `ddwaf_handle` which will be a valid p
     // Both the context and the handle are destroyed here
     ddwaf_context_destroy(context);
 ```
-
 Note that the `ddwaf_update` function also has an optional input parameter for the `ruleset_info` structure, this will only provide useful diagnostics when the update provided contains new rules (within the `rules` key), also note that the `ruleset_info` should either be a fresh new structure or the previously used after calling `ddwaf_ruleset_info_free`.
 
 Finally, you can call `ddwaf_init` with all previously mentioned keys, or a combination of them, however the `rules` key is mandatory. This does not apply to `ddwaf_update.
+
+#### Notes on thread-safety
+
+The thread-safety of any operations on the handle depends on whether they act on the ruleset or the builder itself, generally:
+- Calling `ddwaf_update` concurrently, regardless of the handle, is never thread-safe.
+- Calling `ddwaf_context_init` concurrently on the same handle is thread-safe.
+- Calling `ddwaf_context_init` and `ddwaf_update` concurrently on the same handle is also thread-safe.
 
 ### Upgrading from `1.6.x` to `1.7.0`
 

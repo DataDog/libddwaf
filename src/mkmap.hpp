@@ -14,12 +14,10 @@
 #include <type_traits.hpp>
 
 namespace ddwaf {
-// TODO SFINAE everything
 template <typename Key, typename T, class Compare = std::less<Key>,
     typename = std::enable_if_t<std::is_copy_constructible_v<std::remove_cv_t<std::decay_t<T>>>>>
 class multi_key_map {
 public:
-    // TODO Check that Key can be constructed from each type within the pair
     template <typename U,
         typename = typename std::enable_if_t<is_pair<typename U::iterator::value_type>::value,
             typename U::iterator>>
@@ -28,7 +26,6 @@ public:
         for (const auto &key : keys) { data_[key.first][key.second].emplace(value); }
     }
 
-    // TODO Check that Key can be constructed from CompatKey
     template <typename CompatKey> std::set<T> find(const std::pair<CompatKey, CompatKey> &key) const
     {
         auto first_it = data_.find(key.first);
@@ -45,7 +42,6 @@ public:
         return second_it->second;
     }
 
-    // TODO Check that Key can be constructed from CompatKey
     template <typename CompatKey>
     const std::set<T> &find_ref(const std::pair<CompatKey, CompatKey> &key) const
     {
@@ -64,7 +60,6 @@ public:
         return second_it->second;
     }
 
-    // TODO Check that Key can be constructed from CompatKey
     template <typename CompatKey>
     std::set<T> find2(const std::pair<CompatKey, CompatKey> &key0,
         const std::pair<CompatKey, CompatKey> &key1) const
@@ -85,8 +80,6 @@ public:
         return result;
     }
 
-    // TODO Check that the container iterator contains a pair
-    //      Check that Key can be constructed from each type within the pair
     template <typename U> std::set<T> multifind(const U &keys) const
     {
         std::pair<Key, Key> first = *keys.begin();
