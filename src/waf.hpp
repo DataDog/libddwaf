@@ -46,8 +46,15 @@ public:
             return;
         }
 
-        builder_ = std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
-        ruleset_ = builder_->build(input, info);
+        if (version == 2) {
+            builder_ =
+                std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
+            ruleset_ = builder_->build(input, info);
+            return;
+        }
+
+        DDWAF_ERROR("incompatible ruleset version %u.x", version);
+        throw unsupported_version();
     }
 
     waf *update(ddwaf::parameter input, ddwaf::ruleset_info &info)

@@ -9,6 +9,16 @@
 
 using namespace ddwaf;
 
+TEST(TestInterface, Empty)
+{
+    auto rule = readRule("{}");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+}
+
 TEST(TestInterface, RootAddresses)
 {
     auto rule = readFile("interface.yaml");
@@ -112,6 +122,18 @@ TEST(TestInterface, HandleLifetimeMultipleContexts)
 TEST(TestInterface, InvalidVersion)
 {
     auto rule = readRule("{version: 3.0, rules: []}");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_EQ(handle1, nullptr);
+    ddwaf_object_free(&rule);
+}
+
+TEST(TestInterface, InvalidVersionNoRules)
+{
+    auto rule = readRule("{version: 3.0}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
