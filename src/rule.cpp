@@ -15,20 +15,15 @@
 
 namespace ddwaf {
 
-rule::rule(std::string &&id_, std::string &&name_, std::string &&type_, std::string &&category_,
-    std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_, bool enabled_)
-    : enabled(enabled_), id(std::move(id_)), name(std::move(name_)), type(std::move(type_)),
-      category(std::move(category_)), conditions(std::move(conditions_)),
-      actions(std::move(actions_))
-{
-    for (auto &cond : conditions) {
-        const auto &cond_targets = cond->get_targets();
-        targets.insert(cond_targets.begin(), cond_targets.end());
-    }
-}
+rule::rule(std::string id_, std::string name_, std::unordered_map<std::string, std::string> tags_,
+    std::vector<condition::ptr> conditions_, std::vector<std::string> actions_, bool enabled_)
+    : enabled(enabled_), id(std::move(id_)), name(std::move(name_)), tags(std::move(tags_)),
+      conditions(std::move(conditions_)), actions(std::move(actions_))
+{}
 
-std::optional<event> rule::match(const object_store &store, const ddwaf::manifest &manifest,
-    cache_type &cache, const std::unordered_set<const ddwaf_object *> &objects_excluded,
+std::optional<event> rule::match(const object_store &store, cache_type &cache,
+    const std::unordered_set<const ddwaf_object *> &objects_excluded,
+    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
@@ -49,7 +44,8 @@ std::optional<event> rule::match(const object_store &store, const ddwaf::manifes
             cached_result = it;
         }
 
-        auto opt_match = cond->match(store, manifest, objects_excluded, run_on_new, deadline);
+        auto opt_match =
+            cond->match(store, objects_excluded, run_on_new, dynamic_processors, deadline);
         if (!opt_match.has_value()) {
             cached_result->second = false;
             return std::nullopt;
@@ -62,8 +58,8 @@ std::optional<event> rule::match(const object_store &store, const ddwaf::manifes
 
     cache.event.id = id;
     cache.event.name = name;
-    cache.event.type = type;
-    cache.event.category = category;
+    cache.event.type = get_tag("type");
+    cache.event.category = get_tag("category");
 
     cache.event.actions.reserve(actions.size());
     for (const auto &action : actions) { cache.event.actions.push_back(action); }

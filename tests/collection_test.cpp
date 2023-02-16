@@ -18,19 +18,20 @@ TYPED_TEST_SUITE(TestCollection, CollectionTypes);
 TYPED_TEST(TestCollection, SingleRuleMatch)
 {
     std::unordered_set<std::string_view> seen_actions;
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
+    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+
     auto rule = std::make_shared<ddwaf::rule>(
-        "id", "name", "type", "category", std::move(conditions), std::vector<std::string>{});
+        "id", "name", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
     TypeParam rule_collection;
     rule_collection.insert(rule);
@@ -47,7 +48,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -61,7 +62,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
         store.insert(root);
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -72,10 +73,10 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 {
     std::unordered_set<std::string_view> seen_actions;
     TypeParam rule_collection;
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -83,28 +84,32 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category1"}};
+
         auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", "type", "category1", std::move(conditions), std::vector<std::string>{});
+            "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
         rule_collection.insert(rule);
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category2"}};
+
         auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", "type", "category2", std::move(conditions), std::vector<std::string>{});
+            "id2", "name2", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
         rule_collection.insert(rule);
     }
-
-    auto manifest = mb.build_manifest();
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
@@ -119,7 +124,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -133,7 +138,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -144,10 +149,10 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 {
     std::unordered_set<std::string_view> seen_actions;
     TypeParam rule_collection;
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -155,28 +160,30 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category1"}};
         auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", "type", "category1", std::move(conditions), std::vector<std::string>{});
+            "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
         rule_collection.insert(rule);
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category2"}};
         auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", "type", "category2", std::move(conditions), std::vector<std::string>{});
+            "id2", "name2", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
         rule_collection.insert(rule);
     }
-
-    auto manifest = mb.build_manifest();
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
@@ -191,7 +198,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -205,7 +212,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -215,11 +222,11 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 {
     std::unordered_set<std::string_view> seen_actions;
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     std::vector<condition::ptr> conditions;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         conditions.emplace_back(
             std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
@@ -228,18 +235,18 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         conditions.emplace_back(
             std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
                 std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"})));
     }
 
-    auto manifest = mb.build_manifest();
+    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<ddwaf::rule>(
-        "id", "name", "type", "category", std::move(conditions), std::vector<std::string>{});
+        "id", "name", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
     TypeParam rule_collection;
     rule_collection.insert(rule);
@@ -256,7 +263,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -272,7 +279,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -283,10 +290,10 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 TEST(TestPriorityCollection, MatchBothActions)
 {
     priority_collection rule_collection;
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -294,28 +301,31 @@ TEST(TestPriorityCollection, MatchBothActions)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category1"}};
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
             std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category2"}};
+
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
             std::move(conditions), std::vector<std::string>{"redirect"});
 
         rule_collection.insert(rule);
     }
-
-    auto manifest = mb.build_manifest();
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
@@ -336,7 +346,7 @@ TEST(TestPriorityCollection, MatchBothActions)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 2);
         EXPECT_EQ(seen_actions.size(), 2);
@@ -349,10 +359,10 @@ TEST(TestPriorityCollection, MatchBothActions)
 TEST(TestPriorityCollection, MatchOneAction)
 {
     priority_collection rule_collection;
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -360,28 +370,32 @@ TEST(TestPriorityCollection, MatchOneAction)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category1"}};
+
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
             std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category2"}};
+
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
             std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
-
-    auto manifest = mb.build_manifest();
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
@@ -401,7 +415,7 @@ TEST(TestPriorityCollection, MatchOneAction)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
         EXPECT_EQ(seen_actions.size(), 1);
@@ -413,10 +427,10 @@ TEST(TestPriorityCollection, MatchOneAction)
 TEST(TestPriorityCollection, MatchAllIfMissing)
 {
     priority_collection rule_collection;
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
@@ -424,28 +438,32 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", "type", "category1",
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category1"}};
+
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
             std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<ddwaf::condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
 
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", "type", "category2",
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category2"}};
+
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
             std::move(conditions), std::vector<std::string>{"block"});
 
         rule_collection.insert(rule);
     }
-
-    auto manifest = mb.build_manifest();
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
@@ -466,7 +484,7 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, manifest, cache, {}, {}, deadline);
+        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 2);
         EXPECT_EQ(seen_actions.size(), 1);

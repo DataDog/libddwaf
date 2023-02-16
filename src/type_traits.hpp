@@ -3,18 +3,15 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+
 #pragma once
 
-#include <ddwaf.h>
-#include <obfuscator.hpp>
-#include <utils.hpp>
+#include <type_traits>
 
 namespace ddwaf {
 
-struct object_limits {
-    uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
-    uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
-    uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
-};
+// https://stackoverflow.com/questions/43992510/enable-if-to-check-if-value-type-of-iterator-is-a-pair
+template <typename> struct is_pair : std::false_type {};
+template <typename T, typename U> struct is_pair<std::pair<T, U>> : std::true_type {};
 
 } // namespace ddwaf

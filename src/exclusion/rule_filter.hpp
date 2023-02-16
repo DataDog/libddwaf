@@ -11,7 +11,6 @@
 #include <vector>
 
 #include <clock.hpp>
-#include <manifest.hpp>
 #include <object_store.hpp>
 #include <rule.hpp>
 
@@ -26,11 +25,11 @@ public:
         std::unordered_map<condition::ptr, bool> conditions;
     };
 
-    rule_filter(std::string &&id, std::vector<condition::ptr> &&conditions,
-        std::set<rule::ptr> &&rule_targets);
+    rule_filter(
+        std::string id, std::vector<condition::ptr> conditions, std::set<rule::ptr> rule_targets);
 
-    std::unordered_set<rule::ptr> match(const object_store &store, const ddwaf::manifest &manifest,
-        cache_type &cache, ddwaf::timer &deadline) const;
+    std::unordered_set<rule::ptr> match(
+        const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
 

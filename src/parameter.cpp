@@ -91,7 +91,7 @@ static void print_(parameter args, uint64_t depth)
 
 void parameter::print() { print_(*this, 0); }
 
-parameter::operator parameter::map()
+parameter::operator parameter::map() const
 {
     if (type != DDWAF_OBJ_MAP) {
         throw bad_cast("map", strtype(type));
@@ -115,7 +115,7 @@ parameter::operator parameter::map()
     return map;
 }
 
-parameter::operator parameter::vector()
+parameter::operator parameter::vector() const
 {
     if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
@@ -127,7 +127,7 @@ parameter::operator parameter::vector()
     return std::vector<parameter>(array, array + nbEntries);
 }
 
-parameter::operator parameter::string_set()
+parameter::operator parameter::string_set() const
 {
     if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
@@ -150,7 +150,7 @@ parameter::operator parameter::string_set()
     return set;
 }
 
-parameter::operator std::string_view()
+parameter::operator std::string_view() const
 {
     if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
         throw bad_cast("string", strtype(type));
@@ -159,7 +159,7 @@ parameter::operator std::string_view()
     return {stringValue, static_cast<size_t>(nbEntries)};
 }
 
-parameter::operator std::string()
+parameter::operator std::string() const
 {
     if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
         throw bad_cast("string", strtype(type));
@@ -168,7 +168,7 @@ parameter::operator std::string()
     return {stringValue, static_cast<size_t>(nbEntries)};
 }
 
-parameter::operator uint64_t()
+parameter::operator uint64_t() const
 {
     if (type == DDWAF_OBJ_UNSIGNED) {
         return uintValue;
@@ -186,7 +186,7 @@ parameter::operator uint64_t()
     throw bad_cast("unsigned", strtype(type));
 }
 
-parameter::operator int64_t()
+parameter::operator int64_t() const
 {
     if (type == DDWAF_OBJ_SIGNED) {
         return intValue;
@@ -204,7 +204,7 @@ parameter::operator int64_t()
     throw bad_cast("signed", strtype(type));
 }
 
-parameter::operator bool()
+parameter::operator bool() const
 {
     if (type == DDWAF_OBJ_BOOL) {
         return boolean;
@@ -232,7 +232,7 @@ parameter::operator bool()
     throw bad_cast("bool", strtype(type));
 }
 
-parameter::operator std::vector<std::string>()
+parameter::operator std::vector<std::string>() const
 {
     if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
@@ -255,7 +255,7 @@ parameter::operator std::vector<std::string>()
     return data;
 }
 
-parameter::operator std::vector<std::string_view>()
+parameter::operator std::vector<std::string_view>() const
 {
     if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));

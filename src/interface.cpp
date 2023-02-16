@@ -8,6 +8,7 @@
 #include <exception.hpp>
 #include <memory>
 #include <mutex>
+#include <obfuscator.hpp>
 #include <ruleset_info.hpp>
 #include <shared_mutex>
 #include <string>
@@ -37,20 +38,61 @@ const char *log_level_to_str(DDWAF_LOG_LEVEL level)
 
     return "off";
 }
+
+std::shared_ptr<ddwaf::obfuscator> obfuscator_from_config(const ddwaf_config *config)
+{
+    std::string_view key_regex;
+    std::string_view value_regex;
+
+    if (config != nullptr) {
+        if (config->obfuscator.key_regex != nullptr) {
+            key_regex = config->obfuscator.key_regex;
+        }
+
+        if (config->obfuscator.value_regex != nullptr) {
+            value_regex = config->obfuscator.value_regex;
+        }
+    }
+
+    return std::make_shared<ddwaf::obfuscator>(key_regex, value_regex);
+}
+
+ddwaf::object_limits limits_from_config(const ddwaf_config *config)
+{
+    ddwaf::object_limits limits;
+
+    if (config != nullptr) {
+        if (config->limits.max_container_size != 0) {
+            limits.max_container_size = config->limits.max_container_size;
+        }
+
+        if (config->limits.max_container_depth != 0) {
+            limits.max_container_depth = config->limits.max_container_depth;
+        }
+
+        if (config->limits.max_string_length != 0) {
+            limits.max_string_length = config->limits.max_string_length;
+        }
+    }
+
+    return limits;
+}
+
 } // namespace
+
 #endif
 // explicit instantiation declaration to suppress warning
 extern "C" {
-ddwaf_handle ddwaf_init(
-    const ddwaf_object *rule, const ddwaf_config *config, ddwaf_ruleset_info *info)
+ddwaf::waf *ddwaf_init(
+    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_ruleset_info *info)
 {
     try {
-        if (rule != nullptr) {
+        if (ruleset != nullptr) {
             ddwaf::ruleset_info ri(info);
-            auto waf_ptr = ddwaf::waf::from_config(*rule, config, ri);
-            if (waf_ptr) {
-                return new std::shared_ptr<ddwaf::waf>(std::move(waf_ptr));
-            }
+            ddwaf::parameter input = *ruleset;
+            return new ddwaf::waf(input, ri, limits_from_config(config),
+                config != nullptr ? config->free_fn : ddwaf_object_free,
+                obfuscator_from_config(config));
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
@@ -61,7 +103,23 @@ ddwaf_handle ddwaf_init(
     return nullptr;
 }
 
-void ddwaf_destroy(ddwaf_handle handle)
+ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_ruleset_info *info)
+{
+    try {
+        if (handle != nullptr && ruleset != nullptr) {
+            ddwaf::ruleset_info ri(info);
+            ddwaf::parameter input = *ruleset;
+            return handle->update(input, ri);
+        }
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("%s", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+    return nullptr;
+}
+
+void ddwaf_destroy(ddwaf::waf *handle)
 {
     if (handle == nullptr) {
         return;
@@ -76,60 +134,14 @@ void ddwaf_destroy(ddwaf_handle handle)
     }
 }
 
-DDWAF_RET_CODE ddwaf_update_rule_data(ddwaf_handle handle, ddwaf_object *data)
+const char *const *ddwaf_required_addresses(ddwaf::waf *handle, uint32_t *size)
 {
-    if (handle == nullptr || *handle == nullptr || data == nullptr) {
-        return DDWAF_ERR_INVALID_ARGUMENT;
-    }
-
-    try {
-        ddwaf::parameter param = *data;
-        (*handle)->update_rule_data(param);
-    } catch (const ddwaf::bad_cast &e) {
-        DDWAF_ERROR("%s", e.what());
-        return DDWAF_ERR_INVALID_OBJECT;
-    } catch (const std::exception &e) {
-        DDWAF_ERROR("%s", e.what());
-        return DDWAF_ERR_INTERNAL;
-    } catch (...) {
-        DDWAF_ERROR("unknown exception");
-        return DDWAF_ERR_INTERNAL;
-    }
-
-    return DDWAF_OK;
-}
-
-DDWAF_RET_CODE ddwaf_toggle_rules(ddwaf_handle handle, ddwaf_object *rule_map)
-{
-    if (handle == nullptr || *handle == nullptr || rule_map == nullptr) {
-        return DDWAF_ERR_INVALID_ARGUMENT;
-    }
-
-    try {
-        ddwaf::parameter param = *rule_map;
-        (*handle)->toggle_rules(param);
-    } catch (const ddwaf::bad_cast &e) {
-        DDWAF_ERROR("%s", e.what());
-        return DDWAF_ERR_INVALID_OBJECT;
-    } catch (const std::exception &e) {
-        DDWAF_ERROR("%s", e.what());
-        return DDWAF_ERR_INTERNAL;
-    } catch (...) {
-        DDWAF_ERROR("unknown exception");
-        return DDWAF_ERR_INTERNAL;
-    }
-
-    return DDWAF_OK;
-}
-
-const char *const *ddwaf_required_addresses(ddwaf::waf::ptr *handle, uint32_t *size)
-{
-    if (handle == nullptr || *handle == nullptr) {
+    if (handle == nullptr) {
         *size = 0;
         return nullptr;
     }
 
-    const auto &addresses = (*handle)->get_root_addresses();
+    const auto &addresses = handle->get_root_addresses();
     if (addresses.empty() || addresses.size() > std::numeric_limits<uint32_t>::max()) {
         *size = 0;
         return nullptr;
@@ -139,28 +151,11 @@ const char *const *ddwaf_required_addresses(ddwaf::waf::ptr *handle, uint32_t *s
     return addresses.data();
 }
 
-const char *const *ddwaf_required_rule_data_ids(ddwaf::waf::ptr *handle, uint32_t *size)
-{
-    if (handle == nullptr || *handle == nullptr) {
-        *size = 0;
-        return nullptr;
-    }
-
-    const auto &ids = (*handle)->get_rule_data_ids();
-    if (ids.empty() || ids.size() > std::numeric_limits<uint32_t>::max()) {
-        *size = 0;
-        return nullptr;
-    }
-
-    *size = (uint32_t)ids.size();
-    return ids.data();
-}
-
-ddwaf_context ddwaf_context_init(ddwaf::waf::ptr *handle)
+ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
 {
     try {
-        if (handle != nullptr && *handle != nullptr) {
-            return new ddwaf::context((*handle)->create_context());
+        if (handle != nullptr) {
+            return new ddwaf::context(handle->create_context());
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());

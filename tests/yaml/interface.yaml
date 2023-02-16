@@ -5,6 +5,7 @@ rules:
     tags:
       type: flow1
       category: category1
+      confidence: 1
     conditions:
       - operator: match_regex
         parameters:
@@ -28,6 +29,7 @@ rules:
     tags:
       type: flow2
       category: category3
+      confidence: 1
     conditions:
       - operator: match_regex
         parameters:

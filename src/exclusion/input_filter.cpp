@@ -11,8 +11,14 @@ namespace ddwaf::exclusion {
 
 using excluded_set = input_filter::excluded_set;
 
-std::optional<excluded_set> input_filter::match(const object_store &store,
-    const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const
+input_filter::input_filter(std::string id, std::vector<condition::ptr> conditions,
+    std::set<rule::ptr> rule_targets, std::shared_ptr<object_filter> filter)
+    : id_(std::move(id)), conditions_(std::move(conditions)),
+      rule_targets_(std::move(rule_targets)), filter_(std::move(filter))
+{}
+
+std::optional<excluded_set> input_filter::match(
+    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (!cache.result) {
         for (const auto &cond : conditions_) {
@@ -31,7 +37,7 @@ std::optional<excluded_set> input_filter::match(const object_store &store,
             }
 
             // TODO: Condition interface without events
-            auto opt_match = cond->match(store, manifest, {}, run_on_new, deadline);
+            auto opt_match = cond->match(store, {}, run_on_new, {}, deadline);
             if (!opt_match.has_value()) {
                 cached_result->second = false;
                 return std::nullopt;
@@ -42,7 +48,7 @@ std::optional<excluded_set> input_filter::match(const object_store &store,
         cache.result = true;
     }
 
-    auto objects = filter_.match(store, cache.object_filter_cache, deadline);
+    auto objects = filter_->match(store, cache.object_filter_cache, deadline);
 
     if (objects.empty()) {
         return std::nullopt;

@@ -19,7 +19,7 @@ namespace ddwaf::rule_processor {
 
 class base {
 public:
-    using shared = std::shared_ptr<base>;
+    using ptr = std::shared_ptr<base>;
 
     base() = default;
     virtual ~base() = default;

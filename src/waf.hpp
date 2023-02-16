@@ -5,45 +5,76 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include "ddwaf.h"
+#include "parser/parser.hpp"
 #include <config.hpp>
 #include <context.hpp>
 #include <memory>
 #include <ruleset.hpp>
+#include <ruleset_builder.hpp>
 #include <ruleset_info.hpp>
 #include <utils.hpp>
 #include <version.hpp>
 
 namespace ddwaf {
 
-class waf : public std::enable_shared_from_this<waf> {
+class waf {
 public:
-    using ptr = std::shared_ptr<waf>;
-
-    static waf::ptr from_config(
-        const ddwaf_object &rules, const ddwaf_config *config, ddwaf::ruleset_info &info);
-
-    ddwaf::context create_context() { return {ruleset_, config_, shared_from_this()}; }
-
-    void update_rule_data(ddwaf::parameter::vector &&input) { ruleset_.dispatcher.dispatch(input); }
-
-    void toggle_rules(ddwaf::parameter::map &&input);
-
-    const std::vector<const char *> &get_root_addresses() const
+    waf(ddwaf::parameter input, ddwaf::ruleset_info &info, ddwaf::object_limits limits,
+        ddwaf_object_free_fn free_fn, std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
     {
-        return ruleset_.manifest.get_root_addresses();
+        auto input_map = static_cast<parameter::map>(input);
+
+        unsigned version = 2;
+
+        auto it = input_map.find("version");
+        if (it != input_map.end()) {
+            try {
+                version = parser::parse_schema_version(input_map);
+            } catch (const std::exception &e) {
+                DDWAF_DEBUG("Failed to parse version (defaulting to 2): %s", e.what());
+            }
+        }
+
+        // Prevent combining version 1 of the ruleset and the builder
+        if (version == 1) {
+            ddwaf::ruleset rs;
+            rs.free_fn = free_fn;
+            rs.event_obfuscator = event_obfuscator;
+            parser::v1::parse(input_map, info, rs, limits);
+            ruleset_ = std::make_shared<ddwaf::ruleset>(std::move(rs));
+            return;
+        }
+
+        builder_ = std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
+        ruleset_ = builder_->build(input, info);
     }
-    const std::vector<const char *> &get_rule_data_ids()
+
+    waf *update(ddwaf::parameter input, ddwaf::ruleset_info &info)
     {
-        return ruleset_.dispatcher.get_rule_data_ids();
+        if (builder_) {
+            auto ruleset = builder_->build(input, info);
+            if (ruleset) {
+                return new waf{builder_, std::move(ruleset)};
+            }
+        }
+        return nullptr;
+    }
+
+    ddwaf::context create_context() { return context{ruleset_}; }
+
+    [[nodiscard]] const std::vector<const char *> &get_root_addresses() const
+    {
+        return ruleset_->manifest.get_root_addresses();
     }
 
 protected:
-    waf(ddwaf::ruleset &&ruleset, ddwaf::config &&config)
-        : ruleset_(std::move(ruleset)), config_(std::move(config))
+    waf(ddwaf::ruleset_builder::ptr builder, ddwaf::ruleset::ptr ruleset)
+        : builder_(std::move(builder)), ruleset_(std::move(ruleset))
     {}
 
-    ddwaf::ruleset ruleset_;
-    ddwaf::config config_;
+    ddwaf::ruleset_builder::ptr builder_;
+    ddwaf::ruleset::ptr ruleset_;
 };
 
 } // namespace ddwaf

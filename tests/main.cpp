@@ -35,7 +35,7 @@ void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsig
 
 int main(int argc, char *argv[])
 {
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_WARN);
+    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

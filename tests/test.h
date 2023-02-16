@@ -17,6 +17,7 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <gmock/gmock.h>
@@ -38,11 +39,13 @@ using namespace std;
 #include <exclusion/input_filter.hpp>
 #include <exclusion/object_filter.hpp>
 #include <ip_utils.hpp>
+#include <mkmap.hpp>
 #include <log.hpp>
 #include <obfuscator.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
-#include <rule_data_dispatcher.hpp>
+#include <parser/parser.hpp>
+#include <parser/specification.hpp>
 #include <ruleset_info.hpp>
 #include <utils.hpp>
 #include <waf.hpp>
@@ -88,3 +91,8 @@ using namespace ddwaf;
   {                                                                                                \
     NULL, 0, {string}, length, DDWAF_OBJ_STRING                                                    \
   }
+
+#define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), b)
+#define EXPECT_STRV(a, b) EXPECT_STREQ(a.data(), b)
+
+

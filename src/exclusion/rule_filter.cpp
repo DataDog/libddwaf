@@ -10,7 +10,7 @@
 namespace ddwaf::exclusion {
 
 rule_filter::rule_filter(
-    std::string &&id, std::vector<condition::ptr> &&conditions, std::set<rule::ptr> &&rule_targets)
+    std::string id, std::vector<condition::ptr> conditions, std::set<rule::ptr> rule_targets)
     : id_(std::move(id)), conditions_(std::move(conditions))
 {
     rule_targets_.reserve(rule_targets.size());
@@ -18,8 +18,9 @@ rule_filter::rule_filter(
         rule_targets_.emplace(std::move(rule_targets.extract(it++).value()));
     }
 }
-std::unordered_set<rule::ptr> rule_filter::match(const object_store &store,
-    const ddwaf::manifest &manifest, cache_type &cache, ddwaf::timer &deadline) const
+
+std::unordered_set<rule::ptr> rule_filter::match(
+    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (cache.result) {
         return {};
@@ -41,7 +42,7 @@ std::unordered_set<rule::ptr> rule_filter::match(const object_store &store,
         }
 
         // TODO: Condition interface without events
-        auto opt_match = cond->match(store, manifest, {}, run_on_new, deadline);
+        auto opt_match = cond->match(store, {}, run_on_new, {}, deadline);
         if (!opt_match.has_value()) {
             cached_result->second = false;
             return {};
