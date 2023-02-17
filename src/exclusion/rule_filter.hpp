@@ -18,7 +18,7 @@ namespace ddwaf::exclusion {
 class rule_filter {
 public:
     using ptr = std::shared_ptr<rule_filter>;
-    using optional_set = std::optional<std::reference_wrapper<const std::set<rule::ptr>>>;
+    using optional_set = std::optional<std::reference_wrapper<const std::set<rule *>>>;
 
     struct cache_type {
         bool result{false};
@@ -26,9 +26,9 @@ public:
     };
 
     rule_filter(
-        std::string id, std::vector<condition::ptr> conditions, std::set<rule::ptr> rule_targets);
+        std::string id, std::vector<condition::ptr> conditions, std::set<rule *> rule_targets);
 
-    std::unordered_set<rule::ptr> match(
+    std::unordered_set<rule *> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
@@ -36,7 +36,7 @@ public:
 protected:
     std::string id_;
     std::vector<condition::ptr> conditions_;
-    std::unordered_set<rule::ptr> rule_targets_;
+    std::unordered_set<rule *> rule_targets_;
 };
 
 } // namespace ddwaf::exclusion

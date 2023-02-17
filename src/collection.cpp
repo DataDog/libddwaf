@@ -13,8 +13,8 @@ namespace ddwaf {
 namespace {
 std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
     std::unordered_map<rule::ptr, rule::cache_type> &cache,
-    const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, collection::object_set> &objects_to_exclude,
+    const std::unordered_set<ddwaf::rule *> &rules_to_exclude,
+    const std::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline)
 {
@@ -29,7 +29,7 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
         return std::nullopt;
     }
 
-    if (rules_to_exclude.find(rule) != rules_to_exclude.end()) {
+    if (rules_to_exclude.find(rule.get()) != rules_to_exclude.end()) {
         DDWAF_DEBUG("Excluding Rule %s", id.c_str());
         return std::nullopt;
     }
@@ -45,7 +45,7 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
 
         rule::cache_type &rule_cache = it->second;
         std::optional<event> event;
-        auto exclude_it = objects_to_exclude.find(rule);
+        auto exclude_it = objects_to_exclude.find(rule.get());
         if (exclude_it != objects_to_exclude.end()) {
             const auto &objects_excluded = exclude_it->second;
             event = rule->match(store, rule_cache, objects_excluded, dynamic_processors, deadline);
@@ -65,8 +65,8 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
 
 void collection::match(std::vector<event> &events,
     std::unordered_set<std::string_view> & /*seen_actions*/, const object_store &store,
-    collection_cache &cache, const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
+    collection_cache &cache, const std::unordered_set<rule *> &rules_to_exclude,
+    const std::unordered_map<rule *, object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
@@ -88,8 +88,8 @@ void collection::match(std::vector<event> &events,
 
 void priority_collection::match(std::vector<event> &events,
     std::unordered_set<std::string_view> &seen_actions, const object_store &store,
-    collection_cache &cache, const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
+    collection_cache &cache, const std::unordered_set<rule *> &rules_to_exclude,
+    const std::unordered_map<rule *, object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {

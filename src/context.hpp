@@ -44,13 +44,12 @@ public:
 
     // These two functions below return references to internal objects,
     // however using them this way helps with testing
-    const std::unordered_set<rule::ptr> &filter_rules(ddwaf::timer &deadline);
-    const std::unordered_map<rule::ptr, object_set> &filter_inputs(
-        const std::unordered_set<rule::ptr> &rules_to_exclude, ddwaf::timer &deadline);
+    const std::unordered_set<rule *> &filter_rules(ddwaf::timer &deadline);
+    const std::unordered_map<rule *, object_set> &filter_inputs(
+        const std::unordered_set<rule *> &rules_to_exclude, ddwaf::timer &deadline);
 
-    std::vector<event> match(const std::unordered_set<rule::ptr> &rules_to_exclude,
-        const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
-        ddwaf::timer &deadline);
+    std::vector<event> match(const std::unordered_set<rule *> &rules_to_exclude,
+        const std::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline);
 
 protected:
     bool is_first_run() const { return collection_cache_.empty(); }
@@ -65,8 +64,8 @@ protected:
     std::unordered_map<rule_filter::ptr, rule_filter::cache_type> rule_filter_cache_;
     std::unordered_map<input_filter::ptr, input_filter::cache_type> input_filter_cache_;
 
-    std::unordered_set<rule::ptr> rules_to_exclude_;
-    std::unordered_map<rule::ptr, object_set> objects_to_exclude_;
+    std::unordered_set<rule *> rules_to_exclude_;
+    std::unordered_map<rule *, object_set> objects_to_exclude_;
 
     // Cache of collections to avoid processing once a result has been obtained
     std::unordered_map<std::string_view, collection::cache_type> collection_cache_;

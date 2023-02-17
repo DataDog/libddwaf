@@ -33,10 +33,10 @@ constexpr ruleset_builder::change_state operator&(
 
 namespace {
 
-std::set<rule::ptr> target_to_rules(const std::vector<parser::rule_target_spec> &targets,
+std::set<rule *> target_to_rules(const std::vector<parser::rule_target_spec> &targets,
     const std::unordered_map<std::string_view, rule::ptr> &rules, const rule_tag_map &rules_by_tags)
 {
-    std::set<rule::ptr> rule_targets;
+    std::set<rule *> rule_targets;
     if (!targets.empty()) {
         for (const auto &target : targets) {
             if (target.type == parser::target_type::id) {
@@ -44,7 +44,7 @@ std::set<rule::ptr> target_to_rules(const std::vector<parser::rule_target_spec> 
                 if (rule_it == rules.end()) {
                     continue;
                 }
-                rule_targets.emplace(rule_it->second);
+                rule_targets.emplace(rule_it->second.get());
             } else if (target.type == parser::target_type::tags) {
                 auto current_targets = rules_by_tags.multifind(target.tags);
                 rule_targets.merge(current_targets);
@@ -52,7 +52,7 @@ std::set<rule::ptr> target_to_rules(const std::vector<parser::rule_target_spec> 
         }
     } else {
         // An empty rules target applies to all rules
-        for (const auto &[id, rule] : rules) { rule_targets.emplace(rule); }
+        for (const auto &[id, rule] : rules) { rule_targets.emplace(rule.get()); }
     }
     return rule_targets;
 }
@@ -93,7 +93,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
 
             // The string_view should be owned by the rule_ptr
             final_rules_.emplace(rule_ptr->id, rule_ptr);
-            rules_by_tags_.insert(rule_ptr->tags, rule_ptr);
+            rules_by_tags_.insert(rule_ptr->tags, rule_ptr.get());
         }
 
         for (const auto &ovrd : overrides_.by_tags) {

@@ -26,6 +26,7 @@ TEST(TestMultiKeyMap, Find)
         {"id6", "type1", "category1", {{"key", "value0"}}},
         {"id7", "type1", "category1", {{"key", "value1"}}}};
 
+    std::vector<ddwaf::rule::ptr> rules;
     for (const auto &spec : specs) {
         std::unordered_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
@@ -33,7 +34,8 @@ TEST(TestMultiKeyMap, Find)
 
         auto rule_ptr = std::make_shared<ddwaf::rule>(
             std::string(spec.id), "name", decltype(tags)(tags), std::vector<condition::ptr>{});
-        ruledb.insert(rule_ptr->tags, rule_ptr);
+        rules.emplace_back(rule_ptr);
+        ruledb.insert(rule_ptr->tags, rule_ptr.get());
     }
 
     using sv_pair = std::pair<std::string_view, std::string_view>;
@@ -89,6 +91,7 @@ TEST(TestMultiKeyMap, Multifind)
         {"id6", "type1", "category1", {{"key", "value0"}}},
         {"id7", "type1", "category1", {{"key", "value1"}}}};
 
+    std::vector<ddwaf::rule::ptr> rules;
     for (const auto &spec : specs) {
         std::unordered_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
@@ -96,7 +99,8 @@ TEST(TestMultiKeyMap, Multifind)
 
         auto rule_ptr = std::make_shared<ddwaf::rule>(
             std::string(spec.id), "name", decltype(tags)(tags), std::vector<condition::ptr>{});
-        ruledb.insert(rule_ptr->tags, rule_ptr);
+        rules.emplace_back(rule_ptr);
+        ruledb.insert(rule_ptr->tags, rule_ptr.get());
     }
 
     using sv_pair_vec = std::vector<std::pair<std::string, std::string>>;

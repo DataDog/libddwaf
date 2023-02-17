@@ -52,8 +52,8 @@ public:
     virtual void match(std::vector<event> &events /* output */,
         std::unordered_set<std::string_view> &seen_actions /* input & output */,
         const object_store &store, collection_cache &cache,
-        const std::unordered_set<rule::ptr> &rules_to_exclude,
-        const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
+        const std::unordered_set<ddwaf::rule *> &rules_to_exclude,
+        const std::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
@@ -81,8 +81,8 @@ public:
     void match(std::vector<event> &events /* output */,
         std::unordered_set<std::string_view> &seen_actions /* input & output */,
         const object_store &store, collection_cache &cache,
-        const std::unordered_set<rule::ptr> &rules_to_exclude,
-        const std::unordered_map<rule::ptr, object_set> &objects_to_exclude,
+        const std::unordered_set<ddwaf::rule *> &rules_to_exclude,
+        const std::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const override;
 

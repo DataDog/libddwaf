@@ -66,7 +66,7 @@ DDWAF_RET_CODE context::run(
     return code;
 }
 
-const std::unordered_set<rule::ptr> &context::filter_rules(ddwaf::timer &deadline)
+const std::unordered_set<rule *> &context::filter_rules(ddwaf::timer &deadline)
 {
     for (const auto &[id, filter] : ruleset_->rule_filters) {
         if (deadline.expired()) {
@@ -87,8 +87,8 @@ const std::unordered_set<rule::ptr> &context::filter_rules(ddwaf::timer &deadlin
     return rules_to_exclude_;
 }
 
-const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs(
-    const std::unordered_set<rule::ptr> &rules_to_exclude, ddwaf::timer &deadline)
+const std::unordered_map<rule *, context::object_set> &context::filter_inputs(
+    const std::unordered_set<rule *> &rules_to_exclude, ddwaf::timer &deadline)
 {
     for (const auto &[id, filter] : ruleset_->input_filters) {
         if (deadline.expired()) {
@@ -119,8 +119,8 @@ const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs
     return objects_to_exclude_;
 }
 
-std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, ddwaf::timer &deadline)
+std::vector<event> context::match(const std::unordered_set<rule *> &rules_to_exclude,
+    const std::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
     std::vector<ddwaf::event> events;
 

@@ -22,7 +22,7 @@ public:
     using ptr = std::shared_ptr<input_filter>;
 
     struct excluded_set {
-        const std::set<rule::ptr> &rules;
+        const std::set<rule *> &rules;
         std::unordered_set<const ddwaf_object *> objects;
     };
 
@@ -33,7 +33,7 @@ public:
     };
 
     input_filter(std::string id, std::vector<condition::ptr> conditions,
-        std::set<rule::ptr> rule_targets, std::shared_ptr<object_filter> filter);
+        std::set<rule *> rule_targets, std::shared_ptr<object_filter> filter);
 
     std::optional<excluded_set> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
@@ -43,7 +43,7 @@ public:
 protected:
     std::string id_;
     std::vector<condition::ptr> conditions_;
-    const std::set<rule::ptr> rule_targets_;
+    const std::set<rule *> rule_targets_;
     std::shared_ptr<object_filter> filter_;
 };
 
