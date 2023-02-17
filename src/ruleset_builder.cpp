@@ -96,16 +96,9 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
             rules_by_tags_.insert(rule_ptr->tags, rule_ptr);
         }
 
-        // Old or new overrides are applied on the new rules
-        std::unordered_set<rule *> overridden_rules;
-        for (const auto &ovrd : overrides_.by_ids) {
-            // Overrides by ID
+        for (const auto &ovrd : overrides_.by_tags) {
             auto rule_targets = target_to_rules(ovrd.targets, final_rules_, rules_by_tags_);
             for (const auto &rule_ptr : rule_targets) {
-                if (overridden_rules.find(rule_ptr.get()) != overridden_rules.end()) {
-                    continue;
-                }
-
                 if (ovrd.enabled.has_value()) {
                     rule_ptr->toggle(*ovrd.enabled);
                 }
@@ -113,21 +106,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
                 if (ovrd.actions.has_value()) {
                     rule_ptr->actions = *ovrd.actions;
                 }
-
-                overridden_rules.emplace(rule_ptr.get());
             }
         }
 
-        // Apply overrides by tag
-        for (const auto &ovrd : overrides_.by_tags) {
+        for (const auto &ovrd : overrides_.by_ids) {
             auto rule_targets = target_to_rules(ovrd.targets, final_rules_, rules_by_tags_);
             for (const auto &rule_ptr : rule_targets) {
-                // If a rule has been overridden by ID, it shouldn't be overridden
-                // by tag.
-                if (overridden_rules.find(rule_ptr.get()) != overridden_rules.end()) {
-                    continue;
-                }
-
                 if (ovrd.enabled.has_value()) {
                     rule_ptr->toggle(*ovrd.enabled);
                 }
