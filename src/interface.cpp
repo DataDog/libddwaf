@@ -87,8 +87,8 @@ ddwaf::waf *ddwaf_init(
     const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_ruleset_info *info)
 {
     try {
+        ddwaf::ruleset_info ri(info);
         if (ruleset != nullptr) {
-            ddwaf::ruleset_info ri(info);
             ddwaf::parameter input = *ruleset;
             return new ddwaf::waf(input, ri, limits_from_config(config),
                 config != nullptr ? config->free_fn : ddwaf_object_free,
@@ -106,8 +106,8 @@ ddwaf::waf *ddwaf_init(
 ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_ruleset_info *info)
 {
     try {
+        ddwaf::ruleset_info ri(info);
         if (handle != nullptr && ruleset != nullptr) {
-            ddwaf::ruleset_info ri(info);
             ddwaf::parameter input = *ruleset;
             return handle->update(input, ri);
         }

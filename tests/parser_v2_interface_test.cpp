@@ -57,6 +57,57 @@ TEST(TestParserV2Interface, Basic)
     ddwaf_destroy(handle);
 }
 
+TEST(TestParserV2Interface, BasicWithUpdate)
+{
+    auto rule = readRule(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_ruleset_info info;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &info);
+    ASSERT_NE(handle, nullptr);
+
+    EXPECT_EQ(info.loaded, 1);
+    EXPECT_EQ(info.failed, 0);
+    EXPECT_STREQ(info.version, "1.2.7");
+    auto errors = static_cast<ddwaf::parameter::map>(parameter(info.errors));
+    EXPECT_EQ(errors.size(), 0);
+    ddwaf_ruleset_info_free(&info);
+
+    info.loaded = 4;
+    info.failed = 3;
+
+    ddwaf_handle new_handle = ddwaf_update(handle, &rule, &info);
+    ASSERT_NE(handle, nullptr);
+
+    EXPECT_EQ(info.loaded, 1);
+    EXPECT_EQ(info.failed, 0);
+    EXPECT_STREQ(info.version, "1.2.7");
+    errors = static_cast<ddwaf::parameter::map>(parameter(info.errors));
+    EXPECT_EQ(errors.size(), 0);
+    ddwaf_ruleset_info_free(&info);
+
+    ddwaf_object_free(&rule);
+    run_test(new_handle);
+
+    ddwaf_destroy(handle);
+    ddwaf_destroy(new_handle);
+}
+
+TEST(TestParserV2Interface, NullRuleset)
+{
+    ddwaf_ruleset_info info;
+    info.loaded = 1;
+    info.failed = 2;
+
+    ddwaf_handle handle = ddwaf_init(nullptr, nullptr, &info);
+    ASSERT_EQ(handle, nullptr);
+
+    EXPECT_EQ(info.loaded, 0);
+    EXPECT_EQ(info.failed, 0);
+}
+
 TEST(TestParserV2Interface, TestInvalidRule)
 {
     auto rule = readFile("invalid_single.yaml");
