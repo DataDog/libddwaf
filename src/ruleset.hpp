@@ -21,7 +21,7 @@
 
 namespace ddwaf {
 
-using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule::ptr>;
+using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
 
 struct ruleset {
     using ptr = std::shared_ptr<ruleset>;

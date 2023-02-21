@@ -12,7 +12,7 @@ namespace ddwaf::exclusion {
 using excluded_set = input_filter::excluded_set;
 
 input_filter::input_filter(std::string id, std::vector<condition::ptr> conditions,
-    std::set<rule::ptr> rule_targets, std::shared_ptr<object_filter> filter)
+    std::set<rule *> rule_targets, std::shared_ptr<object_filter> filter)
     : id_(std::move(id)), conditions_(std::move(conditions)),
       rule_targets_(std::move(rule_targets)), filter_(std::move(filter))
 {}
