@@ -1,5 +1,13 @@
 # libddwaf release
 
+### v1.8.2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Use raw pointers instead of shared pointers for rule targets ([#141](https://github.com/DataDog/libddwaf/pull/141))
+
+#### Fixes
+- Relax rule override restrictions ([#140](https://github.com/DataDog/libddwaf/pull/140))
+- Initialise `ruleset_info` on invalid input ([#142](https://github.com/DataDog/libddwaf/pull/142))
+
 ### v1.8.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
 - Return `NULL` handle when incorrect version or empty rules provided to `ddwaf_init` ([#139](https://github.com/DataDog/libddwaf/pull/139))
