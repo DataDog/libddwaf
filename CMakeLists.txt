@@ -82,6 +82,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
+    ${libddwaf_SOURCE_DIR}/src/compat_memory_resource.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
@@ -110,6 +111,29 @@ try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     CXX_STANDARD 17)
 if(NOT STDLIB_MAP_RECURSIVE)
 	target_compile_definitions(libddwaf_objects PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
+endif()
+
+try_compile(STD_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_std_monobuffer.cpp
+    CXX_STANDARD 17)
+if(STD_MONOBUFFER)
+	target_compile_definitions(libddwaf_objects PRIVATE HAS_STD_MONOBUFFER)
+else()
+	try_compile(STD_EXPER_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
+		SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_experimental_monobuffer.cpp
+		CXX_STANDARD 17)
+	if(STD_EXPER_MONOBUFFER)
+		target_compile_definitions(libddwaf_objects PRIVATE HAS_EXPERIMENTAL_MONOBUFFER)
+	else()
+		try_compile(STD_EXPER_PMR ${CMAKE_CURRENT_BINARY_DIR}
+			SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_experimental_pmr.cpp
+			CXX_STANDARD 17)
+		if(STD_EXPER_PMR)
+			target_compile_definitions(libddwaf_objects PRIVATE HAS_EXPERIMENTAL_PMR)
+		else()
+			message(FATAL_ERROR "No kind of pmr headers found")
+		endif()
+	endif()
 endif()
 
 target_include_directories(libddwaf_objects PUBLIC ${libddwaf_SOURCE_DIR}/include)

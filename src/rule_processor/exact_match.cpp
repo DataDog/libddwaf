@@ -25,7 +25,7 @@ exact_match::exact_match(const std::vector<std::pair<std::string_view, uint64_t>
     }
 }
 
-std::optional<event::match> exact_match::match(std::string_view str) const
+std::optional<event::match> exact_match::do_match(std::string_view str, allocator alloc) const
 {
     if (values_.empty() || str.empty() || str.data() == nullptr) {
         return std::nullopt;
@@ -44,7 +44,7 @@ std::optional<event::match> exact_match::match(std::string_view str) const
             return std::nullopt;
         }
     }
-    return make_event(str, str);
+    return make_event(str, str, alloc);
 }
 
 } // namespace ddwaf::rule_processor

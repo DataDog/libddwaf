@@ -15,7 +15,7 @@ class is_xss : public base {
 public:
     is_xss() = default;
     [[nodiscard]] std::string_view name() const override { return "is_xss"; }
-    [[nodiscard]] std::optional<event::match> match(std::string_view pattern) const override;
+    [[nodiscard]] std::optional<event::match> do_match(std::string_view pattern, allocator alloc) const override;
 };
 
 } // namespace ddwaf::rule_processor

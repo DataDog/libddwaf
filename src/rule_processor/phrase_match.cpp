@@ -25,7 +25,7 @@ phrase_match::phrase_match(std::vector<const char *> pattern, std::vector<uint32
     ac = std::unique_ptr<ac_t, void (*)(void *)>(ac_, ac_free);
 }
 
-std::optional<event::match> phrase_match::match(std::string_view pattern) const
+std::optional<event::match> phrase_match::do_match(std::string_view pattern, allocator alloc) const
 {
     ac_t *acStructure = ac.get();
     if (pattern.empty() || pattern.data() == nullptr || acStructure == nullptr) {
@@ -47,7 +47,7 @@ std::optional<event::match> phrase_match::match(std::string_view pattern) const
             pattern.substr(result.match_begin, (result.match_end - result.match_begin + 1));
     }
 
-    return make_event(pattern, matched_value);
+    return make_event(pattern, matched_value, alloc);
 }
 
 } // namespace ddwaf::rule_processor

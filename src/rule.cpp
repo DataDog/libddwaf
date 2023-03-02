@@ -4,11 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <rule.hpp>
+#include "rule.hpp"
 
+#include <utility>
 #include <waf.hpp>
 
 #include "clock.hpp"
+#include "condition.hpp"
 #include <exception.hpp>
 #include <log.hpp>
 #include <memory>
@@ -22,7 +24,7 @@ rule::rule(std::string id_, std::string name_, std::unordered_map<std::string, s
 {}
 
 std::optional<event> rule::match(const object_store &store, cache_type &cache,
-    const std::unordered_set<const ddwaf_object *> &objects_excluded,
+    const std::pmr::unordered_set<const ddwaf_object *> &objects_excluded,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
@@ -31,40 +33,46 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
         return std::nullopt;
     }
 
-    for (const auto &cond : conditions) {
-        bool run_on_new = false;
-        auto cached_result = cache.conditions.find(cond);
-        if (cached_result != cache.conditions.end()) {
-            if (cached_result->second) {
-                continue;
-            }
-            run_on_new = true;
-        } else {
-            auto [it, res] = cache.conditions.emplace(cond, false);
-            cached_result = it;
-        }
+    // On the first run, go through the conditions. Stop either at the first
+    // condition that didn't match and return no event or go through all
+    // and return an event.
+    // On subsequent runs, we can start at the first condition that did not
+    // match, because if the conditions matched with the data of the first
+    // run, then they having new data will make them match again. The condition
+    // that failed (and stopped the processing), we can run it again, but only
+    // on the new data. The subsequent conditions, we need to run with all data.
+    std::vector<condition::ptr>::const_iterator cond_iter;
+    bool run_on_new;
+    if (cache.last_non_matched_cond.has_value()) {
+        cond_iter = *cache.last_non_matched_cond;
+        run_on_new = true;
+    } else {
+        cond_iter = conditions.cbegin();
+        run_on_new = false;
+    }
 
+    while (cond_iter != conditions.cend()) {
+        auto &&cond = *cond_iter;
         auto opt_match =
             cond->match(store, objects_excluded, run_on_new, dynamic_processors, deadline);
         if (!opt_match.has_value()) {
-            cached_result->second = false;
+            cache.last_non_matched_cond = cond_iter;
             return std::nullopt;
         }
-        cached_result->second = true;
-        cache.event.matches.emplace_back(std::move(*opt_match));
+        cache.matches.emplace_back(std::move(*opt_match));
+
+        run_on_new = false;
+        cond_iter++;
     }
 
     cache.result = true;
 
-    cache.event.id = id;
-    cache.event.name = name;
-    cache.event.type = get_tag("type");
-    cache.event.category = get_tag("category");
-
-    cache.event.actions.reserve(actions.size());
-    for (const auto &action : actions) { cache.event.actions.push_back(action); }
-
-    return {std::move(cache.event)};
+    std::pmr::polymorphic_allocator<std::byte> alloc{objects_excluded.get_allocator()};
+    std::pmr::vector<std::string_view> event_actions{alloc};
+    event_actions.reserve(actions.size());
+    for (const auto &action : actions) { event_actions.emplace_back(action); }
+    return std::optional<event>{std::in_place, id, name, get_tag("type"), get_tag("category"),
+        std::move(event_actions), std::move(cache.matches), alloc};
 }
 
 } // namespace ddwaf

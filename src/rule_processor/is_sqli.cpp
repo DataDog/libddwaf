@@ -11,7 +11,7 @@
 
 namespace ddwaf::rule_processor {
 
-std::optional<event::match> is_sqli::match(std::string_view pattern) const
+std::optional<event::match> is_sqli::do_match(std::string_view pattern, allocator alloc) const
 {
     if (pattern.empty() || pattern.data() == nullptr) {
         return std::nullopt;
@@ -23,7 +23,7 @@ std::optional<event::match> is_sqli::match(std::string_view pattern) const
         return std::nullopt;
     }
 
-    return make_event(pattern, fingerprint.data());
+    return make_event(pattern, fingerprint.data(), alloc);
 }
 
 } // namespace ddwaf::rule_processor
