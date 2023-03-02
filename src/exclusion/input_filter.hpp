@@ -27,8 +27,21 @@ public:
     };
 
     struct cache_type {
+        using allocator_type = std::pmr::polymorphic_allocator<std::byte>;
+
+        explicit cache_type(allocator_type alloc = {})
+            : conditions{alloc}, object_filter_cache{alloc} {};
+        cache_type(const cache_type &o, allocator_type alloc)
+            : result{o.result}, conditions{o.conditions, alloc}, object_filter_cache{
+                                                                     o.object_filter_cache, alloc}
+        {}
+        cache_type(cache_type &&o, allocator_type alloc)
+            : result{o.result}, conditions{std::move(o.conditions), alloc},
+              object_filter_cache{std::move(o.object_filter_cache), alloc}
+        {}
+
         bool result{false};
-        std::unordered_map<condition::ptr, bool> conditions;
+        std::pmr::unordered_map<condition::ptr, bool> conditions;
         object_filter::cache_type object_filter_cache;
     };
 

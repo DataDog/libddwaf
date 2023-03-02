@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "compat_memory_resource.hpp"
 #include <atomic>
 #include <memory>
 #include <string>
@@ -28,9 +29,27 @@ public:
     using ptr = std::shared_ptr<rule>;
 
     struct cache_type {
+        using allocator_type = std::pmr::polymorphic_allocator<std::byte>;
+
+        explicit cache_type(allocator_type alloc = {}) : matches{alloc} {}
+        cache_type(const cache_type &o, allocator_type alloc)
+            : result{o.result}, matches{o.matches, alloc}, last_non_matched_cond{
+                                                               o.last_non_matched_cond}
+        {}
+        cache_type(cache_type &&o, allocator_type alloc)
+            : result{o.result}, matches{std::move(o.matches), alloc}, last_non_matched_cond{
+                                                                          o.last_non_matched_cond}
+        {}
+
+        cache_type(const cache_type&) = default;
+        cache_type(cache_type&&) = default;
+        cache_type&operator=(const cache_type&) = default;
+        cache_type&operator=(cache_type&&) = default;
+        ~cache_type() = default;
+
         bool result{false};
-        std::unordered_map<condition::ptr, bool> conditions;
-        ddwaf::event event;
+        std::pmr::vector<event::match> matches;
+        std::optional<std::vector<condition::ptr>::const_iterator> last_non_matched_cond{};
     };
 
     // TODO: make fields protected, add getters, follow conventions, add cache
@@ -63,14 +82,14 @@ public:
     ~rule() = default;
 
     std::optional<event> match(const object_store &store, cache_type &cache,
-        const std::unordered_set<const ddwaf_object *> &objects_excluded,
+        const std::pmr::unordered_set<const ddwaf_object *> &objects_excluded,
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled; }
     void toggle(bool value) { enabled = value; }
 
-    std::string_view get_tag(const std::string &tag) const
+    [[nodiscard]] std::string_view get_tag(const std::string &tag) const
     {
         auto it = tags.find(tag);
         return it == tags.end() ? std::string_view() : it->second;

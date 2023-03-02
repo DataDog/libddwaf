@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "compat_memory_resource.hpp"
 #include <event.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
@@ -31,11 +32,6 @@ char *to_cstr(rapidjson::StringBuffer &buffer)
 rapidjson::GenericStringRef<char> StringRef(std::string_view str)
 {
     return {str.data(), static_cast<rapidjson::SizeType>(str.size())};
-}
-
-rapidjson::GenericStringRef<char> StringRef(const std::string &str)
-{
-    return {str.c_str(), static_cast<rapidjson::SizeType>(str.size())};
 }
 
 bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
@@ -84,8 +80,8 @@ void serialize_match(rapidjson::Value &output, rapidjson::Document::AllocatorTyp
 
 } // namespace
 
-void event_serializer::serialize(const std::vector<event> &events,
-    const std::unordered_set<std::string_view> &actions, ddwaf_result &output) const
+void event_serializer::serialize(const std::pmr::vector<event> &events,
+    const std::pmr::unordered_set<std::string_view> &actions, ddwaf_result &output) const
 {
     rapidjson::Document doc;
     auto &allocator = doc.GetAllocator();

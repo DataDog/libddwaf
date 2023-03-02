@@ -24,7 +24,8 @@ public:
 
     [[nodiscard]] std::string_view to_string() const override { return regex->pattern(); }
     [[nodiscard]] std::string_view name() const override { return "match_regex"; }
-    [[nodiscard]] std::optional<event::match> match(std::string_view pattern) const override;
+    [[nodiscard]] std::optional<event::match> do_match(
+        std::string_view pattern, allocator alloc) const override;
 
 protected:
     static constexpr int max_match_count = 16;

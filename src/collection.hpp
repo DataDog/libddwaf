@@ -9,6 +9,7 @@
 #include <event.hpp>
 #include <rule.hpp>
 
+#include "compat_memory_resource.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -30,14 +31,22 @@ namespace ddwaf {
 // priority collection of the same type, aren't processed when the respective
 // priority collection has already had a match.
 struct collection_cache {
+    using alloc_type = std::pmr::polymorphic_allocator<std::byte>;
+    explicit collection_cache(alloc_type alloc = {})
+        : rule_cache{alloc}, remaining_actions{alloc}
+    {}
+    collection_cache(const std::unordered_set<std::string_view> &actions_set, alloc_type alloc)
+        : rule_cache{alloc}, remaining_actions{actions_set.cbegin(), actions_set.cend(),
+                                 actions_set.bucket_count(), alloc} {};
+
     bool result{false};
-    std::unordered_map<rule::ptr, rule::cache_type> rule_cache;
-    std::unordered_set<std::string_view> remaining_actions;
+    std::pmr::unordered_map<rule::ptr, rule::cache_type> rule_cache;
+    std::pmr::unordered_set<std::string_view> remaining_actions;
 };
 
 class collection {
 public:
-    using object_set = std::unordered_set<const ddwaf_object *>;
+    using object_set = std::pmr::unordered_set<const ddwaf_object *>;
     using cache_type = collection_cache;
 
     collection() = default;
@@ -49,15 +58,19 @@ public:
 
     virtual void insert(rule::ptr rule) { rules_.emplace_back(std::move(rule)); }
 
-    virtual void match(std::vector<event> &events /* output */,
-        std::unordered_set<std::string_view> &seen_actions /* input & output */,
+    virtual void match(std::pmr::vector<event> &events /* output */,
+        std::pmr::unordered_set<std::string_view> &seen_actions /* input & output */,
         const object_store &store, collection_cache &cache,
-        const std::unordered_set<ddwaf::rule *> &rules_to_exclude,
-        const std::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
+        const std::pmr::unordered_set<ddwaf::rule *> &rules_to_exclude,
+        const std::pmr::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
-    [[nodiscard]] virtual collection_cache get_cache() const { return {}; }
+    [[nodiscard]] virtual collection_cache get_cache(
+        std::pmr::polymorphic_allocator<std::byte> alloc) const
+    {
+        return collection_cache{alloc};
+    }
 
 protected:
     std::vector<rule::ptr> rules_{};
@@ -78,15 +91,19 @@ public:
         rules_.emplace_back(std::move(rule));
     }
 
-    void match(std::vector<event> &events /* output */,
-        std::unordered_set<std::string_view> &seen_actions /* input & output */,
+    void match(std::pmr::vector<event> &events /* output */,
+        std::pmr::unordered_set<std::string_view> &seen_actions /* input & output */,
         const object_store &store, collection_cache &cache,
-        const std::unordered_set<ddwaf::rule *> &rules_to_exclude,
-        const std::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
+        const std::pmr::unordered_set<ddwaf::rule *> &rules_to_exclude,
+        const std::pmr::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const override;
 
-    [[nodiscard]] collection_cache get_cache() const override { return {false, {}, actions_}; }
+    [[nodiscard]] collection_cache get_cache(
+        std::pmr::polymorphic_allocator<std::byte> alloc) const override
+    {
+        return {actions_, alloc};
+    }
 
 protected:
     std::unordered_set<std::string_view> actions_;

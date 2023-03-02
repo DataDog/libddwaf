@@ -27,7 +27,7 @@ public:
     exact_match &operator=(const exact_match &) = default;
     exact_match &operator=(exact_match &&) = default;
 
-    std::optional<event::match> match(std::string_view str) const override;
+    std::optional<event::match> do_match(std::string_view str, allocator alloc) const override;
     std::string_view name() const override { return "exact_match"; }
 
 protected:

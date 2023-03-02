@@ -10,13 +10,17 @@
 
 namespace ddwaf {
 
-object_store::object_store(const manifest &m, ddwaf_object_free_fn free_fn)
-    : manifest_(m), obj_free_(free_fn)
+object_store::object_store(const manifest &m, ddwaf_object_free_fn free_fn, alloc_type alloc)
+    : manifest_{m}, latest_batch_{alloc}, objects_{alloc}, objects_to_free_{alloc}, obj_free_{
+                                                                                        free_fn}
 {
     if (obj_free_ != nullptr) {
         objects_to_free_.reserve(8);
     }
 }
+object_store::object_store(const manifest &m, alloc_type alloc)
+    : object_store{m, ddwaf_object_free, alloc}
+{}
 
 object_store::~object_store()
 {

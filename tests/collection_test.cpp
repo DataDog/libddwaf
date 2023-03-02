@@ -17,7 +17,7 @@ TYPED_TEST_SUITE(TestCollection, CollectionTypes);
 // Validate that a rule within the collection matches only once
 TYPED_TEST(TestCollection, SingleRuleMatch)
 {
-    std::unordered_set<std::string_view> seen_actions;
+    std::pmr::unordered_set<std::string_view> seen_actions;
     std::vector<ddwaf::condition::target_type> targets;
 
     ddwaf::manifest manifest;
@@ -36,7 +36,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
     TypeParam rule_collection;
     rule_collection.insert(rule);
 
-    auto cache = rule_collection.get_cache();
+    auto cache = rule_collection.get_cache({});
     ddwaf::object_store store(manifest);
     {
         ddwaf_object root;
@@ -46,7 +46,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -60,7 +60,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         store.insert(root);
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -71,7 +71,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 // Validate that once there's a match for a collection, a second match isn't possible
 TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 {
-    std::unordered_set<std::string_view> seen_actions;
+    std::pmr::unordered_set<std::string_view> seen_actions;
     TypeParam rule_collection;
     ddwaf::manifest manifest;
     {
@@ -113,7 +113,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    auto cache = rule_collection.get_cache();
+    auto cache = rule_collection.get_cache({});
 
     {
         ddwaf_object root;
@@ -122,7 +122,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -136,7 +136,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -147,7 +147,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 // Validate that after a failed match, the collection can still produce a match
 TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 {
-    std::unordered_set<std::string_view> seen_actions;
+    std::pmr::unordered_set<std::string_view> seen_actions;
     TypeParam rule_collection;
     ddwaf::manifest manifest;
     {
@@ -187,7 +187,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    auto cache = rule_collection.get_cache();
+    auto cache = rule_collection.get_cache({});
 
     {
         ddwaf_object root;
@@ -196,7 +196,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -210,7 +210,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -221,7 +221,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 // Validate that the rule cache is acted on
 TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 {
-    std::unordered_set<std::string_view> seen_actions;
+    std::pmr::unordered_set<std::string_view> seen_actions;
     ddwaf::manifest manifest;
     std::vector<condition::ptr> conditions;
     {
@@ -251,7 +251,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
     TypeParam rule_collection;
     rule_collection.insert(rule);
 
-    auto cache = rule_collection.get_cache();
+    auto cache = rule_collection.get_cache({});
     {
         ddwaf_object root;
         ddwaf_object tmp;
@@ -261,7 +261,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
         ddwaf::object_store store(manifest);
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -277,7 +277,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
         ddwaf::object_store store(manifest);
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -329,9 +329,9 @@ TEST(TestPriorityCollection, MatchBothActions)
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    std::unordered_set<std::string_view> seen_actions;
+    std::pmr::unordered_set<std::string_view> seen_actions;
 
-    auto cache = rule_collection.get_cache();
+    auto cache = rule_collection.get_cache({});
     EXPECT_EQ(cache.remaining_actions.size(), 2);
     EXPECT_NE(cache.remaining_actions.find("redirect"), cache.remaining_actions.end());
     EXPECT_NE(cache.remaining_actions.find("block"), cache.remaining_actions.end());
@@ -344,7 +344,7 @@ TEST(TestPriorityCollection, MatchBothActions)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -399,9 +399,9 @@ TEST(TestPriorityCollection, MatchOneAction)
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    std::unordered_set<std::string_view> seen_actions;
+    std::pmr::unordered_set<std::string_view> seen_actions;
 
-    auto cache = rule_collection.get_cache();
+    auto cache = rule_collection.get_cache({});
     EXPECT_EQ(cache.remaining_actions.size(), 1);
     EXPECT_NE(cache.remaining_actions.find("block"), cache.remaining_actions.end());
 
@@ -413,7 +413,7 @@ TEST(TestPriorityCollection, MatchOneAction)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
@@ -467,11 +467,11 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    std::unordered_set<std::string_view> seen_actions;
+    std::pmr::unordered_set<std::string_view> seen_actions;
 
     // This test can also be done by adding an extra rule that will not match
     // however this hack also works.
-    auto cache = rule_collection.get_cache();
+    auto cache = rule_collection.get_cache({});
     cache.remaining_actions.emplace("redirect");
 
     {
@@ -482,7 +482,7 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        std::pmr::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
 
