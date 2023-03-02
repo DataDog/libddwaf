@@ -10,7 +10,7 @@
 
 namespace ddwaf::rule_processor {
 
-std::optional<event::match> is_xss::match(std::string_view pattern) const
+std::optional<event::match> is_xss::do_match(std::string_view pattern, allocator alloc) const
 {
     if (pattern.empty() || pattern.data() == nullptr) {
         return std::nullopt;
@@ -20,7 +20,7 @@ std::optional<event::match> is_xss::match(std::string_view pattern) const
         return std::nullopt;
     }
 
-    return make_event(pattern, {});
+    return make_event(pattern, {}, alloc);
 }
 
 } // namespace ddwaf::rule_processor

@@ -27,7 +27,7 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
     }
 }
 
-std::optional<event::match> regex_match::match(std::string_view pattern) const
+std::optional<event::match> regex_match::do_match(std::string_view pattern, allocator alloc) const
 {
     if (pattern.data() == nullptr || !regex->ok() || pattern.size() < min_length) {
         return std::nullopt;
@@ -41,7 +41,7 @@ std::optional<event::match> regex_match::match(std::string_view pattern) const
         return std::nullopt;
     }
 
-    return make_event(pattern, {match[0].data(), match[0].size()});
+    return make_event(pattern, {match[0].data(), match[0].size()}, alloc);
 }
 
 } // namespace ddwaf::rule_processor

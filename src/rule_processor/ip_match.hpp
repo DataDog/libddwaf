@@ -27,7 +27,8 @@ public:
     ip_match &operator=(ip_match &&) = default;
 
     [[nodiscard]] std::string_view name() const override { return "ip_match"; }
-    [[nodiscard]] std::optional<event::match> match(std::string_view str) const override;
+    [[nodiscard]] std::optional<event::match> do_match(
+        std::string_view str, allocator alloc) const override;
 
 protected:
     static constexpr unsigned radix_tree_bits = 128; // IPv6

@@ -21,8 +21,18 @@ public:
     using optional_set = std::optional<std::reference_wrapper<const std::set<rule *>>>;
 
     struct cache_type {
+        using allocator_type = std::pmr::polymorphic_allocator<std::byte>;
+
+        explicit cache_type(allocator_type alloc = {}) : conditions{alloc} {}
+        cache_type(const cache_type &o, allocator_type alloc)
+            : result{o.result}, conditions{o.conditions, alloc}
+        {}
+        cache_type(cache_type &&o, allocator_type alloc)
+            : result{o.result}, conditions{std::move(o.conditions), alloc}
+        {}
+
         bool result{false};
-        std::unordered_map<condition::ptr, bool> conditions;
+        std::pmr::unordered_map<condition::ptr, bool> conditions;
     };
 
     rule_filter(

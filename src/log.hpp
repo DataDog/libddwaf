@@ -49,48 +49,56 @@ constexpr const char *base_name(const char *path)
     return base;
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #  define DDWAF_LOG_HELPER(level, function, file, line, fmt, ...)                                  \
     {                                                                                              \
       if (ddwaf::logger::valid(level)) {                                                           \
         constexpr const char *filename = base_name(file);                                          \
-        int _bytes = snprintf(nullptr, 0, fmt, ##__VA_ARGS__);                                     \
+        int _bytes = snprintf(nullptr, 0, fmt, ##__VA_ARGS__); /* NOLINT */                        \
         if (_bytes > 0) {                                                                          \
           size_t bytes = (size_t)_bytes;                                                           \
-          char *message = (char *)malloc(bytes + 1);                                               \
+          char *message = (char *)malloc(bytes + 1); /* NOLINT */                                  \
           if (message != nullptr) {                                                                \
-            snprintf(message, bytes + 1, fmt, ##__VA_ARGS__);                                      \
-            ddwaf::logger::log(level, function, filename, line, message, bytes);                   \
-            free((void *)message);                                                                 \
+            snprintf(message, bytes + 1, fmt, ##__VA_ARGS__); /* NOLINT */                         \
+            ddwaf::logger::log(level, static_cast<const char *>(function),                         \
+                static_cast<const char *>(filename), line, message, bytes);                        \
+            free((void *)message); /* NOLINT */                                                    \
           }                                                                                        \
         }                                                                                          \
       }                                                                                            \
     }
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #  define DDWAF_LOG(level, fmt, ...)                                                               \
     DDWAF_LOG_HELPER(level, __func__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 #endif
 
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_TRACE
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #  define DDWAF_TRACE(fmt, ...) DDWAF_LOG(DDWAF_LOG_TRACE, fmt, ##__VA_ARGS__)
 #else
 #  define DDWAF_TRACE(fmt, ...) (void)0
 #endif
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_DEBUG
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #  define DDWAF_DEBUG(fmt, ...) DDWAF_LOG(DDWAF_LOG_DEBUG, fmt, ##__VA_ARGS__)
 #else
 #  define DDWAF_DEBUG(fmt, ...) (void)0
 #endif
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_INFO
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #  define DDWAF_INFO(fmt, ...) DDWAF_LOG(DDWAF_LOG_INFO, fmt, ##__VA_ARGS__)
 #else
 #  define DDWAF_INFO(fmt, ...) (void)0
 #endif
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_WARN
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #  define DDWAF_WARN(fmt, ...) DDWAF_LOG(DDWAF_LOG_WARN, fmt, ##__VA_ARGS__)
 #else
 #  define DDWAF_WARN(fmt, ...) (void)0
 #endif
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_ERROR
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #  define DDWAF_ERROR(fmt, ...) DDWAF_LOG(DDWAF_LOG_ERROR, fmt, ##__VA_ARGS__)
 #else
 #  define DDWAF_ERROR(fmt, ...) (void)0
