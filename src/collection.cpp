@@ -4,17 +4,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "compat_memory_resource.hpp"
 #include <collection.hpp>
 #include <exception.hpp>
 #include <log.hpp>
+#include <tuple>
 
 namespace ddwaf {
 
 namespace {
 std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
-    std::unordered_map<rule::ptr, rule::cache_type> &cache,
-    const std::unordered_set<ddwaf::rule *> &rules_to_exclude,
-    const std::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
+    std::pmr::unordered_map<rule::ptr, rule::cache_type> &cache,
+    const std::pmr::unordered_set<ddwaf::rule *> &rules_to_exclude,
+    const std::pmr::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline)
 {
@@ -39,7 +41,10 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
     try {
         auto it = cache.find(rule);
         if (it == cache.end()) {
-            auto [new_it, res] = cache.emplace(rule, rule::cache_type{});
+            auto [new_it, res] = cache.emplace(
+                std::piecewise_construct,
+                std::forward_as_tuple(rule),
+                std::forward_as_tuple()); // map forwards allocator
             it = new_it;
         }
 
@@ -50,7 +55,9 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
             const auto &objects_excluded = exclude_it->second;
             event = rule->match(store, rule_cache, objects_excluded, dynamic_processors, deadline);
         } else {
-            event = rule->match(store, rule_cache, {}, dynamic_processors, deadline);
+            static const std::pmr::unordered_set<const ddwaf_object *> empty_objects_excluded{
+                std::pmr::new_delete_resource()};
+            event = rule->match(store, rule_cache, empty_objects_excluded, dynamic_processors, deadline);
         }
 
         return event;
@@ -63,10 +70,10 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
 }
 } // namespace
 
-void collection::match(std::vector<event> &events,
-    std::unordered_set<std::string_view> & /*seen_actions*/, const object_store &store,
-    collection_cache &cache, const std::unordered_set<rule *> &rules_to_exclude,
-    const std::unordered_map<rule *, object_set> &objects_to_exclude,
+void collection::match(std::pmr::vector<event> &events,
+    std::pmr::unordered_set<std::string_view> & /*seen_actions*/, const object_store &store,
+    collection_cache &cache, const std::pmr::unordered_set<rule *> &rules_to_exclude,
+    const std::pmr::unordered_map<rule *, object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
@@ -86,10 +93,10 @@ void collection::match(std::vector<event> &events,
     }
 }
 
-void priority_collection::match(std::vector<event> &events,
-    std::unordered_set<std::string_view> &seen_actions, const object_store &store,
-    collection_cache &cache, const std::unordered_set<rule *> &rules_to_exclude,
-    const std::unordered_map<rule *, object_set> &objects_to_exclude,
+void priority_collection::match(std::pmr::vector<event> &events,
+    std::pmr::unordered_set<std::string_view> &seen_actions, const object_store &store,
+    collection_cache &cache, const std::pmr::unordered_set<rule *> &rules_to_exclude,
+    const std::pmr::unordered_map<rule *, object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {

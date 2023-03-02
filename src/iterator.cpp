@@ -14,7 +14,7 @@ namespace ddwaf::object {
 
 template <typename T>
 iterator_base<T>::iterator_base(
-    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
+    const std::pmr::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
     : limits_(limits), excluded_(exclude)
 {
     stack_.reserve(initial_stack_size);
@@ -30,7 +30,7 @@ template <typename T> bool iterator_base<T>::operator++()
 }
 
 // TODO: return string_view as this will be immediately copied after
-template <typename T> std::vector<std::string> iterator_base<T>::get_current_path() const
+template <typename T> std::pmr::vector<std::pmr::string> iterator_base<T>::get_current_path() const
 {
     if (current_ == nullptr) {
         return {};
@@ -39,11 +39,12 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
         if (path_.empty()) {
             return {};
         }
-        return path_;
+        return {path_.cbegin(), path_.cend(), excluded_.get_allocator()};
     }
 
-    std::vector<std::string> keys = path_;
+    std::pmr::vector<std::pmr::string> keys{excluded_.get_allocator()};
     keys.reserve(path_.size() + stack_.size());
+    keys.insert(keys.begin(), path_.cbegin(), path_.cend());
 
     auto [parent, parent_index] = stack_.front();
     for (unsigned i = 1; i < stack_.size(); i++) {
@@ -68,7 +69,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
 }
 
 value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
-    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
+    const std::pmr::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
@@ -215,7 +216,7 @@ void value_iterator::set_cursor_to_next_object()
 }
 
 key_iterator::key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
-    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
+    const std::pmr::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);

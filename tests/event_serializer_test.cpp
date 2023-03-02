@@ -117,7 +117,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    std::vector<ddwaf::event> events;
+    std::pmr::vector<ddwaf::event> events;
     {
         ddwaf::event event;
         event.id = "xasd1022";

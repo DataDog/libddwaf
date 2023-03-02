@@ -182,7 +182,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_STREQ(event.name.data(), "name1");
     EXPECT_STREQ(event.type.data(), "type");
     EXPECT_STREQ(event.category.data(), "category1");
-    std::vector<std::string_view> expected_actions{};
+    std::pmr::vector<std::string_view> expected_actions{};
     EXPECT_EQ(event.actions, expected_actions);
     EXPECT_EQ(event.matches.size(), 1);
 
@@ -341,7 +341,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         EXPECT_STREQ(event.name.data(), "name1");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category1");
-        std::vector<std::string_view> expected_actions{};
+        std::pmr::vector<std::string_view> expected_actions{};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -427,7 +427,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_STREQ(event.name.data(), "name1");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category1");
-        std::vector<std::string_view> expected_actions{};
+        std::pmr::vector<std::string_view> expected_actions{};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -458,7 +458,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_STREQ(event.name.data(), "name2");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category2");
-        std::vector<std::string_view> expected_actions{"block"};
+        std::pmr::vector<std::string_view> expected_actions{"block"};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -533,7 +533,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         EXPECT_STREQ(event.name.data(), "name1");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category1");
-        std::vector<std::string_view> expected_actions{"block"};
+        std::pmr::vector<std::string_view> expected_actions{"block"};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -621,7 +621,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_STREQ(event.name.data(), "name1");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category1");
-        std::vector<std::string_view> expected_actions{"block"};
+        std::pmr::vector<std::string_view> expected_actions{"block"};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -652,7 +652,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_STREQ(event.name.data(), "name2");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category2");
-        std::vector<std::string_view> expected_actions{"redirect"};
+        std::pmr::vector<std::string_view> expected_actions{"redirect"};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -1136,6 +1136,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
 
     {
         auto filter = std::make_shared<rule_filter>("2", std::vector<condition::ptr>{},
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
             std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(), rules[5].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1151,6 +1152,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
 
     {
         auto filter = std::make_shared<rule_filter>("3", std::vector<condition::ptr>{},
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
             std::set<ddwaf::rule *>{rules[6].get(), rules[7].get(), rules[8].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1212,6 +1214,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
     {
         auto filter = std::make_shared<rule_filter>("2", std::vector<condition::ptr>{},
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
             std::set<ddwaf::rule *>{rules[2].get(), rules[3].get(), rules[4].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1226,6 +1229,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
     {
         auto filter = std::make_shared<rule_filter>("3", std::vector<condition::ptr>{},
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
             std::set<ddwaf::rule *>{rules[0].get(), rules[5].get(), rules[6].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1242,6 +1246,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
     {
         auto filter = std::make_shared<rule_filter>("4", std::vector<condition::ptr>{},
+            // NOLINTNEXTLINE
             std::set<ddwaf::rule *>{rules[7].get(), rules[8].get(), rules[6].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1261,6 +1266,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     {
         auto filter = std::make_shared<rule_filter>("5", std::vector<condition::ptr>{},
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(),
+                // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
                 rules[4].get(), rules[5].get(), rules[6].get(), rules[7].get(), rules[8].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1329,6 +1335,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 
         auto filter = std::make_shared<rule_filter>("2", std::move(conditions),
             std::set<ddwaf::rule *>{
+                // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
                 rules[5].get(), rules[6].get(), rules[7].get(), rules[8].get(), rules[9].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
@@ -1409,6 +1416,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 
         auto filter = std::make_shared<rule_filter>("1", std::move(conditions),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(),
+                // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
                 rules[4].get(), rules[5].get(), rules[6].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
@@ -1423,8 +1431,9 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
         auto filter = std::make_shared<rule_filter>("2", std::move(conditions),
-            std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(), rules[5].get(), rules[6].get(),
-                rules[7].get(), rules[8].get(), rules[9].get()});
+            std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(),
+                // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
+                rules[5].get(), rules[6].get(), rules[7].get(), rules[8].get(), rules[9].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 

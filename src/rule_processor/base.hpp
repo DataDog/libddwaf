@@ -19,6 +19,7 @@ namespace ddwaf::rule_processor {
 
 class base {
 public:
+    using allocator =  std::pmr::polymorphic_allocator<std::byte>;
     using ptr = std::shared_ptr<base>;
 
     base() = default;
@@ -28,14 +29,17 @@ public:
     base &operator=(const base &) = default;
     base &operator=(base &&) = default;
 
-    [[nodiscard]] virtual std::optional<event::match> match(std::string_view str) const = 0;
-
-    virtual std::optional<event::match> match_object(const ddwaf_object *obj) const
+    std::optional<event::match> match_object(const ddwaf_object *obj) const
     {
         if (obj->stringValue == nullptr) {
             return std::nullopt;
         }
-        return match({obj->stringValue, static_cast<std::size_t>(obj->nbEntries)});
+        return do_match(
+            {obj->stringValue, static_cast<std::size_t>(obj->nbEntries)}, new_del_alloc);
+    }
+
+    [[nodiscard]] std::optional<event::match> match(std::string_view str) {
+        return do_match(str, new_del_alloc);
     }
 
     [[nodiscard]] virtual std::string_view to_string() const { return ""; }
@@ -45,10 +49,20 @@ public:
      * with a literal. */
     [[nodiscard]] virtual std::string_view name() const = 0;
 
-    [[nodiscard]] event::match make_event(std::string_view resolved, std::string_view matched) const
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    [[nodiscard]] event::match make_event(
+        std::string_view resolved, std::string_view matched, allocator alloc) const
     {
-        return {std::string(resolved), std::string(matched), name(), to_string(), {}, {}};
+        return {resolved, matched, name(), to_string(), alloc};
     }
+protected:
+    // Interface could be modified to pass along the allocator used for the
+    // context. This would avoid some copies down the line, as the match is
+    // stored inside the context
+    static inline const auto new_del_alloc = std::pmr::new_delete_resource();
+
+    [[nodiscard]] virtual std::optional<event::match> do_match(
+        std::string_view str, allocator alloc) const = 0;
 };
 
 } // namespace ddwaf::rule_processor

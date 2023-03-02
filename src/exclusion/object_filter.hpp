@@ -237,7 +237,7 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = std::unordered_set<manifest::target_type>;
+    using cache_type = std::pmr::unordered_set<manifest::target_type>;
 
     explicit object_filter(const ddwaf::object_limits &limits = {}) : limits_(limits) {}
 

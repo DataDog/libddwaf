@@ -53,7 +53,7 @@ ip_match::ip_match(const std::vector<std::pair<std::string_view, uint64_t>> &ip_
     }
 }
 
-std::optional<event::match> ip_match::match(std::string_view str) const
+std::optional<event::match> ip_match::do_match(std::string_view str, allocator alloc) const
 {
     if (!rtree_ || str.empty() || str.data() == nullptr) {
         return std::nullopt;
@@ -87,7 +87,7 @@ std::optional<event::match> ip_match::match(std::string_view str) const
         }
     }
 
-    return make_event(str, str);
+    return make_event(str, str, alloc);
 }
 
 } // namespace ddwaf::rule_processor

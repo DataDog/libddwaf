@@ -101,7 +101,7 @@ const rule_processor::base::ptr &condition::get_processor(
 }
 
 std::optional<event::match> condition::match(const object_store &store,
-    const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
+    const std::pmr::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {

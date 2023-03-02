@@ -16,7 +16,8 @@ class phrase_match : public base {
 public:
     phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths);
     [[nodiscard]] std::string_view name() const override { return "phrase_match"; }
-    [[nodiscard]] std::optional<event::match> match(std::string_view pattern) const override;
+    [[nodiscard]] std::optional<event::match> do_match(
+        std::string_view pattern, allocator alloc) const override;
 
 protected:
     std::unique_ptr<ac_t, void (*)(void *)> ac{nullptr, nullptr};
