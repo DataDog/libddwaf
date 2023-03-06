@@ -5076,7 +5076,8 @@ static const keyword_t sql_keywords[] = {
     {"0NTVO(", 'F'},
     {"0NTVOF", 'F'},
     {"0NTVOS", 'F'},
-    {"0NU(1)", 'F'},
+    // Incorrectly matches `Positivo Union (123)`, `~European Union (123)`
+    {"0NU(1)", '~'},
     {"0NU(1O", 'F'},
     {"0NU(E(", 'F'},
     {"0NU(E1", 'F'},
