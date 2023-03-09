@@ -329,6 +329,29 @@ void ddwaf_context_destroy(ddwaf_context context);
 void ddwaf_result_free(ddwaf_result *result);
 
 /**
+ * ddwaf_object_from_json
+ *
+ * Creates an object from a json string.
+ *
+ * @param json Object to perform the operation on. (nonnull)
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+ddwaf_object *ddwaf_object_from_json(ddwaf_object *object, const char *json);
+
+/**
+ * ddwaf_object_to_json
+ *
+ * Creates an object from a json string.
+ *
+ * @param object Object to perform the operation on. (nonnull)
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+const char* ddwaf_object_to_json(const ddwaf_object *object);
+
+
+/**
  * ddwaf_object_invalid
  *
  * Creates an invalid object.

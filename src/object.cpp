@@ -11,22 +11,200 @@
 #include <cstdlib>
 #include <cstring>
 #include <log.hpp>
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 #include <utils.hpp>
 
-extern "C" {
 namespace {
 // Maximum number of characters required to represent a 64 bit integer as a string
 // 20 bytes for UINT64_MAX or INT64_MIN + null byte
 constexpr size_t UINT64_CHARS = 21;
+
+class parsing_error : public std::exception
+{
+public:
+    parsing_error(const std::string& what) : what_(what) {}
+    const char* what() { return what_.c_str(); }
+
+protected:
+    const std::string what_;
+};
+
+ddwaf_object ddwaf_object_from_json_rec(const rapidjson::GenericValue<rapidjson::UTF8<>>& json)
+{
+    ddwaf_object object {};
+    json.GetType();
+    switch (json.GetType())
+    {
+        case rapidjson::kObjectType:
+        {
+            ddwaf_object_map(&object);
+            for (const auto& kvp : json.GetObject())
+            {
+                auto value = ddwaf_object_from_json_rec(kvp.value);
+                ddwaf_object_map_add(&object, kvp.name.GetString(), &value);
+            }
+
+            return object;
+        }
+        case rapidjson::kArrayType:
+        {
+            ddwaf_object_array(&object);
+            for (const auto& elem : json.GetArray())
+            {
+                auto value = ddwaf_object_from_json_rec(elem);
+                ddwaf_object_array_add(&object, &value);
+            }
+            return object;
+        }
+        case rapidjson::kStringType:
+        {
+            ddwaf_object_string(&object, json.GetString());
+            return object;
+        }
+        case rapidjson::kNumberType:
+        {
+            if (json.IsUint64() || json.IsUint())
+            {
+                ddwaf_object_unsigned(&object, json.GetUint64());
+            }
+            else if (json.IsInt64() || json.IsInt())
+            {
+                ddwaf_object_signed(&object, json.GetInt64());
+            }
+            return object;
+        }
+        case rapidjson::kTrueType: /* fallthrough */
+        case rapidjson::kFalseType:
+        {
+            ddwaf_object_bool(&object, json.GetBool());
+            return object;
+        }
+        case rapidjson::kNullType:
+        default:
+            throw parsing_error { "Invalid null value in input json" };
+    }
+}
+
+rapidjson::GenericValue<rapidjson::UTF8<>> ddwaf_object_to_json_rec(
+    const ddwaf_object* object, rapidjson::Document::AllocatorType& allocator)
+{
+    rapidjson::GenericValue<rapidjson::UTF8<>> value {};
+    switch (object->type)
+    {
+        case DDWAF_OBJ_MAP:
+        {
+            value.SetObject();
+            for (decltype(object->nbEntries) i = 0; i < object->nbEntries; i++)
+            {
+                value.AddMember(rapidjson::Value { object->array[i].parameterName, allocator },
+                                ddwaf_object_to_json_rec(object->array + i, allocator).Move(), allocator);
+            }
+            return value;
+        }
+        case DDWAF_OBJ_ARRAY:
+        {
+            value.SetArray();
+            for (decltype(object->nbEntries) i = 0; i < object->nbEntries; i++)
+            {
+                value.PushBack(
+                    ddwaf_object_to_json_rec(object->array + i, allocator).Move(), allocator);
+            }
+            return value;
+        }
+        case DDWAF_OBJ_BOOL:
+        {
+            if (strncmp(object->stringValue, "true", 5))
+            {
+                return rapidjson::Value { true };
+            }
+            if (strncmp(object->stringValue, "false", 6))
+            {
+                return rapidjson::Value { false };
+            }
+
+            throw parsing_error { "Bad conversion to boolean" };
+        }
+        case DDWAF_OBJ_STRING:
+            return rapidjson::Value { object->stringValue, allocator };
+        case DDWAF_OBJ_SIGNED:
+            return rapidjson::Value { object->intValue };
+        case DDWAF_OBJ_UNSIGNED:
+            return rapidjson::Value { object->uintValue };
+        case DDWAF_OBJ_INVALID:
+        default:
+            throw parsing_error { "Invalid ddwaf object type" };
+    }
+}
+
 } // namespace
 
-ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
+extern "C"
 {
-    if (object == nullptr) {
+    
+ddwaf_object* ddwaf_object_from_json(ddwaf_object* object, const char* json)
+{
+    rapidjson::Document document {};
+    document.Parse(json);
+    if (document.HasParseError() || object == nullptr)
+    {
         return nullptr;
     }
 
-    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID};
+    try
+    {
+        *object = ddwaf_object_from_json_rec(document);
+    }
+    catch (const parsing_error&)
+    {
+        return nullptr;
+    }
+
+    return object;
+}
+
+const char* ddwaf_object_to_json(const ddwaf_object* object)
+{
+    if (object == nullptr)
+    {
+        return nullptr;
+    }
+
+    rapidjson::GenericValue<rapidjson::UTF8<>> root {};
+    rapidjson::Document document {};
+
+    try
+    {
+        root = ddwaf_object_to_json_rec(object, document.GetAllocator());
+    }
+    catch (const parsing_error&)
+    {
+        return nullptr;
+    }
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer { buffer };
+    root.Accept(writer);
+
+    char* malloc_str = (char*) malloc(buffer.GetSize() + 1);
+    if (malloc_str == nullptr)
+    {
+        return nullptr;
+    }
+
+    strncpy(malloc_str, buffer.GetString(), buffer.GetSize() + 1);
+    return malloc_str;
+}
+
+ddwaf_object* ddwaf_object_invalid(ddwaf_object* object)
+{
+    if (object == NULL)
+    {
+        return NULL;
+    }
+
+    *object = { NULL, 0, { NULL }, 0, DDWAF_OBJ_INVALID };
 
     return object;
 }
