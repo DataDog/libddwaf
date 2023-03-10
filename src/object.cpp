@@ -25,7 +25,7 @@ class parsing_error : public std::exception
 {
 public:
     parsing_error(const std::string& what) : what_(what) {}
-    const char* what() { return what_.c_str(); }
+    const char* what() const noexcept final { return what_.c_str(); }
 
 protected:
     const std::string what_;
@@ -81,7 +81,7 @@ ddwaf_object ddwaf_object_from_json_rec(const rapidjson::GenericValue<rapidjson:
             ddwaf_object_bool(&object, json.GetBool());
             return object;
         }
-        case rapidjson::kNullType:
+        case rapidjson::kNullType: /* fallthrough */
         default:
             throw parsing_error { "Invalid null value in input json" };
     }
@@ -132,7 +132,7 @@ rapidjson::GenericValue<rapidjson::UTF8<>> ddwaf_object_to_json_rec(
             return rapidjson::Value { object->intValue };
         case DDWAF_OBJ_UNSIGNED:
             return rapidjson::Value { object->uintValue };
-        case DDWAF_OBJ_INVALID:
+        case DDWAF_OBJ_INVALID: /* fallthrough */
         default:
             throw parsing_error { "Invalid ddwaf object type" };
     }
