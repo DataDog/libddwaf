@@ -70,8 +70,6 @@ protected:
     // Cache of collections to avoid processing once a result has been obtained
     std::unordered_map<std::string_view, collection::cache_type> collection_cache_;
     std::unordered_set<std::string_view> seen_actions_;
-
-    std::shared_ptr<waf> handle_;
 };
 
 } // namespace ddwaf
