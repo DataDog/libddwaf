@@ -124,9 +124,6 @@ std::vector<event> context::match(const std::unordered_set<rule *> &rules_to_exc
 {
     std::vector<ddwaf::event> events;
 
-    for (const auto &[id, proc] : ruleset_->dynamic_processors) {
-        DDWAF_DEBUG("PROCESSORS: %s", id.c_str());
-    }
     auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);
         if (it == collection_cache_.end()) {
