@@ -82,7 +82,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
-    ${libddwaf_SOURCE_DIR}/src/compat_memory_resource.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
