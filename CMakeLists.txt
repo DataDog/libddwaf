@@ -127,14 +127,26 @@ try_compile(STD_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_std_monobuffer.cpp
     CXX_STANDARD 17)
 if(NOT STD_MONOBUFFER)
+    message("Failed to compile has_std_monobuffer.cpp")
     try_compile(STD_EXPER_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
         SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_experimental_monobuffer.cpp
         CXX_STANDARD 17)
     if(NOT STD_EXPER_MONOBUFFER)
-        list(APPEND LIBDDWAF_PRIVATE_LIBRARIES libcxx-compat)
+        message("Failed to compile has_experimental_monobuffer.cpp")
+
+        try_compile(STD_EXPER_PMR ${CMAKE_CURRENT_BINARY_DIR}
+            SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_experimental_pmr.cpp
+            CXX_STANDARD 17)
+        if(NOT STD_EXPER_PMR)
+            message(FATAL_ERROR "No kind of pmr headers found")
+        else()
+            list(APPEND LIBDDWAF_PRIVATE_LIBRARIES libcxx-compat)
+        endif()
     else()
-        message(FATAL_ERROR "No kind of pmr headers found")
+        message("Compiled has_experimental_monobuffer.cpp")
     endif()
+else()
+    message("Compiled has_std_monobuffer.cpp")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
