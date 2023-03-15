@@ -41,10 +41,10 @@ public:
                                                                           o.last_non_matched_cond}
         {}
 
-        cache_type(const cache_type&) = default;
-        cache_type(cache_type&&) = default;
-        cache_type&operator=(const cache_type&) = default;
-        cache_type&operator=(cache_type&&) = default;
+        cache_type(const cache_type &) = default;
+        cache_type(cache_type &&) = default;
+        cache_type &operator=(const cache_type &) = default;
+        cache_type &operator=(cache_type &&) = default;
         ~cache_type() = default;
 
         bool result{false};

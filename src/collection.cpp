@@ -41,10 +41,9 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
     try {
         auto it = cache.find(rule);
         if (it == cache.end()) {
-            auto [new_it, res] = cache.emplace(
-                std::piecewise_construct,
-                std::forward_as_tuple(rule),
-                std::forward_as_tuple()); // map forwards allocator
+            auto [new_it, res] =
+                cache.emplace(std::piecewise_construct, std::forward_as_tuple(rule),
+                    std::forward_as_tuple()); // map forwards allocator
             it = new_it;
         }
 
@@ -57,7 +56,8 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
         } else {
             static const std::pmr::unordered_set<const ddwaf_object *> empty_objects_excluded{
                 std::pmr::new_delete_resource()};
-            event = rule->match(store, rule_cache, empty_objects_excluded, dynamic_processors, deadline);
+            event = rule->match(
+                store, rule_cache, empty_objects_excluded, dynamic_processors, deadline);
         }
 
         return event;

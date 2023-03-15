@@ -21,13 +21,13 @@ public:
     // and corresponding constructors
     using alloc_type = std::pmr::polymorphic_allocator<std::byte>;
 
-    explicit object_store(const manifest &m, ddwaf_object_free_fn free_fn = ddwaf_object_free,
-        alloc_type alloc = {});
+    explicit object_store(
+        const manifest &m, ddwaf_object_free_fn free_fn = ddwaf_object_free, alloc_type alloc = {});
     object_store(const manifest &m, alloc_type alloc);
-    object_store(const object_store&) = default;
-    object_store(object_store&&) = default;
-    object_store& operator=(const object_store&) = delete;
-    object_store& operator=(object_store&&) = delete;
+    object_store(const object_store &) = default;
+    object_store(object_store &&) = default;
+    object_store &operator=(const object_store &) = delete;
+    object_store &operator=(object_store &&) = delete;
     ~object_store();
 
     bool insert(const ddwaf_object &input);
