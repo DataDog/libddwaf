@@ -32,7 +32,7 @@ DDWAF_RET_CODE context::run(
         output = {false, nullptr, {nullptr, 0}, 0};
     }
 
-    if (!store_->insert(newParameters)) {
+    if (!store_.insert(newParameters)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }
@@ -51,7 +51,7 @@ DDWAF_RET_CODE context::run(
     ddwaf::timer deadline{std::chrono::microseconds(timeLeft)};
 
     // If this is a new run but no rule care about those new params, let's skip the run
-    if (!is_first_run() && !store_->has_new_targets()) {
+    if (!is_first_run() && !store_.has_new_targets()) {
         return DDWAF_OK;
     }
 
@@ -67,7 +67,7 @@ DDWAF_RET_CODE context::run(
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
         ddwaf_result &output = *res;
-        serializer.serialize(events, seen_actions_.value(), output);
+        serializer.serialize(events, seen_actions_, output);
         output.total_runtime = deadline.elapsed().count();
         output.timeout = deadline.expired_before();
     }
@@ -83,17 +83,18 @@ const std::pmr::unordered_set<rule *> &context::filter_rules(ddwaf::timer &deadl
             throw timeout_exception();
         }
 
-        auto it = rule_filter_cache_->find(filter);
-        if (it == rule_filter_cache_->end()) {
-            auto [new_it, res] = rule_filter_cache_->emplace(filter, rule_filter::cache_type{&pool_});
+        auto it = rule_filter_cache_.find(filter.get());
+        if (it == rule_filter_cache_.end()) {
+            auto [new_it, res] =
+                rule_filter_cache_.emplace(filter.get(), rule_filter::cache_type{&pool_});
             it = new_it;
         }
 
         rule_filter::cache_type &cache = it->second;
-        const auto& exclusion = filter->match(store_.value(), cache, deadline);
-        for (auto &&e : exclusion) { rules_to_exclude_->insert(e); }
+        const auto &exclusion = filter->match(store_, cache, deadline);
+        for (auto &&e : exclusion) { rules_to_exclude_.insert(e); }
     }
-    return rules_to_exclude_.value();
+    return rules_to_exclude_;
 }
 
 const std::pmr::unordered_map<rule *, context::object_set> &context::filter_inputs(
@@ -105,28 +106,28 @@ const std::pmr::unordered_map<rule *, context::object_set> &context::filter_inpu
             throw timeout_exception();
         }
 
-        auto it = input_filter_cache_->find(filter);
-        if (it == input_filter_cache_->end()) {
+        auto it = input_filter_cache_.find(filter.get());
+        if (it == input_filter_cache_.end()) {
             auto [new_it, res] =
-                input_filter_cache_->emplace(filter, input_filter::cache_type{&pool_});
+                input_filter_cache_.emplace(filter.get(), input_filter::cache_type{&pool_});
             it = new_it;
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_.value(), cache, deadline);
+        auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 if (rules_to_exclude.find(rule) != rules_to_exclude.end()) {
                     continue;
                 }
 
-                auto &common_exclusion = objects_to_exclude_.value()[rule];
+                auto &common_exclusion = objects_to_exclude_[rule];
                 common_exclusion.insert(exclusion->objects.begin(), exclusion->objects.end());
             }
         }
     }
 
-    return objects_to_exclude_.value();
+    return objects_to_exclude_;
 }
 
 std::pmr::vector<event> context::match(const std::pmr::unordered_set<rule *> &rules_to_exclude,
@@ -135,14 +136,13 @@ std::pmr::vector<event> context::match(const std::pmr::unordered_set<rule *> &ru
     std::pmr::vector<ddwaf::event> events{&pool_};
 
     auto eval_collection = [&](const auto &type, const auto &collection) {
-        auto it = collection_cache_->find(type);
-        if (it == collection_cache_->end()) {
-            auto [new_it, res] = collection_cache_->emplace(
-                type, collection.get_cache(&pool_));
+        auto it = collection_cache_.find(type);
+        if (it == collection_cache_.end()) {
+            auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache(&pool_));
             it = new_it;
         }
-        collection.match(events, seen_actions_.value(), store_.value(), it->second,
-            rules_to_exclude, objects_to_exclude, ruleset_->dynamic_processors, deadline);
+        collection.match(events, seen_actions_, store_, it->second, rules_to_exclude,
+            objects_to_exclude, ruleset_->dynamic_processors, deadline);
     };
 
     // Evaluate priority collections first

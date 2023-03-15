@@ -84,10 +84,10 @@ struct event {
           actions{std::move(oevent.actions), alloc}, matches{std::move(oevent.matches), alloc}
     {}
 
-    event(const event&) = default;
-    event(event&&) = default;
-    event& operator=(const event&) = default;
-    event& operator=(event&&) = default;
+    event(const event &) = default;
+    event(event &&) = default;
+    event &operator=(const event &) = default;
+    event &operator=(event &&) = default;
     ~event() = default;
 
     std::string_view id;
@@ -98,7 +98,8 @@ struct event {
     std::pmr::vector<match> matches;
 };
 static_assert(std::uses_allocator_v<event, std::pmr::polymorphic_allocator<std::byte>> != 0U);
-static_assert(std::uses_allocator_v<event::match, std::pmr::polymorphic_allocator<std::byte>> != 0U);
+static_assert(
+    std::uses_allocator_v<event::match, std::pmr::polymorphic_allocator<std::byte>> != 0U);
 
 using optional_event = std::optional<event>;
 using optional_match = std::optional<event::match>;

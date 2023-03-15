@@ -32,8 +32,7 @@ namespace ddwaf {
 // priority collection has already had a match.
 struct collection_cache {
     using alloc_type = std::pmr::polymorphic_allocator<std::byte>;
-    explicit collection_cache(alloc_type alloc = {})
-        : rule_cache{alloc}, remaining_actions{alloc}
+    explicit collection_cache(alloc_type alloc = {}) : rule_cache{alloc}, remaining_actions{alloc}
     {}
     collection_cache(const std::unordered_set<std::string_view> &actions_set, alloc_type alloc)
         : rule_cache{alloc}, remaining_actions{actions_set.cbegin(), actions_set.cend(),

@@ -19,7 +19,7 @@ namespace ddwaf::rule_processor {
 
 class base {
 public:
-    using allocator =  std::pmr::polymorphic_allocator<std::byte>;
+    using allocator = std::pmr::polymorphic_allocator<std::byte>;
     using ptr = std::shared_ptr<base>;
 
     base() = default;
@@ -38,7 +38,8 @@ public:
             {obj->stringValue, static_cast<std::size_t>(obj->nbEntries)}, new_del_alloc);
     }
 
-    [[nodiscard]] std::optional<event::match> match(std::string_view str) {
+    [[nodiscard]] std::optional<event::match> match(std::string_view str)
+    {
         return do_match(str, new_del_alloc);
     }
 
@@ -55,6 +56,7 @@ public:
     {
         return {resolved, matched, name(), to_string(), alloc};
     }
+
 protected:
     // Interface could be modified to pass along the allocator used for the
     // context. This would avoid some copies down the line, as the match is
