@@ -14,14 +14,6 @@
 #include <utils.hpp>
 #include <waf.hpp>
 
-#if 0
-namespace {
-__attribute__((constructor)) void forbid_default_pmr_allocator() {
-    std::pmr::set_default_resource(std::pmr::null_memory_resource());
-}
-} // namespace
-#endif
-
 namespace ddwaf {
 
 DDWAF_RET_CODE context::run(

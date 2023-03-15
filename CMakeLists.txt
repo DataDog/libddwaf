@@ -125,30 +125,6 @@ set(LIBDDWAF_INTERFACE_LIBRARIES "")
 set(LIBDDWAF_PRIVATE_LIBRARIES 
     lib_re2 lib_rapidjson lib_ac lib_injection lib_radix lib_utf8proc)
 
-try_compile(STD_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_std_monobuffer.cpp
-    CXX_STANDARD 17)
-if(NOT STD_MONOBUFFER)
-    message("Failed to compile has_std_monobuffer.cpp")
-    try_compile(STD_EXPER_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
-        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_experimental_monobuffer.cpp
-        CXX_STANDARD 17)
-    if(NOT STD_EXPER_MONOBUFFER)
-        message("Failed to compile has_experimental_monobuffer.cpp")
-
-        try_compile(STD_EXPER_PMR ${CMAKE_CURRENT_BINARY_DIR}
-            SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_experimental_pmr.cpp
-            CXX_STANDARD 17)
-        if(NOT STD_EXPER_PMR)
-            message(FATAL_ERROR "No kind of pmr headers found")
-        endif()
-    else()
-        message("Compiled has_experimental_monobuffer.cpp")
-    endif()
-else()
-    message("Compiled has_std_monobuffer.cpp")
-endif()
-
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 # needed for glibc <2.17. We compile with --as-needed so the library won't
 # be linked on more 2.17+, but dependencies might since it's part of the public
