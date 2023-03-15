@@ -187,4 +187,12 @@ ExternalProject_Add(proj_event_rules
     INSTALL_COMMAND "")
 
 set_target_properties(proj_event_rules PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+# Compat libcxx
+add_library(libcxx-compat STATIC
+    libcxx-compat/monotonic_buffer_resource.cpp)
+target_include_directories(libcxx-compat INTERFACE ${PROJECT_SOURCE_DIR}/libcxx-compat)
+set_target_properties(libcxx-compat PROPERTIES POSITION_INDEPENDENT_CODE 1)
+set_target_properties(libcxx-compat PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
 # vim: et

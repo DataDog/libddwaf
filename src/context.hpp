@@ -10,12 +10,12 @@
 #include <optional>
 
 #include "log.hpp"
+#include "memory_resource.hpp"
 #include <config.hpp>
 #include <ddwaf.h>
 #include <event.hpp>
 #include <exclusion/input_filter.hpp>
 #include <exclusion/rule_filter.hpp>
-#include <memory_resource>
 #include <obfuscator.hpp>
 #include <rule.hpp>
 #include <ruleset.hpp>

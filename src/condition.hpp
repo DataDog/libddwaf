@@ -18,6 +18,7 @@
 #include <event.hpp>
 #include <iterator.hpp>
 #include <manifest.hpp>
+#include <memory_resource.hpp>
 #include <object_store.hpp>
 #include <rule_processor/base.hpp>
 

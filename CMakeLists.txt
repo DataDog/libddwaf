@@ -112,29 +112,6 @@ if(NOT STDLIB_MAP_RECURSIVE)
 	target_compile_definitions(libddwaf_objects PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
 endif()
 
-try_compile(STD_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_std_monobuffer.cpp
-    CXX_STANDARD 17)
-if(STD_MONOBUFFER)
-	target_compile_definitions(libddwaf_objects PRIVATE HAS_STD_MONOBUFFER)
-else()
-	try_compile(STD_EXPER_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
-		SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_experimental_monobuffer.cpp
-		CXX_STANDARD 17)
-	if(STD_EXPER_MONOBUFFER)
-		target_compile_definitions(libddwaf_objects PRIVATE HAS_EXPERIMENTAL_MONOBUFFER)
-	else()
-		try_compile(STD_EXPER_PMR ${CMAKE_CURRENT_BINARY_DIR}
-			SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_experimental_pmr.cpp
-			CXX_STANDARD 17)
-		if(STD_EXPER_PMR)
-			target_compile_definitions(libddwaf_objects PRIVATE HAS_EXPERIMENTAL_PMR)
-		else()
-			message(FATAL_ERROR "No kind of pmr headers found")
-		endif()
-	endif()
-endif()
-
 target_include_directories(libddwaf_objects PUBLIC ${libddwaf_SOURCE_DIR}/include)
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src)
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/rule_processor)
@@ -145,6 +122,20 @@ install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
 set(LIBDDWAF_PRIVATE_LIBRARIES 
     lib_re2 lib_rapidjson lib_ac lib_injection lib_radix lib_utf8proc)
+
+try_compile(STD_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_std_monobuffer.cpp
+    CXX_STANDARD 17)
+if(NOT STD_MONOBUFFER)
+    try_compile(STD_EXPER_MONOBUFFER ${CMAKE_CURRENT_BINARY_DIR}
+        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/has_experimental_monobuffer.cpp
+        CXX_STANDARD 17)
+    if(NOT STD_EXPER_MONOBUFFER)
+        list(APPEND LIBDDWAF_PRIVATE_LIBRARIES libcxx-compat)
+    else()
+        message(FATAL_ERROR "No kind of pmr headers found")
+    endif()
+endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 # needed for glibc <2.17. We compile with --as-needed so the library won't
@@ -203,6 +194,7 @@ if (LIBDDWAF_BUILD_STATIC)
                 /OUT:combined${CMAKE_STATIC_LIBRARY_SUFFIX}
                 $<TARGET_FILE:libddwaf_static> $<TARGET_FILE:lib_re2> $<TARGET_FILE:lib_ac>
                 $<TARGET_FILE:lib_injection> $<TARGET_FILE:lib_utf8proc> $<TARGET_FILE:lib_radix>
+		$<TARGET_FILE:libcxx-compat>
             COMMAND ${CMAKE_COMMAND} -E copy lib_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     else()

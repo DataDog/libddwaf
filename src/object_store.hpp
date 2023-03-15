@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "memory_resource.hpp"
 #include <ddwaf.h>
 #include <manifest.hpp>
-#include <memory_resource>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>

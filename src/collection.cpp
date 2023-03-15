@@ -4,10 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "memory_resource.hpp"
 #include <collection.hpp>
 #include <exception.hpp>
 #include <log.hpp>
-#include <memory_resource>
 #include <tuple>
 
 namespace ddwaf {

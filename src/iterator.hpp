@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include "memory_resource.hpp"
 #include <config.hpp>
 #include <cstdint>
 #include <functional>
 #include <manifest.hpp>
-#include <memory_resource>
 #include <set>
 #include <string>
 #include <unordered_map>

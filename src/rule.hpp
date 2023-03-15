@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "memory_resource.hpp"
 #include <atomic>
 #include <memory>
-#include <memory_resource>
 #include <string>
 #include <unordered_map>
 #include <vector>
