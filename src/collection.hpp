@@ -9,7 +9,7 @@
 #include <event.hpp>
 #include <rule.hpp>
 
-#include "compat_memory_resource.hpp"
+#include <memory_resource>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>

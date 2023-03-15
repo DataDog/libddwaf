@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include "compat_memory_resource.hpp"
 #include <ddwaf.h>
 #include <initializer_list>
 #include <memory>
+#include <memory_resource>
 #include <obfuscator.hpp>
 #include <optional>
 #include <string>

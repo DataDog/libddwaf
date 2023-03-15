@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "compat_memory_resource.hpp"
 #include <event.hpp>
+#include <memory_resource>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <unordered_set>
