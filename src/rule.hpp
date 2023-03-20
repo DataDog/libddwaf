@@ -29,7 +29,7 @@ public:
 
     struct cache_type {
         bool result{false};
-        std::unordered_map<condition::ptr, bool> conditions;
+        std::unordered_map<condition *, bool> conditions;
         ddwaf::event event;
     };
 

@@ -58,7 +58,7 @@ DDWAF_RET_CODE context::run(
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
         ddwaf_result &output = *res;
-        serializer.serialize(events, seen_actions_, output);
+        serializer.serialize(events, output);
         output.total_runtime = deadline.elapsed().count();
         output.timeout = deadline.expired_before();
     }
@@ -74,9 +74,10 @@ const std::unordered_set<rule *> &context::filter_rules(ddwaf::timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = rule_filter_cache_.find(filter);
+        auto it = rule_filter_cache_.find(filter.get());
         if (it == rule_filter_cache_.end()) {
-            auto [new_it, res] = rule_filter_cache_.emplace(filter, rule_filter::cache_type{});
+            auto [new_it, res] =
+                rule_filter_cache_.emplace(filter.get(), rule_filter::cache_type{});
             it = new_it;
         }
 
@@ -96,9 +97,10 @@ const std::unordered_map<rule *, context::object_set> &context::filter_inputs(
             throw timeout_exception();
         }
 
-        auto it = input_filter_cache_.find(filter);
+        auto it = input_filter_cache_.find(filter.get());
         if (it == input_filter_cache_.end()) {
-            auto [new_it, res] = input_filter_cache_.emplace(filter, input_filter::cache_type{});
+            auto [new_it, res] =
+                input_filter_cache_.emplace(filter.get(), input_filter::cache_type{});
             it = new_it;
         }
 
@@ -127,11 +129,11 @@ std::vector<event> context::match(const std::unordered_set<rule *> &rules_to_exc
     auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);
         if (it == collection_cache_.end()) {
-            auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache());
+            auto [new_it, res] = collection_cache_.emplace(type, collection_cache{});
             it = new_it;
         }
-        collection.match(events, seen_actions_, store_, it->second, rules_to_exclude,
-            objects_to_exclude, ruleset_->dynamic_processors, deadline);
+        collection.match(events, store_, it->second, rules_to_exclude, objects_to_exclude,
+            ruleset_->dynamic_processors, deadline);
     };
 
     // Evaluate priority collections first

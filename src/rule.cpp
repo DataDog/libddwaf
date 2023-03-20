@@ -33,14 +33,14 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
 
     for (const auto &cond : conditions) {
         bool run_on_new = false;
-        auto cached_result = cache.conditions.find(cond);
+        auto cached_result = cache.conditions.find(cond.get());
         if (cached_result != cache.conditions.end()) {
             if (cached_result->second) {
                 continue;
             }
             run_on_new = true;
         } else {
-            auto [it, res] = cache.conditions.emplace(cond, false);
+            auto [it, res] = cache.conditions.emplace(cond.get(), false);
             cached_result = it;
         }
 

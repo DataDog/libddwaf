@@ -17,7 +17,6 @@ TYPED_TEST_SUITE(TestCollection, CollectionTypes);
 // Validate that a rule within the collection matches only once
 TYPED_TEST(TestCollection, SingleRuleMatch)
 {
-    std::unordered_set<std::string_view> seen_actions;
     std::vector<ddwaf::condition::target_type> targets;
 
     ddwaf::manifest manifest;
@@ -36,7 +35,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
     TypeParam rule_collection;
     rule_collection.insert(rule);
 
-    auto cache = rule_collection.get_cache();
+    collection_cache cache;
     ddwaf::object_store store(manifest);
     {
         ddwaf_object root;
@@ -48,7 +47,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -62,7 +61,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
         store.insert(root);
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -71,7 +70,6 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 // Validate that once there's a match for a collection, a second match isn't possible
 TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 {
-    std::unordered_set<std::string_view> seen_actions;
     TypeParam rule_collection;
     ddwaf::manifest manifest;
     {
@@ -113,7 +111,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    auto cache = rule_collection.get_cache();
+    collection_cache cache;
 
     {
         ddwaf_object root;
@@ -124,7 +122,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -138,7 +136,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -147,7 +145,6 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 // Validate that after a failed match, the collection can still produce a match
 TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 {
-    std::unordered_set<std::string_view> seen_actions;
     TypeParam rule_collection;
     ddwaf::manifest manifest;
     {
@@ -187,7 +184,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    auto cache = rule_collection.get_cache();
+    collection_cache cache;
 
     {
         ddwaf_object root;
@@ -198,7 +195,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -212,7 +209,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -221,7 +218,6 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 // Validate that the rule cache is acted on
 TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 {
-    std::unordered_set<std::string_view> seen_actions;
     ddwaf::manifest manifest;
     std::vector<condition::ptr> conditions;
     {
@@ -251,7 +247,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
     TypeParam rule_collection;
     rule_collection.insert(rule);
 
-    auto cache = rule_collection.get_cache();
+    collection_cache cache;
     {
         ddwaf_object root;
         ddwaf_object tmp;
@@ -263,7 +259,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -279,17 +275,17 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
 }
 
-// Validate that all rules in the priority collection are evaluated in order to
-// satisfy the requirement of all actions being fulfilled
-TEST(TestPriorityCollection, MatchBothActions)
+// Validate that a match in a priority collection prevents further regular matches
+TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 {
-    priority_collection rule_collection;
+    collection regular;
+    priority_collection priority;
     ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
@@ -303,10 +299,10 @@ TEST(TestPriorityCollection, MatchBothActions)
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
-            std::move(conditions), std::vector<std::string>{"block"});
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
-        rule_collection.insert(rule);
+        regular.insert(rule);
     }
 
     {
@@ -324,41 +320,49 @@ TEST(TestPriorityCollection, MatchBothActions)
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
             std::move(conditions), std::vector<std::string>{"redirect"});
 
-        rule_collection.insert(rule);
+        priority.insert(rule);
     }
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    std::unordered_set<std::string_view> seen_actions;
 
-    auto cache = rule_collection.get_cache();
-    EXPECT_EQ(cache.remaining_actions.size(), 2);
-    EXPECT_NE(cache.remaining_actions.find("redirect"), cache.remaining_actions.end());
-    EXPECT_NE(cache.remaining_actions.find("block"), cache.remaining_actions.end());
-
+    collection_cache cache;
     {
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline{2s};
+        priority.match(events, store, cache, {}, {}, {}, deadline);
+
+        ASSERT_EQ(events.size(), 1);
+        ASSERT_EQ(events[0].actions.size(), 1);
+        EXPECT_STREQ(events[0].actions[0].data(), "redirect");
+    }
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        regular.match(events, store, cache, {}, {}, {}, deadline);
 
-        EXPECT_EQ(events.size(), 2);
-        EXPECT_EQ(seen_actions.size(), 2);
-        EXPECT_NE(seen_actions.find("redirect"), seen_actions.end());
-        EXPECT_NE(seen_actions.find("block"), seen_actions.end());
+        EXPECT_EQ(events.size(), 0);
     }
 }
 
-// Validate that once all actions have been seen no other rules are evaluated
-TEST(TestPriorityCollection, MatchOneAction)
+// Validate that a match in a regular collection doesn't inhibit a match in a
+// priority collection
+TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 {
-    priority_collection rule_collection;
+    collection regular;
+    priority_collection priority;
     ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
@@ -372,11 +376,10 @@ TEST(TestPriorityCollection, MatchOneAction)
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
-            std::move(conditions), std::vector<std::string>{"block"});
-
-        rule_collection.insert(rule);
+        regular.insert(rule);
     }
 
     {
@@ -392,41 +395,51 @@ TEST(TestPriorityCollection, MatchOneAction)
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
-            std::move(conditions), std::vector<std::string>{"block"});
+            std::move(conditions), std::vector<std::string>{"redirect"});
 
-        rule_collection.insert(rule);
+        priority.insert(rule);
     }
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    std::unordered_set<std::string_view> seen_actions;
 
-    auto cache = rule_collection.get_cache();
-    EXPECT_EQ(cache.remaining_actions.size(), 1);
-    EXPECT_NE(cache.remaining_actions.find("block"), cache.remaining_actions.end());
-
+    collection_cache cache;
     {
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        regular.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
-        EXPECT_EQ(seen_actions.size(), 1);
-        EXPECT_NE(seen_actions.find("block"), seen_actions.end());
+        EXPECT_TRUE(events[0].actions.empty());
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline{2s};
+        priority.match(events, store, cache, {}, {}, {}, deadline);
+
+        ASSERT_EQ(events.size(), 1);
+        ASSERT_EQ(events[0].actions.size(), 1);
+        EXPECT_STREQ(events[0].actions[0].data(), "redirect");
     }
 }
 
-// Validate that (currently) all rules will be evaluated if any action is missing
-TEST(TestPriorityCollection, MatchAllIfMissing)
+// Validate that a match in a priority collection prevents another match
+TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 {
-    priority_collection rule_collection;
+    priority_collection priority;
     ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
@@ -440,11 +453,10 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
-
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
             std::move(conditions), std::vector<std::string>{"block"});
 
-        rule_collection.insert(rule);
+        priority.insert(rule);
     }
 
     {
@@ -460,34 +472,42 @@ TEST(TestPriorityCollection, MatchAllIfMissing)
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
-            std::move(conditions), std::vector<std::string>{"block"});
+            std::move(conditions), std::vector<std::string>{"redirect"});
 
-        rule_collection.insert(rule);
+        priority.insert(rule);
     }
 
     ddwaf::timer deadline{2s};
     ddwaf::object_store store(manifest);
-    std::unordered_set<std::string_view> seen_actions;
 
-    // This test can also be done by adding an extra rule that will not match
-    // however this hack also works.
-    auto cache = rule_collection.get_cache();
-    cache.remaining_actions.emplace("redirect");
+    collection_cache cache;
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline{2s};
+        priority.match(events, store, cache, {}, {}, {}, deadline);
+
+        ASSERT_EQ(events.size(), 1);
+        ASSERT_EQ(events[0].actions.size(), 1);
+        EXPECT_STREQ(events[0].actions[0].data(), "block");
+    }
 
     {
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, seen_actions, store, cache, {}, {}, {}, deadline);
+        priority.match(events, store, cache, {}, {}, {}, deadline);
 
-        EXPECT_EQ(events.size(), 2);
-        EXPECT_EQ(seen_actions.size(), 1);
-        EXPECT_NE(seen_actions.find("block"), seen_actions.end());
+        ASSERT_EQ(events.size(), 0);
     }
 }

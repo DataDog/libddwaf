@@ -43,8 +43,7 @@ public:
         : obfuscator_(event_obfuscator)
     {}
 
-    void serialize(const std::vector<event> &events,
-        const std::unordered_set<std::string_view> &actions, ddwaf_result &output) const;
+    void serialize(const std::vector<event> &events, ddwaf_result &output) const;
 
 protected:
     const ddwaf::obfuscator &obfuscator_;

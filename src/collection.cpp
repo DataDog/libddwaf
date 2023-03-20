@@ -10,9 +10,8 @@
 
 namespace ddwaf {
 
-namespace {
 std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
-    std::unordered_map<rule::ptr, rule::cache_type> &cache,
+    std::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
     const std::unordered_set<ddwaf::rule *> &rules_to_exclude,
     const std::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
@@ -37,9 +36,9 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
     DDWAF_DEBUG("Running the WAF on rule %s", id.c_str());
 
     try {
-        auto it = cache.find(rule);
+        auto it = cache.find(rule.get());
         if (it == cache.end()) {
-            auto [new_it, res] = cache.emplace(rule, rule::cache_type{});
+            auto [new_it, res] = cache.emplace(rule.get(), rule::cache_type{});
             it = new_it;
         }
 
@@ -61,16 +60,15 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
 
     return std::nullopt;
 }
-} // namespace
 
-void collection::match(std::vector<event> &events,
-    std::unordered_set<std::string_view> & /*seen_actions*/, const object_store &store,
+template <typename Derived>
+void base_collection<Derived>::match(std::vector<event> &events, const object_store &store,
     collection_cache &cache, const std::unordered_set<rule *> &rules_to_exclude,
     const std::unordered_map<rule *, object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
-    if (cache.result) {
+    if (cache.result >= Derived::type()) {
         return;
     }
 
@@ -78,7 +76,7 @@ void collection::match(std::vector<event> &events,
         auto event = match_rule(rule, store, cache.rule_cache, rules_to_exclude, objects_to_exclude,
             dynamic_processors, deadline);
         if (event.has_value()) {
-            cache.result = true;
+            cache.result = Derived::type();
             events.emplace_back(std::move(*event));
             DDWAF_DEBUG("Found event on rule %s", rule->id.c_str());
             break;
@@ -86,51 +84,7 @@ void collection::match(std::vector<event> &events,
     }
 }
 
-void priority_collection::match(std::vector<event> &events,
-    std::unordered_set<std::string_view> &seen_actions, const object_store &store,
-    collection_cache &cache, const std::unordered_set<rule *> &rules_to_exclude,
-    const std::unordered_map<rule *, object_set> &objects_to_exclude,
-    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
-    ddwaf::timer &deadline) const
-{
-    auto &remaining_actions = cache.remaining_actions;
-    for (auto it = remaining_actions.begin(); it != remaining_actions.end();) {
-        if (seen_actions.find(*it) != seen_actions.end()) {
-            it = remaining_actions.erase(it);
-        } else {
-            ++it;
-        }
-    }
-
-    // If there are no remaining actions, we treat this collection as a regular one
-    if (remaining_actions.empty()) {
-        collection::match(events, seen_actions, store, cache, rules_to_exclude, objects_to_exclude,
-            dynamic_processors, deadline);
-        return;
-    }
-
-    // If there are still remaining actions, we treat this collection as a priority tone
-    for (const auto &rule : rules_) {
-        auto event = match_rule(rule, store, cache.rule_cache, rules_to_exclude, objects_to_exclude,
-            dynamic_processors, deadline);
-        if (event.has_value()) {
-            // If there has been a match, we set the result to true to ensure
-            // that the equivalent regular collection doesn't attempt to match
-            cache.result = true;
-
-            for (auto &action : event->actions) {
-                if (remaining_actions.find(action) != remaining_actions.end()) {
-                    remaining_actions.erase(action);
-                    seen_actions.emplace(action);
-                }
-            }
-            events.emplace_back(std::move(*event));
-            DDWAF_DEBUG("Found event on rule %s", rule->id.c_str());
-            if (remaining_actions.empty()) {
-                break;
-            }
-        }
-    }
-}
+template class base_collection<collection>;
+template class base_collection<priority_collection>;
 
 } // namespace ddwaf
