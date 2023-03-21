@@ -21,28 +21,27 @@ std::optional<excluded_set> input_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (!cache.result) {
-        for (const auto &cond : conditions_) {
-            // If there's a (false) cache hit, we only need to run this condition
-            // on new parameters.
-            bool run_on_new = false;
-            auto cached_result = cache.conditions.find(cond.get());
-            if (cached_result != cache.conditions.end()) {
-                if (cached_result->second) {
-                    continue;
-                }
-                run_on_new = true;
-            } else {
-                auto [it, res] = cache.conditions.emplace(cond.get(), false);
-                cached_result = it;
-            }
+        std::vector<condition::ptr>::const_iterator cond_iter;
+        bool run_on_new;
+        if (cache.last_cond.has_value()) {
+            cond_iter = *cache.last_cond;
+            run_on_new = true;
+        } else {
+            cond_iter = conditions_.cbegin();
+            run_on_new = false;
+        }
 
+        while (cond_iter != conditions_.cend()) {
+            auto &&cond = *cond_iter;
             // TODO: Condition interface without events
             auto opt_match = cond->match(store, {}, run_on_new, {}, deadline);
             if (!opt_match.has_value()) {
-                cached_result->second = false;
+                cache.last_cond = cond_iter;
                 return std::nullopt;
             }
-            cached_result->second = true;
+
+            run_on_new = false;
+            cond_iter++;
         }
 
         cache.result = true;
