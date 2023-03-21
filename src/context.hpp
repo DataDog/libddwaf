@@ -10,6 +10,7 @@
 #include <optional>
 
 #include <config.hpp>
+#include <context_allocator.hpp>
 #include <ddwaf.h>
 #include <event.hpp>
 #include <exclusion/input_filter.hpp>
@@ -61,14 +62,14 @@ protected:
     using rule_filter = exclusion::rule_filter;
 
     // Cache of filters and conditions
-    std::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;
-    std::unordered_map<input_filter *, input_filter::cache_type> input_filter_cache_;
+    memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;
+    memory::unordered_map<input_filter *, input_filter::cache_type> input_filter_cache_;
 
     std::unordered_set<rule *> rules_to_exclude_;
     std::unordered_map<rule *, object_set> objects_to_exclude_;
 
     // Cache of collections to avoid processing once a result has been obtained
-    std::unordered_map<std::string_view, collection::cache_type> collection_cache_;
+    memory::unordered_map<std::string_view, collection::cache_type> collection_cache_;
 };
 
 } // namespace ddwaf
