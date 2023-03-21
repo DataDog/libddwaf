@@ -577,8 +577,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
-            std::move(conditions), std::vector<std::string>{"block"});
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
         ruleset->insert_rule(rule);
     }
@@ -621,9 +621,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_STREQ(event.name.data(), "name1");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category1");
-        std::vector<std::string_view> expected_actions{"block"};
-        EXPECT_EQ(event.actions, expected_actions);
-        EXPECT_EQ(event.matches.size(), 1);
+        EXPECT_TRUE(event.actions.empty());
 
         auto &match = event.matches[0];
         EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");

@@ -29,8 +29,8 @@ public:
 
     struct cache_type {
         bool result{false};
-        std::unordered_map<condition::ptr, bool> conditions;
-        ddwaf::event event;
+        std::vector<event::match> matches;
+        std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
     };
 
     // TODO: make fields protected, add getters, follow conventions, add cache

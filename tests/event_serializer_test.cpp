@@ -12,7 +12,7 @@ TEST(TestEventSerializer, SerializeNothing)
     ddwaf::event_serializer serializer(obfuscator);
 
     ddwaf_result output;
-    serializer.serialize({}, {}, output);
+    serializer.serialize({}, output);
     EXPECT_STREQ(output.data, nullptr);
 }
 
@@ -22,7 +22,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     ddwaf::event_serializer serializer(obfuscator);
 
     ddwaf_result output;
-    serializer.serialize({ddwaf::event{}}, {}, output);
+    serializer.serialize({ddwaf::event{}}, output);
     EXPECT_EVENTS(output, {});
 
     ddwaf_result_free(&output);
@@ -42,7 +42,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf::event_serializer serializer(obfuscator);
 
     ddwaf_result output;
-    serializer.serialize({event}, {"block", "monitor"}, output);
+    serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -78,7 +78,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf::event_serializer serializer(obfuscator);
 
     ddwaf_result output;
-    serializer.serialize({event}, {"block", "monitor"}, output);
+    serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -145,7 +145,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     events.emplace_back(ddwaf::event{});
 
     ddwaf_result output;
-    serializer.serialize(events, {"block", "monitor", "unblock"}, output);
+    serializer.serialize(events, output);
     EXPECT_EVENTS(output,
         {.id = "xasd1022",
             .name = "random rule",
@@ -198,7 +198,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf::event_serializer serializer(obfuscator);
 
     ddwaf_result output;
-    serializer.serialize({event}, {}, output);
+    serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
