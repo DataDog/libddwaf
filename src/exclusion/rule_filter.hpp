@@ -22,7 +22,7 @@ public:
 
     struct cache_type {
         bool result{false};
-        std::unordered_map<condition*, bool> conditions;
+        std::unordered_map<condition *, bool> conditions;
     };
 
     rule_filter(
