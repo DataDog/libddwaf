@@ -12,9 +12,13 @@
 #include <unordered_set>
 
 namespace ddwaf::memory {
+// NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
+extern std::pmr::memory_resource *global_memory_resource;
+extern thread_local std::pmr::memory_resource *local_memory_resource;
 
-std::pmr::memory_resource *get_local_memory_resource();
-void set_local_memory_resource(std::pmr::memory_resource *mr);
+inline std::pmr::memory_resource *get_local_memory_resource() { return local_memory_resource; }
+
+inline void set_local_memory_resource(std::pmr::memory_resource *mr) { local_memory_resource = mr; }
 
 class memory_resource_guard {
 public:
