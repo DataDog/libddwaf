@@ -28,7 +28,7 @@ public:
 
     struct cache_type {
         bool result{false};
-        std::unordered_map<condition::ptr, bool> conditions;
+        std::unordered_map<condition*, bool> conditions;
         object_filter::cache_type object_filter_cache;
     };
 
