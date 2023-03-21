@@ -45,7 +45,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -59,7 +59,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         store.insert(root);
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -120,7 +120,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -134,7 +134,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -193,7 +193,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -207,7 +207,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -257,7 +257,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
         ddwaf::object_store store(manifest);
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -273,7 +273,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
         ddwaf::object_store store(manifest);
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -334,7 +334,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         priority.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -349,7 +349,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         regular.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -411,7 +411,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         regular.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -426,7 +426,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         priority.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -488,7 +488,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         priority.match(events, store, cache, {}, {}, {}, deadline);
 
@@ -504,7 +504,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         store.insert(root);
 
-        std::vector<event> events;
+        memory::vector<event> events;
         ddwaf::timer deadline{2s};
         priority.match(events, store, cache, {}, {}, {}, deadline);
 

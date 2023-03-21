@@ -41,7 +41,7 @@ TEST(TestRule, Match)
     EXPECT_STREQ(event->name.data(), "name");
     EXPECT_STREQ(event->type.data(), "type");
     EXPECT_STREQ(event->category.data(), "category");
-    std::vector<std::string_view> expected_actions{"update", "block", "passlist"};
+    memory::vector<std::string_view> expected_actions{"update", "block", "passlist"};
     EXPECT_EQ(event->actions, expected_actions);
     EXPECT_EQ(event->matches.size(), 1);
 

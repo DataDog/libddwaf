@@ -6,10 +6,11 @@
 
 #pragma once
 
-#include <iostream>
 #include <memory_resource>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace ddwaf::memory {
 // NOLINTNEXTLINE(fuchsia-statically-constructed-objects)

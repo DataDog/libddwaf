@@ -30,7 +30,7 @@ template <typename T> bool iterator_base<T>::operator++()
 }
 
 // TODO: return string_view as this will be immediately copied after
-template <typename T> std::vector<std::string> iterator_base<T>::get_current_path() const
+template <typename T> memory::vector<memory::string> iterator_base<T>::get_current_path() const
 {
     if (current_ == nullptr) {
         return {};
@@ -42,7 +42,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
         return path_;
     }
 
-    std::vector<std::string> keys = path_;
+    memory::vector<memory::string> keys = path_;
     keys.reserve(path_.size() + stack_.size());
 
     auto [parent, parent_index] = stack_.front();
@@ -175,7 +175,7 @@ void value_iterator::initialise_cursor_with_path(
 
     // Once we reach this point, if current_is valid, we found the key path
     if (current_ != nullptr) {
-        path_ = path;
+        for (const auto &p : path) { path_.emplace_back(p); }
     }
 }
 
@@ -296,7 +296,7 @@ void key_iterator::initialise_cursor_with_path(
 
     // Once we reach this point, if current_ is valid, we found the key path
     if (current_ != nullptr) {
-        path_ = path;
+        for (const auto &p : path) { path_.emplace_back(p); }
     }
 }
 

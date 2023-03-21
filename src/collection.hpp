@@ -30,7 +30,7 @@ enum class collection_type : uint8_t { none = 0, regular = 1, priority = 2 };
 // priority collection has already had a match.
 struct collection_cache {
     collection_type result{collection_type::none};
-    std::unordered_map<rule *, rule::cache_type> rule_cache;
+    memory::unordered_map<rule *, rule::cache_type> rule_cache;
 };
 
 template <typename Derived> class base_collection {
@@ -47,7 +47,7 @@ public:
 
     void insert(rule::ptr rule) { rules_.emplace_back(std::move(rule)); }
 
-    void match(std::vector<event> &events /* output */, const object_store &store,
+    void match(memory::vector<event> &events /* output */, const object_store &store,
         collection_cache &cache, const memory::unordered_set<ddwaf::rule *> &rules_to_exclude,
         const memory::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,

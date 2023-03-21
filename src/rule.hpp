@@ -29,7 +29,7 @@ public:
 
     struct cache_type {
         bool result{false};
-        std::vector<event::match> matches;
+        memory::vector<event::match> matches;
         std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
     };
 

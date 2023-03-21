@@ -182,7 +182,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_STREQ(event.name.data(), "name1");
     EXPECT_STREQ(event.type.data(), "type");
     EXPECT_STREQ(event.category.data(), "category1");
-    std::vector<std::string_view> expected_actions{};
+    memory::vector<std::string_view> expected_actions{};
     EXPECT_EQ(event.actions, expected_actions);
     EXPECT_EQ(event.matches.size(), 1);
 
@@ -341,7 +341,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         EXPECT_STREQ(event.name.data(), "name1");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category1");
-        std::vector<std::string_view> expected_actions{};
+        memory::vector<std::string_view> expected_actions{};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -427,7 +427,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_STREQ(event.name.data(), "name1");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category1");
-        std::vector<std::string_view> expected_actions{};
+        memory::vector<std::string_view> expected_actions{};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -458,7 +458,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_STREQ(event.name.data(), "name2");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category2");
-        std::vector<std::string_view> expected_actions{"block"};
+        memory::vector<std::string_view> expected_actions{"block"};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -533,7 +533,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         EXPECT_STREQ(event.name.data(), "name1");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category1");
-        std::vector<std::string_view> expected_actions{"block"};
+        memory::vector<std::string_view> expected_actions{"block"};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
@@ -650,7 +650,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_STREQ(event.name.data(), "name2");
         EXPECT_STREQ(event.type.data(), "type");
         EXPECT_STREQ(event.category.data(), "category2");
-        std::vector<std::string_view> expected_actions{"redirect"};
+        memory::vector<std::string_view> expected_actions{"redirect"};
         EXPECT_EQ(event.actions, expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 

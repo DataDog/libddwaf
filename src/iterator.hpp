@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "context_allocator.hpp"
 #include <config.hpp>
 #include <cstdint>
 #include <functional>
@@ -36,7 +37,7 @@ public:
 
     [[nodiscard]] explicit operator bool() const { return current_ != nullptr; }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
-    [[nodiscard]] std::vector<std::string> get_current_path() const;
+    [[nodiscard]] memory::vector<memory::string> get_current_path() const;
     [[nodiscard]] const ddwaf_object *get_underlying_object() { return current_; }
 
 protected:
@@ -52,7 +53,7 @@ protected:
     // since the iterator doesn't keep track of the root object provided,
     // but only the beginning of the key path, we keep this here so that we
     // can later provide the accurate full key path.
-    std::vector<std::string> path_;
+    memory::vector<memory::string> path_;
     std::vector<std::pair<const ddwaf_object *, std::size_t>> stack_;
     const ddwaf_object *current_{nullptr};
 

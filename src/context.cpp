@@ -50,7 +50,7 @@ DDWAF_RET_CODE context::run(
 
     const event_serializer serializer(*ruleset_->event_obfuscator);
 
-    std::vector<ddwaf::event> events;
+    memory::vector<ddwaf::event> events;
     try {
         const auto &rules_to_exclude = filter_rules(deadline);
         const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
@@ -123,10 +123,10 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
     return objects_to_exclude_;
 }
 
-std::vector<event> context::match(const memory::unordered_set<rule *> &rules_to_exclude,
+memory::vector<event> context::match(const memory::unordered_set<rule *> &rules_to_exclude,
     const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
-    std::vector<ddwaf::event> events;
+    memory::vector<ddwaf::event> events;
 
     auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);

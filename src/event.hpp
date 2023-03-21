@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <context_allocator.hpp>
 #include <ddwaf.h>
 #include <obfuscator.hpp>
 
@@ -23,15 +24,15 @@ struct event {
         std::string_view operator_name;
         std::string_view operator_value;
         std::string_view source;
-        std::vector<std::string> key_path;
+        memory::vector<memory::string> key_path;
     };
 
     std::string_view id;
     std::string_view name;
     std::string_view type;
     std::string_view category;
-    std::vector<std::string_view> actions;
-    std::vector<match> matches;
+    memory::vector<std::string_view> actions;
+    memory::vector<match> matches;
 };
 
 using optional_event = std::optional<event>;
@@ -43,7 +44,7 @@ public:
         : obfuscator_(event_obfuscator)
     {}
 
-    void serialize(const std::vector<event> &events, ddwaf_result &output) const;
+    void serialize(const memory::vector<event> &events, ddwaf_result &output) const;
 
 protected:
     const ddwaf::obfuscator &obfuscator_;
