@@ -10,6 +10,7 @@
 #include <config.hpp>
 #include <context.hpp>
 #include <memory>
+#include <memory_resource>
 #include <ruleset.hpp>
 #include <ruleset_builder.hpp>
 #include <ruleset_info.hpp>
@@ -68,7 +69,7 @@ public:
         return nullptr;
     }
 
-    ddwaf::context create_context() { return context{ruleset_}; }
+    ddwaf::context *create_context() { return context::create(ruleset_); }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses() const
     {

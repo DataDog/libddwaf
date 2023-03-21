@@ -5,8 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <context.hpp>
+#include <context_allocator.hpp>
 #include <exception.hpp>
 #include <memory>
+#include <memory_resource>
 #include <mutex>
 #include <obfuscator.hpp>
 #include <ruleset_info.hpp>
@@ -155,7 +157,7 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
 {
     try {
         if (handle != nullptr) {
-            return new ddwaf::context(handle->create_context());
+            return handle->create_context();
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
@@ -200,7 +202,7 @@ void ddwaf_context_destroy(ddwaf_context context)
     }
 
     try {
-        delete context;
+        ddwaf::context::destroy(context);
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("%s", e.what());

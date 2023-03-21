@@ -23,7 +23,7 @@ public:
 
     struct excluded_set {
         const std::set<rule *> &rules;
-        std::unordered_set<const ddwaf_object *> objects;
+        memory::unordered_set<const ddwaf_object *> objects;
     };
 
     struct cache_type {

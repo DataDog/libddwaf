@@ -21,7 +21,9 @@ public:
     explicit memory_resource_guard(std::pmr::memory_resource *mr) noexcept
         : old_mr_(get_local_memory_resource())
     {
-        set_local_memory_resource(mr);
+        if (mr != nullptr) {
+            set_local_memory_resource(mr);
+        }
     }
 
     ~memory_resource_guard() noexcept { set_local_memory_resource(old_mr_); }
