@@ -238,12 +238,18 @@ radix_node_t* radix_matching_do(radix_tree_t* radix, prefix_t* prefix)
         stack[cnt++] = node;
 
     node = NULL;
-    while (cnt-- > 0) {
-        if (_comp_with_mask(PREFIX_TO_UCHAR(stack[cnt]->prefix), PREFIX_TO_UCHAR(prefix),
-                stack[cnt]->prefix->bitlen)) {
-            if (node == NULL || stack[cnt]->expiration == 0 ||
-                (node->expiration != 0 && stack[cnt]->expiration > node->expiration)) {
-                node = stack[cnt];
+    while (cnt > 0)
+    {
+        radix_node_t *curnode = stack[--cnt];
+
+        if (_comp_with_mask(PREFIX_TO_UCHAR(curnode->prefix), PREFIX_TO_UCHAR(prefix),
+                curnode->prefix->bitlen))
+	{
+            if (node == NULL || curnode->expiration == 0 || curnode->expiration > node->expiration)
+            {
+                node = curnode;
+                if (node->expiration == 0)
+                    break;
             }
         }
     }
