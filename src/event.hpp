@@ -19,8 +19,8 @@ namespace ddwaf {
 
 struct event {
     struct match {
-        std::string resolved;
-        std::string matched;
+        memory::string resolved;
+        memory::string matched;
         std::string_view operator_name;
         std::string_view operator_value;
         std::string_view source;

@@ -46,6 +46,11 @@ template <typename T = std::byte> class context_allocator {
 public:
     using value_type = T;
     context_allocator() noexcept = default;
+    ~context_allocator() = default;
+    context_allocator(context_allocator &&) noexcept = default;
+    context_allocator(const context_allocator &) = default;
+    context_allocator &operator=(context_allocator &&) noexcept = default;
+    context_allocator &operator=(const context_allocator &) = default;
 
     template <typename U>
     explicit context_allocator(const context_allocator<U> & /*other*/) noexcept
@@ -62,6 +67,9 @@ public:
         auto *mr = get_local_memory_resource();
         mr->deallocate(p, n * sizeof(T), alignof(T));
     }
+
+    bool operator!=(const context_allocator & /*unused*/) { return false; }
+    bool operator==(const context_allocator & /*unused*/) { return true; }
 };
 
 using string = std::basic_string<char, std::char_traits<char>, context_allocator<char>>;
