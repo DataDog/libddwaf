@@ -87,7 +87,7 @@ extern "C"
     void radix_free(radix_tree_t* radix);
 
     radix_node_t* radix_matching_do(radix_tree_t* radix, prefix_t* prefix);
-    radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix);
+    radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix, uint64_t expiration);
     void radix_remove(radix_tree_t* radix, radix_node_t* node);
 
 #ifdef __cplusplus

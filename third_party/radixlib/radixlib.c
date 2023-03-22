@@ -237,21 +237,21 @@ radix_node_t* radix_matching_do(radix_tree_t* radix, prefix_t* prefix)
     if (node && node->prefix)
         stack[cnt++] = node;
 
-    while (cnt > 0)
-    {
-        node = stack[--cnt];
-        if (_comp_with_mask(PREFIX_TO_UCHAR(node->prefix),
-                            PREFIX_TO_UCHAR(prefix),
-                            node->prefix->bitlen))
-        {
-            return node;
+    node = NULL;
+    while (cnt-- > 0) {
+        if (_comp_with_mask(PREFIX_TO_UCHAR(stack[cnt]->prefix), PREFIX_TO_UCHAR(prefix),
+                stack[cnt]->prefix->bitlen)) {
+            if (node == NULL || stack[cnt]->expiration == 0 ||
+                (node->expiration != 0 && stack[cnt]->expiration > node->expiration)) {
+                node = stack[cnt];
+            }
         }
     }
 
-    return NULL;
+    return node;
 }
 
-radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix)
+radix_node_t *radix_put_if_absent(radix_tree_t *radix, prefix_t *prefix, uint64_t expiration)
 {
     radix_node_t *node, *new_node, *parent, *glue;
     uint8_t *addr, *test_addr;
@@ -266,7 +266,8 @@ radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix)
         node->prefix = _prefix_addref(prefix);
         node->parent = NULL;
         node->l = node->r = NULL;
-        radix->head       = node;
+        node->expiration = expiration;
+        radix->head = node;
 
         return node;
     }
@@ -327,6 +328,10 @@ radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix)
         if (node->prefix == NULL)
         {
             node->prefix = _prefix_addref(prefix);
+            node->expiration = expiration;
+        } else if (node->expiration != 0 && (expiration == 0 || expiration > node->expiration)) {
+            /* Update the expiration if it lasts longer than the existing one */
+            node->expiration = expiration;
         }
         /* leaves current prefix in place of replacing it with argument */
         return node;
@@ -336,6 +341,7 @@ radix_node_t* radix_put_if_absent(radix_tree_t* radix, prefix_t* prefix)
     new_node->bit    = prefix->bitlen;
     new_node->prefix = _prefix_addref(prefix);
     new_node->parent = NULL;
+    new_node->expiration = expiration;
     new_node->l = new_node->r = NULL;
 
     if (node->bit == differ_bit)
