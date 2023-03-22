@@ -19,6 +19,15 @@ inline std::pmr::memory_resource *get_local_memory_resource() { return local_mem
 
 inline void set_local_memory_resource(std::pmr::memory_resource *mr) { local_memory_resource = mr; }
 
+class null_memory_resource final : public std::pmr::memory_resource {
+    void *do_allocate(size_t /*bytes*/, size_t /*alignment*/) override { throw std::bad_alloc(); }
+    void do_deallocate(void * /*p*/, size_t /*bytes*/, size_t /*alignment*/) noexcept override {}
+    [[nodiscard]] bool do_is_equal(const memory_resource &other) const noexcept override
+    {
+        return this == &other;
+    }
+};
+
 class memory_resource_guard {
 public:
     explicit memory_resource_guard(std::pmr::memory_resource *mr) noexcept
