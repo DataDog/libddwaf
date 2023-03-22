@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "context_allocator.hpp"
+#include <memory>
 
 namespace ddwaf::memory {
 
@@ -19,9 +20,9 @@ class null_memory_resource final : public std::pmr::memory_resource {
 };
 
 // NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
-null_memory_resource global_memory_resource;
+std::unique_ptr<null_memory_resource> global_memory_resource{new null_memory_resource};
 } // namespace
 
-thread_local std::pmr::memory_resource *local_memory_resource{&global_memory_resource};
+thread_local std::pmr::memory_resource *local_memory_resource{global_memory_resource.get()};
 
 } // namespace ddwaf::memory
