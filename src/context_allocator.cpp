@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "context_allocator.hpp"
-#include <memory_resource>
+
 namespace ddwaf::memory {
 // NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
 std::pmr::memory_resource *global_memory_resource{std::pmr::new_delete_resource()};
