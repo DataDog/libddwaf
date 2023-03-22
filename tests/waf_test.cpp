@@ -41,7 +41,7 @@ TEST(TestWaf, BasicContextRun)
 
     auto *ctx = instance.create_context();
     EXPECT_EQ(ctx->run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
-    context::destroy(ctx);
+    delete ctx;
 }
 
 TEST(TestWaf, RuleDisabledInRuleset)
@@ -62,6 +62,6 @@ TEST(TestWaf, RuleDisabledInRuleset)
 
         auto *ctx = instance.create_context();
         EXPECT_EQ(ctx->run(root, std::nullopt, LONG_TIME), DDWAF_OK);
-        context::destroy(ctx);
+        delete ctx;
     }
 }

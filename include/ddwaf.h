@@ -10,10 +10,10 @@
 #ifdef __cplusplus
 namespace ddwaf{
 class waf;
-class context;
+class context_wrapper;
 } // namespace ddwaf
 using ddwaf_handle = ddwaf::waf *;
-using ddwaf_context = ddwaf::context *;
+using ddwaf_context = ddwaf::context_wrapper *;
 
 extern "C"
 {

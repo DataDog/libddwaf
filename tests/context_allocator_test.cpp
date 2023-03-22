@@ -7,6 +7,7 @@
 #include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "test.h"
+#include <thread>
 
 using namespace ddwaf;
 
@@ -25,18 +26,27 @@ protected:
     memory::null_memory_resource resource;
 };
 
-TEST_F(TestContextAllocator, NullAllocator)
+TEST_F(TestContextAllocator, NullLocalAllocator)
 {
+    memory::context_allocator alloc;
+    EXPECT_THROW(alloc.allocate(1), std::bad_alloc);
+
     // If the allocator is not set, memory::* objecs won't be able to allocate
     EXPECT_THROW(memory::string("string longer than optimisation"), std::bad_alloc);
 }
 
-TEST_F(TestContextAllocator, LocalAllocator)
+TEST_F(TestContextAllocator, MonotonicLocalAllocator)
 {
     // If the allocator is not set, memory::* objecs won't be able to allocate
     std::pmr::monotonic_buffer_resource resource;
     memory::set_local_memory_resource(&resource);
     EXPECT_EQ(memory::get_local_memory_resource(), &resource);
+
+    memory::context_allocator alloc;
+    auto value = alloc.allocate(1);
+    EXPECT_NE(value, nullptr);
+    alloc.deallocate(value, 1);
+
     EXPECT_NO_THROW(memory::string("string longer than optimisation"));
 }
 
@@ -53,4 +63,50 @@ TEST_F(TestContextAllocator, AllocatorGuard)
     }
 
     EXPECT_EQ(memory::get_local_memory_resource(), old_resource);
+}
+
+TEST_F(TestContextAllocator, MultipleThreads)
+{
+    std::pmr::monotonic_buffer_resource resource;
+    memory::memory_resource_guard guard{&resource};
+    EXPECT_EQ(memory::get_local_memory_resource(), &resource);
+
+    {
+        memory::context_allocator alloc;
+        auto value = alloc.allocate(1);
+        EXPECT_NE(value, nullptr);
+        alloc.deallocate(value, 1);
+
+        EXPECT_NO_THROW(memory::string("string longer than optimisation"));
+    }
+
+    std::thread([]() {
+        memory::context_allocator alloc;
+        EXPECT_THROW(alloc.allocate(1), std::bad_alloc);
+
+        // If the allocator is not set, memory::* objecs won't be able to allocate
+        EXPECT_THROW(memory::string("string longer than optimisation"), std::bad_alloc);
+    }).join();
+
+    std::thread([]() {
+        std::pmr::monotonic_buffer_resource resource;
+        memory::memory_resource_guard guard{&resource};
+        EXPECT_EQ(memory::get_local_memory_resource(), &resource);
+
+        memory::context_allocator alloc;
+        auto value = alloc.allocate(1);
+        EXPECT_NE(value, nullptr);
+        alloc.deallocate(value, 1);
+
+        EXPECT_NO_THROW(memory::string("string longer than optimisation"));
+    }).join();
+
+    {
+        memory::context_allocator alloc;
+        auto value = alloc.allocate(1);
+        EXPECT_NE(value, nullptr);
+        alloc.deallocate(value, 1);
+
+        EXPECT_NO_THROW(memory::string("string longer than optimisation"));
+    }
 }

@@ -27,25 +27,8 @@ class context {
 public:
     using object_set = std::unordered_set<const ddwaf_object *>;
 
-    static context *create(std::shared_ptr<ruleset> ruleset)
-    {
-        std::pmr::memory_resource *mr = new std::pmr::monotonic_buffer_resource();
-        memory::memory_resource_guard mr_guard{mr};
-        return new context{std::move(ruleset), mr};
-    }
-
-    static void destroy(context *ctx)
-    {
-        std::pmr::memory_resource *mr = ctx->get_memory_resource();
-        {
-            memory::memory_resource_guard mr_guard{mr};
-            delete ctx;
-        }
-        delete mr;
-    }
-
-    explicit context(std::shared_ptr<ruleset> ruleset, std::pmr::memory_resource *mr = nullptr)
-        : mr_(mr), ruleset_(std::move(ruleset)), store_(ruleset_->manifest, ruleset_->free_fn)
+    explicit context(ruleset::ptr ruleset)
+        : ruleset_(std::move(ruleset)), store_(ruleset_->manifest, ruleset_->free_fn)
     {
         rule_filter_cache_.reserve(ruleset_->rule_filters.size());
         input_filter_cache_.reserve(ruleset_->input_filters.size());
@@ -58,7 +41,7 @@ public:
     context &operator=(context &&) = delete;
     ~context() = default;
 
-    DDWAF_RET_CODE run(const ddwaf_object &, optional_ref<ddwaf_result> res, uint64_t);
+    DDWAF_RET_CODE run(const ddwaf_object &, optional_ref<ddwaf_result>, uint64_t);
 
     // These two functions below return references to internal objects,
     // however using them this way helps with testing
@@ -70,14 +53,10 @@ public:
         const memory::unordered_map<rule *, object_set> &objects_to_exclude,
         ddwaf::timer &deadline);
 
-    std::pmr::memory_resource *get_memory_resource() { return mr_; }
-
 protected:
     bool is_first_run() const { return collection_cache_.empty(); }
 
-    std::pmr::memory_resource *mr_;
-
-    std::shared_ptr<ruleset> ruleset_;
+    ruleset::ptr ruleset_;
     ddwaf::object_store store_;
 
     using input_filter = exclusion::input_filter;
@@ -92,6 +71,33 @@ protected:
 
     // Cache of collections to avoid processing once a result has been obtained
     memory::unordered_map<std::string_view, collection::cache_type> collection_cache_;
+};
+
+class context_wrapper {
+public:
+    context_wrapper(ruleset::ptr ruleset)
+    {
+        memory::memory_resource_guard guard(&mr_);
+        ctx_ = static_cast<context *>(mr_.allocate(sizeof(context), alignof(context)));
+        new (ctx_) context{std::move(ruleset)};
+    }
+
+    ~context_wrapper()
+    {
+        memory::memory_resource_guard guard(&mr_);
+        ctx_->~context();
+        mr_.deallocate(static_cast<void *>(ctx_), sizeof(context), alignof(context));
+    }
+
+    DDWAF_RET_CODE run(const ddwaf_object &data, optional_ref<ddwaf_result> res, uint64_t timeout)
+    {
+        memory::memory_resource_guard guard(&mr_);
+        return ctx_->run(data, res, timeout);
+    }
+
+protected:
+    context *ctx_;
+    std::pmr::monotonic_buffer_resource mr_;
 };
 
 } // namespace ddwaf

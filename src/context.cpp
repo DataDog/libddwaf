@@ -16,10 +16,8 @@
 namespace ddwaf {
 
 DDWAF_RET_CODE context::run(
-    const ddwaf_object &newParameters, optional_ref<ddwaf_result> res, uint64_t timeLeft)
+    const ddwaf_object &newParameters, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
-    memory::memory_resource_guard mr_guard{mr_};
-
     if (res.has_value()) {
         ddwaf_result &output = *res;
         output = {false, nullptr, {nullptr, 0}, 0};
@@ -33,7 +31,7 @@ DDWAF_RET_CODE context::run(
     // If the timeout provided is 0, we need to ensure the parameters are owned
     // by the additive to ensure that the semantics of DDWAF_ERR_TIMEOUT are
     // consistent across all possible timeout scenarios.
-    if (timeLeft == 0) {
+    if (timeout == 0) {
         if (res.has_value()) {
             ddwaf_result &output = *res;
             output.timeout = true;
@@ -41,7 +39,7 @@ DDWAF_RET_CODE context::run(
         return DDWAF_OK;
     }
 
-    ddwaf::timer deadline{std::chrono::microseconds(timeLeft)};
+    ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     // If this is a new run but no rule care about those new params, let's skip the run
     if (!is_first_run() && !store_.has_new_targets()) {

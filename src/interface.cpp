@@ -201,7 +201,7 @@ void ddwaf_context_destroy(ddwaf_context context)
     }
 
     try {
-        ddwaf::context::destroy(context);
+        delete context;
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("%s", e.what());
