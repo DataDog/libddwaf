@@ -35,15 +35,17 @@ template <typename T> memory::vector<memory::string> iterator_base<T>::get_curre
     if (current_ == nullptr) {
         return {};
     }
+
+    memory::vector<memory::string> keys;
+    keys.reserve(path_.size() + stack_.size());
+    for (const auto &key : path_) { keys.emplace_back(key); }
+
     if (stack_.empty()) {
-        if (path_.empty()) {
+        if (keys.empty()) {
             return {};
         }
-        return path_;
+        return keys;
     }
-
-    memory::vector<memory::string> keys = path_;
-    keys.reserve(path_.size() + stack_.size());
 
     auto [parent, parent_index] = stack_.front();
     for (unsigned i = 1; i < stack_.size(); i++) {

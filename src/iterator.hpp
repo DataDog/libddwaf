@@ -53,7 +53,7 @@ protected:
     // since the iterator doesn't keep track of the root object provided,
     // but only the beginning of the key path, we keep this here so that we
     // can later provide the accurate full key path.
-    memory::vector<memory::string> path_;
+    std::vector<std::string> path_;
     std::vector<std::pair<const ddwaf_object *, std::size_t>> stack_;
     const ddwaf_object *current_{nullptr};
 
