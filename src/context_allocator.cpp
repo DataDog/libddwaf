@@ -7,5 +7,21 @@
 #include "context_allocator.hpp"
 
 namespace ddwaf::memory {
-thread_local std::pmr::memory_resource *local_memory_resource{std::pmr::null_memory_resource()};
+
+namespace {
+class null_memory_resource final : public std::pmr::memory_resource {
+    void *do_allocate(size_t /*bytes*/, size_t /*alignment*/) override { throw std::bad_alloc(); }
+    void do_deallocate(void * /*p*/, size_t /*bytes*/, size_t /*alignment*/) noexcept override {}
+    [[nodiscard]] bool do_is_equal(const memory_resource &other) const noexcept override
+    {
+        return this == &other;
+    }
+};
+
+// NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
+null_memory_resource global_memory_resource;
+} // namespace
+
+thread_local std::pmr::memory_resource *local_memory_resource{&global_memory_resource};
+
 } // namespace ddwaf::memory
