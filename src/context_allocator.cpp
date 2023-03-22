@@ -7,8 +7,5 @@
 #include "context_allocator.hpp"
 
 namespace ddwaf::memory {
-// NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
-std::pmr::memory_resource *global_memory_resource{std::pmr::new_delete_resource()};
-thread_local std::pmr::memory_resource *local_memory_resource{global_memory_resource};
-
+thread_local std::pmr::memory_resource *local_memory_resource{std::pmr::null_memory_resource()};
 } // namespace ddwaf::memory

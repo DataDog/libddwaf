@@ -4,8 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "context_allocator.hpp"
 #include "log.hpp"
 #include "test.h"
+#include <memory_resource>
 
 const char *level_to_str(DDWAF_LOG_LEVEL level)
 {
@@ -36,6 +38,7 @@ void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsig
 int main(int argc, char *argv[])
 {
     ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
+    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

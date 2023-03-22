@@ -13,8 +13,6 @@
 #include <vector>
 
 namespace ddwaf::memory {
-// NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
-extern std::pmr::memory_resource *global_memory_resource;
 extern thread_local std::pmr::memory_resource *local_memory_resource;
 
 inline std::pmr::memory_resource *get_local_memory_resource() { return local_memory_resource; }
