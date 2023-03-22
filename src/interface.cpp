@@ -8,7 +8,6 @@
 #include <context_allocator.hpp>
 #include <exception.hpp>
 #include <memory>
-#include <memory_resource>
 #include <mutex>
 #include <obfuscator.hpp>
 #include <ruleset_info.hpp>

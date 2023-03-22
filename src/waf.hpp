@@ -10,7 +10,6 @@
 #include <config.hpp>
 #include <context.hpp>
 #include <memory>
-#include <memory_resource>
 #include <ruleset.hpp>
 #include <ruleset_builder.hpp>
 #include <ruleset_info.hpp>
