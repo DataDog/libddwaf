@@ -83,7 +83,9 @@ const memory::unordered_set<rule *> &context::filter_rules(ddwaf::timer &deadlin
 
         rule_filter::cache_type &cache = it->second;
         auto exclusion = filter->match(store_, cache, deadline);
-        for (auto &&rule : exclusion) { rules_to_exclude_.insert(rule); }
+        if (exclusion.has_value()) {
+            for (auto &&rule : exclusion->get()) { rules_to_exclude_.insert(rule); }
+        }
     }
     return rules_to_exclude_;
 }

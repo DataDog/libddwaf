@@ -19,6 +19,8 @@ inline std::pmr::memory_resource *get_local_memory_resource() { return local_mem
 
 inline void set_local_memory_resource(std::pmr::memory_resource *mr) { local_memory_resource = mr; }
 
+// The null memory resource is used as the default onef or the static thread
+// local memory resource. Only exposed for testing purposes.
 class null_memory_resource final : public std::pmr::memory_resource {
     void *do_allocate(size_t /*bytes*/, size_t /*alignment*/) override { throw std::bad_alloc(); }
     void do_deallocate(void * /*p*/, size_t /*bytes*/, size_t /*alignment*/) noexcept override {}
@@ -28,6 +30,9 @@ class null_memory_resource final : public std::pmr::memory_resource {
     }
 };
 
+// The memory resource guard replaces the current static thread local memory
+// resource with the user provided one on construction and reverts it back on
+// destruction.
 class memory_resource_guard {
 public:
     explicit memory_resource_guard(std::pmr::memory_resource *mr) noexcept
@@ -49,6 +54,14 @@ protected:
     std::pmr::memory_resource *old_mr_;
 };
 
+// The context allocator uses the static thread local memory resource to
+// allocate memory for STL objecs. The thread local memory resource has to be
+// set before constructing, modifying or destroying an object using the
+// context allocator, otherwise allocations should fail as the default thread
+// local resource is the null resource.
+// As the name suggests, the purpose of the context_allocator and the static
+// thread local memory resources is to optimise allocations and deallocations
+// within the context lifecycle, reduce global allocator contention.
 template <typename T = std::byte> class context_allocator {
 public:
     using value_type = T;
@@ -79,6 +92,7 @@ public:
     bool operator==(const context_allocator & /*unused*/) { return true; }
 };
 
+// Required STL type definitions with context allocator
 using string = std::basic_string<char, std::char_traits<char>, context_allocator<char>>;
 
 template <typename T> using vector = std::vector<T, context_allocator<T>>;

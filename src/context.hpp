@@ -75,7 +75,7 @@ protected:
 
 class context_wrapper {
 public:
-    context_wrapper(ruleset::ptr ruleset)
+    explicit context_wrapper(ruleset::ptr ruleset)
     {
         memory::memory_resource_guard guard(&mr_);
         ctx_ = static_cast<context *>(mr_.allocate(sizeof(context), alignof(context)));
@@ -88,6 +88,11 @@ public:
         ctx_->~context();
         mr_.deallocate(static_cast<void *>(ctx_), sizeof(context), alignof(context));
     }
+
+    context_wrapper(context_wrapper &&) noexcept = delete;
+    context_wrapper(const context_wrapper &) = delete;
+    context_wrapper &operator=(context_wrapper &&) noexcept = delete;
+    context_wrapper &operator=(const context_wrapper &) = delete;
 
     DDWAF_RET_CODE run(const ddwaf_object &data, optional_ref<ddwaf_result> res, uint64_t timeout)
     {
