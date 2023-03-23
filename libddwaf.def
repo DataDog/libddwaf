@@ -33,6 +33,8 @@ EXPORTS
   ddwaf_object_get_signed
   ddwaf_object_get_index
   ddwaf_object_get_bool
+  ddwaf_object_from_json
+  ddwaf_object_to_json
   ddwaf_object_free
   ddwaf_get_version
   ddwaf_set_log_cb
