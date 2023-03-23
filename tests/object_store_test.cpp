@@ -10,12 +10,10 @@ using namespace ddwaf;
 
 TEST(TestObjectStore, InsertInvalidObject)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto query_key = mb.insert("query", {"key"});
-    auto url = mb.insert("url", {});
-    auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+    auto url = manifest.insert("url");
+
     object_store store(manifest);
 
     ddwaf_object root = DDWAF_OBJECT_INVALID;
@@ -25,19 +23,14 @@ TEST(TestObjectStore, InsertInvalidObject)
     EXPECT_FALSE((bool)store);
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(query_key));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_FALSE(store.is_new_target(url_key));
     EXPECT_EQ(store.get_target(query), nullptr);
-    EXPECT_EQ(store.get_target(query_key), nullptr);
     EXPECT_EQ(store.get_target(url), nullptr);
-    EXPECT_EQ(store.get_target(url_key), nullptr);
 }
 
 TEST(TestObjectStore, InsertMalformedMap)
 {
-    ddwaf::manifest_builder mb;
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
 
     object_store store(manifest);
 
@@ -51,13 +44,13 @@ TEST(TestObjectStore, InsertMalformedMap)
 
 TEST(TestObjectStore, InsertMalformedMapKey)
 {
-    ddwaf::manifest_builder mb;
-    mb.insert("key", {});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    manifest.insert("key");
 
     object_store store(manifest);
 
-    ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
+    ddwaf_object tmp;
+    ddwaf_object root = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
 
     free((void *)root.array[0].parameterName);
@@ -69,12 +62,9 @@ TEST(TestObjectStore, InsertMalformedMapKey)
 
 TEST(TestObjectStore, InsertStringObject)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto query_key = mb.insert("query", {"key"});
-    auto url = mb.insert("url", {});
-    auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+    auto url = manifest.insert("url");
 
     object_store store(manifest);
 
@@ -86,27 +76,21 @@ TEST(TestObjectStore, InsertStringObject)
     EXPECT_FALSE((bool)store);
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(query_key));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_FALSE(store.is_new_target(url_key));
     EXPECT_EQ(store.get_target(query), nullptr);
-    EXPECT_EQ(store.get_target(query_key), nullptr);
     EXPECT_EQ(store.get_target(url), nullptr);
-    EXPECT_EQ(store.get_target(url_key), nullptr);
 }
 
 TEST(TestObjectStore, InsertAndGetObject)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto query_key = mb.insert("query", {"key"});
-    auto url = mb.insert("url", {});
-    auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+    auto url = manifest.insert("url");
 
     object_store store(manifest);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "hello"));
 
@@ -115,27 +99,23 @@ TEST(TestObjectStore, InsertAndGetObject)
     EXPECT_TRUE((bool)store);
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_TRUE(store.is_new_target(query));
-    EXPECT_TRUE(store.is_new_target(query_key));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_FALSE(store.is_new_target(url_key));
     EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_NE(store.get_target(query_key), nullptr);
     EXPECT_EQ(store.get_target(url), nullptr);
-    EXPECT_EQ(store.get_target(url_key), nullptr);
 }
 
 TEST(TestObjectStore, InsertMultipleUniqueObjects)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto query_key = mb.insert("query", {"key"});
-    auto url = mb.insert("url", {});
-    auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+    auto url = manifest.insert("url");
 
     object_store store(manifest);
 
-    ddwaf_object first, second, third, tmp;
+    ddwaf_object first;
+    ddwaf_object second;
+    ddwaf_object third;
+    ddwaf_object tmp;
     ddwaf_object_map(&first);
     ddwaf_object_map_add(&first, "query", ddwaf_object_string(&tmp, "hello"));
 
@@ -144,13 +124,9 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_TRUE((bool)store);
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_TRUE(store.is_new_target(query));
-    EXPECT_TRUE(store.is_new_target(query_key));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_FALSE(store.is_new_target(url_key));
     EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_NE(store.get_target(query_key), nullptr);
     EXPECT_EQ(store.get_target(url), nullptr);
-    EXPECT_EQ(store.get_target(url_key), nullptr);
 
     ddwaf_object_map(&second);
     ddwaf_object_map_add(&second, "url", ddwaf_object_string(&tmp, "hello"));
@@ -160,40 +136,32 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_TRUE((bool)store);
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(query_key));
     EXPECT_TRUE(store.is_new_target(url));
-    EXPECT_TRUE(store.is_new_target(url_key));
     EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_NE(store.get_target(query_key), nullptr);
     EXPECT_NE(store.get_target(url), nullptr);
-    EXPECT_NE(store.get_target(url_key), nullptr);
 
     third = DDWAF_OBJECT_INVALID;
     store.insert(third);
     EXPECT_TRUE((bool)store);
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(query_key));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_FALSE(store.is_new_target(url_key));
     EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_NE(store.get_target(query_key), nullptr);
     EXPECT_NE(store.get_target(url), nullptr);
-    EXPECT_NE(store.get_target(url_key), nullptr);
 }
 
 TEST(TestObjectStore, InsertMultipleOverlappingObjects)
 {
-    ddwaf::manifest_builder mb;
-    auto query = mb.insert("query", {});
-    auto query_key = mb.insert("query", {"key"});
-    auto url = mb.insert("url", {});
-    auto url_key = mb.insert("url", {"key"});
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    auto query = manifest.insert("query");
+    auto url = manifest.insert("url");
 
     object_store store(manifest);
 
-    ddwaf_object first, second, third, tmp;
+    ddwaf_object first;
+    ddwaf_object second;
+    ddwaf_object third;
+    ddwaf_object tmp;
     ddwaf_object_map(&first);
     ddwaf_object_map_add(&first, "query", ddwaf_object_string(&tmp, "hello"));
     store.insert(first);
@@ -201,23 +169,12 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     EXPECT_TRUE((bool)store);
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_TRUE(store.is_new_target(query));
-    EXPECT_TRUE(store.is_new_target(query_key));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_FALSE(store.is_new_target(url_key));
     EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_NE(store.get_target(query_key), nullptr);
     EXPECT_EQ(store.get_target(url), nullptr);
-    EXPECT_EQ(store.get_target(url_key), nullptr);
 
     {
         const ddwaf_object *object = store.get_target(query);
-        EXPECT_NE(object, nullptr);
-        EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-        EXPECT_STREQ(object->stringValue, "hello");
-    }
-
-    {
-        const ddwaf_object *object = store.get_target(query_key);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "hello");
@@ -232,9 +189,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     EXPECT_TRUE((bool)store);
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_TRUE(store.is_new_target(query));
-    EXPECT_TRUE(store.is_new_target(query_key));
     EXPECT_TRUE(store.is_new_target(url));
-    EXPECT_TRUE(store.is_new_target(url_key));
 
     {
         const ddwaf_object *object = store.get_target(url);
@@ -244,21 +199,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     }
 
     {
-        const ddwaf_object *object = store.get_target(url_key);
-        EXPECT_NE(object, nullptr);
-        EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-        EXPECT_STREQ(object->stringValue, "hello");
-    }
-
-    {
         const ddwaf_object *object = store.get_target(query);
-        EXPECT_NE(object, nullptr);
-        EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-        EXPECT_STREQ(object->stringValue, "bye");
-    }
-
-    {
-        const ddwaf_object *object = store.get_target(query_key);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "bye");
@@ -272,21 +213,11 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     EXPECT_TRUE((bool)store);
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(query_key));
     EXPECT_TRUE(store.is_new_target(url));
-    EXPECT_TRUE(store.is_new_target(url_key));
     EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_NE(store.get_target(query_key), nullptr);
 
     {
         const ddwaf_object *object = store.get_target(url);
-        EXPECT_NE(object, nullptr);
-        EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-        EXPECT_STREQ(object->stringValue, "bye");
-    }
-
-    {
-        const ddwaf_object *object = store.get_target(url_key);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "bye");

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 
+#include "ddwaf.h"
 #include "utils.hpp"
 
 namespace ddwaf::benchmark::utils {
@@ -23,6 +24,9 @@ void debug_str_helper(std::string &res, const ddwaf_object &p)
     switch (p.type) {
     case DDWAF_OBJ_INVALID:
         res += "<invalid>";
+        break;
+    case DDWAF_OBJ_BOOL:
+        res += p.boolean ? "true" : "false";
         break;
     case DDWAF_OBJ_SIGNED:
         res += std::to_string(p.intValue);
@@ -75,6 +79,9 @@ ddwaf_object object_dup(const ddwaf_object &o) noexcept
     case DDWAF_OBJ_INVALID:
         ddwaf_object_invalid(&copy);
         break;
+    case DDWAF_OBJ_BOOL:
+        ddwaf_object_bool(&copy, o.boolean);
+        break;
     case DDWAF_OBJ_SIGNED:
         ddwaf_object_signed(&copy, o.intValue);
         break;
@@ -116,7 +123,7 @@ std::string read_file(const fs::path &filename)
     buffer.resize(file.tellg());
     file.seekg(0, std::ios::beg);
 
-    file.read(&buffer[0], static_cast<int64_t>(buffer.size()));
+    file.read(buffer.data(), static_cast<int64_t>(buffer.size()));
     file.close();
     return buffer;
 }

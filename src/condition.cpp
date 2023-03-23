@@ -6,24 +6,15 @@
 
 #include <condition.hpp>
 
-#include <waf.hpp>
-
-#include "clock.hpp"
 #include <exception.hpp>
 #include <log.hpp>
 #include <memory>
 
 namespace ddwaf {
 
-std::optional<event::match> condition::match_object(const ddwaf_object *object) const
+std::optional<event::match> condition::match_object(
+    const ddwaf_object *object, const rule_processor::base::ptr &processor) const
 {
-    decltype(processor_) processor;
-    if (mutable_) {
-        processor = std::atomic_load(&processor_);
-    } else {
-        processor = processor_;
-    }
-
     const bool has_transform = !transformers_.empty();
     bool transform_required = false;
 
@@ -66,7 +57,8 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object) 
 }
 
 template <typename T>
-std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadline) const
+std::optional<event::match> condition::match_target(
+    T &it, const rule_processor::base::ptr &processor, ddwaf::timer &deadline) const
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -77,7 +69,7 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
             continue;
         }
 
-        auto optional_match = match_object(*it);
+        auto optional_match = match_object(*it, processor);
         if (!optional_match.has_value()) {
             continue;
         }
@@ -90,12 +82,33 @@ std::optional<event::match> condition::match_target(T &it, ddwaf::timer &deadlin
     return std::nullopt;
 }
 
+const rule_processor::base::ptr &condition::get_processor(
+    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors) const
+{
+    if (processor_ || data_id_.empty()) {
+        return processor_;
+    }
+
+    auto it = dynamic_processors.find(data_id_);
+    if (it == dynamic_processors.end()) {
+        return processor_;
+    }
+
+    return it->second;
+}
+
 std::optional<event::match> condition::match(const object_store &store,
-    const ddwaf::manifest &manifest,
     const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
+    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
-    for (const auto &target : targets_) {
+    const auto &processor = get_processor(dynamic_processors);
+    if (!processor) {
+        DDWAF_DEBUG("Condition doesn't have a valid processor");
+        return std::nullopt;
+    }
+
+    for (const auto &[target, name, key_path] : targets_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
@@ -106,8 +119,6 @@ std::optional<event::match> condition::match(const object_store &store,
             continue;
         }
 
-        const auto &info = manifest.get_target_info(target);
-
         // TODO: iterators could be cached to avoid reinitialisation
         const auto *object = store.get_target(target);
         if (object == nullptr) {
@@ -116,17 +127,17 @@ std::optional<event::match> condition::match(const object_store &store,
 
         std::optional<event::match> optional_match;
         if (source_ == data_source::keys) {
-            object::key_iterator it(object, info.key_path, objects_excluded, limits_);
-            optional_match = match_target(it, deadline);
+            object::key_iterator it(object, key_path, objects_excluded, limits_);
+            optional_match = match_target(it, processor, deadline);
         } else {
-            object::value_iterator it(object, info.key_path, objects_excluded, limits_);
-            optional_match = match_target(it, deadline);
+            object::value_iterator it(object, key_path, objects_excluded, limits_);
+            optional_match = match_target(it, processor, deadline);
         }
 
         if (optional_match.has_value()) {
-            optional_match->source = info.name;
+            optional_match->source = name;
 
-            DDWAF_TRACE("Target %s matched parameter value %s", info.name.c_str(),
+            DDWAF_TRACE("Target %s matched parameter value %s", name.c_str(),
                 optional_match->resolved.c_str());
             return optional_match;
         }

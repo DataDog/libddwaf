@@ -8,9 +8,7 @@
 
 void populateManifest(ddwaf::manifest &manifest)
 {
-    ddwaf::manifest_builder mb;
-    for (auto key : {"value", "key", "mixed", "mixed2"}) { mb.insert(key, {}); }
-    manifest = mb.build_manifest();
+    for (const auto *key : {"value", "key", "mixed", "mixed2"}) { manifest.insert(key); }
 }
 
 TEST(TestAdditive, TestMultiCall)

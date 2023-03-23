@@ -12,7 +12,7 @@ TEST(TestParameter, ToBool)
         ddwaf_object root;
         ddwaf_object_bool(&root, true);
 
-        bool value = ddwaf::parameter(root);
+        bool value = static_cast<bool>(parameter(root));
         EXPECT_TRUE(value);
     }
 
@@ -20,7 +20,7 @@ TEST(TestParameter, ToBool)
         ddwaf_object root;
         ddwaf_object_bool(&root, false);
 
-        bool value = ddwaf::parameter(root);
+        bool value = static_cast<bool>(parameter(root));
         EXPECT_FALSE(value);
     }
 
@@ -28,7 +28,7 @@ TEST(TestParameter, ToBool)
         ddwaf_object root;
         ddwaf_object_string(&root, "true");
 
-        bool value = ddwaf::parameter(root);
+        bool value = static_cast<bool>(parameter(root));
         EXPECT_TRUE(value);
 
         ddwaf_object_free(&root);
@@ -38,7 +38,7 @@ TEST(TestParameter, ToBool)
         ddwaf_object root;
         ddwaf_object_string(&root, "TrUe");
 
-        bool value = ddwaf::parameter(root);
+        bool value = static_cast<bool>(parameter(root));
         EXPECT_TRUE(value);
 
         ddwaf_object_free(&root);
@@ -48,7 +48,7 @@ TEST(TestParameter, ToBool)
         ddwaf_object root;
         ddwaf_object_string(&root, "false");
 
-        bool value = ddwaf::parameter(root);
+        bool value = static_cast<bool>(parameter(root));
         EXPECT_FALSE(value);
 
         ddwaf_object_free(&root);
@@ -58,7 +58,7 @@ TEST(TestParameter, ToBool)
         ddwaf_object root;
         ddwaf_object_string(&root, "FaLsE");
 
-        bool value = ddwaf::parameter(root);
+        bool value = static_cast<bool>(parameter(root));
         EXPECT_FALSE(value);
 
         ddwaf_object_free(&root);
@@ -78,7 +78,7 @@ TEST(TestParameter, ToUint64)
         ddwaf_object root;
         ddwaf_object_unsigned_force(&root, 2123);
 
-        uint64_t value = ddwaf::parameter(root);
+        uint64_t value = static_cast<uint64_t>(parameter(root));
         EXPECT_EQ(value, 2123);
     }
 
@@ -86,7 +86,7 @@ TEST(TestParameter, ToUint64)
         ddwaf_object root;
         ddwaf_object_unsigned(&root, 2123);
 
-        uint64_t value = ddwaf::parameter(root);
+        uint64_t value = static_cast<uint64_t>(parameter(root));
         EXPECT_EQ(value, 2123);
 
         ddwaf_object_free(&root);
@@ -96,7 +96,7 @@ TEST(TestParameter, ToUint64)
         ddwaf_object root;
         ddwaf_object_string(&root, "2123");
 
-        uint64_t value = ddwaf::parameter(root);
+        uint64_t value = static_cast<uint64_t>(parameter(root));
         EXPECT_EQ(value, 2123);
 
         ddwaf_object_free(&root);
@@ -116,7 +116,7 @@ TEST(TestParameter, ToInt64)
         ddwaf_object root;
         ddwaf_object_signed_force(&root, -2123);
 
-        int64_t value = ddwaf::parameter(root);
+        int64_t value = static_cast<int64_t>(parameter(root));
         EXPECT_EQ(value, -2123);
     }
 
@@ -124,7 +124,7 @@ TEST(TestParameter, ToInt64)
         ddwaf_object root;
         ddwaf_object_signed(&root, -2123);
 
-        int64_t value = ddwaf::parameter(root);
+        int64_t value = static_cast<int64_t>(parameter(root));
         EXPECT_EQ(value, -2123);
 
         ddwaf_object_free(&root);
@@ -134,7 +134,7 @@ TEST(TestParameter, ToInt64)
         ddwaf_object root;
         ddwaf_object_string(&root, "-2123");
 
-        int64_t value = ddwaf::parameter(root);
+        int64_t value = static_cast<int64_t>(parameter(root));
         EXPECT_EQ(value, -2123);
 
         ddwaf_object_free(&root);
@@ -154,7 +154,7 @@ TEST(TestParameter, ToString)
         ddwaf_object root;
         ddwaf_object_string(&root, "hello world, this is a string");
 
-        std::string value = ddwaf::parameter(root);
+        auto value = static_cast<std::string>(ddwaf::parameter(root));
         EXPECT_STREQ(value.c_str(), "hello world, this is a string");
 
         ddwaf_object_free(&root);
@@ -174,7 +174,7 @@ TEST(TestParameter, ToStringView)
         ddwaf_object root;
         ddwaf_object_string(&root, "hello world, this is a string");
 
-        std::string_view value = ddwaf::parameter(root);
+        auto value = static_cast<std::string_view>(ddwaf::parameter(root));
         EXPECT_STREQ(value.data(), "hello world, this is a string");
 
         ddwaf_object_free(&root);
@@ -198,7 +198,7 @@ TEST(TestParameter, ToVector)
             ddwaf_object_array_add(&root, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
         }
 
-        ddwaf::parameter::vector vec_param = ddwaf::parameter(root);
+        auto vec_param = static_cast<parameter::vector>(ddwaf::parameter(root));
         EXPECT_EQ(vec_param.size(), 20);
 
         unsigned i = 0;
@@ -229,7 +229,7 @@ TEST(TestParameter, ToMap)
                 ddwaf_object_string(&tmp, std::to_string(i + 100).c_str()));
         }
 
-        ddwaf::parameter::map map_param = ddwaf::parameter(root);
+        auto map_param = static_cast<parameter::map>(ddwaf::parameter(root));
         EXPECT_EQ(map_param.size(), 20);
 
         for (unsigned i = 0; i < 20; i++) {
@@ -259,7 +259,7 @@ TEST(TestParameter, ToStringVector)
             ddwaf_object_array_add(&root, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
         }
 
-        std::vector<std::string> vec_param = ddwaf::parameter(root);
+        auto vec_param = static_cast<std::vector<std::string>>(ddwaf::parameter(root));
         EXPECT_EQ(vec_param.size(), 20);
 
         unsigned i = 0;
@@ -298,7 +298,7 @@ TEST(TestParameter, ToStringViewVector)
             ddwaf_object_array_add(&root, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
         }
 
-        std::vector<std::string_view> vec_param = ddwaf::parameter(root);
+        auto vec_param = static_cast<std::vector<std::string_view>>(ddwaf::parameter(root));
         EXPECT_EQ(vec_param.size(), 20);
 
         unsigned i = 0;
@@ -337,7 +337,7 @@ TEST(TestParameter, ToStringViewSet)
             ddwaf_object_array_add(&root, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
         }
 
-        ddwaf::parameter::string_set set_param = ddwaf::parameter(root);
+        auto set_param = static_cast<parameter::string_set>(ddwaf::parameter(root));
         EXPECT_EQ(set_param.size(), 20);
 
         for (unsigned i = 0; i < 20; i++) {

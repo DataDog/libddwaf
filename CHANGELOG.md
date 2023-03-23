@@ -1,5 +1,32 @@
 # libddwaf release
 
+### v1.8.2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Use raw pointers instead of shared pointers for rule targets ([#141](https://github.com/DataDog/libddwaf/pull/141))
+
+#### Fixes
+- Relax rule override restrictions ([#140](https://github.com/DataDog/libddwaf/pull/140))
+- Initialise `ruleset_info` on invalid input ([#142](https://github.com/DataDog/libddwaf/pull/142))
+
+### v1.8.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Fixes
+- Return `NULL` handle when incorrect version or empty rules provided to `ddwaf_init` ([#139](https://github.com/DataDog/libddwaf/pull/139))
+
+### v1.8.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### API \& Breaking Changes
+- Add `ddwaf_update` for all-in-one ruleset updates ([#138](https://github.com/DataDog/libddwaf/pull/138))
+- Remove `ddwaf_required_rule_data_ids` ([#138](https://github.com/DataDog/libddwaf/pull/138))
+- Remove `ddwaf_update_rule_data` ([#138](https://github.com/DataDog/libddwaf/pull/138))
+- Remove `ddwaf_toggle_rules` ([#138](https://github.com/DataDog/libddwaf/pull/138))
+
+#### Changes
+- Add WAF Builder ([#138](https://github.com/DataDog/libddwaf/pull/138))
+
+### v1.7.0  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/02/06
+#### Changes
+- Handle lifetime extension ([#135](https://github.com/DataDog/libddwaf/pull/135))
+- Create macos universal binary ([#136](https://github.com/DataDog/libddwaf/pull/136))
+
 ### v1.6.2  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/26
 #### Changes
 - Add boolean getter ([#132](https://github.com/DataDog/libddwaf/pull/132))

@@ -12,7 +12,6 @@
 
 #include <clock.hpp>
 #include <exclusion/object_filter.hpp>
-#include <manifest.hpp>
 #include <object_store.hpp>
 #include <rule.hpp>
 
@@ -23,32 +22,29 @@ public:
     using ptr = std::shared_ptr<input_filter>;
 
     struct excluded_set {
-        const std::set<rule::ptr> &rules;
-        std::unordered_set<const ddwaf_object *> objects;
+        const std::set<rule *> &rules;
+        memory::unordered_set<const ddwaf_object *> objects;
     };
 
     struct cache_type {
         bool result{false};
-        std::unordered_map<condition::ptr, bool> conditions;
+        std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
         object_filter::cache_type object_filter_cache;
     };
 
-    input_filter(std::string &&id, std::vector<condition::ptr> &&conditions,
-        std::set<rule::ptr> &&rule_targets, object_filter &&filter)
-        : id_(std::move(id)), conditions_(std::move(conditions)),
-          rule_targets_(std::move(rule_targets)), filter_(std::move(filter))
-    {}
+    input_filter(std::string id, std::vector<condition::ptr> conditions,
+        std::set<rule *> rule_targets, std::shared_ptr<object_filter> filter);
 
-    std::optional<excluded_set> match(const object_store &store, const ddwaf::manifest &manifest,
-        cache_type &cache, ddwaf::timer &deadline) const;
+    std::optional<excluded_set> match(
+        const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
 
 protected:
     std::string id_;
     std::vector<condition::ptr> conditions_;
-    const std::set<rule::ptr> rule_targets_;
-    object_filter filter_;
+    const std::set<rule *> rule_targets_;
+    std::shared_ptr<object_filter> filter_;
 };
 
 } // namespace ddwaf::exclusion

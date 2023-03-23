@@ -27,8 +27,7 @@ ip_match::ip_match(const std::vector<std::string_view> &ip_list)
             prefix_t prefix;
             // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
             radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
-            auto *node = radix_put_if_absent(rtree_.get(), &prefix);
-            node->expiration = 0;
+            radix_put_if_absent(rtree_.get(), &prefix, 0);
         }
     }
 }
@@ -47,8 +46,7 @@ ip_match::ip_match(const std::vector<std::pair<std::string_view, uint64_t>> &ip_
             prefix_t prefix;
             // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
             radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
-            auto *node = radix_put_if_absent(rtree_.get(), &prefix);
-            node->expiration = expiration;
+            radix_put_if_absent(rtree_.get(), &prefix, expiration);
         }
     }
 }

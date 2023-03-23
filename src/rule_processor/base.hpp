@@ -19,7 +19,7 @@ namespace ddwaf::rule_processor {
 
 class base {
 public:
-    using shared = std::shared_ptr<base>;
+    using ptr = std::shared_ptr<base>;
 
     base() = default;
     virtual ~base() = default;
@@ -47,7 +47,7 @@ public:
 
     [[nodiscard]] event::match make_event(std::string_view resolved, std::string_view matched) const
     {
-        return {std::string(resolved), std::string(matched), name(), to_string(), {}, {}};
+        return {memory::string(resolved), memory::string(matched), name(), to_string(), {}, {}};
     }
 };
 

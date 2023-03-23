@@ -5,6 +5,7 @@ rules:
     tags:
       type: flow1
       category: category1
+      confidence: 1
     conditions:
       - operator: ip_match
         parameters:
@@ -16,6 +17,7 @@ rules:
     tags:
       type: flow2
       category: category2
+      confidence: 0
     conditions:
       - operator: exact_match
         parameters:

@@ -16,7 +16,7 @@
 namespace ddwaf {
 
 DDWAF_RET_CODE context::run(
-    const ddwaf_object &newParameters, optional_ref<ddwaf_result> res, uint64_t timeLeft)
+    const ddwaf_object &newParameters, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
     if (res.has_value()) {
         ddwaf_result &output = *res;
@@ -31,7 +31,7 @@ DDWAF_RET_CODE context::run(
     // If the timeout provided is 0, we need to ensure the parameters are owned
     // by the additive to ensure that the semantics of DDWAF_ERR_TIMEOUT are
     // consistent across all possible timeout scenarios.
-    if (timeLeft == 0) {
+    if (timeout == 0) {
         if (res.has_value()) {
             ddwaf_result &output = *res;
             output.timeout = true;
@@ -39,16 +39,16 @@ DDWAF_RET_CODE context::run(
         return DDWAF_OK;
     }
 
-    ddwaf::timer deadline{std::chrono::microseconds(timeLeft)};
+    ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     // If this is a new run but no rule care about those new params, let's skip the run
     if (!is_first_run() && !store_.has_new_targets()) {
         return DDWAF_OK;
     }
 
-    const event_serializer serializer(config_.event_obfuscator);
+    const event_serializer serializer(*ruleset_->event_obfuscator);
 
-    std::vector<ddwaf::event> events;
+    memory::vector<ddwaf::event> events;
     try {
         const auto &rules_to_exclude = filter_rules(deadline);
         const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
@@ -58,7 +58,7 @@ DDWAF_RET_CODE context::run(
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
     if (res.has_value()) {
         ddwaf_result &output = *res;
-        serializer.serialize(events, seen_actions_, output);
+        serializer.serialize(events, output);
         output.total_runtime = deadline.elapsed().count();
         output.timeout = deadline.expired_before();
     }
@@ -66,44 +66,48 @@ DDWAF_RET_CODE context::run(
     return code;
 }
 
-const std::unordered_set<rule::ptr> &context::filter_rules(ddwaf::timer &deadline)
+const memory::unordered_set<rule *> &context::filter_rules(ddwaf::timer &deadline)
 {
-    for (const auto &[id, filter] : ruleset_.rule_filters) {
+    for (const auto &[id, filter] : ruleset_->rule_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating rule filters");
             throw timeout_exception();
         }
 
-        auto it = rule_filter_cache_.find(filter);
+        auto it = rule_filter_cache_.find(filter.get());
         if (it == rule_filter_cache_.end()) {
-            auto [new_it, res] = rule_filter_cache_.emplace(filter, rule_filter::cache_type{});
+            auto [new_it, res] =
+                rule_filter_cache_.emplace(filter.get(), rule_filter::cache_type{});
             it = new_it;
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, ruleset_.manifest, cache, deadline);
-        rules_to_exclude_.merge(exclusion);
+        auto exclusion = filter->match(store_, cache, deadline);
+        if (exclusion.has_value()) {
+            for (auto &&rule : exclusion->get()) { rules_to_exclude_.insert(rule); }
+        }
     }
     return rules_to_exclude_;
 }
 
-const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs(
-    const std::unordered_set<rule::ptr> &rules_to_exclude, ddwaf::timer &deadline)
+const memory::unordered_map<rule *, context::object_set> &context::filter_inputs(
+    const memory::unordered_set<rule *> &rules_to_exclude, ddwaf::timer &deadline)
 {
-    for (const auto &[id, filter] : ruleset_.input_filters) {
+    for (const auto &[id, filter] : ruleset_->input_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating input filters");
             throw timeout_exception();
         }
 
-        auto it = input_filter_cache_.find(filter);
+        auto it = input_filter_cache_.find(filter.get());
         if (it == input_filter_cache_.end()) {
-            auto [new_it, res] = input_filter_cache_.emplace(filter, input_filter::cache_type{});
+            auto [new_it, res] =
+                input_filter_cache_.emplace(filter.get(), input_filter::cache_type{});
             it = new_it;
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, ruleset_.manifest, cache, deadline);
+        auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 if (rules_to_exclude.find(rule) != rules_to_exclude.end()) {
@@ -119,29 +123,29 @@ const std::unordered_map<rule::ptr, context::object_set> &context::filter_inputs
     return objects_to_exclude_;
 }
 
-std::vector<event> context::match(const std::unordered_set<rule::ptr> &rules_to_exclude,
-    const std::unordered_map<rule::ptr, object_set> &objects_to_exclude, ddwaf::timer &deadline)
+memory::vector<event> context::match(const memory::unordered_set<rule *> &rules_to_exclude,
+    const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
-    std::vector<ddwaf::event> events;
+    memory::vector<ddwaf::event> events;
 
     auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);
         if (it == collection_cache_.end()) {
-            auto [new_it, res] = collection_cache_.emplace(type, collection.get_cache());
+            auto [new_it, res] = collection_cache_.emplace(type, collection_cache{});
             it = new_it;
         }
-        collection.match(events, seen_actions_, store_, ruleset_.manifest, it->second,
-            rules_to_exclude, objects_to_exclude, deadline);
+        collection.match(events, store_, it->second, rules_to_exclude, objects_to_exclude,
+            ruleset_->dynamic_processors, deadline);
     };
 
     // Evaluate priority collections first
-    for (auto &[type, collection] : ruleset_.priority_collections) {
+    for (auto &[type, collection] : ruleset_->priority_collections) {
         DDWAF_DEBUG("Evaluating priority collection %s", type.data());
         eval_collection(type, collection);
     }
 
     // Evalaute regular collection after
-    for (auto &[type, collection] : ruleset_.collections) {
+    for (auto &[type, collection] : ruleset_->collections) {
         DDWAF_DEBUG("Evaluating collection %s", type.data());
         eval_collection(type, collection);
     }

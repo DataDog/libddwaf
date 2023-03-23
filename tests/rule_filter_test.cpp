@@ -10,20 +10,18 @@ using namespace ddwaf;
 
 TEST(TestRuleFilter, Match)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
-
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions),
-        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
+    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
+    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -35,18 +33,15 @@ TEST(TestRuleFilter, Match)
     ddwaf::timer deadline{2s};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    auto rules = filter.match(store, manifest, cache, deadline);
-    EXPECT_FALSE(rules.empty());
+    EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
 }
 
 TEST(TestRuleFilter, NoMatch)
 {
-    std::vector<ddwaf::manifest::target_type> targets;
+    std::vector<condition::target_type> targets;
 
-    ddwaf::manifest_builder mb;
-    targets.push_back(mb.insert("http.client_ip", {}));
-
-    auto manifest = mb.build_manifest();
+    ddwaf::manifest manifest;
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
 
     auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
@@ -65,17 +60,17 @@ TEST(TestRuleFilter, NoMatch)
     ddwaf::timer deadline{2s};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
+    EXPECT_FALSE(filter.match(store, cache, deadline));
 }
 
 TEST(TestRuleFilter, ValidateCachedMatch)
 {
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -83,16 +78,15 @@ TEST(TestRuleFilter, ValidateCachedMatch)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
-    auto manifest = mb.build_manifest();
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions),
-        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
+    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
+    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
 
@@ -108,7 +102,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 
     {
@@ -120,18 +114,18 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
     }
 }
 
 TEST(TestRuleFilter, MatchWithoutCache)
 {
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -139,16 +133,15 @@ TEST(TestRuleFilter, MatchWithoutCache)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
-    auto manifest = mb.build_manifest();
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions),
-        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
+    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
+    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -163,7 +156,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 
     {
@@ -175,18 +168,18 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
     }
 }
 
 TEST(TestRuleFilter, NoMatchWithoutCache)
 {
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -194,14 +187,14 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
-    auto manifest = mb.build_manifest();
+    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {}};
 
     // In this test we validate that when the cache is empty and only one
@@ -216,7 +209,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 
     {
@@ -229,18 +222,18 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 }
 
 TEST(TestRuleFilter, FullCachedMatchSecondRun)
 {
-    ddwaf::manifest_builder mb;
+    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("http.client_ip", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::ip_match>(
                 std::vector<std::string_view>{"192.168.0.1"}));
@@ -248,16 +241,15 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     }
 
     {
-        std::vector<ddwaf::manifest::target_type> targets;
-        targets.push_back(mb.insert("usr.id", {}));
+        std::vector<condition::target_type> targets;
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
         auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
-    auto manifest = mb.build_manifest();
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions),
-        {std::make_shared<ddwaf::rule>(ddwaf::rule("", "", "", "", {}))}};
+    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
+    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
 
     ddwaf::object_store store(manifest);
     ddwaf::exclusion::rule_filter::cache_type cache;
@@ -273,7 +265,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
         EXPECT_TRUE(cache.result);
     }
 
@@ -285,7 +277,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, manifest, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 }
 

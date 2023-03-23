@@ -729,7 +729,6 @@ static attribute_t is_black_attr(const char* s, size_t len)
 
 #if 0
         // 2017-10-09 - commented out to prevent some false positives:
-        // https://admin-infra.sqreen.io/test_attacks/59de90aa36fe25000a02b2fe
         /* XMLNS can be used to create arbitrary tags */
         if (cstrcasecmp_with_null("XMLNS", s, 5) == 0 || cstrcasecmp_with_null("XLINK", s, 5) == 0) {
             DEBUG_PRINT("Got XMLNS and XLINK tags\n");
@@ -928,7 +927,6 @@ int libinjection_is_xss(const char* s, size_t len, int flags)
                 DEBUG_PRINT("BACK TICK\n");
 #if 0
                 // 2017-10-09 - commented out to prevent some false positives:
-                // https://admin-infra.sqreen.io/test_attacks/59de941d36698c00079902f1
                 return 1;
 #endif
             }

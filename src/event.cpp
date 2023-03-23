@@ -33,11 +33,6 @@ rapidjson::GenericStringRef<char> StringRef(std::string_view str)
     return {str.data(), static_cast<rapidjson::SizeType>(str.size())};
 }
 
-rapidjson::GenericStringRef<char> StringRef(const std::string &str)
-{
-    return {str.c_str(), static_cast<rapidjson::SizeType>(str.size())};
-}
-
 bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
 {
     for (const auto &key : match.key_path) {
@@ -84,8 +79,7 @@ void serialize_match(rapidjson::Value &output, rapidjson::Document::AllocatorTyp
 
 } // namespace
 
-void event_serializer::serialize(const std::vector<event> &events,
-    const std::unordered_set<std::string_view> &actions, ddwaf_result &output) const
+void event_serializer::serialize(const memory::vector<event> &events, ddwaf_result &output) const
 {
     rapidjson::Document doc;
     auto &allocator = doc.GetAllocator();
@@ -94,6 +88,7 @@ void event_serializer::serialize(const std::vector<event> &events,
     output.actions = {nullptr, 0};
 
     doc.SetArray();
+    std::unordered_set<std::string_view> actions;
     for (const auto &event : events) {
         rapidjson::Value map;
         rapidjson::Value rule;
@@ -112,6 +107,7 @@ void event_serializer::serialize(const std::vector<event> &events,
         if (!event.actions.empty()) {
             on_match.SetArray();
             for (const auto &action : event.actions) {
+                actions.emplace(action);
                 on_match.PushBack(StringRef(action), allocator);
             }
             rule.AddMember("on_match", on_match, allocator);

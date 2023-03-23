@@ -17,8 +17,8 @@
 #include <condition.hpp>
 #include <event.hpp>
 #include <iterator.hpp>
-#include <manifest.hpp>
 #include <object_store.hpp>
+#include <parser/specification.hpp>
 #include <rule_processor/base.hpp>
 
 namespace ddwaf {
@@ -29,60 +29,58 @@ public:
 
     struct cache_type {
         bool result{false};
-        std::unordered_map<condition::ptr, bool> conditions;
-        ddwaf::event event;
+        memory::vector<event::match> matches;
+        std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
     };
 
     // TODO: make fields protected, add getters, follow conventions, add cache
     //       move condition matching from context.
 
-    rule(std::string &&id_, std::string &&name_, std::string &&type_, std::string &&category_,
-        std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_ = {},
+    rule(std::string id_, std::string name_, std::unordered_map<std::string, std::string> tags_,
+        std::vector<condition::ptr> conditions_, std::vector<std::string> actions_ = {},
         bool enabled_ = true);
 
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;
 
-    // Atomics aren't movable so the default move constructor and move
-    // assignment operator can't be used. With this constructor and operator
-    // any relevant atomic member does not behave as such.
     rule(rule &&rhs) noexcept
-        : enabled(rhs.enabled.load(std::memory_order_relaxed)), id(std::move(rhs.id)),
-          name(std::move(rhs.name)), type(std::move(rhs.type)), category(std::move(rhs.category)),
-          conditions(std::move(rhs.conditions)), targets(std::move(rhs.targets)),
+        : enabled(rhs.enabled), id(std::move(rhs.id)), name(std::move(rhs.name)),
+          tags(std::move(rhs.tags)), conditions(std::move(rhs.conditions)),
           actions(std::move(rhs.actions))
     {}
 
     rule &operator=(rule &&rhs) noexcept
     {
-        enabled = rhs.enabled.load(std::memory_order_relaxed);
+        enabled = rhs.enabled;
         id = std::move(rhs.id);
         name = std::move(rhs.name);
-        type = std::move(rhs.type);
-        category = std::move(rhs.category);
+        tags = std::move(rhs.tags);
         conditions = std::move(rhs.conditions);
-        targets = std::move(rhs.targets);
         actions = std::move(rhs.actions);
-
         return *this;
     }
 
     ~rule() = default;
 
-    std::optional<event> match(const object_store &store, const ddwaf::manifest &manifest,
-        cache_type &cache, const std::unordered_set<const ddwaf_object *> &objects_excluded,
+    std::optional<event> match(const object_store &store, cache_type &cache,
+        const std::unordered_set<const ddwaf_object *> &objects_excluded,
+        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
-    bool is_enabled() const { return enabled.load(std::memory_order_relaxed); }
-    void toggle(bool value) { enabled.store(value, std::memory_order_relaxed); }
+    [[nodiscard]] bool is_enabled() const { return enabled; }
+    void toggle(bool value) { enabled = value; }
 
-    std::atomic<bool> enabled{true};
+    std::string_view get_tag(const std::string &tag) const
+    {
+        auto it = tags.find(tag);
+        return it == tags.end() ? std::string_view() : it->second;
+    }
+
+    bool enabled{true};
     std::string id;
     std::string name;
-    std::string type;
-    std::string category;
+    std::unordered_map<std::string, std::string> tags;
     std::vector<condition::ptr> conditions;
-    std::unordered_set<ddwaf::manifest::target_type> targets;
     std::vector<std::string> actions;
 };
 

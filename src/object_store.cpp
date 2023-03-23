@@ -62,11 +62,12 @@ bool object_store::insert(const ddwaf_object &input)
         }
 
         std::string key(array[i].parameterName, length);
-        auto [res, target] = manifest_.get_target(key);
-        if (!res) {
+        auto opt_target = manifest_.find(key);
+        if (!opt_target.has_value()) {
             continue;
         }
 
+        auto target = *opt_target;
         objects_[target] = &array[i];
         latest_batch_.emplace(target);
     }
@@ -76,7 +77,7 @@ bool object_store::insert(const ddwaf_object &input)
 
 const ddwaf_object *object_store::get_target(manifest::target_type target) const
 {
-    auto it = objects_.find(manifest::get_root(target));
+    auto it = objects_.find(target);
     return it != objects_.end() ? it->second : nullptr;
 }
 

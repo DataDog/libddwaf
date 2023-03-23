@@ -15,20 +15,15 @@
 
 namespace ddwaf {
 
-rule::rule(std::string &&id_, std::string &&name_, std::string &&type_, std::string &&category_,
-    std::vector<condition::ptr> &&conditions_, std::vector<std::string> &&actions_, bool enabled_)
-    : enabled(enabled_), id(std::move(id_)), name(std::move(name_)), type(std::move(type_)),
-      category(std::move(category_)), conditions(std::move(conditions_)),
-      actions(std::move(actions_))
-{
-    for (auto &cond : conditions) {
-        const auto &cond_targets = cond->get_targets();
-        targets.insert(cond_targets.begin(), cond_targets.end());
-    }
-}
+rule::rule(std::string id_, std::string name_, std::unordered_map<std::string, std::string> tags_,
+    std::vector<condition::ptr> conditions_, std::vector<std::string> actions_, bool enabled_)
+    : enabled(enabled_), id(std::move(id_)), name(std::move(name_)), tags(std::move(tags_)),
+      conditions(std::move(conditions_)), actions(std::move(actions_))
+{}
 
-std::optional<event> rule::match(const object_store &store, const ddwaf::manifest &manifest,
-    cache_type &cache, const std::unordered_set<const ddwaf_object *> &objects_excluded,
+std::optional<event> rule::match(const object_store &store, cache_type &cache,
+    const std::unordered_set<const ddwaf_object *> &objects_excluded,
+    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
@@ -36,39 +31,51 @@ std::optional<event> rule::match(const object_store &store, const ddwaf::manifes
         return std::nullopt;
     }
 
-    for (const auto &cond : conditions) {
-        bool run_on_new = false;
-        auto cached_result = cache.conditions.find(cond);
-        if (cached_result != cache.conditions.end()) {
-            if (cached_result->second) {
-                continue;
-            }
-            run_on_new = true;
-        } else {
-            auto [it, res] = cache.conditions.emplace(cond, false);
-            cached_result = it;
-        }
+    // On the first run, go through the conditions. Stop either at the first
+    // condition that didn't match and return no event or go through all
+    // and return an event.
+    // On subsequent runs, we can start at the first condition that did not
+    // match, because if the conditions matched with the data of the first
+    // run, then they having new data will make them match again. The condition
+    // that failed (and stopped the processing), we can run it again, but only
+    // on the new data. The subsequent conditions, we need to run with all data.
+    std::vector<condition::ptr>::const_iterator cond_iter;
+    bool run_on_new;
+    if (cache.last_cond.has_value()) {
+        cond_iter = *cache.last_cond;
+        run_on_new = true;
+    } else {
+        cond_iter = conditions.cbegin();
+        run_on_new = false;
+    }
 
-        auto opt_match = cond->match(store, manifest, objects_excluded, run_on_new, deadline);
+    while (cond_iter != conditions.cend()) {
+        auto &&cond = *cond_iter;
+        auto opt_match =
+            cond->match(store, objects_excluded, run_on_new, dynamic_processors, deadline);
         if (!opt_match.has_value()) {
-            cached_result->second = false;
+            cache.last_cond = cond_iter;
             return std::nullopt;
         }
-        cached_result->second = true;
-        cache.event.matches.emplace_back(std::move(*opt_match));
+        cache.matches.emplace_back(std::move(*opt_match));
+
+        run_on_new = false;
+        cond_iter++;
     }
 
     cache.result = true;
 
-    cache.event.id = id;
-    cache.event.name = name;
-    cache.event.type = type;
-    cache.event.category = category;
+    ddwaf::event evt;
+    evt.id = id;
+    evt.name = name;
+    evt.type = get_tag("type");
+    evt.category = get_tag("category");
+    evt.matches = std::move(cache.matches);
 
-    cache.event.actions.reserve(actions.size());
-    for (const auto &action : actions) { cache.event.actions.push_back(action); }
+    evt.actions.reserve(actions.size());
+    for (const auto &action : actions) { evt.actions.push_back(action); }
 
-    return {std::move(cache.event)};
+    return {std::move(evt)};
 }
 
 } // namespace ddwaf

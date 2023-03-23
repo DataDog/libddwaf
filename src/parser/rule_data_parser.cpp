@@ -21,8 +21,9 @@ data_with_expiration parse_rule_data<data_with_expiration>(std::string_view type
     data_with_expiration data;
     data.reserve(input.nbEntries);
 
-    parameter::vector array = input;
-    for (parameter::map values : array) {
+    auto array = static_cast<parameter::vector>(input);
+    for (const auto &values_param : array) {
+        auto values = static_cast<parameter::map>(values_param);
         data.emplace_back(
             at<std::string_view>(values, "value"), at<uint64_t>(values, "expiration", 0));
     }

@@ -13,7 +13,7 @@ namespace ddwaf::exclusion {
 
 namespace {
 void iterate_object(const path_trie::traverser &filter, const ddwaf_object *object,
-    std::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
+    memory::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
 {
     using state = path_trie::traverser::state;
     if (object == nullptr) {
@@ -91,10 +91,10 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
 
 } // namespace
 
-std::unordered_set<const ddwaf_object *> object_filter::match(
+memory::unordered_set<const ddwaf_object *> object_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
-    std::unordered_set<const ddwaf_object *> objects_to_exclude;
+    memory::unordered_set<const ddwaf_object *> objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

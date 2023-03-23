@@ -18,9 +18,9 @@ namespace ddwaf {
 
 class parameter : public ddwaf_object {
 public:
-    typedef std::unordered_map<std::string_view, parameter> map;
-    typedef std::vector<parameter> vector;
-    typedef std::unordered_set<std::string_view> string_set;
+    using map = std::unordered_map<std::string_view, parameter>;
+    using vector = std::vector<parameter>;
+    using string_set = std::unordered_set<std::string_view>;
 
     parameter() = default;
     parameter(const ddwaf_object &arg) { *((ddwaf_object *)this) = arg; }
@@ -33,16 +33,16 @@ public:
 
     void print();
 
-    operator map();
-    operator vector();
-    operator string_set();
-    operator std::string_view();
-    operator std::string();
-    operator uint64_t();
-    operator int64_t();
-    operator bool();
-    operator std::vector<std::string>();
-    operator std::vector<std::string_view>();
+    explicit operator map() const;
+    explicit operator vector() const;
+    explicit operator string_set() const;
+    explicit operator std::string_view() const;
+    explicit operator std::string() const;
+    explicit operator uint64_t() const;
+    explicit operator int64_t() const;
+    explicit operator bool() const;
+    explicit operator std::vector<std::string>() const;
+    explicit operator std::vector<std::string_view>() const;
 
     ~parameter() = default;
 };
