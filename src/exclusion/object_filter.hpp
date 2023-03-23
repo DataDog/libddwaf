@@ -19,6 +19,7 @@
 
 #include <clock.hpp>
 #include <config.hpp>
+#include <context_allocator.hpp>
 #include <log.hpp>
 #include <manifest.hpp>
 #include <object_store.hpp>
@@ -247,7 +248,7 @@ public:
         targets_.emplace(target);
     }
 
-    std::unordered_set<const ddwaf_object *> match(
+    memory::unordered_set<const ddwaf_object *> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     const std::unordered_set<manifest::target_type> &get_targets() const { return targets_; }

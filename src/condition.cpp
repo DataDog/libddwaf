@@ -6,9 +6,6 @@
 
 #include <condition.hpp>
 
-#include <waf.hpp>
-
-#include "clock.hpp"
 #include <exception.hpp>
 #include <log.hpp>
 #include <memory>

@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <context.hpp>
+#include <context_allocator.hpp>
 #include <exception.hpp>
 #include <memory>
 #include <mutex>
@@ -155,7 +156,7 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
 {
     try {
         if (handle != nullptr) {
-            return new ddwaf::context(handle->create_context());
+            return handle->create_context();
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());

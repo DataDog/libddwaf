@@ -15,6 +15,7 @@
 
 #include <PWTransformer.h>
 #include <clock.hpp>
+#include <context_allocator.hpp>
 #include <event.hpp>
 #include <iterator.hpp>
 #include <manifest.hpp>

@@ -11,9 +11,9 @@
 namespace ddwaf {
 
 std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
-    std::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
-    const std::unordered_set<ddwaf::rule *> &rules_to_exclude,
-    const std::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
+    memory::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
+    const memory::unordered_set<ddwaf::rule *> &rules_to_exclude,
+    const memory::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline)
 {
@@ -62,9 +62,9 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
 }
 
 template <typename Derived>
-void base_collection<Derived>::match(std::vector<event> &events, const object_store &store,
-    collection_cache &cache, const std::unordered_set<rule *> &rules_to_exclude,
-    const std::unordered_map<rule *, object_set> &objects_to_exclude,
+void base_collection<Derived>::match(memory::vector<event> &events, const object_store &store,
+    collection_cache &cache, const memory::unordered_set<rule *> &rules_to_exclude,
+    const memory::unordered_map<rule *, object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {

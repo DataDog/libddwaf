@@ -68,7 +68,7 @@ public:
         return nullptr;
     }
 
-    ddwaf::context create_context() { return context{ruleset_}; }
+    ddwaf::context_wrapper *create_context() { return new context_wrapper(ruleset_); }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses() const
     {

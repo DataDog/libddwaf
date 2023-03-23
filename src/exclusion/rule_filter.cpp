@@ -19,7 +19,7 @@ rule_filter::rule_filter(
     }
 }
 
-std::unordered_set<rule *> rule_filter::match(
+optional_ref<const std::unordered_set<rule *>> rule_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (cache.result) {
@@ -51,7 +51,7 @@ std::unordered_set<rule *> rule_filter::match(
 
     cache.result = true;
 
-    return rule_targets_;
+    return {rule_targets_};
 }
 
 } // namespace ddwaf::exclusion

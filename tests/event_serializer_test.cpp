@@ -36,7 +36,8 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     event.type = "test";
     event.category = "none";
     event.actions = {"block", "monitor"};
-    event.matches = {{"value", "val", "random", "val", "query", {"root", "key"}}};
+    event.matches =
+        decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}}};
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
@@ -69,10 +70,11 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     event.type = "test";
     event.category = "none";
     event.actions = {"block", "monitor"};
-    event.matches = {{"value", "val", "random", "val", "query", {"root", "key"}},
-        {"string", "string", "match_regex", ".*", "response.body", {}},
-        {"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}},
-        {"<script>", "", "is_xss", "", "path_params", {"key"}}};
+    event.matches =
+        decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}},
+            {"string", "string", "match_regex", ".*", "response.body", {}},
+            {"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}},
+            {"<script>", "", "is_xss", "", "path_params", {"key"}}};
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
@@ -117,7 +119,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    std::vector<ddwaf::event> events;
+    memory::vector<ddwaf::event> events;
     {
         ddwaf::event event;
         event.id = "xasd1022";
@@ -125,9 +127,10 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         event.type = "test";
         event.category = "none";
         event.actions = {"block", "monitor"};
-        event.matches = {{"value", "val", "random", "val", "query", {"root", "key"}},
-            {"string", "string", "match_regex", ".*", "response.body", {}},
-            {"<script>", "", "is_xss", "", "path_params", {"key"}}};
+        event.matches =
+            decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}},
+                {"string", "string", "match_regex", ".*", "response.body", {}},
+                {"<script>", "", "is_xss", "", "path_params", {"key"}}};
         events.emplace_back(std::move(event));
     }
 
@@ -138,7 +141,8 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         event.type = "test";
         event.category = "none";
         event.actions = {"unblock"};
-        event.matches = {{"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}}};
+        event.matches = decltype(event.matches){
+            {"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}}};
         events.emplace_back(std::move(event));
     }
 
@@ -192,7 +196,8 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     event.name = "random rule";
     event.type = "test";
     event.category = "none";
-    event.matches = {{"value", "val", "random", "val", "query", {"root", "key"}}};
+    event.matches =
+        decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}}};
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);

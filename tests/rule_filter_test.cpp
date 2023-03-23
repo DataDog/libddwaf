@@ -33,8 +33,7 @@ TEST(TestRuleFilter, Match)
     ddwaf::timer deadline{2s};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    auto rules = filter.match(store, cache, deadline);
-    EXPECT_FALSE(rules.empty());
+    EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
 }
 
 TEST(TestRuleFilter, NoMatch)
@@ -61,7 +60,7 @@ TEST(TestRuleFilter, NoMatch)
     ddwaf::timer deadline{2s};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+    EXPECT_FALSE(filter.match(store, cache, deadline));
 }
 
 TEST(TestRuleFilter, ValidateCachedMatch)
@@ -103,7 +102,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 
     {
@@ -115,7 +114,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
     }
 }
 
@@ -157,7 +156,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 
     {
@@ -169,7 +168,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
     }
 }
 
@@ -210,7 +209,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 
     {
@@ -223,7 +222,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 }
 
@@ -266,7 +265,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
         EXPECT_TRUE(cache.result);
     }
 
@@ -278,7 +277,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 }
 

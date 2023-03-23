@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <ddwaf.h>
+#include <functional>
 #include <iterator>
 #include <optional>
 #include <unordered_map>
