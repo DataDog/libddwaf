@@ -27,7 +27,6 @@ This project is built using `cmake`.
 On Linux and Darwin, the following should produce a static and a dynamic library inside of `build`:
 
 ```
-git submodule update --init
 mkdir -p build && cd build
 cmake ..
 make -j4
