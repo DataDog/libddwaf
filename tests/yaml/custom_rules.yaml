@@ -1,0 +1,26 @@
+version: '2.1'
+custom_rules:
+  - id: custom_rule1
+    name: custom_rule1
+    tags:
+      type: flow1
+      category: category1
+      confidence: 1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: custom_rule1
+  - id: custom_rule2
+    name: custom_rule2
+    tags:
+      type: flow2
+      category: category2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value2
+          regex: custom_rule2
+

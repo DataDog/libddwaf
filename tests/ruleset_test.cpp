@@ -11,12 +11,11 @@ using namespace ddwaf;
 
 namespace {
 rule::ptr make_rule(std::string id, std::string name,
-    std::unordered_map<std::string, std::string> tags,
-    std::vector<std::string> actions, 
+    std::unordered_map<std::string, std::string> tags, std::vector<std::string> actions,
     rule::source_type source = rule::source_type::base)
 {
-    return std::make_shared<ddwaf::rule>(std::move(id), std::move(name),
-            std::move(tags), std::vector<condition::ptr>{}, std::move(actions), true, source);
+    return std::make_shared<ddwaf::rule>(std::move(id), std::move(name), std::move(tags),
+        std::vector<condition::ptr>{}, std::move(actions), true, source);
 }
 
 } // namespace
@@ -132,12 +131,18 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
 TEST(TestRuleset, InsertSingleRegularUserRules)
 {
     std::vector<ddwaf::rule::ptr> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {}, rule::source_type::user),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {}, rule::source_type::user),
+        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {},
+            rule::source_type::user),
+        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {},
+            rule::source_type::user),
     };
 
     {
@@ -169,12 +174,18 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
 TEST(TestRuleset, InsertSinglePriorityUserRules)
 {
     std::vector<ddwaf::rule::ptr> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"}, rule::source_type::user),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}, rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}, rule::source_type::user),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {"block"}, rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}, rule::source_type::user),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}, rule::source_type::user),
+        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
+            rule::source_type::user),
     };
     {
         ddwaf::ruleset ruleset;
@@ -204,12 +215,18 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
 TEST(TestRuleset, InsertSingleMixedUserRules)
 {
     std::vector<ddwaf::rule::ptr> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}, rule::source_type::user),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}, rule::source_type::user),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}, rule::source_type::user),
+        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
+            rule::source_type::user),
     };
 
     {
@@ -240,12 +257,18 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
 TEST(TestRuleset, InsertSingleRegularMixedRules)
 {
     std::vector<ddwaf::rule::ptr> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}, rule::source_type::base),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {}, rule::source_type::base),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {}, rule::source_type::base),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {}, rule::source_type::user),
+        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
+            rule::source_type::base),
+        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {},
+            rule::source_type::base),
+        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {},
+            rule::source_type::base),
+        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {},
+            rule::source_type::user),
     };
 
     {
@@ -273,16 +296,21 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
     }
 }
 
-
 TEST(TestRuleset, InsertSinglePriorityMixedRules)
 {
     std::vector<ddwaf::rule::ptr> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"}, rule::source_type::base),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}, rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}, rule::source_type::base),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {"block"}, rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}, rule::source_type::base),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}, rule::source_type::user),
+        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"},
+            rule::source_type::base),
+        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
+            rule::source_type::base),
+        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
+            rule::source_type::base),
+        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
+            rule::source_type::user),
     };
     {
         ddwaf::ruleset ruleset;
@@ -312,12 +340,18 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
 TEST(TestRuleset, InsertSingleMixedMixedRules)
 {
     std::vector<ddwaf::rule::ptr> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}, rule::source_type::user),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {}, rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}, rule::source_type::user),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}, rule::source_type::user),
+        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
+            rule::source_type::user),
+        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
+            rule::source_type::user),
+        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
+            rule::source_type::user),
         make_rule("id6", "name", {{"type", "type0"}, {"category", "category0"}}, {}),
         make_rule("id7", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
         make_rule("id8", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
@@ -350,4 +384,3 @@ TEST(TestRuleset, InsertSingleMixedMixedRules)
         EXPECT_EQ(ruleset.user_priority_collections.size(), 2);
     }
 }
-
