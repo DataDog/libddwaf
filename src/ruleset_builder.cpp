@@ -242,18 +242,12 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
         auto new_base_rules =
             parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids, limits_);
 
-        if (new_base_rules.empty()) {
-            throw ddwaf::parsing_error("no valid rules found");
+        if (!new_base_rules.empty()) {
+            // Upon reaching this stage, we know our base ruleset is valid
+            base_rules_ = std::move(new_base_rules);
+            rule_data_ids_ = std::move(rule_data_ids);
+            state = state | change_state::rules;
         }
-
-        // Upon reaching this stage, we know our base ruleset is valid
-        base_rules_ = std::move(new_base_rules);
-        rule_data_ids_ = std::move(rule_data_ids);
-        state = state | change_state::rules;
-    } else if (base_rules_.empty()) {
-        // If we haven't received rules and our base ruleset is empty, the
-        // WAF can't proceed.
-        throw ddwaf::parsing_error("no valid rules found");
     }
 
     it = root.find("custom_rules");
@@ -269,6 +263,12 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
             user_rules_ = std::move(new_user_rules);
             state = state | change_state::custom_rules;
         }
+    }
+
+    if (base_rules_.empty() && user_rules_.empty()) {
+        // If we haven't received rules and our base ruleset is empty, the
+        // WAF can't proceed.
+        throw ddwaf::parsing_error("no valid rules found");
     }
 
     it = root.find("rules_data");
