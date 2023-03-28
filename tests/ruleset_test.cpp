@@ -44,7 +44,7 @@ TEST(TestRuleset, Insert)
     for (const auto &rule : test_rules()) { ruleset.insert_rule(rule); }
 
     EXPECT_EQ(ruleset.rules.size(), 6);
-    EXPECT_EQ(ruleset.collections.size(), 3);
+    EXPECT_EQ(ruleset.base_collections.size(), 3);
 }
 
 TEST(TestRuleset, InsertContainer)
@@ -55,5 +55,5 @@ TEST(TestRuleset, InsertContainer)
     ruleset.insert_rules(rules);
 
     EXPECT_EQ(ruleset.rules.size(), 6);
-    EXPECT_EQ(ruleset.collections.size(), 3);
+    EXPECT_EQ(ruleset.base_collections.size(), 3);
 }

@@ -46,9 +46,10 @@ protected:
     enum class change_state : uint32_t {
         none = 0,
         rules = 1,
-        overrides = 2,
-        filters = 4,
-        data = 8
+        custom_rules = 2,
+        overrides = 4,
+        filters = 8,
+        data = 16
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
@@ -78,6 +79,8 @@ protected:
 
     // Obtained from 'rules', can't be empty
     parser::rule_spec_container base_rules_;
+    // Obtained from 'custom_rules'
+    parser::rule_spec_container user_rules_;
     // Obtained from 'rules_data', depends on base_rules_
     parser::rule_data_container dynamic_processors_;
     // Obtained from 'rules_override'
@@ -87,19 +90,26 @@ protected:
 
     // These are the contents of the latest generated ruleset
 
-    // Rules
-    std::unordered_map<std::string_view, rule::ptr> final_rules_;
     // An mkmap organising rules by their tags, used for overrides and exclusion filters
-    rule_tag_map rules_by_tags_;
+
+    // Rules
+    std::unordered_map<std::string_view, rule::ptr> final_base_rules_;
+    std::unordered_map<std::string_view, rule::ptr> final_user_rules_;
+
+    // An mkmap organising rules by their tags, used for overrides and exclusion filters
+    rule_tag_map base_rules_by_tags_;
+    rule_tag_map user_rules_by_tags_;
+
     // The list of tagets used by the rules in final_rules_, used for manifest cleanup
-    std::unordered_set<manifest::target_type> targets_from_rules_;
+    std::unordered_set<manifest::target_type> inputs_from_base_rules_;
+    std::unordered_set<manifest::target_type> inputs_from_user_rules_;
 
     // Filters
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters_;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters_;
     // The list of targets used by rule_filters_, input_filters_ and their internal
     // object filters, used for manifest cleanup
-    std::unordered_set<manifest::target_type> targets_from_filters_;
+    std::unordered_set<manifest::target_type> inputs_from_filters_;
 };
 
 } // namespace ddwaf

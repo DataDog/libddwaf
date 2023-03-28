@@ -10,6 +10,7 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <parameter.hpp>
+#include <rule.hpp>
 
 #include <string>
 
@@ -17,6 +18,7 @@ namespace ddwaf::parser {
 
 struct rule_spec {
     bool enabled;
+    rule::source_type source;
     std::string name;
     std::unordered_map<std::string, std::string> tags;
     std::vector<condition::ptr> conditions;
