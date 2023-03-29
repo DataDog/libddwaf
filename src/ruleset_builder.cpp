@@ -78,9 +78,9 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
     constexpr static change_state manifest_update =
         change_state::rules | change_state::custom_rules | change_state::filters;
 
-    // When a configuration with 'rules', 'rules_data' or 'rules_override' is
-    // received, we need to regenerate the ruleset from the base rules as we
-    // want to ensure that there are no side-effects on running contexts.
+    // When a configuration with 'rules' or 'rules_override' is received, we
+    // need to regenerate the ruleset from the base rules as we want to ensure
+    // that there are no side-effects on running contexts.
     if ((state & base_rule_update) != change_state::none) {
         final_base_rules_.clear();
         base_rules_by_tags_.clear();
@@ -252,6 +252,8 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
 
     it = root.find("custom_rules");
     if (it != root.end()) {
+        // Rule data is currently not supported by custom rules so these will
+        // be discarded after
         decltype(rule_data_ids_) rule_data_ids;
 
         auto rules = static_cast<parameter::vector>(it->second);

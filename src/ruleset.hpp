@@ -28,7 +28,7 @@ struct ruleset {
 
     void insert_rule(rule::ptr rule)
     {
-        rules.emplace(rule->id, rule);
+        rules.emplace_back(rule);
         std::string_view type = rule->get_tag("type");
         collection_types.emplace(type);
         if (rule->actions.empty()) {
@@ -59,7 +59,7 @@ struct ruleset {
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
 
     // Rules are ordered by rule.id
-    std::unordered_map<std::string_view, rule::ptr> rules;
+    std::vector<rule::ptr> rules;
     std::unordered_map<std::string, rule_processor::base::ptr> dynamic_processors;
 
     // Both collections are ordered by rule.type
