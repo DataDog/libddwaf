@@ -150,13 +150,13 @@ memory::vector<event> context::match(const memory::unordered_set<rule *> &rules_
         eval_collection(type, collection);
     }
 
-    // Evalaute regular collection after
+    // Evaluate regular collection after
     for (auto &[type, collection] : ruleset_->user_collections) {
         DDWAF_DEBUG("Evaluating user collection %s", type.data());
         eval_collection(type, collection);
     }
 
-    // Evalaute regular collection after
+    // Evaluate regular collection after
     for (auto &[type, collection] : ruleset_->base_collections) {
         DDWAF_DEBUG("Evaluating base collection %s", type.data());
         eval_collection(type, collection);

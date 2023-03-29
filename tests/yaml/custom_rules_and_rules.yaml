@@ -23,6 +23,32 @@ rules:
           inputs:
             - address: value2
           regex: ^rule2
+  - id: rule3
+    name: rule3
+    tags:
+      type: flow34
+      category: category3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value3
+            - address: value34
+          regex: rule
+  - id: rule4
+    name: rule4
+    tags:
+      type: flow34
+      category: category4
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value4
+            - address: value34
+          regex: rule
+    on_match:
+      - block
 
 custom_rules:
   - id: custom_rule1
@@ -48,4 +74,30 @@ custom_rules:
           inputs:
             - address: value2
           regex: custom_rule2
+  - id: custom_rule3
+    name: custom_rule3
+    tags:
+      type: flow34
+      category: category3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value3
+            - address: value34
+          regex: custom_rule
+  - id: custom_rule4
+    name: custom_rule4
+    tags:
+      type: flow34
+      category: category4
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value4
+            - address: value34
+          regex: custom_rule
+    on_match:
+      - block
 

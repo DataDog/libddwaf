@@ -95,7 +95,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
             }
 
             auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled);
+                id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
             final_base_rules_.emplace(rule_ptr->id, rule_ptr);
@@ -145,7 +145,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
             }
 
             auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled);
+                id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
             final_user_rules_.emplace(rule_ptr->id, rule_ptr);
@@ -255,12 +255,19 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
         decltype(rule_data_ids_) rule_data_ids;
 
         auto rules = static_cast<parameter::vector>(it->second);
-        auto new_user_rules = parser::v2::parse_rules(
-            rules, info, target_manifest_, rule_data_ids, limits_, rule::source_type::user);
+        if (!rules.empty()) {
+            auto new_user_rules = parser::v2::parse_rules(
+                rules, info, target_manifest_, rule_data_ids, limits_, rule::source_type::user);
 
-        if (!new_user_rules.empty()) {
-            // Upon reaching this stage, we know our base ruleset is valid
-            user_rules_ = std::move(new_user_rules);
+            if (new_user_rules.empty()) {
+                DDWAF_WARN("No valid custom rules found");
+            } else {
+                // Upon reaching this stage, we know our base ruleset is valid
+                user_rules_ = std::move(new_user_rules);
+                state = state | change_state::custom_rules;
+            }
+        } else {
+            user_rules_.clear();
             state = state | change_state::custom_rules;
         }
     }
