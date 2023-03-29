@@ -40,10 +40,14 @@ std::atomic_bool monotonic_clock::warning_issued{};
 
 struct VdsoInitializer {
     VdsoInitializer() noexcept
-        : handle(dlopen("linux-vdso.so.1", RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD))
+        : handle(dlopen(nullptr, RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD))
     {
         if (handle != nullptr) {
+#ifdef __aarch64__
+            void *p = dlsym(handle, "__kernel_clock_gettime");
+#else
             void *p = dlsym(handle, "__vdso_clock_gettime");
+#endif
             if (p != nullptr) {
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
                 ddwaf::clock_gettime = reinterpret_cast<clock_gettime_t>(p);
