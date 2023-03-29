@@ -379,7 +379,7 @@ size_t getFileSize(const char *filename)
     return output;
 }
 
-ddwaf_object readFile(const char *filename)
+ddwaf_object readFile(std::string_view filename, std::string_view base)
 {
     const static char path_sep =
 #ifdef _WIN32
@@ -388,8 +388,14 @@ ddwaf_object readFile(const char *filename)
         '/';
 #endif
 
-    auto fullFileName = string{"yaml"} + path_sep + filename;
+    std::string base_dir{base};
+    if (*base_dir.end() != path_sep) {
+        base_dir += path_sep;
+    }
 
+    auto fullFileName = base_dir + "yaml" + path_sep + std::string{filename};
+
+    DDWAF_DEBUG("Opening %s", fullFileName.c_str());
     auto fileSize = getFileSize(fullFileName.c_str());
     if (fileSize == 0) {
         DDWAF_ERROR("No such file or size 0 (wrong dir?): %s", fullFileName.c_str());

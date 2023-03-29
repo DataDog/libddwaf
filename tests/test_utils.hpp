@@ -140,7 +140,7 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
   EXPECT_TRUE(ValidateSchema(result));                                                             \
   EXPECT_THAT(result, WithEvents({__VA_ARGS__}));
 
-ddwaf_object readFile(const char *filename);
+ddwaf_object readFile(std::string_view filename, std::string_view base = "./");
 ddwaf_object readRule(const char *rule);
 
 inline ddwaf_object json_to_object(std::string_view data) { return readRule(data.data()); }
