@@ -37,13 +37,13 @@ public:
     // The boolean return value represents if the ruleset provided was
     // somehow invalid and couldn't be parsed correctly. If false, the
     // ruleset failed to parse, if true, there were no issues during parsing.
-    std::pair<ruleset::ptr, bool> build(parameter root_map, ruleset_info &info)
+    ruleset::ptr build(parameter root_map, ruleset_info &info)
     {
         auto root = static_cast<parameter::map>(root_map);
         return build(root, info);
     }
 
-    std::pair<ruleset::ptr, bool> build(parameter::map &root, ruleset_info &info);
+    ruleset::ptr build(parameter::map &root, ruleset_info &info);
 
 protected:
     enum class change_state : uint32_t {
@@ -63,13 +63,10 @@ protected:
 
     change_state load(parameter::map &root, ruleset_info &info);
 
-    // Loading the rules shouldn't really fail
     void build_base_rules();
     void build_user_rules();
-
-    // Overrides and exclusion filters might have no side-effects
-    bool build_overrides();
-    bool build_exclusions();
+    void build_overrides();
+    void build_exclusions();
 
     // These members are obtained through ddwaf_config and are persistent across
     // all updates.

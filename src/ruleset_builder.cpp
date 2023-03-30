@@ -128,20 +128,10 @@ void ruleset_builder::build_user_rules()
     }
 }
 
-bool ruleset_builder::build_overrides()
+void ruleset_builder::build_overrides()
 {
-    bool side_effects = false;
-    if (overrides_.by_tags.empty() || overrides_.by_ids.empty()) {
-        // Empty overrides have the side-effect of removing all existing overrides
-        side_effects = true;
-    }
-
     for (const auto &ovrd : overrides_.by_tags) {
         auto rule_targets = target_to_rules(ovrd.targets, final_base_rules_, base_rules_by_tags_);
-        if (!side_effects && !rule_targets.empty()) {
-            side_effects = true;
-        }
-
         for (const auto &rule_ptr : rule_targets) {
             if (ovrd.enabled.has_value()) {
                 rule_ptr->toggle(*ovrd.enabled);
@@ -155,10 +145,6 @@ bool ruleset_builder::build_overrides()
 
     for (const auto &ovrd : overrides_.by_ids) {
         auto rule_targets = target_to_rules(ovrd.targets, final_base_rules_, base_rules_by_tags_);
-        if (!side_effects && !rule_targets.empty()) {
-            side_effects = true;
-        }
-
         for (const auto &rule_ptr : rule_targets) {
             if (ovrd.enabled.has_value()) {
                 rule_ptr->toggle(*ovrd.enabled);
@@ -169,22 +155,13 @@ bool ruleset_builder::build_overrides()
             }
         }
     }
-
-    return side_effects;
 }
 
-bool ruleset_builder::build_exclusions()
+void ruleset_builder::build_exclusions()
 {
     rule_filters_.clear();
     input_filters_.clear();
     inputs_from_filters_.clear();
-
-    bool side_effects = false;
-    if (exclusions_.rule_filters.empty() || exclusions_.input_filters.empty()) {
-        // If at least one type of filter is empty, it can mean it has been
-        // explicitly removed
-        side_effects = true;
-    }
 
     // First generate rule filters
     for (const auto &[id, filter] : exclusions_.rule_filters) {
@@ -201,7 +178,6 @@ bool ruleset_builder::build_exclusions()
                     inputs_from_filters_.emplace(target.root);
                 }
             }
-            side_effects = true;
         }
     }
 
@@ -224,14 +200,11 @@ bool ruleset_builder::build_exclusions()
                     inputs_from_filters_.emplace(target.root);
                 }
             }
-            side_effects = true;
         }
     }
-
-    return side_effects;
 }
 
-std::pair<ruleset::ptr, bool> ruleset_builder::build(parameter::map &root, ruleset_info &info)
+ruleset::ptr ruleset_builder::build(parameter::map &root, ruleset_info &info)
 {
     // Load new rules, overrides and exclusions
     change_state state = change_state::none;
@@ -239,14 +212,14 @@ std::pair<ruleset::ptr, bool> ruleset_builder::build(parameter::map &root, rules
     try {
         state = load(root, info);
         if (state == change_state::none) {
-            return {{}, false};
+            return {};
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("Failed to load ruleset: %s", e.what());
-        return {{}, false};
+        return {};
     } catch (...) {
         DDWAF_ERROR("unknown exception");
-        return {{}, false};
+        return {};
     }
 
     constexpr static change_state base_rule_update = change_state::rules | change_state::overrides;
@@ -255,38 +228,21 @@ std::pair<ruleset::ptr, bool> ruleset_builder::build(parameter::map &root, rules
     constexpr static change_state manifest_update =
         change_state::rules | change_state::custom_rules | change_state::filters;
 
-    change_state state_applied = change_state::none;
-    if (state && change_state::data) {
-        state_applied |= change_state::data;
-    }
-
     // When a configuration with 'rules' or 'rules_override' is received, we
     // need to regenerate the ruleset from the base rules as we want to ensure
     // that there are no side-effects on running contexts.
     if ((state & base_rule_update) != change_state::none) {
         build_base_rules();
-        if (state && change_state::rules) {
-            state_applied |= change_state::rules;
-        }
-
-        auto res = build_overrides();
-        // Consider the case in which overrides have been removed
-        if (res && (state && change_state::overrides)) {
-            state_applied |= change_state::overrides;
-        }
+        build_overrides();
     }
 
     if (state && change_state::custom_rules) {
         build_user_rules();
-        state_applied |= change_state::custom_rules;
     }
 
     // Generate exclusion filters targetting all final rules
     if ((state & filters_update) != change_state::none) {
-        auto res = build_exclusions();
-        if (res) {
-            state_applied |= change_state::filters;
-        }
+        build_exclusions();
     }
 
     if ((state & manifest_update) != change_state::none) {
@@ -300,11 +256,6 @@ std::pair<ruleset::ptr, bool> ruleset_builder::build(parameter::map &root, rules
         target_manifest_.remove_unused(all_targets);
     }
 
-    if (state_applied == change_state::none) {
-        // No side-effects, still a valid update that doesn't require a new handle
-        return {{}, true};
-    }
-
     auto rs = std::make_shared<ddwaf::ruleset>();
     rs->manifest = target_manifest_;
     rs->insert_rules(final_base_rules_);
@@ -315,7 +266,7 @@ std::pair<ruleset::ptr, bool> ruleset_builder::build(parameter::map &root, rules
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
-    return {rs, true};
+    return rs;
 }
 
 ruleset_builder::change_state ruleset_builder::load(parameter::map &root, ruleset_info &info)
