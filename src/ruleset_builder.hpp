@@ -34,13 +34,16 @@ public:
     ruleset_builder &operator=(ruleset_builder &&) = delete;
     ruleset_builder &operator=(const ruleset_builder &) = delete;
 
-    std::shared_ptr<ruleset> build(parameter root_map, ruleset_info &info)
+    // The boolean return value represents if the ruleset provided was
+    // somehow invalid and couldn't be parsed correctly. If false, the
+    // ruleset failed to parse, if true, there were no issues during parsing.
+    std::pair<ruleset::ptr, bool> build(parameter root_map, ruleset_info &info)
     {
         auto root = static_cast<parameter::map>(root_map);
         return build(root, info);
     }
 
-    std::shared_ptr<ruleset> build(parameter::map &root, ruleset_info &info);
+    std::pair<ruleset::ptr, bool> build(parameter::map &root, ruleset_info &info);
 
 protected:
     enum class change_state : uint32_t {
@@ -49,13 +52,24 @@ protected:
         custom_rules = 2,
         overrides = 4,
         filters = 8,
-        data = 16
+        data = 16,
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
+    friend constexpr change_state &operator|=(change_state &lhs, change_state rhs);
     friend constexpr change_state operator&(change_state lhs, change_state rhs);
+    friend constexpr change_state &operator&=(change_state &lhs, change_state rhs);
+    friend constexpr bool operator&&(change_state lhs, change_state rhs);
 
     change_state load(parameter::map &root, ruleset_info &info);
+
+    // Loading the rules shouldn't really fail
+    void build_base_rules();
+    void build_user_rules();
+
+    // Overrides and exclusion filters might have no side-effects
+    bool build_overrides();
+    bool build_exclusions();
 
     // These members are obtained through ddwaf_config and are persistent across
     // all updates.

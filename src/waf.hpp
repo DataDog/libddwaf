@@ -49,23 +49,30 @@ public:
         if (version == 2) {
             builder_ =
                 std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
-            ruleset_ = builder_->build(input, info);
+            auto [ruleset, parsing_res] = builder_->build(input, info);
+            if (!ruleset) {
+                throw std::runtime_error("failed to instantiate WAF");
+            }
+            ruleset_ = std::move(ruleset);
             return;
         }
 
-        DDWAF_ERROR("incompatible ruleset version %u.x", version);
+        DDWAF_ERROR("incompatible ruleset schema version %u.x", version);
         throw unsupported_version();
     }
 
     waf *update(ddwaf::parameter input, ddwaf::ruleset_info &info)
     {
-        if (builder_) {
-            auto ruleset = builder_->build(input, info);
-            if (ruleset) {
-                return new waf{builder_, std::move(ruleset)};
-            }
+        if (!builder_) {
+            return nullptr;
         }
-        return nullptr;
+
+        auto [ruleset, parsing_res] = builder_->build(input, info);
+        if (ruleset) {
+            return new waf{builder_, std::move(ruleset)};
+        }
+
+        return parsing_res ? this : nullptr;
     }
 
     ddwaf::context_wrapper *create_context() { return new context_wrapper(ruleset_); }
