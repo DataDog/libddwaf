@@ -502,7 +502,6 @@ override_spec_container parse_overrides(parameter::vector &override_array)
 
     return overrides;
 }
-#include <parser/specification.hpp>
 
 filter_spec_container parse_filters(
     parameter::vector &filter_array, manifest &target_manifest, const object_limits &limits)
