@@ -90,8 +90,6 @@ protected:
 
     // These are the contents of the latest generated ruleset
 
-    // An mkmap organising rules by their tags, used for overrides and exclusion filters
-
     // Rules
     std::unordered_map<std::string_view, rule::ptr> final_base_rules_;
     std::unordered_map<std::string_view, rule::ptr> final_user_rules_;
