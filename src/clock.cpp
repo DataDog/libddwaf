@@ -16,6 +16,12 @@
 #  include <dlfcn.h>
 #  include <log.hpp>
 
+#ifdef __aarch64__
+#  define CLOCK_GETTIME "__kernel_clock_gettime"
+#else
+#  define CLOCK_GETTIME "__vdso_clock_gettime"
+#endif
+
 namespace ddwaf {
 using clock_gettime_t = int (*)(clockid_t, timespec *);
 
@@ -40,26 +46,11 @@ std::atomic_bool monotonic_clock::warning_issued{};
 
 struct VdsoInitializer {
     VdsoInitializer() noexcept
-        : handle(dlopen(nullptr, RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD))
     {
-        if (handle != nullptr) {
-#ifdef __aarch64__
-            void *p = dlsym(handle, "__kernel_clock_gettime");
-#else
-            void *p = dlsym(handle, "__vdso_clock_gettime");
-#endif
-            if (p != nullptr) {
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-                ddwaf::clock_gettime = reinterpret_cast<clock_gettime_t>(p);
-            }
-        }
-    }
-
-    ~VdsoInitializer()
-    {
-        if (handle != nullptr) {
-            ddwaf::clock_gettime = &::clock_gettime;
-            dlclose(handle);
+        void *p = dlsym(RTLD_DEFAULT, CLOCK_GETTIME);
+        if (p != nullptr) {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+            ddwaf::clock_gettime = reinterpret_cast<clock_gettime_t>(p);
         }
     }
 
@@ -67,9 +58,6 @@ struct VdsoInitializer {
     VdsoInitializer &operator=(const VdsoInitializer &) = delete;
     VdsoInitializer(VdsoInitializer &&) = delete;
     VdsoInitializer &operator=(VdsoInitializer &&) = delete;
-
-private:
-    void *handle;
 };
 
 // NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
