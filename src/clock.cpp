@@ -16,6 +16,11 @@
 #  include <dlfcn.h>
 #  include <log.hpp>
 
+#  ifdef __aarch64__
+#    define VDSO_CLOCK_GETTIME "__kernel_clock_gettime"
+#  else
+#    define VDSO_CLOCK_GETTIME "__vdso_clock_gettime"
+#  endif
 namespace ddwaf {
 using clock_gettime_t = int (*)(clockid_t, timespec *);
 
@@ -43,7 +48,7 @@ struct VdsoInitializer {
         : handle(dlopen("linux-vdso.so.1", RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD))
     {
         if (handle != nullptr) {
-            void *p = dlsym(handle, "__vdso_clock_gettime");
+            void *p = dlsym(handle, VDSO_CLOCK_GETTIME);
             if (p != nullptr) {
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
                 ddwaf::clock_gettime = reinterpret_cast<clock_gettime_t>(p);
