@@ -58,11 +58,10 @@ struct ruleset {
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
 
-    // Rules are ordered by rule.id
     std::vector<rule::ptr> rules;
     std::unordered_map<std::string, rule_processor::base::ptr> dynamic_processors;
 
-    // Both collections are ordered by rule.type
+    // The key used to organise collections is rule.type
     std::unordered_set<std::string_view> collection_types;
     std::unordered_map<std::string_view, priority_collection> user_priority_collections;
     std::unordered_map<std::string_view, priority_collection> base_priority_collections;

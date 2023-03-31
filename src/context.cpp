@@ -140,25 +140,29 @@ memory::vector<event> context::match(const memory::unordered_set<rule *> &rules_
 
     // Evaluate user priority collections first
     for (auto &[type, collection] : ruleset_->user_priority_collections) {
-        DDWAF_DEBUG("Evaluating user priority collection %s", type.data());
+        DDWAF_DEBUG("Evaluating user priority collection %.*s", static_cast<int>(type.length()),
+            type.data());
         eval_collection(type, collection);
     }
 
     // Evaluate priority collections first
     for (auto &[type, collection] : ruleset_->base_priority_collections) {
-        DDWAF_DEBUG("Evaluating priority collection %s", type.data());
+        DDWAF_DEBUG(
+            "Evaluating priority collection %.*s", static_cast<int>(type.length()), type.data());
         eval_collection(type, collection);
     }
 
     // Evaluate regular collection after
     for (auto &[type, collection] : ruleset_->user_collections) {
-        DDWAF_DEBUG("Evaluating user collection %s", type.data());
+        DDWAF_DEBUG(
+            "Evaluating user collection %.*s", static_cast<int>(type.length()), type.data());
         eval_collection(type, collection);
     }
 
     // Evaluate regular collection after
     for (auto &[type, collection] : ruleset_->base_collections) {
-        DDWAF_DEBUG("Evaluating base collection %s", type.data());
+        DDWAF_DEBUG(
+            "Evaluating base collection %.*s", static_cast<int>(type.length()), type.data());
         eval_collection(type, collection);
     }
 

@@ -82,7 +82,7 @@ public:
     }
 
     bool enabled{true};
-    source_type source{source_type::base};
+    source_type source;
     std::string id;
     std::string name;
     std::unordered_map<std::string, std::string> tags;

@@ -36,10 +36,6 @@ namespace {
 std::set<rule *> target_to_rules(const std::vector<parser::rule_target_spec> &targets,
     const std::unordered_map<std::string_view, rule::ptr> &rules, const rule_tag_map &rules_by_tags)
 {
-    if (rules_by_tags.empty()) {
-        return {};
-    }
-
     std::set<rule *> rule_targets;
     if (!targets.empty()) {
         for (const auto &target : targets) {
@@ -236,42 +232,33 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
 
     auto it = root.find("rules");
     if (it != root.end()) {
-        decltype(rule_data_ids_) rule_data_ids;
-
         auto rules = static_cast<parameter::vector>(it->second);
-        auto new_base_rules =
-            parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids, limits_);
+        rule_data_ids_.clear();
 
-        if (!new_base_rules.empty()) {
-            // Upon reaching this stage, we know our base ruleset is valid
-            base_rules_ = std::move(new_base_rules);
-            rule_data_ids_ = std::move(rule_data_ids);
-            state = state | change_state::rules;
+        if (!rules.empty()) {
+            base_rules_ =
+                parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids_, limits_);
+        } else {
+            base_rules_.clear();
         }
+        state = state | change_state::rules;
     }
 
     it = root.find("custom_rules");
     if (it != root.end()) {
-        // Rule data is currently not supported by custom rules so these will
-        // be discarded after
-        decltype(rule_data_ids_) rule_data_ids;
-
         auto rules = static_cast<parameter::vector>(it->second);
         if (!rules.empty()) {
+            // Rule data is currently not supported by custom rules so these will
+            // be discarded after
+            decltype(rule_data_ids_) rule_data_ids;
+
             auto new_user_rules = parser::v2::parse_rules(
                 rules, info, target_manifest_, rule_data_ids, limits_, rule::source_type::user);
-
-            if (new_user_rules.empty()) {
-                DDWAF_WARN("No valid custom rules found");
-            } else {
-                // Upon reaching this stage, we know our base ruleset is valid
-                user_rules_ = std::move(new_user_rules);
-                state = state | change_state::custom_rules;
-            }
+            user_rules_ = std::move(new_user_rules);
         } else {
             user_rules_.clear();
-            state = state | change_state::custom_rules;
         }
+        state = state | change_state::custom_rules;
     }
 
     if (base_rules_.empty() && user_rules_.empty()) {
@@ -289,52 +276,35 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
                 // The rules_data array might have unrelated IDs, so we need
                 // to consider "no valid IDs" as an empty rules_data
                 dynamic_processors_.clear();
-                state = state | change_state::data;
             } else {
                 dynamic_processors_ = std::move(new_processors);
-                state = state | change_state::data;
             }
         } else {
             dynamic_processors_.clear();
-            state = state | change_state::data;
         }
+        state = state | change_state::data;
     }
 
     it = root.find("rules_override");
     if (it != root.end()) {
         auto overrides = static_cast<parameter::vector>(it->second);
         if (!overrides.empty()) {
-            auto new_overrides = parser::v2::parse_overrides(overrides);
-            if (new_overrides.empty()) {
-                // We can continue whilst ignoring the lack of overrides
-                DDWAF_WARN("No valid overrides provided");
-            } else {
-                overrides_ = std::move(new_overrides);
-                state = state | change_state::overrides;
-            }
+            overrides_ = parser::v2::parse_overrides(overrides);
         } else {
             overrides_.clear();
-            state = state | change_state::overrides;
         }
+        state = state | change_state::overrides;
     }
 
     it = root.find("exclusions");
     if (it != root.end()) {
         auto exclusions = static_cast<parameter::vector>(it->second);
         if (!exclusions.empty()) {
-            auto new_exclusions = parser::v2::parse_filters(exclusions, target_manifest_, limits_);
-
-            if (new_exclusions.empty()) {
-                // We can continue whilst ignoring the lack of exclusions
-                DDWAF_WARN("No valid exclusion filters provided");
-            } else {
-                exclusions_ = std::move(new_exclusions);
-                state = state | change_state::filters;
-            }
+            exclusions_ = parser::v2::parse_filters(exclusions, target_manifest_, limits_);
         } else {
             exclusions_.clear();
-            state = state | change_state::filters;
         }
+        state = state | change_state::filters;
     }
 
     return state;
