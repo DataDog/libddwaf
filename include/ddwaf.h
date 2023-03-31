@@ -159,30 +159,9 @@ struct _ddwaf_result
     /** Run result in JSON format **/
     const char* data;
     /** Actions array and its size **/
-    struct _ddwaf_result_actions {
-        char **array;
-        uint32_t size;
-    } actions;
+    ddwaf_object actions;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
-};
-
-/**
- * @ddwaf_ruleset_info
- *
- * Structure containing diagnostics on the provided ruleset.
- * */
-struct _ddwaf_ruleset_info
-{
-    /** Number of rules successfully loaded **/
-    uint16_t loaded;
-    /** Number of rules which failed to parse **/
-    uint16_t failed;
-    /** Map from an error string to an array of all the rule ids for which
-     *  that error was raised. {error: [rule_ids]} **/
-    ddwaf_object errors;
-    /** Ruleset version **/
-    const char *version;
 };
 
 /**
@@ -202,21 +181,70 @@ typedef void (*ddwaf_log_cb)(
     const char* message, uint64_t message_len);
 
 /**
+{
+    "ruleset_version": string,
+    "schema_version": unsigned,
+    "diagnostics": {
+        "error": string,
+        "rules": {
+            "error": string,
+            "loaded": [<rule ids>],
+            "failed": {
+                <rule id>: <error>
+                ...
+            }
+        },
+        "custom_rules": {
+            "error": string,
+            "loaded": [<custom rule ids>],
+            "failed": {
+                <custom rule id>: <error>
+                ...
+            }
+        },
+        "exclusions": {
+            "error": string,
+            "loaded": [<exclusion ids>],
+            "failed": {
+                <exclusion id>: <error>
+                ...
+            }
+        },
+        "rules_override": {
+            "error": string,
+            "loaded": [rule_override index],
+            "failed": {
+                <rule_override index>: <error>
+                ...
+            }
+        },
+        "rules_data": {
+            "error": string,
+            "loaded": [<rule data ids>],
+            "failed": {
+                <rule data ids>: <error>
+                ...
+            }
+        },
+    }
+}
+**/
+/**
  * ddwaf_init
  *
  * Initialize a ddwaf instance
  *
  * @param rule ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
  * @param config Optional configuration of the WAF. (nullable)
- * @param info Optional ruleset parsing diagnostics. (nullable)
+ * @param diagnostics Optional ddwaf_object for parsing diagnostics. (nullable)
  *
  * @return Handle to the WAF instance or NULL on error.
  *
  * @note If config is NULL, default values will be used, including the default
  *       free function (ddwaf_object_free).
  **/
-ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
-    const ddwaf_config* config, ddwaf_ruleset_info *info);
+ddwaf_handle ddwaf_init(const ddwaf_object *ruleset, const ddwaf_config* config,
+    ddwaf_object *diagnostics);
 
 /**
  * ddwaf_update
@@ -224,12 +252,12 @@ ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
  * Update a ddwaf instance
  *
  * @param rule ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
- * @param info Optional ruleset parsing diagnostics. (nullable)
+ * @param info Optional ddwaf_object for parsing diagnostics. (nullable)
  *
  * @return Handle to the new WAF instance or NULL if there was an error processing the ruleset.
  **/
 ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
-    ddwaf_ruleset_info *info);
+    ddwaf_object *diagnostics);
 
 /**
  * ddwaf_destroy
@@ -240,14 +268,6 @@ ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
  */
 void ddwaf_destroy(ddwaf_handle handle);
 
-/**
- * ddwaf_ruleset_info_free
- *
- * Free the memory associated with the ruleset info structure.
- *
- * @param info Ruleset info to free.
- * */
-void ddwaf_ruleset_info_free(ddwaf_ruleset_info *info);
 /**
  * ddwaf_required_addresses
  *
