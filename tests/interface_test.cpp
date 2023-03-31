@@ -841,6 +841,7 @@ TEST(TestInterface, UpdateInvalidOverrides)
     ddwaf_object_free(&overrides);
 
     ddwaf_destroy(handle1);
+    ddwaf_destroy(handle2);
 }
 
 TEST(TestInterface, UpdateRuleData)
