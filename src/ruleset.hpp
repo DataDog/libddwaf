@@ -28,25 +28,27 @@ struct ruleset {
 
     void insert_rule(rule::ptr rule)
     {
-        rules.emplace(rule->id, rule);
+        rules.emplace_back(rule);
+        std::string_view type = rule->get_tag("type");
+        collection_types.emplace(type);
         if (rule->actions.empty()) {
-            collections[rule->get_tag("type")].insert(rule);
+            if (rule->source == rule::source_type::user) {
+                user_collections[type].insert(rule);
+            } else {
+                base_collections[type].insert(rule);
+            }
         } else {
-            priority_collections[rule->get_tag("type")].insert(rule);
+            if (rule->source == rule::source_type::user) {
+                user_priority_collections[type].insert(rule);
+            } else {
+                base_priority_collections[type].insert(rule);
+            }
         }
     }
 
-    void insert_rules(std::unordered_map<std::string_view, rule::ptr> rules_)
+    void insert_rules(const std::unordered_map<std::string_view, rule::ptr> &rules_)
     {
-        rules = std::move(rules_);
-
-        for (const auto &[id, rule] : rules) {
-            if (rule->actions.empty()) {
-                collections[rule->get_tag("type")].insert(rule);
-            } else {
-                priority_collections[rule->get_tag("type")].insert(rule);
-            }
-        }
+        for (const auto &[id, rule] : rules_) { insert_rule(rule); }
     }
 
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
@@ -56,13 +58,15 @@ struct ruleset {
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
 
-    // Rules are ordered by rule.id
-    std::unordered_map<std::string_view, rule::ptr> rules;
+    std::vector<rule::ptr> rules;
     std::unordered_map<std::string, rule_processor::base::ptr> dynamic_processors;
 
-    // Both collections are ordered by rule.type
-    std::unordered_map<std::string_view, priority_collection> priority_collections;
-    std::unordered_map<std::string_view, collection> collections;
+    // The key used to organise collections is rule.type
+    std::unordered_set<std::string_view> collection_types;
+    std::unordered_map<std::string_view, priority_collection> user_priority_collections;
+    std::unordered_map<std::string_view, priority_collection> base_priority_collections;
+    std::unordered_map<std::string_view, collection> user_collections;
+    std::unordered_map<std::string_view, collection> base_collections;
 };
 
 } // namespace ddwaf

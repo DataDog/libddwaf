@@ -18,7 +18,6 @@
 #include <event.hpp>
 #include <iterator.hpp>
 #include <object_store.hpp>
-#include <parser/specification.hpp>
 #include <rule_processor/base.hpp>
 
 namespace ddwaf {
@@ -26,6 +25,8 @@ namespace ddwaf {
 class rule {
 public:
     using ptr = std::shared_ptr<rule>;
+
+    enum class source_type : uint8_t { base = 1, user = 2 };
 
     struct cache_type {
         bool result{false};
@@ -38,20 +39,24 @@ public:
 
     rule(std::string id_, std::string name_, std::unordered_map<std::string, std::string> tags_,
         std::vector<condition::ptr> conditions_, std::vector<std::string> actions_ = {},
-        bool enabled_ = true);
+        bool enabled_ = true, source_type source_ = source_type::base)
+        : enabled(enabled_), source(source_), id(std::move(id_)), name(std::move(name_)),
+          tags(std::move(tags_)), conditions(std::move(conditions_)), actions(std::move(actions_))
+    {}
 
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;
 
     rule(rule &&rhs) noexcept
-        : enabled(rhs.enabled), id(std::move(rhs.id)), name(std::move(rhs.name)),
-          tags(std::move(rhs.tags)), conditions(std::move(rhs.conditions)),
-          actions(std::move(rhs.actions))
+        : enabled(rhs.enabled), source(rhs.source), id(std::move(rhs.id)),
+          name(std::move(rhs.name)), tags(std::move(rhs.tags)),
+          conditions(std::move(rhs.conditions)), actions(std::move(rhs.actions))
     {}
 
     rule &operator=(rule &&rhs) noexcept
     {
         enabled = rhs.enabled;
+        source = rhs.source;
         id = std::move(rhs.id);
         name = std::move(rhs.name);
         tags = std::move(rhs.tags);
@@ -77,6 +82,7 @@ public:
     }
 
     bool enabled{true};
+    source_type source;
     std::string id;
     std::string name;
     std::unordered_map<std::string, std::string> tags;

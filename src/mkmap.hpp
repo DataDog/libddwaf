@@ -117,6 +117,7 @@ public:
     }
 
     void clear() { data_.clear(); }
+    [[nodiscard]] bool empty() const { return data_.empty(); }
 
 protected:
     std::unordered_map<Key, std::unordered_map<Key, std::set<T>>> data_;

@@ -837,10 +837,11 @@ TEST(TestInterface, UpdateInvalidOverrides)
 
     auto overrides = readRule(R"({rules_override: [{enabled: false}]})");
     ddwaf_handle handle2 = ddwaf_update(handle1, &overrides, nullptr);
-    ASSERT_EQ(handle2, nullptr);
+    ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&overrides);
 
     ddwaf_destroy(handle1);
+    ddwaf_destroy(handle2);
 }
 
 TEST(TestInterface, UpdateRuleData)

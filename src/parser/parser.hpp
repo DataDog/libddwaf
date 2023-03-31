@@ -27,7 +27,7 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
 namespace v2 {
 rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_info &info,
     manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids,
-    const object_limits &limits);
+    const object_limits &limits, rule::source_type source = rule::source_type::base);
 
 rule_data_container parse_rule_data(
     parameter::vector &rule_data, std::unordered_map<std::string, std::string> &rule_data_ids);

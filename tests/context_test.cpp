@@ -1593,7 +1593,7 @@ TEST(TestContext, InputFilterWithCondition)
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
 
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules["id"].get()};
+        std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
         auto filter = std::make_shared<input_filter>(
             "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
@@ -1702,8 +1702,7 @@ TEST(TestContext, InputFilterMultipleRules)
         obj_filter->insert(usr_id.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
-        std::set<ddwaf::rule *> filter_rules{
-            ruleset->rules["usr_id"].get(), ruleset->rules["ip_id"].get()};
+        std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get(), ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
             "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
@@ -1817,7 +1816,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         obj_filter->insert(client_ip.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules["ip_id"].get()};
+        std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
         auto filter = std::make_shared<input_filter>(
             "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
@@ -1829,7 +1828,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         obj_filter->insert(usr_id.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules["usr_id"].get()};
+        std::set<ddwaf::rule *> filter_rules{ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
             "2", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
@@ -1956,9 +1955,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         ruleset->insert_rule(rule);
     }
 
-    auto ip_rule = ruleset->rules["ip_id"];
-    auto usr_rule = ruleset->rules["usr_id"];
-    auto cookie_rule = ruleset->rules["cookie_id"];
+    auto ip_rule = ruleset->rules[0];
+    auto usr_rule = ruleset->rules[1];
+    auto cookie_rule = ruleset->rules[2];
     {
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(client_ip.root);

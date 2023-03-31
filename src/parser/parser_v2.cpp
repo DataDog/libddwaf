@@ -145,10 +145,11 @@ condition::ptr parse_rule_condition(const parameter::map &root, manifest &target
 }
 
 rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
-    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits)
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    rule::source_type source)
 {
     std::vector<PW_TRANSFORM_ID> rule_transformers;
-    auto source = ddwaf::condition::data_source::values;
+    auto data_source = ddwaf::condition::data_source::values;
     auto transformers = at<parameter::vector>(rule, "transformers", {});
     for (const auto &transformer_param : transformers) {
         auto transformer = static_cast<std::string_view>(transformer_param);
@@ -163,7 +164,7 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
                            "in the list, all transformers will be applied to "
                            "keys and not values");
             }
-            source = ddwaf::condition::data_source::keys;
+            data_source = ddwaf::condition::data_source::keys;
         } else {
             rule_transformers.push_back(transform_id);
         }
@@ -176,7 +177,7 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
     for (const auto &cond_param : conditions_array) {
         auto cond = static_cast<parameter::map>(cond_param);
         conditions.push_back(parse_rule_condition(
-            cond, target_manifest, rule_data_ids, source, rule_transformers, limits));
+            cond, target_manifest, rule_data_ids, data_source, rule_transformers, limits));
     }
 
     std::unordered_map<std::string, std::string> tags;
@@ -192,7 +193,7 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
         throw ddwaf::parsing_error("missing key 'type'");
     }
 
-    return {at<bool>(rule, "enabled", true), at<std::string>(rule, "name"), std::move(tags),
+    return {at<bool>(rule, "enabled", true), source, at<std::string>(rule, "name"), std::move(tags),
         std::move(conditions), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
@@ -394,7 +395,7 @@ rule_filter_spec parse_rule_filter(
 
 rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_info &info,
     manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids,
-    const object_limits &limits)
+    const object_limits &limits, rule::source_type source)
 {
     rule_spec_container rules;
     for (const auto &rule_param : rule_array) {
@@ -408,7 +409,7 @@ rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_in
                 continue;
             }
 
-            auto rule = parse_rule(rule_map, target_manifest, rule_data_ids, limits);
+            auto rule = parse_rule(rule_map, target_manifest, rule_data_ids, limits, source);
             rules.emplace(std::move(id), std::move(rule));
             info.add_loaded();
         } catch (const std::exception &e) {

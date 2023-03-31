@@ -107,10 +107,10 @@ condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
 }
 
 void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest &target_manifest,
-    ddwaf::ruleset &rs, ddwaf::object_limits limits)
+    std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
-    if (rs.rules.find(id) != rs.rules.end()) {
+    if (rule_ids.find(id) != rule_ids.end()) {
         DDWAF_WARN("duplicate rule %s", id.c_str());
         info.insert_error(id, "duplicate rule");
         return;
@@ -152,6 +152,7 @@ void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest &target
         auto rule_ptr = std::make_shared<ddwaf::rule>(
             std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(conditions));
 
+        rule_ids.emplace(rule_ptr->id);
         rs.insert_rule(rule_ptr);
         info.add_loaded();
     } catch (const std::exception &e) {
@@ -167,10 +168,11 @@ void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, obje
     auto rules_array = at<parameter::vector>(ruleset, "events");
     rs.rules.reserve(rules_array.size());
 
+    std::unordered_set<std::string_view> rule_ids;
     for (const auto &rule_param : rules_array) {
         try {
             auto rule = static_cast<parameter::map>(rule_param);
-            parseRule(rule, info, rs.manifest, rs, limits);
+            parseRule(rule, info, rs.manifest, rule_ids, rs, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("%s", e.what());
             info.add_failed();
