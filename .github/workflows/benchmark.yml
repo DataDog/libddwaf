@@ -4,6 +4,9 @@ on:
   push:
     branches: [ master ]
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   benchmark:
     runs-on: ubuntu-latest
