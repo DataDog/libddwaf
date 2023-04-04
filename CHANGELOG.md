@@ -4,10 +4,10 @@
 #### Changes
 - Remove a libinjection signature ([#145](https://github.com/DataDog/libddwaf/pull/145))
 - Priority collection, rule and filter simplification ([#150](https://github.com/DataDog/libddwaf/pull/150))
-- Longest rule data expiration takes precedence for `ip_match` and `exact_match` operators ([#152](https://github.com/DataDog/libddwaf/pull/152))
 - Improve allocation / deallocation performance within the context using a `context_allocator` ([#151](https://github.com/DataDog/libddwaf/pull/151))
-- Add vdso support for aarch64 ([#157](https://github.com/DataDog/libddwaf/pull/157))
+- Longest rule data expiration takes precedence for `ip_match` and `exact_match` operators ([#152](https://github.com/DataDog/libddwaf/pull/152))
 - Custom rules support ([#154](https://github.com/DataDog/libddwaf/pull/154))
+- Add vdso support for aarch64 ([#157](https://github.com/DataDog/libddwaf/pull/157))
 
 #### Miscellaneous
 - Upgrade CodeQL Github Action to v2 ([#144](https://github.com/DataDog/libddwaf/pull/144))
