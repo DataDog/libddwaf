@@ -34,9 +34,6 @@ public:
         std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
     };
 
-    // TODO: make fields protected, add getters, follow conventions, add cache
-    //       move condition matching from context.
-
     rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
         std::vector<condition::ptr> conditions, std::vector<std::string> actions = {},
         bool enabled = true, source_type source = source_type::base)
