@@ -348,8 +348,8 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
-        ASSERT_EQ(events[0].actions.size(), 1);
-        EXPECT_STREQ(events[0].actions[0].data(), "redirect");
+        ASSERT_EQ(events[0].rule->get_actions().size(), 1);
+        EXPECT_STREQ(events[0].rule->get_actions()[0].data(), "redirect");
     }
     {
         ddwaf_object root;
@@ -428,7 +428,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         regular.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(events[0].actions.empty());
+        EXPECT_TRUE(events[0].rule->get_actions().empty());
     }
 
     {
@@ -443,8 +443,8 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
-        ASSERT_EQ(events[0].actions.size(), 1);
-        EXPECT_STREQ(events[0].actions[0].data(), "redirect");
+        ASSERT_EQ(events[0].rule->get_actions().size(), 1);
+        EXPECT_STREQ(events[0].rule->get_actions()[0].data(), "redirect");
     }
 }
 
@@ -508,8 +508,8 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
-        ASSERT_EQ(events[0].actions.size(), 1);
-        EXPECT_STREQ(events[0].actions[0].data(), "block");
+        ASSERT_EQ(events[0].rule->get_actions().size(), 1);
+        EXPECT_STREQ(events[0].rule->get_actions()[0].data(), "block");
     }
 
     {
