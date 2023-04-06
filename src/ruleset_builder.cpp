@@ -204,7 +204,7 @@ void ruleset_builder::build_exclusions()
     }
 }
 
-ruleset::ptr ruleset_builder::build(parameter::map &root, ruleset_info &info)
+ruleset::ptr ruleset_builder::build(parameter::map &root, base_ruleset_info &info)
 {
     // Load new rules, overrides and exclusions
     change_state state = change_state::none;
@@ -269,23 +269,24 @@ ruleset::ptr ruleset_builder::build(parameter::map &root, ruleset_info &info)
     return rs;
 }
 
-ruleset_builder::change_state ruleset_builder::load(parameter::map &root, ruleset_info &info)
+ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_ruleset_info &info)
 {
     change_state state = change_state::none;
 
     auto metadata = parser::at<parameter::map>(root, "metadata", {});
     auto rules_version = metadata.find("rules_version");
     if (rules_version != metadata.end()) {
-        info.set_version(static_cast<std::string_view>(rules_version->second));
+        info.set_ruleset_version(static_cast<std::string_view>(rules_version->second));
     }
 
     auto it = root.find("rules");
     if (it != root.end()) {
         decltype(rule_data_ids_) rule_data_ids;
 
+        auto &section = info.add_section("rules");
         auto rules = static_cast<parameter::vector>(it->second);
         auto new_base_rules =
-            parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids, limits_);
+            parser::v2::parse_rules(rules, section, target_manifest_, rule_data_ids, limits_);
 
         if (!new_base_rules.empty()) {
             // Upon reaching this stage, we know our base ruleset is valid
@@ -301,10 +302,11 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
         // be discarded after
         decltype(rule_data_ids_) rule_data_ids;
 
+        auto &section = info.add_section("custom_rules");
         auto rules = static_cast<parameter::vector>(it->second);
         if (!rules.empty()) {
             auto new_user_rules = parser::v2::parse_rules(
-                rules, info, target_manifest_, rule_data_ids, limits_, rule::source_type::user);
+                rules, section, target_manifest_, rule_data_ids, limits_, rule::source_type::user);
 
             if (new_user_rules.empty()) {
                 DDWAF_WARN("No valid custom rules found");
@@ -329,7 +331,8 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
     if (it != root.end()) {
         auto rules_data = static_cast<parameter::vector>(it->second);
         if (!rules_data.empty()) {
-            auto new_processors = parser::v2::parse_rule_data(rules_data, rule_data_ids_);
+            auto &section = info.add_section("rules_data");
+            auto new_processors = parser::v2::parse_rule_data(rules_data, section, rule_data_ids_);
             if (new_processors.empty()) {
                 // The rules_data array might have unrelated IDs, so we need
                 // to consider "no valid IDs" as an empty rules_data
@@ -349,7 +352,8 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
     if (it != root.end()) {
         auto overrides = static_cast<parameter::vector>(it->second);
         if (!overrides.empty()) {
-            auto new_overrides = parser::v2::parse_overrides(overrides);
+            auto &section = info.add_section("rules_override");
+            auto new_overrides = parser::v2::parse_overrides(overrides, section);
             if (new_overrides.empty()) {
                 // We can continue whilst ignoring the lack of overrides
                 DDWAF_WARN("No valid overrides provided");
@@ -367,7 +371,9 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
     if (it != root.end()) {
         auto exclusions = static_cast<parameter::vector>(it->second);
         if (!exclusions.empty()) {
-            auto new_exclusions = parser::v2::parse_filters(exclusions, target_manifest_, limits_);
+            auto &section = info.add_section("exclusions");
+            auto new_exclusions =
+                parser::v2::parse_filters(exclusions, section, target_manifest_, limits_);
 
             if (new_exclusions.empty()) {
                 // We can continue whilst ignoring the lack of exclusions

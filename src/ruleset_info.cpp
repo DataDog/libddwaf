@@ -9,7 +9,8 @@
 namespace ddwaf {
 
 namespace {
-std::pair<uint64_t, ddwaf_object*> object_map_add_helper(ddwaf_object *map, std::string_view key, ddwaf_object *object)
+std::pair<uint64_t, ddwaf_object *> object_map_add_helper(
+    ddwaf_object *map, std::string_view key, ddwaf_object *object)
 {
     ddwaf_object_map_addl(map, key.data(), key.length(), object);
     // Get the element we just added

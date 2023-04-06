@@ -85,7 +85,7 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
     auto &allocator = doc.GetAllocator();
 
     output.data = nullptr;
-    output.actions = {nullptr, 0};
+    ddwaf_object_array(&output.actions);
 
     doc.SetArray();
     std::unordered_set<std::string_view> actions;
@@ -141,12 +141,11 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
         }
 
         if (!actions.empty()) {
-            // NOLINTNEXTLINE
-            output.actions.array = static_cast<char **>(malloc(sizeof(char *) * actions.size()));
-            output.actions.size = actions.size();
-
-            std::size_t index = 0;
-            for (const auto &action : actions) { output.actions.array[index++] = to_cstr(action); }
+            for (const auto &action : actions) {
+                ddwaf_object tmp;
+                ddwaf_object_array_add(
+                    &output.actions, ddwaf_object_stringl(&tmp, action.data(), action.length()));
+            }
         }
     }
 }

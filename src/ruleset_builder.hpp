@@ -37,13 +37,13 @@ public:
     // The boolean return value represents if the ruleset provided was
     // somehow invalid and couldn't be parsed correctly. If false, the
     // ruleset failed to parse, if true, there were no issues during parsing.
-    ruleset::ptr build(parameter root_map, ruleset_info &info)
+    ruleset::ptr build(parameter root_map, base_ruleset_info &info)
     {
         auto root = static_cast<parameter::map>(root_map);
         return build(root, info);
     }
 
-    ruleset::ptr build(parameter::map &root, ruleset_info &info);
+    ruleset::ptr build(parameter::map &root, base_ruleset_info &info);
 
 protected:
     enum class change_state : uint32_t {
@@ -61,7 +61,7 @@ protected:
     friend constexpr change_state &operator&=(change_state &lhs, change_state rhs);
     friend constexpr bool operator&&(change_state lhs, change_state rhs);
 
-    change_state load(parameter::map &root, ruleset_info &info);
+    change_state load(parameter::map &root, base_ruleset_info &info);
 
     void build_base_rules();
     void build_user_rules();

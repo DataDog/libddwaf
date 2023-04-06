@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "ddwaf.h"
 #include <context.hpp>
 #include <context_allocator.hpp>
 #include <exception.hpp>
@@ -85,15 +86,21 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
 // explicit instantiation declaration to suppress warning
 extern "C" {
 ddwaf::waf *ddwaf_init(
-    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_ruleset_info *info)
+    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_object *diagnostics)
 {
     try {
-        ddwaf::ruleset_info ri(info);
         if (ruleset != nullptr) {
             ddwaf::parameter input = *ruleset;
-            return new ddwaf::waf(input, ri, limits_from_config(config),
-                config != nullptr ? config->free_fn : ddwaf_object_free,
-                obfuscator_from_config(config));
+            auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
+            if (diagnostics == nullptr) {
+                ddwaf::null_ruleset_info ri;
+                return new ddwaf::waf(
+                    input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
+            }
+
+            ddwaf::ruleset_info ri(*diagnostics);
+            return new ddwaf::waf(
+                input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("%s", e.what());
@@ -104,12 +111,17 @@ ddwaf::waf *ddwaf_init(
     return nullptr;
 }
 
-ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_ruleset_info *info)
+ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_object *diagnostics)
 {
     try {
-        ddwaf::ruleset_info ri(info);
         if (handle != nullptr && ruleset != nullptr) {
             ddwaf::parameter input = *ruleset;
+            if (diagnostics == nullptr) {
+                ddwaf::null_ruleset_info ri;
+                return handle->update(input, ri);
+            }
+
+            ddwaf::ruleset_info ri(*diagnostics);
             return handle->update(input, ri);
         }
     } catch (const std::exception &e) {
@@ -170,7 +182,10 @@ DDWAF_RET_CODE ddwaf_run(
     ddwaf_context context, ddwaf_object *data, ddwaf_result *result, uint64_t timeout)
 {
     if (result != nullptr) {
-        *result = {false, nullptr, {nullptr, 0}, 0};
+        result->timeout = false;
+        result->data = nullptr;
+        ddwaf_object_invalid(&result->actions);
+        result->total_runtime = 0;
     }
 
     if (context == nullptr || data == nullptr) {
@@ -224,14 +239,13 @@ void ddwaf_result_free(ddwaf_result *result)
     // NOLINTNEXTLINE
     free(const_cast<char *>(result->data));
 
-    auto actions = result->actions;
-    if (actions.array != nullptr) {
-        // NOLINTNEXTLINE
-        for (unsigned i = 0; i < actions.size; i++) { free(actions.array[i]); }
-        // NOLINTNEXTLINE
-        free(actions.array);
+    if (result->actions.type != DDWAF_OBJ_INVALID) {
+        ddwaf_object_free(&result->actions);
     }
 
-    *result = {false, nullptr, {nullptr, 0}, 0};
+    result->timeout = false;
+    result->data = nullptr;
+    ddwaf_object_invalid(&result->actions);
+    result->total_runtime = 0;
 }
 }
