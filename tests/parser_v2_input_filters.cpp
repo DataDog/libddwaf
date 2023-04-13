@@ -13,12 +13,13 @@ TEST(TestParserV2InputFilters, ParseFilterWithoutID)
 
     auto object = readRule(R"([{inputs: [{address: http.client_ip}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 0);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 }
 
 TEST(TestParserV2InputFilters, ParseDuplicateFilters)
@@ -31,12 +32,13 @@ TEST(TestParserV2InputFilters, ParseDuplicateFilters)
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}]}, {id: 1, inputs: [{address: usr.id}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 0);
-    EXPECT_EQ(exclusions.input_filters.size(), 1);
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 1);
 }
 
 TEST(TestParserV2InputFilters, ParseNoConditionsOrTargets)
@@ -48,20 +50,21 @@ TEST(TestParserV2InputFilters, ParseNoConditionsOrTargets)
 
     auto object = readRule(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 0);
-    EXPECT_EQ(exclusions.input_filters.size(), 1);
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 1);
 
-    const auto &exclusion_it = exclusions.input_filters.begin();
-    EXPECT_STR(exclusion_it->first, "1");
+    const auto &input_it = filters.input_filters.begin();
+    EXPECT_STR(input_it->first, "1");
 
-    const auto &exclusion = exclusion_it->second;
-    EXPECT_EQ(exclusion.conditions.size(), 0);
-    EXPECT_EQ(exclusion.targets.size(), 0);
-    EXPECT_TRUE(exclusion.filter);
+    const auto &input = input_it->second;
+    EXPECT_EQ(input.conditions.size(), 0);
+    EXPECT_EQ(input.targets.size(), 0);
+    EXPECT_TRUE(input.filter);
 }
 
 // TODO more tests

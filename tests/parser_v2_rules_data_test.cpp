@@ -15,7 +15,8 @@ TEST(TestParserV2RuleData, ParseIPData)
         R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
-    auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto rule_data = parser::v2::parse_rule_data(input, section, rule_data_ids);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(rule_data.size(), 1);
@@ -30,7 +31,8 @@ TEST(TestParserV2RuleData, ParseStringData)
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
-    auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto rule_data = parser::v2::parse_rule_data(input, section, rule_data_ids);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(rule_data.size(), 1);
@@ -46,7 +48,8 @@ TEST(TestParserV2RuleData, ParseMultipleRuleData)
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
-    auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto rule_data = parser::v2::parse_rule_data(input, section, rule_data_ids);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(rule_data.size(), 2);
@@ -62,7 +65,8 @@ TEST(TestParserV2RuleData, ParseUnknownRuleData)
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
-    auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto rule_data = parser::v2::parse_rule_data(input, section, rule_data_ids);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(rule_data.size(), 2);
@@ -79,7 +83,8 @@ TEST(TestParserV2RuleData, ParseUnsupportedProcessor)
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
-    auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto rule_data = parser::v2::parse_rule_data(input, section, rule_data_ids);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(rule_data.size(), 0);
@@ -92,7 +97,8 @@ TEST(TestParserV2RuleData, ParseMissingType)
     auto object = readRule(R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
-    auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto rule_data = parser::v2::parse_rule_data(input, section, rule_data_ids);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(rule_data.size(), 0);
@@ -106,7 +112,8 @@ TEST(TestParserV2RuleData, ParseMissingID)
         readRule(R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
-    auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto rule_data = parser::v2::parse_rule_data(input, section, rule_data_ids);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(rule_data.size(), 0);
@@ -119,7 +126,8 @@ TEST(TestParserV2RuleData, ParseMissingData)
     auto object = readRule(R"([{id: ip_data, type: ip_with_expiration}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
-    auto rule_data = parser::v2::parse_rule_data(input, rule_data_ids);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto rule_data = parser::v2::parse_rule_data(input, section, rule_data_ids);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(rule_data.size(), 0);

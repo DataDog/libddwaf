@@ -13,7 +13,7 @@ TEST(TestWaf, RootAddresses)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf::ruleset_info info;
+    ddwaf::null_ruleset_info info;
     ddwaf::waf instance{
         rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf_object_free(&rule);
@@ -29,7 +29,7 @@ TEST(TestWaf, BasicContextRun)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf::ruleset_info info;
+    ddwaf::null_ruleset_info info;
     ddwaf::waf instance{
         rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf_object_free(&rule);
@@ -49,7 +49,7 @@ TEST(TestWaf, RuleDisabledInRuleset)
     auto rule = readFile("rule_disabled.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf::ruleset_info info;
+    ddwaf::null_ruleset_info info;
     ddwaf::waf instance{
         rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf_object_free(&rule);

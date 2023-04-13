@@ -3,7 +3,6 @@ EXPORTS
   ddwaf_init
   ddwaf_update
   ddwaf_destroy
-  ddwaf_ruleset_info_free
   ddwaf_required_addresses
   ddwaf_context_init
   ddwaf_run

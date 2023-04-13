@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "ruleset_info.hpp"
 #include "test.h"
 
 TEST(TestParserV2RuleFilters, ParseEmptyFilter)
@@ -13,12 +14,13 @@ TEST(TestParserV2RuleFilters, ParseEmptyFilter)
 
     auto object = readRule(R"([{id: 1}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 0);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 }
 
 TEST(TestParserV2RuleFilters, ParseFilterWithoutID)
@@ -28,12 +30,13 @@ TEST(TestParserV2RuleFilters, ParseFilterWithoutID)
 
     auto object = readRule(R"([{rules_target: [{rule_id: 2939}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 0);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 }
 
 TEST(TestParserV2RuleFilters, ParseDuplicateUnconditionalRuleFilters)
@@ -44,12 +47,13 @@ TEST(TestParserV2RuleFilters, ParseDuplicateUnconditionalRuleFilters)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}]},{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 1);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 }
 
 TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetID)
@@ -59,21 +63,22 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetID)
 
     auto object = readRule(R"([{id: 1, rules_target: [{rule_id: 2939}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 1);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 
-    const auto &exclusion_it = exclusions.rule_filters.begin();
-    EXPECT_STR(exclusion_it->first, "1");
+    const auto &filter_it = filters.rule_filters.begin();
+    EXPECT_STR(filter_it->first, "1");
 
-    const auto &exclusion = exclusion_it->second;
-    EXPECT_EQ(exclusion.conditions.size(), 0);
-    EXPECT_EQ(exclusion.targets.size(), 1);
+    const auto &filter = filter_it->second;
+    EXPECT_EQ(filter.conditions.size(), 0);
+    EXPECT_EQ(filter.targets.size(), 1);
 
-    const auto &target = exclusion.targets[0];
+    const auto &target = filter.targets[0];
     EXPECT_EQ(target.type, parser::target_type::id);
     EXPECT_STR(target.rule_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
@@ -86,21 +91,22 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetTags)
 
     auto object = readRule(R"([{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 1);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 
-    const auto &exclusion_it = exclusions.rule_filters.begin();
-    EXPECT_STR(exclusion_it->first, "1");
+    const auto &filter_it = filters.rule_filters.begin();
+    EXPECT_STR(filter_it->first, "1");
 
-    const auto &exclusion = exclusion_it->second;
-    EXPECT_EQ(exclusion.conditions.size(), 0);
-    EXPECT_EQ(exclusion.targets.size(), 1);
+    const auto &filter = filter_it->second;
+    EXPECT_EQ(filter.conditions.size(), 0);
+    EXPECT_EQ(filter.targets.size(), 1);
 
-    const auto &target = exclusion.targets[0];
+    const auto &target = filter.targets[0];
     EXPECT_EQ(target.type, parser::target_type::tags);
     EXPECT_TRUE(target.rule_id.empty());
     EXPECT_EQ(target.tags.size(), 2);
@@ -116,21 +122,22 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetPriority)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 1);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 
-    const auto &exclusion_it = exclusions.rule_filters.begin();
-    EXPECT_STR(exclusion_it->first, "1");
+    const auto &filter_it = filters.rule_filters.begin();
+    EXPECT_STR(filter_it->first, "1");
 
-    const auto &exclusion = exclusion_it->second;
-    EXPECT_EQ(exclusion.conditions.size(), 0);
-    EXPECT_EQ(exclusion.targets.size(), 1);
+    const auto &filter = filter_it->second;
+    EXPECT_EQ(filter.conditions.size(), 0);
+    EXPECT_EQ(filter.targets.size(), 1);
 
-    const auto &target = exclusion.targets[0];
+    const auto &target = filter.targets[0];
     EXPECT_EQ(target.type, parser::target_type::id);
     EXPECT_STR(target.rule_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
@@ -144,29 +151,30 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterMultipleTargets)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939},{tags: {type: rule, category: unknown}}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 1);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 
-    const auto &exclusion_it = exclusions.rule_filters.begin();
-    EXPECT_STR(exclusion_it->first, "1");
+    const auto &filter_it = filters.rule_filters.begin();
+    EXPECT_STR(filter_it->first, "1");
 
-    const auto &exclusion = exclusion_it->second;
-    EXPECT_EQ(exclusion.conditions.size(), 0);
-    EXPECT_EQ(exclusion.targets.size(), 2);
+    const auto &filter = filter_it->second;
+    EXPECT_EQ(filter.conditions.size(), 0);
+    EXPECT_EQ(filter.targets.size(), 2);
 
     {
-        const auto &target = exclusion.targets[0];
+        const auto &target = filter.targets[0];
         EXPECT_EQ(target.type, parser::target_type::id);
         EXPECT_STR(target.rule_id, "2939");
         EXPECT_EQ(target.tags.size(), 0);
     }
 
     {
-        const auto &target = exclusion.targets[1];
+        const auto &target = filter.targets[1];
         EXPECT_EQ(target.type, parser::target_type::tags);
         EXPECT_TRUE(target.rule_id.empty());
         EXPECT_EQ(target.tags.size(), 2);
@@ -183,36 +191,37 @@ TEST(TestParserV2RuleFilters, ParseMultipleUnconditionalRuleFilters)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}]},{id: 2, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 2);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 2);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 
     {
-        const auto &exclusion_it = exclusions.rule_filters.find("1");
-        EXPECT_STR(exclusion_it->first, "1");
+        const auto &filter_it = filters.rule_filters.find("1");
+        EXPECT_STR(filter_it->first, "1");
 
-        const auto &exclusion = exclusion_it->second;
-        EXPECT_EQ(exclusion.conditions.size(), 0);
-        EXPECT_EQ(exclusion.targets.size(), 1);
+        const auto &filter = filter_it->second;
+        EXPECT_EQ(filter.conditions.size(), 0);
+        EXPECT_EQ(filter.targets.size(), 1);
 
-        const auto &target = exclusion.targets[0];
+        const auto &target = filter.targets[0];
         EXPECT_EQ(target.type, parser::target_type::id);
         EXPECT_STR(target.rule_id, "2939");
         EXPECT_EQ(target.tags.size(), 0);
     }
 
     {
-        const auto &exclusion_it = exclusions.rule_filters.find("2");
-        EXPECT_STR(exclusion_it->first, "2");
+        const auto &filter_it = filters.rule_filters.find("2");
+        EXPECT_STR(filter_it->first, "2");
 
-        const auto &exclusion = exclusion_it->second;
-        EXPECT_EQ(exclusion.conditions.size(), 0);
-        EXPECT_EQ(exclusion.targets.size(), 1);
+        const auto &filter = filter_it->second;
+        EXPECT_EQ(filter.conditions.size(), 0);
+        EXPECT_EQ(filter.targets.size(), 1);
 
-        const auto &target = exclusion.targets[0];
+        const auto &target = filter.targets[0];
         EXPECT_EQ(target.type, parser::target_type::tags);
         EXPECT_TRUE(target.rule_id.empty());
         EXPECT_EQ(target.tags.size(), 2);
@@ -229,12 +238,13 @@ TEST(TestParserV2RuleFilters, ParseDuplicateConditionalRuleFilters)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]},{id: 1, rules_target: [{tags: {type: rule, category: unknown}}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 1);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 }
 
 TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterSingleCondition)
@@ -245,21 +255,22 @@ TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterSingleCondition)
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 1);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 
-    const auto &exclusion_it = exclusions.rule_filters.begin();
-    EXPECT_STR(exclusion_it->first, "1");
+    const auto &filter_it = filters.rule_filters.begin();
+    EXPECT_STR(filter_it->first, "1");
 
-    const auto &exclusion = exclusion_it->second;
-    EXPECT_EQ(exclusion.conditions.size(), 1);
-    EXPECT_EQ(exclusion.targets.size(), 1);
+    const auto &filter = filter_it->second;
+    EXPECT_EQ(filter.conditions.size(), 1);
+    EXPECT_EQ(filter.targets.size(), 1);
 
-    const auto &target = exclusion.targets[0];
+    const auto &target = filter.targets[0];
     EXPECT_EQ(target.type, parser::target_type::id);
     EXPECT_STR(target.rule_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
@@ -273,19 +284,20 @@ TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterGlobal)
     auto object = readRule(
         R"([{id: 1, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 1);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 
-    const auto &exclusion_it = exclusions.rule_filters.begin();
-    EXPECT_STR(exclusion_it->first, "1");
+    const auto &filter_it = filters.rule_filters.begin();
+    EXPECT_STR(filter_it->first, "1");
 
-    const auto &exclusion = exclusion_it->second;
-    EXPECT_EQ(exclusion.conditions.size(), 1);
-    EXPECT_EQ(exclusion.targets.size(), 0);
+    const auto &filter = filter_it->second;
+    EXPECT_EQ(filter.conditions.size(), 1);
+    EXPECT_EQ(filter.targets.size(), 0);
 }
 
 TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterMultipleConditions)
@@ -295,21 +307,23 @@ TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterMultipleConditions)
 
     auto object = readRule(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
-    auto exclusions_array = static_cast<parameter::vector>(parameter(object));
-    auto exclusions = parser::v2::parse_filters(exclusions_array, manifest, limits);
+
+    ddwaf::null_ruleset_info::null_section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(exclusions.rule_filters.size(), 1);
-    EXPECT_EQ(exclusions.input_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
 
-    const auto &exclusion_it = exclusions.rule_filters.begin();
-    EXPECT_STR(exclusion_it->first, "1");
+    const auto &filter_it = filters.rule_filters.begin();
+    EXPECT_STR(filter_it->first, "1");
 
-    const auto &exclusion = exclusion_it->second;
-    EXPECT_EQ(exclusion.conditions.size(), 3);
-    EXPECT_EQ(exclusion.targets.size(), 1);
+    const auto &filter = filter_it->second;
+    EXPECT_EQ(filter.conditions.size(), 3);
+    EXPECT_EQ(filter.targets.size(), 1);
 
-    const auto &target = exclusion.targets[0];
+    const auto &target = filter.targets[0];
     EXPECT_EQ(target.type, parser::target_type::id);
     EXPECT_STR(target.rule_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);

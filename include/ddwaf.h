@@ -87,7 +87,6 @@ typedef struct _ddwaf_context* ddwaf_context;
 typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_config ddwaf_config;
 typedef struct _ddwaf_result ddwaf_result;
-typedef struct _ddwaf_ruleset_info ddwaf_ruleset_info;
 /**
  * @struct ddwaf_object
  *
@@ -168,24 +167,6 @@ struct _ddwaf_result
 };
 
 /**
- * @ddwaf_ruleset_info
- *
- * Structure containing diagnostics on the provided ruleset.
- * */
-struct _ddwaf_ruleset_info
-{
-    /** Number of rules successfully loaded **/
-    uint16_t loaded;
-    /** Number of rules which failed to parse **/
-    uint16_t failed;
-    /** Map from an error string to an array of all the rule ids for which
-     *  that error was raised. {error: [rule_ids]} **/
-    ddwaf_object errors;
-    /** Ruleset version **/
-    const char *version;
-};
-
-/**
  * @typedef ddwaf_log_cb
  *
  * Callback that powerwaf will call to relay messages to the binding.
@@ -206,30 +187,34 @@ typedef void (*ddwaf_log_cb)(
  *
  * Initialize a ddwaf instance
  *
- * @param rule ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
+ * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
  * @param config Optional configuration of the WAF. (nullable)
- * @param info Optional ruleset parsing diagnostics. (nullable)
+ * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Handle to the WAF instance or NULL on error.
  *
  * @note If config is NULL, default values will be used, including the default
  *       free function (ddwaf_object_free).
+ *
+ * @note If ruleset is NULL, the diagnostics object will not be initialised.
  **/
 ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
-    const ddwaf_config* config, ddwaf_ruleset_info *info);
+    const ddwaf_config* config, ddwaf_object *diagnostics);
 
 /**
  * ddwaf_update
  *
  * Update a ddwaf instance
  *
- * @param rule ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
- * @param info Optional ruleset parsing diagnostics. (nullable)
+ * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
+ * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Handle to the new WAF instance or NULL if there was an error processing the ruleset.
+ *
+ * @note If handle or ruleset are NULL, the diagnostics object will not be initialised.
  **/
 ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
-    ddwaf_ruleset_info *info);
+    ddwaf_object *diagnostics);
 
 /**
  * ddwaf_destroy
@@ -240,14 +225,6 @@ ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
  */
 void ddwaf_destroy(ddwaf_handle handle);
 
-/**
- * ddwaf_ruleset_info_free
- *
- * Free the memory associated with the ruleset info structure.
- *
- * @param info Ruleset info to free.
- * */
-void ddwaf_ruleset_info_free(ddwaf_ruleset_info *info);
 /**
  * ddwaf_required_addresses
  *

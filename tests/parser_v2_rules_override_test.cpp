@@ -10,8 +10,9 @@ TEST(TestParserV2RulesOverride, ParseRuleOverride)
 {
     auto object = readRule(R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]}])");
 
+    ddwaf::null_ruleset_info::null_section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    auto overrides = parser::v2::parse_overrides(override_array);
+    auto overrides = parser::v2::parse_overrides(override_array, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(overrides.by_ids.size(), 0);
@@ -36,8 +37,9 @@ TEST(TestParserV2RulesOverride, ParseMultipleRuleOverrides)
     auto object = readRule(
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]},{rules_target: [{rule_id: 1}], enabled: false}])");
 
+    ddwaf::null_ruleset_info::null_section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    auto overrides = parser::v2::parse_overrides(override_array);
+    auto overrides = parser::v2::parse_overrides(override_array, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(overrides.by_ids.size(), 1);
@@ -77,8 +79,9 @@ TEST(TestParserV2RulesOverride, ParseInconsistentRuleOverride)
     auto object = readRule(
         R"([{rules_target: [{tags: {confidence: 1}}, {rule_id: 1}], on_match: [block], enabled: false}])");
 
+    ddwaf::null_ruleset_info::null_section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    auto overrides = parser::v2::parse_overrides(override_array);
+    auto overrides = parser::v2::parse_overrides(override_array, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(overrides.by_ids.size(), 0);
