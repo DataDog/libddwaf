@@ -60,8 +60,19 @@ TEST(TestRegressions, DuplicateFlowMatches)
     EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data,
-        R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow1","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]},{"operator":"match_regex","operator_value":"Duplicate","parameters":[{"address":"param2","key_path":[],"value":"Duplicate","highlight":["Duplicate"]}]}]}])");
+    EXPECT_EVENTS(ret, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category2"}},
+                           .matches = {{.op = "match_regex",
+                                           .op_value = "Sqreen",
+                                           .address = "param1",
+                                           .value = "Sqreen",
+                                           .highlight = "Sqreen"},
+                               {.op = "match_regex",
+                                   .op_value = "Duplicate",
+                                   .address = "param2",
+                                   .value = "Duplicate",
+                                   .highlight = "Duplicate"}}});
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);

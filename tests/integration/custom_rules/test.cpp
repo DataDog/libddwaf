@@ -121,8 +121,7 @@ TEST(TestCustomRules, RegularCustomRulesPrecedence)
 
         EXPECT_EVENTS(res, {.id = "custom_rule3",
                                .name = "custom_rule3",
-                               .type = "flow34",
-                               .category = "category3",
+                               .tags = {{"type", "flow34"}, {"category", "category3"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
                                    .address = "value3",
@@ -163,8 +162,7 @@ TEST(TestCustomRules, PriorityCustomRulesPrecedence)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
@@ -208,8 +206,7 @@ TEST(TestCustomRules, CustomRulesPrecedence)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
@@ -264,8 +261,7 @@ TEST(TestCustomRules, UpdateFromBaseRules)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
@@ -287,8 +283,7 @@ TEST(TestCustomRules, UpdateFromBaseRules)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
@@ -346,8 +341,7 @@ TEST(TestCustomRules, UpdateFromCustomRules)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
@@ -369,8 +363,7 @@ TEST(TestCustomRules, UpdateFromCustomRules)
 
         EXPECT_EVENTS(res, {.id = "custom_rule5",
                                .name = "custom_rule5",
-                               .type = "flow5",
-                               .category = "category5",
+                               .tags = {{"type", "flow5"}, {"category", "category5"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
                                    .address = "value34",
@@ -447,8 +440,7 @@ TEST(TestCustomRules, UpdateRemoveAllCustomRules)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
@@ -470,8 +462,7 @@ TEST(TestCustomRules, UpdateRemoveAllCustomRules)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
@@ -528,8 +519,7 @@ TEST(TestCustomRules, CustomRulesUnaffectedByOverrides)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
@@ -551,8 +541,7 @@ TEST(TestCustomRules, CustomRulesUnaffectedByOverrides)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
@@ -620,8 +609,7 @@ TEST(TestCustomRules, CustomRulesUnaffectedByOverridesAfterUpdate)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
@@ -652,8 +640,7 @@ TEST(TestCustomRules, CustomRulesUnaffectedByOverridesAfterUpdate)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
@@ -711,8 +698,7 @@ TEST(TestCustomRules, CustomRulesAffectedByExclusions)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
@@ -734,8 +720,7 @@ TEST(TestCustomRules, CustomRulesAffectedByExclusions)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
@@ -803,8 +788,7 @@ TEST(TestCustomRules, CustomRulesAffectedByExclusionsAfterUpdate)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
-                               .type = "flow34",
-                               .category = "category4",
+                               .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
@@ -826,8 +810,7 @@ TEST(TestCustomRules, CustomRulesAffectedByExclusionsAfterUpdate)
 
         EXPECT_EVENTS(res, {.id = "rule3",
                                .name = "rule3",
-                               .type = "flow34",
-                               .category = "category3",
+                               .tags = {{"type", "flow34"}, {"category", "category3"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
                                    .address = "value34",
@@ -847,8 +830,7 @@ TEST(TestCustomRules, CustomRulesAffectedByExclusionsAfterUpdate)
 
         EXPECT_EVENTS(res, {.id = "custom_rule3",
                                .name = "custom_rule3",
-                               .type = "flow34",
-                               .category = "category3",
+                               .tags = {{"type", "flow34"}, {"category", "category3"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
                                    .address = "value34",

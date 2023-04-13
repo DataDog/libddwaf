@@ -29,8 +29,20 @@ TEST(TestPWProcessor, TestOutput)
     EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data,
-        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule2","parameters":[{"address":"value","key_path":[],"value":"rule2","highlight":["rule2"]}]},{"operator":"match_regex","operator_value":"rule3","parameters":[{"address":"value2","key_path":["key"],"value":"rule3","highlight":["rule3"]}]}]}])");
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                                           .op_value = "rule2",
+                                           .address = "value",
+                                           .value = "rule2",
+                                           .highlight = "rule2"},
+                               {.op = "match_regex",
+                                   .op_value = "rule3",
+                                   .address = "value2",
+                                   .path = {"key"},
+                                   .value = "rule3",
+                                   .highlight = "rule3"}}});
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -58,8 +70,15 @@ TEST(TestPWProcessor, TestKeyPaths)
     EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data,
-        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["x"],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "Sqreen",
+                               .address = "param",
+                               .path = {"x"},
+                               .value = "Sqreen",
+                               .highlight = "Sqreen"}}});
 
     ddwaf_result_free(&ret);
 
@@ -71,9 +90,15 @@ TEST(TestPWProcessor, TestKeyPaths)
     EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data,
-        R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["z"],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
-
+    EXPECT_EVENTS(ret, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow2"}, {"category", "category2"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "Sqreen",
+                               .address = "param",
+                               .path = {"z"},
+                               .value = "Sqreen",
+                               .highlight = "Sqreen"}}});
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
 
@@ -89,8 +114,15 @@ TEST(TestPWProcessor, TestKeyPaths)
     EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data,
-        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param","key_path":["y"],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "Sqreen",
+                               .address = "param",
+                               .path = {"y"},
+                               .value = "Sqreen",
+                               .highlight = "Sqreen"}}});
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -239,9 +271,14 @@ TEST(TestPWProcessor, TestCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param1, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
-        EXPECT_STREQ(ret.data,
-            R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
-
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "Sqreen",
+                                   .address = "param1",
+                                   .value = "Sqreen",
+                                   .highlight = "Sqreen"}}});
         ddwaf_result_free(&ret);
     }
 
@@ -280,9 +317,14 @@ TEST(TestPWProcessor, TestMultiFlowCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
-        EXPECT_STREQ(ret.data,
-            R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param1","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
-
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "Sqreen",
+                                   .address = "param1",
+                                   .value = "Sqreen",
+                                   .highlight = "Sqreen"}}});
         ddwaf_result_free(&ret);
     }
 
@@ -303,9 +345,14 @@ TEST(TestPWProcessor, TestMultiFlowCacheReport)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
-        EXPECT_STREQ(ret.data,
-            R"([{"rule":{"id":"2","name":"rule2","tags":{"type":"flow2","category":"category2"}},"rule_matches":[{"operator":"match_regex","operator_value":"Sqreen","parameters":[{"address":"param2","key_path":[],"value":"Sqreen","highlight":["Sqreen"]}]}]}])");
-
+        EXPECT_EVENTS(ret, {.id = "2",
+                               .name = "rule2",
+                               .tags = {{"type", "flow2"}, {"category", "category2"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "Sqreen",
+                                   .address = "param2",
+                                   .value = "Sqreen",
+                                   .highlight = "Sqreen"}}});
         ddwaf_result_free(&ret);
     }
 

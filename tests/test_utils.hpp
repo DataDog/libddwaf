@@ -5,6 +5,8 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <utility>
+
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/schema.h"
 #include "test.h"
@@ -24,8 +26,7 @@ struct event {
 
     std::string id;
     std::string name;
-    std::string type;
-    std::string category;
+    std::map<std::string, std::string> tags{{"type", ""}, {"category", ""}};
     std::vector<std::string> actions;
     std::vector<match> matches;
 };
@@ -40,8 +41,8 @@ namespace YAML {
 
 class parsing_error : public std::exception {
 public:
-    parsing_error(const std::string &what) : what_(what) {}
-    const char *what() const noexcept { return what_.c_str(); }
+    explicit parsing_error(std::string what) : what_(std::move(what)) {}
+    [[nodiscard]] const char *what() const noexcept override { return what_.c_str(); }
 
 protected:
     const std::string what_;
@@ -89,7 +90,7 @@ void PrintTo(const ddwaf_result &result, ::std::ostream *os);
 
 class WafResultActionMatcher {
 public:
-    WafResultActionMatcher(std::vector<std::string_view> &&values);
+    explicit WafResultActionMatcher(std::vector<std::string_view> &&values);
     bool MatchAndExplain(
         const ddwaf_result_actions &actions, ::testing::MatchResultListener *) const;
 
@@ -98,13 +99,13 @@ public:
     void DescribeNegationTo(::std::ostream *os) const { *os << expected_as_string_; }
 
 private:
-    std::string expected_as_string_;
+    std::string expected_as_string_{};
     std::vector<std::string_view> expected_;
 };
 
 class WafResultDataMatcher {
 public:
-    WafResultDataMatcher(std::vector<ddwaf::test::event> expected_events)
+    explicit WafResultDataMatcher(std::vector<ddwaf::test::event> expected_events)
         : expected_events_(std::move(expected_events))
     {}
 
@@ -112,12 +113,12 @@ public:
 
     void DescribeTo(::std::ostream *os) const
     {
-        for (auto expected : expected_events_) { *os << expected; }
+        for (const auto &expected : expected_events_) { *os << expected; }
     }
 
     void DescribeNegationTo(::std::ostream *os) const
     {
-        for (auto expected : expected_events_) { *os << expected; }
+        for (const auto &expected : expected_events_) { *os << expected; }
     }
 
 protected:

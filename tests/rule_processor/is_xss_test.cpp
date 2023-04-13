@@ -71,8 +71,7 @@ TEST(TestIsXSS, TestRuleset)
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
-                           .type = "flow1",
-                           .category = "category1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{
                                .op = "is_xss",
                                .address = "arg1",

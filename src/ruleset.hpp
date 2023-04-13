@@ -31,14 +31,14 @@ struct ruleset {
         rules.emplace_back(rule);
         std::string_view type = rule->get_tag("type");
         collection_types.emplace(type);
-        if (rule->actions.empty()) {
-            if (rule->source == rule::source_type::user) {
+        if (rule->get_actions().empty()) {
+            if (rule->get_source() == rule::source_type::user) {
                 user_collections[type].insert(rule);
             } else {
                 base_collections[type].insert(rule);
             }
         } else {
-            if (rule->source == rule::source_type::user) {
+            if (rule->get_source() == rule::source_type::user) {
                 user_priority_collections[type].insert(rule);
             } else {
                 base_priority_collections[type].insert(rule);

@@ -34,34 +34,31 @@ public:
         std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
     };
 
-    // TODO: make fields protected, add getters, follow conventions, add cache
-    //       move condition matching from context.
-
-    rule(std::string id_, std::string name_, std::unordered_map<std::string, std::string> tags_,
-        std::vector<condition::ptr> conditions_, std::vector<std::string> actions_ = {},
-        bool enabled_ = true, source_type source_ = source_type::base)
-        : enabled(enabled_), source(source_), id(std::move(id_)), name(std::move(name_)),
-          tags(std::move(tags_)), conditions(std::move(conditions_)), actions(std::move(actions_))
+    rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
+        std::vector<condition::ptr> conditions, std::vector<std::string> actions = {},
+        bool enabled = true, source_type source = source_type::base)
+        : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
+          tags_(std::move(tags)), conditions_(std::move(conditions)), actions_(std::move(actions))
     {}
 
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;
 
     rule(rule &&rhs) noexcept
-        : enabled(rhs.enabled), source(rhs.source), id(std::move(rhs.id)),
-          name(std::move(rhs.name)), tags(std::move(rhs.tags)),
-          conditions(std::move(rhs.conditions)), actions(std::move(rhs.actions))
+        : enabled_(rhs.enabled_), source_(rhs.source_), id_(std::move(rhs.id_)),
+          name_(std::move(rhs.name_)), tags_(std::move(rhs.tags_)),
+          conditions_(std::move(rhs.conditions_)), actions_(std::move(rhs.actions_))
     {}
 
     rule &operator=(rule &&rhs) noexcept
     {
-        enabled = rhs.enabled;
-        source = rhs.source;
-        id = std::move(rhs.id);
-        name = std::move(rhs.name);
-        tags = std::move(rhs.tags);
-        conditions = std::move(rhs.conditions);
-        actions = std::move(rhs.actions);
+        enabled_ = rhs.enabled_;
+        source_ = rhs.source_;
+        id_ = std::move(rhs.id_);
+        name_ = std::move(rhs.name_);
+        tags_ = std::move(rhs.tags_);
+        conditions_ = std::move(rhs.conditions_);
+        actions_ = std::move(rhs.actions_);
         return *this;
     }
 
@@ -72,22 +69,33 @@ public:
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
-    [[nodiscard]] bool is_enabled() const { return enabled; }
-    void toggle(bool value) { enabled = value; }
+    [[nodiscard]] bool is_enabled() const { return enabled_; }
+    void toggle(bool value) { enabled_ = value; }
+
+    source_type get_source() const { return source_; }
+    const std::string &get_id() const { return id_; }
+    const std::string &get_name() const { return name_; }
 
     std::string_view get_tag(const std::string &tag) const
     {
-        auto it = tags.find(tag);
-        return it == tags.end() ? std::string_view() : it->second;
+        auto it = tags_.find(tag);
+        return it == tags_.end() ? std::string_view() : it->second;
     }
 
-    bool enabled{true};
-    source_type source;
-    std::string id;
-    std::string name;
-    std::unordered_map<std::string, std::string> tags;
-    std::vector<condition::ptr> conditions;
-    std::vector<std::string> actions;
+    const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
+
+    const std::vector<std::string> &get_actions() const { return actions_; }
+
+    void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
+
+protected:
+    bool enabled_{true};
+    source_type source_;
+    std::string id_;
+    std::string name_;
+    std::unordered_map<std::string, std::string> tags_;
+    std::vector<condition::ptr> conditions_;
+    std::vector<std::string> actions_;
 };
 
 } // namespace ddwaf

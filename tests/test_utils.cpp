@@ -18,8 +18,8 @@ bool operator==(const event::match &lhs, const event::match &rhs)
 
 bool operator==(const event &lhs, const event &rhs)
 {
-    return lhs.id == rhs.id && lhs.name == rhs.name && lhs.type == rhs.type &&
-           lhs.category == rhs.category && lhs.actions == rhs.actions && lhs.matches == rhs.matches;
+    return lhs.id == rhs.id && lhs.name == rhs.name && lhs.tags == rhs.tags &&
+           lhs.actions == rhs.actions && lhs.matches == rhs.matches;
 }
 
 namespace {
@@ -42,21 +42,33 @@ std::ostream &operator<<(std::ostream &os, const event &e)
     os << "{\n"
        << indent(4) << "id: " << e.id << ",\n"
        << indent(4) << "name: " << e.name << ",\n"
-       << indent(4) << "type: " << e.type << ",\n"
-       << indent(4) << "category: " << e.category << ",\n"
-       << indent(4) << "actions: [";
-    bool start = true;
-    for (auto a : e.actions) {
-        if (!start) {
-            os << ", ";
-        } else {
-            start = false;
+       << indent(4) << "tags: {";
+    {
+        bool start = true;
+        for (const auto &[key, val] : e.tags) {
+            if (!start) {
+                os << ", ";
+            } else {
+                start = false;
+            }
+            os << '\n' << indent(8) << key << ": " << val;
         }
-        os << a;
+    }
+    os << '\n' << indent(4) << "},\n" << indent(4) << "actions: [";
+    {
+        bool start = true;
+        for (const auto &a : e.actions) {
+            if (!start) {
+                os << ", ";
+            } else {
+                start = false;
+            }
+            os << a;
+        }
     }
     os << "],\n" << indent(4) << "matches: [\n";
 
-    for (auto m : e.matches) {
+    for (const auto &m : e.matches) {
         os << indent(8) << "{\n";
 
         os << indent(12) << "operator: " << m.op << ",\n"
@@ -65,7 +77,7 @@ std::ostream &operator<<(std::ostream &os, const event &e)
            << indent(12) << "path: [";
 
         bool start = true;
-        for (auto p : m.path) {
+        for (const auto &p : m.path) {
             if (!start) {
                 os << ", ";
             } else {
@@ -164,14 +176,7 @@ event as_if<event, void>::operator()() const
     auto id = rule["id"];
     e.id = as<std::string>(rule, "id");
     e.name = as<std::string>(rule, "name");
-
-    auto tags = rule["tags"];
-    if (!tags || tags.Type() != YAML::NodeType::Map) {
-        throw parsing_error("tags should be a map");
-    }
-
-    e.type = as<std::string>(tags, "type");
-    e.category = as<std::string>(tags, "category");
+    e.tags = as<std::map<std::string, std::string>>(rule, "tags");
     e.actions = as<std::vector<std::string>>(rule, "on_match");
     e.matches = as<std::vector<match>>(node, "rule_matches");
 
@@ -193,7 +198,7 @@ ddwaf_object node_to_arg(const Node &node)
     case NodeType::Map: {
         ddwaf_object arg = DDWAF_OBJECT_MAP;
         for (auto it = node.begin(); it != node.end(); ++it) {
-            std::string key = it->first.as<std::string>();
+            auto key = it->first.as<std::string>();
             ddwaf_object child = node_to_arg(it->second);
             ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
         }
@@ -232,7 +237,7 @@ event_schema_validator::event_schema_validator()
     buffer.resize(rule_file.tellg());
     rule_file.seekg(0, std::ios::beg);
 
-    rule_file.read(&buffer[0], buffer.size());
+    rule_file.read(buffer.data(), buffer.size());
     rule_file.close();
 
     if (schema_doc_.Parse(buffer).HasParseError()) {
