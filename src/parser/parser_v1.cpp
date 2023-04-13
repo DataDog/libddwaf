@@ -155,7 +155,7 @@ void parseRule(parameter::map &rule, base_section_info &info, manifest &target_m
 
         rule_ids.emplace(rule_ptr->get_id());
         rs.insert_rule(rule_ptr);
-        info.insert(rule_ptr->id);
+        info.insert(rule_ptr->get_id());
     } catch (const std::exception &e) {
         DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
         info.insert(id, e.what());
