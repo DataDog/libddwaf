@@ -55,6 +55,9 @@ TEST(TestParserV1, Basic)
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
 
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 0);
+
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 0);
 
@@ -86,6 +89,9 @@ TEST(TestParserV1, TestInvalidRule)
 
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
+
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 1);
 
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
@@ -122,6 +128,9 @@ TEST(TestParserV1, TestMultipleSameInvalidRules)
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 2);
+
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
@@ -157,6 +166,9 @@ TEST(TestParserV1, TestMultipleDiffInvalidRules)
 
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
+
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 2);
 
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 2);
@@ -203,6 +215,9 @@ TEST(TestParserV1, TestMultipleMixInvalidRules)
 
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
+
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 4);
 
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 3);
@@ -260,6 +275,9 @@ TEST(TestParserV1, TestInvalidDuplicate)
 
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
+
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 1);
 
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);

@@ -19,9 +19,16 @@ std::pair<uint64_t, ddwaf_object *> object_map_add_helper(
 }
 } // namespace
 
-void ruleset_info::section_info::insert(std::string_view id, std::string_view error)
+void ruleset_info::section_info::add_loaded(std::string_view id)
 {
-    ddwaf_object *array;
+    ddwaf_object id_str;
+    ddwaf_object_stringl(&id_str, id.data(), id.size());
+    ddwaf_object_array_add(&loaded, &id_str);
+}
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+void ruleset_info::section_info::add_failed(std::string_view id, std::string_view error)
+{
     ddwaf_object id_str;
     if (!error.empty()) {
         auto it = error_obj_cache.find(error);
@@ -29,20 +36,22 @@ void ruleset_info::section_info::insert(std::string_view id, std::string_view er
             ddwaf_object tmp_array;
             ddwaf_object_array(&tmp_array);
 
-            auto [index, new_array] = object_map_add_helper(&errors, error, &tmp_array);
-            array = new_array;
+            auto [index, array] = object_map_add_helper(&errors, error, &tmp_array);
 
             const std::string_view key(array->parameterName, array->parameterNameLength);
             error_obj_cache[key] = index;
+
+            ddwaf_object_stringl(&id_str, id.data(), id.size());
+            ddwaf_object_array_add(array, &id_str);
+
         } else {
-            array = &errors.array[it->second];
+            ddwaf_object_stringl(&id_str, id.data(), id.size());
+            ddwaf_object_array_add(&errors.array[it->second], &id_str);
         }
-    } else {
-        array = &loaded;
     }
 
     ddwaf_object_stringl(&id_str, id.data(), id.size());
-    ddwaf_object_array_add(array, &id_str);
+    ddwaf_object_array_add(&failed, &id_str);
 }
 
 } // namespace ddwaf

@@ -271,7 +271,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
 
     it = root.find("rules_data");
     if (it != root.end()) {
-        auto &section = info.add_section("rules_Data");
+        auto &section = info.add_section("rules_data");
         auto rules_data = static_cast<parameter::vector>(it->second);
         if (!rules_data.empty()) {
             auto new_processors = parser::v2::parse_rule_data(rules_data, section, rule_data_ids_);

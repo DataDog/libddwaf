@@ -25,8 +25,9 @@ public:
         base_section_info &operator=(const base_section_info &) = default;
         base_section_info &operator=(base_section_info &&) noexcept = default;
 
-        virtual void insert(std::string_view id) = 0;
-        virtual void insert(std::string_view id, std::string_view error) = 0;
+        virtual void add_loaded(std::string_view id) = 0;
+        virtual void add_failed(std::string_view id) = 0;
+        virtual void add_failed(std::string_view id, std::string_view error) = 0;
     };
 
     base_ruleset_info() = default;
@@ -51,8 +52,9 @@ public:
         null_section_info &operator=(const null_section_info &) = default;
         null_section_info &operator=(null_section_info &&) noexcept = default;
 
-        void insert(std::string_view /*id*/) override {}
-        void insert(std::string_view /*id*/, std::string_view /*error*/) override {}
+        void add_loaded(std::string_view /*id*/) override {}
+        void add_failed(std::string_view /*id*/) override {}
+        void add_failed(std::string_view /*id*/, std::string_view /*error*/) override {}
     };
 
     null_ruleset_info() = default;
@@ -78,6 +80,7 @@ public:
         section_info()
         {
             ddwaf_object_array(&loaded);
+            ddwaf_object_array(&failed);
             ddwaf_object_map(&errors);
         }
 
@@ -87,19 +90,23 @@ public:
         section_info &operator=(const section_info &) = default;
         section_info &operator=(section_info &&) noexcept = default;
 
-        void insert(std::string_view id) override { insert(id, {}); }
-        void insert(std::string_view id, std::string_view error) override;
+        void add_loaded(std::string_view id) override;
+        void add_failed(std::string_view id) override { return add_failed(id, ""); }
+        void add_failed(std::string_view id, std::string_view error) override;
 
         void to_object(ddwaf_object &output)
         {
             ddwaf_object_map(&output);
             ddwaf_object_map_add(&output, "loaded", &loaded);
+            ddwaf_object_map_add(&output, "failed", &failed);
             ddwaf_object_map_add(&output, "errors", &errors);
         }
 
     protected:
         /** Array of loaded elements */
         ddwaf_object loaded{};
+        /** Array of failed elements */
+        ddwaf_object failed{};
         /** Map from an error string to an array of all the ids for which
          *  that error was raised. {error: [ids]} **/
         ddwaf_object errors{};

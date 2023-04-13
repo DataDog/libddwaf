@@ -75,6 +75,9 @@ TEST(TestParserV2Interface, Basic)
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
 
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 0);
+
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 0);
 
@@ -109,6 +112,9 @@ TEST(TestParserV2Interface, BasicWithUpdate)
         auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 1);
 
+        auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
         auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
@@ -129,6 +135,9 @@ TEST(TestParserV2Interface, BasicWithUpdate)
 
         auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 1);
+
+        auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+        EXPECT_EQ(failed.size(), 0);
 
         auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
@@ -172,6 +181,9 @@ TEST(TestParserV2Interface, TestInvalidRule)
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 1);
+
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
@@ -203,6 +215,9 @@ TEST(TestParserV2Interface, TestMultipleSameInvalidRules)
 
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
+
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 2);
 
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
@@ -236,6 +251,9 @@ TEST(TestParserV2Interface, TestMultipleDiffInvalidRules)
 
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
+
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 2);
 
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 2);
@@ -279,6 +297,9 @@ TEST(TestParserV2Interface, TestMultipleMixInvalidRules)
 
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
+
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 4);
 
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 3);
@@ -335,6 +356,9 @@ TEST(TestParserV2Interface, TestInvalidDuplicate)
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
 
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 1);
+
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
@@ -368,6 +392,9 @@ TEST(TestParserV2Interface, TestInvalidRuleset)
 
     auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
+
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 400);
 
     auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 20);
