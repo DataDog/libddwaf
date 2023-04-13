@@ -135,7 +135,7 @@ std::optional<event::match> condition::match(const object_store &store,
         }
 
         if (optional_match.has_value()) {
-            optional_match->source = name;
+            optional_match->address = name;
 
             DDWAF_TRACE("Target %s matched parameter value %s", name.c_str(),
                 optional_match->resolved.c_str());

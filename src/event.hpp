@@ -17,21 +17,19 @@
 
 namespace ddwaf {
 
+class rule;
+
 struct event {
     struct match {
         memory::string resolved;
         memory::string matched;
         std::string_view operator_name;
         std::string_view operator_value;
-        std::string_view source;
+        std::string_view address;
         memory::vector<memory::string> key_path;
     };
 
-    std::string_view id;
-    std::string_view name;
-    std::string_view type;
-    std::string_view category;
-    memory::vector<std::string_view> actions;
+    const ddwaf::rule *rule{nullptr};
     memory::vector<match> matches;
 };
 

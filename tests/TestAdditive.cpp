@@ -44,8 +44,20 @@ TEST(TestAdditive, TestMultiCall)
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data,
-        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                                           .op_value = ".*",
+                                           .address = "arg1",
+                                           .value = "string 1",
+                                           .highlight = "string 1"},
+                               {.op = "match_regex",
+                                   .op_value = ".*",
+                                   .address = "arg2",
+                                   .value = "string 2",
+                                   .highlight = "string 2"}}});
+
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);
@@ -125,8 +137,20 @@ TEST(TestAdditive, TestParameterOverride)
     // Override `arg1`
     code = ddwaf_run(context, &param2, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
-    EXPECT_STREQ(ret.data,
-        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"flow1","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"^string.*","parameters":[{"address":"arg1","key_path":[],"value":"string 1","highlight":["string 1"]}]},{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg2","key_path":[],"value":"string 2","highlight":["string 2"]}]}]}])");
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                                           .op_value = "^string.*",
+                                           .address = "arg1",
+                                           .value = "string 1",
+                                           .highlight = "string 1"},
+                               {.op = "match_regex",
+                                   .op_value = ".*",
+                                   .address = "arg2",
+                                   .value = "string 2",
+                                   .highlight = "string 2"}}});
+
     ddwaf_result_free(&ret);
 
     // Run again without change

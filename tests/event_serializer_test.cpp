@@ -30,12 +30,11 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
 
 TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 {
+    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}}, {},
+        {"block", "monitor"}};
+
     ddwaf::event event;
-    event.id = "xasd1022";
-    event.name = "random rule";
-    event.type = "test";
-    event.category = "none";
-    event.actions = {"block", "monitor"};
+    event.rule = &rule;
     event.matches =
         decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}}};
 
@@ -47,8 +46,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
-                              .type = "test",
-                              .category = "none",
+                              .tags = {{"type", "test"}, {"category", "none"}},
                               .actions = {"block", "monitor"},
                               .matches = {{.op = "random",
                                   .op_value = "val",
@@ -64,12 +62,11 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 {
+    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}}, {},
+        {"block", "monitor"}};
+
     ddwaf::event event;
-    event.id = "xasd1022";
-    event.name = "random rule";
-    event.type = "test";
-    event.category = "none";
-    event.actions = {"block", "monitor"};
+    event.rule = &rule;
     event.matches =
         decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}},
             {"string", "string", "match_regex", ".*", "response.body", {}},
@@ -84,8 +81,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
-                              .type = "test",
-                              .category = "none",
+                              .tags = {{"type", "test"}, {"category", "none"}},
                               .actions = {"block", "monitor"},
                               .matches = {{.op = "random",
                                               .op_value = "val",
@@ -119,14 +115,14 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
+    ddwaf::rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}}, {},
+        {"block", "monitor"}};
+    ddwaf::rule rule2{
+        "xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}}, {}, {"unblock"}};
     memory::vector<ddwaf::event> events;
     {
         ddwaf::event event;
-        event.id = "xasd1022";
-        event.name = "random rule";
-        event.type = "test";
-        event.category = "none";
-        event.actions = {"block", "monitor"};
+        event.rule = &rule1;
         event.matches =
             decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}},
                 {"string", "string", "match_regex", ".*", "response.body", {}},
@@ -136,11 +132,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     {
         ddwaf::event event;
-        event.id = "xasd1023";
-        event.name = "pseudorandom rule";
-        event.type = "test";
-        event.category = "none";
-        event.actions = {"unblock"};
+        event.rule = &rule2;
         event.matches = decltype(event.matches){
             {"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}}};
         events.emplace_back(std::move(event));
@@ -153,8 +145,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     EXPECT_EVENTS(output,
         {.id = "xasd1022",
             .name = "random rule",
-            .type = "test",
-            .category = "none",
+            .tags = {{"type", "test"}, {"category", "none"}},
             .actions = {"block", "monitor"},
             .matches = {{.op = "random",
                             .op_value = "val",
@@ -175,8 +166,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
                 }}},
         {.id = "xasd1023",
             .name = "pseudorandom rule",
-            .type = "test",
-            .category = "none",
+            .tags = {{"type", "test"}, {"category", "none"}},
             .actions = {"unblock"},
             .matches = {{.op = "ip_match",
                 .address = "client.ip",
@@ -191,11 +181,10 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
 TEST(TestEventSerializer, SerializeEventNoActions)
 {
+    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}}, {}, {}};
+
     ddwaf::event event;
-    event.id = "xasd1022";
-    event.name = "random rule";
-    event.type = "test";
-    event.category = "none";
+    event.rule = &rule;
     event.matches =
         decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}}};
 
@@ -207,8 +196,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
-                              .type = "test",
-                              .category = "none",
+                              .tags = {{"type", "test"}, {"category", "none"}},
                               .matches = {{.op = "random",
                                   .op_value = "val",
                                   .address = "query",
@@ -220,6 +208,41 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
     EXPECT_EQ(output.actions.array, nullptr);
     EXPECT_EQ(output.actions.size, 0);
+
+    ddwaf_result_free(&output);
+}
+
+TEST(TestEventSerializer, SerializeAllTags)
+{
+    ddwaf::rule rule{"xasd1022", "random rule",
+        {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
+            {"confidence", "none"}},
+        {}, {"unblock"}};
+
+    ddwaf::event event;
+    event.rule = &rule;
+    event.matches =
+        decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}}};
+
+    ddwaf::obfuscator obfuscator;
+    ddwaf::event_serializer serializer(obfuscator);
+
+    ddwaf_result output;
+    serializer.serialize({event}, output);
+
+    EXPECT_EVENTS(output, {.id = "xasd1022",
+                              .name = "random rule",
+                              .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
+                                  {"tag1", "value1"}, {"confidence", "none"}},
+                              .actions = {"unblock"},
+                              .matches = {{.op = "random",
+                                  .op_value = "val",
+                                  .address = "query",
+                                  .path = {"root", "key"},
+                                  .value = "value",
+                                  .highlight = "val"}}});
+
+    EXPECT_THAT(output.actions, WithActions({"unblock"}));
 
     ddwaf_result_free(&output);
 }

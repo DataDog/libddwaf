@@ -94,8 +94,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
-            final_base_rules_.emplace(rule_ptr->id, rule_ptr);
-            base_rules_by_tags_.insert(rule_ptr->tags, rule_ptr.get());
+            final_base_rules_.emplace(rule_ptr->get_id(), rule_ptr);
+            base_rules_by_tags_.insert(rule_ptr->get_tags(), rule_ptr.get());
         }
 
         for (const auto &ovrd : overrides_.by_tags) {
@@ -107,7 +107,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 }
 
                 if (ovrd.actions.has_value()) {
-                    rule_ptr->actions = *ovrd.actions;
+                    rule_ptr->set_actions(*ovrd.actions);
                 }
             }
         }
@@ -121,7 +121,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 }
 
                 if (ovrd.actions.has_value()) {
-                    rule_ptr->actions = *ovrd.actions;
+                    rule_ptr->set_actions(*ovrd.actions);
                 }
             }
         }
@@ -144,8 +144,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
-            final_user_rules_.emplace(rule_ptr->id, rule_ptr);
-            user_rules_by_tags_.insert(rule_ptr->tags, rule_ptr.get());
+            final_user_rules_.emplace(rule_ptr->get_id(), rule_ptr);
+            user_rules_by_tags_.insert(rule_ptr->get_tags(), rule_ptr.get());
         }
     }
 

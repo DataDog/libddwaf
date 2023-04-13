@@ -153,7 +153,7 @@ void parseRule(parameter::map &rule, base_section_info &info, manifest &target_m
         auto rule_ptr = std::make_shared<ddwaf::rule>(
             std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(conditions));
 
-        rule_ids.emplace(rule_ptr->id);
+        rule_ids.emplace(rule_ptr->get_id());
         rs.insert_rule(rule_ptr);
         info.insert(rule_ptr->id);
     } catch (const std::exception &e) {

@@ -73,8 +73,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -96,8 +95,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -119,8 +117,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -142,8 +139,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -179,8 +175,7 @@ TEST(TestObfuscator, TestConfigKey)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -202,8 +197,7 @@ TEST(TestObfuscator, TestConfigKey)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -225,8 +219,7 @@ TEST(TestObfuscator, TestConfigKey)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -261,8 +254,7 @@ TEST(TestObfuscator, TestConfigValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -284,8 +276,7 @@ TEST(TestObfuscator, TestConfigValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -307,8 +298,7 @@ TEST(TestObfuscator, TestConfigValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -343,8 +333,7 @@ TEST(TestObfuscator, TestConfigHighlight)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
-                               .type = "security_scanner",
-                               .category = "category2",
+                               .tags = {{"type", "security_scanner"}, {"category", "category2"}},
                                .matches = {{.op = "phrase_match",
                                    .address = "value",
                                    .value = "<Redacted>",
@@ -364,8 +353,7 @@ TEST(TestObfuscator, TestConfigHighlight)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
-                               .type = "security_scanner",
-                               .category = "category2",
+                               .tags = {{"type", "security_scanner"}, {"category", "category2"}},
                                .matches = {{.op = "phrase_match",
                                    .address = "value",
                                    .value = "othervalue_badvalue",
@@ -399,8 +387,7 @@ TEST(TestObfuscator, TestConfigEmpty)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -422,8 +409,7 @@ TEST(TestObfuscator, TestConfigEmpty)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -445,8 +431,7 @@ TEST(TestObfuscator, TestConfigEmpty)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -481,8 +466,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -504,8 +488,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -527,8 +510,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -563,8 +545,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -586,8 +567,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",
@@ -609,8 +589,7 @@ TEST(TestObfuscator, TestInvalidConfigValue)
         EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "security_scanner",
-                               .category = "category1",
+                               .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
                                    .address = "value",

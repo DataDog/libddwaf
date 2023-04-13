@@ -39,11 +39,11 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
         cond_iter = *cache.last_cond;
         run_on_new = true;
     } else {
-        cond_iter = conditions.cbegin();
+        cond_iter = conditions_.cbegin();
         run_on_new = false;
     }
 
-    while (cond_iter != conditions.cend()) {
+    while (cond_iter != conditions_.cend()) {
         auto &&cond = *cond_iter;
         auto opt_match =
             cond->match(store, objects_excluded, run_on_new, dynamic_processors, deadline);
@@ -59,16 +59,7 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
 
     cache.result = true;
 
-    ddwaf::event evt;
-    evt.id = id;
-    evt.name = name;
-    evt.type = get_tag("type");
-    evt.category = get_tag("category");
-    evt.matches = std::move(cache.matches);
-
-    evt.actions.reserve(actions.size());
-    for (const auto &action : actions) { evt.actions.push_back(action); }
-
+    ddwaf::event evt{this, std::move(cache.matches)};
     return {std::move(evt)};
 }
 
