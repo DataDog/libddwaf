@@ -45,7 +45,7 @@ TEST(TestRuleset, InsertSingleRegularBaseRules)
     {
         ddwaf::ruleset ruleset;
         std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->id, rule); }
+        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
@@ -81,7 +81,7 @@ TEST(TestRuleset, InsertSinglePriorityBaseRules)
     {
         ddwaf::ruleset ruleset;
         std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->id, rule); }
+        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
@@ -117,7 +117,7 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
     {
         ddwaf::ruleset ruleset;
         std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->id, rule); }
+        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
@@ -160,7 +160,7 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
         ddwaf::ruleset ruleset;
 
         std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->id, rule); }
+        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
@@ -201,7 +201,7 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
     {
         ddwaf::ruleset ruleset;
         std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->id, rule); }
+        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
@@ -243,7 +243,7 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
     {
         ddwaf::ruleset ruleset;
         std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->id, rule); }
+        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
@@ -285,7 +285,7 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
     {
         ddwaf::ruleset ruleset;
         std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->id, rule); }
+        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
@@ -326,7 +326,7 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
     {
         ddwaf::ruleset ruleset;
         std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->id, rule); }
+        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
@@ -374,7 +374,7 @@ TEST(TestRuleset, InsertSingleMixedMixedRules)
     {
         ddwaf::ruleset ruleset;
         std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->id, rule); }
+        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
         EXPECT_EQ(ruleset.rules.size(), 12);

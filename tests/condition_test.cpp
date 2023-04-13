@@ -35,7 +35,7 @@ TEST(TestCondition, Match)
     EXPECT_STREQ(match->matched.c_str(), "value");
     EXPECT_STREQ(match->operator_name.data(), "match_regex");
     EXPECT_STREQ(match->operator_value.data(), ".*");
-    EXPECT_STREQ(match->source.data(), "server.request.query");
+    EXPECT_STREQ(match->address.data(), "server.request.query");
     EXPECT_TRUE(match->key_path.empty());
 }
 

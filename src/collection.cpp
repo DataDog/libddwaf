@@ -17,7 +17,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline)
 {
-    const auto &id = rule->id;
+    const auto &id = rule->get_id();
 
     if (deadline.expired()) {
         DDWAF_INFO("Ran out of time while running rule %s", id.c_str());
@@ -78,7 +78,7 @@ void base_collection<Derived>::match(memory::vector<event> &events, const object
         if (event.has_value()) {
             cache.result = Derived::type();
             events.emplace_back(std::move(*event));
-            DDWAF_DEBUG("Found event on rule %s", rule->id.c_str());
+            DDWAF_DEBUG("Found event on rule %s", rule->get_id().c_str());
             break;
         }
     }

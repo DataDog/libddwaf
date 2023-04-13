@@ -7,6 +7,7 @@
 #include <event.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
+#include <rule.hpp>
 #include <unordered_set>
 
 namespace ddwaf {
@@ -64,7 +65,7 @@ void serialize_match(rapidjson::Value &output, rapidjson::Document::AllocatorTyp
     }
 
     param.SetObject();
-    param.AddMember("address", StringRef(match.source), allocator);
+    param.AddMember("address", StringRef(match.address), allocator);
     param.AddMember("key_path", key_path, allocator);
     param.AddMember("value", redact ? redaction_msg : StringRef(match.resolved), allocator);
     param.AddMember("highlight", highlight, allocator);
@@ -88,7 +89,7 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
     output.actions = {nullptr, 0};
 
     doc.SetArray();
-    std::unordered_set<std::string_view> actions;
+    std::unordered_set<std::string_view> all_actions;
     for (const auto &event : events) {
         rapidjson::Value map;
         rapidjson::Value rule;
@@ -97,21 +98,34 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
         rapidjson::Value on_match;
 
         tags.SetObject();
-        tags.AddMember("type", StringRef(event.type), allocator);
-        tags.AddMember("category", StringRef(event.category), allocator);
-
         rule.SetObject();
-        rule.AddMember("id", StringRef(event.id), allocator);
-        rule.AddMember("name", StringRef(event.name), allocator);
-        rule.AddMember("tags", tags, allocator);
-        if (!event.actions.empty()) {
-            on_match.SetArray();
-            for (const auto &action : event.actions) {
-                actions.emplace(action);
-                on_match.PushBack(StringRef(action), allocator);
+
+        if (event.rule != nullptr) {
+            for (const auto &[key, value] : event.rule->get_tags()) {
+                tags.AddMember(StringRef(key), StringRef(value), allocator);
             }
-            rule.AddMember("on_match", on_match, allocator);
+
+            rule.AddMember("id", StringRef(event.rule->get_id()), allocator);
+            rule.AddMember("name", StringRef(event.rule->get_name()), allocator);
+
+            const auto &actions = event.rule->get_actions();
+            if (!actions.empty()) {
+                on_match.SetArray();
+                for (const auto &action : actions) {
+                    all_actions.emplace(action);
+                    on_match.PushBack(StringRef(action), allocator);
+                }
+                rule.AddMember("on_match", on_match, allocator);
+            }
+        } else {
+            // This will only be used for testing
+            tags.AddMember("type", "", allocator);
+            tags.AddMember("category", "", allocator);
+            rule.AddMember("id", "", allocator);
+            rule.AddMember("name", "", allocator);
         }
+
+        rule.AddMember("tags", tags, allocator);
 
         match_array.SetArray();
         for (const auto &match : event.matches) {
@@ -140,13 +154,16 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
             output.data = to_cstr(buffer);
         }
 
-        if (!actions.empty()) {
+        if (!all_actions.empty()) {
             // NOLINTNEXTLINE
-            output.actions.array = static_cast<char **>(malloc(sizeof(char *) * actions.size()));
-            output.actions.size = actions.size();
+            output.actions.array =
+                static_cast<char **>(malloc(sizeof(char *) * all_actions.size()));
+            output.actions.size = all_actions.size();
 
             std::size_t index = 0;
-            for (const auto &action : actions) { output.actions.array[index++] = to_cstr(action); }
+            for (const auto &action : all_actions) {
+                output.actions.array[index++] = to_cstr(action);
+            }
         }
     }
 }

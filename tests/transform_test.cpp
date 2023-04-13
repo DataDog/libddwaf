@@ -603,8 +603,14 @@ TEST(TestTransforms, TestCoverage)
     ddwaf_result ret;
     EXPECT_EQ(ddwaf_run(context, &map, &ret, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data,
-        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"test_coverage","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":".*","parameters":[{"address":"arg","key_path":[],"value":"","highlight":[]}]}]}])");
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "test_coverage"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = ".*",
+                               .address = "arg",
+                               .value = "",
+                               .highlight = ""}}});
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -678,8 +684,15 @@ TEST(TestTransforms, TestRuleRunOnKey)
     ddwaf_result ret;
     EXPECT_EQ(ddwaf_run(context, &map, &ret, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_STREQ(ret.data,
-        R"([{"rule":{"id":"1","name":"rule1","tags":{"type":"security_scanner","category":"category1"}},"rule_matches":[{"operator":"match_regex","operator_value":"rule1","parameters":[{"address":"value","key_path":["rule1"],"value":"rule1","highlight":["rule1"]}]}]}])");
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "security_scanner"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "rule1",
+                               .address = "value",
+                               .path = {"rule1"},
+                               .value = "rule1",
+                               .highlight = "rule1"}}});
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
