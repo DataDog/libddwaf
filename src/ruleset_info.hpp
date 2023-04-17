@@ -43,14 +43,14 @@ public:
 
 class null_ruleset_info : public base_ruleset_info {
 public:
-    class null_section_info : public base_ruleset_info::base_section_info {
+    class section_info : public base_ruleset_info::base_section_info {
     public:
-        null_section_info() = default;
-        ~null_section_info() override = default;
-        null_section_info(const null_section_info &) = default;
-        null_section_info(null_section_info &&) noexcept = default;
-        null_section_info &operator=(const null_section_info &) = default;
-        null_section_info &operator=(null_section_info &&) noexcept = default;
+        section_info() = default;
+        ~section_info() override = default;
+        section_info(const section_info &) = default;
+        section_info(section_info &&) noexcept = default;
+        section_info &operator=(const section_info &) = default;
+        section_info &operator=(section_info &&) noexcept = default;
 
         void add_loaded(std::string_view /*id*/) override {}
         void add_failed(std::string_view /*id*/) override {}
@@ -66,7 +66,7 @@ public:
 
     base_section_info &add_section(std::string_view /*section*/) override
     {
-        static null_section_info section;
+        static section_info section;
         return section;
     }
 

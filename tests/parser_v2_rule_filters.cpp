@@ -60,6 +60,31 @@ TEST(TestParserV2RuleFilters, ParseFilterWithoutID)
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("index:0"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("missing key 'id'");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("index:0"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+
     EXPECT_EQ(filters.rule_filters.size(), 0);
     EXPECT_EQ(filters.input_filters.size(), 0);
 }
@@ -77,6 +102,32 @@ TEST(TestParserV2RuleFilters, ParseDuplicateUnconditional)
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("duplicate filter");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+
     EXPECT_EQ(filters.rule_filters.size(), 1);
     EXPECT_EQ(filters.input_filters.size(), 0);
 }
@@ -92,6 +143,25 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetID)
     auto filters_array = static_cast<parameter::vector>(parameter(object));
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(filters.rule_filters.size(), 1);
     EXPECT_EQ(filters.input_filters.size(), 0);
@@ -120,6 +190,25 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetTags)
     auto filters_array = static_cast<parameter::vector>(parameter(object));
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(filters.rule_filters.size(), 1);
     EXPECT_EQ(filters.input_filters.size(), 0);
@@ -152,6 +241,25 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetPriority)
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
     EXPECT_EQ(filters.rule_filters.size(), 1);
     EXPECT_EQ(filters.input_filters.size(), 0);
 
@@ -180,6 +288,25 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalMultipleTargets)
     auto filters_array = static_cast<parameter::vector>(parameter(object));
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(filters.rule_filters.size(), 1);
     EXPECT_EQ(filters.input_filters.size(), 0);
@@ -220,6 +347,26 @@ TEST(TestParserV2RuleFilters, ParseMultipleUnconditional)
     auto filters_array = static_cast<parameter::vector>(parameter(object));
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 2);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+        EXPECT_NE(loaded.find("2"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(filters.rule_filters.size(), 2);
     EXPECT_EQ(filters.input_filters.size(), 0);
@@ -285,6 +432,25 @@ TEST(TestParserV2RuleFilters, ParseConditionalSingleCondition)
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
     EXPECT_EQ(filters.rule_filters.size(), 1);
     EXPECT_EQ(filters.input_filters.size(), 0);
 
@@ -314,6 +480,25 @@ TEST(TestParserV2RuleFilters, ParseConditionalGlobal)
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
 
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
     EXPECT_EQ(filters.rule_filters.size(), 1);
     EXPECT_EQ(filters.input_filters.size(), 0);
 
@@ -337,6 +522,25 @@ TEST(TestParserV2RuleFilters, ParseConditionalMultipleConditions)
     auto filters_array = static_cast<parameter::vector>(parameter(object));
     auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
     ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(filters.rule_filters.size(), 1);
     EXPECT_EQ(filters.input_filters.size(), 0);
