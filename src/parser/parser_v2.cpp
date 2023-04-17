@@ -205,14 +205,14 @@ rule_target_spec parse_rules_target(const parameter::map &target)
     }
 
     auto tag_map = at<parameter::map>(target, "tags", {});
-    if (tag_map.empty()) {
-        throw ddwaf::parsing_error("empty rules_target");
+    if (!tag_map.empty()) {
+        std::unordered_map<std::string, std::string> tags;
+        for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
+
+        return {target_type::tags, {}, std::move(tags)};
     }
 
-    std::unordered_map<std::string, std::string> tags;
-    for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
-
-    return {target_type::tags, {}, std::move(tags)};
+    return {target_type::none, {}, {}};
 }
 
 std::pair<override_spec, target_type> parse_override(const parameter::map &node)
@@ -242,7 +242,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
             if (type == target_type::none) {
                 type = target_spec.type;
             } else if (type != target_spec.type) {
-                throw ddwaf::parsing_error("rule_override targets rules and tags");
+                throw ddwaf::parsing_error("rule override targets rules and tags");
             }
 
             current.targets.emplace_back(std::move(target_spec));
@@ -255,7 +255,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
     }
 
     if (!current.actions.has_value() && !current.enabled.has_value()) {
-        throw ddwaf::parsing_error("rules_override without side-effects");
+        throw ddwaf::parsing_error("rule override without side-effects");
     }
 
     return {current, type};
@@ -503,12 +503,14 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
             } else if (type == target_type::tags) {
                 overrides.by_tags.emplace_back(std::move(spec));
             } else {
-                DDWAF_WARN("override with no targets");
-                info.add_failed(id, "override with no targets");
+                // This code is likely unreachable
+                DDWAF_WARN("rule override with no targets");
+                info.add_failed(id, "rule override with no targets");
+                continue;
             }
             info.add_loaded(id);
         } catch (const std::exception &e) {
-            DDWAF_WARN("failed to parse rule_override: %s", e.what());
+            DDWAF_WARN("failed to parse rule override: %s", e.what());
             info.add_failed(id, e.what());
         }
     }
@@ -532,16 +534,16 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
                 continue;
             }
 
-            info.add_loaded(id);
             if (node.find("inputs") != node.end()) {
                 auto filter = parse_input_filter(node, target_manifest, limits);
                 filters.ids.emplace(id);
-                filters.input_filters.emplace(std::move(id), std::move(filter));
+                filters.input_filters.emplace(id, std::move(filter));
             } else {
                 auto filter = parse_rule_filter(node, target_manifest, limits);
                 filters.ids.emplace(id);
-                filters.rule_filters.emplace(std::move(id), std::move(filter));
+                filters.rule_filters.emplace(id, std::move(filter));
             }
+            info.add_loaded(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = "index:" + std::to_string(i);

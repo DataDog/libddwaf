@@ -10,23 +10,21 @@ using namespace ddwaf;
 
 TEST(TestRulesetInfo, EmptyRulesetInfo)
 {
-    ddwaf_object diagnostics;
-    {
-        ruleset_info info(diagnostics);
-    }
+    ddwaf::parameter root;
+    ruleset_info info;
+    info.to_object(root);
 
-    ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
     EXPECT_EQ(root_map.size(), 0);
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_free(&root);
 }
 
 TEST(TestRulesetInfo, ValidRulesetInfo)
 {
-    ddwaf_object diagnostics;
+    ddwaf::parameter root;
     {
-        ruleset_info info(diagnostics);
+        ruleset_info info;
         info.set_ruleset_version("2.3.4");
 
         {
@@ -43,9 +41,9 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
             auto &section = info.add_section("rules_override");
             section.add_loaded("third");
         }
+        info.to_object(root);
     }
 
-    ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
     EXPECT_EQ(root_map.size(), 4);
 
@@ -70,14 +68,14 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
         EXPECT_EQ(errors.size(), 0);
     }
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_free(&root);
 }
 
 TEST(TestRulesetInfo, FailedWithoutErrorsRulesetInfo)
 {
-    ddwaf_object diagnostics;
+    ddwaf::parameter root;
     {
-        ruleset_info info(diagnostics);
+        ruleset_info info;
         info.set_ruleset_version("2.3.4");
 
         {
@@ -94,9 +92,9 @@ TEST(TestRulesetInfo, FailedWithoutErrorsRulesetInfo)
             auto &section = info.add_section("rules_override");
             section.add_failed("third");
         }
+        info.to_object(root);
     }
 
-    ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
     EXPECT_EQ(root_map.size(), 4);
 
@@ -121,14 +119,14 @@ TEST(TestRulesetInfo, FailedWithoutErrorsRulesetInfo)
         EXPECT_EQ(errors.size(), 0);
     }
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_free(&root);
 }
 
 TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
 {
-    ddwaf_object diagnostics;
+    ddwaf::parameter root;
     {
-        ruleset_info info(diagnostics);
+        ruleset_info info;
         info.set_ruleset_version("2.3.4");
 
         auto &section = info.add_section("rules");
@@ -137,9 +135,10 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
         section.add_failed("third", "error2");
         section.add_failed("fourth", "error2");
         section.add_failed("fifth", "error3");
+
+        info.to_object(root);
     }
 
-    ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
     EXPECT_EQ(root_map.size(), 2);
 
@@ -191,7 +190,7 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
         EXPECT_NE(error_rules.find("fifth"), error_rules.end());
     }
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_free(&root);
 }
 
 TEST(TestRulesetInfo, NullRulesetInfo)

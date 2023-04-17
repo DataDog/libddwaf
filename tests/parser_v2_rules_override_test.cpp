@@ -6,6 +6,78 @@
 
 #include "test.h"
 
+TEST(TestParserV2RulesOverride, ParseRuleOverrideWithoutSideEffects)
+{
+    auto object = readRule(R"([{rules_target: [{tags: {confidence: 1}}]}])");
+
+    ddwaf::ruleset_info::section_info section;
+    auto override_array = static_cast<parameter::vector>(parameter(object));
+    auto overrides = parser::v2::parse_overrides(override_array, section);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("index:0"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+
+        auto it = errors.find("rule override without side-effects");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("index:0"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+}
+
+TEST(TestParserV2RulesOverride, ParseRuleOverrideWithoutTargets)
+{
+    auto object = readRule(R"([{rules_target: [{}], enabled: false}])");
+
+    ddwaf::ruleset_info::section_info section;
+    auto override_array = static_cast<parameter::vector>(parameter(object));
+    auto overrides = parser::v2::parse_overrides(override_array, section);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("index:0"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+
+        auto it = errors.find("rule override with no targets");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("index:0"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+}
+
 TEST(TestParserV2RulesOverride, ParseRuleOverride)
 {
     auto object = readRule(R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]}])");
@@ -30,6 +102,8 @@ TEST(TestParserV2RulesOverride, ParseRuleOverride)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(overrides.by_ids.size(), 0);
@@ -75,6 +149,8 @@ TEST(TestParserV2RulesOverride, ParseMultipleRuleOverrides)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(overrides.by_ids.size(), 1);
@@ -92,7 +168,7 @@ TEST(TestParserV2RulesOverride, ParseMultipleRuleOverrides)
         EXPECT_EQ(target.type, parser::target_type::tags);
         EXPECT_TRUE(target.rule_id.empty());
         EXPECT_EQ(target.tags.size(), 1);
-        // EXPECT_EQ(target.tags[0], {"confidence","1"});
+        EXPECT_STR(target.tags["confidence"], "1");
     }
 
     {
@@ -135,12 +211,14 @@ TEST(TestParserV2RulesOverride, ParseInconsistentRuleOverride)
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
 
-        auto it = errors.find("rule_override targets rules and tags");
+        auto it = errors.find("rule override targets rules and tags");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(overrides.by_ids.size(), 0);

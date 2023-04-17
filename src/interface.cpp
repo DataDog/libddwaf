@@ -14,6 +14,7 @@
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
+#include <utils.hpp>
 #include <waf.hpp>
 
 #include <log.hpp>
@@ -98,7 +99,9 @@ ddwaf::waf *ddwaf_init(
                     input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
             }
 
-            ddwaf::ruleset_info ri(*diagnostics);
+            ddwaf::ruleset_info ri;
+            ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
+
             return new ddwaf::waf(
                 input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
         }
@@ -121,7 +124,9 @@ ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_
                 return handle->update(input, ri);
             }
 
-            ddwaf::ruleset_info ri(*diagnostics);
+            ddwaf::ruleset_info ri;
+            ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
+
             return handle->update(input, ri);
         }
     } catch (const std::exception &e) {

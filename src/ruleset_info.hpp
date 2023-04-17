@@ -84,7 +84,13 @@ public:
             ddwaf_object_map(&errors);
         }
 
-        ~section_info() override = default;
+        ~section_info() override
+        {
+            ddwaf_object_free(&loaded);
+            ddwaf_object_free(&failed);
+            ddwaf_object_free(&errors);
+        }
+
         section_info(const section_info &) = default;
         section_info(section_info &&) noexcept = default;
         section_info &operator=(const section_info &) = default;
@@ -94,12 +100,17 @@ public:
         void add_failed(std::string_view id) override { return add_failed(id, ""); }
         void add_failed(std::string_view id, std::string_view error) override;
 
+        // This operation effectively moves the contents
         void to_object(ddwaf_object &output)
         {
             ddwaf_object_map(&output);
             ddwaf_object_map_add(&output, "loaded", &loaded);
             ddwaf_object_map_add(&output, "failed", &failed);
             ddwaf_object_map_add(&output, "errors", &errors);
+
+            ddwaf_object_invalid(&loaded);
+            ddwaf_object_invalid(&failed);
+            ddwaf_object_invalid(&errors);
         }
 
     protected:
@@ -113,22 +124,34 @@ public:
         std::map<std::string_view, uint64_t> error_obj_cache;
     };
 
-    explicit ruleset_info(ddwaf_object &root) : root_(root) { ddwaf_object_map(&root_); }
-
-    ~ruleset_info() override
-    {
-        for (auto &[name, section] : sections_) {
-            ddwaf_object section_object;
-            section.to_object(section_object);
-
-            ddwaf_object_map_addl(&root_, name.c_str(), name.length(), &section_object);
-        }
-    }
+    ruleset_info() = default;
+    ~ruleset_info() override = default;
 
     ruleset_info(const ruleset_info &) = default;
     ruleset_info(ruleset_info &&) noexcept = default;
     ruleset_info &operator=(const ruleset_info &) = delete;
     ruleset_info &operator=(ruleset_info &&) noexcept = delete;
+
+    // This operation effectively moves the contents
+    void to_object(ddwaf_object &output)
+    {
+        ddwaf_object_map(&output);
+        for (auto &[name, section] : sections_) {
+            ddwaf_object section_object;
+            section.to_object(section_object);
+
+            ddwaf_object_map_addl(&output, name.c_str(), name.length(), &section_object);
+        }
+        sections_.clear();
+
+        if (!ruleset_version_.empty()) {
+            ddwaf_object version_object;
+            ddwaf_object_stringl(
+                &version_object, ruleset_version_.c_str(), ruleset_version_.size());
+            ddwaf_object_map_add(&output, "ruleset_version", &version_object);
+            ruleset_version_.clear();
+        }
+    }
 
     base_section_info &add_section(std::string_view section) override
     {
@@ -136,15 +159,10 @@ public:
         return it->second;
     }
 
-    void set_ruleset_version(std::string_view version) override
-    {
-        ddwaf_object version_obj;
-        ddwaf_object_stringl(&version_obj, version.data(), version.size());
-        ddwaf_object_map_add(&root_, "ruleset_version", &version_obj);
-    }
+    void set_ruleset_version(std::string_view version) override { ruleset_version_ = version; }
 
 protected:
-    ddwaf_object &root_;
+    std::string ruleset_version_;
     std::map<std::string, section_info, std::less<>> sections_;
 };
 

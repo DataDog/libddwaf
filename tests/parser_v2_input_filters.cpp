@@ -29,9 +29,18 @@ TEST(TestParserV2InputFilters, ParseFilterWithoutID)
 
         auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("index:0"), failed.end());
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("missing key 'id'");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("index:0"), error_rules.end());
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
@@ -65,9 +74,18 @@ TEST(TestParserV2InputFilters, ParseDuplicateFilters)
 
         auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("duplicate filter");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
@@ -103,6 +121,8 @@ TEST(TestParserV2InputFilters, ParseUnconditionalNoTargets)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
@@ -147,6 +167,8 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetID)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
@@ -196,6 +218,8 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetTags)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
@@ -247,6 +271,8 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetPriority)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
@@ -296,6 +322,8 @@ TEST(TestParserV2InputFilters, ParseUnconditionalMultipleTargets)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
@@ -357,6 +385,8 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
@@ -425,6 +455,8 @@ TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
@@ -474,6 +506,8 @@ TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(filters.rule_filters.size(), 0);
