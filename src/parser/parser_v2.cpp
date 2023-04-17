@@ -411,8 +411,8 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
             }
 
             auto rule = parse_rule(rule_map, target_manifest, rule_data_ids, limits, source);
-            rules.emplace(std::move(id), std::move(rule));
             info.add_loaded(id);
+            rules.emplace(std::move(id), std::move(rule));
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = "index:" + std::to_string(i);
@@ -532,6 +532,7 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
                 continue;
             }
 
+            info.add_loaded(id);
             if (node.find("inputs") != node.end()) {
                 auto filter = parse_input_filter(node, target_manifest, limits);
                 filters.ids.emplace(id);
@@ -541,7 +542,6 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
                 filters.ids.emplace(id);
                 filters.rule_filters.emplace(std::move(id), std::move(filter));
             }
-            info.add_loaded(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = "index:" + std::to_string(i);

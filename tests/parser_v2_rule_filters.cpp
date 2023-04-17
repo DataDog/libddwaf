@@ -39,7 +39,7 @@ TEST(TestParserV2RuleFilters, ParseFilterWithoutID)
     EXPECT_EQ(filters.input_filters.size(), 0);
 }
 
-TEST(TestParserV2RuleFilters, ParseDuplicateUnconditionalRuleFilters)
+TEST(TestParserV2RuleFilters, ParseDuplicateUnconditional)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
@@ -56,7 +56,7 @@ TEST(TestParserV2RuleFilters, ParseDuplicateUnconditionalRuleFilters)
     EXPECT_EQ(filters.input_filters.size(), 0);
 }
 
-TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetID)
+TEST(TestParserV2RuleFilters, ParseUnconditionalTargetID)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
@@ -84,7 +84,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetID)
     EXPECT_EQ(target.tags.size(), 0);
 }
 
-TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetTags)
+TEST(TestParserV2RuleFilters, ParseUnconditionalTargetTags)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
@@ -114,7 +114,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetTags)
     EXPECT_STR(target.tags.find("category")->second, "unknown");
 }
 
-TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetPriority)
+TEST(TestParserV2RuleFilters, ParseUnconditionalTargetPriority)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
@@ -143,7 +143,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterTargetPriority)
     EXPECT_EQ(target.tags.size(), 0);
 }
 
-TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterMultipleTargets)
+TEST(TestParserV2RuleFilters, ParseUnconditionalMultipleTargets)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
@@ -183,7 +183,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalRuleFilterMultipleTargets)
     }
 }
 
-TEST(TestParserV2RuleFilters, ParseMultipleUnconditionalRuleFilters)
+TEST(TestParserV2RuleFilters, ParseMultipleUnconditional)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
@@ -230,7 +230,7 @@ TEST(TestParserV2RuleFilters, ParseMultipleUnconditionalRuleFilters)
     }
 }
 
-TEST(TestParserV2RuleFilters, ParseDuplicateConditionalRuleFilters)
+TEST(TestParserV2RuleFilters, ParseDuplicateConditional)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
@@ -247,7 +247,7 @@ TEST(TestParserV2RuleFilters, ParseDuplicateConditionalRuleFilters)
     EXPECT_EQ(filters.input_filters.size(), 0);
 }
 
-TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterSingleCondition)
+TEST(TestParserV2RuleFilters, ParseConditionalSingleCondition)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
@@ -276,7 +276,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterSingleCondition)
     EXPECT_EQ(target.tags.size(), 0);
 }
 
-TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterGlobal)
+TEST(TestParserV2RuleFilters, ParseConditionalGlobal)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
@@ -300,7 +300,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterGlobal)
     EXPECT_EQ(filter.targets.size(), 0);
 }
 
-TEST(TestParserV2RuleFilters, ParseConditionalRuleFilterMultipleConditions)
+TEST(TestParserV2RuleFilters, ParseConditionalMultipleConditions)
 {
     ddwaf::manifest manifest;
     ddwaf::object_limits limits;
