@@ -26,7 +26,6 @@ public:
         base_section_info &operator=(base_section_info &&) noexcept = default;
 
         virtual void add_loaded(std::string_view id) = 0;
-        virtual void add_failed(std::string_view id) = 0;
         virtual void add_failed(std::string_view id, std::string_view error) = 0;
     };
 
@@ -53,7 +52,6 @@ public:
         section_info &operator=(section_info &&) noexcept = default;
 
         void add_loaded(std::string_view /*id*/) override {}
-        void add_failed(std::string_view /*id*/) override {}
         void add_failed(std::string_view /*id*/, std::string_view /*error*/) override {}
     };
 
@@ -97,7 +95,6 @@ public:
         section_info &operator=(section_info &&) noexcept = default;
 
         void add_loaded(std::string_view id) override;
-        void add_failed(std::string_view id) override { return add_failed(id, ""); }
         void add_failed(std::string_view id, std::string_view error) override;
 
         // This operation effectively moves the contents

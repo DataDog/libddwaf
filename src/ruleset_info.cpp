@@ -31,24 +31,22 @@ void ruleset_info::section_info::add_loaded(std::string_view id)
 void ruleset_info::section_info::add_failed(std::string_view id, std::string_view error)
 {
     ddwaf_object id_str;
-    if (!error.empty()) {
-        auto it = error_obj_cache.find(error);
-        if (it == error_obj_cache.end()) {
-            ddwaf_object tmp_array;
-            ddwaf_object_array(&tmp_array);
+    auto it = error_obj_cache.find(error);
+    if (it == error_obj_cache.end()) {
+        ddwaf_object tmp_array;
+        ddwaf_object_array(&tmp_array);
 
-            auto [index, array] = object_map_add_helper(&errors, error, &tmp_array);
+        auto [index, array] = object_map_add_helper(&errors, error, &tmp_array);
 
-            const std::string_view key(array->parameterName, array->parameterNameLength);
-            error_obj_cache[key] = index;
+        const std::string_view key(array->parameterName, array->parameterNameLength);
+        error_obj_cache[key] = index;
 
-            ddwaf_object_stringl(&id_str, id.data(), id.size());
-            ddwaf_object_array_add(array, &id_str);
+        ddwaf_object_stringl(&id_str, id.data(), id.size());
+        ddwaf_object_array_add(array, &id_str);
 
-        } else {
-            ddwaf_object_stringl(&id_str, id.data(), id.size());
-            ddwaf_object_array_add(&errors.array[it->second], &id_str);
-        }
+    } else {
+        ddwaf_object_stringl(&id_str, id.data(), id.size());
+        ddwaf_object_array_add(&errors.array[it->second], &id_str);
     }
 
     ddwaf_object_stringl(&id_str, id.data(), id.size());

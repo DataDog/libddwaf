@@ -71,57 +71,6 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
     ddwaf_object_free(&root);
 }
 
-TEST(TestRulesetInfo, FailedWithoutErrorsRulesetInfo)
-{
-    ddwaf::parameter root;
-    {
-        ruleset_info info;
-        info.set_ruleset_version("2.3.4");
-
-        {
-            auto &section = info.add_section("rules");
-            section.add_failed("first");
-        }
-
-        {
-            auto &section = info.add_section("exclusions");
-            section.add_failed("second");
-        }
-
-        {
-            auto &section = info.add_section("rules_override");
-            section.add_failed("third");
-        }
-        info.to_object(root);
-    }
-
-    auto root_map = static_cast<ddwaf::parameter::map>(root);
-    EXPECT_EQ(root_map.size(), 4);
-
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
-    EXPECT_STREQ(version.c_str(), "2.3.4");
-
-    std::unordered_map<std::string, std::string> kv{
-        {"rules", "first"}, {"exclusions", "second"}, {"rules_override", "third"}};
-    for (auto &[key, value] : kv) {
-        auto section = ddwaf::parser::at<parameter::map>(root_map, key);
-        EXPECT_EQ(section.size(), 3);
-
-        auto loaded = ddwaf::parser::at<parameter::vector>(section, "loaded");
-        EXPECT_EQ(loaded.size(), 0);
-
-        auto failed = ddwaf::parser::at<parameter::vector>(section, "failed");
-        EXPECT_EQ(failed.size(), 1);
-
-        EXPECT_STREQ(static_cast<std::string>(failed[0]).c_str(), value.c_str());
-
-        auto errors = ddwaf::parser::at<parameter::map>(section, "errors");
-        EXPECT_EQ(errors.size(), 0);
-    }
-
-    ddwaf_object_free(&root);
-}
-
 TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
 {
     ddwaf::parameter root;
@@ -202,14 +151,12 @@ TEST(TestRulesetInfo, NullRulesetInfo)
     {
         auto &section = info.add_section("rules");
         section.add_loaded("loaded");
-        section.add_failed("failed");
         section.add_failed("failed", "error");
     }
 
     {
         auto &section = info.add_section("exclusions");
         section.add_loaded("loaded");
-        section.add_failed("failed");
         section.add_failed("failed", "error");
     }
 
