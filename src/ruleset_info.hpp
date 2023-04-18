@@ -25,6 +25,7 @@ public:
         base_section_info &operator=(const base_section_info &) = default;
         base_section_info &operator=(base_section_info &&) noexcept = default;
 
+        virtual void set_error(std::string_view error) = 0;
         virtual void add_loaded(std::string_view id) = 0;
         virtual void add_failed(std::string_view id, std::string_view error) = 0;
     };
@@ -51,6 +52,7 @@ public:
         section_info &operator=(const section_info &) = default;
         section_info &operator=(section_info &&) noexcept = default;
 
+        void set_error(std::string_view /*error*/) override {}
         void add_loaded(std::string_view /*id*/) override {}
         void add_failed(std::string_view /*id*/, std::string_view /*error*/) override {}
     };
@@ -77,16 +79,16 @@ public:
     public:
         section_info()
         {
-            ddwaf_object_array(&loaded);
-            ddwaf_object_array(&failed);
-            ddwaf_object_map(&errors);
+            ddwaf_object_array(&loaded_);
+            ddwaf_object_array(&failed_);
+            ddwaf_object_map(&errors_);
         }
 
         ~section_info() override
         {
-            ddwaf_object_free(&loaded);
-            ddwaf_object_free(&failed);
-            ddwaf_object_free(&errors);
+            ddwaf_object_free(&loaded_);
+            ddwaf_object_free(&failed_);
+            ddwaf_object_free(&errors_);
         }
 
         section_info(const section_info &) = default;
@@ -94,6 +96,7 @@ public:
         section_info &operator=(const section_info &) = default;
         section_info &operator=(section_info &&) noexcept = default;
 
+        void set_error(std::string_view error) override { error_ = error; }
         void add_loaded(std::string_view id) override;
         void add_failed(std::string_view id, std::string_view error) override;
 
@@ -101,24 +104,33 @@ public:
         void to_object(ddwaf_object &output)
         {
             ddwaf_object_map(&output);
-            ddwaf_object_map_add(&output, "loaded", &loaded);
-            ddwaf_object_map_add(&output, "failed", &failed);
-            ddwaf_object_map_add(&output, "errors", &errors);
+            if (!error_.empty()) {
+                ddwaf_object error_str;
+                ddwaf_object_stringl(&error_str, error_.c_str(), error_.size());
+                ddwaf_object_map_add(&output, "error", &error_str);
+                error_.clear();
+            } else {
+                ddwaf_object_map_add(&output, "loaded", &loaded_);
+                ddwaf_object_map_add(&output, "failed", &failed_);
+                ddwaf_object_map_add(&output, "errors", &errors_);
 
-            ddwaf_object_invalid(&loaded);
-            ddwaf_object_invalid(&failed);
-            ddwaf_object_invalid(&errors);
+                ddwaf_object_invalid(&loaded_);
+                ddwaf_object_invalid(&failed_);
+                ddwaf_object_invalid(&errors_);
+                error_obj_cache_.clear();
+            }
         }
 
     protected:
+        std::string error_;
         /** Array of loaded elements */
-        ddwaf_object loaded{};
+        ddwaf_object loaded_{};
         /** Array of failed elements */
-        ddwaf_object failed{};
+        ddwaf_object failed_{};
         /** Map from an error string to an array of all the ids for which
          *  that error was raised. {error: [ids]} **/
-        ddwaf_object errors{};
-        std::map<std::string_view, uint64_t> error_obj_cache;
+        ddwaf_object errors_{};
+        std::map<std::string_view, uint64_t> error_obj_cache_;
     };
 
     ruleset_info() = default;

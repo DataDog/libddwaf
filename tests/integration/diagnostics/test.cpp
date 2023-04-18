@@ -53,6 +53,86 @@ TEST(TestDiagnosticsIntegration, Rules)
     ddwaf_destroy(handle);
 }
 
+TEST(TestDiagnosticsIntegration, RulesWithErrors)
+{
+    auto rule = readFile("rules_with_errors.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root = diagnostics;
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STR(version, "5.4.1");
+
+        auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+        EXPECT_EQ(rules.size(), 3);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(rules, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("rule1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(rules, "failed");
+        EXPECT_EQ(failed.size(), 5);
+        EXPECT_NE(failed.find("rule1"), failed.end());
+        EXPECT_NE(failed.find("index:2"), failed.end());
+        EXPECT_NE(failed.find("rule4"), failed.end());
+        EXPECT_NE(failed.find("rule5"), failed.end());
+        EXPECT_NE(failed.find("rule6"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+        EXPECT_EQ(errors.size(), 4);
+
+        {
+            auto it = errors.find("duplicate rule");
+            EXPECT_NE(it, errors.end());
+
+            auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+            EXPECT_EQ(error_rules.size(), 1);
+            EXPECT_NE(error_rules.find("rule1"), error_rules.end());
+        }
+
+        {
+            auto it = errors.find("missing key 'id'");
+            EXPECT_NE(it, errors.end());
+
+            auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+            EXPECT_EQ(error_rules.size(), 1);
+            EXPECT_NE(error_rules.find("index:2"), error_rules.end());
+        }
+
+        {
+            auto it = errors.find("missing key 'type'");
+            EXPECT_NE(it, errors.end());
+
+            auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+            EXPECT_EQ(error_rules.size(), 2);
+            EXPECT_NE(error_rules.find("rule4"), error_rules.end());
+            EXPECT_NE(error_rules.find("rule5"), error_rules.end());
+        }
+
+        {
+            auto it = errors.find("missing key 'name'");
+            EXPECT_NE(it, errors.end());
+
+            auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+            EXPECT_EQ(error_rules.size(), 1);
+            EXPECT_NE(error_rules.find("rule6"), error_rules.end());
+        }
+
+        ddwaf_object_free(&root);
+    }
+
+    ddwaf_destroy(handle);
+}
+
 TEST(TestDiagnosticsIntegration, CustomRules)
 {
     auto rule = readFile("custom_rules.yaml", base_dir);

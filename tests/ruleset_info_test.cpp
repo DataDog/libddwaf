@@ -41,6 +41,7 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
             auto &section = info.add_section("rules_override");
             section.add_loaded("third");
         }
+
         info.to_object(root);
     }
 
@@ -137,6 +138,38 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("fifth"), error_rules.end());
+    }
+
+    ddwaf_object_free(&root);
+}
+
+TEST(TestRulesetInfo, SectionErrorRulesetInfo)
+{
+    ddwaf::parameter root;
+    {
+        ruleset_info info;
+        info.set_ruleset_version("2.3.4");
+
+        auto &section = info.add_section("rules_data");
+        section.set_error("expected 'array' found 'map'");
+        section.add_loaded("fourth");
+        section.add_failed("fifth", "error");
+
+        info.to_object(root);
+    }
+
+    {
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        EXPECT_EQ(root_map.size(), 2);
+
+        auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "2.3.4");
+
+        auto section = ddwaf::parser::at<parameter::map>(root_map, "rules_data");
+        EXPECT_EQ(section.size(), 1);
+
+        auto error = ddwaf::parser::at<std::string>(section, "error");
+        EXPECT_STR(error, "expected 'array' found 'map'");
     }
 
     ddwaf_object_free(&root);
