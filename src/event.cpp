@@ -78,6 +78,12 @@ void serialize_match(rapidjson::Value &output, rapidjson::Document::AllocatorTyp
     output.AddMember("parameters", parameters, allocator);
 }
 
+
+ddwaf_object* to_object(std::string_view str) {
+    static ddwaf_object tmp;
+    return ddwaf_object_stringl(&tmp, str.data(), str.size());
+}
+
 } // namespace
 
 void event_serializer::serialize(const memory::vector<event> &events, ddwaf_result &output) const
@@ -85,49 +91,48 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
     rapidjson::Document doc;
     auto &allocator = doc.GetAllocator();
 
-    output.data = nullptr;
     output.actions = {nullptr, 0};
+    ddwaf_object_array(&output.events);
 
-    doc.SetArray();
     std::unordered_set<std::string_view> all_actions;
     for (const auto &event : events) {
-        rapidjson::Value map;
-        rapidjson::Value rule;
-        rapidjson::Value tags;
-        rapidjson::Value match_array;
-        rapidjson::Value on_match;
+        ddwaf_object root_map;
+        ddwaf_object rule_map;
+        ddwaf_object tags_map;
+        ddwaf_object match_array;
 
-        tags.SetObject();
-        rule.SetObject();
+        ddwaf_object_map(&root_map);
+        ddwaf_object_map(&rule_map);
+        ddwaf_object_map(&tags_map);
+        ddwaf_object_array(&match_array);
 
         if (event.rule != nullptr) {
             for (const auto &[key, value] : event.rule->get_tags()) {
-                tags.AddMember(StringRef(key), StringRef(value), allocator);
+                ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(value));
             }
 
-            rule.AddMember("id", StringRef(event.rule->get_id()), allocator);
-            rule.AddMember("name", StringRef(event.rule->get_name()), allocator);
+            ddwaf_object_map_add(&rule_map, "id", to_object(event.rule->get_id()));
+            ddwaf_object_map_add(&rule_map, "name", to_object(event.rule->get_name()));
 
             const auto &actions = event.rule->get_actions();
             if (!actions.empty()) {
-                on_match.SetArray();
+                ddwaf_object actions_array;
+                ddwaf_object_array(&actions_array);
                 for (const auto &action : actions) {
                     all_actions.emplace(action);
-                    on_match.PushBack(StringRef(action), allocator);
+                    ddwaf_object_array_add(&actions_array, to_object(action));
                 }
-                rule.AddMember("on_match", on_match, allocator);
+                ddwaf_object_map_add(&rule_map, "on_match", &actions_array);
             }
         } else {
             // This will only be used for testing
-            tags.AddMember("type", "", allocator);
-            tags.AddMember("category", "", allocator);
-            rule.AddMember("id", "", allocator);
-            rule.AddMember("name", "", allocator);
+            ddwaf_object_map_add(&rule_map, "id", to_object({}));
+            ddwaf_object_map_add(&rule_map, "name", to_object({}));
+            ddwaf_object_map_add(&tags_map, "type", to_object({}));
+            ddwaf_object_map_add(&tags_map, "category", to_object({}));
         }
+        ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 
-        rule.AddMember("tags", tags, allocator);
-
-        match_array.SetArray();
         for (const auto &match : event.matches) {
             rapidjson::Value output;
             output.SetObject();

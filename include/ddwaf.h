@@ -155,8 +155,8 @@ struct _ddwaf_result
 {
     /** Whether there has been a timeout during the operation **/
     bool timeout;
-    /** Run result in JSON format **/
-    const char* data;
+    /** Array of events generated **/
+    ddwaf_object events;
     /** Actions array and its size **/
     struct _ddwaf_result_actions {
         char **array;
