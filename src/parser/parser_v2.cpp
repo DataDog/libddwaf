@@ -391,6 +391,8 @@ rule_filter_spec parse_rule_filter(
     return {std::move(conditions), std::move(rules_target)};
 }
 
+std::string index_to_id(unsigned idx) { return "index:" + std::to_string(idx); }
+
 } // namespace
 
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
@@ -415,7 +417,7 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
             rules.emplace(std::move(id), std::move(rule));
         } catch (const std::exception &e) {
             if (id.empty()) {
-                id = "index:" + std::to_string(i);
+                id = index_to_id(i);
             }
             DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
             info.add_failed(id, e.what());
@@ -477,7 +479,7 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
             processors.emplace(std::move(id), std::move(processor));
         } catch (const ddwaf::exception &e) {
             if (id.empty()) {
-                id = "index:" + std::to_string(i);
+                id = index_to_id(i);
             }
 
             DDWAF_ERROR("Failed to parse data id '%s': %s", id.c_str(), e.what());
@@ -493,7 +495,7 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
     override_spec_container overrides;
 
     for (unsigned i = 0; i < override_array.size(); ++i) {
-        std::string id = "index:" + std::to_string(i);
+        auto id = index_to_id(i);
         const auto &node_param = override_array[i];
         auto node = static_cast<parameter::map>(node_param);
         try {
@@ -546,7 +548,7 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
             info.add_loaded(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
-                id = "index:" + std::to_string(i);
+                id = index_to_id(i);
             }
             DDWAF_WARN("failed to parse filter '%s': %s", id.c_str(), e.what());
             info.add_failed(id, e.what());
