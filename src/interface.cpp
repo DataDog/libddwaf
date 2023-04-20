@@ -187,7 +187,7 @@ DDWAF_RET_CODE ddwaf_run(
     ddwaf_context context, ddwaf_object *data, ddwaf_result *result, uint64_t timeout)
 {
     if (result != nullptr) {
-        *result = {false, nullptr, {nullptr, 0}, 0};
+        *result = {false, {}, {nullptr, 0}, 0};
     }
 
     if (context == nullptr || data == nullptr) {
@@ -239,7 +239,7 @@ bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 void ddwaf_result_free(ddwaf_result *result)
 {
     // NOLINTNEXTLINE
-    free(const_cast<char *>(result->data));
+    ddwaf_object_free(&result->events);
 
     auto actions = result->actions;
     if (actions.array != nullptr) {
@@ -249,6 +249,6 @@ void ddwaf_result_free(ddwaf_result *result)
         free(actions.array);
     }
 
-    *result = {false, nullptr, {nullptr, 0}, 0};
+    *result = {false, {}, {nullptr, 0}, 0};
 }
 }

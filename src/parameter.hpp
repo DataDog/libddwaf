@@ -23,7 +23,7 @@ public:
     using string_set = std::unordered_set<std::string_view>;
 
     parameter() = default;
-    explicit parameter(const ddwaf_object &arg) : _ddwaf_object() { *((ddwaf_object *)this) = arg; }
+    parameter(const ddwaf_object &arg) : _ddwaf_object() { *((ddwaf_object *)this) = arg; }
 
     parameter(const parameter &) = default;
     parameter &operator=(const parameter &) = default;
