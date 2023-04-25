@@ -28,7 +28,7 @@ add_library(lib_rapidjson INTERFACE IMPORTED GLOBAL)
 target_include_directories(lib_rapidjson INTERFACE ${INSTALL_DIR}/include)
 add_dependencies(lib_rapidjson proj_rapidjson)
 target_compile_definitions(lib_rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING=1)
-set_target_properties(lib_rapidjson proj_rapidjson PROPERTIES EXCLUDE_FROM_ALL TRUE)
+set_target_properties(proj_rapidjson PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 if(NOT MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fPIC")
