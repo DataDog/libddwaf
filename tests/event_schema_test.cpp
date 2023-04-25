@@ -5,6 +5,7 @@
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "test.h"
+#include "test_utils.hpp"
 
 using namespace rapidjson;
 
@@ -43,10 +44,12 @@ public:
     {
         Document d;
         EXPECT_EQ(code, DDWAF_MATCH);
-        EXPECT_NE(ret.data, nullptr);
+        ASSERT_NE(ret.events.type, DDWAF_OBJ_INVALID);
         EXPECT_FALSE(ret.timeout);
+
+        auto data = ddwaf::test::object_to_json(ret.events);
         if (!HasFailure()) {
-            EXPECT_TRUE(ValidateSchema(ret));
+            EXPECT_TRUE(ValidateSchema(data));
         }
     }
 

@@ -26,6 +26,8 @@ size_t find_string_cutoff(
 // clang-format off
 #define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
 #define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
+#define DDWAF_OBJECT_INITIALISER {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID}
+#define DDWAF_RESULT_INITIALISER {false, DDWAF_OBJECT_INITIALISER, {nullptr, 0}, 0}
 // clang-format on
 
 namespace ddwaf {

@@ -11,9 +11,9 @@ TEST(TestEventSerializer, SerializeNothing)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    ddwaf_result output;
+    ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({}, output);
-    EXPECT_STREQ(output.data, nullptr);
+    EXPECT_EQ(output.events.type, DDWAF_OBJ_INVALID);
 }
 
 TEST(TestEventSerializer, SerializeEmptyEvent)
@@ -21,7 +21,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    ddwaf_result output;
+    ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({ddwaf::event{}}, output);
     EXPECT_EVENTS(output, {});
 
@@ -41,7 +41,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    ddwaf_result output;
+    ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
@@ -76,7 +76,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    ddwaf_result output;
+    ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
@@ -140,7 +140,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     events.emplace_back(ddwaf::event{});
 
-    ddwaf_result output;
+    ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize(events, output);
     EXPECT_EVENTS(output,
         {.id = "xasd1022",
@@ -191,7 +191,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    ddwaf_result output;
+    ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
@@ -227,7 +227,7 @@ TEST(TestEventSerializer, SerializeAllTags)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    ddwaf_result output;
+    ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({event}, output);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",

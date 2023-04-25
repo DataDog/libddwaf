@@ -35,6 +35,9 @@ bool operator==(const event::match &lhs, const event::match &rhs);
 bool operator==(const event &lhs, const event &rhs);
 
 std::ostream &operator<<(std::ostream &os, const event &e);
+
+std::string object_to_json(const ddwaf_object &obj);
+
 } // namespace ddwaf::test
 
 namespace YAML {
@@ -82,7 +85,7 @@ protected:
 // Note that naming conventions (and Pascal case) are kept for functions and
 // classes involved in anything GTest related.
 
-::testing::AssertionResult ValidateSchema(const ddwaf_result &result);
+::testing::AssertionResult ValidateSchema(const std::string &result);
 
 // Required by gtest to pretty print relevant types
 void PrintTo(const ddwaf_result_actions &actions, ::std::ostream *os);
@@ -109,7 +112,7 @@ public:
         : expected_events_(std::move(expected_events))
     {}
 
-    bool MatchAndExplain(const ddwaf_result &result, ::testing::MatchResultListener *) const;
+    bool MatchAndExplain(const std::string &result, ::testing::MatchResultListener *) const;
 
     void DescribeTo(::std::ostream *os) const
     {
@@ -137,9 +140,13 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected)));
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
-  EXPECT_TRUE(ValidateSchema(result));                                                             \
-  EXPECT_THAT(result, WithEvents({__VA_ARGS__}));
+  {                                                                                                \
+    auto data = ddwaf::test::object_to_json(result.events);                                        \
+    EXPECT_TRUE(ValidateSchema(data));                                                             \
+    EXPECT_THAT(data, WithEvents({__VA_ARGS__}));                                                  \
+  }
 
 ddwaf_object readFile(std::string_view filename, std::string_view base = "./");
 ddwaf_object readRule(const char *rule);

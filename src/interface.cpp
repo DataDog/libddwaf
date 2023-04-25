@@ -187,7 +187,7 @@ DDWAF_RET_CODE ddwaf_run(
     ddwaf_context context, ddwaf_object *data, ddwaf_result *result, uint64_t timeout)
 {
     if (result != nullptr) {
-        *result = {false, {}, {nullptr, 0}, 0};
+        *result = DDWAF_RESULT_INITIALISER;
     }
 
     if (context == nullptr || data == nullptr) {
@@ -249,6 +249,6 @@ void ddwaf_result_free(ddwaf_result *result)
         free(actions.array);
     }
 
-    *result = {false, {}, {nullptr, 0}, 0};
+    *result = DDWAF_RESULT_INITIALISER;
 }
 }

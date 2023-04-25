@@ -75,7 +75,10 @@ void serialize_match(ddwaf_object &match_map, const event::match &match, bool re
 
 void event_serializer::serialize(const memory::vector<event> &events, ddwaf_result &output) const
 {
-    output.actions = {nullptr, 0};
+    if (events.empty()) {
+        return;
+    }
+
     ddwaf_object_array(&output.events);
 
     std::unordered_set<std::string_view> all_actions;
@@ -110,17 +113,18 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
             }
         } else {
             // This will only be used for testing
-            ddwaf_object_map_add(&rule_map, "id", to_object({}));
-            ddwaf_object_map_add(&rule_map, "name", to_object({}));
-            ddwaf_object_map_add(&tags_map, "type", to_object({}));
-            ddwaf_object_map_add(&tags_map, "category", to_object({}));
+            ddwaf_object_map_add(&rule_map, "id", to_object(""));
+            ddwaf_object_map_add(&rule_map, "name", to_object(""));
+            ddwaf_object_map_add(&tags_map, "type", to_object(""));
+            ddwaf_object_map_add(&tags_map, "category", to_object(""));
         }
         ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 
         for (const auto &match : event.matches) {
-            ddwaf_object match_map;
-
             const bool redact = redact_match(obfuscator_, match);
+
+            ddwaf_object match_map;
+            ddwaf_object_map(&match_map);
             serialize_match(match_map, match, redact);
 
             ddwaf_object_array_add(&match_array, &match_map);

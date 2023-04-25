@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test_utils.hpp"
+#include "ddwaf.h"
 #include <fstream>
 #include <memory>
 
@@ -95,6 +96,104 @@ std::ostream &operator<<(std::ostream &os, const event &e)
     os << indent(4) << "]\n}\n";
 
     return os;
+}
+
+namespace {
+class string_buffer {
+public:
+    using Ch = char;
+
+protected:
+    static constexpr std::size_t default_capacity = 1024;
+
+public:
+    string_buffer() { buffer_.reserve(default_capacity); }
+
+    void Put(Ch c) { buffer_.push_back(c); }
+    void PutUnsafe(Ch c) { Put(c); }
+    void Flush() {}
+    void Clear() { buffer_.clear(); }
+    void ShrinkToFit() { buffer_.shrink_to_fit(); }
+    void Reserve(size_t count) { buffer_.reserve(count); }
+
+    [[nodiscard]] const Ch *GetString() const { return buffer_.c_str(); }
+    [[nodiscard]] size_t GetSize() const { return buffer_.size(); }
+
+    [[nodiscard]] size_t GetLength() const { return GetSize(); }
+
+    std::string &get_string_ref() { return buffer_; }
+
+protected:
+    std::string buffer_;
+};
+
+template <typename T>
+// NOLINTNEXTLINE(misc-no-recursion, google-runtime-references)
+void object_to_json_helper(
+    const ddwaf_object &obj, T &output, rapidjson::Document::AllocatorType &alloc)
+{
+    switch (obj.type) {
+    case DDWAF_OBJ_BOOL: {
+        std::string_view value = "false"sv;
+        if (obj.boolean) {
+            value = "true"sv;
+        }
+        output.SetString(value.data(), value.size(), alloc);
+    } break;
+    case DDWAF_OBJ_SIGNED:
+        output.SetInt64(obj.intValue);
+        break;
+    case DDWAF_OBJ_UNSIGNED:
+        output.SetUint64(obj.uintValue);
+        break;
+    case DDWAF_OBJ_STRING: {
+        auto sv = std::string_view(obj.stringValue, obj.nbEntries);
+        output.SetString(sv.data(), sv.size(), alloc);
+    } break;
+    case DDWAF_OBJ_MAP:
+        output.SetObject();
+        for (unsigned i = 0; i < obj.nbEntries; i++) {
+            rapidjson::Value key;
+            rapidjson::Value value;
+
+            auto child = obj.array[i];
+            object_to_json_helper(child, value, alloc);
+
+            key.SetString(child.parameterName, child.parameterNameLength, alloc);
+            output.AddMember(key, value, alloc);
+        }
+        break;
+    case DDWAF_OBJ_ARRAY:
+        output.SetArray();
+        for (unsigned i = 0; i < obj.nbEntries; i++) {
+            rapidjson::Value value;
+            auto child = obj.array[i];
+            object_to_json_helper(child, value, alloc);
+            output.PushBack(value, alloc);
+        }
+        break;
+    case DDWAF_OBJ_INVALID:
+        throw std::runtime_error("invalid parameter in structure");
+    };
+}
+
+} // namespace
+
+std::string object_to_json(const ddwaf_object &obj)
+{
+    rapidjson::Document document;
+    rapidjson::Document::AllocatorType &alloc = document.GetAllocator();
+
+    object_to_json_helper(obj, document, alloc);
+
+    string_buffer buffer;
+    rapidjson::Writer<decltype(buffer)> writer(buffer);
+
+    if (document.Accept(writer)) {
+        return std::move(buffer.get_string_ref());
+    }
+
+    return {};
 }
 
 } // namespace ddwaf::test
@@ -271,15 +370,10 @@ std::optional<std::string> event_schema_validator::validate(const char *events)
     return std::nullopt;
 }
 
-::testing::AssertionResult ValidateSchema(const ddwaf_result &result)
+::testing::AssertionResult ValidateSchema(const std::string &result)
 {
-
-    if (result.data == nullptr) {
-        return ::testing::AssertionFailure() << " invalid data";
-    }
-
     static event_schema_validator schema;
-    auto error = schema.validate(result.data);
+    auto error = schema.validate(result.c_str());
     if (error) {
         return ::testing::AssertionFailure() << *error;
     }
@@ -301,7 +395,8 @@ void PrintTo(const ddwaf_result_actions &actions, ::std::ostream *os)
 
 void PrintTo(const ddwaf_result &result, ::std::ostream *os)
 {
-    YAML::Node doc = YAML::Load(result.data);
+    auto data = ddwaf::test::object_to_json(result.events);
+    YAML::Node doc = YAML::Load(data.c_str());
     auto events = doc.as<std::vector<ddwaf::test::event>>();
     for (auto e : events) { *os << e; }
 }
@@ -338,20 +433,16 @@ bool WafResultActionMatcher::MatchAndExplain(
 }
 
 bool WafResultDataMatcher::MatchAndExplain(
-    const ddwaf_result &result, ::testing::MatchResultListener *) const
+    const std::string &result, ::testing::MatchResultListener * /*unused*/) const
 {
-    if (result.data == nullptr) {
-        return false;
-    }
-
-    YAML::Node doc = YAML::Load(result.data);
+    YAML::Node doc = YAML::Load(result.c_str());
     auto events = doc.as<std::list<ddwaf::test::event>>();
 
     if (events.size() != expected_events_.size()) {
         return false;
     }
 
-    for (auto expected : expected_events_) {
+    for (const auto &expected : expected_events_) {
         bool found = false;
         for (auto it = events.begin(); it != events.end(); ++it) {
             auto &obtained = *it;
@@ -366,11 +457,7 @@ bool WafResultDataMatcher::MatchAndExplain(
         }
     }
 
-    if (!events.empty()) {
-        return false;
-    }
-
-    return true;
+    return events.empty();
 }
 
 size_t getFileSize(const char *filename)
