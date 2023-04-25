@@ -239,7 +239,7 @@ int main() {
     ddwaf_result result = {0};
     ddwaf_run(ctx, &data, &result, (uint32_t)-1);
 
-    if (ddwaf_object_type(result.events) == DDWAF_OBJ_INVALID) {
+    if (ddwaf_object_type(&result.events) == DDWAF_OBJ_INVALID) {
         puts("result is invalid");
         return 1;
     }
