@@ -12,6 +12,11 @@
 #include <string_view>
 #include <yaml-cpp/yaml.h>
 
+// clang-format off
+#define DDWAF_OBJECT_INITIALISER {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID}
+#define DDWAF_RESULT_INITIALISER {false, DDWAF_OBJECT_INITIALISER, {nullptr, 0}, 0}
+// clang-format on
+
 namespace YAML {
 
 class parsing_error : public std::exception {
@@ -50,3 +55,4 @@ bool has_colour();
 } // namespace term
 
 std::ostream &operator<<(std::ostream &os, term::colour c);
+YAML::Node object_to_yaml(const ddwaf_object &obj);
