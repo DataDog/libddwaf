@@ -13,8 +13,7 @@
 #include <yaml-cpp/yaml.h>
 
 // clang-format off
-#define DDWAF_OBJECT_INITIALISER {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID}
-#define DDWAF_RESULT_INITIALISER {false, DDWAF_OBJECT_INITIALISER, {nullptr, 0}, 0}
+#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0}, 0}
 // clang-format on
 
 namespace YAML {

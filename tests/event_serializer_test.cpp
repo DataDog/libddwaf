@@ -13,7 +13,8 @@ TEST(TestEventSerializer, SerializeNothing)
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({}, output);
-    EXPECT_EQ(output.events.type, DDWAF_OBJ_INVALID);
+    EXPECT_EQ(ddwaf_object_type(&output.events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_size(&output.events), 0);
 }
 
 TEST(TestEventSerializer, SerializeEmptyEvent)

@@ -155,7 +155,7 @@ struct _ddwaf_result
 {
     /** Whether there has been a timeout during the operation **/
     bool timeout;
-    /** Array of events generated **/
+    /** Array of events generated, this is guaranteed to be an array **/
     ddwaf_object events;
     /** Actions array and its size **/
     struct _ddwaf_result_actions {

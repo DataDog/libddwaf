@@ -163,7 +163,8 @@ TEST(TestContextIntegration, MissingParameter)
     EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
 
     EXPECT_FALSE(ret.timeout);
-    EXPECT_EQ(ret.events.type, DDWAF_OBJ_INVALID);
+    EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -250,7 +251,8 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_FALSE(ret.timeout);
-        EXPECT_EQ(ret.events.type, DDWAF_OBJ_INVALID);
+        EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
 
         ddwaf_result_free(&ret);
     }
@@ -298,7 +300,8 @@ TEST(TestContextIntegration, MultiCollectionMatches)
 
         EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_FALSE(ret.timeout);
-        EXPECT_EQ(ret.events.type, DDWAF_OBJ_INVALID);
+        EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
 
         ddwaf_result_free(&ret);
     }
