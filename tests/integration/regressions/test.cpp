@@ -12,7 +12,6 @@ namespace {
 constexpr std::string_view base_dir = "integration/regressions/";
 } // namespace
 
-
 TEST(TestRegressionsIntegration, TruncatedUTF8)
 {
     auto rule = readFile("regressions.yaml", base_dir);
@@ -59,7 +58,8 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+    ddwaf_object parameter = DDWAF_OBJECT_MAP;
+    ddwaf_object tmp;
     ddwaf_object_map_add(&parameter, "param1", ddwaf_object_string(&tmp, "Sqreen"));
     ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp, "Duplicate"));
 
