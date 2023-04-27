@@ -65,5 +65,4 @@ public:
 protected:
     Fn fn_;
 };
-
 } // namespace ddwaf
