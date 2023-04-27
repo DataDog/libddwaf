@@ -20,10 +20,10 @@ public:
     public:
         base_section_info() = default;
         virtual ~base_section_info() = default;
-        base_section_info(const base_section_info &) = default;
+        base_section_info(const base_section_info &) = delete;
         base_section_info(base_section_info &&) noexcept = default;
-        base_section_info &operator=(const base_section_info &) = default;
-        base_section_info &operator=(base_section_info &&) noexcept = default;
+        base_section_info &operator=(const base_section_info &) = delete;
+        base_section_info &operator=(base_section_info &&) noexcept = delete;
 
         virtual void set_error(std::string_view error) = 0;
         virtual void add_loaded(std::string_view id) = 0;
@@ -32,13 +32,15 @@ public:
 
     base_ruleset_info() = default;
     virtual ~base_ruleset_info() = default;
-    base_ruleset_info(const base_ruleset_info &) = default;
+    base_ruleset_info(const base_ruleset_info &) = delete;
     base_ruleset_info(base_ruleset_info &&) noexcept = default;
-    base_ruleset_info &operator=(const base_ruleset_info &) = default;
-    base_ruleset_info &operator=(base_ruleset_info &&) noexcept = default;
+    base_ruleset_info &operator=(const base_ruleset_info &) = delete;
+    base_ruleset_info &operator=(base_ruleset_info &&) noexcept = delete;
 
     virtual base_section_info &add_section(std::string_view section) = 0;
     virtual void set_ruleset_version(std::string_view version) = 0;
+
+    virtual void to_object(ddwaf_object &output) = 0;
 };
 
 class null_ruleset_info : public base_ruleset_info {
@@ -47,10 +49,10 @@ public:
     public:
         section_info() = default;
         ~section_info() override = default;
-        section_info(const section_info &) = default;
+        section_info(const section_info &) = delete;
         section_info(section_info &&) noexcept = default;
-        section_info &operator=(const section_info &) = default;
-        section_info &operator=(section_info &&) noexcept = default;
+        section_info &operator=(const section_info &) = delete;
+        section_info &operator=(section_info &&) noexcept = delete;
 
         void set_error(std::string_view /*error*/) override {}
         void add_loaded(std::string_view /*id*/) override {}
@@ -59,10 +61,10 @@ public:
 
     null_ruleset_info() = default;
     ~null_ruleset_info() override = default;
-    null_ruleset_info(const null_ruleset_info &) = default;
+    null_ruleset_info(const null_ruleset_info &) = delete;
     null_ruleset_info(null_ruleset_info &&) noexcept = default;
-    null_ruleset_info &operator=(const null_ruleset_info &) = default;
-    null_ruleset_info &operator=(null_ruleset_info &&) noexcept = default;
+    null_ruleset_info &operator=(const null_ruleset_info &) = delete;
+    null_ruleset_info &operator=(null_ruleset_info &&) noexcept = delete;
 
     base_section_info &add_section(std::string_view /*section*/) override
     {
@@ -71,6 +73,8 @@ public:
     }
 
     void set_ruleset_version(std::string_view /*version*/) override{};
+
+    void to_object(ddwaf_object & /*output*/) override{};
 };
 
 class ruleset_info : public base_ruleset_info {
@@ -91,10 +95,10 @@ public:
             ddwaf_object_free(&errors_);
         }
 
-        section_info(const section_info &) = default;
+        section_info(const section_info &) = delete;
         section_info(section_info &&) noexcept = default;
-        section_info &operator=(const section_info &) = default;
-        section_info &operator=(section_info &&) noexcept = default;
+        section_info &operator=(const section_info &) = delete;
+        section_info &operator=(section_info &&) noexcept = delete;
 
         void set_error(std::string_view error) override { error_ = error; }
         void add_loaded(std::string_view id) override;
@@ -136,13 +140,21 @@ public:
     ruleset_info() = default;
     ~ruleset_info() override = default;
 
-    ruleset_info(const ruleset_info &) = default;
+    ruleset_info(const ruleset_info &) = delete;
     ruleset_info(ruleset_info &&) noexcept = default;
     ruleset_info &operator=(const ruleset_info &) = delete;
     ruleset_info &operator=(ruleset_info &&) noexcept = delete;
 
+    base_section_info &add_section(std::string_view section) override
+    {
+        auto [it, res] = sections_.emplace(section, section_info{});
+        return it->second;
+    }
+
+    void set_ruleset_version(std::string_view version) override { ruleset_version_ = version; }
+
     // This operation effectively moves the contents
-    void to_object(ddwaf_object &output)
+    void to_object(ddwaf_object &output) override
     {
         ddwaf_object_map(&output);
         for (auto &[name, section] : sections_) {
@@ -161,14 +173,6 @@ public:
             ruleset_version_.clear();
         }
     }
-
-    base_section_info &add_section(std::string_view section) override
-    {
-        auto [it, res] = sections_.emplace(section, section_info{});
-        return it->second;
-    }
-
-    void set_ruleset_version(std::string_view version) override { ruleset_version_ = version; }
 
 protected:
     std::string ruleset_version_;

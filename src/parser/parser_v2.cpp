@@ -442,7 +442,7 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
             auto type = at<std::string_view>(entry, "type");
             auto data = at<parameter>(entry, "data");
 
-            std::string operation{};
+            std::string_view operation;
             auto it = rule_data_ids.find(id);
             if (it == rule_data_ids.end()) {
                 // Infer processor from data type
@@ -469,9 +469,9 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
                 processor = std::make_shared<rule_processor::exact_match>(parsed_data);
             } else {
-                DDWAF_WARN("Processor %s doesn't support dynamic rule data", operation.c_str());
-                info.add_failed(
-                    id, "processor " + operation + " doesn't support dynamic rule data");
+                DDWAF_WARN("Processor %s doesn't support dynamic rule data", operation.data());
+                info.add_failed(id,
+                    "processor " + std::string(operation) + " doesn't support dynamic rule data");
                 continue;
             }
 
