@@ -59,7 +59,7 @@ std::set<rule *> target_to_rules(const std::vector<parser::rule_target_spec> &ta
 
 } // namespace
 
-std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_info &info)
+std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_ruleset_info &info)
 {
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
@@ -220,45 +220,55 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, ruleset_in
     return rs;
 }
 
-ruleset_builder::change_state ruleset_builder::load(parameter::map &root, ruleset_info &info)
+ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_ruleset_info &info)
 {
     change_state state = change_state::none;
 
     auto metadata = parser::at<parameter::map>(root, "metadata", {});
-    auto rules_version = metadata.find("rules_version");
-    if (rules_version != metadata.end()) {
-        info.set_version(static_cast<std::string_view>(rules_version->second));
+    auto rules_version = parser::at<std::string_view>(metadata, "rules_version", {});
+    if (!rules_version.empty()) {
+        info.set_ruleset_version(rules_version);
     }
 
     auto it = root.find("rules");
     if (it != root.end()) {
-        auto rules = static_cast<parameter::vector>(it->second);
-        rule_data_ids_.clear();
+        auto &section = info.add_section("rules");
+        try {
+            auto rules = static_cast<parameter::vector>(it->second);
+            rule_data_ids_.clear();
 
-        if (!rules.empty()) {
-            base_rules_ =
-                parser::v2::parse_rules(rules, info, target_manifest_, rule_data_ids_, limits_);
-        } else {
-            base_rules_.clear();
+            if (!rules.empty()) {
+                base_rules_ = parser::v2::parse_rules(
+                    rules, section, target_manifest_, rule_data_ids_, limits_);
+            } else {
+                base_rules_.clear();
+            }
+            state = state | change_state::rules;
+        } catch (const std::exception &e) {
+            section.set_error(e.what());
         }
-        state = state | change_state::rules;
     }
 
     it = root.find("custom_rules");
     if (it != root.end()) {
-        auto rules = static_cast<parameter::vector>(it->second);
-        if (!rules.empty()) {
-            // Rule data is currently not supported by custom rules so these will
-            // be discarded after
-            decltype(rule_data_ids_) rule_data_ids;
+        auto &section = info.add_section("custom_rules");
+        try {
+            auto rules = static_cast<parameter::vector>(it->second);
+            if (!rules.empty()) {
+                // Rule data is currently not supported by custom rules so these will
+                // be discarded after
+                decltype(rule_data_ids_) rule_data_ids;
 
-            auto new_user_rules = parser::v2::parse_rules(
-                rules, info, target_manifest_, rule_data_ids, limits_, rule::source_type::user);
-            user_rules_ = std::move(new_user_rules);
-        } else {
-            user_rules_.clear();
+                auto new_user_rules = parser::v2::parse_rules(rules, section, target_manifest_,
+                    rule_data_ids, limits_, rule::source_type::user);
+                user_rules_ = std::move(new_user_rules);
+            } else {
+                user_rules_.clear();
+            }
+            state = state | change_state::custom_rules;
+        } catch (const std::exception &e) {
+            section.set_error(e.what());
         }
-        state = state | change_state::custom_rules;
     }
 
     if (base_rules_.empty() && user_rules_.empty()) {
@@ -269,42 +279,59 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, rulese
 
     it = root.find("rules_data");
     if (it != root.end()) {
-        auto rules_data = static_cast<parameter::vector>(it->second);
-        if (!rules_data.empty()) {
-            auto new_processors = parser::v2::parse_rule_data(rules_data, rule_data_ids_);
-            if (new_processors.empty()) {
-                // The rules_data array might have unrelated IDs, so we need
-                // to consider "no valid IDs" as an empty rules_data
-                dynamic_processors_.clear();
+        auto &section = info.add_section("rules_data");
+        try {
+            auto rules_data = static_cast<parameter::vector>(it->second);
+            if (!rules_data.empty()) {
+                auto new_processors =
+                    parser::v2::parse_rule_data(rules_data, section, rule_data_ids_);
+                if (new_processors.empty()) {
+                    // The rules_data array might have unrelated IDs, so we need
+                    // to consider "no valid IDs" as an empty rules_data
+                    dynamic_processors_.clear();
+                } else {
+                    dynamic_processors_ = std::move(new_processors);
+                }
             } else {
-                dynamic_processors_ = std::move(new_processors);
+                dynamic_processors_.clear();
             }
-        } else {
-            dynamic_processors_.clear();
+            state = state | change_state::data;
+        } catch (const std::exception &e) {
+            section.set_error(e.what());
         }
-        state = state | change_state::data;
     }
 
     it = root.find("rules_override");
     if (it != root.end()) {
-        auto overrides = static_cast<parameter::vector>(it->second);
-        if (!overrides.empty()) {
-            overrides_ = parser::v2::parse_overrides(overrides);
-        } else {
-            overrides_.clear();
+        auto &section = info.add_section("rules_override");
+        try {
+            auto overrides = static_cast<parameter::vector>(it->second);
+            if (!overrides.empty()) {
+                overrides_ = parser::v2::parse_overrides(overrides, section);
+            } else {
+                overrides_.clear();
+            }
+            state = state | change_state::overrides;
+        } catch (const std::exception &e) {
+            section.set_error(e.what());
         }
-        state = state | change_state::overrides;
     }
 
     it = root.find("exclusions");
     if (it != root.end()) {
-        auto exclusions = static_cast<parameter::vector>(it->second);
-        if (!exclusions.empty()) {
-            exclusions_ = parser::v2::parse_filters(exclusions, target_manifest_, limits_);
-        } else {
-            exclusions_.clear();
+        auto &section = info.add_section("exclusions");
+        try {
+            auto exclusions = static_cast<parameter::vector>(it->second);
+            if (!exclusions.empty()) {
+                exclusions_ =
+                    parser::v2::parse_filters(exclusions, section, target_manifest_, limits_);
+            } else {
+                exclusions_.clear();
+            }
+            state = state | change_state::filters;
+        } catch (const std::exception &e) {
+            section.set_error(e.what());
         }
-        state = state | change_state::filters;
     }
 
     return state;

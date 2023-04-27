@@ -4,53 +4,53 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "log.hpp"
 #include <ruleset_info.hpp>
-
-extern "C" {
-
-void ddwaf_ruleset_info_free(ddwaf_ruleset_info *info)
-{
-    if (info != nullptr) {
-        ddwaf_object_free(&info->errors);
-        delete[] info->version;
-    }
-}
-}
 
 namespace ddwaf {
 
-void ruleset_info::insert_error(std::string_view rule_id, std::string_view error)
+namespace {
+std::pair<uint64_t, ddwaf_object *> object_map_add_helper(
+    ddwaf_object *map, std::string_view key, ddwaf_object *object)
 {
-    if (info == nullptr) {
-        return;
-    }
+    ddwaf_object_map_addl(map, key.data(), key.length(), object);
+    // Get the element we just added
+    const uint64_t index = map->nbEntries - 1;
+    return {index, &map->array[index]};
+}
+} // namespace
 
-    ddwaf_object *rule_array;
+void ruleset_info::section_info::add_loaded(std::string_view id)
+{
     ddwaf_object id_str;
+    ddwaf_object_stringl(&id_str, id.data(), id.size());
+    ddwaf_object_array_add(&loaded_, &id_str);
+}
 
-    auto it = error_obj_cache.find(error);
-    if (it == error_obj_cache.end()) {
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+void ruleset_info::section_info::add_failed(std::string_view id, std::string_view error)
+{
+    ddwaf_object id_str;
+    auto it = error_obj_cache_.find(error);
+    if (it == error_obj_cache_.end()) {
         ddwaf_object tmp_array;
         ddwaf_object_array(&tmp_array);
-        const bool res =
-            ddwaf_object_map_addl(&info->errors, error.data(), error.size(), &tmp_array);
-        if (!res) {
-            return;
-        }
 
-        // Get the map element we just added
-        const uint64_t index = info->errors.nbEntries - 1;
-        rule_array = &info->errors.array[index];
-        const std::string_view key(rule_array->parameterName, rule_array->parameterNameLength);
-        error_obj_cache[key] = index;
+        auto [index, array] = object_map_add_helper(&errors_, error, &tmp_array);
+
+        const std::string_view key(array->parameterName, array->parameterNameLength);
+        error_obj_cache_[key] = index;
+
+        ddwaf_object_stringl(&id_str, id.data(), id.size());
+        ddwaf_object_array_add(array, &id_str);
+
     } else {
-        rule_array = &info->errors.array[it->second];
+        ddwaf_object_stringl(&id_str, id.data(), id.size());
+        ddwaf_object_array_add(&errors_.array[it->second], &id_str);
     }
 
-    ddwaf_object_stringl(&id_str, rule_id.data(), rule_id.size());
-    ddwaf_object_array_add(rule_array, &id_str);
-
-    add_failed();
+    ddwaf_object_stringl(&id_str, id.data(), id.size());
+    ddwaf_object_array_add(&failed_, &id_str);
 }
 
 } // namespace ddwaf

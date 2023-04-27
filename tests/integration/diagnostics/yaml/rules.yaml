@@ -1,0 +1,53 @@
+version: '2.1'
+metadata:
+  rules_version: 5.4.2
+rules:
+  - id: rule1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+      confidence: 1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: ^rule1
+  - id: rule2
+    name: rule2
+    tags:
+      type: flow2
+      category: category2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value2
+          regex: ^rule2
+  - id: rule3
+    name: rule3
+    tags:
+      type: flow34
+      category: category3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value3
+            - address: value34
+          regex: rule
+  - id: rule4
+    name: rule4
+    tags:
+      type: flow34
+      category: category4
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value4
+            - address: value34
+          regex: rule
+    on_match:
+      - block

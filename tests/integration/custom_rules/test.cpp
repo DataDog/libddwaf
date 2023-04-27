@@ -14,7 +14,7 @@ constexpr std::string_view base_dir = "integration/custom_rules/";
 } // namespace
 
 // Custom rules can be used instead of base rules
-TEST(TestCustomRules, InitWithoutBaseRules)
+TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
 {
     auto rule = readFile("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -54,7 +54,7 @@ TEST(TestCustomRules, InitWithoutBaseRules)
 }
 
 // Custom rules can work alongside base rules
-TEST(TestCustomRules, InitWithBaseRules)
+TEST(TestCustomRulesIntegration, InitWithBaseRules)
 {
     auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -94,7 +94,7 @@ TEST(TestCustomRules, InitWithBaseRules)
 }
 
 // Regular custom rules have precedence over regular base rules
-TEST(TestCustomRules, RegularCustomRulesPrecedence)
+TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
 {
     auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -135,7 +135,7 @@ TEST(TestCustomRules, RegularCustomRulesPrecedence)
 }
 
 // Priority custom rules have precedence over priority base rules
-TEST(TestCustomRules, PriorityCustomRulesPrecedence)
+TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
 {
     auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -179,7 +179,7 @@ TEST(TestCustomRules, PriorityCustomRulesPrecedence)
 }
 
 // Global rules precedence test Priority Custom > Priority Base > Custom > Base
-TEST(TestCustomRules, CustomRulesPrecedence)
+TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
 {
     auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -223,7 +223,7 @@ TEST(TestCustomRules, CustomRulesPrecedence)
 }
 
 // Custom rules can be updated when base rules exist
-TEST(TestCustomRules, UpdateFromBaseRules)
+TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 {
     auto rule = readFile("custom_rules_base_rules_only.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -301,7 +301,7 @@ TEST(TestCustomRules, UpdateFromBaseRules)
 }
 
 // Custom rules can be updated when custom rules already exist
-TEST(TestCustomRules, UpdateFromCustomRules)
+TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 {
     auto rule = readFile("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -379,7 +379,7 @@ TEST(TestCustomRules, UpdateFromCustomRules)
 }
 
 // Remove all custom rules when no other rules are available
-TEST(TestCustomRules, UpdateWithEmptyRules)
+TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
 {
     auto rule = readFile("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -402,7 +402,7 @@ TEST(TestCustomRules, UpdateWithEmptyRules)
 }
 
 // Remove all custom rules when base rules are available
-TEST(TestCustomRules, UpdateRemoveAllCustomRules)
+TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 {
     auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -480,7 +480,7 @@ TEST(TestCustomRules, UpdateRemoveAllCustomRules)
 }
 
 // Ensure that existing custom rules are unaffected by overrides
-TEST(TestCustomRules, CustomRulesUnaffectedByOverrides)
+TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 {
     auto rule = readFile("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -559,7 +559,7 @@ TEST(TestCustomRules, CustomRulesUnaffectedByOverrides)
 }
 
 // Ensure that custom rules are unaffected by overrides after an update
-TEST(TestCustomRules, CustomRulesUnaffectedByOverridesAfterUpdate)
+TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 {
     auto rule = readFile("custom_rules_base_rules_only.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -659,7 +659,7 @@ TEST(TestCustomRules, CustomRulesUnaffectedByOverridesAfterUpdate)
 }
 
 // Ensure that existing custom rules are unaffected by overrides
-TEST(TestCustomRules, CustomRulesAffectedByExclusions)
+TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 {
     auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -738,7 +738,7 @@ TEST(TestCustomRules, CustomRulesAffectedByExclusions)
 }
 
 // Ensure that custom rules are affected by overrides after an update
-TEST(TestCustomRules, CustomRulesAffectedByExclusionsAfterUpdate)
+TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
 {
     auto rule = readFile("custom_rules_base_rules_only.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
