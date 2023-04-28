@@ -34,9 +34,8 @@ bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match
            obfuscator.is_sensitive_value(match.matched);
 }
 
-ddwaf_object *to_object(std::string_view str, bool redact = false)
+ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str, bool redact = false)
 {
-    static ddwaf_object tmp;
     if (redact) {
         return ddwaf_object_stringl(
             &tmp, ddwaf::obfuscator::redaction_msg.data(), ddwaf::obfuscator::redaction_msg.size());
@@ -46,35 +45,40 @@ ddwaf_object *to_object(std::string_view str, bool redact = false)
 
 void serialize_match(ddwaf_object &match_map, const event::match &match, bool redact)
 {
+    ddwaf_object tmp;
     ddwaf_object key_path;
     ddwaf_object_array(&key_path);
-    for (const auto &key : match.key_path) { ddwaf_object_array_add(&key_path, to_object(key)); }
+    for (const auto &key : match.key_path) {
+        ddwaf_object_array_add(&key_path, to_object(tmp, key));
+    }
 
     ddwaf_object highlight;
     ddwaf_object_array(&highlight);
     if (!match.matched.empty()) {
-        ddwaf_object_array_add(&highlight, to_object(match.matched, redact));
+        ddwaf_object_array_add(&highlight, to_object(tmp, match.matched, redact));
     }
 
     ddwaf_object param;
     ddwaf_object_map(&param);
-    ddwaf_object_map_add(&param, "address", to_object(match.address));
+    ddwaf_object_map_add(&param, "address", to_object(tmp, match.address));
     ddwaf_object_map_add(&param, "key_path", &key_path);
-    ddwaf_object_map_add(&param, "value", to_object(match.resolved, redact));
+    ddwaf_object_map_add(&param, "value", to_object(tmp, match.resolved, redact));
     ddwaf_object_map_add(&param, "highlight", &highlight);
 
     ddwaf_object parameters;
     ddwaf_object_array(&parameters);
     ddwaf_object_array_add(&parameters, &param);
 
-    ddwaf_object_map_add(&match_map, "operator", to_object(match.operator_name));
-    ddwaf_object_map_add(&match_map, "operator_value", to_object(match.operator_value));
+    ddwaf_object_map_add(&match_map, "operator", to_object(tmp, match.operator_name));
+    ddwaf_object_map_add(&match_map, "operator_value", to_object(tmp, match.operator_value));
     ddwaf_object_map_add(&match_map, "parameters", &parameters);
 }
 } // namespace
 
 void event_serializer::serialize(const memory::vector<event> &events, ddwaf_result &output) const
 {
+    ddwaf_object tmp;
+
     if (events.empty()) {
         return;
     }
@@ -95,11 +99,11 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
 
         if (event.rule != nullptr) {
             for (const auto &[key, value] : event.rule->get_tags()) {
-                ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(value));
+                ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
             }
 
-            ddwaf_object_map_add(&rule_map, "id", to_object(event.rule->get_id()));
-            ddwaf_object_map_add(&rule_map, "name", to_object(event.rule->get_name()));
+            ddwaf_object_map_add(&rule_map, "id", to_object(tmp, event.rule->get_id()));
+            ddwaf_object_map_add(&rule_map, "name", to_object(tmp, event.rule->get_name()));
 
             const auto &actions = event.rule->get_actions();
             if (!actions.empty()) {
@@ -107,16 +111,16 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
                 ddwaf_object_array(&actions_array);
                 for (const auto &action : actions) {
                     all_actions.emplace(action);
-                    ddwaf_object_array_add(&actions_array, to_object(action));
+                    ddwaf_object_array_add(&actions_array, to_object(tmp, action));
                 }
                 ddwaf_object_map_add(&rule_map, "on_match", &actions_array);
             }
         } else {
             // This will only be used for testing
-            ddwaf_object_map_add(&rule_map, "id", to_object(""));
-            ddwaf_object_map_add(&rule_map, "name", to_object(""));
-            ddwaf_object_map_add(&tags_map, "type", to_object(""));
-            ddwaf_object_map_add(&tags_map, "category", to_object(""));
+            ddwaf_object_map_add(&rule_map, "id", to_object(tmp, ""));
+            ddwaf_object_map_add(&rule_map, "name", to_object(tmp, ""));
+            ddwaf_object_map_add(&tags_map, "type", to_object(tmp, ""));
+            ddwaf_object_map_add(&tags_map, "category", to_object(tmp, ""));
         }
         ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 
