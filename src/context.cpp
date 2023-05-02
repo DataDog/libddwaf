@@ -20,7 +20,7 @@ DDWAF_RET_CODE context::run(
 {
     if (res.has_value()) {
         ddwaf_result &output = *res;
-        output = {false, nullptr, {nullptr, 0}, 0};
+        output = DDWAF_RESULT_INITIALISER;
     }
 
     if (!store_.insert(newParameters)) {

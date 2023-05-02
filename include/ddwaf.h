@@ -155,8 +155,8 @@ struct _ddwaf_result
 {
     /** Whether there has been a timeout during the operation **/
     bool timeout;
-    /** Run result in JSON format **/
-    const char* data;
+    /** Array of events generated, this is guaranteed to be an array **/
+    ddwaf_object events;
     /** Actions array and its size **/
     struct _ddwaf_result_actions {
         char **array;
@@ -508,7 +508,7 @@ bool ddwaf_object_map_addl_nc(ddwaf_object *map, const char *key, size_t length,
  *
  * @return The object type of DDWAF_OBJ_INVALID if NULL.
  **/
-DDWAF_OBJ_TYPE ddwaf_object_type(ddwaf_object *object);
+DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object);
 
 /**
  * ddwaf_object_size
@@ -519,7 +519,7 @@ DDWAF_OBJ_TYPE ddwaf_object_type(ddwaf_object *object);
  *
  * @return The object size or 0 if the object is not a container (array, map).
  **/
-size_t ddwaf_object_size(ddwaf_object *object);
+size_t ddwaf_object_size(const ddwaf_object *object);
 
 /**
  * ddwaf_object_length
@@ -530,7 +530,7 @@ size_t ddwaf_object_size(ddwaf_object *object);
  *
  * @return The string length or 0 if the object is not a string.
  **/
-size_t ddwaf_object_length(ddwaf_object *object);
+size_t ddwaf_object_length(const ddwaf_object *object);
 
 /**
  * ddwaf_object_get_key
@@ -543,7 +543,7 @@ size_t ddwaf_object_length(ddwaf_object *object);
  *
  * @return The key of the object or NULL if the object doesn't contain a key.
  **/
-const char* ddwaf_object_get_key(ddwaf_object *object, size_t *length);
+const char* ddwaf_object_get_key(const ddwaf_object *object, size_t *length);
 
 /**
  * ddwaf_object_get_string
@@ -556,7 +556,7 @@ const char* ddwaf_object_get_key(ddwaf_object *object, size_t *length);
  *
  * @return The string of the object or NULL if the object is not a string.
  **/
-const char* ddwaf_object_get_string(ddwaf_object *object, size_t *length);
+const char* ddwaf_object_get_string(const ddwaf_object *object, size_t *length);
 
 /**
  * ddwaf_object_get_unsigned
@@ -567,7 +567,7 @@ const char* ddwaf_object_get_string(ddwaf_object *object, size_t *length);
  *
  * @return The integer or 0 if the object is not an unsigned.
  **/
-uint64_t ddwaf_object_get_unsigned(ddwaf_object *object);
+uint64_t ddwaf_object_get_unsigned(const ddwaf_object *object);
 
 /**
  * ddwaf_object_get_signed
@@ -578,7 +578,7 @@ uint64_t ddwaf_object_get_unsigned(ddwaf_object *object);
  *
  * @return The integer or 0 if the object is not a signed.
  **/
-int64_t ddwaf_object_get_signed(ddwaf_object *object);
+int64_t ddwaf_object_get_signed(const ddwaf_object *object);
 
 /**
  * ddwaf_object_get_bool
@@ -589,7 +589,7 @@ int64_t ddwaf_object_get_signed(ddwaf_object *object);
  *
  * @return The boolean or false if the object is not a boolean.
  **/
-bool ddwaf_object_get_bool(ddwaf_object *object);
+bool ddwaf_object_get_bool(const ddwaf_object *object);
 
 /**
  * ddwaf_object_get_index
@@ -602,7 +602,7 @@ bool ddwaf_object_get_bool(ddwaf_object *object);
  * @return The requested object or NULL if the index is out of bounds or the
  *         object is not a container.
  **/
-ddwaf_object* ddwaf_object_get_index(ddwaf_object *object, size_t index);
+const ddwaf_object* ddwaf_object_get_index(const ddwaf_object *object, size_t index);
 
 
 /**

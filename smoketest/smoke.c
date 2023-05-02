@@ -239,11 +239,10 @@ int main() {
     ddwaf_result result = {0};
     ddwaf_run(ctx, &data, &result, (uint32_t)-1);
 
-    if (!result.data) {
-        puts("result data is null");
+    if (ddwaf_object_size(&result.events) == 0) {
+        puts("result is empty");
         return 1;
     }
-
-    puts(result.data);
+    puts("result is valid");
     return 0;
 }
