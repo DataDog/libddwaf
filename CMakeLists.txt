@@ -70,6 +70,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
     ${libddwaf_SOURCE_DIR}/src/event.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
+    ${libddwaf_SOURCE_DIR}/src/object_view.cpp
     ${libddwaf_SOURCE_DIR}/src/manifest.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/collection.cpp
