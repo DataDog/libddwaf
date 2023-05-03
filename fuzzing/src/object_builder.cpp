@@ -4,15 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ddwaf_object_builder.hpp"
-#include "helpers.hpp"
 #include <cstdio>
 #include <cstring>
 
+#include "object_builder.hpp"
+#include "helpers.hpp"
+
 struct Data {
-    const uint8_t *bytes;
-    size_t size;
-    size_t position = 0;
+    const uint8_t *bytes{nullptr};
+    size_t size{0};
+    size_t position{0};
 };
 
 uint8_t popSize(Data *data)

@@ -4,21 +4,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <fstream>
+#include <ios>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <system_error>
+
 #include "helpers.hpp"
-#include "stdio.h"
-#include "stdlib.h"
+
 
 namespace {
-size_t get_file_size(FILE *fp)
-{
-    long size;
-
-    fseek(fp, 0L, SEEK_END);
-    size = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-
-    return size;
-}
 
 void indent(int i) { fprintf(stderr, "\n%*s", i * 4, ""); }
 
@@ -106,6 +102,9 @@ void _print_object(ddwaf_object entry, uint8_t depth)
     case DDWAF_OBJ_STRING:
         print_string(entry.stringValue, entry.nbEntries);
         break;
+    case DDWAF_OBJ_BOOL:
+        fprintf(stderr, "%s", entry.boolean ? "true" : "false");
+        break;
     case DDWAF_OBJ_INVALID:
         fprintf(stderr, "--PW ERROR--");
         break;
@@ -120,27 +119,23 @@ void print_object(ddwaf_object entry)
     fprintf(stderr, "\n");
 }
 
-char *read_file_content(const char *filename, size_t *psize)
+std::string read_file(std::string_view filename)
 {
-    FILE *fp = fopen(filename, "r");
-
-    if (!fp) {
-        fprintf(stderr, "Can't read file %s\n", filename);
-        exit(EXIT_FAILURE);
+    std::ifstream file(filename.data(), std::ios::in);
+    if (!file)
+    {
+        throw std::system_error(errno, std::generic_category());
     }
 
-    *psize = get_file_size(fp);
-    char *fcontent = (char *)malloc(*psize + 1);
+    // Create a buffer equal to the file size
+    std::string buffer;
+    file.seekg(0, std::ios::end);
+    buffer.resize(file.tellg());
+    file.seekg(0, std::ios::beg);
 
-    if (!fcontent) {
-        fprintf(stderr, "Can't allocate %lu bytes", *psize);
-        exit(EXIT_FAILURE);
-    }
+    file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+    file.close();
 
-    fread(fcontent, 1, *psize, fp);
-    fclose(fp);
-
-    fcontent[*psize] = 0;
-
-    return fcontent;
+    return buffer;
 }
+

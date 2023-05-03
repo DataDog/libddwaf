@@ -4,23 +4,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstring>
 #include <ddwaf.h>
 
-#include "ddwaf_interface.hpp"
-#include "ddwaf_object_builder.hpp"
+#include "interface.hpp"
+#include "object_builder.hpp"
 #include "helpers.hpp"
 
 bool verbose = false;
 bool fuzzTimeout = false;
 
-ddwaf_handle handle = NULL;
+ddwaf_handle handle = nullptr;
 
-extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
 {
     for (int i = 0; i < *argc; i++) {
         if (strcmp((*argv)[i], "--V") == 0) {
@@ -32,7 +28,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 
     handle = init_waf();
 
-    if (handle == NULL) {
+    if (handle == nullptr) {
         __builtin_trap();
     }
 

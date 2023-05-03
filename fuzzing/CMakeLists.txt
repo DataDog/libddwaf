@@ -6,12 +6,10 @@ set_target_properties(fuzzer PROPERTIES
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
 
-
 target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/fuzzing/tools)
 target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/include)
 target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src)
 target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/rule_processor)
-
 
 set_target_properties(fuzzer PROPERTIES COMPILE_FLAGS "-fsanitize=fuzzer,address,undefined -fprofile-instr-generate -fcoverage-mapping")
 set_target_properties(fuzzer PROPERTIES LINK_FLAGS "-fsanitize=fuzzer,address,undefined -fprofile-instr-generate -fcoverage-mapping")
