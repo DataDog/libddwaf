@@ -1,5 +1,9 @@
 # libddwaf release
 
+### v1.10.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Add all rule tags to event ([#160](https://github.com/DataDog/libddwaf/pull/160))
+
 ### v1.9.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Remove a libinjection signature ([#145](https://github.com/DataDog/libddwaf/pull/145))
