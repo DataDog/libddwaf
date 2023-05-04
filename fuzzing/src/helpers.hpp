@@ -4,12 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifndef DDWAF_FUZZER_HELPERS_H
-#define DDWAF_FUZZER_HELPERS_H
+#pragma once
 
 #include <ddwaf.h>
+#include <string>
+#include <string_view>
 
 void print_object(ddwaf_object object);
-char *read_file_content(const char *filename, size_t *size);
-
-#endif
+std::string read_file(std::string_view filename);
