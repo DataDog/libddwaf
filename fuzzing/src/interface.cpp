@@ -10,8 +10,8 @@
 #include <utility>
 #include <yaml-cpp/yaml.h>
 
-#include "interface.hpp"
 #include "helpers.hpp"
+#include "interface.hpp"
 
 namespace YAML {
 
@@ -66,7 +66,10 @@ ddwaf_object yaml_to_object(const Node &node)
 
 template <> as_if<ddwaf_object, void>::as_if(const Node &node_) : node(node_) {}
 
-template <> ddwaf_object as_if<ddwaf_object, void>::operator()() const { return yaml_to_object(node); }
+template <> ddwaf_object as_if<ddwaf_object, void>::operator()() const
+{
+    return yaml_to_object(node);
+}
 } // namespace YAML
 
 ddwaf_object file_to_object(std::string_view filename)

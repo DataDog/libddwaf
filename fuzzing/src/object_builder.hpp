@@ -9,4 +9,3 @@
 
 ddwaf_object build_object(
     const uint8_t *bytes, size_t size, bool verbose, bool fuzzTimeout, size_t *timeLeftInMs);
-
