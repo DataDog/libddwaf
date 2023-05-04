@@ -66,10 +66,17 @@ void pop_string(Data *data, ddwaf_object *object)
 
     // sometimes, send NULL
     if (size == 3 && result[0] == 6 && result[1] == 6 && result[2] == 6) {
-        ddwaf_object_stringl(object, NULL, size);
+        ddwaf_object_stringl(object, nullptr, size);
     }
 
     ddwaf_object_stringl(object, result, size);
+}
+
+bool popBoolean(Data *data)
+{
+    bool result = false;
+    popBytes(data, &result, 1);
+    return result;
 }
 
 uint64_t popUnsignedInteger(Data *data)
@@ -152,9 +159,12 @@ void build_array(Data *data, ddwaf_object *object, size_t deep)
 ddwaf_object create_object(Data *data, size_t deep)
 {
     ddwaf_object result;
-    uint8_t selector = popSelector(data, 5);
+    uint8_t selector = popSelector(data, 6);
 
     switch (selector) {
+    case 5:
+        ddwaf_object_bool(&result, popBoolean(data));
+        break;
     case 4:
         ddwaf_object_unsigned(&result, popUnsignedInteger(data));
         break;
@@ -189,45 +199,6 @@ ddwaf_object build_object(
 
     data.bytes = bytes;
     data.size = size;
-
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-    ddwaf_log_cb cb = [](DDWAF_LOG_LEVEL level, const char *function, const char *file,
-                          unsigned line, const char *message, uint64_t message_len) {};
-
-    uint8_t selector = popSize(&data);
-
-    if (selector == 255) {
-        ddwaf_set_log_cb(cb, DDWAF_LOG_TRACE);
-        log("DDWAF_LOG_TRACE", verbose);
-    } else if (selector == 254) {
-        ddwaf_set_log_cb(cb, DDWAF_LOG_DEBUG);
-        log("DDWAF_LOG_DEBUG", verbose);
-    } else if (selector == 253) {
-        ddwaf_set_log_cb(cb, DDWAF_LOG_INFO);
-        log("DDWAF_LOG_INFO", verbose);
-    } else if (selector == 252) {
-        ddwaf_set_log_cb(cb, DDWAF_LOG_WARN);
-        log("DDWAF_LOG_WARN", verbose);
-    } else if (selector == 251) {
-        ddwaf_set_log_cb(cb, DDWAF_LOG_ERROR);
-        log("DDWAF_LOG_ERROR\n", verbose);
-    } else {
-        ddwaf_set_log_cb(nullptr, DDWAF_LOG_DEBUG);
-        log("DDWAF_LOG_<nocb>", verbose);
-    }
-
-    if (popUInt16(&data) == 16896) { // all 65000 => reset
-        log("Reload rules", verbose);
-        // TODO
-        /*        pw_clearRule(RULE_NAME);*/
-        /*initPowerWaf();*/
-    }
-
-    if (popUInt16(&data) == 16896) { // all 65000 => reset all
-        log("clear all", verbose);
-        /*        pw_clearAll();*/
-        /*initPowerWaf();*/
-    }
 
     if (fuzzTimeout) {
         *timeLeftInMs = (size_t)popUInt16(&data);
