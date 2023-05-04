@@ -143,7 +143,7 @@ struct _ddwaf_config
     /** Function to free the ddwaf::object provided to the context during calls
      *  to ddwaf_run. If the value of this function is NULL, the objects will
      *  not be freed. The default value should be ddwaf_object_free. */
-    ddwaf_object_free_fn free_fn; 
+    ddwaf_object_free_fn free_fn;
 };
 
 /**
@@ -157,7 +157,7 @@ struct _ddwaf_result
     bool timeout;
     /** Array of events generated, this is guaranteed to be an array **/
     ddwaf_object events;
-    /** Actions array **/
+    /** Array of actions generated, this is guaranteed to be an array **/
     ddwaf_object actions;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
@@ -241,7 +241,7 @@ const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t 
  * Context object to perform matching using the provided WAF instance.
  *
  * @param handle Handle of the WAF instance containing the ruleset definition. (nonnull)
- 
+
  * @return Handle to the context instance.
  *
  * @note The WAF instance needs to be valid for the lifetime of the context.

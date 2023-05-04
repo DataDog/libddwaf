@@ -85,6 +85,7 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
     }
 
     ddwaf_object_array(&output.events);
+    ddwaf_object_array(&output.actions);
 
     std::unordered_set<std::string_view> all_actions;
     for (const auto &event : events) {
@@ -142,8 +143,6 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
     }
 
     if (!all_actions.empty()) {
-        ddwaf_object_array(&output.actions);
-
         for (const auto &action : all_actions) {
             ddwaf_object string_action;
             ddwaf_object_stringl(&string_action, action.data(), action.size());
