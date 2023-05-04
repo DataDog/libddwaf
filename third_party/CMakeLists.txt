@@ -9,6 +9,12 @@ set(INSTALL_DIR  ${CMAKE_BINARY_DIR}/third_party)
 # workaround for using it in target_include_directories
 file(MAKE_DIRECTORY ${INSTALL_DIR}/include)
 
+if(NOT MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-unused-parameter")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -Wno-unused-parameter")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-unused-parameter")
+endif()
+
 set(RAPIDJSON_COMMIT 22a62fcc2c2fa2418f5d358cdf65c1df73b418ae)
 ExternalProject_Add(proj_rapidjson
     URL               https://github.com/Tencent/rapidjson/archive/${RAPIDJSON_COMMIT}.tar.gz

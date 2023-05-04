@@ -212,6 +212,7 @@ ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
  * @return Handle to the new WAF instance or NULL if there was an error processing the ruleset.
  *
  * @note If handle or ruleset are NULL, the diagnostics object will not be initialised.
+ * @note This function is not thread-safe
  **/
 ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
     ddwaf_object *diagnostics);
@@ -630,6 +631,8 @@ const char *ddwaf_get_version();
  * @param min_level The minimum logging level for which to relay messages
  *
  * @return whether the operation succeeded or not
+ *
+ * @note This function is not thread-safe
  **/
 bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level);
 
