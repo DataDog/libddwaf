@@ -146,7 +146,7 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
 
         for (const auto &action : all_actions) {
             ddwaf_object string_action;
-            ddwaf_object_string(&string_action, to_cstr(action));
+            ddwaf_object_stringl(&string_action, action.data(), action.size());
             ddwaf_object_array_add(&output.actions, &string_action);
         }
     }
