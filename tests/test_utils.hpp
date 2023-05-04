@@ -11,8 +11,6 @@
 #include "rapidjson/schema.h"
 #include "test.h"
 
-using ddwaf_result_actions = ddwaf_result::_ddwaf_result_actions;
-
 namespace ddwaf::test {
 struct event {
     struct match {
@@ -88,14 +86,13 @@ protected:
 ::testing::AssertionResult ValidateSchema(const std::string &result);
 
 // Required by gtest to pretty print relevant types
-void PrintTo(const ddwaf_result_actions &actions, ::std::ostream *os);
+void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
 void PrintTo(const ddwaf_result &result, ::std::ostream *os);
 
 class WafResultActionMatcher {
 public:
     explicit WafResultActionMatcher(std::vector<std::string_view> &&values);
-    bool MatchAndExplain(
-        const ddwaf_result_actions &actions, ::testing::MatchResultListener *) const;
+    bool MatchAndExplain(const ddwaf_object &actions, ::testing::MatchResultListener *) const;
 
     void DescribeTo(::std::ostream *os) const { *os << expected_as_string_; }
 

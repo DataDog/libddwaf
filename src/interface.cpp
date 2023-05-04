@@ -241,13 +241,7 @@ void ddwaf_result_free(ddwaf_result *result)
     // NOLINTNEXTLINE
     ddwaf_object_free(&result->events);
 
-    auto actions = result->actions;
-    if (actions.array != nullptr) {
-        // NOLINTNEXTLINE
-        for (unsigned i = 0; i < actions.size; i++) { free(actions.array[i]); }
-        // NOLINTNEXTLINE
-        free(actions.array);
-    }
+    ddwaf_object_free(&result->actions);
 
     *result = DDWAF_RESULT_INITIALISER;
 }

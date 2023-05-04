@@ -157,11 +157,8 @@ struct _ddwaf_result
     bool timeout;
     /** Array of events generated, this is guaranteed to be an array **/
     ddwaf_object events;
-    /** Actions array and its size **/
-    struct _ddwaf_result_actions {
-        char **array;
-        uint32_t size;
-    } actions;
+    /** Actions array **/
+    ddwaf_object actions;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
 };

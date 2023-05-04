@@ -381,14 +381,17 @@ std::optional<std::string> event_schema_validator::validate(const char *events)
     return ::testing::AssertionSuccess();
 }
 
-void PrintTo(const ddwaf_result_actions &actions, ::std::ostream *os)
+void PrintTo(const ddwaf_object &actions, ::std::ostream *os)
 {
     *os << "[";
-    for (unsigned i = 0; i < actions.size; i++) {
+    for (unsigned i = 0; i < ddwaf_object_size(&actions); i++) {
         if (i > 0) {
             *os << ", ";
         }
-        *os << actions.array[i];
+        auto object = ddwaf_object_get_index(actions.array, i);
+        if (ddwaf_object_type(object) == DDWAF_OBJ_STRING) {
+            *os << ddwaf_object_get_string(ddwaf_object_get_index(object, i), NULL);
+        }
     }
     *os << "]";
 }
@@ -418,15 +421,17 @@ WafResultActionMatcher::WafResultActionMatcher(std::vector<std::string_view> &&v
 }
 
 bool WafResultActionMatcher::MatchAndExplain(
-    const ddwaf_result_actions &actions, ::testing::MatchResultListener *) const
+    const ddwaf_object &actions, ::testing::MatchResultListener *) const
 {
-    if (actions.size != expected_.size()) {
+    if (ddwaf_object_size(&actions) != expected_.size()) {
         return false;
     }
 
     std::vector<std::string_view> obtained;
-    obtained.reserve(actions.size);
-    for (unsigned i = 0; i < actions.size; i++) { obtained.emplace_back(actions.array[i]); }
+    obtained.reserve(actions.nbEntries);
+    for (unsigned i = 0; i < ddwaf_object_size(&actions); i++) {
+        obtained.emplace_back(ddwaf_object_get_string(ddwaf_object_get_index(&actions, i), NULL));
+    }
     std::sort(obtained.begin(), obtained.end());
 
     return obtained == expected_;

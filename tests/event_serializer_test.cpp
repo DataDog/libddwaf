@@ -208,7 +208,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     EXPECT_THAT(output.actions, WithActions({}));
 
     EXPECT_EQ(output.actions.array, nullptr);
-    EXPECT_EQ(output.actions.size, 0);
+    EXPECT_EQ(ddwaf_object_size(&output.actions), 0);
 
     ddwaf_result_free(&output);
 }

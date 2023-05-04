@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <ddwaf.h>
 #include <event.hpp>
 #include <rule.hpp>
 #include <unordered_set>
@@ -141,12 +142,13 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
     }
 
     if (!all_actions.empty()) {
-        // NOLINTNEXTLINE
-        output.actions.array = static_cast<char **>(malloc(sizeof(char *) * all_actions.size()));
-        output.actions.size = all_actions.size();
+        ddwaf_object_array(&output.actions);
 
-        std::size_t index = 0;
-        for (const auto &action : all_actions) { output.actions.array[index++] = to_cstr(action); }
+        for (const auto &action : all_actions) {
+            ddwaf_object string_action;
+            ddwaf_object_string(&string_action, to_cstr(action));
+            ddwaf_object_array_add(&output.actions, &string_action);
+        }
     }
 }
 
