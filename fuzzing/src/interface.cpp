@@ -85,8 +85,10 @@ ddwaf_handle init_waf()
             R"(^(?:\d[ -]*?){13,16}$)"},
         ddwaf_object_free};
     ddwaf_object rule = file_to_object("sample_rules.yml");
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_object ruleset_info;
+    ddwaf_handle handle = ddwaf_init(&rule, &config, &ruleset_info);
     ddwaf_object_free(&rule);
+    ddwaf_object_free(&ruleset_info);
     return handle;
 }
 
