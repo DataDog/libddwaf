@@ -26,8 +26,8 @@ jobs:
 
       - name: Install deps
         run: |
-          sudo apt-get -y update
-          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install python3 apt-transport-https build-essential wget cmake git clang-14 libfuzzer-14-dev
+          sudo .github/workflows/scripts/llvm.sh 15
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install python3 apt-transport-https build-essential wget cmake git clang-15 libfuzzer-15-dev
 
       - name: Build
         run: ./fuzzing/build.sh
