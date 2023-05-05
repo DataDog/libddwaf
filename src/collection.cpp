@@ -10,14 +10,14 @@
 
 namespace ddwaf {
 
-std::optional<event> match_rule(const rule::ptr &rule, const object_store &store,
+std::optional<event> match_rule(rule *rule, const object_store &store,
     memory::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
     const memory::unordered_set<ddwaf::rule *> &rules_to_exclude,
     const memory::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline)
 {
-    const auto &id = rule->id;
+    const auto &id = rule->get_id();
 
     if (deadline.expired()) {
         DDWAF_INFO("Ran out of time while running rule %s", id.c_str());
@@ -28,7 +28,7 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
         return std::nullopt;
     }
 
-    if (rules_to_exclude.find(rule.get()) != rules_to_exclude.end()) {
+    if (rules_to_exclude.find(rule) != rules_to_exclude.end()) {
         DDWAF_DEBUG("Excluding Rule %s", id.c_str());
         return std::nullopt;
     }
@@ -36,15 +36,15 @@ std::optional<event> match_rule(const rule::ptr &rule, const object_store &store
     DDWAF_DEBUG("Running the WAF on rule %s", id.c_str());
 
     try {
-        auto it = cache.find(rule.get());
+        auto it = cache.find(rule);
         if (it == cache.end()) {
-            auto [new_it, res] = cache.emplace(rule.get(), rule::cache_type{});
+            auto [new_it, res] = cache.emplace(rule, rule::cache_type{});
             it = new_it;
         }
 
         rule::cache_type &rule_cache = it->second;
         std::optional<event> event;
-        auto exclude_it = objects_to_exclude.find(rule.get());
+        auto exclude_it = objects_to_exclude.find(rule);
         if (exclude_it != objects_to_exclude.end()) {
             const auto &objects_excluded = exclude_it->second;
             event = rule->match(store, rule_cache, objects_excluded, dynamic_processors, deadline);
@@ -72,13 +72,13 @@ void base_collection<Derived>::match(memory::vector<event> &events, const object
         return;
     }
 
-    for (const auto &rule : rules_) {
+    for (auto *rule : rules_) {
         auto event = match_rule(rule, store, cache.rule_cache, rules_to_exclude, objects_to_exclude,
             dynamic_processors, deadline);
         if (event.has_value()) {
             cache.result = Derived::type();
             events.emplace_back(std::move(*event));
-            DDWAF_DEBUG("Found event on rule %s", rule->id.c_str());
+            DDWAF_DEBUG("Found event on rule %s", rule->get_id().c_str());
             break;
         }
     }

@@ -9,6 +9,12 @@ set(INSTALL_DIR  ${CMAKE_BINARY_DIR}/third_party)
 # workaround for using it in target_include_directories
 file(MAKE_DIRECTORY ${INSTALL_DIR}/include)
 
+if(NOT MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-unused-parameter")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -Wno-unused-parameter")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-unused-parameter")
+endif()
+
 set(RAPIDJSON_COMMIT 22a62fcc2c2fa2418f5d358cdf65c1df73b418ae)
 ExternalProject_Add(proj_rapidjson
     URL               https://github.com/Tencent/rapidjson/archive/${RAPIDJSON_COMMIT}.tar.gz
@@ -28,6 +34,7 @@ add_library(lib_rapidjson INTERFACE IMPORTED GLOBAL)
 target_include_directories(lib_rapidjson INTERFACE ${INSTALL_DIR}/include)
 add_dependencies(lib_rapidjson proj_rapidjson)
 target_compile_definitions(lib_rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING=1)
+set_target_properties(proj_rapidjson PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 if(NOT MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fPIC")
@@ -180,7 +187,7 @@ set_target_properties(lib_yamlcpp proj_yamlcpp PROPERTIES EXCLUDE_FROM_ALL TRUE)
 # Appsec event rules
 ExternalProject_Add(proj_event_rules
     GIT_REPOSITORY https://github.com/DataDog/appsec-event-rules.git
-    GIT_TAG 1.3.2
+    GIT_TAG 1.6.0
     GIT_SHALLOW ON
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""

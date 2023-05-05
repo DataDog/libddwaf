@@ -4,46 +4,45 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <fstream>
+#include <iomanip>
+#include <ios>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <system_error>
+
 #include "helpers.hpp"
-#include "stdio.h"
-#include "stdlib.h"
 
 namespace {
-size_t get_file_size(FILE *fp)
-{
-    long size;
 
-    fseek(fp, 0L, SEEK_END);
-    size = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-
-    return size;
-}
-
-void indent(int i) { fprintf(stderr, "\n%*s", i * 4, ""); }
+void indent(int i) { std::cerr << '\n' << std::setw(i * 4) << std::setfill(' ') << ""; }
 
 void print_string(const char *buffer, uint64_t size)
 {
-    if (buffer == NULL) {
-        fprintf(stderr, "<NULL_PTR>");
+    if (buffer == nullptr) {
+        std::cerr << "<NULL_PTR>";
         return;
     }
 
-    fprintf(stderr, "\"");
+    std::cerr << "\"";
     for (uint64_t i = 0; i < size; i++) {
         if (buffer[i] == 34) {
-            fprintf(stderr, "\\\"");
+            std::cerr << "\\\"";
         } else if (buffer[i] == 92) {
-            fprintf(stderr, "\\\\");
+            std::cerr << "\\\\";
         } else if (buffer[i] >= 32 && buffer[i] <= 127) {
-            fprintf(stderr, "%c", buffer[i]);
+            std::cerr << buffer[i];
         } else {
-            fprintf(stderr, "\\x%02x", buffer[i]);
+            std::cerr << "\\x" << std::hex << std::setw(2) << std::setfill('0')
+                      << static_cast<unsigned>(buffer[i]) << std::endl;
         }
     }
-    fprintf(stderr, "\"");
+    std::cerr << "\"";
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void _print_object(ddwaf_object entry, uint8_t depth)
 {
     bool first = true;
@@ -51,96 +50,93 @@ void _print_object(ddwaf_object entry, uint8_t depth)
     switch (entry.type) {
     case DDWAF_OBJ_MAP:
         if (entry.nbEntries == 0) {
-            fprintf(stderr, "{}");
+            std::cerr << "{}";
         } else {
 
-            fprintf(stderr, "{");
+            std::cerr << "{";
 
             for (uint64_t i = 0; i < entry.nbEntries; i++) {
                 if (first) {
                     first = false;
                 } else {
-                    fprintf(stderr, ",");
+                    std::cerr << ",";
                 }
 
                 indent(depth + 1);
                 print_string(entry.array[i].parameterName, entry.array[i].parameterNameLength);
-                fprintf(stderr, ": ");
+                std::cerr << ": ";
                 _print_object(entry.array[i], depth + 1);
             }
 
             indent(depth);
-            fprintf(stderr, "}");
+            std::cerr << "}";
         }
         break;
 
     case DDWAF_OBJ_ARRAY:
         if (entry.nbEntries == 0) {
             indent(depth);
-            fprintf(stderr, "[]");
+            std::cerr << "[]";
         } else {
-            fprintf(stderr, "[");
+            std::cerr << "[";
 
             for (uint64_t i = 0; i < entry.nbEntries; i++) {
                 if (first) {
                     first = false;
                 } else {
-                    fprintf(stderr, ",");
+                    std::cerr << ",";
                 }
                 indent(depth + 1);
                 _print_object(entry.array[i], depth + 1);
             }
 
             indent(depth);
-            fprintf(stderr, "]");
+            std::cerr << "]";
         }
 
         break;
 
     case DDWAF_OBJ_SIGNED:
-        fprintf(stderr, "%ld", entry.intValue);
+        std::cerr << entry.intValue;
         break;
     case DDWAF_OBJ_UNSIGNED:
-        fprintf(stderr, "%lu", entry.uintValue);
+        std::cerr << entry.uintValue;
         break;
     case DDWAF_OBJ_STRING:
         print_string(entry.stringValue, entry.nbEntries);
         break;
+    case DDWAF_OBJ_BOOL:
+        std::cerr << std::boolalpha << entry.boolean;
+        break;
     case DDWAF_OBJ_INVALID:
-        fprintf(stderr, "--PW ERROR--");
+        std::cerr << "--PW ERROR--";
         break;
     }
 }
 
 } // namespace
 
-void print_object(ddwaf_object entry)
+void print_object(ddwaf_object object)
 {
-    _print_object(entry, 0);
-    fprintf(stderr, "\n");
+    _print_object(object, 0);
+    std::cerr << "\n";
 }
 
-char *read_file_content(const char *filename, size_t *psize)
+std::string read_file(std::string_view filename)
 {
-    FILE *fp = fopen(filename, "r");
-
-    if (!fp) {
-        fprintf(stderr, "Can't read file %s\n", filename);
-        exit(EXIT_FAILURE);
+    std::ifstream file(filename.data(), std::ios::in);
+    if (!file) {
+        throw std::system_error(errno, std::generic_category());
     }
 
-    *psize = get_file_size(fp);
-    char *fcontent = (char *)malloc(*psize + 1);
+    // Create a buffer equal to the file size
+    std::string buffer;
+    file.seekg(0, std::ios::end);
+    buffer.resize(file.tellg());
+    file.seekg(0, std::ios::beg);
 
-    if (!fcontent) {
-        fprintf(stderr, "Can't allocate %lu bytes", *psize);
-        exit(EXIT_FAILURE);
-    }
+    file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+    file.close();
 
-    fread(fcontent, 1, *psize, fp);
-    fclose(fp);
-
-    fcontent[*psize] = 0;
-
-    return fcontent;
+    return buffer;
 }

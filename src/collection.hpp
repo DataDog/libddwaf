@@ -45,7 +45,7 @@ public:
     base_collection &operator=(const base_collection &) = default;
     base_collection &operator=(base_collection &&) noexcept = default;
 
-    void insert(rule::ptr rule) { rules_.emplace_back(std::move(rule)); }
+    void insert(const rule::ptr &rule) { rules_.emplace_back(rule.get()); }
 
     void match(memory::vector<event> &events /* output */, const object_store &store,
         collection_cache &cache, const memory::unordered_set<ddwaf::rule *> &rules_to_exclude,
@@ -54,7 +54,7 @@ public:
         ddwaf::timer &deadline) const;
 
 protected:
-    std::vector<rule::ptr> rules_{};
+    std::vector<rule *> rules_{};
 };
 
 class collection : public base_collection<collection> {

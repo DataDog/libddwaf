@@ -26,6 +26,7 @@ size_t find_string_cutoff(
 // clang-format off
 #define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
 #define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
+#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, 0}
 // clang-format on
 
 namespace ddwaf {
@@ -51,4 +52,17 @@ inline bool is_scalar(const ddwaf_object *obj)
 
 inline bool isdigit(char c) { return (c >= '0' && c <= '9'); }
 
+template <class Fn> class scope_exit {
+public:
+    explicit scope_exit(Fn &&fn) noexcept : fn_(std::move(fn)) {}
+    ~scope_exit() { fn_(); }
+
+    scope_exit(const scope_exit &) = delete;
+    scope_exit(scope_exit &&) = delete;
+    scope_exit &operator=(const scope_exit &) = delete;
+    scope_exit &operator=(scope_exit &&) = delete;
+
+protected:
+    Fn fn_;
+};
 } // namespace ddwaf

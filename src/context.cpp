@@ -20,7 +20,7 @@ DDWAF_RET_CODE context::run(
 {
     if (res.has_value()) {
         ddwaf_result &output = *res;
-        output = {false, nullptr, {nullptr, 0}, 0};
+        output = DDWAF_RESULT_INITIALISER;
     }
 
     if (!store_.insert(newParameters)) {
@@ -138,15 +138,31 @@ memory::vector<event> context::match(const memory::unordered_set<rule *> &rules_
             ruleset_->dynamic_processors, deadline);
     };
 
-    // Evaluate priority collections first
-    for (auto &[type, collection] : ruleset_->priority_collections) {
-        DDWAF_DEBUG("Evaluating priority collection %s", type.data());
+    // Evaluate user priority collections first
+    for (auto &[type, collection] : ruleset_->user_priority_collections) {
+        DDWAF_DEBUG("Evaluating user priority collection %.*s", static_cast<int>(type.length()),
+            type.data());
         eval_collection(type, collection);
     }
 
-    // Evalaute regular collection after
-    for (auto &[type, collection] : ruleset_->collections) {
-        DDWAF_DEBUG("Evaluating collection %s", type.data());
+    // Evaluate priority collections first
+    for (auto &[type, collection] : ruleset_->base_priority_collections) {
+        DDWAF_DEBUG(
+            "Evaluating priority collection %.*s", static_cast<int>(type.length()), type.data());
+        eval_collection(type, collection);
+    }
+
+    // Evaluate regular collection after
+    for (auto &[type, collection] : ruleset_->user_collections) {
+        DDWAF_DEBUG(
+            "Evaluating user collection %.*s", static_cast<int>(type.length()), type.data());
+        eval_collection(type, collection);
+    }
+
+    // Evaluate regular collection after
+    for (auto &[type, collection] : ruleset_->base_collections) {
+        DDWAF_DEBUG(
+            "Evaluating base collection %.*s", static_cast<int>(type.length()), type.data());
         eval_collection(type, collection);
     }
 

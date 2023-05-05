@@ -15,12 +15,6 @@
 
 namespace ddwaf {
 
-rule::rule(std::string id_, std::string name_, std::unordered_map<std::string, std::string> tags_,
-    std::vector<condition::ptr> conditions_, std::vector<std::string> actions_, bool enabled_)
-    : enabled(enabled_), id(std::move(id_)), name(std::move(name_)), tags(std::move(tags_)),
-      conditions(std::move(conditions_)), actions(std::move(actions_))
-{}
-
 std::optional<event> rule::match(const object_store &store, cache_type &cache,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
@@ -45,11 +39,11 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
         cond_iter = *cache.last_cond;
         run_on_new = true;
     } else {
-        cond_iter = conditions.cbegin();
+        cond_iter = conditions_.cbegin();
         run_on_new = false;
     }
 
-    while (cond_iter != conditions.cend()) {
+    while (cond_iter != conditions_.cend()) {
         auto &&cond = *cond_iter;
         auto opt_match =
             cond->match(store, objects_excluded, run_on_new, dynamic_processors, deadline);
@@ -65,16 +59,7 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
 
     cache.result = true;
 
-    ddwaf::event evt;
-    evt.id = id;
-    evt.name = name;
-    evt.type = get_tag("type");
-    evt.category = get_tag("category");
-    evt.matches = std::move(cache.matches);
-
-    evt.actions.reserve(actions.size());
-    for (const auto &action : actions) { evt.actions.push_back(action); }
-
+    ddwaf::event evt{this, std::move(cache.matches)};
     return {std::move(evt)};
 }
 

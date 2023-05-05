@@ -145,10 +145,11 @@ condition::ptr parse_rule_condition(const parameter::map &root, manifest &target
 }
 
 rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
-    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits)
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    rule::source_type source)
 {
     std::vector<PW_TRANSFORM_ID> rule_transformers;
-    auto source = ddwaf::condition::data_source::values;
+    auto data_source = ddwaf::condition::data_source::values;
     auto transformers = at<parameter::vector>(rule, "transformers", {});
     for (const auto &transformer_param : transformers) {
         auto transformer = static_cast<std::string_view>(transformer_param);
@@ -163,7 +164,7 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
                            "in the list, all transformers will be applied to "
                            "keys and not values");
             }
-            source = ddwaf::condition::data_source::keys;
+            data_source = ddwaf::condition::data_source::keys;
         } else {
             rule_transformers.push_back(transform_id);
         }
@@ -176,7 +177,7 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
     for (const auto &cond_param : conditions_array) {
         auto cond = static_cast<parameter::map>(cond_param);
         conditions.push_back(parse_rule_condition(
-            cond, target_manifest, rule_data_ids, source, rule_transformers, limits));
+            cond, target_manifest, rule_data_ids, data_source, rule_transformers, limits));
     }
 
     std::unordered_map<std::string, std::string> tags;
@@ -192,7 +193,7 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
         throw ddwaf::parsing_error("missing key 'type'");
     }
 
-    return {at<bool>(rule, "enabled", true), at<std::string>(rule, "name"), std::move(tags),
+    return {at<bool>(rule, "enabled", true), source, at<std::string>(rule, "name"), std::move(tags),
         std::move(conditions), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
@@ -204,14 +205,14 @@ rule_target_spec parse_rules_target(const parameter::map &target)
     }
 
     auto tag_map = at<parameter::map>(target, "tags", {});
-    if (tag_map.empty()) {
-        throw ddwaf::parsing_error("empty rules_target");
+    if (!tag_map.empty()) {
+        std::unordered_map<std::string, std::string> tags;
+        for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
+
+        return {target_type::tags, {}, std::move(tags)};
     }
 
-    std::unordered_map<std::string, std::string> tags;
-    for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
-
-    return {target_type::tags, {}, std::move(tags)};
+    return {target_type::none, {}, {}};
 }
 
 std::pair<override_spec, target_type> parse_override(const parameter::map &node)
@@ -241,7 +242,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
             if (type == target_type::none) {
                 type = target_spec.type;
             } else if (type != target_spec.type) {
-                throw ddwaf::parsing_error("rule_override targets rules and tags");
+                throw ddwaf::parsing_error("rule override targets rules and tags");
             }
 
             current.targets.emplace_back(std::move(target_spec));
@@ -254,7 +255,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
     }
 
     if (!current.actions.has_value() && !current.enabled.has_value()) {
-        throw ddwaf::parsing_error("rules_override without side-effects");
+        throw ddwaf::parsing_error("rule override without side-effects");
     }
 
     return {current, type};
@@ -390,46 +391,48 @@ rule_filter_spec parse_rule_filter(
     return {std::move(conditions), std::move(rules_target)};
 }
 
+std::string index_to_id(unsigned idx) { return "index:" + std::to_string(idx); }
+
 } // namespace
 
-rule_spec_container parse_rules(parameter::vector &rule_array, ddwaf::ruleset_info &info,
+rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
     manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids,
-    const object_limits &limits)
+    const object_limits &limits, rule::source_type source)
 {
     rule_spec_container rules;
-    for (const auto &rule_param : rule_array) {
+    for (unsigned i = 0; i < rule_array.size(); ++i) {
+        const auto &rule_param = rule_array[i];
         auto rule_map = static_cast<parameter::map>(rule_param);
         std::string id;
         try {
             id = at<std::string>(rule_map, "id");
             if (rules.find(id) != rules.end()) {
                 DDWAF_WARN("duplicate rule %s", id.c_str());
-                info.insert_error(id, "duplicate rule");
+                info.add_failed(id, "duplicate rule");
                 continue;
             }
 
-            auto rule = parse_rule(rule_map, target_manifest, rule_data_ids, limits);
+            auto rule = parse_rule(rule_map, target_manifest, rule_data_ids, limits, source);
+            info.add_loaded(id);
             rules.emplace(std::move(id), std::move(rule));
-            info.add_loaded();
         } catch (const std::exception &e) {
-            if (!id.empty()) {
-                DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
-                info.insert_error(id, e.what());
-            } else {
-                DDWAF_WARN("failed to parse rule: %s", e.what());
-                info.add_failed();
+            if (id.empty()) {
+                id = index_to_id(i);
             }
+            DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
+            info.add_failed(id, e.what());
         }
     }
 
     return rules;
 }
 
-rule_data_container parse_rule_data(
-    parameter::vector &rule_data, std::unordered_map<std::string, std::string> &rule_data_ids)
+rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_info &info,
+    std::unordered_map<std::string, std::string> &rule_data_ids)
 {
     rule_data_container processors;
-    for (ddwaf::parameter object : rule_data) {
+    for (unsigned i = 0; i < rule_data.size(); ++i) {
+        ddwaf::parameter object = rule_data[i];
         std::string id;
         try {
             auto entry = static_cast<ddwaf::parameter::map>(object);
@@ -448,7 +451,9 @@ rule_data_container parse_rule_data(
                 } else if (type == "data_with_expiration") {
                     operation = "exact_match";
                 } else {
-                    DDWAF_DEBUG("Failed to process rule idata id '%s", id.c_str());
+                    DDWAF_DEBUG("Failed to process rule data id '%s", id.c_str());
+                    info.add_failed(id, "failed to infer processor");
+                    continue;
                 }
             } else {
                 operation = it->second;
@@ -464,26 +469,34 @@ rule_data_container parse_rule_data(
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
                 processor = std::make_shared<rule_processor::exact_match>(parsed_data);
             } else {
-                DDWAF_WARN("Processor %.*s doesn't support dynamic rule data",
-                    static_cast<int>(operation.length()), operation.data());
+                DDWAF_WARN("Processor %s doesn't support dynamic rule data", operation.data());
+                info.add_failed(id,
+                    "processor " + std::string(operation) + " doesn't support dynamic rule data");
                 continue;
             }
 
+            info.add_loaded(id);
             processors.emplace(std::move(id), std::move(processor));
         } catch (const ddwaf::exception &e) {
-            DDWAF_ERROR("Failed to parse data id '%s': %s",
-                (!id.empty() ? id.c_str() : "(unknown)"), e.what());
+            if (id.empty()) {
+                id = index_to_id(i);
+            }
+
+            DDWAF_ERROR("Failed to parse data id '%s': %s", id.c_str(), e.what());
+            info.add_failed(id, e.what());
         }
     }
 
     return processors;
 }
 
-override_spec_container parse_overrides(parameter::vector &override_array)
+override_spec_container parse_overrides(parameter::vector &override_array, base_section_info &info)
 {
     override_spec_container overrides;
 
-    for (const auto &node_param : override_array) {
+    for (unsigned i = 0; i < override_array.size(); ++i) {
+        auto id = index_to_id(i);
+        const auto &node_param = override_array[i];
         auto node = static_cast<parameter::map>(node_param);
         try {
             auto [spec, type] = parse_override(node);
@@ -492,45 +505,53 @@ override_spec_container parse_overrides(parameter::vector &override_array)
             } else if (type == target_type::tags) {
                 overrides.by_tags.emplace_back(std::move(spec));
             } else {
-                DDWAF_WARN("override with no targets");
+                // This code is likely unreachable
+                DDWAF_WARN("rule override with no targets");
+                info.add_failed(id, "rule override with no targets");
+                continue;
             }
+            info.add_loaded(id);
         } catch (const std::exception &e) {
-            DDWAF_WARN("failed to parse rule_override: %s", e.what());
+            DDWAF_WARN("failed to parse rule override: %s", e.what());
+            info.add_failed(id, e.what());
         }
     }
 
     return overrides;
 }
 
-filter_spec_container parse_filters(
-    parameter::vector &filter_array, manifest &target_manifest, const object_limits &limits)
+filter_spec_container parse_filters(parameter::vector &filter_array, base_section_info &info,
+    manifest &target_manifest, const object_limits &limits)
 {
     filter_spec_container filters;
-    for (const auto &node_param : filter_array) {
+    for (unsigned i = 0; i < filter_array.size(); i++) {
+        const auto &node_param = filter_array[i];
         auto node = static_cast<parameter::map>(node_param);
         std::string id;
         try {
             id = at<std::string>(node, "id");
             if (filters.ids.find(id) != filters.ids.end()) {
                 DDWAF_WARN("duplicate filter: %s", id.c_str());
+                info.add_failed(id, "duplicate filter");
                 continue;
             }
 
             if (node.find("inputs") != node.end()) {
                 auto filter = parse_input_filter(node, target_manifest, limits);
                 filters.ids.emplace(id);
-                filters.input_filters.emplace(std::move(id), std::move(filter));
+                filters.input_filters.emplace(id, std::move(filter));
             } else {
                 auto filter = parse_rule_filter(node, target_manifest, limits);
                 filters.ids.emplace(id);
-                filters.rule_filters.emplace(std::move(id), std::move(filter));
+                filters.rule_filters.emplace(id, std::move(filter));
             }
+            info.add_loaded(id);
         } catch (const std::exception &e) {
-            if (!id.empty()) {
-                DDWAF_WARN("failed to parse filter '%s': %s", id.c_str(), e.what());
-            } else {
-                DDWAF_WARN("failed to parse filter: %s", e.what());
+            if (id.empty()) {
+                id = index_to_id(i);
             }
+            DDWAF_WARN("failed to parse filter '%s': %s", id.c_str(), e.what());
+            info.add_failed(id, e.what());
         }
     }
 

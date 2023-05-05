@@ -83,6 +83,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
+    ${libddwaf_SOURCE_DIR}/src/waf.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
@@ -122,8 +123,7 @@ install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
-set(LIBDDWAF_PRIVATE_LIBRARIES 
-    lib_re2 lib_rapidjson lib_ac lib_injection lib_radix lib_utf8proc)
+set(LIBDDWAF_PRIVATE_LIBRARIES lib_re2 lib_ac lib_injection lib_radix lib_utf8proc)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 # needed for glibc <2.17. We compile with --as-needed so the library won't

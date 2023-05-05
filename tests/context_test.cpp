@@ -178,12 +178,12 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_EQ(events.size(), 1);
 
     auto &event = events[0];
-    EXPECT_STREQ(event.id.data(), "id1");
-    EXPECT_STREQ(event.name.data(), "name1");
-    EXPECT_STREQ(event.type.data(), "type");
-    EXPECT_STREQ(event.category.data(), "category1");
-    memory::vector<std::string_view> expected_actions{};
-    EXPECT_EQ(event.actions, expected_actions);
+    EXPECT_STREQ(event.rule->get_id().c_str(), "id1");
+    EXPECT_STREQ(event.rule->get_name().c_str(), "name1");
+    EXPECT_STREQ(event.rule->get_tag("type").data(), "type");
+    EXPECT_STREQ(event.rule->get_tag("category").data(), "category1");
+    std::vector<std::string> expected_actions{};
+    EXPECT_EQ(event.rule->get_actions(), expected_actions);
     EXPECT_EQ(event.matches.size(), 1);
 
     auto &match = event.matches[0];
@@ -191,7 +191,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
     EXPECT_STREQ(match.operator_name.data(), "ip_match");
     EXPECT_STREQ(match.operator_value.data(), "");
-    EXPECT_STREQ(match.source.data(), "http.client_ip");
+    EXPECT_STREQ(match.address.data(), "http.client_ip");
     EXPECT_TRUE(match.key_path.empty());
 }
 
@@ -254,9 +254,9 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         EXPECT_EQ(events.size(), 1);
 
         auto event = events[0];
-        EXPECT_STREQ(event.id.data(), "id2");
-        EXPECT_EQ(event.actions.size(), 1);
-        EXPECT_STREQ(event.actions[0].data(), "block");
+        EXPECT_STREQ(event.rule->get_id().c_str(), "id2");
+        EXPECT_EQ(event.rule->get_actions().size(), 1);
+        EXPECT_STREQ(event.rule->get_actions()[0].data(), "block");
     }
 
     {
@@ -274,9 +274,9 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         EXPECT_EQ(events.size(), 1);
 
         auto event = events[0];
-        EXPECT_STREQ(event.id.data(), "id2");
-        EXPECT_EQ(event.actions.size(), 1);
-        EXPECT_STREQ(event.actions[0].data(), "block");
+        EXPECT_STREQ(event.rule->get_id().c_str(), "id2");
+        EXPECT_EQ(event.rule->get_actions().size(), 1);
+        EXPECT_STREQ(event.rule->get_actions()[0].data(), "block");
     }
 }
 
@@ -337,12 +337,12 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
-        EXPECT_STREQ(event.id.data(), "id1");
-        EXPECT_STREQ(event.name.data(), "name1");
-        EXPECT_STREQ(event.type.data(), "type");
-        EXPECT_STREQ(event.category.data(), "category1");
-        memory::vector<std::string_view> expected_actions{};
-        EXPECT_EQ(event.actions, expected_actions);
+        EXPECT_STREQ(event.rule->get_id().c_str(), "id1");
+        EXPECT_STREQ(event.rule->get_name().c_str(), "name1");
+        EXPECT_STREQ(event.rule->get_tag("type").data(), "type");
+        EXPECT_STREQ(event.rule->get_tag("category").data(), "category1");
+        std::vector<std::string> expected_actions{};
+        EXPECT_EQ(event.rule->get_actions(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
@@ -350,7 +350,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.source.data(), "http.client_ip");
+        EXPECT_STREQ(match.address.data(), "http.client_ip");
         EXPECT_TRUE(match.key_path.empty());
     }
 
@@ -423,12 +423,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
-        EXPECT_STREQ(event.id.data(), "id1");
-        EXPECT_STREQ(event.name.data(), "name1");
-        EXPECT_STREQ(event.type.data(), "type");
-        EXPECT_STREQ(event.category.data(), "category1");
-        memory::vector<std::string_view> expected_actions{};
-        EXPECT_EQ(event.actions, expected_actions);
+        EXPECT_STREQ(event.rule->get_id().c_str(), "id1");
+        EXPECT_STREQ(event.rule->get_name().c_str(), "name1");
+        EXPECT_STREQ(event.rule->get_tag("type").data(), "type");
+        EXPECT_STREQ(event.rule->get_tag("category").data(), "category1");
+        std::vector<std::string> expected_actions{};
+        EXPECT_EQ(event.rule->get_actions(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
@@ -436,7 +436,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.source.data(), "http.client_ip");
+        EXPECT_STREQ(match.address.data(), "http.client_ip");
         EXPECT_TRUE(match.key_path.empty());
     }
 
@@ -454,12 +454,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 
         auto &event = events[0];
         EXPECT_EQ(events.size(), 1);
-        EXPECT_STREQ(event.id.data(), "id2");
-        EXPECT_STREQ(event.name.data(), "name2");
-        EXPECT_STREQ(event.type.data(), "type");
-        EXPECT_STREQ(event.category.data(), "category2");
-        memory::vector<std::string_view> expected_actions{"block"};
-        EXPECT_EQ(event.actions, expected_actions);
+        EXPECT_STREQ(event.rule->get_id().c_str(), "id2");
+        EXPECT_STREQ(event.rule->get_name().c_str(), "name2");
+        EXPECT_STREQ(event.rule->get_tag("type").data(), "type");
+        EXPECT_STREQ(event.rule->get_tag("category").data(), "category2");
+        std::vector<std::string> expected_actions{"block"};
+        EXPECT_EQ(event.rule->get_actions(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
@@ -467,7 +467,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_STREQ(match.matched.c_str(), "admin");
         EXPECT_STREQ(match.operator_name.data(), "exact_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.source.data(), "usr.id");
+        EXPECT_STREQ(match.address.data(), "usr.id");
         EXPECT_TRUE(match.key_path.empty());
     }
 }
@@ -529,12 +529,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
-        EXPECT_STREQ(event.id.data(), "id1");
-        EXPECT_STREQ(event.name.data(), "name1");
-        EXPECT_STREQ(event.type.data(), "type");
-        EXPECT_STREQ(event.category.data(), "category1");
-        memory::vector<std::string_view> expected_actions{"block"};
-        EXPECT_EQ(event.actions, expected_actions);
+        EXPECT_STREQ(event.rule->get_id().c_str(), "id1");
+        EXPECT_STREQ(event.rule->get_name().c_str(), "name1");
+        EXPECT_STREQ(event.rule->get_tag("type").data(), "type");
+        EXPECT_STREQ(event.rule->get_tag("category").data(), "category1");
+        std::vector<std::string> expected_actions{"block"};
+        EXPECT_EQ(event.rule->get_actions(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
@@ -542,7 +542,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.source.data(), "http.client_ip");
+        EXPECT_STREQ(match.address.data(), "http.client_ip");
         EXPECT_TRUE(match.key_path.empty());
     }
 
@@ -617,18 +617,18 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
-        EXPECT_STREQ(event.id.data(), "id1");
-        EXPECT_STREQ(event.name.data(), "name1");
-        EXPECT_STREQ(event.type.data(), "type");
-        EXPECT_STREQ(event.category.data(), "category1");
-        EXPECT_TRUE(event.actions.empty());
+        EXPECT_STREQ(event.rule->get_id().c_str(), "id1");
+        EXPECT_STREQ(event.rule->get_name().c_str(), "name1");
+        EXPECT_STREQ(event.rule->get_tag("type").data(), "type");
+        EXPECT_STREQ(event.rule->get_tag("category").data(), "category1");
+        EXPECT_TRUE(event.rule->get_actions().empty());
 
         auto &match = event.matches[0];
         EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
         EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.source.data(), "http.client_ip");
+        EXPECT_STREQ(match.address.data(), "http.client_ip");
         EXPECT_TRUE(match.key_path.empty());
     }
 
@@ -646,12 +646,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
 
         auto &event = events[0];
         EXPECT_EQ(events.size(), 1);
-        EXPECT_STREQ(event.id.data(), "id2");
-        EXPECT_STREQ(event.name.data(), "name2");
-        EXPECT_STREQ(event.type.data(), "type");
-        EXPECT_STREQ(event.category.data(), "category2");
-        memory::vector<std::string_view> expected_actions{"redirect"};
-        EXPECT_EQ(event.actions, expected_actions);
+        EXPECT_STREQ(event.rule->get_id().c_str(), "id2");
+        EXPECT_STREQ(event.rule->get_name().c_str(), "name2");
+        EXPECT_STREQ(event.rule->get_tag("type").data(), "type");
+        EXPECT_STREQ(event.rule->get_tag("category").data(), "category2");
+        std::vector<std::string> expected_actions{"redirect"};
+        EXPECT_EQ(event.rule->get_actions(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
@@ -659,7 +659,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_STREQ(match.matched.c_str(), "admin");
         EXPECT_STREQ(match.operator_name.data(), "exact_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.source.data(), "usr.id");
+        EXPECT_STREQ(match.address.data(), "usr.id");
         EXPECT_TRUE(match.key_path.empty());
     }
 }
@@ -1593,7 +1593,7 @@ TEST(TestContext, InputFilterWithCondition)
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
 
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules["id"].get()};
+        std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
         auto filter = std::make_shared<input_filter>(
             "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
@@ -1702,8 +1702,7 @@ TEST(TestContext, InputFilterMultipleRules)
         obj_filter->insert(usr_id.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
-        std::set<ddwaf::rule *> filter_rules{
-            ruleset->rules["usr_id"].get(), ruleset->rules["ip_id"].get()};
+        std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get(), ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
             "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
@@ -1817,7 +1816,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         obj_filter->insert(client_ip.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules["ip_id"].get()};
+        std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
         auto filter = std::make_shared<input_filter>(
             "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
@@ -1829,7 +1828,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         obj_filter->insert(usr_id.root);
 
         std::vector<std::shared_ptr<condition>> conditions;
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules["usr_id"].get()};
+        std::set<ddwaf::rule *> filter_rules{ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
             "2", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
 
@@ -1956,9 +1955,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         ruleset->insert_rule(rule);
     }
 
-    auto ip_rule = ruleset->rules["ip_id"];
-    auto usr_rule = ruleset->rules["usr_id"];
-    auto cookie_rule = ruleset->rules["cookie_id"];
+    auto ip_rule = ruleset->rules[0];
+    auto usr_rule = ruleset->rules[1];
+    auto cookie_rule = ruleset->rules[2];
     {
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(client_ip.root);

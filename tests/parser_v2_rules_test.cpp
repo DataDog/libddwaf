@@ -9,7 +9,7 @@
 TEST(TestParserV2Rules, ParseRule)
 {
     ddwaf::object_limits limits;
-    ruleset_info info;
+    ddwaf::ruleset_info::section_info section;
     ddwaf::manifest manifest;
     std::unordered_map<std::string, std::string> rule_data_ids;
 
@@ -17,8 +17,27 @@ TEST(TestParserV2Rules, ParseRule)
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
-    auto rules = parser::v2::parse_rules(rule_array, info, manifest, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, manifest, rule_data_ids, limits);
     ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(rules.size(), 1);
     EXPECT_NE(rules.find("1"), rules.end());
@@ -36,7 +55,7 @@ TEST(TestParserV2Rules, ParseRule)
 TEST(TestParserV2Rules, ParseRuleWithoutType)
 {
     ddwaf::object_limits limits;
-    ruleset_info info;
+    ddwaf::ruleset_info::section_info section;
     ddwaf::manifest manifest;
     std::unordered_map<std::string, std::string> rule_data_ids;
 
@@ -44,8 +63,33 @@ TEST(TestParserV2Rules, ParseRuleWithoutType)
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
-    auto rules = parser::v2::parse_rules(rule_array, info, manifest, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, manifest, rule_data_ids, limits);
     ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("missing key 'type'");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(rules.size(), 0);
 }
@@ -53,7 +97,7 @@ TEST(TestParserV2Rules, ParseRuleWithoutType)
 TEST(TestParserV2Rules, ParseRuleWithoutID)
 {
     ddwaf::object_limits limits;
-    ruleset_info info;
+    ddwaf::ruleset_info::section_info section;
     ddwaf::manifest manifest;
     std::unordered_map<std::string, std::string> rule_data_ids;
 
@@ -61,8 +105,33 @@ TEST(TestParserV2Rules, ParseRuleWithoutID)
         R"([{name: rule1, tags: {type: type1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
-    auto rules = parser::v2::parse_rules(rule_array, info, manifest, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, manifest, rule_data_ids, limits);
     ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("index:0"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("missing key 'id'");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("index:0"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(rules.size(), 0);
 }
@@ -70,7 +139,7 @@ TEST(TestParserV2Rules, ParseRuleWithoutID)
 TEST(TestParserV2Rules, ParseMultipleRules)
 {
     ddwaf::object_limits limits;
-    ruleset_info info;
+    ddwaf::ruleset_info::section_info section;
     ddwaf::manifest manifest;
     std::unordered_map<std::string, std::string> rule_data_ids;
 
@@ -80,8 +149,28 @@ TEST(TestParserV2Rules, ParseMultipleRules)
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
     EXPECT_EQ(rule_array.size(), 2);
 
-    auto rules = parser::v2::parse_rules(rule_array, info, manifest, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, manifest, rule_data_ids, limits);
     ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 2);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+        EXPECT_NE(loaded.find("secondrule"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(rules.size(), 2);
     EXPECT_NE(rules.find("1"), rules.end());
@@ -115,7 +204,7 @@ TEST(TestParserV2Rules, ParseMultipleRules)
 TEST(TestParserV2Rules, ParseMultipleRulesOneInvalid)
 {
     ddwaf::object_limits limits;
-    ruleset_info info;
+    ddwaf::ruleset_info::section_info section;
     ddwaf::manifest manifest;
     std::unordered_map<std::string, std::string> rule_data_ids;
 
@@ -124,8 +213,35 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneInvalid)
 
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
 
-    auto rules = parser::v2::parse_rules(rule_array, info, manifest, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, manifest, rule_data_ids, limits);
     ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 2);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+        EXPECT_NE(loaded.find("secondrule"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("error"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("missing key 'conditions'");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("error"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(rules.size(), 2);
     EXPECT_NE(rules.find("1"), rules.end());
@@ -159,7 +275,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneInvalid)
 TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
 {
     ddwaf::object_limits limits;
-    ruleset_info info;
+    ddwaf::ruleset_info::section_info section;
     ddwaf::manifest manifest;
     std::unordered_map<std::string, std::string> rule_data_ids;
 
@@ -169,8 +285,34 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
     EXPECT_EQ(rule_array.size(), 2);
 
-    auto rules = parser::v2::parse_rules(rule_array, info, manifest, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, manifest, rule_data_ids, limits);
     ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("duplicate rule");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
 
     EXPECT_EQ(rules.size(), 1);
     EXPECT_NE(rules.find("1"), rules.end());

@@ -71,8 +71,7 @@ TEST(TestIsSQLi, TestRuleset)
     EXPECT_EVENTS(ret,
         {.id = "1",
             .name = "rule1",
-            .type = "flow1",
-            .category = "category1",
+            .tags = {{"type", "flow1"}, {"category", "category1"}},
             .matches = {
                 {.op = "is_sqli", .address = "arg1", .value = "'OR 1=1/*", .highlight = "s&1c"}}});
     ddwaf_result_free(&ret);

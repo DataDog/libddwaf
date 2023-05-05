@@ -9,6 +9,7 @@
 #include <manifest.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
+#include <parser/parser.hpp>
 #include <rule.hpp>
 #include <rule_processor/is_sqli.hpp>
 #include <rule_processor/is_xss.hpp>
@@ -106,13 +107,13 @@ condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
         std::move(targets), std::move(transformers), std::move(processor), std::string{}, limits);
 }
 
-void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest &target_manifest,
-    ddwaf::ruleset &rs, ddwaf::object_limits limits)
+void parseRule(parameter::map &rule, base_section_info &info, manifest &target_manifest,
+    std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
-    if (rs.rules.find(id) != rs.rules.end()) {
+    if (rule_ids.find(id) != rule_ids.end()) {
         DDWAF_WARN("duplicate rule %s", id.c_str());
-        info.insert_error(id, "duplicate rule");
+        info.add_failed(id, "duplicate rule");
         return;
     }
 
@@ -152,28 +153,34 @@ void parseRule(parameter::map &rule, ddwaf::ruleset_info &info, manifest &target
         auto rule_ptr = std::make_shared<ddwaf::rule>(
             std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(conditions));
 
+        rule_ids.emplace(rule_ptr->get_id());
         rs.insert_rule(rule_ptr);
-        info.add_loaded();
+        info.add_loaded(rule_ptr->get_id());
     } catch (const std::exception &e) {
         DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
-        info.insert_error(id, e.what());
+        info.add_failed(id, e.what());
     }
 }
 
 } // namespace
 
-void parse(parameter::map &ruleset, ruleset_info &info, ddwaf::ruleset &rs, object_limits limits)
+void parse(
+    parameter::map &ruleset, base_ruleset_info &info, ddwaf::ruleset &rs, object_limits limits)
 {
     auto rules_array = at<parameter::vector>(ruleset, "events");
     rs.rules.reserve(rules_array.size());
 
-    for (const auto &rule_param : rules_array) {
+    auto &section = info.add_section("rules");
+
+    std::unordered_set<std::string_view> rule_ids;
+    for (unsigned i = 0; i < rules_array.size(); ++i) {
+        const auto &rule_param = rules_array[i];
         try {
             auto rule = static_cast<parameter::map>(rule_param);
-            parseRule(rule, info, rs.manifest, rs, limits);
+            parseRule(rule, section, rs.manifest, rule_ids, rs, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("%s", e.what());
-            info.add_failed();
+            section.add_failed("index:" + std::to_string(i), e.what());
         }
     }
 

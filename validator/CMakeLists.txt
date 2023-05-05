@@ -1,7 +1,10 @@
-set(CMAKE_CXX_STANDARD 17)
-
 file(GLOB_RECURSE LIBDDWAF_VALIDATOR_SOURCE *.cpp)
 add_executable(waf_validator ${LIBDDWAF_VALIDATOR_SOURCE})
+
+set_target_properties(waf_validator PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
 
 target_include_directories(waf_validator PRIVATE ${libddwaf_SOURCE_DIR}/include)
 target_link_libraries(waf_validator PRIVATE  libddwaf_objects lib_yamlcpp)

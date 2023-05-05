@@ -70,6 +70,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 // Validate that once there's a match for a collection, a second match isn't possible
 TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 {
+    std::vector<rule::ptr> rules;
     TypeParam rule_collection;
     ddwaf::manifest manifest;
     {
@@ -88,6 +89,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         auto rule = std::make_shared<ddwaf::rule>(
             "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
+        rules.emplace_back(rule);
         rule_collection.insert(rule);
     }
 
@@ -106,6 +108,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         auto rule = std::make_shared<ddwaf::rule>(
             "id2", "name2", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
+        rules.emplace_back(rule);
         rule_collection.insert(rule);
     }
 
@@ -145,6 +148,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 // Validate that after a failed match, the collection can still produce a match
 TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 {
+    std::vector<rule::ptr> rules;
     TypeParam rule_collection;
     ddwaf::manifest manifest;
     {
@@ -162,6 +166,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         auto rule = std::make_shared<ddwaf::rule>(
             "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
+        rules.emplace_back(rule);
         rule_collection.insert(rule);
     }
 
@@ -179,6 +184,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         auto rule = std::make_shared<ddwaf::rule>(
             "id2", "name2", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
+        rules.emplace_back(rule);
         rule_collection.insert(rule);
     }
 
@@ -284,6 +290,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 // Validate that a match in a priority collection prevents further regular matches
 TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 {
+    std::vector<rule::ptr> rules;
     collection regular;
     priority_collection priority;
     ddwaf::manifest manifest;
@@ -302,6 +309,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         auto rule = std::make_shared<ddwaf::rule>(
             "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
+        rules.emplace_back(rule);
         regular.insert(rule);
     }
 
@@ -320,6 +328,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
             std::move(conditions), std::vector<std::string>{"redirect"});
 
+        rules.emplace_back(rule);
         priority.insert(rule);
     }
 
@@ -339,8 +348,8 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
-        ASSERT_EQ(events[0].actions.size(), 1);
-        EXPECT_STREQ(events[0].actions[0].data(), "redirect");
+        ASSERT_EQ(events[0].rule->get_actions().size(), 1);
+        EXPECT_STREQ(events[0].rule->get_actions()[0].data(), "redirect");
     }
     {
         ddwaf_object root;
@@ -361,6 +370,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 // priority collection
 TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 {
+    std::vector<rule::ptr> rules;
     collection regular;
     priority_collection priority;
     ddwaf::manifest manifest;
@@ -379,6 +389,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         auto rule = std::make_shared<ddwaf::rule>(
             "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
 
+        rules.emplace_back(rule);
         regular.insert(rule);
     }
 
@@ -397,6 +408,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
             std::move(conditions), std::vector<std::string>{"redirect"});
 
+        rules.emplace_back(rule);
         priority.insert(rule);
     }
 
@@ -416,7 +428,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         regular.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(events[0].actions.empty());
+        EXPECT_TRUE(events[0].rule->get_actions().empty());
     }
 
     {
@@ -431,14 +443,15 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
-        ASSERT_EQ(events[0].actions.size(), 1);
-        EXPECT_STREQ(events[0].actions[0].data(), "redirect");
+        ASSERT_EQ(events[0].rule->get_actions().size(), 1);
+        EXPECT_STREQ(events[0].rule->get_actions()[0].data(), "redirect");
     }
 }
 
 // Validate that a match in a priority collection prevents another match
 TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 {
+    std::vector<rule::ptr> rules;
     priority_collection priority;
     ddwaf::manifest manifest;
     {
@@ -456,6 +469,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
             std::move(conditions), std::vector<std::string>{"block"});
 
+        rules.emplace_back(rule);
         priority.insert(rule);
     }
 
@@ -474,6 +488,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
             std::move(conditions), std::vector<std::string>{"redirect"});
 
+        rules.emplace_back(rule);
         priority.insert(rule);
     }
 
@@ -493,8 +508,8 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
-        ASSERT_EQ(events[0].actions.size(), 1);
-        EXPECT_STREQ(events[0].actions[0].data(), "block");
+        ASSERT_EQ(events[0].rule->get_actions().size(), 1);
+        EXPECT_STREQ(events[0].rule->get_actions()[0].data(), "block");
     }
 
     {

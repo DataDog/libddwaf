@@ -5,11 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <utility>
+
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/schema.h"
 #include "test.h"
-
-using ddwaf_result_actions = ddwaf_result::_ddwaf_result_actions;
 
 namespace ddwaf::test {
 struct event {
@@ -24,8 +24,7 @@ struct event {
 
     std::string id;
     std::string name;
-    std::string type;
-    std::string category;
+    std::map<std::string, std::string> tags{{"type", ""}, {"category", ""}};
     std::vector<std::string> actions;
     std::vector<match> matches;
 };
@@ -34,14 +33,17 @@ bool operator==(const event::match &lhs, const event::match &rhs);
 bool operator==(const event &lhs, const event &rhs);
 
 std::ostream &operator<<(std::ostream &os, const event &e);
+
+std::string object_to_json(const ddwaf_object &obj);
+
 } // namespace ddwaf::test
 
 namespace YAML {
 
 class parsing_error : public std::exception {
 public:
-    parsing_error(const std::string &what) : what_(what) {}
-    const char *what() const noexcept { return what_.c_str(); }
+    explicit parsing_error(std::string what) : what_(std::move(what)) {}
+    [[nodiscard]] const char *what() const noexcept override { return what_.c_str(); }
 
 protected:
     const std::string what_;
@@ -81,43 +83,42 @@ protected:
 // Note that naming conventions (and Pascal case) are kept for functions and
 // classes involved in anything GTest related.
 
-::testing::AssertionResult ValidateSchema(const ddwaf_result &result);
+::testing::AssertionResult ValidateSchema(const std::string &result);
 
 // Required by gtest to pretty print relevant types
-void PrintTo(const ddwaf_result_actions &actions, ::std::ostream *os);
+void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
 void PrintTo(const ddwaf_result &result, ::std::ostream *os);
 
 class WafResultActionMatcher {
 public:
-    WafResultActionMatcher(std::vector<std::string_view> &&values);
-    bool MatchAndExplain(
-        const ddwaf_result_actions &actions, ::testing::MatchResultListener *) const;
+    explicit WafResultActionMatcher(std::vector<std::string_view> &&values);
+    bool MatchAndExplain(const ddwaf_object &actions, ::testing::MatchResultListener *) const;
 
     void DescribeTo(::std::ostream *os) const { *os << expected_as_string_; }
 
     void DescribeNegationTo(::std::ostream *os) const { *os << expected_as_string_; }
 
 private:
-    std::string expected_as_string_;
+    std::string expected_as_string_{};
     std::vector<std::string_view> expected_;
 };
 
 class WafResultDataMatcher {
 public:
-    WafResultDataMatcher(std::vector<ddwaf::test::event> expected_events)
+    explicit WafResultDataMatcher(std::vector<ddwaf::test::event> expected_events)
         : expected_events_(std::move(expected_events))
     {}
 
-    bool MatchAndExplain(const ddwaf_result &result, ::testing::MatchResultListener *) const;
+    bool MatchAndExplain(const std::string &result, ::testing::MatchResultListener *) const;
 
     void DescribeTo(::std::ostream *os) const
     {
-        for (auto expected : expected_events_) { *os << expected; }
+        for (const auto &expected : expected_events_) { *os << expected; }
     }
 
     void DescribeNegationTo(::std::ostream *os) const
     {
-        for (auto expected : expected_events_) { *os << expected; }
+        for (const auto &expected : expected_events_) { *os << expected; }
     }
 
 protected:
@@ -136,11 +137,15 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected)));
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
-  EXPECT_TRUE(ValidateSchema(result));                                                             \
-  EXPECT_THAT(result, WithEvents({__VA_ARGS__}));
+  {                                                                                                \
+    auto data = ddwaf::test::object_to_json(result.events);                                        \
+    EXPECT_TRUE(ValidateSchema(data));                                                             \
+    EXPECT_THAT(data, WithEvents({__VA_ARGS__}));                                                  \
+  }
 
-ddwaf_object readFile(const char *filename);
+ddwaf_object readFile(std::string_view filename, std::string_view base = "./");
 ddwaf_object readRule(const char *rule);
 
 inline ddwaf_object json_to_object(std::string_view data) { return readRule(data.data()); }
