@@ -137,17 +137,6 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     if (LIBRT)
         list(APPEND LIBDDWAF_INTERFACE_LIBRARIES rt)
     endif()
-    find_library(LIBDL dl)
-    if (LIBDL)
-        list(APPEND LIBDDWAF_INTERFACE_LIBRARIES dl)
-    endif()
-    # there is also a call to ceilf that may or may not result in an import.
-    # The symbol might live in libm or the normal libc (e.g. musl). In any case,
-    # add the dependency
-    find_library(LIBM m)
-    if (LIBM)
-        list(APPEND LIBDDWAF_INTERFACE_LIBRARIES m)
-    endif()
 elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
