@@ -16,8 +16,9 @@
 
 namespace ddwaf {
 
-enum object_type : unsigned {
+enum class object_type : unsigned {
     invalid = DDWAF_OBJ_INVALID,
+    boolean = DDWAF_OBJ_BOOL,
     int64 = DDWAF_OBJ_SIGNED,
     uint64 = DDWAF_OBJ_UNSIGNED,
     string = DDWAF_OBJ_STRING,
@@ -27,6 +28,10 @@ enum object_type : unsigned {
 
 class object_view {
 public:
+    using map = std::unordered_map<std::string_view, object_view>;
+    using vector = std::vector<object_view>;
+    using string_set = std::unordered_set<std::string_view>;
+
     class iterator {
     public:
         explicit iterator(const ddwaf_object &obj, size_t index = 0)
@@ -57,6 +62,8 @@ public:
             throw std::runtime_error("object_view initialised with null pointer");
         }
     }
+    explicit object_view(const ddwaf_object &ptr) : ptr_(&ptr) {}
+
     ~object_view() = default;
 
     object_view(const object_view &other) = default;
@@ -88,17 +95,20 @@ public:
     }
 
     // Scalars
-    bool is_invalid() const { return ptr_->type == DDWAF_OBJ_INVALID; }
-    bool is_boolean() const { return ptr_->type == DDWAF_OBJ_BOOL; }
-    bool is_signed() const { return ptr_->type == DDWAF_OBJ_SIGNED; }
-    bool is_unsigned() const { return ptr_->type == DDWAF_OBJ_UNSIGNED; }
-    bool is_string() const { return ptr_->type == DDWAF_OBJ_STRING; }
-    bool is_scalar() const { return is_boolean() || is_signed() || is_unsigned() || is_string(); }
+    bool is_invalid() const noexcept { return type() == object_type::invalid; }
+    bool is_boolean() const noexcept { return type() == object_type::boolean; }
+    bool is_signed() const noexcept { return type() == object_type::int64; }
+    bool is_unsigned() const noexcept { return type() == object_type::uint64; }
+    bool is_string() const noexcept { return type() == object_type::string; }
+    bool is_scalar() const noexcept
+    {
+        return is_boolean() || is_signed() || is_unsigned() || is_string();
+    }
 
     // Containers
-    bool is_array() const { return ptr_->type == DDWAF_OBJ_ARRAY; }
-    bool is_map() const { return ptr_->type == DDWAF_OBJ_MAP; }
-    bool is_container() const { return is_array() || is_map(); }
+    bool is_array() const noexcept { return type() == object_type::array; }
+    bool is_map() const noexcept { return type() == object_type::map; }
+    bool is_container() const noexcept { return is_array() || is_map(); }
 
     [[nodiscard]] iterator begin() const
     {
@@ -131,8 +141,51 @@ public:
 
     operator const ddwaf_object *() noexcept { return ptr_; }
 
+    explicit operator map() const;
+    explicit operator vector() const;
+    explicit operator string_set() const;
+    explicit operator std::string_view() const;
+    explicit operator std::string() const;
+    explicit operator uint64_t() const;
+    explicit operator int64_t() const;
+    explicit operator bool() const;
+    explicit operator std::vector<std::string>() const;
+    explicit operator std::vector<std::string_view>() const;
+
 protected:
     const ddwaf_object *ptr_;
 };
+
+// template <typename T> struct object_view_traits {
+// static const char *name() { return typeid(T).name(); }
+//};
+
+// template <> struct object_view_traits<std::string> {
+// static const char *name() { return "std::string"; }
+//};
+
+// template <> struct object_view_traits<std::string_view> {
+// static const char *name() { return "std::string_view"; }
+//};
+
+// template <> struct object_view_traits<object_view::map> {
+// static const char *name() { return "object_view::map"; }
+//};
+
+// template <> struct object_view_traits<object_view::vector> {
+// static const char *name() { return "object_view::vector"; }
+//};
+
+// template <> struct object_view_traits<object_view::string_set> {
+// static const char *name() { return "object_view::string_set"; }
+//};
+
+// template <> struct object_view_traits<std::vector<std::string>> {
+// static const char *name() { return "std::vector<std::string>"; }
+//};
+
+// template <> struct object_view_traits<std::vector<std::string_view>> {
+// static const char *name() { return "std::vector<std::string_view>"; }
+//};
 
 } // namespace ddwaf
