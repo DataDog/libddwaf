@@ -13,10 +13,10 @@ TEST(TestCondition, Match)
     std::vector<ddwaf::condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}});
+    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::regex_match>(".*", 0, true));
+    auto cond = std::make_shared<condition>(
+        std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -44,9 +44,9 @@ TEST(TestCondition, NoMatch)
     std::vector<ddwaf::condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     ddwaf_object root;
@@ -68,10 +68,10 @@ TEST(TestCondition, ExcludeInput)
     std::vector<ddwaf::condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}});
+    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::regex_match>(".*", 0, true));
+    auto cond = std::make_shared<condition>(
+        std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -92,10 +92,10 @@ TEST(TestCondition, ExcludeKeyPath)
     std::vector<ddwaf::condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}});
+    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-        std::make_unique<rule_processor::regex_match>(".*", 0, true));
+    auto cond = std::make_shared<condition>(
+        std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
 
     ddwaf_object root;
     ddwaf_object map;

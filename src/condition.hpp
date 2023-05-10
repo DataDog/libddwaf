@@ -31,17 +31,16 @@ public:
         manifest::target_type root;
         std::string name;
         std::vector<std::string> key_path;
+        std::vector<PW_TRANSFORM_ID> transformers;
     };
 
     enum class data_source : uint8_t { values, keys };
 
-    condition(std::vector<target_type> targets, std::vector<PW_TRANSFORM_ID> transformers,
-        std::shared_ptr<rule_processor::base> processor, std::string data_id = {},
-        ddwaf::object_limits limits = ddwaf::object_limits(),
+    condition(std::vector<target_type> targets, std::shared_ptr<rule_processor::base> processor,
+        std::string data_id = {}, ddwaf::object_limits limits = ddwaf::object_limits(),
         data_source source = data_source::values)
-        : targets_(std::move(targets)), transformers_(std::move(transformers)),
-          processor_(std::move(processor)), data_id_(std::move(data_id)), limits_(limits),
-          source_(source)
+        : targets_(std::move(targets)), processor_(std::move(processor)),
+          data_id_(std::move(data_id)), limits_(limits), source_(source)
     {}
 
     ~condition() = default;
@@ -62,17 +61,17 @@ public:
     }
 
 protected:
-    std::optional<event::match> match_object(
-        const ddwaf_object *object, const rule_processor::base::ptr &processor) const;
+    std::optional<event::match> match_object(const ddwaf_object *object,
+        const rule_processor::base::ptr &processor,
+        const std::vector<PW_TRANSFORM_ID> &transformers) const;
 
     template <typename T>
-    std::optional<event::match> match_target(
-        T &it, const rule_processor::base::ptr &processor, ddwaf::timer &deadline) const;
+    std::optional<event::match> match_target(T &it, const rule_processor::base::ptr &processor,
+        const std::vector<PW_TRANSFORM_ID> &transformers, ddwaf::timer &deadline) const;
 
     [[nodiscard]] const rule_processor::base::ptr &get_processor(
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors) const;
     std::vector<condition::target_type> targets_;
-    std::vector<PW_TRANSFORM_ID> transformers_;
     std::shared_ptr<rule_processor::base> processor_;
     std::string data_id_;
     ddwaf::object_limits limits_;

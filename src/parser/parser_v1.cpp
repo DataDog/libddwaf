@@ -100,11 +100,12 @@ condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
         if (!key_path.empty()) {
             target.key_path.emplace_back(key_path);
         }
+        target.transformers = transformers;
         targets.emplace_back(std::move(target));
     }
 
     return std::make_shared<condition>(
-        std::move(targets), std::move(transformers), std::move(processor), std::string{}, limits);
+        std::move(targets), std::move(processor), std::string{}, limits);
 }
 
 void parseRule(parameter::map &rule, base_section_info &info, manifest &target_manifest,

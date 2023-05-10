@@ -100,9 +100,38 @@ std::pair<std::string, rule_processor::base::ptr> parse_processor(
     return {std::move(rule_data_id), std::move(processor)};
 }
 
+std::vector<PW_TRANSFORM_ID> parse_transformers(
+    const parameter::vector &root, condition::data_source &source)
+{
+    if (root.empty()) {
+        return {};
+    }
+
+    std::vector<PW_TRANSFORM_ID> transformers;
+    transformers.reserve(root.size());
+
+    for (const auto &transformer_param : root) {
+        auto transformer = static_cast<std::string_view>(transformer_param);
+        PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
+        switch (transform_id) {
+        case PWT_KEYS_ONLY:
+            source = ddwaf::condition::data_source::keys;
+            break;
+        case PWT_VALUES_ONLY:
+            source = ddwaf::condition::data_source::values;
+            break;
+        case PWT_INVALID:
+            throw ddwaf::parsing_error("invalid transformer " + std::string(transformer));
+        default:
+            transformers.push_back(transform_id);
+        }
+    }
+    return transformers;
+}
+
 condition::ptr parse_rule_condition(const parameter::map &root, manifest &target_manifest,
     std::unordered_map<std::string, std::string> &rule_data_ids, condition::data_source source,
-    std::vector<PW_TRANSFORM_ID> transformers, const object_limits &limits)
+    const std::vector<PW_TRANSFORM_ID> &transformers, const object_limits &limits)
 {
     auto operation = at<std::string_view>(root, "operator");
     auto params = at<parameter::map>(root, "parameters");
@@ -136,12 +165,18 @@ condition::ptr parse_rule_condition(const parameter::map &root, manifest &target
         target.root = target_manifest.insert(address);
         target.name = address;
         target.key_path = std::move(kp);
+        auto input_transformers = at<parameter::vector>(input, "transformers", {});
+        if (input_transformers.empty()) {
+            target.transformers = transformers;
+        } else {
+            target.transformers = parse_transformers(input_transformers, source);
+        }
 
         targets.emplace_back(target);
     }
 
-    return std::make_shared<condition>(std::move(targets), std::move(transformers),
-        std::move(processor), std::move(rule_data_id), limits, source);
+    return std::make_shared<condition>(
+        std::move(targets), std::move(processor), std::move(rule_data_id), limits, source);
 }
 
 rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
@@ -151,24 +186,7 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
     std::vector<PW_TRANSFORM_ID> rule_transformers;
     auto data_source = ddwaf::condition::data_source::values;
     auto transformers = at<parameter::vector>(rule, "transformers", {});
-    for (const auto &transformer_param : transformers) {
-        auto transformer = static_cast<std::string_view>(transformer_param);
-        PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
-        if (transform_id == PWT_INVALID) {
-            throw ddwaf::parsing_error("invalid transformer " + std::string(transformer));
-        }
-
-        if (transform_id == PWT_KEYS_ONLY) {
-            if (!rule_transformers.empty()) {
-                DDWAF_WARN("keys_only transformer should be the first one "
-                           "in the list, all transformers will be applied to "
-                           "keys and not values");
-            }
-            data_source = ddwaf::condition::data_source::keys;
-        } else {
-            rule_transformers.push_back(transform_id);
-        }
-    }
+    rule_transformers = parse_transformers(transformers, data_source);
 
     std::vector<condition::ptr> conditions;
     auto conditions_array = at<parameter::vector>(rule, "conditions");
@@ -301,8 +319,8 @@ condition::ptr parse_filter_condition(
         targets.emplace_back(target);
     }
 
-    return std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-        std::move(processor), std::string{}, limits);
+    return std::make_shared<condition>(
+        std::move(targets), std::move(processor), std::string{}, limits);
 }
 
 input_filter_spec parse_input_filter(
