@@ -508,8 +508,8 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
                 overrides.by_tags.emplace_back(std::move(spec));
             } else {
                 // This code is likely unreachable
-                DDWAF_WARN("Override with no targets");
-                info.add_failed(id, "override with no targets");
+                DDWAF_WARN("Rule override with no targets");
+                info.add_failed(id, "rule override with no targets");
                 continue;
             }
             DDWAF_DEBUG("Parsed override %s", id.c_str());
