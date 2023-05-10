@@ -13,16 +13,6 @@ namespace ddwaf {
 
 namespace {
 
-char *to_cstr(std::string_view input)
-{
-    const std::size_t size = input.size();
-    // NOLINTNEXTLINE
-    char *str = static_cast<char *>(malloc(size + 1));
-    memcpy(str, input.data(), size);
-    str[size] = '\0';
-    return str;
-}
-
 bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
 {
     for (const auto &key : match.key_path) {

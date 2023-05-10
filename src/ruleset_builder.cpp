@@ -232,6 +232,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
 
     auto it = root.find("rules");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing base rules");
         auto &section = info.add_section("rules");
         try {
             auto rules = static_cast<parameter::vector>(it->second);
@@ -241,16 +242,19 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
                 base_rules_ = parser::v2::parse_rules(
                     rules, section, target_manifest_, rule_data_ids_, limits_);
             } else {
+                DDWAF_DEBUG("Clearing all base rules");
                 base_rules_.clear();
             }
             state = state | change_state::rules;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse rules: %s", e.what());
             section.set_error(e.what());
         }
     }
 
     it = root.find("custom_rules");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing custom rules");
         auto &section = info.add_section("custom_rules");
         try {
             auto rules = static_cast<parameter::vector>(it->second);
@@ -263,10 +267,12 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
                     rule_data_ids, limits_, rule::source_type::user);
                 user_rules_ = std::move(new_user_rules);
             } else {
+                DDWAF_DEBUG("Clearing all custom rules");
                 user_rules_.clear();
             }
             state = state | change_state::custom_rules;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse custom rules: %s", e.what());
             section.set_error(e.what());
         }
     }
@@ -274,11 +280,13 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
     if (base_rules_.empty() && user_rules_.empty()) {
         // If we haven't received rules and our base ruleset is empty, the
         // WAF can't proceed.
+        DDWAF_WARN("No valid rules found");
         throw ddwaf::parsing_error("no valid rules found");
     }
 
     it = root.find("rules_data");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing rule data");
         auto &section = info.add_section("rules_data");
         try {
             auto rules_data = static_cast<parameter::vector>(it->second);
@@ -293,32 +301,38 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
                     dynamic_processors_ = std::move(new_processors);
                 }
             } else {
+                DDWAF_DEBUG("Clearing all rule data");
                 dynamic_processors_.clear();
             }
             state = state | change_state::data;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse rule data: %s", e.what());
             section.set_error(e.what());
         }
     }
 
     it = root.find("rules_override");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing overrides");
         auto &section = info.add_section("rules_override");
         try {
             auto overrides = static_cast<parameter::vector>(it->second);
             if (!overrides.empty()) {
                 overrides_ = parser::v2::parse_overrides(overrides, section);
             } else {
+                DDWAF_DEBUG("Clearing all overrides");
                 overrides_.clear();
             }
             state = state | change_state::overrides;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse overrides: %s", e.what());
             section.set_error(e.what());
         }
     }
 
     it = root.find("exclusions");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing exclusions");
         auto &section = info.add_section("exclusions");
         try {
             auto exclusions = static_cast<parameter::vector>(it->second);
@@ -326,10 +340,12 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
                 exclusions_ =
                     parser::v2::parse_filters(exclusions, section, target_manifest_, limits_);
             } else {
+                DDWAF_DEBUG("Clearing all exclusions");
                 exclusions_.clear();
             }
             state = state | change_state::filters;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse exclusions: %s", e.what());
             section.set_error(e.what());
         }
     }
