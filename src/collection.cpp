@@ -25,6 +25,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     }
 
     if (!rule->is_enabled()) {
+        DDWAF_DEBUG("Rule %s is disabled", id.c_str());
         return std::nullopt;
     }
 

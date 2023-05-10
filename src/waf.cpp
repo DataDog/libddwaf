@@ -28,12 +28,14 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         ddwaf::ruleset rs;
         rs.free_fn = free_fn;
         rs.event_obfuscator = event_obfuscator;
+        DDWAF_DEBUG("Parsing ruleset with schema version 1.x");
         parser::v1::parse(input_map, info, rs, limits);
         ruleset_ = std::make_shared<ddwaf::ruleset>(std::move(rs));
         return;
     }
 
     if (version == 2) {
+        DDWAF_DEBUG("Parsing ruleset with schema version 2.x");
         builder_ = std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
         ruleset_ = builder_->build(input, info);
         if (!ruleset_) {
@@ -43,6 +45,7 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
     }
 
     DDWAF_ERROR("incompatible ruleset schema version %u.x", version);
+
     throw unsupported_version();
 }
 

@@ -407,19 +407,20 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
         try {
             id = at<std::string>(rule_map, "id");
             if (rules.find(id) != rules.end()) {
-                DDWAF_WARN("duplicate rule %s", id.c_str());
+                DDWAF_WARN("Duplicate rule %s", id.c_str());
                 info.add_failed(id, "duplicate rule");
                 continue;
             }
 
             auto rule = parse_rule(rule_map, target_manifest, rule_data_ids, limits, source);
+            DDWAF_DEBUG("Parsed rule %s", id.c_str());
             info.add_loaded(id);
             rules.emplace(std::move(id), std::move(rule));
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
             }
-            DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
+            DDWAF_WARN("Failed to parse rule '%s': %s", id.c_str(), e.what());
             info.add_failed(id, e.what());
         }
     }
@@ -475,6 +476,7 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 continue;
             }
 
+            DDWAF_DEBUG("Parsed rule data %s", id.c_str());
             info.add_loaded(id);
             processors.emplace(std::move(id), std::move(processor));
         } catch (const ddwaf::exception &e) {
@@ -506,13 +508,14 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
                 overrides.by_tags.emplace_back(std::move(spec));
             } else {
                 // This code is likely unreachable
-                DDWAF_WARN("rule override with no targets");
-                info.add_failed(id, "rule override with no targets");
+                DDWAF_WARN("Override with no targets");
+                info.add_failed(id, "override with no targets");
                 continue;
             }
+            DDWAF_DEBUG("Parsed override %s", id.c_str());
             info.add_loaded(id);
         } catch (const std::exception &e) {
-            DDWAF_WARN("failed to parse rule override: %s", e.what());
+            DDWAF_WARN("Failed to parse rule override: %s", e.what());
             info.add_failed(id, e.what());
         }
     }
@@ -531,7 +534,7 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
         try {
             id = at<std::string>(node, "id");
             if (filters.ids.find(id) != filters.ids.end()) {
-                DDWAF_WARN("duplicate filter: %s", id.c_str());
+                DDWAF_WARN("Duplicate filter: %s", id.c_str());
                 info.add_failed(id, "duplicate filter");
                 continue;
             }
@@ -545,12 +548,13 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
                 filters.ids.emplace(id);
                 filters.rule_filters.emplace(id, std::move(filter));
             }
+            DDWAF_DEBUG("Parsed exclusion filter %s", id.c_str());
             info.add_loaded(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
             }
-            DDWAF_WARN("failed to parse filter '%s': %s", id.c_str(), e.what());
+            DDWAF_WARN("Failed to parse filter '%s': %s", id.c_str(), e.what());
             info.add_failed(id, e.what());
         }
     }
