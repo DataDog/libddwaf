@@ -1,0 +1,39 @@
+version: '2.1'
+rules:
+  - id: rule1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+      confidence: 1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1_0
+            - address: value1_1
+          regex: rule1
+          options:
+            case_sensitive: true
+    transformers:
+      - lowercase
+
+  - id: rule2
+    name: rule2
+    tags:
+      type: flow2
+      category: category2
+      confidence: 1000
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value2_0
+            - address: value2_1
+          regex: ^ rule2 $
+          options:
+            case_sensitive: true
+    transformers:
+      - lowercase
+      - compressWhiteSpace
+
