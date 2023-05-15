@@ -12,7 +12,15 @@ rules:
           inputs:
             - address: value1_0
             - address: value1_1
-          regex: rule1
+              transformers: []
+            - address: value1_2
+              transformers:
+                - compressWhiteSpace
+            - address: value1_3
+              transformers:
+                - lowercase
+                - compressWhiteSpace
+          regex: ^ rule1 $
           options:
             case_sensitive: true
     transformers:
@@ -30,29 +38,15 @@ rules:
           inputs:
             - address: value2_0
             - address: value2_1
-          regex: ^ rule2 $
-          options:
-            case_sensitive: true
-    transformers:
-      - lowercase
-      - compressWhiteSpace
-
-  - id: rule3
-    name: rule3
-    tags:
-      type: flow3
-      category: category3
-      confidence: 1000
-    conditions:
-      - operator: match_regex
-        parameters:
-          inputs:
-            - address: value3_0
-            - address: value3_1
-          regex: rule3
+              transformers:
+                - values_only
+            - address: value2_2
+              transformers:
+                - lowercase
+            - address: value2_3
+              transformers: []
+          regex: rule2
           options:
             case_sensitive: true
     transformers:
       - keys_only
-      - lowercase
-

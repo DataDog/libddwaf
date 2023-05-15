@@ -35,3 +35,23 @@ rules:
           regex: ^ rule2 $
           options:
             case_sensitive: true
+  - id: rule3
+    name: rule3
+    tags:
+      type: flow3
+      category: category3
+      confidence: 1000
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value3_0
+              transformers:
+                - keys_only
+                - lowercase
+            - address: value3_1
+              transformers:
+                - lowercase
+          regex: rule3
+          options:
+            case_sensitive: true

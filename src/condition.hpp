@@ -27,20 +27,21 @@ namespace ddwaf {
 class condition {
 public:
     using ptr = std::shared_ptr<condition>;
-    struct target_type {
-        manifest::target_type root;
-        std::string name;
-        std::vector<std::string> key_path;
-        std::vector<PW_TRANSFORM_ID> transformers;
-    };
 
     enum class data_source : uint8_t { values, keys };
 
+    struct target_type {
+        manifest::target_type root;
+        std::string name;
+        std::vector<std::string> key_path{};
+        std::vector<PW_TRANSFORM_ID> transformers{};
+        data_source source{data_source::values};
+    };
+
     condition(std::vector<target_type> targets, std::shared_ptr<rule_processor::base> processor,
-        std::string data_id = {}, ddwaf::object_limits limits = ddwaf::object_limits(),
-        data_source source = data_source::values)
+        std::string data_id = {}, ddwaf::object_limits limits = ddwaf::object_limits())
         : targets_(std::move(targets)), processor_(std::move(processor)),
-          data_id_(std::move(data_id)), limits_(limits), source_(source)
+          data_id_(std::move(data_id)), limits_(limits)
     {}
 
     ~condition() = default;
@@ -75,7 +76,6 @@ protected:
     std::shared_ptr<rule_processor::base> processor_;
     std::string data_id_;
     ddwaf::object_limits limits_;
-    data_source source_;
 };
 
 } // namespace ddwaf

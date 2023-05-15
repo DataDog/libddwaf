@@ -110,7 +110,7 @@ std::optional<event::match> condition::match(const object_store &store,
         return std::nullopt;
     }
 
-    for (const auto &[target, name, key_path, transformers] : targets_) {
+    for (const auto &[target, name, key_path, transformers, source] : targets_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
@@ -128,7 +128,7 @@ std::optional<event::match> condition::match(const object_store &store,
         }
 
         std::optional<event::match> optional_match;
-        if (source_ == data_source::keys) {
+        if (source == data_source::keys) {
             object::key_iterator it(object, key_path, objects_excluded, limits_);
             optional_match = match_target(it, processor, transformers, deadline);
         } else {

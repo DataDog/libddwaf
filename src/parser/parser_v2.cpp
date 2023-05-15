@@ -124,6 +124,7 @@ std::vector<PW_TRANSFORM_ID> parse_transformers(
             throw ddwaf::parsing_error("invalid transformer " + std::string(transformer));
         default:
             transformers.push_back(transform_id);
+            break;
         }
     }
     return transformers;
@@ -165,18 +166,21 @@ condition::ptr parse_rule_condition(const parameter::map &root, manifest &target
         target.root = target_manifest.insert(address);
         target.name = address;
         target.key_path = std::move(kp);
-        auto input_transformers = at<parameter::vector>(input, "transformers", {});
-        if (input_transformers.empty()) {
+
+        auto it = input.find("transformers");
+        if (it == input.end()) {
+            target.source = source;
             target.transformers = transformers;
         } else {
-            target.transformers = parse_transformers(input_transformers, source);
+            auto input_transformers = static_cast<parameter::vector>(it->second);
+            target.source = condition::data_source::values;
+            target.transformers = parse_transformers(input_transformers, target.source);
         }
-
         targets.emplace_back(target);
     }
 
     return std::make_shared<condition>(
-        std::move(targets), std::move(processor), std::move(rule_data_id), limits, source);
+        std::move(targets), std::move(processor), std::move(rule_data_id), limits);
 }
 
 rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
