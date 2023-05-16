@@ -1138,8 +1138,6 @@ bool PWTransformer::transformUnicodeNormalize(ddwaf_object *parameter, bool read
         return false;
     }
 
-    if (readOnly) { return true; }
-
     uint32_t codepoint;
     uint64_t position = 0;
     if (readOnly) {
