@@ -20,9 +20,9 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
     std::vector<ddwaf::condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -75,11 +75,11 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
     ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -95,9 +95,9 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -153,11 +153,11 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
     ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -172,9 +172,9 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -228,21 +228,19 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
     std::vector<condition::ptr> conditions;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-        conditions.emplace_back(
-            std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-                std::make_unique<rule_processor::ip_match>(
-                    std::vector<std::string_view>{"192.168.0.1"})));
+        conditions.emplace_back(std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"})));
     }
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
 
-        conditions.emplace_back(
-            std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-                std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"})));
+        conditions.emplace_back(std::make_shared<condition>(std::move(targets),
+            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"})));
     }
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
@@ -296,11 +294,11 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
     ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -315,9 +313,9 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -376,11 +374,11 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
     ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -395,9 +393,9 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -456,11 +454,11 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
     ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -475,9 +473,9 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
 
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};

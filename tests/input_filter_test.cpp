@@ -75,8 +75,8 @@ TEST(TestInputFilter, InputExclusionWithCondition)
     ddwaf::manifest manifest;
     auto client_ip = manifest.insert("http.client_ip");
 
-    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -109,8 +109,8 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     ddwaf::manifest manifest;
     auto client_ip = manifest.insert("http.client_ip");
 
-    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -141,8 +141,8 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     auto client_ip = manifest.insert("http.client_ip");
     auto query = manifest.insert("query");
 
-    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -182,8 +182,8 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     auto client_ip = manifest.insert("http.client_ip");
     auto query = manifest.insert("query");
 
-    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -222,16 +222,16 @@ TEST(TestInputFilter, InputValidateCachedMatch)
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -284,16 +284,16 @@ TEST(TestInputFilter, InputMatchWithoutCache)
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -342,16 +342,16 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -407,16 +407,16 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -471,16 +471,16 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -543,16 +543,16 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -612,16 +612,16 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -680,16 +680,16 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}}};
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
