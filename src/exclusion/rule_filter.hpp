@@ -27,8 +27,8 @@ public:
     rule_filter(
         std::string id, std::vector<condition::ptr> conditions, std::set<rule *> rule_targets);
 
-    optional_ref<const std::unordered_set<rule *>> match(
-        const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
+    optional_ref<const std::unordered_set<rule *>> match(const object_store &store,
+        cache_type &cache, transformer_cache &tcache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
 

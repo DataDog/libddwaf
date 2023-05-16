@@ -7,6 +7,7 @@
 #pragma once
 
 #include "memory_resource.hpp"
+#include <list>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -93,6 +94,8 @@ public:
 };
 
 // Required STL type definitions with context allocator
+template <typename T> using list = std::list<T, context_allocator<T>>;
+
 using string = std::basic_string<char, std::char_traits<char>, context_allocator<char>>;
 
 template <typename T> using vector = std::vector<T, context_allocator<T>>;

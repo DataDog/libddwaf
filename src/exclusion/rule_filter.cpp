@@ -19,8 +19,8 @@ rule_filter::rule_filter(
     }
 }
 
-optional_ref<const std::unordered_set<rule *>> rule_filter::match(
-    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
+optional_ref<const std::unordered_set<rule *>> rule_filter::match(const object_store &store,
+    cache_type &cache, transformer_cache &tcache, ddwaf::timer &deadline) const
 {
     if (cache.result) {
         return {};
@@ -39,7 +39,7 @@ optional_ref<const std::unordered_set<rule *>> rule_filter::match(
     while (cond_iter != conditions_.cend()) {
         auto &&cond = *cond_iter;
         // TODO: Condition interface without events
-        auto opt_match = cond->match(store, {}, run_on_new, {}, deadline);
+        auto opt_match = cond->match(store, {}, run_on_new, {}, tcache, deadline);
         if (!opt_match.has_value()) {
             cache.last_cond = cond_iter;
             return {};

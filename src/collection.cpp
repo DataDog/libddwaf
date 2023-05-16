@@ -15,7 +15,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     const memory::unordered_set<ddwaf::rule *> &rules_to_exclude,
     const memory::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
-    ddwaf::timer &deadline)
+    transformer_cache &tcache, ddwaf::timer &deadline)
 {
     const auto &id = rule->get_id();
 
@@ -48,9 +48,10 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
         auto exclude_it = objects_to_exclude.find(rule);
         if (exclude_it != objects_to_exclude.end()) {
             const auto &objects_excluded = exclude_it->second;
-            event = rule->match(store, rule_cache, objects_excluded, dynamic_processors, deadline);
+            event = rule->match(
+                store, rule_cache, objects_excluded, dynamic_processors, tcache, deadline);
         } else {
-            event = rule->match(store, rule_cache, {}, dynamic_processors, deadline);
+            event = rule->match(store, rule_cache, {}, dynamic_processors, tcache, deadline);
         }
 
         return event;
@@ -67,7 +68,7 @@ void base_collection<Derived>::match(memory::vector<event> &events, const object
     collection_cache &cache, const memory::unordered_set<rule *> &rules_to_exclude,
     const memory::unordered_map<rule *, object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
-    ddwaf::timer &deadline) const
+    transformer_cache &tcache, ddwaf::timer &deadline) const
 {
     if (cache.result >= Derived::type()) {
         return;
@@ -75,7 +76,7 @@ void base_collection<Derived>::match(memory::vector<event> &events, const object
 
     for (auto *rule : rules_) {
         auto event = match_rule(rule, store, cache.rule_cache, rules_to_exclude, objects_to_exclude,
-            dynamic_processors, deadline);
+            dynamic_processors, tcache, deadline);
         if (event.has_value()) {
             cache.result = Derived::type();
             events.emplace_back(std::move(*event));

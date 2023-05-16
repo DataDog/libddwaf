@@ -187,7 +187,7 @@ set_target_properties(lib_yamlcpp proj_yamlcpp PROPERTIES EXCLUDE_FROM_ALL TRUE)
 # Appsec event rules
 ExternalProject_Add(proj_event_rules
     GIT_REPOSITORY https://github.com/DataDog/appsec-event-rules.git
-    GIT_TAG 1.6.0
+    GIT_TAG 1.7.0
     GIT_SHALLOW ON
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""

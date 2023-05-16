@@ -82,7 +82,7 @@ const memory::unordered_set<rule *> &context::filter_rules(ddwaf::timer &deadlin
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, deadline);
+        auto exclusion = filter->match(store_, cache, tcache_, deadline);
         if (exclusion.has_value()) {
             for (auto &&rule : exclusion->get()) { rules_to_exclude_.insert(rule); }
         }
@@ -107,7 +107,7 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, deadline);
+        auto exclusion = filter->match(store_, cache, tcache_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 if (rules_to_exclude.find(rule) != rules_to_exclude.end()) {
@@ -135,7 +135,7 @@ memory::vector<event> context::match(const memory::unordered_set<rule *> &rules_
             it = new_it;
         }
         collection.match(events, store_, it->second, rules_to_exclude, objects_to_exclude,
-            ruleset_->dynamic_processors, deadline);
+            ruleset_->dynamic_processors, tcache_, deadline);
     };
 
     // Evaluate user priority collections first

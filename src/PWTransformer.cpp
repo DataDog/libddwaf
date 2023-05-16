@@ -1134,13 +1134,11 @@ bool PWTransformer::transformNumerize(ddwaf_object *parameter, bool readOnly)
 
 bool PWTransformer::transformUnicodeNormalize(ddwaf_object *parameter, bool readOnly)
 {
-    if (parameter->type != DDWAF_OBJ_STRING) {
+    if (parameter->type != DDWAF_OBJ_STRING || (parameter->stringValue == nullptr || parameter->nbEntries == 0)) {
         return false;
     }
 
-    if (parameter->stringValue == nullptr || parameter->nbEntries == 0) {
-        return false;
-    }
+    if (readOnly) { return true; }
 
     uint32_t codepoint;
     uint64_t position = 0;

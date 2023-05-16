@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "transformer_cache.hpp"
 #include <atomic>
 #include <memory>
 #include <string>
@@ -54,7 +55,7 @@ public:
     std::optional<event::match> match(const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
-        ddwaf::timer &deadline) const;
+        transformer_cache &tcache, ddwaf::timer &deadline) const;
 
     [[nodiscard]] const std::vector<condition::target_type> &get_targets() const
     {
@@ -64,11 +65,12 @@ public:
 protected:
     std::optional<event::match> match_object(const ddwaf_object *object,
         const rule_processor::base::ptr &processor,
-        const std::vector<PW_TRANSFORM_ID> &transformers) const;
+        const std::vector<PW_TRANSFORM_ID> &transformers, transformer_cache &tcache) const;
 
     template <typename T>
     std::optional<event::match> match_target(T &it, const rule_processor::base::ptr &processor,
-        const std::vector<PW_TRANSFORM_ID> &transformers, ddwaf::timer &deadline) const;
+        const std::vector<PW_TRANSFORM_ID> &transformers, transformer_cache &tcache,
+        ddwaf::timer &deadline) const;
 
     [[nodiscard]] const rule_processor::base::ptr &get_processor(
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors) const;

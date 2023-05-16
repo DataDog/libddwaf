@@ -18,7 +18,7 @@ namespace ddwaf {
 std::optional<event> rule::match(const object_store &store, cache_type &cache,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
-    ddwaf::timer &deadline) const
+    transformer_cache &tcache, ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
     if (cache.result) {
@@ -46,7 +46,7 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
     while (cond_iter != conditions_.cend()) {
         auto &&cond = *cond_iter;
         auto opt_match =
-            cond->match(store, objects_excluded, run_on_new, dynamic_processors, deadline);
+            cond->match(store, objects_excluded, run_on_new, dynamic_processors, tcache, deadline);
         if (!opt_match.has_value()) {
             cache.last_cond = cond_iter;
             return std::nullopt;

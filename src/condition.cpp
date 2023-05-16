@@ -15,14 +15,13 @@
 namespace ddwaf {
 
 std::optional<event::match> condition::match_object(const ddwaf_object *object,
-    const rule_processor::base::ptr &processor,
-    const std::vector<PW_TRANSFORM_ID> &transformers) const
+    const rule_processor::base::ptr &processor, const std::vector<PW_TRANSFORM_ID> &transformers,
+    transformer_cache &tcache) const
 {
     const size_t length =
         find_string_cutoff(object->stringValue, object->nbEntries, limits_.max_string_length);
 
-    transformer_cache cache;
-    const auto *copy = cache.transform(object, length, transformers);
+    const auto [copy, cached] = tcache.transform(object, length, transformers);
     if (copy == nullptr) {
         return processor->match({object->stringValue, length});
     }
@@ -33,7 +32,7 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object,
 template <typename T>
 std::optional<event::match> condition::match_target(T &it,
     const rule_processor::base::ptr &processor, const std::vector<PW_TRANSFORM_ID> &transformers,
-    ddwaf::timer &deadline) const
+    transformer_cache &tcache, ddwaf::timer &deadline) const
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -44,7 +43,7 @@ std::optional<event::match> condition::match_target(T &it,
             continue;
         }
 
-        auto optional_match = match_object(*it, processor, transformers);
+        auto optional_match = match_object(*it, processor, transformers, tcache);
         if (!optional_match.has_value()) {
             continue;
         }
@@ -75,7 +74,7 @@ const rule_processor::base::ptr &condition::get_processor(
 std::optional<event::match> condition::match(const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
-    ddwaf::timer &deadline) const
+    transformer_cache &tcache, ddwaf::timer &deadline) const
 {
     const auto &processor = get_processor(dynamic_processors);
     if (!processor) {
@@ -103,10 +102,10 @@ std::optional<event::match> condition::match(const object_store &store,
         std::optional<event::match> optional_match;
         if (source == data_source::keys) {
             object::key_iterator it(object, key_path, objects_excluded, limits_);
-            optional_match = match_target(it, processor, transformers, deadline);
+            optional_match = match_target(it, processor, transformers, tcache, deadline);
         } else {
             object::value_iterator it(object, key_path, objects_excluded, limits_);
-            optional_match = match_target(it, processor, transformers, deadline);
+            optional_match = match_target(it, processor, transformers, tcache, deadline);
         }
 
         if (optional_match.has_value()) {

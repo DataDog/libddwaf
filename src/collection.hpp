@@ -51,7 +51,7 @@ public:
         collection_cache &cache, const memory::unordered_set<ddwaf::rule *> &rules_to_exclude,
         const memory::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
-        ddwaf::timer &deadline) const;
+        transformer_cache &tcache, ddwaf::timer &deadline) const;
 
 protected:
     std::vector<rule *> rules_{};

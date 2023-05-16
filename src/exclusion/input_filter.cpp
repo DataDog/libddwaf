@@ -17,8 +17,8 @@ input_filter::input_filter(std::string id, std::vector<condition::ptr> condition
       rule_targets_(std::move(rule_targets)), filter_(std::move(filter))
 {}
 
-std::optional<excluded_set> input_filter::match(
-    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
+std::optional<excluded_set> input_filter::match(const object_store &store, cache_type &cache,
+    transformer_cache &tcache, ddwaf::timer &deadline) const
 {
     if (!cache.result) {
         std::vector<condition::ptr>::const_iterator cond_iter;
@@ -34,7 +34,7 @@ std::optional<excluded_set> input_filter::match(
         while (cond_iter != conditions_.cend()) {
             auto &&cond = *cond_iter;
             // TODO: Condition interface without events
-            auto opt_match = cond->match(store, {}, run_on_new, {}, deadline);
+            auto opt_match = cond->match(store, {}, run_on_new, {}, tcache, deadline);
             if (!opt_match.has_value()) {
                 cache.last_cond = cond_iter;
                 return std::nullopt;

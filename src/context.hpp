@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "transformer_cache.hpp"
 #include <memory>
 #include <optional>
 
@@ -61,6 +62,8 @@ protected:
 
     using input_filter = exclusion::input_filter;
     using rule_filter = exclusion::rule_filter;
+
+    transformer_cache tcache_;
 
     // Cache of filters and conditions
     memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;
