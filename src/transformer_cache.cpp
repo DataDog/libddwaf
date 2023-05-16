@@ -9,6 +9,28 @@
 
 namespace ddwaf {
 
+namespace {
+void copy_string_object(ddwaf_object &destination, const ddwaf_object &source, size_t length)
+{
+    memory::context_allocator<char> alloc;
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    char *copy = alloc.allocate(length + 1);
+
+    memcpy(copy, source.stringValue, length);
+    copy[length] = '\0';
+
+    destination = {nullptr, 0, {copy}, length, DDWAF_OBJ_STRING};
+}
+
+void free_string_object(ddwaf_object &object)
+{
+    memory::context_allocator<char> alloc;
+    // NOLINTNEXTLINE
+    alloc.deallocate(const_cast<char *>(object.stringValue), object.nbEntries + 1);
+}
+
+} // namespace
 std::pair<const ddwaf_object *, bool> transformer_cache::transform(
     const ddwaf_object *source, size_t length, const std::vector<PW_TRANSFORM_ID> &transformers)
 {
@@ -38,11 +60,11 @@ std::pair<const ddwaf_object *, bool> transformer_cache::transform(
         }
 
         ddwaf_object copy;
-        ddwaf_object_stringl(&copy, previous->stringValue, length);
+        copy_string_object(copy, *previous, length);
 
         if (!PWTransformer::transform(transformer, &copy)) {
             // Transform failed, let's skip it and continue
-            ddwaf_object_free(&copy);
+            free_string_object(copy);
             transform_cache_.emplace(key, previous);
             continue;
         }
@@ -63,6 +85,11 @@ std::pair<const ddwaf_object *, bool> transformer_cache::transform(
     }
 
     return {previous, true};
+}
+
+transformer_cache::~transformer_cache()
+{
+    for (auto object : owned_objects_) { free_string_object(object); }
 }
 
 } // namespace ddwaf

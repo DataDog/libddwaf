@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2022 Datadog, Inc.
 
+#include "context_allocator.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -195,21 +196,27 @@ uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64
 
 struct ScratchpadChunck {
     char *scratchpad;
-    uint64_t length, used;
+    uint64_t length, used{};
 
-    ScratchpadChunck(uint64_t chunckLength) : length(chunckLength), used(0)
+    explicit ScratchpadChunck(uint64_t chunckLength) : length(chunckLength)
     {
-        scratchpad = (char *)malloc(length);
+        memory::context_allocator<char> alloc;
+        scratchpad = alloc.allocate(length);
     }
 
     ScratchpadChunck(ScratchpadChunck &) = delete;
-    ScratchpadChunck(ScratchpadChunck &&chunck)
+    ScratchpadChunck(ScratchpadChunck &&chunck) noexcept
         : scratchpad(chunck.scratchpad), length(chunck.length), used(chunck.used)
     {
         chunck.scratchpad = nullptr;
     }
 
-    ~ScratchpadChunck() { free(scratchpad); }
+    ~ScratchpadChunck()
+    {
+
+        memory::context_allocator<char> alloc;
+        alloc.deallocate(scratchpad, length);
+    }
 };
 
 size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBufferLength)
@@ -328,9 +335,10 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
         }
     }
 
+    memory::context_allocator<char> alloc;
     if (scratchPad.size() == 1) {
         // We have a single scratchpad, we can simply swap the pointers :D
-        free(*_utf8Buffer);
+        alloc.deallocate(*_utf8Buffer, bufferLength);
         *_utf8Buffer = scratchPad.front().scratchpad;
         bufferLength = scratchPad.front().used;
 
@@ -342,11 +350,9 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
         for (ScratchpadChunck &chunck : scratchPad) { outputLength += chunck.used; }
 
         if (outputLength > bufferLength) {
-            void *newUTF8Buffer = realloc((void *)*_utf8Buffer, outputLength);
-            if (newUTF8Buffer == nullptr) {
-                return false;
-            }
-            *_utf8Buffer = (char *)newUTF8Buffer;
+            char *newUTF8Buffer = alloc.allocate(outputLength);
+            alloc.deallocate(*_utf8Buffer, bufferLength);
+            *_utf8Buffer = newUTF8Buffer;
         }
 
         uint64_t writeIndex = 0;

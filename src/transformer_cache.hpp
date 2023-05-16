@@ -26,22 +26,14 @@ public:
         : owned_objects_(std::move(other.owned_objects_)), limits_(other.limits_),
           transform_cache_(std::move(other.transform_cache_))
     {}
-
     transformer_cache &operator=(const transformer_cache &) = delete;
     transformer_cache &operator=(transformer_cache &&) = delete;
-
-    ~transformer_cache()
-    {
-        for (auto object : owned_objects_) { ddwaf_object_free(&object); }
-    }
+    ~transformer_cache();
 
     std::pair<const ddwaf_object *, bool> transform(const ddwaf_object *source, size_t length,
         const std::vector<PW_TRANSFORM_ID> &transformers);
 
 protected:
-    bool requires_transform(const ddwaf_object *source, size_t length,
-        const std::vector<PW_TRANSFORM_ID> &transformers);
-
     memory::list<ddwaf_object> owned_objects_{};
     ddwaf::object_limits limits_{};
 
@@ -55,7 +47,6 @@ protected:
         }
     };
 
-    memory::unordered_map<cache_key, bool, cash_key_hash> requires_cache_{};
     memory::unordered_map<cache_key, const ddwaf_object *, cash_key_hash> transform_cache_{};
 };
 
