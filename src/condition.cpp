@@ -10,51 +10,24 @@
 #include <log.hpp>
 #include <memory>
 
+#include "transformer_cache.hpp"
+
 namespace ddwaf {
 
 std::optional<event::match> condition::match_object(const ddwaf_object *object,
     const rule_processor::base::ptr &processor,
     const std::vector<PW_TRANSFORM_ID> &transformers) const
 {
-    const bool has_transform = !transformers.empty();
-    bool transform_required = false;
-
-    if (has_transform) {
-        // This codepath is shared with the mutable path. The structure can't be const :/
-        transform_required =
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-            PWTransformer::doesNeedTransform(transformers, const_cast<ddwaf_object *>(object));
-    }
-
     const size_t length =
         find_string_cutoff(object->stringValue, object->nbEntries, limits_.max_string_length);
 
-    // If we don't have transform to perform, or if they're irrelevant, no need to waste time
-    // copying and allocating data
-    if (!has_transform || !transform_required) {
+    transformer_cache cache;
+    const auto *copy = cache.transform(object, length, transformers);
+    if (copy == nullptr) {
         return processor->match({object->stringValue, length});
     }
 
-    ddwaf_object copy;
-    ddwaf_object_stringl(&copy, (const char *)object->stringValue, length);
-
-    const std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> scope(
-        &copy, ddwaf_object_free);
-
-    // Transform it and pick the pointer to process
-    bool transformFailed = false;
-    for (const PW_TRANSFORM_ID &transform : transformers) {
-        transformFailed = !PWTransformer::transform(transform, &copy);
-        if (transformFailed || (copy.type == DDWAF_OBJ_STRING && copy.nbEntries == 0)) {
-            break;
-        }
-    }
-
-    if (transformFailed) {
-        return processor->match({object->stringValue, length});
-    }
-
-    return processor->match_object(&copy);
+    return processor->match_object(copy);
 }
 
 template <typename T>

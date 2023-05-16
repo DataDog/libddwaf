@@ -597,7 +597,8 @@ TEST(TestTransforms, TestCoverage)
     ddwaf_context context = ddwaf_context_init(handle);
     /* // Want to hit a case where the transformer fail*/
 
-    ddwaf_object map = DDWAF_OBJECT_MAP, tmp;
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object tmp;
     ddwaf_object_map_add(&map, "arg", ddwaf_object_stringl(&tmp, "\0", 1));
 
     ddwaf_result ret;
