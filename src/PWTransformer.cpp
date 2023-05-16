@@ -1134,30 +1134,32 @@ bool PWTransformer::transformNumerize(ddwaf_object *parameter, bool readOnly)
 
 bool PWTransformer::transformUnicodeNormalize(ddwaf_object *parameter, bool readOnly)
 {
-    if (parameter->type != DDWAF_OBJ_STRING || (parameter->stringValue == nullptr || parameter->nbEntries == 0)) {
+    if (parameter->type != DDWAF_OBJ_STRING ||
+        (parameter->stringValue == nullptr || parameter->nbEntries == 0)) {
         return false;
     }
 
-    uint32_t codepoint;
-    uint64_t position = 0;
+    /*    uint32_t codepoint;*/
+    /*uint64_t position = 0;*/
     if (readOnly) {
-        while ((codepoint = ddwaf::utf8::fetch_next_codepoint(
-                    parameter->stringValue, position, parameter->nbEntries)) != UTF8_EOF) {
-            // Ignore invalid glyphs or Zero-Width joiners (which we allow for emojis)
-            if (codepoint == UTF8_INVALID) {
-                continue;
-            }
+        return true;
+        /*        while ((codepoint = ddwaf::utf8::fetch_next_codepoint(*/
+        /*parameter->stringValue, position, parameter->nbEntries)) != UTF8_EOF) {*/
+        /*// Ignore invalid glyphs or Zero-Width joiners (which we allow for emojis)*/
+        /*if (codepoint == UTF8_INVALID) {*/
+        /*continue;*/
+        /*}*/
 
-            int32_t decomposedCodepoint = 0;
-            size_t const decomposedLength =
-                ddwaf::utf8::normalize_codepoint(codepoint, &decomposedCodepoint, 1);
+        /*int32_t decomposedCodepoint = 0;*/
+        /*size_t const decomposedLength =*/
+        /*ddwaf::utf8::normalize_codepoint(codepoint, &decomposedCodepoint, 1);*/
 
-            // If the glyph needed decomposition, we flag the string
-            if (decomposedLength != 1 || codepoint != (uint32_t)decomposedCodepoint) {
-                return true;
-            }
-        }
-        return false;
+        /*// If the glyph needed decomposition, we flag the string*/
+        /*if (decomposedLength != 1 || codepoint != (uint32_t)decomposedCodepoint) {*/
+        /*return true;*/
+        /*}*/
+        /*}*/
+        /*return false;*/
     }
 
     return ddwaf::utf8::normalize_string((char **)&parameter->stringValue, parameter->nbEntries);
