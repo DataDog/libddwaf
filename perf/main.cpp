@@ -190,18 +190,17 @@ benchmark::settings generate_settings(int argc, char *argv[])
 
         std::size_t delimiter = 0;
 
-        std::vector<std::string_view> test_list;
         std::string_view remaining = test_str;
         while ((delimiter = remaining.find(',')) != std::string::npos) {
             auto substr = remaining.substr(0, delimiter);
             if (!substr.empty()) {
-                test_list.push_back(substr);
+                s.test_list.emplace(substr);
             }
             remaining = remaining.substr(delimiter + 1);
         }
 
         if (!remaining.empty()) {
-            test_list.push_back(remaining);
+            s.test_list.emplace(remaining);
         }
     }
 
