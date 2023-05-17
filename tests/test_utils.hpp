@@ -87,7 +87,7 @@ protected:
 
 // Required by gtest to pretty print relevant types
 void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
-void PrintTo(const ddwaf_result &result, ::std::ostream *os);
+void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
 
 class WafResultActionMatcher {
 public:
@@ -109,7 +109,7 @@ public:
         : expected_events_(std::move(expected_events))
     {}
 
-    bool MatchAndExplain(const std::string &result, ::testing::MatchResultListener *) const;
+    bool MatchAndExplain(std::list<ddwaf::test::event>, ::testing::MatchResultListener *) const;
 
     void DescribeTo(::std::ostream *os) const
     {
@@ -142,7 +142,9 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
   {                                                                                                \
     auto data = ddwaf::test::object_to_json(result.events);                                        \
     EXPECT_TRUE(ValidateSchema(data));                                                             \
-    EXPECT_THAT(data, WithEvents({__VA_ARGS__}));                                                  \
+    YAML::Node doc = YAML::Load(data.c_str());                                                     \
+    auto events = doc.as<std::list<ddwaf::test::event>>();                                         \
+    EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                                \
   }
 
 ddwaf_object readFile(std::string_view filename, std::string_view base = "./");
