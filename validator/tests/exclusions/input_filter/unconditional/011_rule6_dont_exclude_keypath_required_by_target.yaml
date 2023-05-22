@@ -1,0 +1,28 @@
+{
+  name: "Don't exclude on multi-key path on multiple inputs",
+  runs: [
+    {
+      input: {
+        rule6-input: {
+          parent: {
+            child: {
+              friend: rule6
+            },
+          }
+        }
+      },
+      rules: [
+        {
+          6: [
+            {
+              address: rule6-input,
+              key_path: [parent, child, friend],
+              value: rule6
+            }
+          ]
+        }
+      ],
+      code: match
+    },
+  ],
+}

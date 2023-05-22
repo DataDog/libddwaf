@@ -1,0 +1,11 @@
+{
+  name: "Rule excluded by ID through exclusion filter",
+  runs: [
+    {
+      input: {
+        rule1-input: "rule1"
+      },
+      code: ok
+    }
+  ]
+}

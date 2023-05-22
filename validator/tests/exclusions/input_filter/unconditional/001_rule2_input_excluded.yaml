@@ -1,0 +1,11 @@
+{
+  name: "Exclude input",
+  runs: [
+    {
+      input: {
+        rule2-input2: "rule2",
+      },
+      code: ok
+    }
+  ]
+}
