@@ -19,8 +19,8 @@
 #include "utils.hpp"
 
 namespace {
-constexpr unsigned max_dir_depth = 4;
-}
+constexpr unsigned max_dir_depth = 32;
+} // namespace
 
 const char *level_to_str(DDWAF_LOG_LEVEL level)
 {
@@ -45,9 +45,11 @@ const char *level_to_str(DDWAF_LOG_LEVEL level)
 void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line,
     const char *message, [[maybe_unused]] uint64_t len)
 {
-    printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line, message);
+    std::cout << "[" << level_to_str(level) << "][" << file << ":" << function << ":" << line
+              << "]: " << message << '\n';
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void print_help_and_exit(std::string_view name, std::string_view error = {})
 {
     std::cerr << "Usage: " << name << " [OPTION]...\n"
@@ -58,8 +60,11 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
 
     if (!error.empty()) {
         std::cerr << "\nError: " << error << "\n";
+
+        // NOLINTNEXTLINE(concurrency-mt-unsafe)
         exit(EXIT_FAILURE);
     }
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
     exit(EXIT_SUCCESS);
 }
 

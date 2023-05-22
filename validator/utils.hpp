@@ -59,5 +59,5 @@ bool has_colour();
 } // namespace term
 
 std::ostream &operator<<(std::ostream &os, term::colour c);
-std::ostream &operator<<(std::ostream &os, const std::set<std::string> &vec);
+std::ostream &operator<<(std::ostream &os, const std::set<std::string> &set);
 YAML::Node object_to_yaml(const ddwaf_object &obj);

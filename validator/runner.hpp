@@ -23,6 +23,13 @@ class test_runner {
 public:
     using result = std::tuple<bool, bool, std::string, std::string>;
     explicit test_runner(const std::string &rule_file);
+
+    test_runner(const test_runner &) = delete;
+    test_runner(test_runner &&) = delete;
+
+    test_runner &operator=(const test_runner &) = delete;
+    test_runner &operator=(test_runner &&) = delete;
+
     ~test_runner();
 
     result run(const fs::path &sample_file);
