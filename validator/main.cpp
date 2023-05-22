@@ -172,7 +172,7 @@ bool run_tests(const std::string &ruleset, const std::vector<fs::path> &files)
     }
     std::cout << '\n';
 
-    return failed > 0 || xpassed > 0;
+    return failed == 0 && xpassed == 0;
 }
 
 int main(int argc, char *argv[])
@@ -241,5 +241,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (exit_val == EXIT_SUCCESS) {
+        std::cout << term::colour::green << "\nValidation succeeded\n";
+    } else {
+        std::cout << term::colour::red << "\nValidation failed\n";
+    }
     return exit_val;
 }
