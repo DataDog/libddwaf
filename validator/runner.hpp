@@ -32,9 +32,10 @@ protected:
     bool run_self_test(const YAML::Node &runs);
 
     void validate(const YAML::Node &expected, const YAML::Node &obtained);
-    void validate_rule(const YAML::Node &expected, const YAML::Node &obtained);
-    void validate_conditions(const YAML::Node &expected, const YAML::Node &obtained);
-    void validate_matches(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_rule(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_conditions(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_matches(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_actions(const YAML::Node &expected, const YAML::Node &obtained);
 
     static constexpr unsigned timeout = 1000000;
     ddwaf_handle handle_;

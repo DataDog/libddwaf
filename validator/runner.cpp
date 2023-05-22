@@ -75,6 +75,7 @@ bool test_runner::run_test(const YAML::Node &runs)
             expect(retval, code);
             if (code == DDWAF_MATCH) {
                 validate(run["rules"], object_to_yaml(res->events));
+                validate_actions(run["actions"], object_to_yaml(res->actions));
             }
 
             ddwaf_result_free(res.get());
@@ -218,5 +219,14 @@ void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node 
             expect(expected_match["key_path"], obtained_match["key_path"]);
         }
         expect(expected_match["value"], obtained_match["value"]);
+    }
+}
+
+void test_runner::validate_actions(const YAML::Node &expected, const YAML::Node &obtained)
+{
+    using strset = std::set<std::string>;
+    if (expected.IsDefined()) {
+        expect(expected.size(), obtained.size());
+        expect(expected.as<strset>(), obtained.as<strset>());
     }
 }

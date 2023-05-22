@@ -3,11 +3,11 @@
   runs: [
     {
       input: {
-        rule14-input: {
+        rule4-input: {
             first: {
                 second: {
                     last: {
-                        rule14: value
+                        rule4: value
                     }
                 }
             }
@@ -15,11 +15,11 @@
       },
       rules: [
         {
-          14: [
+          4: [
             {
-              address: rule14-input,
-              key_path: [first, second, last, rule14],
-              value: rule14
+              address: rule4-input,
+              key_path: [first, second, last, rule4],
+              value: rule4
             }
           ]
         }

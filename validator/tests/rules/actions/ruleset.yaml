@@ -1,0 +1,18 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1-on-match-actions
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: rule1-input
+          list:
+            - "192.188.0.0/16"
+            - "abcd::1234:0:0:0/96"
+    on_match:
+        - block_request
+        - match

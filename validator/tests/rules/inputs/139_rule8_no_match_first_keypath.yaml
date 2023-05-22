@@ -3,10 +3,8 @@
   runs: [
     {
       input: {
-        rule13-input: {
-          first: {
-              second: rule13
-          }
+        rule8-input: {
+          first: rule8
         }
       },
       code: ok

@@ -1,22 +1,22 @@
 {
-  name: "Basic run with match and nulls removed",
+  name: "Match on all-caps",
   runs: [
     {
       input: {
-        rule15-input: "rule15\u0000"
+        rule1-input: RULE1
       },
       rules: [
         {
-          15: [
+          1: [
             {
-              address: rule15-input,
+              address: rule1-input,
               key_path: [],
-              value: rule15
+              value: rule1
             }
           ]
         }
       ],
       code: match
     }
-  ]
+  ],
 }

@@ -3,19 +3,19 @@
   runs: [
     {
       input: {
-        rule11-input2: rule11_2
+        rule7-input2: rule7_2
       },
       code: ok
     },
     {
       input: {
-        rule11-input2: garbage
+        rule7-input2: garbage
       },
       code: ok
     },
     {
       input: {
-        rule11-input1: rule11_1
+        rule7-input1: rule7_1
       },
       code: ok
     }

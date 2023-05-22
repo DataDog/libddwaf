@@ -3,9 +3,9 @@
   runs: [
     {
       input: {
-        rule14-input: {
+        rule4-input: {
             first: {
-                rule14: {
+                rule4: {
                     other: value
                 }
             }

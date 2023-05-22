@@ -3,19 +3,20 @@
   runs: [
     {
       input: {
-        rule19-input: "abcd::1234:0:ab11:0"
+        rule1-input: "abcd::1234:0:ab11:0"
       },
       rules: [
         {
-          19: [
+          1: [
             {
-              address: rule19-input,
+              address: rule1-input,
               value: "abcd::1234:0:ab11:0"
             }
           ]
         }
       ],
-      code: match
+      code: match,
+      actions: [block_request, match]
     }
   ]
 }

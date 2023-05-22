@@ -3,26 +3,26 @@
   runs: [
     {
       input: {
-        rule11-input2: rule11_2
+        rule7-input2: rule7_2
       },
       code: ok
     },
     {
       input: {
-        rule11-input1: rule11_1
+        rule7-input1: rule7_1
       },
       rules: [
         {
-          11: [
+          7: [
             {
-              address: rule11-input1,
+              address: rule7-input1,
               key_path: [],
-              value: rule11_1
+              value: rule7_1
             },
             {
-              address: rule11-input2,
+              address: rule7-input2,
               key_path: [],
-              value: rule11_2
+              value: rule7_2
             }
           ]
         }

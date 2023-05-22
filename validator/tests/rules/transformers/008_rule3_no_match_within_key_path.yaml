@@ -3,8 +3,8 @@
   runs: [
     {
       input: {
-        rule12-input: {
-            rule12: {
+        rule3-input: {
+            rule3: {
                 other: value
             }
         }

@@ -3,26 +3,28 @@
   runs: [
     {
       input: {
-        rule13-input: {
+        rule8-input: {
           first: {
             second: {
-                last: [ rule13 ]
+                last: {
+                    other: rule8
+                }
             }
           }
         }
       },
       rules: [
         {
-          13: [
+          8: [
             {
-              address: rule13-input,
+              address: rule8-input,
               key_path: [
                 first,
                 second,
                 last,
-                0
+                other
               ],
-              value: rule13
+              value: rule8
             }
           ]
         }
