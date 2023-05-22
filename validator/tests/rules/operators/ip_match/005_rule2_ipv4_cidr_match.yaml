@@ -3,13 +3,13 @@
   runs: [
     {
       input: {
-        rule18-input: 192.188.25.1
+        rule2-input: 192.188.25.1
       },
       rules: [
         {
-          18: [
+          2: [
             {
-              address: rule18-input,
+              address: rule2-input,
               value: 192.188.25.1
             }
           ]

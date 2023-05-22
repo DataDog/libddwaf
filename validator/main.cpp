@@ -118,7 +118,11 @@ void extract_all_files(
 
 bool run_tests(const std::string &ruleset, const std::vector<fs::path> &files)
 {
-    bool result = true;
+    unsigned passed = 0;
+    unsigned xpassed = 0;
+    unsigned failed = 0;
+    unsigned xfailed = 0;
+
     test_runner runner(ruleset);
     for (const auto &file : files) {
         auto [res, expected_fail, error, output] = runner.run(file);
@@ -126,11 +130,12 @@ bool run_tests(const std::string &ruleset, const std::vector<fs::path> &files)
             if (!expected_fail) {
                 std::cout << std::string{file} << " => " << term::colour::green << "Passed\n"
                           << term::colour::off;
+                ++passed;
             } else {
                 std::cout << std::string{file} << " => " << term::colour::red
                           << "Expected to fail but passed\n"
                           << term::colour::off;
-                result = false;
+                ++xpassed;
             }
         } else {
             if (!expected_fail) {
@@ -140,15 +145,34 @@ bool run_tests(const std::string &ruleset, const std::vector<fs::path> &files)
                 if (!output.empty()) {
                     std::cout << output << "\n";
                 }
-                result = false;
+                ++failed;
             } else {
                 std::cout << std::string{file} << " => " << term::colour::yellow
                           << "Failed (expected): " << error << "\n"
                           << term::colour::off;
+                ++xfailed;
             }
         }
     }
-    return result;
+
+    std::cout << term::colour::blue << "Result: " << term::colour::white << files.size() << " tests"
+              << term::colour::off;
+    if (failed > 0) {
+        std::cout << ", " << term::colour::red << failed << " failed" << term::colour::off;
+    }
+
+    std::cout << ", " << term::colour::green << passed << " passed" << term::colour::off;
+
+    if (xfailed > 0) {
+        std::cout << ", " << term::colour::yellow << xfailed << " xfailed" << term::colour::off;
+    }
+
+    if (xpassed > 0) {
+        std::cout << ", " << term::colour::magenta << xpassed << " xpassed" << term::colour::off;
+    }
+    std::cout << '\n';
+
+    return failed > 0 || xpassed > 0;
 }
 
 int main(int argc, char *argv[])
@@ -206,8 +230,14 @@ int main(int argc, char *argv[])
 
         std::sort(tests.begin(), tests.end());
 
+        std::cout << term::colour::cyan << "Testing: " << std::string(dir) << term::colour::off
+                  << '\n';
         if (!run_tests(dir / "ruleset.yaml", tests)) {
             exit_val = EXIT_FAILURE;
+        }
+
+        if (files.rbegin()->first != dir) {
+            std::cout << '\n';
         }
     }
 

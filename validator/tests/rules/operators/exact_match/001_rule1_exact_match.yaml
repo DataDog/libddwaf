@@ -3,13 +3,13 @@
   runs: [
     {
       input: {
-        rule17-input: "something else"
+        rule1-input: "something else"
       },
       rules: [
         {
-          17: [
+          1: [
             {
-              address: rule17-input,
+              address: rule1-input,
               value: "something else"
             }
           ]

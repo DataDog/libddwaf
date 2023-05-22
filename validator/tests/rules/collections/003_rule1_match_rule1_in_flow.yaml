@@ -1,17 +1,17 @@
 {
-  name: "Match on rule7 in flow",
+  name: "Match on rule1 in flow",
   runs: [
     {
       input: {
-        rule7-input: rule7
+        rule1-input: rule1
       },
       rules: [
         {
-          7: [
+          1: [
             {
-              address: rule7-input,
+              address: rule1-input,
               key_path: [],
-              value: rule7
+              value: rule1
             }
           ]
         }

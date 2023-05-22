@@ -3,13 +3,13 @@
   runs: [
     {
       input: {
-        rule18-input: "abcd::1234:0:ab11:0"
+        rule2-input: "abcd::1234:0:ab11:0"
       },
       rules: [
         {
-          18: [
+          2: [
             {
-              address: rule18-input,
+              address: rule2-input,
               value: "abcd::1234:0:ab11:0"
             }
           ]

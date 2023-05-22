@@ -3,23 +3,23 @@
   runs: [
     {
       input: {
-        rule8-input: rule8,
-        rule7-input: rule7
+        rule2-input: rule8,
+        rule1-input: rule1
       },
       rules: [
         {
-          7: [
+          1: [
             {
-              address: rule7-input,
+              address: rule1-input,
               key_path: [],
-              value: rule7
+              value: rule1
             }
           ],
-          8: [
+          2: [
             {
-              address: rule8-input,
+              address: rule2-input,
               key_path: [],
-              value: rule8
+              value: rule2
             }
           ]
         }

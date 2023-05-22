@@ -1,0 +1,24 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1-common-flow
+    tags:
+      type: flow1_2
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule1-input
+          regex: rule1
+  - id: 2
+    name: rule2-common-flow
+    tags:
+      type: flow1_2
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule2-input
+          regex: rule2

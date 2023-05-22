@@ -53,17 +53,15 @@ ddwaf_object node_to_arg(const Node &node)
 
 ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(node); }
 
-
-std::set<std::string> as_if<std::set<std::string>, void>::operator()() const {
+std::set<std::string> as_if<std::set<std::string>, void>::operator()() const
+{
 
     if (node.Type() != NodeType::Sequence) {
         throw parsing_error("Invalid node type, expected sequence");
     }
 
     std::set<std::string> set;
-    for (auto it = node.begin(); it != node.end(); ++it) {
-        set.emplace(it->as<std::string>());
-    }
+    for (auto it = node.begin(); it != node.end(); ++it) { set.emplace(it->as<std::string>()); }
 
     return set;
 }
@@ -109,7 +107,9 @@ std::ostream &operator<<(std::ostream &os, const std::set<std::string> &set)
     os << "[";
     for (const auto &str : set) {
         os << str;
-        if (str != *set.rbegin()) { os << ", "; }
+        if (str != *set.rbegin()) {
+            os << ", ";
+        }
     }
     os << "]";
     return os;

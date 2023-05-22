@@ -3,7 +3,7 @@
   runs: [
     {
       input: {
-        rule18-input: "abcd::1234:1:0:1"
+        rule2-input: "abcd::1234:1:0:1"
       },
       code: ok
     }

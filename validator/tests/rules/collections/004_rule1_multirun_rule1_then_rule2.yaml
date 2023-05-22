@@ -1,17 +1,17 @@
 {
-  name: "Match on rule7 on first run and rule8 on second run",
+  name: "Match on rule1 on first run and rule2 on second run",
   runs: [
     {
       input: {
-        rule7-input: rule7
+        rule1-input: rule1
       },
       rules: [
         {
-          7: [
+          1: [
             {
-              address: rule7-input,
+              address: rule1-input,
               key_path: [],
-              value: rule7
+              value: rule1
             }
           ]
         }
@@ -20,7 +20,7 @@
     },
     {
       input: {
-        rule8-input: rule8
+        rule2-input: rule8
       },
       code: ok
     }

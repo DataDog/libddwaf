@@ -3,7 +3,7 @@
   runs: [
     {
       input: {
-        rule18-input: 192.189.0.1
+        rule2-input: 192.189.0.1
       },
       code: ok
     }

@@ -3,7 +3,7 @@
   runs: [
     {
       input: {
-        rule17-input: "something"
+        rule1-input: "something"
       },
       code: ok
     }

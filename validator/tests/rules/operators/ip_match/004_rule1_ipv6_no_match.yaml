@@ -3,7 +3,7 @@
   runs: [
     {
       input: {
-        rule16-input: "abcd::1234:ffff:ffff:fffa"
+        rule1-input: "abcd::1234:ffff:ffff:fffa"
       },
       code: ok
     }

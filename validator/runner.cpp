@@ -87,7 +87,7 @@ bool test_runner::run_test(const YAML::Node &runs)
         error_ << "unknown exception";
     }
 
-    if (!passed && res->events.type != DDWAF_OBJ_INVALID) {
+    if (!passed && res->events.type != DDWAF_OBJ_INVALID && ddwaf_object_size(&res->events) > 0) {
         YAML::Emitter out(output_);
         out.SetIndent(2);
         out.SetMapFormat(YAML::Block);

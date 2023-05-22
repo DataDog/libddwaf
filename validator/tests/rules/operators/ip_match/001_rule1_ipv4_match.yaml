@@ -3,13 +3,13 @@
   runs: [
     {
       input: {
-        rule16-input: 192.168.0.1
+        rule1-input: 192.168.0.1
       },
       rules: [
         {
-          16: [
+          1: [
             {
-              address: rule16-input,
+              address: rule1-input,
               value: 192.168.0.1
             }
           ]
