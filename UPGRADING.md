@@ -1,5 +1,20 @@
 # Upgrading libddwaf
 
+### Upgrading from `1.10.0` to `1.11.0`
+
+Version `1.11.0` introduces a number of breaking changes to the API, notably:
+- The `ruleset_info` structure has been replaced with a `ddwaf_object`, providing many more parsing diagnostics.
+- The `ddwaf_result::data` field containing the resulting events in JSON format has been replaced with a `ddwaf_object` containing an array of events in `ddwaf_result::events`.
+- The actions array has also been replaced by a `ddwaf_object` containing an array of strings.
+
+Finally it also introduces support for per-input transformers which, while not a breaking change, will also be explained here.
+
+#### Ruleset Parsing diagnostics
+
+#### Events and actions as `ddwaf_object`
+
+#### Per-input transformers
+
 ### Upgrading from `1.7.x` to `1.8.0`
 
 Version `1.8.0` introduces the WAF builder, a new module with the ability to generate a new WAF instance from an existing one. This new module works transparently through the `ddwaf_update` function, which allows the user to update one, some or all of the following:

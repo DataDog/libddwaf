@@ -8,9 +8,9 @@
 
 int main(int argc, char *argv[])
 {
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_DEBUG);
+    ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
     if (argc < 3) {
-        std::cout << "Usage: " << argv[0] << " <json/yaml file> [<json/yaml file>] <json input>";
+        std::cout << "Usage: " << argv[0] << " <json/yaml file> [<json/yaml file>] <json input>\n";
         return EXIT_FAILURE;
     }
 
