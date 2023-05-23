@@ -15,6 +15,39 @@ Finally it also introduces support for per-input transformers which, while not a
 
 #### Per-input transformers
 
+```
+{
+  "id": "crs-933-111",
+  "name": "PHP Injection Attack: PHP Script File Upload Found",
+  "tags": { ... },
+  "conditions": [ ... ],
+  "transformers": [
+    "lowercase"
+  ]
+},
+```
+
+
+```
+"inputs": [
+  {
+    "address": "server.request.query"
+  }
+]
+```
+
+```
+"inputs": [
+  {
+    "address": "server.request.headers.no_cookies",
+    "transformers": [
+      "lowercase",
+      "removeNulls"
+    ]
+  }
+]
+```
+
 ### Upgrading from `1.7.x` to `1.8.0`
 
 Version `1.8.0` introduces the WAF builder, a new module with the ability to generate a new WAF instance from an existing one. This new module works transparently through the `ddwaf_update` function, which allows the user to update one, some or all of the following:
