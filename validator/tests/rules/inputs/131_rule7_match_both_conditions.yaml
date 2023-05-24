@@ -1,0 +1,28 @@
+{
+  name: "Match on both conditions",
+  runs: [
+    {
+      input: {
+        rule7-input1: rule7_1,
+        rule7-input2: rule7_2
+      },
+      rules: [
+        {
+          7: [
+            {
+              address: rule7-input1,
+              key_path: [],
+              value: rule7_1
+            },
+            {
+              address: rule7-input2,
+              key_path: [],
+              value: rule7_2
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

@@ -1,0 +1,22 @@
+{
+  name: "Don't exclude",
+  runs: [
+    {
+      input: {
+        rule7-input3: rule7
+      },
+      rules: [
+        {
+          7: [
+            {
+              address: rule7-input3,
+              key_path: [],
+              value: rule7,
+            }
+          ]
+        }
+      ],
+      code: match
+    },
+  ],
+}

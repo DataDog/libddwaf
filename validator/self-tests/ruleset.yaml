@@ -1,0 +1,25 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1-basic-single-input
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule1-input
+          regex: rule1
+  - id: 2
+    name: rule2-basic-multiple-inputs
+    tags:
+      type: flow2
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule2-input1
+            - address: rule2-input2
+          regex: rule2

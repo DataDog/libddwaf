@@ -1,0 +1,30 @@
+{
+  name: "Match key below key path",
+  runs: [
+    {
+      input: {
+        rule4-input: {
+            first: {
+                second: {
+                    last: {
+                        rule4: value
+                    }
+                }
+            }
+        }
+      },
+      rules: [
+        {
+          4: [
+            {
+              address: rule4-input,
+              key_path: [first, second, last, rule4],
+              value: rule4
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

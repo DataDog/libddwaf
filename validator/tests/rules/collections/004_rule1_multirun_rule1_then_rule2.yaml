@@ -1,0 +1,28 @@
+{
+  name: "Match on rule1 on first run and rule2 on second run",
+  runs: [
+    {
+      input: {
+        rule1-input: rule1
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              key_path: [],
+              value: rule1
+            }
+          ]
+        }
+      ],
+      code: match
+    },
+    {
+      input: {
+        rule2-input: rule8
+      },
+      code: ok
+    }
+  ],
+}

@@ -1,0 +1,18 @@
+{
+  name: "Exclude multi key path",
+  runs: [
+    {
+      input: {
+        rule4-input: {
+          parent: {
+            sibling: rule4,
+            child: {
+              grandchild: rule4
+            },
+          }
+        }
+      },
+      code: ok
+    }
+  ],
+}

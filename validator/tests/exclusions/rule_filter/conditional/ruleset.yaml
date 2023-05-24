@@ -1,0 +1,67 @@
+version: '2.1'
+exclusions:
+  - id: 1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-1-input
+          regex: exclusion-filter-1
+  - id: 2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-2-input1
+          regex: exclusion-filter-2
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-2-input2
+          regex: exclusion-filter-2
+  - id: 3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-3-input
+          regex: exclusion-filter-3
+    rules_target:
+      - tags:
+          type: flow2
+          category: category2
+      - rule_id: 3
+rules:
+  - id: 1
+    name: rule1-basic-single-input
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule1-input
+          regex: rule1
+  - id: 2
+    name: rule2-target-excluded-through-conditions
+    tags:
+      type: flow2
+      category: category2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule2-input
+          regex: rule2
+  - id: 3
+    name: rule3-target-excluded-through-conditions
+    tags:
+      type: flow3
+      category: category3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule3-input
+          regex: rule3

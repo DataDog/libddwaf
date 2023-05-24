@@ -1,0 +1,21 @@
+{
+  name: "Basic run with ip_match operator and ipv6",
+  runs: [
+    {
+      input: {
+        rule1-input: "abcd::1234:ffff:ffff:ffff"
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: "abcd::1234:ffff:ffff:ffff"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  name: "Match on both rules in flow",
+  runs: [
+    {
+      input: {
+        rule2-input: rule8,
+        rule1-input: rule1
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              key_path: [],
+              value: rule1
+            }
+          ],
+          2: [
+            {
+              address: rule2-input,
+              key_path: [],
+              value: rule2
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

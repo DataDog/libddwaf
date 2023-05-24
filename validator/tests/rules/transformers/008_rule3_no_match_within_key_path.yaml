@@ -1,0 +1,15 @@
+{
+  name: "No match within key path",
+  runs: [
+    {
+      input: {
+        rule3-input: {
+            rule3: {
+                other: value
+            }
+        }
+      },
+      code: ok
+    }
+  ],
+}

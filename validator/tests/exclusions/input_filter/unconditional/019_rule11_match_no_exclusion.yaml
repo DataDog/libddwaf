@@ -1,0 +1,23 @@
+{
+  name: "Match with no exclusion",
+  runs: [
+    {
+      input: {
+        rule11-input: rule9-11
+      },
+      rules: [
+        {
+          11: [
+            {
+              address: rule11-input,
+              key_path: [],
+              value: rule9-11
+            }
+          ]
+        }
+      ],
+
+      code: match
+    },
+  ],
+}

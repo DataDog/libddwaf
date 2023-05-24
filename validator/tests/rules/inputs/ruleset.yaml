@@ -1,0 +1,121 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1-basic-single-input
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule1-input
+          regex: rule1
+  - id: 2
+    name: rule2-basic-multiple-inputs
+    tags:
+      type: flow2
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule2-input1
+            - address: rule2-input2
+          regex: rule2
+  - id: 3
+    name: rule3-basic-single-input-single-keypath
+    tags:
+      type: flow3
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule3-input
+              key_path:
+                - keypath
+          regex: rule3
+  - id: 4
+    name: rule4-basic-multiple-inputs-single-keypath
+    tags:
+      type: flow4
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule4-input1
+              key_path:
+                - keypath
+            - address: rule4-input2
+              key_path:
+                - keypath
+          regex: rule4
+  - id: 5
+    name: rule5-basic-single-input-multiple-keypath
+    tags:
+      type: flow5
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule5-input
+              key_path:
+                - keypath1
+            - address: rule5-input
+              key_path:
+                - keypath2
+          regex: rule5
+  - id: 6
+    name: rule6-multicondition-single-input
+    tags:
+      type: flow6
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule6-input1
+          regex: rule6
+      - operator: phrase_match
+        parameters:
+          inputs:
+            - address: rule6-input2
+          list:
+            - rule6
+  - id: 7
+    name: rule7-multicondition-multiple-input
+    tags:
+      type: flow7
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule7-input1
+            - address: rule7-input2
+          regex: rule7_1
+      - operator: phrase_match
+        parameters:
+          inputs:
+            - address: rule7-input1
+            - address: rule7-input2
+          list:
+            - rule7_2
+  - id: 8
+    name: rule3-basic-single-input-single-multi-keypath
+    tags:
+      type: flow8
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule8-input
+              key_path:
+                - first
+                - second
+                - last
+          regex: rule8
