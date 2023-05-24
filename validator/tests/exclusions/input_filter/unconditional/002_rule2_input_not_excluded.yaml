@@ -1,0 +1,23 @@
+{
+  name: "One input is excluded, but the other one isn't",
+  runs: [
+    {
+      input: {
+        rule2-input2: "rule2",
+        rule2-input1: "rule2",
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input1,
+              key_path: [],
+              value: rule2
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

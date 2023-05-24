@@ -1,0 +1,13 @@
+{
+  name: "No match",
+  runs: [
+    {
+      input: {
+        rule8-input: {
+          first: rule8
+        }
+      },
+      code: ok
+    }
+  ],
+}

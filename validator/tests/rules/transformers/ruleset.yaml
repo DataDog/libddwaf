@@ -1,0 +1,73 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1-to-lower
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule1-input
+          regex: rule1
+    transformers:
+      - lowercase
+  - id: 2
+    name: rule2-keys-only
+    tags:
+      type: flow2
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule2-input
+          regex: rule2
+    transformers:
+      - keys_only
+  - id: 3
+    name: rule3-keys-only-with-keypath
+    tags:
+      type: flow3
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule3-input
+              key_path:
+                - rule3
+          regex: rule3
+    transformers:
+      - keys_only
+  - id: 4
+    name: rule4-keys-only-with-multi-keypath
+    tags:
+      type: flow4
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule4-input
+              key_path:
+                - first
+                - second
+                - last
+          regex: rule4
+    transformers:
+      - keys_only
+  - id: 5
+    name: rule5-remove-nulls-transformer
+    tags:
+      type: flow5
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule5-input
+          regex: rule5
+    transformers:
+      - removeNulls

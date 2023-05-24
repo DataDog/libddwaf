@@ -1,0 +1,19 @@
+{
+  name: "No match within third key path",
+  runs: [
+    {
+      input: {
+        rule4-input: {
+            first: {
+                second: {
+                    last: {
+                        other: value
+                    }
+                }
+            }
+        }
+      },
+      code: ok
+    }
+  ],
+}

@@ -1,0 +1,16 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1-ip-match
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule1-input
+          list:
+            - "string"
+            - "other"
+            - "something else"

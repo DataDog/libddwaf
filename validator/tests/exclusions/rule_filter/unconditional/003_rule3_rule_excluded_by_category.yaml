@@ -1,0 +1,11 @@
+{
+  name: "Rule excluded by category through exclusion filter",
+  runs: [
+    {
+      input: {
+        rule3-input: "rule3"
+      },
+      code: ok
+    }
+  ]
+}
