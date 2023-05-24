@@ -11,7 +11,7 @@ Finally it also introduces support for per-input transformers which, while not a
 
 #### Ruleset Parsing diagnostics
 
-Until this version, basic diagnostics were provided through the `ddwaf_ruleset_info` structure, with the following definition:
+Before `1.11.0`, basic diagnostics were provided through the `ddwaf_ruleset_info` structure, with the following definition:
 
 ```c
 struct _ddwaf_ruleset_info
@@ -27,21 +27,65 @@ struct _ddwaf_ruleset_info
     const char *version;
 };
 ```
-In this definition, `ddwaf_ruleset_info::errors` was always a map containing errors as keys and an array of rule IDs as values; this field was used as a compressed view of the rules which couldn't be parsed and the reason. Each field within the structure was added to the root span as shown in the example below:
+In this definition, `ddwaf_ruleset_info::errors` was always a map containing errors as keys and an array of rule IDs as values; this field was used as a compressed view of the rules which couldn't be parsed and the relevant parsing error, e.g.:
 
-```c
-    ddwaf_ruleset_info info;
-    handle_ = ddwaf_init(rule, &config, &info);
+```json
+"errors": {
+  "missing key 'type'": [
+    "blk-001-002"
+  ]
+}
+```
+Each field within the structure was added to the root span either as a meta tag or a metric as shown in the example below:
 
-    root_span.metrics["_dd.appsec.event_rules.loaded"] = info.loaded;
-    root_span.metrics["_dd.appsec.event_rules.error_count"] = info.failed;
-    root_span.meta["_dd.appsec.event_rules.errors"] = object_to_json(info.errors);
-    root_span.meta["_dd.appsec.event_rules.version"] = info.version;   
+```cpp
+ddwaf_ruleset_info info;
+auto handle = ddwaf_init(rule, &config, &info);
 
-    ddwaf_ruleset_info_free(&info);
+root_span.metrics["_dd.appsec.event_rules.loaded"] = info.loaded;
+root_span.metrics["_dd.appsec.event_rules.error_count"] = info.failed;
+root_span.meta["_dd.appsec.event_rules.errors"] = object_to_json(info.errors);
+root_span.meta["_dd.appsec.event_rules.version"] = info.version;   
+
+ddwaf_ruleset_info_free(&info);
 ```
 
-With the introduction of exclusion filters, rule overrides, custom rules and, to a lesser extent, rule data, better diagnostics have become a priority 
+With the introduction of exclusion filters, rule overrides, custom rules and, to a lesser extent, rule data, the current set of diagnostics was not enough to provide an accurate understanding of the parsing result. For this reason, the `ddwaf_ruleset_info` structure has been deprecated in favour of a `ddwaf_object` as a parameter to both `ddwaf_init` and `ddwaf_update`:
+
+```c
+ddwaf_handle ddwaf_init(const ddwaf_object *ruleset, const ddwaf_config* config, ddwaf_object *diagnostics);
+ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset, ddwaf_object *diagnostics);
+```
+The use of a `ddwaf_object` instead of a dedicated structure has a number of advantages and disadvantages, however it allows us to add more diagnostics without necessarily breaking the ABI, which means we can automatically support new high-level features without breaking existing libraries. 
+
+The new diagnostics object is always a map containing the following:
+- A map per top-level feature parsed (e.g. rules, custom rules, exclusions, etc), with the same key as said top-level feature.
+- Other metadata if present in the ruleset, such as the ruleset version.
+
+Providing the WAF with a complete ruleset typically results in a `ddwaf_object` with the following contents:
+
+```json
+{
+  "custom_rules": {...},
+  "exclusions": {...},
+  "rules": {...},
+  "rules_data": {...},
+  "rules_override": {...},
+  "ruleset_version": "1.7.0"
+}
+
+```
+The definition of the map provided for each top-level key is generic and can contain a number of keys:
+- `error`: this key is optional and always contains a string indicating the error which prevented this top-level key from being parsed. Since this key represents a critical parsing error, no other keys are provided when this one is present.
+- `loaded`: the value associated with this key is always an array of the IDs and represents those elements that were loaded. If the relevant feature does not have an ID (e.g. rule overrides), it'll contain the index within the parsed array in the form `index:X` with `X` representing the numerical index. 
+- `failed`: the value provided with this key is exactly the same as loaded, but these are instead elements which couldn't be loaded.
+- `errors`: for backwards compatibility, this key contains a compressed map of errors, each containing the list of IDs which failed with said error.
+
+```json
+  "rules_data": {
+    "error": "bad cast, expected 'array', obtained 'map'"
+  },
+```
 
 #### Events and actions as `ddwaf_object`
 
