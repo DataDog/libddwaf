@@ -203,10 +203,62 @@ const ddwaf_object *find_object(const ddwaf_object *map, std::string_view key) {
     return nullptr;
 }
 ```
-#### Events and actions as `ddwaf_object`
+#### Events & actions as `ddwaf_object`
 
+The outcome of a WAF run is provided as part of the `ddwaf_result` structure, which before `1.11.0` had the following definition:
 
+```c
+struct _ddwaf_result
+{
+    /** Whether there has been a timeout during the operation **/
+    bool timeout;
+    /** Run result in JSON format **/
+    const char* data;
+    /** Actions array and its size **/
+    struct _ddwaf_result_actions {
+        char **array;
+        uint32_t size;
+    } actions;
+    /** Total WAF runtime in nanoseconds **/
+    uint64_t total_runtime;
+};
+```
+In particular, the data field was a JSON-serialized string containing an array of events. Unfortunately, since WAF users typically call the WAF multiple times within the same context, extracting a meaningful result requires stitching multiple JSON strings together. Similarly, truncating the resulting JSON array to comply with trace limits also requires deserializing, performing changes and reserialising. 
 
+To work around these problems, the new version of the WAF doesn't report events as a JSON string, but rather as a `ddwaf_object` containing an array of events, with exactly the same definition as the previously provided JSON string.
+
+```c
+struct _ddwaf_result
+{
+    /** Whether there has been a timeout during the operation **/
+    bool timeout;
+    /** Array of events generated, this is guaranteed to be an array **/
+    ddwaf_object events;
+    /** Array of actions generated, this is guaranteed to be an array **/
+    ddwaf_object actions;
+    /** Total WAF runtime in nanoseconds **/
+    uint64_t total_runtime;
+};
+```
+With this new definition, the caller now has the responsibility of serializing events into JSON.
+
+Similarly, actions are now also a `ddwaf_object` instead of a struct representing an array. Iterating through the old structure could be done as follows:
+
+```c
+ddwaf_result res;
+for (unsigned i = 0; i < res.actions.size; ++i) {
+    printf("%s", res.actions.array[i]);
+}
+```
+
+The same can now be done as follows:
+```c
+ddwaf_result res;
+for (unsigned i = 0; i < ddwaf_object_size(&res.actions); ++i) {
+    const ddwaf_object *node = ddwaf_object_get_index(&res.actions, i);
+    printf("%s", ddwaf_object_get_string(node, nullptr));
+}
+```
 #### Per-input transformers
 
 Rules provide a transformers key which represents a list of transformers which should be applied (in order) to each scalar before evaluating the operator. An example of a rule with transformers could be the following:
