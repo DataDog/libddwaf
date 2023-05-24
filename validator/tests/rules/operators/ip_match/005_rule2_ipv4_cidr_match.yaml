@@ -1,0 +1,21 @@
+{
+  name: "ip_match operator, match IPv4 CIDR",
+  runs: [
+    {
+      input: {
+        rule2-input: 192.188.25.1
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input,
+              value: 192.188.25.1
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

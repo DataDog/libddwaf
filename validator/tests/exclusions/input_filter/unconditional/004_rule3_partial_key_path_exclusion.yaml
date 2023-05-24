@@ -1,0 +1,15 @@
+{
+  name: "Exclude match on partial key path",
+  runs: [
+    {
+      input: {
+        rule3-input: {
+          parent: {
+            child: rule3
+          }
+        }
+      },
+      code: ok
+    }
+  ],
+}

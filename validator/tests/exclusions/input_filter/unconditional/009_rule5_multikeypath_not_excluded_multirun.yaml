@@ -1,0 +1,38 @@
+{
+  name: "Exclude on multi-key path on multiple inputs",
+  runs: [
+    {
+      input: {
+        rule5-input1: {
+          parent: {
+            child: {
+              grandchild: rule5
+            },
+          }
+        }
+      },
+      code: ok
+    },
+    {
+      input: {
+        rule5-input2: {
+          uncle: {
+            sibling: rule5,
+          }
+        }
+      },
+      rules: [
+        {
+          5: [
+            {
+              address: rule5-input2,
+              key_path: [uncle, sibling],
+              value: rule5
+            }
+          ]
+        },
+      ],
+      code: match
+    }
+  ],
+}

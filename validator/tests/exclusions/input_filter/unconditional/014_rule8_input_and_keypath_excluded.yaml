@@ -1,0 +1,24 @@
+{
+  name: "Exclusion points at wrong addresses",
+  runs: [
+    {
+      input: {
+        rule8-input: {
+          parent: rule8
+        }
+      },
+      rules: [
+        {
+          8: [
+            {
+              address: rule8-input,
+              key_path: [parent],
+              value: rule8
+            }
+          ]
+        }
+      ],
+      code: match
+    },
+  ],
+}

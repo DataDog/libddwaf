@@ -1,0 +1,21 @@
+{
+  name: "Rule not excluded due to category",
+  runs: [
+    {
+      input: {
+        rule5-input: rule5
+      },
+      rules: [
+        {
+          5: [
+            {
+              address: rule5-input,
+              value: rule5
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

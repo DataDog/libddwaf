@@ -1,0 +1,21 @@
+{
+  name: "Basic run with exact_match operator",
+  runs: [
+    {
+      input: {
+        rule1-input: "something else"
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: "something else"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

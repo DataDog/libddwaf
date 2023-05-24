@@ -1,0 +1,21 @@
+{
+  name: "Rule not excluded due to type",
+  runs: [
+    {
+      input: {
+        rule6-input: rule6
+      },
+      rules: [
+        {
+          6: [
+            {
+              address: rule6-input,
+              value: rule6
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

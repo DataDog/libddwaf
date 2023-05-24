@@ -1,0 +1,22 @@
+{
+  name: "Match on all-caps",
+  runs: [
+    {
+      input: {
+        rule1-input: RULE1
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              key_path: [],
+              value: rule1
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}
