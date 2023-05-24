@@ -11,11 +11,45 @@ Finally it also introduces support for per-input transformers which, while not a
 
 #### Ruleset Parsing diagnostics
 
+Until this version, basic diagnostics were provided through the `ddwaf_ruleset_info` structure, with the following definition:
+
+```c
+struct _ddwaf_ruleset_info
+{
+    /** Number of rules successfully loaded **/
+    uint16_t loaded;
+    /** Number of rules which failed to parse **/
+    uint16_t failed;
+    /** Map from an error string to an array of all the rule ids for which
+     *  that error was raised. {error: [rule_ids]} **/
+    ddwaf_object errors;
+    /** Ruleset version **/
+    const char *version;
+};
+```
+In this definition, `ddwaf_ruleset_info::errors` was always a map containing errors as keys and an array of rule IDs as values; this field was used as a compressed view of the rules which couldn't be parsed and the reason. Each field within the structure was added to the root span as shown in the example below:
+
+```c
+    ddwaf_ruleset_info info;
+    handle_ = ddwaf_init(rule, &config, &info);
+
+    root_span.metrics["_dd.appsec.event_rules.loaded"] = info.loaded;
+    root_span.metrics["_dd.appsec.event_rules.error_count"] = info.failed;
+    root_span.meta["_dd.appsec.event_rules.errors"] = object_to_json(info.errors);
+    root_span.meta["_dd.appsec.event_rules.version"] = info.version;   
+
+    ddwaf_ruleset_info_free(&info);
+```
+
+With the introduction of exclusion filters, rule overrides, custom rules and, to a lesser extent, rule data, better diagnostics have become a priority 
+
 #### Events and actions as `ddwaf_object`
+
+
 
 #### Per-input transformers
 
-```
+```json
 {
   "id": "crs-933-111",
   "name": "PHP Injection Attack: PHP Script File Upload Found",
@@ -28,7 +62,7 @@ Finally it also introduces support for per-input transformers which, while not a
 ```
 
 
-```
+```json
 "inputs": [
   {
     "address": "server.request.query"
@@ -36,7 +70,7 @@ Finally it also introduces support for per-input transformers which, while not a
 ]
 ```
 
-```
+```json
 "inputs": [
   {
     "address": "server.request.headers.no_cookies",
