@@ -1,6 +1,6 @@
 # Upgrading libddwaf
 
-### Upgrading from `1.10.0` to `1.11.0`
+## Upgrading from `1.10.0` to `1.11.0`
 
 Version `1.11.0` introduces a number of breaking changes to the API, notably:
 - The `ruleset_info` structure has been replaced with a `ddwaf_object`, providing many more parsing diagnostics.
@@ -9,7 +9,7 @@ Version `1.11.0` introduces a number of breaking changes to the API, notably:
 
 Finally it also introduces support for per-input transformers which, while not a breaking change, will also be explained here.
 
-#### Ruleset Parsing diagnostics
+### Ruleset Parsing diagnostics
 
 Before `1.11.0`, basic diagnostics were provided through the `ddwaf_ruleset_info` structure, with the following definition:
 
@@ -27,7 +27,7 @@ struct _ddwaf_ruleset_info
     const char *version;
 };
 ```
-In this definition, `ddwaf_ruleset_info::errors` was always a map containing errors as keys and an array of rule IDs as values; this field was used as a compressed view of the rules which couldn't be parsed and the relevant parsing error, e.g.:
+In this definition, `ddwaf_ruleset_info::errors` was always a map containing errors as keys and an array of rule IDs as values; this field was used as a compressed view of the rules which couldn't be parsed and the relevant parsing errors, e.g.:
 
 ```json
 "errors": {
@@ -36,7 +36,116 @@ In this definition, `ddwaf_ruleset_info::errors` was always a map containing err
   ]
 }
 ```
-Each field within the structure was added to the root span either as a meta tag or a metric as shown in the example below:
+With the introduction of exclusion filters, rule overrides, custom rules and, to a lesser extent, rule data, the current set of diagnostics was not enough to provide an accurate understanding of the parsing result. For this reason, the `ddwaf_ruleset_info` structure has been deprecated in favour of `ddwaf_object`. This object is now provided as a parameter to both `ddwaf_init` and `ddwaf_update`, and it should be allocated by the caller (e.g. stack-allocated as a local variable):
+```c
+ddwaf_handle ddwaf_init(const ddwaf_object *ruleset, const ddwaf_config* config, ddwaf_object *diagnostics);
+ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset, ddwaf_object *diagnostics);
+```
+The use of a `ddwaf_object` instead of a dedicated structure has a number of advantages and disadvantages, however it allows us to add more diagnostics in a backwards-compatible manner, without breaking the ABI. This translates in having the ability to automatically provide diagnostics for new high-level features without breaking existing libraries. 
+
+The new diagnostics object is always a map containing the following:
+- A map per top-level feature parsed (e.g. rules, custom rules, exclusions, etc), with the same key as said top-level feature.
+- Other metadata if present in the ruleset, such as the ruleset version.
+
+Providing the WAF with a complete ruleset typically results in a `ddwaf_object` with the following contents:
+```json
+{
+  "custom_rules": {...},
+  "exclusions": {...},
+  "rules": {...},
+  "rules_data": {...},
+  "rules_override": {...},
+  "ruleset_version": "1.7.0"
+}
+```
+The definition of the map provided for each top-level feature is generic. The expected keys when the top-level feature couldn't be parsed are the following:
+- `error`: this key contains a string indicating the error which prevented the relevant top-level key from being parsed and will only be present in this situation. Since this key represents a critical parsing error, no other keys are provided when this one is present.
+
+An example ruleset in which the `rules_data` key had the wrong type could result in the following diagnostics:
+```json
+{
+  "rules_data": {
+    "error": "bad cast, expected 'array', obtained 'map'"
+  }
+}
+```
+The expected keys when the top-level feature was parsed successfully are the following:
+- `loaded`: the value associated with this key is always an array of IDs and represents those elements that were loaded successfully. If the relevant feature does not have an ID (e.g. rule overrides), it'll contain the index within the parsed array in the form `index:x` with `x` representing the numerical index. 
+- `failed`: the value provided with this key is exactly the same as loaded, but these are instead elements which couldn't be loaded. If the relevant element or feature lacks an ID, the `index:x` format is used instead.
+- `errors`: for backwards compatibility, this key contains a compressed map of errors, each containing the list of IDs which failed with said error.
+
+An example ruleset with all valid entries could look as follows:
+
+```json
+{
+  "custom_rules": {
+    "loaded": [
+      "a45b55fc-5b57-4002-90bf-58cdf296124c"
+    ],
+    "failed": [],
+    "errors": {}
+  },
+  "rules_override": {
+    "loaded": [
+      "index:0",
+      "index:1"
+    ],
+    "failed": [],
+    "errors": {}
+  }
+}
+```
+An example ruleset with some invalid entries could look as follows:
+
+```json
+{
+  "exclusions": {
+    "loaded": [
+      "1d058b7b-9b35-4a01-9b60-74c9a2a3bd78",
+    ],
+    "failed": [
+      "index:2"
+    ],
+    "errors": {
+      "missing key 'id'": [
+        "index:2"
+      ]
+    }
+  },
+  "rules": {
+    "loaded": [
+      "blk-001-001"
+    ],
+    "failed": [
+      "blk-001-002"
+    ],
+    "errors": {
+      "missing key 'conditions'": [
+        "blk-001-002"
+      ]
+    }
+  },
+  "rules_override": {
+    "loaded": [
+      "index:1"
+    ],
+    "failed": [
+      "index:0"
+    ],
+    "errors": {
+      "invalid type 'map' for key 'rules_target', expected 'array'": [
+        "index:0"
+      ]
+    }
+  },
+  "ruleset_version": "1.7.0"
+}
+```
+Note that in this example, an exclusion filter lacking a valid ID was also represented using the `index:x` notation.
+
+### Adding diagnostics to the root span
+
+In previous versions of the WAF, each field of the `ddwaf_ruleset_info` structure was added to the root span either as a meta tag or a metric as shown in the example below:
 
 ```cpp
 ddwaf_ruleset_info info;
@@ -49,71 +158,72 @@ root_span.meta["_dd.appsec.event_rules.version"] = info.version;
 
 ddwaf_ruleset_info_free(&info);
 ```
+While the new diagnostics provide much more information, for backwards compatibility, rule metrics and errors still need to be reported through the root span, the following example shows a simple mechanism to traverse the diagnostics object:
 
-With the introduction of exclusion filters, rule overrides, custom rules and, to a lesser extent, rule data, the current set of diagnostics was not enough to provide an accurate understanding of the parsing result. For this reason, the `ddwaf_ruleset_info` structure has been deprecated in favour of a `ddwaf_object` as a parameter to both `ddwaf_init` and `ddwaf_update`:
+```cpp
+ddwaf_object diagnostics;
+ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+ddwaf_object_free(&rule);
+ddwaf_destroy(handle);
 
-```c
-ddwaf_handle ddwaf_init(const ddwaf_object *ruleset, const ddwaf_config* config, ddwaf_object *diagnostics);
-ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset, ddwaf_object *diagnostics);
-```
-The use of a `ddwaf_object` instead of a dedicated structure has a number of advantages and disadvantages, however it allows us to add more diagnostics without necessarily breaking the ABI, which means we can automatically support new high-level features without breaking existing libraries. 
+const auto *rules = find_object(&diagnostics, "rules");
+if (rules != nullptr) {
+    size_t index = 0;
+    const ddwaf_object *node = nullptr;
+    while ((node = ddwaf_object_get_index(rules, index++)) != nullptr) {
+        std::string_view node_key = ddwaf_object_get_key(node, nullptr);
 
-The new diagnostics object is always a map containing the following:
-- A map per top-level feature parsed (e.g. rules, custom rules, exclusions, etc), with the same key as said top-level feature.
-- Other metadata if present in the ruleset, such as the ruleset version.
-
-Providing the WAF with a complete ruleset typically results in a `ddwaf_object` with the following contents:
-
-```json
-{
-  "custom_rules": {...},
-  "exclusions": {...},
-  "rules": {...},
-  "rules_data": {...},
-  "rules_override": {...},
-  "ruleset_version": "1.7.0"
+        if (node_key == "loaded") {
+            root_span.metrics["_dd.appsec.event_rules.loaded"] = ddwaf_object_size(node);
+        } else if (node_key =="failed") {
+            root_span.metrics["_dd.appsec.event_rules.error_count"] = ddwaf_object_size(node);
+        }  else if (node_key == "errors") {
+            root_span.meta["_dd.appsec.event_rules.errors"] = object_to_yaml(*node);
+        } else if (node_key == "ruleset_version") {
+            root_span.meta["_dd.appsec.event_rules.version"] = ddwaf_object_get_string(node, nullptr);
+        }
+    }
 }
-
 ```
-The definition of the map provided for each top-level key is generic and can contain a number of keys:
-- `error`: this key is optional and always contains a string indicating the error which prevented this top-level key from being parsed. Since this key represents a critical parsing error, no other keys are provided when this one is present.
-- `loaded`: the value associated with this key is always an array of the IDs and represents those elements that were loaded. If the relevant feature does not have an ID (e.g. rule overrides), it'll contain the index within the parsed array in the form `index:X` with `X` representing the numerical index. 
-- `failed`: the value provided with this key is exactly the same as loaded, but these are instead elements which couldn't be loaded.
-- `errors`: for backwards compatibility, this key contains a compressed map of errors, each containing the list of IDs which failed with said error.
+Note that it might also be prudent to check for the `error` key before attempting to traverse the map, as the relevant keys won't be available in such case.
 
-```json
-  "rules_data": {
-    "error": "bad cast, expected 'array', obtained 'map'"
-  },
+A suitable definition of `find_object` could be the following:
+
+```cpp
+const ddwaf_object *find_object(const ddwaf_object *map, std::string_view key) {
+    size_t index = 0;
+    const ddwaf_object *node = nullptr;
+    while ((node = ddwaf_object_get_index(map, index++)) != nullptr) {
+        std::string_view node_key = ddwaf_object_get_key(node, nullptr);
+        if (key == node_key) {
+            return node;
+        }
+    }
+
+    return nullptr;
+}
 ```
-
 #### Events and actions as `ddwaf_object`
 
 
 
 #### Per-input transformers
 
+Rules provide a transformers key which represents a list of transformers which should be applied (in order) to each scalar before evaluating the operator. An example of a rule with transformers could be the following:
 ```json
 {
   "id": "crs-933-111",
   "name": "PHP Injection Attack: PHP Script File Upload Found",
-  "tags": { ... },
-  "conditions": [ ... ],
+  "tags": {...},
+  "conditions": [...],
   "transformers": [
     "lowercase"
   ]
 },
 ```
+Since the transformers are rule-local, they are applied to all inputs, potentially resulting in a performance impact, as well as limiting the ability of the rule writer to use more fine-grained transformers. 
 
-
-```json
-"inputs": [
-  {
-    "address": "server.request.query"
-  }
-]
-```
-
+In `1.11.0`, transformers can be defined per input, for example:
 ```json
 "inputs": [
   {
@@ -125,6 +235,7 @@ The definition of the map provided for each top-level key is generic and can con
   }
 ]
 ```
+The existence of a transformers key on an input, even if empty, completely overrides any available rule transformers. Conversely, the lack of a transformers key on an input results in the specific input inheriting the rule transformers.
 
 ### Upgrading from `1.7.x` to `1.8.0`
 
@@ -184,14 +295,14 @@ Note that the `ddwaf_update` function also has an optional input parameter for t
 
 Finally, you can call `ddwaf_init` with all previously mentioned keys, or a combination of them, however the `rules` key is mandatory. This does not apply to `ddwaf_update.
 
-#### Notes on thread-safety
+### Notes on thread-safety
 
 The thread-safety of any operations on the handle depends on whether they act on the ruleset or the builder itself, generally:
 - Calling `ddwaf_update` concurrently, regardless of the handle, is never thread-safe.
 - Calling `ddwaf_context_init` concurrently on the same handle is thread-safe.
 - Calling `ddwaf_context_init` and `ddwaf_update` concurrently on the same handle is also thread-safe.
 
-### Upgrading from `1.6.x` to `1.7.0`
+## Upgrading from `1.6.x` to `1.7.0`
 
 There are no API changes in 1.7.0, however `ddwaf_handle` is now reference-counted and shared between the user and each `ddwaf_context`. This means that it is now possible to call `ddwaf_destroy` on a `ddwaf_handle` without invalidating any `ddwaf_context` in use instantiated from said `ddwaf_handle`. For example, the following snippet is now perfectly legal and will work as expected (note that any checks have been omitted for brevity):
 
