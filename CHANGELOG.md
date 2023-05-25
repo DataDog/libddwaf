@@ -14,7 +14,7 @@
 - Multithreaded fuzzer ([#166](https://github.com/DataDog/libddwaf/pull/166))
 - Fix benchmark, test output and update ruleset to 1.7.0 ([#171](https://github.com/DataDog/libddwaf/pull/171))
 - Renamed examples directory to tools ([#173](https://github.com/DataDog/libddwaf/pull/173))
-- Updated ruleset to 1.7.1 ([#173](https://github.com/DataDog/libddwaf/pull/173))
+- Update ruleset to 1.7.1 ([#173](https://github.com/DataDog/libddwaf/pull/173))
 
 ### v1.10.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
