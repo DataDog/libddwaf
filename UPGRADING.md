@@ -44,7 +44,7 @@ ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset, ddwa
 The use of a `ddwaf_object` instead of a dedicated structure has a number of advantages and disadvantages, however it allows us to add more diagnostics in a backwards-compatible manner, without breaking the ABI. This translates in having the ability to automatically provide diagnostics for new high-level features without breaking existing libraries. 
 
 The new diagnostics object is always a map containing the following:
-- A map per top-level feature parsed (e.g. rules, custom rules, exclusions, etc), with the same key as said top-level feature.
+- A map per high-level feature parsed (e.g. rules, custom rules, exclusions, etc), with the same key as said high-level feature.
 - Other metadata if present in the ruleset, such as the ruleset version.
 
 Providing the WAF with a complete ruleset typically results in a `ddwaf_object` with the following contents:
@@ -58,7 +58,7 @@ Providing the WAF with a complete ruleset typically results in a `ddwaf_object` 
   "ruleset_version": "1.7.0"
 }
 ```
-The definition of the map provided for each top-level feature is generic. The expected keys when the top-level feature couldn't be parsed are the following:
+The definition of the map provided for each high-level feature is generic. The expected keys when the high-level feature couldn't be parsed are the following:
 - `error`: this key contains a string indicating the error which prevented the relevant top-level key from being parsed and will only be present in this situation. Since this key represents a critical parsing error, no other keys are provided when this one is present.
 
 An example ruleset in which the `rules_data` key had the wrong type could result in the following diagnostics:
@@ -69,13 +69,12 @@ An example ruleset in which the `rules_data` key had the wrong type could result
   }
 }
 ```
-The expected keys when the top-level feature was parsed successfully are the following:
-- `loaded`: the value associated with this key is always an array of IDs and represents those elements that were loaded successfully. If the relevant feature does not have an ID (e.g. rule overrides), it'll contain the index within the parsed array in the form `index:x` with `x` representing the numerical index. 
-- `failed`: the value provided with this key is exactly the same as loaded, but these are instead elements which couldn't be loaded. If the relevant element or feature lacks an ID, the `index:x` format is used instead.
+The expected keys when the high-level feature was parsed successfully are the following:
+- `loaded`: the value associated with this key is always an array of IDs and represents those elements that were loaded successfully. If the relevant feature definition does not have an ID (e.g. rule overrides), it'll contain the index within the parsed array in the form `index:x` with `x` representing the numerical index. 
+- `failed`: the value provided with this key is exactly the same as with the `loaded` key, but these are instead elements which couldn't be loaded. If the relevant element or feature definition lacks an ID, the `index:x` format is used instead.
 - `errors`: for backwards compatibility, this key contains a compressed map of errors, each containing the list of IDs which failed with said error.
 
 An example ruleset with all valid entries could look as follows:
-
 ```json
 {
   "custom_rules": {
@@ -96,7 +95,6 @@ An example ruleset with all valid entries could look as follows:
 }
 ```
 An example ruleset with some invalid entries could look as follows:
-
 ```json
 {
   "exclusions": {
@@ -146,7 +144,6 @@ Note that in this example, an exclusion filter lacking a valid ID was also repre
 ### Adding diagnostics to the root span
 
 In previous versions of the WAF, each field of the `ddwaf_ruleset_info` structure was added to the root span either as a meta tag or a metric as shown in the example below:
-
 ```cpp
 ddwaf_ruleset_info info;
 auto handle = ddwaf_init(rule, &config, &info);
@@ -184,11 +181,11 @@ if (rules != nullptr) {
         }
     }
 }
+ddwaf_object_free(&diagnostics);
 ```
 Note that it might also be prudent to check for the `error` key before attempting to traverse the map, as the relevant keys won't be available in such case.
 
 A suitable definition of `find_object` could be the following:
-
 ```cpp
 const ddwaf_object *find_object(const ddwaf_object *map, std::string_view key) {
     size_t index = 0;
@@ -199,7 +196,6 @@ const ddwaf_object *find_object(const ddwaf_object *map, std::string_view key) {
             return node;
         }
     }
-
     return nullptr;
 }
 ```
@@ -223,10 +219,9 @@ struct _ddwaf_result
     uint64_t total_runtime;
 };
 ```
-In particular, the data field was a JSON-serialized string containing an array of events. Unfortunately, since WAF users typically call the WAF multiple times within the same context, extracting a meaningful result requires stitching multiple JSON strings together. Similarly, truncating the resulting JSON array to comply with trace limits also requires deserializing, performing changes and reserialising. 
+In particular, the `data` field was a JSON-serialized string containing an array of events. Unfortunately, since WAF users typically call the WAF multiple times within the same context, extracting a meaningful result requires stitching multiple JSON strings together. Similarly, truncating the resulting JSON array to comply with trace limits also requires deserializing, performing changes and reserialising. 
 
-To work around these problems, the new version of the WAF doesn't report events as a JSON string, but rather as a `ddwaf_object` containing an array of events, with exactly the same definition as the previously provided JSON string.
-
+To work around these problems, the new version of the WAF doesn't report events as a JSON string, but rather as a `ddwaf_object` containing an array of events, with exactly the same definition as the previously provided JSON string. This new object resides in `ddwaf_result::events` rather than `ddwaf_result::data`, as it signifies more clearly the purpose of the field.
 ```c
 struct _ddwaf_result
 {
@@ -250,7 +245,6 @@ for (unsigned i = 0; i < res.actions.size; ++i) {
     printf("%s", res.actions.array[i]);
 }
 ```
-
 The same can now be done as follows:
 ```c
 ddwaf_result res;
@@ -261,7 +255,7 @@ for (unsigned i = 0; i < ddwaf_object_size(&res.actions); ++i) {
 ```
 #### Per-input transformers
 
-Rules provide a transformers key which represents a list of transformers which should be applied (in order) to each scalar before evaluating the operator. An example of a rule with transformers could be the following:
+Rules provide a `transformers` key which represents a list of transformers which should be applied (in order) to each scalar before evaluating the operator. An example of a rule with transformers could be the following:
 ```json
 {
   "id": "crs-933-111",
@@ -287,7 +281,7 @@ In `1.11.0`, transformers can be defined per input, for example:
   }
 ]
 ```
-The existence of a transformers key on an input, even if empty, completely overrides any available rule transformers. Conversely, the lack of a transformers key on an input results in the specific input inheriting the rule transformers.
+The existence of a `transformers` key on an input, even if empty, completely overrides any available rule transformers. Conversely, the lack of a `transformers` key on an input results in the specific input inheriting the rule transformers.
 
 ### Upgrading from `1.7.x` to `1.8.0`
 
