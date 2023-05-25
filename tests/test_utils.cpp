@@ -326,7 +326,7 @@ ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(
 
 event_schema_validator::event_schema_validator()
 {
-    std::ifstream rule_file("../schema/appsec-event-1.1.0.json", std::ios::in);
+    std::ifstream rule_file("../schema/events.json", std::ios::in);
     if (!rule_file) {
         throw std::system_error(errno, std::generic_category());
     }

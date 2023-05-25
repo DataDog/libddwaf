@@ -1,0 +1,60 @@
+{
+    "title": "Ruleset Diagnostics Schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "schema/diagnostics.json",
+    "$defs": {
+        "feature": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "description": ""
+                },
+                "loaded": {
+                    "type": "array",
+                    "description": "",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "failed": {
+                    "type": "array",
+                    "description": "",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "errors": {
+                    "type": "map",
+                    "description": ""
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        }
+    },
+
+    "type": "object",
+    "properties": {
+        "ruleset_version": {
+            "type": "string",
+            "description": "The version of the parsed ruleset if available"
+        },
+        "rules": {
+            "$ref": "#/$defs/feature"
+        },
+        "custom_rules": {
+            "$ref": "#/$defs/feature"
+        },
+        "exclusions": {
+            "$ref": "#/$defs/feature"
+        },
+        "rules_override": {
+            "$ref": "#/$defs/feature"
+        },
+        "rules_data": {
+            "$ref": "#/$defs/feature"
+        }
+    }
+}
+
