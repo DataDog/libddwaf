@@ -65,8 +65,9 @@ TEST(TestExactMatch, Expiration)
         std::chrono::system_clock::now().time_since_epoch())
                        .count();
 
-    exact_match processor(std::vector<std::pair<std::string_view, uint64_t>>{
-        {"aaaa", now - 1}, {"bbbb", now + 100}, {"cccc", now - 1}});
+    exact_match processor(std::vector<std::pair<std::string_view, uint64_t>>{{"aaaa", now - 1},
+        {"bbbb", now + 100}, {"cccc", now - 1}, {"dddd", 0}, {"dddd", now - 1}, {"eeee", now - 1},
+        {"eeee", 0}, {"ffff", now + 100}, {"ffff", now}});
 
     EXPECT_STREQ(processor.name().data(), "exact_match");
     EXPECT_STREQ(processor.to_string().data(), "");
@@ -79,6 +80,10 @@ TEST(TestExactMatch, Expiration)
     EXPECT_TRUE(match);
     EXPECT_STREQ(match->resolved.c_str(), input.data());
     EXPECT_STREQ(match->matched.c_str(), input.data());
+
+    EXPECT_TRUE(processor.match("dddd"));
+    EXPECT_TRUE(processor.match("eeee"));
+    EXPECT_TRUE(processor.match("ffff"));
 }
 
 TEST(TestExactMatch, InvalidMatchInput)

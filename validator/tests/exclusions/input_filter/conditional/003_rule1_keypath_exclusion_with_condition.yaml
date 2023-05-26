@@ -1,0 +1,14 @@
+{
+  name: "Keypath exclusion with condition",
+  runs: [
+    {
+      input: {
+        exclusion-filter-1-input: exclusion-filter-1,
+        rule1-input1: {
+            parent: rule1
+        }
+      },
+      code: ok
+    },
+  ],
+}

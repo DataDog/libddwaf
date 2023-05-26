@@ -1,0 +1,32 @@
+{
+  name: "Valid key-path and match",
+  runs: [
+    {
+      input: {
+        rule8-input: {
+          first: {
+            second: {
+                last: rule8
+            }
+          }
+        }
+      },
+      rules: [
+        {
+          8: [
+            {
+              address: rule8-input,
+              key_path: [
+                first,
+                second,
+                last
+              ],
+              value: rule8
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

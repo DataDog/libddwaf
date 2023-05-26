@@ -1,0 +1,12 @@
+{
+  name: "Exclude a set of rules with a condition and rules target",
+  runs: [
+    {
+      input: {
+        exclusion-filter-3-input: "exclusion-filter-3",
+        rule2-input: "rule2",
+      },
+      code: ok
+    }
+  ]
+}

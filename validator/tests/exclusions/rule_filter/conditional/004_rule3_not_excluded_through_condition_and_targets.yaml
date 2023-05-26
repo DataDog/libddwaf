@@ -1,0 +1,22 @@
+{
+  name: "Fail to exclude a set of rules with a condition and rules target",
+  runs: [
+    {
+      input: {
+        exclusion-filter-3-input: "exclusion-filter",
+        rule3-input: "rule3",
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              value: rule3
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

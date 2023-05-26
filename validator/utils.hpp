@@ -12,6 +12,10 @@
 #include <string_view>
 #include <yaml-cpp/yaml.h>
 
+// clang-format off
+#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, 0}
+// clang-format on
+
 namespace YAML {
 
 class parsing_error : public std::exception {
@@ -29,6 +33,11 @@ template <> struct as_if<ddwaf_object, void> {
     const Node &node;
 };
 
+template <> struct as_if<std::set<std::string>, void> {
+    explicit as_if(const Node &node_) : node(node_) {}
+    std::set<std::string> operator()() const;
+    const Node &node;
+};
 } // namespace YAML
 
 std::string read_file(std::string_view filename);
@@ -50,3 +59,5 @@ bool has_colour();
 } // namespace term
 
 std::ostream &operator<<(std::ostream &os, term::colour c);
+std::ostream &operator<<(std::ostream &os, const std::set<std::string> &set);
+YAML::Node object_to_yaml(const ddwaf_object &obj);

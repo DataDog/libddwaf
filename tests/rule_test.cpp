@@ -13,9 +13,9 @@ TEST(TestRule, Match)
     std::vector<condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -37,12 +37,12 @@ TEST(TestRule, Match)
     auto event = rule.match(store, cache, {}, {}, deadline);
     EXPECT_TRUE(event.has_value());
 
-    EXPECT_STREQ(event->id.data(), "id");
-    EXPECT_STREQ(event->name.data(), "name");
-    EXPECT_STREQ(event->type.data(), "type");
-    EXPECT_STREQ(event->category.data(), "category");
-    std::vector<std::string_view> expected_actions{"update", "block", "passlist"};
-    EXPECT_EQ(event->actions, expected_actions);
+    EXPECT_STREQ(event->rule->get_id().c_str(), "id");
+    EXPECT_STREQ(event->rule->get_name().c_str(), "name");
+    EXPECT_STREQ(event->rule->get_tag("type").data(), "type");
+    EXPECT_STREQ(event->rule->get_tag("category").data(), "category");
+    std::vector<std::string> expected_actions{"update", "block", "passlist"};
+    EXPECT_EQ(event->rule->get_actions(), expected_actions);
     EXPECT_EQ(event->matches.size(), 1);
 
     auto &match = event->matches[0];
@@ -50,7 +50,7 @@ TEST(TestRule, Match)
     EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
     EXPECT_STREQ(match.operator_name.data(), "ip_match");
     EXPECT_STREQ(match.operator_value.data(), "");
-    EXPECT_STREQ(match.source.data(), "http.client_ip");
+    EXPECT_STREQ(match.address.data(), "http.client_ip");
     EXPECT_TRUE(match.key_path.empty());
 }
 
@@ -59,9 +59,9 @@ TEST(TestRule, NoMatch)
     std::vector<condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -89,17 +89,17 @@ TEST(TestRule, ValidateCachedMatch)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -136,11 +136,11 @@ TEST(TestRule, ValidateCachedMatch)
         ddwaf::timer deadline{2s};
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
-        EXPECT_STREQ(event->id.data(), "id");
-        EXPECT_STREQ(event->name.data(), "name");
-        EXPECT_STREQ(event->type.data(), "type");
-        EXPECT_STREQ(event->category.data(), "category");
-        EXPECT_TRUE(event->actions.empty());
+        EXPECT_STREQ(event->rule->get_id().c_str(), "id");
+        EXPECT_STREQ(event->rule->get_name().c_str(), "name");
+        EXPECT_STREQ(event->rule->get_tag("type").data(), "type");
+        EXPECT_STREQ(event->rule->get_tag("category").data(), "category");
+        EXPECT_TRUE(event->rule->get_actions().empty());
         EXPECT_EQ(event->matches.size(), 2);
 
         {
@@ -149,7 +149,7 @@ TEST(TestRule, ValidateCachedMatch)
             EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
             EXPECT_STREQ(match.operator_name.data(), "ip_match");
             EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.source.data(), "http.client_ip");
+            EXPECT_STREQ(match.address.data(), "http.client_ip");
             EXPECT_TRUE(match.key_path.empty());
         }
         {
@@ -158,7 +158,7 @@ TEST(TestRule, ValidateCachedMatch)
             EXPECT_STREQ(match.matched.c_str(), "admin");
             EXPECT_STREQ(match.operator_name.data(), "exact_match");
             EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.source.data(), "usr.id");
+            EXPECT_STREQ(match.address.data(), "usr.id");
             EXPECT_TRUE(match.key_path.empty());
         }
     }
@@ -171,17 +171,17 @@ TEST(TestRule, MatchWithoutCache)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -225,7 +225,7 @@ TEST(TestRule, MatchWithoutCache)
             EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
             EXPECT_STREQ(match.operator_name.data(), "ip_match");
             EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.source.data(), "http.client_ip");
+            EXPECT_STREQ(match.address.data(), "http.client_ip");
             EXPECT_TRUE(match.key_path.empty());
         }
         {
@@ -234,7 +234,7 @@ TEST(TestRule, MatchWithoutCache)
             EXPECT_STREQ(match.matched.c_str(), "admin");
             EXPECT_STREQ(match.operator_name.data(), "exact_match");
             EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.source.data(), "usr.id");
+            EXPECT_STREQ(match.address.data(), "usr.id");
             EXPECT_TRUE(match.key_path.empty());
         }
     }
@@ -247,17 +247,17 @@ TEST(TestRule, NoMatchWithoutCache)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -304,17 +304,17 @@ TEST(TestRule, FullCachedMatchSecondRun)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -361,9 +361,9 @@ TEST(TestRule, ExcludeObject)
     std::vector<condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};

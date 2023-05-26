@@ -13,7 +13,7 @@ TEST(TestWaf, RootAddresses)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf::ruleset_info info;
+    ddwaf::null_ruleset_info info;
     ddwaf::waf instance{
         rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf_object_free(&rule);
@@ -29,7 +29,7 @@ TEST(TestWaf, BasicContextRun)
     auto rule = readFile("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf::ruleset_info info;
+    ddwaf::null_ruleset_info info;
     ddwaf::waf instance{
         rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf_object_free(&rule);
@@ -39,8 +39,9 @@ TEST(TestWaf, BasicContextRun)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-    auto ctx = instance.create_context();
-    EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
+    auto *ctx = instance.create_context();
+    EXPECT_EQ(ctx->run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
+    delete ctx;
 }
 
 TEST(TestWaf, RuleDisabledInRuleset)
@@ -48,7 +49,7 @@ TEST(TestWaf, RuleDisabledInRuleset)
     auto rule = readFile("rule_disabled.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf::ruleset_info info;
+    ddwaf::null_ruleset_info info;
     ddwaf::waf instance{
         rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf_object_free(&rule);
@@ -59,7 +60,8 @@ TEST(TestWaf, RuleDisabledInRuleset)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        auto ctx = instance.create_context();
-        EXPECT_EQ(ctx.run(root, std::nullopt, LONG_TIME), DDWAF_OK);
+        auto *ctx = instance.create_context();
+        EXPECT_EQ(ctx->run(root, std::nullopt, LONG_TIME), DDWAF_OK);
+        delete ctx;
     }
 }

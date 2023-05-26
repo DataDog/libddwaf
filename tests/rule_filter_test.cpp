@@ -13,9 +13,9 @@ TEST(TestRuleFilter, Match)
     std::vector<ddwaf::condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -33,8 +33,7 @@ TEST(TestRuleFilter, Match)
     ddwaf::timer deadline{2s};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    auto rules = filter.match(store, cache, deadline);
-    EXPECT_FALSE(rules.empty());
+    EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
 }
 
 TEST(TestRuleFilter, NoMatch)
@@ -42,9 +41,9 @@ TEST(TestRuleFilter, NoMatch)
     std::vector<condition::target_type> targets;
 
     ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
+    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
 
-    auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+    auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -61,7 +60,7 @@ TEST(TestRuleFilter, NoMatch)
     ddwaf::timer deadline{2s};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+    EXPECT_FALSE(filter.match(store, cache, deadline));
 }
 
 TEST(TestRuleFilter, ValidateCachedMatch)
@@ -71,17 +70,17 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -103,7 +102,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 
     {
@@ -115,7 +114,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
     }
 }
 
@@ -126,17 +125,17 @@ TEST(TestRuleFilter, MatchWithoutCache)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -157,7 +156,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 
     {
@@ -169,7 +168,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
     }
 }
 
@@ -180,17 +179,17 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -210,7 +209,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 
     {
@@ -223,7 +222,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 }
 
@@ -234,17 +233,17 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
-            std::make_unique<rule_processor::ip_match>(
-                std::vector<std::string_view>{"192.168.0.1"}));
+        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        auto cond = std::make_shared<condition>(
+            std::move(targets), std::make_unique<rule_processor::ip_match>(
+                                    std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}});
-        auto cond = std::make_shared<condition>(std::move(targets), std::vector<PW_TRANSFORM_ID>{},
+        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
@@ -266,7 +265,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline)->get().empty());
         EXPECT_TRUE(cache.result);
     }
 
@@ -278,7 +277,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_TRUE(filter.match(store, cache, deadline).empty());
+        EXPECT_FALSE(filter.match(store, cache, deadline));
     }
 }
 
@@ -302,8 +301,7 @@ TEST(TestRuleFilter, ExcludeSingleRule)
     EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
-                           .type = "type2",
-                           .category = "category",
+                           .tags = {{"type", "type2"}, {"category", "category"}},
                            .matches = {{.op = "ip_match",
                                .address = "http.client_ip",
                                .value = "192.168.0.1",
@@ -333,8 +331,7 @@ TEST(TestRuleFilter, ExcludeByType)
     EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
-                           .type = "type1",
-                           .category = "category",
+                           .tags = {{"type", "type1"}, {"category", "category"}},
                            .matches = {{.op = "ip_match",
                                .address = "http.client_ip",
                                .value = "192.168.0.1",
@@ -388,8 +385,7 @@ TEST(TestRuleFilter, ExcludeByTags)
     EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
-                           .type = "type2",
-                           .category = "category",
+                           .tags = {{"type", "type2"}, {"category", "category"}},
                            .matches = {{.op = "ip_match",
                                .address = "http.client_ip",
                                .value = "192.168.0.1",
@@ -437,16 +433,14 @@ TEST(TestRuleFilter, ExcludeAllWithCondition)
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
-                .type = "type1",
-                .category = "category",
+                .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",
                     .highlight = "192.168.0.1"}}},
             {.id = "2",
                 .name = "rule2",
-                .type = "type2",
-                .category = "category",
+                .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",
@@ -479,8 +473,7 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
-                               .type = "type2",
-                               .category = "category",
+                               .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
                                    .address = "http.client_ip",
                                    .value = "192.168.0.1",
@@ -503,16 +496,14 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
-                .type = "type1",
-                .category = "category",
+                .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",
                     .highlight = "192.168.0.1"}}},
             {.id = "2",
                 .name = "rule2",
-                .type = "type2",
-                .category = "category",
+                .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",
@@ -545,8 +536,7 @@ TEST(TestRuleFilter, ExcludeByTypeWithCondition)
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
-                               .type = "type1",
-                               .category = "category",
+                               .tags = {{"type", "type1"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
                                    .address = "http.client_ip",
                                    .value = "192.168.0.1",
@@ -569,16 +559,14 @@ TEST(TestRuleFilter, ExcludeByTypeWithCondition)
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
-                .type = "type1",
-                .category = "category",
+                .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",
                     .highlight = "192.168.0.1"}}},
             {.id = "2",
                 .name = "rule2",
-                .type = "type2",
-                .category = "category",
+                .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",
@@ -627,16 +615,14 @@ TEST(TestRuleFilter, ExcludeByCategoryWithCondition)
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
-                .type = "type1",
-                .category = "category",
+                .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",
                     .highlight = "192.168.0.1"}}},
             {.id = "2",
                 .name = "rule2",
-                .type = "type2",
-                .category = "category",
+                .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",
@@ -669,8 +655,7 @@ TEST(TestRuleFilter, ExcludeByTagsWithCondition)
         EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
-                               .type = "type2",
-                               .category = "category",
+                               .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
                                    .address = "http.client_ip",
                                    .value = "192.168.0.1",
@@ -693,16 +678,14 @@ TEST(TestRuleFilter, ExcludeByTagsWithCondition)
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
-                .type = "type1",
-                .category = "category",
+                .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",
                     .highlight = "192.168.0.1"}}},
             {.id = "2",
                 .name = "rule2",
-                .type = "type2",
-                .category = "category",
+                .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
                     .address = "http.client_ip",
                     .value = "192.168.0.1",

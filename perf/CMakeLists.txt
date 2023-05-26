@@ -13,6 +13,22 @@ target_link_libraries(benchcmp PRIVATE lib_yamlcpp m)
 add_executable(benchmerge benchmerge.cpp)
 target_link_libraries(benchmerge PRIVATE lib_yamlcpp m)
 
+set_target_properties(benchmark PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+
+set_target_properties(benchcmp PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+
+set_target_properties(benchmerge PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO)
+
+
 ExternalProject_Get_property(proj_event_rules SOURCE_DIR)
 set(EVENT_RULES_SOURCE_DIR ${SOURCE_DIR})
 

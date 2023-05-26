@@ -19,6 +19,7 @@
 #include <clock.hpp>
 #include <ddwaf.h>
 
+#include "context_destroy_fixture.hpp"
 #include "object_generator.hpp"
 #include "output_formatter.hpp"
 #include "random.hpp"
@@ -39,6 +40,8 @@ std::map<std::string, benchmark::object_generator::settings> default_tests = {
     {"run.random.deep_containers", {.container_depth = {5, 20}, .type = generator_type::random}},
     {"run.valid", {.type = generator_type::valid}},
     {"run.mixed", {.type = generator_type::mixed}},
+    {"context_destroy", {.type = generator_type::mixed}},
+
 };
 
 void print_help_and_exit(std::string_view name, std::string_view error = {})
@@ -187,18 +190,17 @@ benchmark::settings generate_settings(int argc, char *argv[])
 
         std::size_t delimiter = 0;
 
-        std::vector<std::string_view> test_list;
         std::string_view remaining = test_str;
         while ((delimiter = remaining.find(',')) != std::string::npos) {
             auto substr = remaining.substr(0, delimiter);
             if (!substr.empty()) {
-                test_list.push_back(substr);
+                s.test_list.emplace(substr);
             }
             remaining = remaining.substr(delimiter + 1);
         }
 
         if (!remaining.empty()) {
-            test_list.push_back(remaining);
+            s.test_list.emplace(remaining);
         }
     }
 
@@ -230,7 +232,14 @@ void initialise_runner(benchmark::runner &runner, ddwaf_handle handle, benchmark
         }
 
         auto objects = generator(v, num_objects);
-        runner.register_fixture<benchmark::run_fixture>(k, handle, std::move(objects));
+        if (k.starts_with("run")) {
+            runner.register_fixture<benchmark::run_fixture>(k, handle, std::move(objects));
+        } else if (k.starts_with("context_destroy")) {
+            runner.register_fixture<benchmark::context_destroy_fixture>(
+                k, handle, std::move(objects));
+        } else {
+            std::cerr << "Unknown fixture type: " << k << '\n';
+        }
     }
 }
 

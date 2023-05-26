@@ -1,0 +1,26 @@
+{
+  name: "Do not exclude match on partial key path",
+  runs: [
+    {
+      input: {
+        rule3-input: {
+          uncle: {
+            child: rule3
+          }
+        }
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              key_path: [uncle, child],
+              value: rule3
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

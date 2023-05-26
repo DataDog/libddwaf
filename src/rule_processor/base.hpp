@@ -47,7 +47,7 @@ public:
 
     [[nodiscard]] event::match make_event(std::string_view resolved, std::string_view matched) const
     {
-        return {std::string(resolved), std::string(matched), name(), to_string(), {}, {}};
+        return {memory::string(resolved), memory::string(matched), name(), to_string(), {}, {}};
     }
 };
 

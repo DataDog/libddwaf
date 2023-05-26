@@ -1,0 +1,29 @@
+{
+  name: "Don't exclude multi key path",
+  runs: [
+    {
+      input: {
+        rule4-input: {
+          uncle: {
+            sibling: rule4,
+            child: {
+              grandchild: rule4
+            },
+          }
+        }
+      },
+      rules: [
+        {
+          4: [
+            {
+              address: rule4-input,
+              key_path: [uncle, sibling],
+              value: rule4
+            }
+          ]
+        },
+      ],
+      code: match
+    }
+  ],
+}

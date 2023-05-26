@@ -1,0 +1,22 @@
+{
+  name: "Fail to match exclusion filter with multiple conditions, matching only first",
+  runs: [
+    {
+      input: {
+        exclusion-filter-2-input1: "exclusion-filter-2",
+        rule1-input: "rule1",
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: rule1
+            }
+          ]
+        },
+      ],
+      code: match
+    }
+  ]
+}

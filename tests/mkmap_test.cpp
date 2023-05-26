@@ -35,7 +35,7 @@ TEST(TestMultiKeyMap, Find)
         auto rule_ptr = std::make_shared<ddwaf::rule>(
             std::string(spec.id), "name", decltype(tags)(tags), std::vector<condition::ptr>{});
         rules.emplace_back(rule_ptr);
-        ruledb.insert(rule_ptr->tags, rule_ptr.get());
+        ruledb.insert(rule_ptr->get_tags(), rule_ptr.get());
     }
 
     using sv_pair = std::pair<std::string_view, std::string_view>;
@@ -100,7 +100,7 @@ TEST(TestMultiKeyMap, Multifind)
         auto rule_ptr = std::make_shared<ddwaf::rule>(
             std::string(spec.id), "name", decltype(tags)(tags), std::vector<condition::ptr>{});
         rules.emplace_back(rule_ptr);
-        ruledb.insert(rule_ptr->tags, rule_ptr.get());
+        ruledb.insert(rule_ptr->get_tags(), rule_ptr.get());
     }
 
     using sv_pair_vec = std::vector<std::pair<std::string, std::string>>;

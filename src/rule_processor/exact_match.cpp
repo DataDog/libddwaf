@@ -21,7 +21,13 @@ exact_match::exact_match(const std::vector<std::pair<std::string_view, uint64_t>
     values_.reserve(data.size());
     for (auto [str, expiration] : data) {
         const auto &ref = data_.emplace_back(str);
-        values_.emplace(ref, expiration);
+        auto res = values_.emplace(ref, expiration);
+        if (!res.second) {
+            uint64_t prev_expiration = res.first->second;
+            if (prev_expiration != 0 && (expiration == 0 || expiration > prev_expiration)) {
+                res.first->second = expiration;
+            }
+        }
     }
 }
 

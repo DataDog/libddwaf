@@ -8,8 +8,11 @@
 #include <iostream>
 #include <unistd.h>
 
+using namespace std::literals;
+
 namespace YAML {
 
+// NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object node_to_arg(const Node &node)
 {
     switch (node.Type()) {
@@ -50,6 +53,18 @@ ddwaf_object node_to_arg(const Node &node)
 
 ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(node); }
 
+std::set<std::string> as_if<std::set<std::string>, void>::operator()() const
+{
+
+    if (node.Type() != NodeType::Sequence) {
+        throw parsing_error("Invalid node type, expected sequence");
+    }
+
+    std::set<std::string> set;
+    for (auto it = node.begin(); it != node.end(); ++it) { set.emplace(it->as<std::string>()); }
+
+    return set;
+}
 } // namespace YAML
 
 std::string read_file(std::string_view filename)
@@ -65,7 +80,7 @@ std::string read_file(std::string_view filename)
     buffer.resize(file.tellg());
     file.seekg(0, std::ios::beg);
 
-    file.read(&buffer[0], buffer.size());
+    file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
     file.close();
     return buffer;
 }
@@ -85,4 +100,66 @@ std::ostream &operator<<(std::ostream &os, term::colour c)
 
     os << "\033[" << static_cast<std::underlying_type<term::colour>::type>(c) << "m";
     return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const std::set<std::string> &set)
+{
+    os << "[";
+    for (const auto &str : set) {
+        os << str;
+        if (str != *set.rbegin()) {
+            os << ", ";
+        }
+    }
+    os << "]";
+    return os;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
+{
+    switch (obj.type) {
+    case DDWAF_OBJ_BOOL:
+        output = obj.boolean ? "true" : "false";
+        break;
+    case DDWAF_OBJ_SIGNED:
+        output = obj.intValue;
+        break;
+    case DDWAF_OBJ_UNSIGNED:
+        output = obj.uintValue;
+        break;
+    case DDWAF_OBJ_STRING:
+        output = std::string{obj.stringValue, obj.nbEntries};
+        break;
+    case DDWAF_OBJ_MAP:
+        output = YAML::Load("{}");
+        for (unsigned i = 0; i < obj.nbEntries; i++) {
+            auto child = obj.array[i];
+            std::string key{child.parameterName, child.parameterNameLength};
+
+            YAML::Node value;
+            object_to_yaml_helper(child, value);
+            output[key] = value;
+        }
+        break;
+    case DDWAF_OBJ_ARRAY:
+        output = YAML::Load("[]");
+        for (unsigned i = 0; i < obj.nbEntries; i++) {
+            auto child = obj.array[i];
+
+            YAML::Node value;
+            object_to_yaml_helper(child, value);
+            output.push_back(value);
+        }
+        break;
+    case DDWAF_OBJ_INVALID:
+        throw std::runtime_error("invalid parameter in structure");
+    };
+}
+
+YAML::Node object_to_yaml(const ddwaf_object &obj)
+{
+    YAML::Node root;
+    object_to_yaml_helper(obj, root);
+    return root;
 }

@@ -23,12 +23,12 @@ public:
 
     struct excluded_set {
         const std::set<rule *> &rules;
-        std::unordered_set<const ddwaf_object *> objects;
+        memory::unordered_set<const ddwaf_object *> objects;
     };
 
     struct cache_type {
         bool result{false};
-        std::unordered_map<condition::ptr, bool> conditions;
+        std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
         object_filter::cache_type object_filter_cache;
     };
 

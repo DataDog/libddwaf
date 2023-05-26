@@ -1,5 +1,43 @@
 # libddwaf release
 
+### v1.11.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### API & Breaking Changes
+- Full ruleset parsing diagnostics ([#161](https://github.com/DataDog/libddwaf/pull/161))
+- Event result as `ddwaf_object` ([#162](https://github.com/DataDog/libddwaf/pull/162))
+- Replace `ddwaf_result.actions` with a `ddwaf_object` array ([#165](https://github.com/DataDog/libddwaf/pull/165))
+
+#### Changes
+- Add logging and remove dead code ([#169](https://github.com/DataDog/libddwaf/pull/169))
+- Support for per-input transformers ([#170](https://github.com/DataDog/libddwaf/pull/170))
+
+#### Miscellaneous
+- Multithreaded fuzzer ([#166](https://github.com/DataDog/libddwaf/pull/166))
+- Fix benchmark, test output and update ruleset to 1.7.0 ([#171](https://github.com/DataDog/libddwaf/pull/171))
+- Validator: add support for per-directory tests and ruleset ([#172](https://github.com/DataDog/libddwaf/pull/172))
+- Rename examples directory to tools ([#173](https://github.com/DataDog/libddwaf/pull/173))
+- Update ruleset to 1.7.1 ([#173](https://github.com/DataDog/libddwaf/pull/173))
+- Refactor and simplify tools to reduce code duplication ([#173](https://github.com/DataDog/libddwaf/pull/173))
+
+### v1.10.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Add all rule tags to event ([#160](https://github.com/DataDog/libddwaf/pull/160))
+
+### v1.9.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Remove a libinjection signature ([#145](https://github.com/DataDog/libddwaf/pull/145))
+- Priority collection, rule and filter simplification ([#150](https://github.com/DataDog/libddwaf/pull/150))
+- Improve allocation / deallocation performance within the context using a `context_allocator` ([#151](https://github.com/DataDog/libddwaf/pull/151))
+- Longest rule data expiration takes precedence for `ip_match` and `exact_match` operators ([#152](https://github.com/DataDog/libddwaf/pull/152))
+- Custom rules support ([#154](https://github.com/DataDog/libddwaf/pull/154))
+- Add vdso support for aarch64 ([#157](https://github.com/DataDog/libddwaf/pull/157))
+
+#### Miscellaneous
+- Upgrade CodeQL Github Action to v2 ([#144](https://github.com/DataDog/libddwaf/pull/144))
+- Fix broken builds ([#147](https://github.com/DataDog/libddwaf/pull/147))
+- Benchmark: context destroy fixture ([#148](https://github.com/DataDog/libddwaf/pull/148))
+- Remove unused json rule files and vendorise aho-corasick submodule ([#153](https://github.com/DataDog/libddwaf/pull/153))
+- Cancel jobs in progress ([#158](https://github.com/DataDog/libddwaf/pull/158))
+
 ### v1.8.2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Use raw pointers instead of shared pointers for rule targets ([#141](https://github.com/DataDog/libddwaf/pull/141))

@@ -67,6 +67,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
     ${libddwaf_SOURCE_DIR}/src/context.cpp
+    ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
     ${libddwaf_SOURCE_DIR}/src/event.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
     ${libddwaf_SOURCE_DIR}/src/manifest.cpp
@@ -82,6 +83,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
+    ${libddwaf_SOURCE_DIR}/src/waf.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
@@ -95,6 +97,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule_processor/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/ip_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/exact_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/libcxx-compat/monotonic_buffer_resource.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})
 
@@ -120,8 +123,7 @@ install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
-set(LIBDDWAF_PRIVATE_LIBRARIES 
-    lib_re2 lib_rapidjson lib_ac lib_injection lib_radix lib_utf8proc)
+set(LIBDDWAF_PRIVATE_LIBRARIES lib_re2 lib_ac lib_injection lib_radix lib_utf8proc)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 # needed for glibc <2.17. We compile with --as-needed so the library won't
@@ -355,7 +357,7 @@ if (LIBDDWAF_TESTING)
     add_subdirectory(validator EXCLUDE_FROM_ALL)
     add_subdirectory(perf EXCLUDE_FROM_ALL)
     add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
-    add_subdirectory(examples EXCLUDE_FROM_ALL)
+    add_subdirectory(tools EXCLUDE_FROM_ALL)
 
     include(cmake/clang-tidy.cmake)
     include(cmake/clang-format.cmake)

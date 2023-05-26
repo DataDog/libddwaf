@@ -1,0 +1,22 @@
+{
+  name: "Match with on_match actions",
+  runs: [
+    {
+      input: {
+        rule1-input: "abcd::1234:0:ab11:0"
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: "abcd::1234:0:ab11:0"
+            }
+          ]
+        }
+      ],
+      code: match,
+      actions: [block_request, match]
+    }
+  ]
+}

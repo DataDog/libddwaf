@@ -56,7 +56,7 @@ bool test_runner::run_test(const YAML::Node &runs)
     std::unique_ptr<std::remove_pointer<ddwaf_context>::type, decltype(&ddwaf_context_destroy)> ctx(
         ddwaf_context_init(handle_), ddwaf_context_destroy);
 
-    ddwaf_result res_mem{false, nullptr, {nullptr, 0}, 0};
+    ddwaf_result res_mem = DDWAF_RESULT_INITIALISER;
     std::unique_ptr<ddwaf_result, decltype(&ddwaf_result_free)> res{&res_mem, ddwaf_result_free};
 
     try {
@@ -74,7 +74,8 @@ bool test_runner::run_test(const YAML::Node &runs)
 
             expect(retval, code);
             if (code == DDWAF_MATCH) {
-                validate(run["rules"], YAML::Load(res->data));
+                validate(run["rules"], object_to_yaml(res->events));
+                validate_actions(run["actions"], object_to_yaml(res->actions));
             }
 
             ddwaf_result_free(res.get());
@@ -86,12 +87,12 @@ bool test_runner::run_test(const YAML::Node &runs)
         error_ << "unknown exception";
     }
 
-    if (!passed && res->data != nullptr) {
+    if (!passed && res->events.type != DDWAF_OBJ_INVALID && ddwaf_object_size(&res->events) > 0) {
         YAML::Emitter out(output_);
         out.SetIndent(2);
         out.SetMapFormat(YAML::Block);
         out.SetSeqFormat(YAML::Block);
-        out << YAML::Load(res->data);
+        out << object_to_yaml(res->events);
     }
 
     return passed;
@@ -218,5 +219,14 @@ void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node 
             expect(expected_match["key_path"], obtained_match["key_path"]);
         }
         expect(expected_match["value"], obtained_match["value"]);
+    }
+}
+
+void test_runner::validate_actions(const YAML::Node &expected, const YAML::Node &obtained)
+{
+    using strset = std::set<std::string>;
+    if (expected.IsDefined()) {
+        expect(expected.size(), obtained.size());
+        expect(expected.as<strset>(), obtained.as<strset>());
     }
 }

@@ -10,10 +10,10 @@
 #ifdef __cplusplus
 namespace ddwaf{
 class waf;
-class context;
+class context_wrapper;
 } // namespace ddwaf
 using ddwaf_handle = ddwaf::waf *;
-using ddwaf_context = ddwaf::context *;
+using ddwaf_context = ddwaf::context_wrapper *;
 
 extern "C"
 {
@@ -87,7 +87,6 @@ typedef struct _ddwaf_context* ddwaf_context;
 typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_config ddwaf_config;
 typedef struct _ddwaf_result ddwaf_result;
-typedef struct _ddwaf_ruleset_info ddwaf_ruleset_info;
 /**
  * @struct ddwaf_object
  *
@@ -144,7 +143,7 @@ struct _ddwaf_config
     /** Function to free the ddwaf::object provided to the context during calls
      *  to ddwaf_run. If the value of this function is NULL, the objects will
      *  not be freed. The default value should be ddwaf_object_free. */
-    ddwaf_object_free_fn free_fn; 
+    ddwaf_object_free_fn free_fn;
 };
 
 /**
@@ -156,33 +155,12 @@ struct _ddwaf_result
 {
     /** Whether there has been a timeout during the operation **/
     bool timeout;
-    /** Run result in JSON format **/
-    const char* data;
-    /** Actions array and its size **/
-    struct _ddwaf_result_actions {
-        char **array;
-        uint32_t size;
-    } actions;
+    /** Array of events generated, this is guaranteed to be an array **/
+    ddwaf_object events;
+    /** Array of actions generated, this is guaranteed to be an array **/
+    ddwaf_object actions;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
-};
-
-/**
- * @ddwaf_ruleset_info
- *
- * Structure containing diagnostics on the provided ruleset.
- * */
-struct _ddwaf_ruleset_info
-{
-    /** Number of rules successfully loaded **/
-    uint16_t loaded;
-    /** Number of rules which failed to parse **/
-    uint16_t failed;
-    /** Map from an error string to an array of all the rule ids for which
-     *  that error was raised. {error: [rule_ids]} **/
-    ddwaf_object errors;
-    /** Ruleset version **/
-    const char *version;
 };
 
 /**
@@ -206,31 +184,35 @@ typedef void (*ddwaf_log_cb)(
  *
  * Initialize a ddwaf instance
  *
- * @param rule ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
+ * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
  * @param config Optional configuration of the WAF. (nullable)
- * @param info Optional ruleset parsing diagnostics. (nullable)
+ * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Handle to the WAF instance or NULL on error.
  *
  * @note If config is NULL, default values will be used, including the default
  *       free function (ddwaf_object_free).
+ *
+ * @note If ruleset is NULL, the diagnostics object will not be initialised.
  **/
 ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
-    const ddwaf_config* config, ddwaf_ruleset_info *info);
+    const ddwaf_config* config, ddwaf_object *diagnostics);
 
 /**
  * ddwaf_update
  *
  * Update a ddwaf instance
  *
- * @param rule ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
- * @param info Optional ruleset parsing diagnostics. (nullable)
+ * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
+ * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
  *
- * @return Handle to the new WAF instance or NULL if there were no new updates
- *         or there was an error processing the ruleset.
+ * @return Handle to the new WAF instance or NULL if there was an error processing the ruleset.
+ *
+ * @note If handle or ruleset are NULL, the diagnostics object will not be initialised.
+ * @note This function is not thread-safe
  **/
 ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
-    ddwaf_ruleset_info *info);
+    ddwaf_object *diagnostics);
 
 /**
  * ddwaf_destroy
@@ -242,23 +224,17 @@ ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
 void ddwaf_destroy(ddwaf_handle handle);
 
 /**
- * ddwaf_ruleset_info_free
- *
- * Free the memory associated with the ruleset info structure.
- *
- * @param info Ruleset info to free.
- * */
-void ddwaf_ruleset_info_free(ddwaf_ruleset_info *info);
-/**
  * ddwaf_required_addresses
  *
- * Get a list of required (root) addresses. The memory is owned by the WAF and
+ * Get an array of required (root) addresses. The memory is owned by the WAF and
  * should not be freed.
  *
  * @param Handle to the WAF instance.
  * @param size Output parameter in which the size will be returned. The value of
  *             size will be 0 if the return value is NULL.
  * @return NULL if empty, otherwise a pointer to an array with size elements.
+ *
+ * @Note The returned array should be considered invalid after calling ddwaf_destroy on the handle used to obtain it.
  **/
 const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size);
 
@@ -268,7 +244,7 @@ const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t 
  * Context object to perform matching using the provided WAF instance.
  *
  * @param handle Handle of the WAF instance containing the ruleset definition. (nonnull)
- 
+
  * @return Handle to the context instance.
  *
  * @note The WAF instance needs to be valid for the lifetime of the context.
@@ -532,7 +508,7 @@ bool ddwaf_object_map_addl_nc(ddwaf_object *map, const char *key, size_t length,
  *
  * @return The object type of DDWAF_OBJ_INVALID if NULL.
  **/
-DDWAF_OBJ_TYPE ddwaf_object_type(ddwaf_object *object);
+DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object);
 
 /**
  * ddwaf_object_size
@@ -543,7 +519,7 @@ DDWAF_OBJ_TYPE ddwaf_object_type(ddwaf_object *object);
  *
  * @return The object size or 0 if the object is not a container (array, map).
  **/
-size_t ddwaf_object_size(ddwaf_object *object);
+size_t ddwaf_object_size(const ddwaf_object *object);
 
 /**
  * ddwaf_object_length
@@ -554,7 +530,7 @@ size_t ddwaf_object_size(ddwaf_object *object);
  *
  * @return The string length or 0 if the object is not a string.
  **/
-size_t ddwaf_object_length(ddwaf_object *object);
+size_t ddwaf_object_length(const ddwaf_object *object);
 
 /**
  * ddwaf_object_get_key
@@ -567,7 +543,7 @@ size_t ddwaf_object_length(ddwaf_object *object);
  *
  * @return The key of the object or NULL if the object doesn't contain a key.
  **/
-const char* ddwaf_object_get_key(ddwaf_object *object, size_t *length);
+const char* ddwaf_object_get_key(const ddwaf_object *object, size_t *length);
 
 /**
  * ddwaf_object_get_string
@@ -580,7 +556,7 @@ const char* ddwaf_object_get_key(ddwaf_object *object, size_t *length);
  *
  * @return The string of the object or NULL if the object is not a string.
  **/
-const char* ddwaf_object_get_string(ddwaf_object *object, size_t *length);
+const char* ddwaf_object_get_string(const ddwaf_object *object, size_t *length);
 
 /**
  * ddwaf_object_get_unsigned
@@ -591,7 +567,7 @@ const char* ddwaf_object_get_string(ddwaf_object *object, size_t *length);
  *
  * @return The integer or 0 if the object is not an unsigned.
  **/
-uint64_t ddwaf_object_get_unsigned(ddwaf_object *object);
+uint64_t ddwaf_object_get_unsigned(const ddwaf_object *object);
 
 /**
  * ddwaf_object_get_signed
@@ -602,7 +578,7 @@ uint64_t ddwaf_object_get_unsigned(ddwaf_object *object);
  *
  * @return The integer or 0 if the object is not a signed.
  **/
-int64_t ddwaf_object_get_signed(ddwaf_object *object);
+int64_t ddwaf_object_get_signed(const ddwaf_object *object);
 
 /**
  * ddwaf_object_get_bool
@@ -613,7 +589,7 @@ int64_t ddwaf_object_get_signed(ddwaf_object *object);
  *
  * @return The boolean or false if the object is not a boolean.
  **/
-bool ddwaf_object_get_bool(ddwaf_object *object);
+bool ddwaf_object_get_bool(const ddwaf_object *object);
 
 /**
  * ddwaf_object_get_index
@@ -626,7 +602,7 @@ bool ddwaf_object_get_bool(ddwaf_object *object);
  * @return The requested object or NULL if the index is out of bounds or the
  *         object is not a container.
  **/
-ddwaf_object* ddwaf_object_get_index(ddwaf_object *object, size_t index);
+const ddwaf_object* ddwaf_object_get_index(const ddwaf_object *object, size_t index);
 
 
 /**
@@ -654,6 +630,8 @@ const char *ddwaf_get_version();
  * @param min_level The minimum logging level for which to relay messages
  *
  * @return whether the operation succeeded or not
+ *
+ * @note This function is not thread-safe
  **/
 bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level);
 

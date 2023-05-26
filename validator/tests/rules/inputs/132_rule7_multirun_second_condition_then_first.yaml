@@ -1,0 +1,33 @@
+{
+  name: "Match on second condition on first run and first condition on second run",
+  runs: [
+    {
+      input: {
+        rule7-input2: rule7_2
+      },
+      code: ok
+    },
+    {
+      input: {
+        rule7-input1: rule7_1
+      },
+      rules: [
+        {
+          7: [
+            {
+              address: rule7-input1,
+              key_path: [],
+              value: rule7_1
+            },
+            {
+              address: rule7-input2,
+              key_path: [],
+              value: rule7_2
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

@@ -319,12 +319,12 @@ void ddwaf_object_free(ddwaf_object *object)
     ddwaf_object_invalid(object);
 }
 
-DDWAF_OBJ_TYPE ddwaf_object_type(ddwaf_object *object)
+DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object)
 {
-    return object ? object->type : DDWAF_OBJ_INVALID;
+    return object != nullptr ? object->type : DDWAF_OBJ_INVALID;
 }
 
-size_t ddwaf_object_size(ddwaf_object *object)
+size_t ddwaf_object_size(const ddwaf_object *object)
 {
     if (object == nullptr || !ddwaf::object::is_container(object)) {
         return 0;
@@ -333,7 +333,7 @@ size_t ddwaf_object_size(ddwaf_object *object)
     return object->nbEntries;
 }
 
-size_t ddwaf_object_length(ddwaf_object *object)
+size_t ddwaf_object_length(const ddwaf_object *object)
 {
     if (object == nullptr || object->type != DDWAF_OBJ_STRING) {
         return 0;
@@ -342,33 +342,33 @@ size_t ddwaf_object_length(ddwaf_object *object)
     return object->nbEntries;
 }
 
-const char *ddwaf_object_get_key(ddwaf_object *object, size_t *length)
+const char *ddwaf_object_get_key(const ddwaf_object *object, size_t *length)
 {
     if (object == nullptr || object->parameterName == nullptr) {
         return nullptr;
     }
 
-    if (length) {
+    if (length != nullptr) {
         *length = object->parameterNameLength;
     }
 
     return object->parameterName;
 }
 
-const char *ddwaf_object_get_string(ddwaf_object *object, size_t *length)
+const char *ddwaf_object_get_string(const ddwaf_object *object, size_t *length)
 {
     if (object == nullptr || object->type != DDWAF_OBJ_STRING) {
         return nullptr;
     }
 
-    if (length) {
+    if (length != nullptr) {
         *length = object->nbEntries;
     }
 
     return object->stringValue;
 }
 
-uint64_t ddwaf_object_get_unsigned(ddwaf_object *object)
+uint64_t ddwaf_object_get_unsigned(const ddwaf_object *object)
 {
     if (object == nullptr || object->type != DDWAF_OBJ_UNSIGNED) {
         return 0;
@@ -377,7 +377,7 @@ uint64_t ddwaf_object_get_unsigned(ddwaf_object *object)
     return object->uintValue;
 }
 
-int64_t ddwaf_object_get_signed(ddwaf_object *object)
+int64_t ddwaf_object_get_signed(const ddwaf_object *object)
 {
     if (object == nullptr || object->type != DDWAF_OBJ_SIGNED) {
         return 0;
@@ -386,7 +386,7 @@ int64_t ddwaf_object_get_signed(ddwaf_object *object)
     return object->intValue;
 }
 
-bool ddwaf_object_get_bool(ddwaf_object *object)
+bool ddwaf_object_get_bool(const ddwaf_object *object)
 {
     if (object == nullptr || object->type != DDWAF_OBJ_BOOL) {
         return false;
@@ -395,7 +395,7 @@ bool ddwaf_object_get_bool(ddwaf_object *object)
     return object->boolean;
 }
 
-ddwaf_object *ddwaf_object_get_index(ddwaf_object *object, size_t index)
+const ddwaf_object *ddwaf_object_get_index(const ddwaf_object *object, size_t index)
 {
     if (object == nullptr || !ddwaf::object::is_container(object) || index >= object->nbEntries) {
         return nullptr;

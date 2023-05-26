@@ -537,9 +537,11 @@ TEST(TestInterface, UpdateActionsByID)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result1.actions.size, 0);
-        EXPECT_EQ(result2.actions.size, 1);
-        EXPECT_STREQ(result2.actions.array[0], "block");
+        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -567,8 +569,8 @@ TEST(TestInterface, UpdateActionsByID)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result1.actions.size, 0);
-        EXPECT_EQ(result2.actions.size, 0);
+        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result2.actions), 0);
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -605,10 +607,14 @@ TEST(TestInterface, UpdateActionsByID)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result2.actions.size, 1);
-        EXPECT_EQ(result3.actions.size, 1);
-        EXPECT_STREQ(result2.actions.array[0], "block");
-        EXPECT_STREQ(result3.actions.array[0], "redirect");
+        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
+        EXPECT_EQ(ddwaf_object_size(&result3.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result3.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(ddwaf_object_get_string(ddwaf_object_get_index(&result3.actions, 0), nullptr),
+            "redirect");
 
         ddwaf_result_free(&result2);
         ddwaf_result_free(&result3);
@@ -659,9 +665,11 @@ TEST(TestInterface, UpdateActionsByTags)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result1.actions.size, 0);
-        EXPECT_EQ(result2.actions.size, 1);
-        EXPECT_STREQ(result2.actions.array[0], "block");
+        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -689,8 +697,8 @@ TEST(TestInterface, UpdateActionsByTags)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result1.actions.size, 0);
-        EXPECT_EQ(result2.actions.size, 0);
+        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result2.actions), 0);
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -739,9 +747,11 @@ TEST(TestInterface, UpdateOverrideByIDAndTag)
         EXPECT_EQ(ddwaf_run(context1, &parameter, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, &result2, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_EQ(result1.actions.size, 0);
-        EXPECT_EQ(result2.actions.size, 1);
-        EXPECT_STREQ(result2.actions.array[0], "block");
+        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -777,9 +787,11 @@ TEST(TestInterface, UpdateOverrideByIDAndTag)
         EXPECT_EQ(ddwaf_run(context2, &parameter, &result2, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context3, &parameter, &result3, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_EQ(result2.actions.size, 1);
-        EXPECT_STREQ(result2.actions.array[0], "block");
-        EXPECT_EQ(result3.actions.size, 0);
+        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
+        EXPECT_EQ(ddwaf_object_size(&result3.actions), 0);
 
         ddwaf_result_free(&result2);
         ddwaf_result_free(&result3);
@@ -837,10 +849,11 @@ TEST(TestInterface, UpdateInvalidOverrides)
 
     auto overrides = readRule(R"({rules_override: [{enabled: false}]})");
     ddwaf_handle handle2 = ddwaf_update(handle1, &overrides, nullptr);
-    ASSERT_EQ(handle2, nullptr);
+    ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&overrides);
 
     ddwaf_destroy(handle1);
+    ddwaf_destroy(handle2);
 }
 
 TEST(TestInterface, UpdateRuleData)
@@ -1300,9 +1313,11 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result2.actions.size, 0);
-        EXPECT_EQ(result3.actions.size, 1);
-        EXPECT_STREQ(result3.actions.array[0], "block");
+        EXPECT_EQ(ddwaf_object_size(&result2.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result3.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result3.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result3.actions, 0), nullptr), "block");
 
         ddwaf_result_free(&result2);
         ddwaf_result_free(&result3);
@@ -1366,9 +1381,11 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result3.actions.size, 0);
-        EXPECT_EQ(result4.actions.size, 1);
-        EXPECT_STREQ(result4.actions.array[0], "block");
+        EXPECT_EQ(ddwaf_object_size(&result3.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result4.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result4.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result4.actions, 0), nullptr), "block");
 
         ddwaf_result_free(&result3);
         ddwaf_result_free(&result4);
@@ -1427,10 +1444,14 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result4.actions.size, 1);
-        EXPECT_STREQ(result4.actions.array[0], "block");
-        EXPECT_EQ(result5.actions.size, 1);
-        EXPECT_STREQ(result5.actions.array[0], "block");
+        EXPECT_EQ(ddwaf_object_size(&result4.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result4.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result4.actions, 0), nullptr), "block");
+        EXPECT_EQ(ddwaf_object_size(&result5.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result5.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result5.actions, 0), nullptr), "block");
 
         ddwaf_result_free(&result4);
         ddwaf_result_free(&result5);
@@ -1479,9 +1500,11 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result4.actions.size, 1);
-        EXPECT_STREQ(result4.actions.array[0], "block");
-        EXPECT_EQ(result5.actions.size, 0);
+        EXPECT_EQ(ddwaf_object_size(&result4.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result4.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result4.actions, 0), nullptr), "block");
+        EXPECT_EQ(ddwaf_object_size(&result5.actions), 0);
 
         ddwaf_result_free(&result4);
         ddwaf_result_free(&result5);
@@ -1524,9 +1547,11 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result5.actions.size, 0);
-        EXPECT_EQ(result6.actions.size, 1);
-        EXPECT_STREQ(result6.actions.array[0], "block");
+        EXPECT_EQ(ddwaf_object_size(&result5.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result6.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result6.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result6.actions, 0), nullptr), "block");
 
         ddwaf_result_free(&result5);
         ddwaf_result_free(&result6);
@@ -1555,10 +1580,14 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result5.actions.size, 1);
-        EXPECT_STREQ(result5.actions.array[0], "block");
-        EXPECT_EQ(result6.actions.size, 1);
-        EXPECT_STREQ(result6.actions.array[0], "block");
+        EXPECT_EQ(ddwaf_object_size(&result5.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result5.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result5.actions, 0), nullptr), "block");
+        EXPECT_EQ(ddwaf_object_size(&result6.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result6.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result6.actions, 0), nullptr), "block");
 
         ddwaf_result_free(&result5);
         ddwaf_result_free(&result6);
@@ -1615,9 +1644,11 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result6.actions.size, 0);
-        EXPECT_EQ(result7.actions.size, 1);
-        EXPECT_STREQ(result7.actions.array[0], "block");
+        EXPECT_EQ(ddwaf_object_size(&result6.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result7.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result7.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result7.actions, 0), nullptr), "block");
 
         ddwaf_result_free(&result6);
         ddwaf_result_free(&result7);
@@ -1657,9 +1688,11 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result7.actions.size, 1);
-        EXPECT_STREQ(result7.actions.array[0], "block");
-        EXPECT_EQ(result8.actions.size, 0);
+        EXPECT_EQ(ddwaf_object_size(&result7.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result7.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result7.actions, 0), nullptr), "block");
+        EXPECT_EQ(ddwaf_object_size(&result8.actions), 0);
 
         ddwaf_result_free(&result7);
         ddwaf_result_free(&result8);
@@ -1688,9 +1721,11 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result7.actions.size, 1);
-        EXPECT_STREQ(result7.actions.array[0], "block");
-        EXPECT_EQ(result8.actions.size, 0);
+        EXPECT_EQ(ddwaf_object_size(&result7.actions), 1);
+        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result7.actions, 0)), DDWAF_OBJ_STRING);
+        EXPECT_STREQ(
+            ddwaf_object_get_string(ddwaf_object_get_index(&result7.actions, 0), nullptr), "block");
+        EXPECT_EQ(ddwaf_object_size(&result8.actions), 0);
 
         ddwaf_result_free(&result7);
         ddwaf_result_free(&result8);
@@ -1729,8 +1764,8 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result8.actions.size, 0);
-        EXPECT_EQ(result9.actions.size, 0);
+        EXPECT_EQ(ddwaf_object_size(&result8.actions), 0);
+        EXPECT_EQ(ddwaf_object_size(&result9.actions), 0);
 
         ddwaf_result_free(&result8);
         ddwaf_result_free(&result9);
@@ -1759,7 +1794,7 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(result9.actions.size, 0);
+        EXPECT_EQ(ddwaf_object_size(&result9.actions), 0);
 
         ddwaf_result_free(&result8);
         ddwaf_result_free(&result9);

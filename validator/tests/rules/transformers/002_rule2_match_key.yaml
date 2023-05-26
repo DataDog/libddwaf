@@ -1,0 +1,26 @@
+{
+  name: "Match on key",
+  runs: [
+    {
+      input: {
+        rule2-input: {
+          rule2: value
+        }
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input,
+              key_path: [
+                rule2
+              ],
+              value: rule2
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

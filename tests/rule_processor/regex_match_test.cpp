@@ -103,8 +103,7 @@ TEST(TestRegexMatch, TestRulesetCaseSensitive)
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
-                               .type = "flow1",
-                               .category = "category1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{
                                    .op = "match_regex",
                                    .op_value = "alert",
@@ -165,8 +164,7 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
-                               .type = "flow1",
-                               .category = "category1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{
                                    .op = "match_regex",
                                    .op_value = "alert",
@@ -194,8 +192,7 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
-                               .type = "flow1",
-                               .category = "category1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{
                                    .op = "match_regex",
                                    .op_value = "alert",
@@ -255,8 +252,7 @@ TEST(TestRegexMatch, TestRulesetMinLength)
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
-                               .type = "flow1",
-                               .category = "category1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{
                                    .op = "match_regex",
                                    .op_value = "alert",

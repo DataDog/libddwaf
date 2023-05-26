@@ -1,0 +1,13 @@
+{
+  name: "Match all conditions in an exclusion filter with multiple conditions",
+  runs: [
+    {
+      input: {
+        exclusion-filter-2-input1: "exclusion-filter-2",
+        exclusion-filter-2-input2: "exclusion-filter-2",
+        rule1-input: "rule1",
+      },
+      code: ok
+    }
+  ]
+}
