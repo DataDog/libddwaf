@@ -8,7 +8,7 @@ and so on. It is created through `ddwaf_init` and `ddwaf_update`.
 
 A tracer will want to keep only one live `ddwaf_handle`. The first one will be
 created through `ddwaf_init`, and then it will replace it through
-`ddwaf_update` as it gets new configuration through remote config.
+`ddwaf_update` as it gets new configurations through remote config.
 
 The two relevant operations on `ddwaf_handle` are `ddwaf_context_init` and
 `ddwaf_update`. Neither of these operations changes the `ddwaf_handle`. So, at
@@ -23,9 +23,9 @@ std::atomic<ddwaf_handle> cur_ddwaf_handle; // global variable; the live handle
 
 // Initialization thread
 void initialize_handle(
-    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_ruleset_info *ruleset_info)
+    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_object *diagnostics)
 {
-    ddwaf_handle new_handle = ddwaf_init(ruleset, config, ruleset_info);
+    ddwaf_handle new_handle = ddwaf_init(ruleset, config, diagnostics);
     if (new_handle == nullptr) { /* handle error */}
     cur_ddwaf_handle.store(new_handle, std::memory_order_release);
 }
@@ -38,17 +38,17 @@ ddwaf_context create_context() {
 }
 ```
 
-However, there is a pontential problem when you update the live handle. While
+However, there is a potential problem when you update the live handle. While
 libddwaf refcounts the `ddwaf_handle` and ensures that its memory is not
 reclaimed until all associated `ddwaf_context`s have been destroyed, it cannot
 prevent a use-after-free in this situation:
 
 ```c++
 // Remote config thread
-void update_handle(const ddwaf_object *ruleset, ddwaf_ruleset_info *ruleset_info)
+void update_handle(const ddwaf_object *ruleset, ddwaf_object *diagnostics)
 {
     ddwaf_handle old_handle = cur_ddwaf_handle.load(std::memory_order_acquire);
-    ddwaf_handle new_handle = ddwaf_update(old_handle, ruleset, ruleset_info);
+    ddwaf_handle new_handle = ddwaf_update(old_handle, ruleset, diagnostics);
     cur_ddwaf_handle.store(new_handle, std::memory_order_release);
 
     // will free the memory if no ddwaf_contexts are associated with it:
@@ -79,7 +79,7 @@ problem, but the most straightforward are:
   do and doesn't involve extra usage of locks, but the memory used by the
   `ddwaf_handle` will not be available until the garbage collector decides
   to reclaim the wrapped object. Because the garbage collector does not see
-  the memory being used by the `ddwaf_handle`, if gargabe collection never
+  the memory being used by the `ddwaf_handle`, if garbage collection never
   happens, there is a risk that memory consumption gets too high. This is a
   rather unlikely scenario though.
 
@@ -92,9 +92,9 @@ ddwaf_handle cur_ddwaf_handle;
 
 // Initialization thread
 void initialize_handle(
-    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_ruleset_info *ruleset_info)
+    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_object *diagnostics)
 {
-    ddwaf_handle new_handle = ddwaf_init(ruleset, config, ruleset_info);
+    ddwaf_handle new_handle = ddwaf_init(ruleset, config, diagnostics);
     if (new_handle == nullptr) { /* handle error */}
 
     std::unique_lock lock{mutex}; // acquire write lock
@@ -103,11 +103,11 @@ void initialize_handle(
 }
 
 // Remote config thread
-void update_handle(const ddwaf_object *ruleset, ddwaf_ruleset_info *ruleset_info)
+void update_handle(const ddwaf_object *ruleset, ddwaf_object *diagnostics)
 {
     std::unique_lock lock{mutex}; // acquire write lock
     ddwaf_handle old_handle = cur_ddwaf_handle.load(std::memory_order_acquire);
-    ddwaf_handle new_handle = ddwaf_update(old_handle, ruleset, ruleset_info);
+    ddwaf_handle new_handle = ddwaf_update(old_handle, ruleset, diagnostics);
     cur_ddwaf_handle = new_handle;
     ddwaf_destroy(old_handle);
     // write lock released on return
@@ -125,10 +125,10 @@ ddwaf_context create_context() {
 ## `ddwaf_context`
 
 On the other hand, `ddwaf_context` is not thread-safe. If a `ddwaf_context` is
-used my multiple threads (in web servers where the processing of the request
+used by multiple threads (in web servers where the processing of the request
 can move between several threads, or happen in several threads simultaneously),
 you need to use locks so that calls to `ddwaf_run/destroy` are not run
-concurently, and that changes made to the `ddwaf_context` in one thread through
+concurrently, and that changes made to the `ddwaf_context` in one thread through
 `ddwaf_run/destroy` are visible to the other threads subsequently run
 `ddwaf_run/destroy` on the same context. You also need to ensure that no calls
 to `ddwaf_run/destroy` happen after `ddwaf_destroy` is called.
@@ -143,7 +143,7 @@ struct ctx_wrapper {
 DDWAF_RET_CODE run_waf(
     ctx_wrapper &wrapper, ddwaf_object *data, ddwaf_result *result, uint64_t timeout)
 {
-    std::lock_guard<std::mutex> lock{wrapper.mutex}; // acquire exlusive lock
+    std::lock_guard<std::mutex> lock{wrapper.mutex}; // acquire exclusive lock
     if (wrapper.ctx == nullptr) { /* context already destroyed */ }
     return ddwaf_run(wrapper.ctx, data, result, timeout);
     // lock is released on return
