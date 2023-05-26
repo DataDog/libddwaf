@@ -8,11 +8,11 @@
             "properties": {
                 "error": {
                     "type": "string",
-                    "description": ""
+                    "description": "The single error which prevented parsing this feature"
                 },
                 "loaded": {
                     "type": "array",
-                    "description": "",
+                    "description": "A list of the unique identifiers from successfully loaded elements",
                     "items": {
                         "type": "string"
                     }
@@ -20,13 +20,14 @@
                 "failed": {
                     "type": "array",
                     "description": "",
+                    "description": "A list of the unique identifiers from the elements which couldn't be loaded",
                     "items": {
                         "type": "string"
                     }
                 },
                 "errors": {
-                    "type": "map",
-                    "description": ""
+                    "type": "object",
+                    "description": "Each key corresponds to a parsing error, each value corresponds to a list of the unique identifiers of the elements which failed with said error"
                 }
             },
             "required": [],
@@ -38,7 +39,8 @@
     "properties": {
         "ruleset_version": {
             "type": "string",
-            "description": "The version of the parsed ruleset if available"
+            "description": "The version of the parsed ruleset if available",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+"
         },
         "rules": {
             "$ref": "#/$defs/feature"
