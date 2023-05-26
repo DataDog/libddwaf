@@ -58,7 +58,7 @@ Providing the WAF with a complete ruleset typically results in a `ddwaf_object` 
   "ruleset_version": "1.7.0"
 }
 ```
-The definition of the map provided for each high-level feature is generic. The expected keys when the high-level feature couldn't be parsed are the following:
+The definition of the map provided for each high-level feature is generic, the complete schema can be found [here](schema/diagnostics.json). The expected keys when the high-level feature couldn't be parsed are the following:
 - `error`: this key contains a string indicating the error which prevented the relevant top-level key from being parsed and will only be present in this situation. Since this key represents a critical parsing error, no other keys are provided when this one is present.
 
 An example ruleset in which the `rules_data` key had the wrong type could result in the following diagnostics:
@@ -253,6 +253,7 @@ for (unsigned i = 0; i < ddwaf_object_size(&res.actions); ++i) {
     printf("%s", ddwaf_object_get_string(node, nullptr));
 }
 ```
+Finally, the events schema can be found [here](schema/events.json) and the actions schema can be found [here](schema/actions.json).
 #### Per-input transformers
 
 Rules provide a `transformers` key which represents a list of transformers which should be applied (in order) to each scalar before evaluating the operator. An example of a rule with transformers could be the following:
