@@ -1,7 +1,7 @@
 {
+    "title": "WAF Events Schema",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "schema/appsec-event-1.0.0.json",
-    "title": "AppSec Event 1.0.0",
+    "$id": "schema/event.json",
     "type": "array",
     "items": {
         "type": "object",
@@ -31,9 +31,15 @@
                             }
                         },
                         "required": [
-                            "type",
-                            "category"
+                            "type"
                         ]
+                    },
+                    "on_match": {
+                        "type": "array",
+                        "description": "on_match actions as defined in the ruleset.",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 },
                 "required": [
