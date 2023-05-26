@@ -31,8 +31,7 @@
                             }
                         },
                         "required": [
-                            "type",
-                            "category"
+                            "type"
                         ]
                     },
                     "on_match": {
