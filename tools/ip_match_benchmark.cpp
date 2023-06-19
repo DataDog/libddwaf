@@ -41,7 +41,6 @@ std::string generate_random_ip()
     sa.sin6_addr.s6_addr32[2] = rng();
     sa.sin6_addr.s6_addr32[3] = rng();
 
-    // now get it back and print it
     inet_ntop(AF_INET6, &(sa.sin6_addr), str.data(), INET6_ADDRSTRLEN);
 
     return {str.data()};
@@ -70,7 +69,6 @@ ddwaf_object generate_rule_data(const std::vector<std::string>& ip_set)
 
         ddwaf_object_map_add(&data_point, "value", ddwaf_object_stringl(&tmp, ip.c_str(), ip.size()));
 
-        //std::cout << ip << std::endl;
         ddwaf_object_array_add(&data, &data_point);
     }
 
