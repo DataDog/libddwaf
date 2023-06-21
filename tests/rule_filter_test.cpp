@@ -514,7 +514,6 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
     ddwaf_destroy(handle);
 }
 
-
 TEST(TestRuleFilter, ExcludeSingleRuleWithConditionAndTransformers)
 {
     auto rule = readFile("exclude_one_rule_with_condition_and_transformers.yaml");
