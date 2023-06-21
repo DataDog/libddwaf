@@ -319,6 +319,13 @@ condition::ptr parse_filter_condition(
         target.root = target_manifest.insert(address);
         target.name = address;
         target.key_path = std::move(key_path);
+        target.source = condition::data_source::values;
+
+        auto it = input.find("transformers");
+        if (it != input.end()) {
+            auto input_transformers = static_cast<parameter::vector>(it->second);
+            target.transformers = parse_transformers(input_transformers, target.source);
+        }
 
         targets.emplace_back(target);
     }
