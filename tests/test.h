@@ -58,6 +58,9 @@ using namespace std;
 #include <rule_processor/phrase_match.hpp>
 #include <rule_processor/regex_match.hpp>
 
+#include <transformer/lowercase.hpp>
+#include <transformer/remove_nulls.hpp>
+
 #include "test_utils.hpp"
 
 using namespace std::literals;

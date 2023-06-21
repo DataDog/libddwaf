@@ -97,6 +97,8 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule_processor/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/ip_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/exact_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/lowercase.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/remove_nulls.cpp
     ${libddwaf_SOURCE_DIR}/src/libcxx-compat/monotonic_buffer_resource.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})
