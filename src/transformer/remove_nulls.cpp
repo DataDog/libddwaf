@@ -8,7 +8,7 @@
 
 namespace ddwaf::transformer {
 
-bool remove_nulls::transform_impl(cow_string &str) {
+bool remove_nulls::transform_impl(lazy_string &str) {
     // First loop looking for the first null char
     uint64_t read = 0;
     for (; read < str.length() && str.at(read) != '\0'; ++read) {}

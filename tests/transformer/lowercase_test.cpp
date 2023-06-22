@@ -8,7 +8,7 @@
 
 TEST(TestLowerCase, ValidTransform)
 {
-    transformer::cow_string str("LoWeRCase");
+    lazy_string str("LoWeRCase");
     transformer::lowercase t;
     EXPECT_TRUE(t.transform(str));
     EXPECT_STREQ(str.get(), "lowercase");
@@ -16,7 +16,7 @@ TEST(TestLowerCase, ValidTransform)
 
 TEST(TestLowerCase, InvalidTransform)
 {
-    transformer::cow_string str("lowercase");
+    lazy_string str("lowercase");
     transformer::lowercase t;
     EXPECT_FALSE(t.transform(str));
     EXPECT_STREQ(str.get(), nullptr);

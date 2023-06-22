@@ -15,7 +15,7 @@ public:
     static transformer_id id() { return transformer_id::remove_nulls; }
     static std::string_view name() { return "remove_nulls"; }
 
-    static bool transform_impl(cow_string &str);
+    static bool transform_impl(lazy_string &str);
 };
 
 } // namespace ddwaf::transformer
