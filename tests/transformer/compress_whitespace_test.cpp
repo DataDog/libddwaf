@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "../test.h"
+#include <transformer/compress_whitespace.hpp>
 
 TEST(TestCompressWhitespace, NameAndID)
 {
@@ -16,7 +17,7 @@ TEST(TestCompressWhitespace, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-    EXPECT_STREQ(str.get(), nullptr);
+    EXPECT_STREQ(str.data(), nullptr);
 }
 
 TEST(TestCompressWhitespace, ValidTransform)
@@ -24,55 +25,55 @@ TEST(TestCompressWhitespace, ValidTransform)
     {
         lazy_string str("  c");
         EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), " c");
+        EXPECT_STREQ(str.data(), " c");
     }
 
     {
         lazy_string str("c  w");
         EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), "c w");
+        EXPECT_STREQ(str.data(), "c w");
     }
 
     {
         lazy_string str("c  ");
         EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), "c ");
+        EXPECT_STREQ(str.data(), "c ");
     }
 
     {
         lazy_string str("  c  ");
         EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), " c ");
+        EXPECT_STREQ(str.data(), " c ");
     }
 
     {
         lazy_string str("        c");
         EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), " c");
+        EXPECT_STREQ(str.data(), " c");
     }
 
     {
         lazy_string str("c      w");
         EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), "c w");
+        EXPECT_STREQ(str.data(), "c w");
     }
 
     {
         lazy_string str("c      ");
         EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), "c ");
+        EXPECT_STREQ(str.data(), "c ");
     }
 
     {
         lazy_string str("      c     ");
         EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), " c ");
+        EXPECT_STREQ(str.data(), " c ");
     }
 
     {
         lazy_string str("      compress  white     space transformer     ");
         EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), " compress white space transformer ");
+        EXPECT_STREQ(str.data(), " compress white space transformer ");
     }
 }
 
@@ -81,42 +82,42 @@ TEST(TestCompressWhitespace, InvalidTransform)
     {
         lazy_string str("c");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str(" c");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str("c ");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str(" c ");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str("c w");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str("compress_whitespace");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str("compress_whitespace but it doesn't matter");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 }

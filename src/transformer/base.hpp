@@ -40,35 +40,44 @@ enum class transformer_id : uint8_t {
     values_only,
 };
 
-namespace transformer {
+// namespace transformer {
 
-template <typename Derived> class base {
-public:
-    static bool transform(const ddwaf_object &src, ddwaf_object &dst)
-    {
-        if (src.type != DDWAF_OBJ_STRING || src.stringValue == nullptr) {
-            return false;
-        }
+/*template <typename Derived> class base {*/
+/*public:*/
+/*static bool transform(const ddwaf_object &src, ddwaf_object &dst)*/
+/*{*/
+/*if (src.type != DDWAF_OBJ_STRING || src.stringValue == nullptr || src.nbEntries == 0) {*/
+/*return false;*/
+/*}*/
 
-        lazy_string str({src.stringValue, src.nbEntries});
-        auto res = Derived::transform(str);
-        if (res) {
-            auto length = str.length();
-            ddwaf_object_stringl_nc(&dst, str.move(), length);
-        }
+/*uint64_t length = 0;*/
+/*char *result = nullptr;*/
+/*if constexpr (typename Derived::in_place()) {*/
+/*lazy_string str({src.stringValue, src.nbEntries});*/
+/*auto res = Derived::transform(str);*/
+/*if (res && str.modified()) {*/
+/*length = str.length();*/
+/*result = str.move();*/
+/*}*/
+/*}*/
 
-        return true;
-    }
+/*if (res) {*/
+/*auto length = str.length();*/
+/*ddwaf_object_stringl_nc(&dst, str.move(), length);*/
+/*}*/
 
-    static bool transform(lazy_string &str)
-    {
-        if (str.length() == 0) {
-            return false;
-        }
+/*return true;*/
+/*}*/
 
-        return Derived::transform_impl(str);
-    }
-};
+/*static bool transform(lazy_string &str)*/
+/*{*/
+/*if (str.length() == 0) {*/
+/*return false;*/
+/*}*/
 
-} // namespace transformer
+/*return Derived::transform(str);*/
+/*}*/
+/*};*/
+
+/*} // namespace transformer*/
 } // namespace ddwaf

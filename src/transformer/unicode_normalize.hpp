@@ -10,12 +10,12 @@
 
 namespace ddwaf::transformer {
 
-class compress_whitespace {
+class unicode_normalize {
 public:
-    static transformer_id id() { return transformer_id::compress_whitespace; }
-    static std::string_view name() { return "compress_whitespace"; }
+    static transformer_id id() { return transformer_id::unicode_normalize; }
+    static std::string_view name() { return "unicode_normalize"; }
     static constexpr bool in_place() { return true; }
-    static bool needs_transform(std::string_view /*str*/) { return true; }
+    static bool needs_transform(std::string_view str);
     static bool transform(lazy_string &str);
 };
 

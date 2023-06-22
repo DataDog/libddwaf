@@ -53,26 +53,45 @@ public:
 
     [[nodiscard]] constexpr std::size_t length() const { return length_; }
     [[nodiscard]] constexpr bool modified() const { return copy_ != nullptr; }
-    [[nodiscard]] constexpr const char *get() const { return copy_; }
+    [[nodiscard]] constexpr const char *value() const
+    {
+        return copy_ != nullptr ? copy_ : original_.data();
+    }
+    [[nodiscard]] constexpr char *data() { return copy_; }
 
     char *move()
     {
         auto *retval = copy_;
+
         copy_ = nullptr;
-        length_ = original_.length();
+        length_ = 0;
+        original_ = {};
+
         return retval;
     }
 
+    void finalize() { return finalize(length_); }
+
     void finalize(std::size_t length)
     {
-        if (length <= length_) {
-            if (copy_ != nullptr) {
-                length_ = length;
-                copy_[length] = '\0';
-            } else {
-                force_copy(length);
-            }
+        if (copy_ != nullptr) {
+            length_ = length;
+            copy_[length] = '\0';
+        } else {
+            force_copy(length);
         }
+        original_ = {copy_, length};
+    }
+
+    void reset(char *str, std::size_t length)
+    {
+        if (copy_ != nullptr) {
+            free(copy_);
+        }
+
+        copy_ = str;
+        length_ = length;
+        original_ = {copy_, length_};
     }
 
 protected:

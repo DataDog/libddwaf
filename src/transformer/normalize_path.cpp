@@ -8,7 +8,7 @@
 
 namespace ddwaf::transformer {
 
-bool normalize_path::transform_impl(lazy_string &str)
+bool normalize_path::transform(lazy_string &str)
 {
     uint64_t read = 0;
     uint64_t write = 0;

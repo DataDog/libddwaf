@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "../test.h"
+#include <transformer/normalize_path.hpp>
 
 TEST(TestNormalizePath, NameAndID)
 {
@@ -16,7 +17,7 @@ TEST(TestNormalizePath, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::normalize_path::transform(str));
-    EXPECT_STREQ(str.get(), nullptr);
+    EXPECT_STREQ(str.data(), nullptr);
 }
 
 TEST(TestNormalizePath, ValidTransform)
@@ -24,31 +25,31 @@ TEST(TestNormalizePath, ValidTransform)
     {
         lazy_string str("./file");
         EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), "file");
+        EXPECT_STREQ(str.data(), "file");
     }
 
     {
         lazy_string str("./a/simple/path");
         EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), "a/simple/path");
+        EXPECT_STREQ(str.data(), "a/simple/path");
     }
 
     {
         lazy_string str("a/simple/./path");
         EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), "a/simple/path");
+        EXPECT_STREQ(str.data(), "a/simple/path");
     }
 
     {
         lazy_string str("./a/simple/wrong/../path");
         EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), "a/simple/path");
+        EXPECT_STREQ(str.data(), "a/simple/path");
     }
 
     {
         lazy_string str("a/simple/../../../../path");
         EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), "/path");
+        EXPECT_STREQ(str.data(), "/path");
     }
 }
 
@@ -57,30 +58,30 @@ TEST(TestNormalizePath, InvalidTransform)
     {
         lazy_string str("/normal/path");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str("/normal/path/to/dir/");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str("path/to/somewhere");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str("./");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 
     {
         lazy_string str("/");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.get(), nullptr);
+        EXPECT_STREQ(str.data(), nullptr);
     }
 }

@@ -8,7 +8,7 @@
 
 namespace ddwaf::transformer {
 
-bool compress_whitespace::transform_impl(lazy_string &str)
+bool compress_whitespace::transform(lazy_string &str)
 {
     // First loop looking for the first two consecutives space char
     uint64_t read = 1;

@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test.h"
+#include <lazy_string.hpp>
 
 TEST(TestLazyString, ConstRead)
 {
@@ -15,7 +16,7 @@ TEST(TestLazyString, ConstRead)
     for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str.at(i)); }
 
     EXPECT_FALSE(str.modified());
-    EXPECT_EQ(str.get(), nullptr);
+    EXPECT_EQ(str.data(), nullptr);
 }
 
 TEST(TestLazyString, NonConstRead)
@@ -27,7 +28,7 @@ TEST(TestLazyString, NonConstRead)
     for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str[i]); }
 
     EXPECT_TRUE(str.modified());
-    EXPECT_NE(str.get(), nullptr);
+    EXPECT_NE(str.data(), nullptr);
 }
 
 TEST(TestLazyString, WriteAndFinalize)
@@ -37,18 +38,18 @@ TEST(TestLazyString, WriteAndFinalize)
 
     str[3] = 'e';
     EXPECT_TRUE(str.modified());
-    EXPECT_NE(str.get(), nullptr);
+    EXPECT_NE(str.data(), nullptr);
 
     str.finalize(4);
     EXPECT_EQ(str.length(), 4);
-    EXPECT_STREQ(str.get(), "vale");
+    EXPECT_STREQ(str.data(), "vale");
 }
 
 TEST(TestLazyString, WriteAndMove)
 {
     lazy_string str("value");
     EXPECT_EQ(str.length(), 5);
-    EXPECT_EQ(str.move(), nullptr);
+    EXPECT_EQ(str.data(), nullptr);
 
     str[3] = 'e';
     EXPECT_TRUE(str.modified());
@@ -56,7 +57,7 @@ TEST(TestLazyString, WriteAndMove)
     char *copy = str.move();
 
     EXPECT_NE(copy, nullptr);
-    EXPECT_EQ(str.get(), nullptr);
+    EXPECT_EQ(str.data(), nullptr);
     EXPECT_STREQ(copy, "valee");
 
     // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
@@ -71,6 +72,6 @@ TEST(TestLazyString, EmptyString)
     str.finalize(str.length());
     EXPECT_EQ(str.length(), 0);
     EXPECT_TRUE(str.modified());
-    EXPECT_NE(str.get(), nullptr);
-    EXPECT_STREQ(str.get(), "");
+    EXPECT_NE(str.data(), nullptr);
+    EXPECT_STREQ(str.data(), "");
 }

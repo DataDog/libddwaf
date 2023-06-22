@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include "lazy_string.hpp"
+#include <cstdint>
+
 namespace ddwaf::utf8 {
 #define UTF8_MAX_CODEPOINT 0x10FFFF
 #define UTF8_INVALID 0xFFFFFFFF
@@ -17,6 +20,8 @@ uint8_t write_codepoint(uint32_t codepoint, char *utf8_buffer, uint64_t length_l
 uint32_t fetch_next_codepoint(const char *utf8_buffer, uint64_t &position, uint64_t length);
 
 size_t normalize_codepoint(uint32_t codepoint, int32_t *wb_buffer, size_t wb_buffer_length);
+
 bool normalize_string(char **utf8_buffer, uint64_t &buffer_length);
+bool normalize_string(lazy_string &str);
 
 } // namespace ddwaf::utf8

@@ -39,7 +39,6 @@ using namespace std;
 #include <exclusion/object_filter.hpp>
 #include <exclusion/rule_filter.hpp>
 #include <ip_utils.hpp>
-#include <lazy_string.hpp>
 #include <log.hpp>
 #include <mkmap.hpp>
 #include <obfuscator.hpp>
@@ -58,11 +57,6 @@ using namespace std;
 #include <rule_processor/is_xss.hpp>
 #include <rule_processor/phrase_match.hpp>
 #include <rule_processor/regex_match.hpp>
-
-#include <transformer/compress_whitespace.hpp>
-#include <transformer/lowercase.hpp>
-#include <transformer/normalize_path.hpp>
-#include <transformer/remove_nulls.hpp>
 
 #include "test_utils.hpp"
 

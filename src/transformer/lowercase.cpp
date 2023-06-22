@@ -8,7 +8,7 @@
 
 namespace ddwaf::transformer {
 
-bool lowercase::transform_impl(lazy_string &str)
+bool lowercase::transform(lazy_string &str)
 {
     size_t pos = 0;
 
@@ -28,6 +28,8 @@ bool lowercase::transform_impl(lazy_string &str)
             str[pos] += 'a' - 'A';
         }
     }
+
+    str.finalize();
 
     return true;
 }
