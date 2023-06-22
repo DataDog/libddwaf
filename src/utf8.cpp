@@ -219,8 +219,8 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
         return 0;
     }
 
-    // Zero-width joiner (0x200D) are used in emojis, let's keep them around
-    else if (codepoint == 0x200D) {
+    // ASCII or Zero-width joiner (0x200D) are used in emojis, let's keep them around
+    else if (codepoint <= 0x7F || codepoint == 0x200D) {
         if (wbBufferLength > 0) {
             wbBuffer[0] = (int32_t)codepoint;
         }
