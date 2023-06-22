@@ -59,7 +59,9 @@ using namespace std;
 #include <rule_processor/phrase_match.hpp>
 #include <rule_processor/regex_match.hpp>
 
+#include <transformer/compress_whitespace.hpp>
 #include <transformer/lowercase.hpp>
+#include <transformer/normalize_path.hpp>
 #include <transformer/remove_nulls.hpp>
 
 #include "test_utils.hpp"

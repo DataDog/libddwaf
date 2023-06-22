@@ -98,6 +98,8 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule_processor/ip_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/exact_match.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/lowercase.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/compress_whitespace.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/normalize_path.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/remove_nulls.cpp
     ${libddwaf_SOURCE_DIR}/src/libcxx-compat/monotonic_buffer_resource.cpp
 )

@@ -12,9 +12,7 @@ TEST(TestLazyString, ConstRead)
     lazy_string str(original);
 
     EXPECT_EQ(original.length(), str.length());
-    for (size_t i = 0; i < original.length(); ++i) {
-        EXPECT_EQ(original[i], str.at(i));
-    }
+    for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str.at(i)); }
 
     EXPECT_FALSE(str.modified());
     EXPECT_EQ(str.get(), nullptr);
@@ -26,9 +24,7 @@ TEST(TestLazyString, NonConstRead)
     lazy_string str(original);
 
     EXPECT_EQ(original.length(), str.length());
-    for (size_t i = 0; i < original.length(); ++i) {
-        EXPECT_EQ(original[i], str[i]);
-    }
+    for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str[i]); }
 
     EXPECT_TRUE(str.modified());
     EXPECT_NE(str.get(), nullptr);
@@ -67,16 +63,14 @@ TEST(TestLazyString, WriteAndMove)
     free(copy);
 }
 
-TEST(TestLazyString, ForceCopy)
+TEST(TestLazyString, EmptyString)
 {
-    lazy_string str("value");
-    EXPECT_EQ(str.length(), 5);
-    EXPECT_FALSE(str.modified());
-    EXPECT_EQ(str.get(), nullptr);
+    lazy_string str({});
+    EXPECT_EQ(str.length(), 0);
 
-    str.force_copy();
-    EXPECT_EQ(str.length(), 5);
+    str.finalize(str.length());
+    EXPECT_EQ(str.length(), 0);
     EXPECT_TRUE(str.modified());
     EXPECT_NE(str.get(), nullptr);
-    EXPECT_STREQ(str.get(), "value");
+    EXPECT_STREQ(str.get(), "");
 }
