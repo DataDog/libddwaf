@@ -12,7 +12,7 @@ namespace ddwaf::transformer {
 bool compress_whitespace::transform_impl(lazy_string &str)
 {
     // First loop looking for the first two consecutives space char
-    uint64_t read = 1;
+    std::size_t read = 1;
     for (; read < str.length() && (str.at(read) != ' ' || str.at(read - 1) != ' '); ++read) {}
 
     //  If we're checking whether we need to do change, finding such a chain mean we need to
@@ -22,7 +22,7 @@ bool compress_whitespace::transform_impl(lazy_string &str)
     }
 
     //  If we're mutating the string, then we have the starting offset
-    uint64_t write = read;
+    std::size_t write = read;
     while (read < str.length()) {
         // When we find two consecutive spaces, we skip over them
         //  We check with read - 1 to make sure at least one space is commited

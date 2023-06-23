@@ -11,7 +11,7 @@ namespace ddwaf::transformer {
 bool remove_nulls::transform_impl(lazy_string &str)
 {
     // First loop looking for the first null char
-    uint64_t read = 0;
+    std::size_t read = 0;
     for (; read < str.length() && str.at(read) != '\0'; ++read) {}
 
     //  If we're checking whether we need to do change, finding such a char mean we need to
@@ -21,7 +21,7 @@ bool remove_nulls::transform_impl(lazy_string &str)
     }
 
     //  If we're mutating the string, then we have the starting offset
-    uint64_t write = read;
+    std::size_t write = read;
     for (; read < str.length(); ++read) {
         auto c = str.at(read);
         if (c == 0) {

@@ -10,8 +10,8 @@ namespace ddwaf::transformer {
 
 bool normalize_path::transform_impl(lazy_string &str)
 {
-    uint64_t read = 0;
-    uint64_t write = 0;
+    std::size_t read = 0;
+    std::size_t write = 0;
 
     // Our algorithm is quite simple: we look for `./`. If we find that, we check if the
     // preceeding char is:

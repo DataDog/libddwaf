@@ -10,7 +10,7 @@ namespace ddwaf::transformer {
 
 bool lowercase::transform_impl(lazy_string &str)
 {
-    size_t pos = 0;
+    std::size_t pos = 0;
 
     // First loop looking for the first non-lowercase char
     for (; pos < str.length() && (str.at(pos) < 'A' || str.at(pos) > 'Z'); ++pos) {}
