@@ -9,6 +9,7 @@
 #include <transformer/lowercase.hpp>
 #include <transformer/manager.hpp>
 #include <transformer/normalize_path.hpp>
+#include <transformer/remove_comments.hpp>
 #include <transformer/remove_nulls.hpp>
 #include <transformer/unicode_normalize.hpp>
 
@@ -29,6 +30,8 @@ bool call_transformer(transformer_id id, lazy_string &str)
         return normalize_path_win::transform(str);
     case transformer_id::unicode_normalize:
         return unicode_normalize::transform(str);
+    case transformer_id::remove_comments:
+        return remove_comments::transform(str);
     case transformer_id::url_decode:
     case transformer_id::url_decode_iis:
     case transformer_id::css_decode:
@@ -41,7 +44,6 @@ bool call_transformer(transformer_id id, lazy_string &str)
     case transformer_id::url_basename:
     case transformer_id::url_path:
     case transformer_id::url_querystring:
-    case transformer_id::remove_comments:
     default:
         break;
     }
