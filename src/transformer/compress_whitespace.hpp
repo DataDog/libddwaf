@@ -10,13 +10,16 @@
 
 namespace ddwaf::transformer {
 
-class compress_whitespace {
+class compress_whitespace : public base<compress_whitespace> {
 public:
-    static transformer_id id() { return transformer_id::compress_whitespace; }
-    static std::string_view name() { return "compress_whitespace"; }
-    static constexpr bool in_place() { return true; }
+    static constexpr transformer_id id() { return transformer_id::compress_whitespace; }
+    static constexpr std::string_view name() { return "compress_whitespace"; }
+
+protected:
     static bool needs_transform(std::string_view /*str*/) { return true; }
-    static bool transform(lazy_string &str);
+    static bool transform_impl(lazy_string &str);
+
+    friend class base<compress_whitespace>;
 };
 
 } // namespace ddwaf::transformer

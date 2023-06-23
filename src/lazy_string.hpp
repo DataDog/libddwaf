@@ -51,6 +51,11 @@ public:
         return copy_[idx];
     }
 
+    constexpr explicit operator std::string_view()
+    {
+        return copy_ != nullptr ? std::string_view{copy_, length_} : original_;
+    }
+
     [[nodiscard]] constexpr std::size_t length() const { return length_; }
     [[nodiscard]] constexpr bool modified() const { return copy_ != nullptr; }
     [[nodiscard]] constexpr const char *value() const

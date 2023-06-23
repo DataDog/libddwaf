@@ -4,11 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <iostream>
 #include <transformer/compress_whitespace.hpp>
 
 namespace ddwaf::transformer {
 
-bool compress_whitespace::transform(lazy_string &str)
+bool compress_whitespace::transform_impl(lazy_string &str)
 {
     // First loop looking for the first two consecutives space char
     uint64_t read = 1;

@@ -8,7 +8,7 @@
 #include <utf8.hpp>
 
 namespace ddwaf::transformer {
-bool needs_transform(std::string_view str)
+bool unicode_normalize::needs_transform(std::string_view str)
 {
     uint32_t codepoint;
     uint64_t position = 0;
@@ -31,6 +31,6 @@ bool needs_transform(std::string_view str)
     return false;
 }
 
-bool unicode_normalize::transform(lazy_string &str) { return utf8::normalize_string(str); }
+bool unicode_normalize::transform_impl(lazy_string &str) { return utf8::normalize_string(str); }
 
 } // namespace ddwaf::transformer

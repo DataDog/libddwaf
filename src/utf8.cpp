@@ -199,7 +199,8 @@ struct ScratchpadChunck {
 
     ScratchpadChunck(uint64_t chunckLength) : length(chunckLength), used(0)
     {
-        scratchpad = (char *)malloc(length);
+        // Allow for potential \0
+        scratchpad = (char *)malloc(length + 1);
     }
 
     ScratchpadChunck(ScratchpadChunck &) = delete;
@@ -233,8 +234,8 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
                             UTF8PROC_STRIPMARK | UTF8PROC_STRIPNA | UTF8PROC_CASEFOLD),
         nullptr);
 
-    // This decomposition is unfortunately not complete. It leaves behind a few chars like ı (i)
-    //  Moreover, some conversions like ß (ss) require casefolding, which changes the case of
+    // This decomposition is unfortunately not complete. It leaves behind a few chars like Ä± (i)
+    //  Moreover, some conversions like Ã (ss) require casefolding, which changes the case of
     //  characters We're trying to address what's left
     if (decomposedLength > 0 && decomposedLength <= wbBufferLength) {
         // If casefolding happened, we check what was the case of the original codepoint and move it
@@ -256,7 +257,7 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
             }
         } else {
             // We're forcing a case conversion back and forth if necessary to catch the few
-            // stragglers like ı (i)
+            // stragglers like Ä± (i)
             for (size_t wbIndex = 0; wbIndex < decomposedLength; ++wbIndex) {
                 const utf8proc_property_t *codepointProperty =
                     utf8proc_get_property(wbBuffer[wbIndex]);
@@ -414,14 +415,13 @@ bool normalize_string(lazy_string &str)
         // We have a single scratchpad, we can simply swap the pointers :D
         new_buffer = scratchPad.front().scratchpad;
         new_length = scratchPad.front().used;
-
         // Prevent the destructor from freeing the pointer we're now using.
         scratchPad.front().scratchpad = nullptr;
     } else {
         // Compile the scratch pads into the final normalized string
         for (ScratchpadChunck &chunck : scratchPad) { new_length += chunck.used; }
 
-        new_buffer = (char *)malloc(new_length);
+        new_buffer = (char *)malloc(new_length + 1);
         if (new_buffer == nullptr) {
             return false;
         }
@@ -433,6 +433,7 @@ bool normalize_string(lazy_string &str)
         }
     }
 
+    new_buffer[new_length] = '\0';
     str.reset(new_buffer, new_length);
 
     return true;

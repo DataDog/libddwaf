@@ -10,13 +10,16 @@
 
 namespace ddwaf::transformer {
 
-class lowercase {
+class lowercase : public base<lowercase> {
 public:
     static transformer_id id() { return transformer_id::lowercase; }
     static std::string_view name() { return "lowercase"; }
-    static constexpr bool in_place() { return true; }
+
+protected:
     static bool needs_transform(std::string_view /*str*/) { return true; }
-    static bool transform(lazy_string &str);
+    static bool transform_impl(lazy_string &str);
+
+    friend class base<lowercase>;
 };
 
 } // namespace ddwaf::transformer

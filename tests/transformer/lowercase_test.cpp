@@ -7,20 +7,20 @@
 #include "../test.h"
 #include <transformer/lowercase.hpp>
 
-TEST(TestLowerCase, NameAndID)
+TEST(TestLowercase, NameAndID)
 {
     EXPECT_STREQ(transformer::lowercase::name().data(), "lowercase");
     EXPECT_EQ(transformer::lowercase::id(), transformer_id::lowercase);
 }
 
-TEST(TestLowerCase, EmptyString)
+TEST(TestLowercase, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::lowercase::transform(str));
     EXPECT_STREQ(str.data(), nullptr);
 }
 
-TEST(TestLowerCase, ValidTransform)
+TEST(TestLowercase, ValidTransform)
 {
     {
         lazy_string str("L");
@@ -59,7 +59,7 @@ TEST(TestLowerCase, ValidTransform)
     }
 }
 
-TEST(TestLowerCase, InvalidTransform)
+TEST(TestLowercase, InvalidTransform)
 {
     {
         lazy_string str("l");

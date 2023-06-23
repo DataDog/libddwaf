@@ -10,13 +10,16 @@
 
 namespace ddwaf::transformer {
 
-class unicode_normalize {
+class unicode_normalize : public base<unicode_normalize> {
 public:
     static transformer_id id() { return transformer_id::unicode_normalize; }
     static std::string_view name() { return "unicode_normalize"; }
-    static constexpr bool in_place() { return true; }
+
+protected:
     static bool needs_transform(std::string_view str);
-    static bool transform(lazy_string &str);
+    static bool transform_impl(lazy_string &str);
+
+    friend class base<unicode_normalize>;
 };
 
 } // namespace ddwaf::transformer
