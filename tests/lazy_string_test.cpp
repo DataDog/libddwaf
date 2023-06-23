@@ -45,25 +45,6 @@ TEST(TestLazyString, WriteAndFinalize)
     EXPECT_STREQ(str.data(), "vale");
 }
 
-TEST(TestLazyString, WriteAndMove)
-{
-    lazy_string str("value");
-    EXPECT_EQ(str.length(), 5);
-    EXPECT_EQ(str.data(), nullptr);
-
-    str[3] = 'e';
-    EXPECT_TRUE(str.modified());
-
-    char *copy = str.move();
-
-    EXPECT_NE(copy, nullptr);
-    EXPECT_EQ(str.data(), nullptr);
-    EXPECT_STREQ(copy, "valee");
-
-    // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-    free(copy);
-}
-
 TEST(TestLazyString, EmptyString)
 {
     lazy_string str({});

@@ -58,7 +58,7 @@ bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
     bool transformed = false;
     lazy_string str({source.stringValue, static_cast<std::size_t>(source.nbEntries)});
     for (auto transformer : transformers) {
-        auto res = call_transformer(transformer, str); 
+        auto res = call_transformer(transformer, str);
         transformed = transformed || res;
     }
 

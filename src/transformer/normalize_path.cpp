@@ -94,5 +94,4 @@ bool normalize_path_win::transform_impl(lazy_string &str)
     return res || normalized;
 }
 
-
 } // namespace ddwaf::transformer

@@ -35,6 +35,4 @@ protected:
     friend class normalize_path_win;
 };
 
-
-
 } // namespace ddwaf::transformer

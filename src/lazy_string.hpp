@@ -17,106 +17,112 @@ namespace ddwaf {
 class lazy_string {
 public:
     explicit lazy_string(std::string_view original)
-        : original_(original), length_(original.length())
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+        : copy_(const_cast<char *>(original.data())), length_(original.length())
     {}
 
     lazy_string(const lazy_string &) = delete;
     lazy_string &operator=(const lazy_string &) = delete;
 
     lazy_string(lazy_string &&other) noexcept
-        : original_(other.original_), length_(other.length_), copy_(other.copy_)
+        : modified_(other.modified_), copy_(other.copy_), length_(other.length_)
     {
+        other.modified_ = false;
         other.copy_ = nullptr;
     }
 
     lazy_string &operator=(lazy_string &&other) noexcept
     {
-        original_ = other.original_;
+        modified_ = other.modified_;
         copy_ = other.copy_;
+
+        other.modified_ = false;
         other.copy_ = nullptr;
+
         return *this;
     }
 
     ~lazy_string()
     {
-        // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-        free(copy_);
+        if (modified_) {
+            // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
+            free(copy_);
+        }
     }
 
-    [[nodiscard]] constexpr char at(std::size_t idx) const { return original_[idx]; }
+    [[nodiscard]] constexpr const char &at(std::size_t idx) const { return copy_[idx]; }
 
     char &operator[](std::size_t idx)
     {
-        force_copy(original_.length());
+        force_copy(length_);
         return copy_[idx];
     }
 
-    constexpr explicit operator std::string_view()
-    {
-        return copy_ != nullptr ? std::string_view{copy_, length_} : original_;
-    }
+    constexpr explicit operator std::string_view() { return {copy_, length_}; }
 
     [[nodiscard]] constexpr std::size_t length() const { return length_; }
-    [[nodiscard]] constexpr bool modified() const { return copy_ != nullptr; }
-    [[nodiscard]] constexpr const char *value() const
+    [[nodiscard]] constexpr bool modified() const { return modified_; }
+    [[nodiscard]] constexpr const char *value() const { return copy_; }
+    [[nodiscard]] constexpr char *data() { return modified_ ? copy_ : nullptr; }
+
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    [[nodiscard]] std::pair<bool, std::size_t> find(char c, std::size_t start) const
     {
-        return copy_ != nullptr ? copy_ : original_.data();
-    }
-    [[nodiscard]] constexpr char *data() { return copy_; }
-
-    char *move()
-    {
-        auto *retval = copy_;
-
-        copy_ = nullptr;
-        length_ = 0;
-        original_ = {};
-
-        return retval;
+        for (std::size_t i = start; i < length_; ++i) {
+            if (copy_[i] == c) {
+                return {true, i};
+            }
+        }
+        return {false, 0};
     }
 
+    // Reset the internal buffer, ownership is transferred
+    void reset(char *str, std::size_t length)
+    {
+        if (modified_) {
+            // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
+            free(copy_);
+        }
+
+        modified_ = true;
+        copy_ = str;
+        length_ = length;
+    }
+
+    // Update length and nul-terminate, allocate if not allocated
     void finalize() { return finalize(length_); }
-
     void finalize(std::size_t length)
     {
-        if (copy_ != nullptr) {
+        if (modified_) {
             length_ = length;
             copy_[length] = '\0';
         } else {
             force_copy(length);
         }
-        original_ = {copy_, length};
-    }
-
-    void reset(char *str, std::size_t length)
-    {
-        if (copy_ != nullptr) {
-            free(copy_);
-        }
-
-        copy_ = str;
-        length_ = length;
-        original_ = {copy_, length_};
     }
 
 protected:
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void force_copy(std::size_t bytes)
     {
-        if (copy_ == nullptr) {
+        if (!modified_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-            copy_ = static_cast<char *>(malloc(bytes + 1));
-            if (copy_ == nullptr) {
+            char *new_copy = static_cast<char *>(malloc(bytes + 1));
+            if (new_copy == nullptr) {
                 throw std::bad_alloc();
             }
 
-            memcpy(copy_, original_.data(), bytes);
-            copy_[bytes] = '\0';
+            memcpy(new_copy, copy_, bytes);
+            new_copy[bytes] = '\0';
+
+            copy_ = new_copy;
+            modified_ = true;
         }
     }
 
-    std::string_view original_;
-    std::size_t length_;
+    bool modified_{false};
     char *copy_{nullptr};
+    std::size_t length_;
 };
 
 } // namespace ddwaf
