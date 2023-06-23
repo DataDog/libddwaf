@@ -39,7 +39,7 @@ bool normalize_path::transform_impl(lazy_string &str)
             // The write head already wrote /., we need to move it back by three
             //  MIN make sure we can't underflow although I don't really see how that could
             //  happen
-            write -= std::min(write, (uint64_t)3);
+            write -= std::min(write, static_cast<std::size_t>(3));
 
             while (write != 0 && str[write] != '/') { write -= 1; }
 
