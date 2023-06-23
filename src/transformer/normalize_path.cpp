@@ -67,4 +67,32 @@ bool normalize_path::transform_impl(lazy_string &str)
     return true;
 }
 
+bool normalize_path_win::transform_impl(lazy_string &str)
+{
+    // Look for any backslash
+    std::size_t pos = 0;
+    for (; pos < str.length() && str.at(pos) != '\\'; ++pos) {}
+
+    bool normalized = false;
+    // If it found one, then that mean we will need to transform this string
+    if (pos < str.length()) {
+        // That's quite a blunt conversion but that's what ModSecurity is doing so ¯\_(ツ)_/¯
+        //  https://github.com/SpiderLabs/ModSecurity/blob/b66224853b4e9d30e0a44d16b29d5ed3842a6b11/src/actions/transformations/normalise_path.cc#L64
+        do {
+            if (str.at(pos) == '\\') {
+                normalized = true;
+                str[pos] = '/';
+            }
+
+        } while (++pos < str.length());
+
+        // Ensure the next transformer uses the outcome of this operation
+        str.finalize();
+    }
+
+    auto res = normalize_path::transform_impl(str);
+    return res || normalized;
+}
+
+
 } // namespace ddwaf::transformer

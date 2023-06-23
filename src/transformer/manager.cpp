@@ -26,7 +26,7 @@ bool call_transformer(transformer_id id, lazy_string &str)
     case transformer_id::normalize_path:
         return normalize_path::transform(str);
     case transformer_id::normalize_path_win:
-        break;
+        return normalize_path_win::transform(str);
     case transformer_id::unicode_normalize:
         return unicode_normalize::transform(str);
     case transformer_id::url_decode:
@@ -57,7 +57,10 @@ bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
 
     bool transformed = false;
     lazy_string str({source.stringValue, static_cast<std::size_t>(source.nbEntries)});
-    for (auto transformer : transformers) { transformed |= call_transformer(transformer, str); }
+    for (auto transformer : transformers) {
+        auto res = call_transformer(transformer, str); 
+        transformed = transformed || res;
+    }
 
     if (!transformed || !str.modified()) {
         return false;
