@@ -31,6 +31,12 @@ size_t find_string_cutoff(
 
 namespace ddwaf {
 
+using target_index = std::size_t;
+
+inline target_index get_target_index(const std::string &address) {
+    return std::hash<std::string>()(address);
+}
+
 namespace object {
 
 inline bool is_container(const ddwaf_object *obj)
@@ -65,4 +71,5 @@ public:
 protected:
     Fn fn_;
 };
+
 } // namespace ddwaf

@@ -65,3 +65,59 @@ TEST(TestWaf, RuleDisabledInRuleset)
         delete ctx;
     }
 }
+
+TEST(TestWaf, AddressUniqueness)
+{
+    std::unordered_set<std::size_t> indices;
+
+    {
+        std::size_t hash = std::hash<std::string>()("grpc.server.request.message");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+    {
+        std::size_t hash = std::hash<std::string>()("grpc.server.request.metadata");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+    {
+        std::size_t hash = std::hash<std::string>()("http.client_ip");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+    {
+        std::size_t hash = std::hash<std::string>()("server.request.body");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+    {
+        std::size_t hash = std::hash<std::string>()("server.request.headers.no_cookies");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+    {
+        std::size_t hash = std::hash<std::string>()("server.request.path_params");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+    {
+        std::size_t hash = std::hash<std::string>()("server.request.query");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+    {
+        std::size_t hash = std::hash<std::string>()("server.request.uri.raw");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+    {
+        std::size_t hash = std::hash<std::string>()("server.response.status");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+    {
+        std::size_t hash = std::hash<std::string>()("usr.id");
+        EXPECT_EQ(indices.find(hash), indices.end());
+        indices.insert(hash);
+    }
+}

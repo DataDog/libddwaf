@@ -10,7 +10,6 @@
 #include <config.hpp>
 #include <cstdint>
 #include <functional>
-#include <manifest.hpp>
 #include <set>
 #include <string>
 #include <unordered_map>

@@ -40,6 +40,17 @@ public:
 
     std::string_view get_id() { return id_; }
 
+    void get_addresses(std::unordered_set<std::string> &addresses) const {
+        for (const auto &cond : conditions_) {
+            for (const auto &target : cond->get_targets()) {
+                addresses.emplace(target.name);
+            }
+        }
+
+        for (const auto &[name, target] : filter_->get_targets()) {
+            addresses.emplace(name);
+        }
+    }
 protected:
     std::string id_;
     std::vector<condition::ptr> conditions_;

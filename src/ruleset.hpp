@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -14,7 +15,6 @@
 #include <collection.hpp>
 #include <exclusion/input_filter.hpp>
 #include <exclusion/rule_filter.hpp>
-#include <manifest.hpp>
 #include <mkmap.hpp>
 #include <obfuscator.hpp>
 #include <rule.hpp>
@@ -51,10 +51,32 @@ struct ruleset {
         for (const auto &[id, rule] : rules_) { insert_rule(rule); }
     }
 
+    [[nodiscard]] const std::vector<const char *> &get_root_addresses()
+    {
+        if (root_addresses.empty()) {
+            for (const auto &rule : rules) {
+                rule->get_addresses(unique_root_addresses);
+            }
+
+            for (const auto &[id, filter] : rule_filters) {
+                filter->get_addresses(unique_root_addresses);
+            }
+
+            for (const auto &[id, filter] : input_filters) {
+                filter->get_addresses(unique_root_addresses);
+            }
+
+            for (const auto &str : unique_root_addresses) {
+                root_addresses.emplace_back(str.c_str());
+            }
+        }
+
+        return root_addresses;
+    }
+
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
-    ddwaf::manifest manifest;
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
 
@@ -67,6 +89,11 @@ struct ruleset {
     std::unordered_map<std::string_view, priority_collection> base_priority_collections;
     std::unordered_map<std::string_view, collection> user_collections;
     std::unordered_map<std::string_view, collection> base_collections;
+
+    // Root addresses, lazily computed
+    std::unordered_set<std::string> unique_root_addresses;
+    // Root address memory to be returned to the API caller
+    std::vector<const char *> root_addresses;
 };
 
 } // namespace ddwaf

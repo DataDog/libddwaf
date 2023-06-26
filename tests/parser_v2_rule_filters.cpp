@@ -9,14 +9,13 @@
 
 TEST(TestParserV2RuleFilters, ParseEmptyFilter)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(R"([{id: 1}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -50,14 +49,13 @@ TEST(TestParserV2RuleFilters, ParseEmptyFilter)
 
 TEST(TestParserV2RuleFilters, ParseFilterWithoutID)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(R"([{rules_target: [{rule_id: 2939}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -91,7 +89,6 @@ TEST(TestParserV2RuleFilters, ParseFilterWithoutID)
 
 TEST(TestParserV2RuleFilters, ParseDuplicateUnconditional)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(
@@ -99,7 +96,7 @@ TEST(TestParserV2RuleFilters, ParseDuplicateUnconditional)
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -134,14 +131,13 @@ TEST(TestParserV2RuleFilters, ParseDuplicateUnconditional)
 
 TEST(TestParserV2RuleFilters, ParseUnconditionalTargetID)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(R"([{id: 1, rules_target: [{rule_id: 2939}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -181,14 +177,13 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetID)
 
 TEST(TestParserV2RuleFilters, ParseUnconditionalTargetTags)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(R"([{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -230,7 +225,6 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetTags)
 
 TEST(TestParserV2RuleFilters, ParseUnconditionalTargetPriority)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(
@@ -238,7 +232,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetPriority)
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -278,7 +272,6 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetPriority)
 
 TEST(TestParserV2RuleFilters, ParseUnconditionalMultipleTargets)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(
@@ -286,7 +279,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalMultipleTargets)
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -337,7 +330,6 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalMultipleTargets)
 
 TEST(TestParserV2RuleFilters, ParseMultipleUnconditional)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(
@@ -345,7 +337,7 @@ TEST(TestParserV2RuleFilters, ParseMultipleUnconditional)
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -404,7 +396,6 @@ TEST(TestParserV2RuleFilters, ParseMultipleUnconditional)
 
 TEST(TestParserV2RuleFilters, ParseDuplicateConditional)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(
@@ -412,7 +403,7 @@ TEST(TestParserV2RuleFilters, ParseDuplicateConditional)
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(filters.rule_filters.size(), 1);
@@ -421,7 +412,6 @@ TEST(TestParserV2RuleFilters, ParseDuplicateConditional)
 
 TEST(TestParserV2RuleFilters, ParseConditionalSingleCondition)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(
@@ -429,7 +419,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalSingleCondition)
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -469,7 +459,6 @@ TEST(TestParserV2RuleFilters, ParseConditionalSingleCondition)
 
 TEST(TestParserV2RuleFilters, ParseConditionalGlobal)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(
@@ -477,7 +466,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalGlobal)
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -512,7 +501,6 @@ TEST(TestParserV2RuleFilters, ParseConditionalGlobal)
 
 TEST(TestParserV2RuleFilters, ParseConditionalMultipleConditions)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(
@@ -520,7 +508,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalMultipleConditions)
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {

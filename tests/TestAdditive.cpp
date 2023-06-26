@@ -6,11 +6,6 @@
 
 #include "test.h"
 
-void populateManifest(ddwaf::manifest &manifest)
-{
-    for (const auto *key : {"value", "key", "mixed", "mixed2"}) { manifest.insert(key); }
-}
-
 TEST(TestAdditive, TestMultiCall)
 {
     // Initialize a PowerWAF rule

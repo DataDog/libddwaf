@@ -10,11 +10,11 @@
 
 namespace ddwaf {
 
-object_store::object_store(const manifest &m, ddwaf_object_free_fn free_fn)
-    : manifest_(m), obj_free_(free_fn)
+object_store::object_store(ddwaf_object_free_fn free_fn)
+    : obj_free_(free_fn)
 {
     if (obj_free_ != nullptr) {
-        objects_to_free_.reserve(8);
+        objects_to_free_.reserve(default_num_objects);
     }
 }
 
@@ -38,7 +38,7 @@ bool object_store::insert(const ddwaf_object &input)
         return false;
     }
 
-    std::size_t entries = static_cast<std::size_t>(input.nbEntries);
+    auto entries = static_cast<std::size_t>(input.nbEntries);
     if (entries == 0) {
         // Objects with no addresses are considered valid as they are harmless
         return true;
@@ -62,12 +62,7 @@ bool object_store::insert(const ddwaf_object &input)
         }
 
         std::string key(array[i].parameterName, length);
-        auto opt_target = manifest_.find(key);
-        if (!opt_target.has_value()) {
-            continue;
-        }
-
-        auto target = *opt_target;
+        auto target = get_target_index(key);
         objects_[target] = &array[i];
         latest_batch_.emplace(target);
     }
@@ -75,7 +70,7 @@ bool object_store::insert(const ddwaf_object &input)
     return true;
 }
 
-const ddwaf_object *object_store::get_target(manifest::target_type target) const
+const ddwaf_object *object_store::get_target(target_index target) const
 {
     auto it = objects_.find(target);
     return it != objects_.end() ? it->second : nullptr;

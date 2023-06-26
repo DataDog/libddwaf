@@ -18,7 +18,6 @@
 #include <context_allocator.hpp>
 #include <event.hpp>
 #include <iterator.hpp>
-#include <manifest.hpp>
 #include <object_store.hpp>
 #include <rule_processor/base.hpp>
 
@@ -31,7 +30,7 @@ public:
     enum class data_source : uint8_t { values, keys };
 
     struct target_type {
-        manifest::target_type root;
+        target_index root;
         std::string name;
         std::vector<std::string> key_path{};
         std::vector<PW_TRANSFORM_ID> transformers{};

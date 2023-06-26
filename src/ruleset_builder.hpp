@@ -7,7 +7,6 @@
 #pragma once
 
 #include "parser/specification.hpp"
-#include <manifest.hpp>
 #include <memory>
 #include <parameter.hpp>
 #include <rule.hpp>
@@ -63,9 +62,6 @@ protected:
     const ddwaf_object_free_fn free_fn_;
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator_;
 
-    // The same manifest is used across updates, so we need to ensure that
-    // unused targets are regularly cleaned up.
-    manifest target_manifest_;
     // Map representing rule data IDs to processor type, this is obtained
     // from parsing the ruleset ('rules' key).
     std::unordered_map<std::string, std::string> rule_data_ids_;
@@ -98,16 +94,10 @@ protected:
     rule_tag_map base_rules_by_tags_;
     rule_tag_map user_rules_by_tags_;
 
-    // The list of tagets used by the rules in final_rules_, used for manifest cleanup
-    std::unordered_set<manifest::target_type> inputs_from_base_rules_;
-    std::unordered_set<manifest::target_type> inputs_from_user_rules_;
-
     // Filters
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters_;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters_;
     // The list of targets used by rule_filters_, input_filters_ and their internal
-    // object filters, used for manifest cleanup
-    std::unordered_set<manifest::target_type> inputs_from_filters_;
 };
 
 } // namespace ddwaf

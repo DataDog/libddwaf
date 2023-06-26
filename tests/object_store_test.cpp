@@ -10,11 +10,10 @@ using namespace ddwaf;
 
 TEST(TestObjectStore, InsertInvalidObject)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
-    auto url = manifest.insert("url");
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root = DDWAF_OBJECT_INVALID;
 
@@ -30,9 +29,8 @@ TEST(TestObjectStore, InsertInvalidObject)
 
 TEST(TestObjectStore, InsertMalformedMap)
 {
-    ddwaf::manifest manifest;
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root = DDWAF_OBJECT_MAP;
     root.nbEntries = 30;
@@ -44,10 +42,9 @@ TEST(TestObjectStore, InsertMalformedMap)
 
 TEST(TestObjectStore, InsertMalformedMapKey)
 {
-    ddwaf::manifest manifest;
-    manifest.insert("key");
+    get_target_index("key");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object tmp;
     ddwaf_object root = DDWAF_OBJECT_MAP;
@@ -62,11 +59,10 @@ TEST(TestObjectStore, InsertMalformedMapKey)
 
 TEST(TestObjectStore, InsertStringObject)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
-    auto url = manifest.insert("url");
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root;
     ddwaf_object_string(&root, "hello");
@@ -83,11 +79,10 @@ TEST(TestObjectStore, InsertStringObject)
 
 TEST(TestObjectStore, InsertAndGetObject)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
-    auto url = manifest.insert("url");
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -106,11 +101,10 @@ TEST(TestObjectStore, InsertAndGetObject)
 
 TEST(TestObjectStore, InsertMultipleUniqueObjects)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
-    auto url = manifest.insert("url");
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object first;
     ddwaf_object second;
@@ -152,11 +146,10 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
 
 TEST(TestObjectStore, InsertMultipleOverlappingObjects)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
-    auto url = manifest.insert("url");
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object first;
     ddwaf_object second;
