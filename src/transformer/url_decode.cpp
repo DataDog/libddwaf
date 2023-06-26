@@ -71,8 +71,7 @@ bool url_decode::transform_impl(lazy_string &str)
                      ddwaf::isxdigit(str.at(read + 4)) && ddwaf::isxdigit(str.at(read + 5))) {
                 // Rebuild the codepoint from the hex
                 const auto codepoint =
-                    (uint16_t)(fromHex(str.at(read + 2)) << 12U |
-                               fromHex(str.at(read + 3)) << 8U |
+                    (uint16_t)(fromHex(str.at(read + 2)) << 12U | fromHex(str.at(read + 3)) << 8U |
                                fromHex(str.at(read + 4)) << 4U | fromHex(str.at(read + 5)));
 
                 read += 6;
@@ -80,8 +79,7 @@ bool url_decode::transform_impl(lazy_string &str)
                 if (codepoint <= 0x7f) {
                     str[write++] = static_cast<char>(codepoint);
                 } else {
-                    write += ddwaf::utf8::write_codepoint(
-                        codepoint, &str[write], read - write);
+                    write += ddwaf::utf8::write_codepoint(codepoint, &str[write], read - write);
                 }
             }
             // Fallback
