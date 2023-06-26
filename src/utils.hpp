@@ -34,7 +34,8 @@ namespace ddwaf {
 
 using target_index = std::size_t;
 
-inline target_index get_target_index(const std::string &address) {
+inline target_index get_target_index(const std::string &address)
+{
     return std::hash<std::string>{}(address);
 }
 

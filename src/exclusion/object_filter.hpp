@@ -241,7 +241,8 @@ public:
 
     explicit object_filter(const ddwaf::object_limits &limits = {}) : limits_(limits) {}
 
-    void insert(target_index target, std::string name, const std::vector<std::string_view> &key_path = {})
+    void insert(
+        target_index target, std::string name, const std::vector<std::string_view> &key_path = {})
     {
         target_paths_[target].insert(key_path);
         targets_.emplace(std::move(name), target);

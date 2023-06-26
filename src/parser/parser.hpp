@@ -28,16 +28,16 @@ void parse(
 
 namespace v2 {
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
-    std::unordered_map<std::string, std::string> &rule_data_ids,
-    const object_limits &limits, rule::source_type source = rule::source_type::base);
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    rule::source_type source = rule::source_type::base);
 
 rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_info &info,
     std::unordered_map<std::string, std::string> &rule_data_ids);
 
 override_spec_container parse_overrides(parameter::vector &override_array, base_section_info &info);
 
-filter_spec_container parse_filters(parameter::vector &filter_array,
-    base_section_info &info, const object_limits &limits);
+filter_spec_container parse_filters(
+    parameter::vector &filter_array, base_section_info &info, const object_limits &limits);
 
 } // namespace v2
 } // namespace ddwaf::parser

@@ -27,7 +27,8 @@ namespace ddwaf::parser::v1 {
 
 namespace {
 
-condition::ptr parseCondition(parameter::map &rule, std::vector<PW_TRANSFORM_ID> transformers, ddwaf::object_limits limits)
+condition::ptr parseCondition(
+    parameter::map &rule, std::vector<PW_TRANSFORM_ID> transformers, ddwaf::object_limits limits)
 {
     auto operation = at<std::string_view>(rule, "operation");
     auto params = at<parameter::map>(rule, "parameters");
@@ -106,7 +107,8 @@ condition::ptr parseCondition(parameter::map &rule, std::vector<PW_TRANSFORM_ID>
         std::move(targets), std::move(processor), std::string{}, limits);
 }
 
-void parseRule(parameter::map &rule, base_section_info &info, std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
+void parseRule(parameter::map &rule, base_section_info &info,
+    std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
     if (rule_ids.find(id) != rule_ids.end()) {

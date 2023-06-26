@@ -194,8 +194,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             rule_data_ids_.clear();
 
             if (!rules.empty()) {
-                base_rules_ = parser::v2::parse_rules(
-                    rules, section, rule_data_ids_, limits_);
+                base_rules_ = parser::v2::parse_rules(rules, section, rule_data_ids_, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all base rules");
                 base_rules_.clear();
@@ -218,8 +217,8 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
                 // be discarded after
                 decltype(rule_data_ids_) rule_data_ids;
 
-                auto new_user_rules = parser::v2::parse_rules(rules, section,
-                    rule_data_ids, limits_, rule::source_type::user);
+                auto new_user_rules = parser::v2::parse_rules(
+                    rules, section, rule_data_ids, limits_, rule::source_type::user);
                 user_rules_ = std::move(new_user_rules);
             } else {
                 DDWAF_DEBUG("Clearing all custom rules");
@@ -292,8 +291,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto exclusions = static_cast<parameter::vector>(it->second);
             if (!exclusions.empty()) {
-                exclusions_ =
-                    parser::v2::parse_filters(exclusions, section, limits_);
+                exclusions_ = parser::v2::parse_filters(exclusions, section, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all exclusions");
                 exclusions_.clear();

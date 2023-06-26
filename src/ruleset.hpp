@@ -54,9 +54,7 @@ struct ruleset {
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
     {
         if (root_addresses.empty()) {
-            for (const auto &rule : rules) {
-                rule->get_addresses(unique_root_addresses);
-            }
+            for (const auto &rule : rules) { rule->get_addresses(unique_root_addresses); }
 
             for (const auto &[id, filter] : rule_filters) {
                 filter->get_addresses(unique_root_addresses);

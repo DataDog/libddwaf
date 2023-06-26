@@ -10,8 +10,7 @@
 
 namespace ddwaf {
 
-object_store::object_store(ddwaf_object_free_fn free_fn)
-    : obj_free_(free_fn)
+object_store::object_store(ddwaf_object_free_fn free_fn) : obj_free_(free_fn)
 {
     if (obj_free_ != nullptr) {
         objects_to_free_.reserve(default_num_objects);

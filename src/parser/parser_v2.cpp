@@ -129,7 +129,9 @@ std::vector<PW_TRANSFORM_ID> parse_transformers(
     return transformers;
 }
 
-condition::ptr parse_rule_condition(const parameter::map &root, std::unordered_map<std::string, std::string> &rule_data_ids, condition::data_source source,  const std::vector<PW_TRANSFORM_ID> &transformers, const object_limits &limits)
+condition::ptr parse_rule_condition(const parameter::map &root,
+    std::unordered_map<std::string, std::string> &rule_data_ids, condition::data_source source,
+    const std::vector<PW_TRANSFORM_ID> &transformers, const object_limits &limits)
 {
     auto operation = at<std::string_view>(root, "operator");
     auto params = at<parameter::map>(root, "parameters");
@@ -180,7 +182,9 @@ condition::ptr parse_rule_condition(const parameter::map &root, std::unordered_m
         std::move(targets), std::move(processor), std::move(rule_data_id), limits);
 }
 
-rule_spec parse_rule(parameter::map &rule, std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits, rule::source_type source)
+rule_spec parse_rule(parameter::map &rule,
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    rule::source_type source)
 {
     std::vector<PW_TRANSFORM_ID> rule_transformers;
     auto data_source = ddwaf::condition::data_source::values;
@@ -193,8 +197,8 @@ rule_spec parse_rule(parameter::map &rule, std::unordered_map<std::string, std::
 
     for (const auto &cond_param : conditions_array) {
         auto cond = static_cast<parameter::map>(cond_param);
-        conditions.push_back(parse_rule_condition(
-            cond, rule_data_ids, data_source, rule_transformers, limits));
+        conditions.push_back(
+            parse_rule_condition(cond, rule_data_ids, data_source, rule_transformers, limits));
     }
 
     std::unordered_map<std::string, std::string> tags;
@@ -337,8 +341,7 @@ input_filter_spec parse_input_filter(const parameter::map &filter, const object_
         conditions.reserve(conditions_array.size());
 
         for (const auto &cond : conditions_array) {
-            conditions.push_back(
-                parse_filter_condition(static_cast<parameter::map>(cond), limits));
+            conditions.push_back(parse_filter_condition(static_cast<parameter::map>(cond), limits));
         }
     }
 
@@ -383,8 +386,7 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
         conditions.reserve(conditions_array.size());
 
         for (const auto &cond : conditions_array) {
-            conditions.push_back(
-                parse_filter_condition(static_cast<parameter::map>(cond), limits));
+            conditions.push_back(parse_filter_condition(static_cast<parameter::map>(cond), limits));
         }
     }
 
@@ -409,7 +411,9 @@ std::string index_to_id(unsigned idx) { return "index:" + std::to_string(idx); }
 
 } // namespace
 
-rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info, std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits, rule::source_type source)
+rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    rule::source_type source)
 {
     rule_spec_container rules;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
@@ -535,7 +539,8 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
     return overrides;
 }
 
-filter_spec_container parse_filters(parameter::vector &filter_array, base_section_info &info, const object_limits &limits)
+filter_spec_container parse_filters(
+    parameter::vector &filter_array, base_section_info &info, const object_limits &limits)
 {
     filter_spec_container filters;
     for (unsigned i = 0; i < filter_array.size(); i++) {

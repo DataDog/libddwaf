@@ -27,8 +27,7 @@ class context {
 public:
     using object_set = std::unordered_set<const ddwaf_object *>;
 
-    explicit context(ruleset::ptr ruleset)
-        : ruleset_(std::move(ruleset)), store_(ruleset_->free_fn)
+    explicit context(ruleset::ptr ruleset) : ruleset_(std::move(ruleset)), store_(ruleset_->free_fn)
     {
         rule_filter_cache_.reserve(ruleset_->rule_filters.size());
         input_filter_cache_.reserve(ruleset_->input_filters.size());
