@@ -38,6 +38,7 @@ public:
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] memory::vector<memory::string> get_current_path() const;
     [[nodiscard]] const ddwaf_object *get_underlying_object() { return current_; }
+    [[nodiscard]] const ddwaf_object *get_root_object() { return stack_.front().first; }
 
 protected:
     bool should_exclude(const ddwaf_object *obj) const

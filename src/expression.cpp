@@ -9,13 +9,15 @@
 #include <log.hpp>
 #include <memory>
 
-namespace ddwaf {
+namespace ddwaf::experimental {
 
 template <typename T>
-std::optional<event::match> expression::eval_target(condition &cond, cache_type &cache, T &it,
-    const rule_processor::base::ptr &processor, const std::vector<PW_TRANSFORM_ID> & /*transformers*/,
-    ddwaf::timer &deadline) const
+std::optional<event::match> expression::evaluator::eval_target(const condition &cond, T &it,
+    const rule_processor::base::ptr &processor,
+    const std::vector<PW_TRANSFORM_ID> & /*transformers*/)
 {
+    std::optional<event::match> last_result = std::nullopt;
+
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -25,101 +27,136 @@ std::optional<event::match> expression::eval_target(condition &cond, cache_type 
             continue;
         }
 
-        auto optional_match = processor->match_object(*it);
-        if (!optional_match.has_value()) {
+        {
+            auto optional_match = processor->match_object(*it);
+            if (!optional_match.has_value()) {
+                continue;
+            }
+            last_result = std::move(optional_match);
+        }
+
+        last_result->key_path = std::move(it.get_current_path());
+        // TODO set the root object only after returning
+        cache.set_eval_entities(cond.index, *it, it.get_root_object(), last_result->resolved);
+
+        bool chain_result = true;
+        for (condition::index_type i = 0; i < cond.dependents.scalar.size(); ++i) {
+            const auto &next_cond = conditions[i];
+            if (!eval_condition(next_cond)) {
+                chain_result = false;
+                break;
+            }
+        }
+
+        if (!chain_result) {
             continue;
         }
 
-        if (!cond.dependents.scalar.empty()) {
-            for (auto index : cond.dependents.scalar) {
-                
-        optional_match->key_path = std::move(it.get_current_path());
-        // If this target matched, we can stop processing
-        return optional_match;
+        break;
     }
 
-    return std::nullopt;
+    return last_result;
 }
 
-
-bool expression::eval_condition(std::size_t index, cache_type &cache, const object_store &store,
-    const std::unordered_set<const ddwaf_object *> &objects_excluded,
-    ddwaf::timer &deadline) const
+bool expression::evaluator::eval_condition(const condition &cond)
 {
-    const auto &cond = conditions_[index];
-    auto  &cond_cache = cache.condition_cache[index];
+    auto &cond_cache = cache.get_condition_cache(cond.index);
 
     for (const auto &target : cond.targets) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (target.scope == eval_scope::local ||
-            cond_cache.targets.find(target.root) != cond_cache.targets.end()) {
+        if (cond_cache.targets.find(target.root) != cond_cache.targets.end()) {
             continue;
         }
 
         // TODO: iterators could be cached to avoid reinitialisation
-        const auto *object = store.get_target(target.root);
-        if (object == nullptr) {
-            continue;
+        const ddwaf_object *object = nullptr;
+        if (target.scope == condition::eval_scope::global) {
+            object = store.get_target(target.root);
+            if (object == nullptr) {
+                continue;
+            }
+        } else {
+            object = cache.get_eval_entity(target.condition_index, target.entity);
         }
 
         std::optional<event::match> optional_match;
-        if (target.source == data_source::keys) {
-            object::key_iterator it(object, target.key_path, objects_excluded, limits_);
-            optional_match = eval_target(it, cond.processor, target.transformers, deadline);
+        if (target.source == condition::data_source::keys) {
+            object::key_iterator it(object, target.key_path, objects_excluded, limits);
+            optional_match = eval_target(cond, it, cond.processor, target.transformers);
         } else {
-            object::value_iterator it(object, target.key_path, objects_excluded, limits_);
-            optional_match = eval_target(it, cond.processor, target.transformers, deadline);
+            object::value_iterator it(object, target.key_path, objects_excluded, limits);
+            optional_match = eval_target(cond, it, cond.processor, target.transformers);
         }
 
-        if (optional_match.has_value()) {
-            optional_match->address = target.name;
-
-            DDWAF_TRACE("Target %s matched parameter value %s",
-                target.name.c_str(), optional_match->resolved.c_str());
-
-            cond_cache.result = optional_match;
-            return true;
+        if (!optional_match.has_value()) {
+            continue;
         }
+
+        optional_match->address = target.name;
+        cond_cache.result = optional_match;
+
+        bool chain_result = true;
+        for (condition::index_type i = 0; i < cond.dependents.object.size(); ++i) {
+            const auto &next_cond = conditions[i];
+            if (!eval_condition(next_cond)) {
+                chain_result = false;
+                break;
+            }
+        }
+
+        if (!chain_result) {
+            continue;
+        }
+
+        DDWAF_TRACE("Target %s matched parameter value %s", target.name.c_str(),
+            optional_match->resolved.c_str());
+
+        return true;
     }
 
     return false;
 }
 
-bool expression::eval(cache_type &cache, const object_store &store,
-    const std::unordered_set<const ddwaf_object *> &objects_excluded,
-    ddwaf::timer &deadline) const
+bool expression::evaluator::eval()
 {
-    for (std::size_t i = 0; i < conditions_.size(); ++i) {
-        auto res = eval_condition(i, cache, store, objects_excluded, deadline);
+    for (const auto &cond : conditions) {
+        if (!eval_condition(cond)) {
+            return false;
+        }
     }
-
     return true;
 }
 
+bool expression::eval(cache_type &cache, const object_store &store,
+    const std::unordered_set<const ddwaf_object *> &objects_excluded, ddwaf::timer &deadline) const
+{
+    evaluator runner{deadline, limits_, conditions_, store, objects_excluded, cache};
+    runner.eval();
+    return true;
+}
 
-expression::condition::condition(std::vector<expression::target_type> targets_,
-        std::shared_ptr<rule_processor::base> processor_):
-    targets(std::move(targets_)), processor(std::move(processor_))
+condition::condition(index_type index_, std::vector<target_type> targets_,
+    std::shared_ptr<rule_processor::base> processor_)
+    : index(index_), targets(std::move(targets_)), processor(std::move(processor_))
 {
     for (const auto &target : targets) {
-        if (target.scope == expression::eval_scope::global) { continue; }
+        if (target.scope == eval_scope::global) {
+            continue;
+        }
 
-        switch(target.entity) {
-        case expression::eval_entity::resolved:
-            dependents.resolved.emplace(target.condition_index);
-            break;
-        case expression::eval_entity::scalar:
+        switch (target.entity) {
+        case eval_entity::resolved:
+        case eval_entity::scalar:
             dependents.scalar.emplace(target.condition_index);
             break;
-        case expression::eval_entity::object:
+        case eval_entity::object:
             dependents.object.emplace(target.condition_index);
             break;
         }
     }
 }
 
-
-} // namespace ddwaf
+} // namespace ddwaf::experimental

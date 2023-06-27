@@ -21,15 +21,20 @@
 #include <object_store.hpp>
 #include <rule_processor/base.hpp>
 
-namespace ddwaf {
+namespace ddwaf::experimental {
 
-class expression {
-public:
-    using ptr = std::shared_ptr<expression>;
+struct condition {
+    using ptr = std::shared_ptr<condition>;
+    using index_type = std::size_t;
+
+    struct cache_type {
+        std::unordered_set<target_index> targets;
+        std::optional<event::match> result;
+    };
 
     enum class data_source : uint8_t { values, keys };
     enum class eval_scope : uint8_t { global, local };
-    enum class eval_entity : uint8_t {resolved, scalar, object};
+    enum class eval_entity : uint8_t { resolved, scalar, object };
 
     struct target_type {
         eval_scope scope{eval_scope::global};
@@ -50,65 +55,103 @@ public:
         data_source source{data_source::values};
     };
 
-    struct condition {
-        struct cache_type {
-            memory::unordered_set<target_index> targets;
-            std::optional<event::match> result;
-        };
+    condition(index_type index_, std::vector<target_type> targets_,
+        std::shared_ptr<rule_processor::base> processor_);
 
-        condition(std::vector<expression::target_type> targets,
-            std::shared_ptr<rule_processor::base> processor);
+    index_type index;
+    std::vector<target_type> targets;
+    std::shared_ptr<rule_processor::base> processor;
+    struct {
+        std::unordered_set<std::size_t> scalar{};
+        std::unordered_set<std::size_t> object{};
+    } dependents;
+};
 
-        std::vector<target_type> targets;
-        std::shared_ptr<rule_processor::base> processor;
-        struct {
-            std::unordered_set<std::size_t> resolved{};
-            std::unordered_set<std::size_t> scalar{};
-            std::unordered_set<std::size_t> object{};
-        } dependents;
-    };
+class expression {
+public:
+    using ptr = std::shared_ptr<expression>;
 
     struct eval_result {
-        std::string resolved;
-        const ddwaf_object *scalar;
-        const ddwaf_object *object;
+        bool valid{false};
+        ddwaf_object resolved{nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID};
+        const ddwaf_object *scalar{nullptr};
+        const ddwaf_object *object{nullptr};
     };
 
     struct cache_type {
-        memory::vector<condition::cache_type> condition_cache{};
+        std::vector<condition::cache_type> conditions{};
+        std::vector<eval_result> store{};
+
+        condition::cache_type &get_condition_cache(condition::index_type index)
+        {
+            return conditions[index];
+        }
 
         // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-/*        void cache_result(std::size_t index, target_index target, std::optional<eval_result> &result) {*/
-            /*if (index >= condition_cache.size()) { return; }*/
+        void set_eval_entities(condition::index_type index, const ddwaf_object *scalar,
+            const ddwaf_object *object, const memory::string &resolved)
+        {
+            auto &eval_res = store[index];
+            eval_res.valid = true;
+            eval_res.scalar = scalar;
+            eval_res.object = object;
+            ddwaf_object_stringl_nc(&eval_res.resolved, resolved.c_str(), resolved.size());
+        }
 
-            /*if (result.has_value()) {*/
-                /*results[index] = std::move(*result);*/
-                /*condition_cache[index].result = true;*/
-            /*}*/
-            /*condition_cache[index].targets.emplace(target);*/
-        /*}*/
+        const ddwaf_object *get_eval_entity(
+            condition::index_type index, condition::eval_entity entity)
+        {
+            auto &result = store[index];
+            if (!result.valid) {
+                return nullptr;
+            }
 
-        /*void invalidate(std::size_t index) {*/
-            /*if (index >= condition_cache.size()) { return; }*/
+            if (entity == condition::eval_entity::resolved) {
+                return &result.resolved;
+            }
 
-            /*condition_cache[index].result = false;*/
-            /*results[index] = {};*/
-        /*}*/
+            if (entity == condition::eval_entity::scalar) {
+                return result.scalar;
+            }
+
+            if (entity == condition::eval_entity::object) {
+                return result.object;
+            }
+
+            return nullptr;
+        }
     };
 
-    explicit expression(std::vector<condition> &&conditions, ddwaf::object_limits limits = ddwaf::object_limits()):
-        limits_(limits), conditions_(std::move(conditions)) {}
+    struct evaluator {
+        bool eval();
+        bool eval_condition(const condition &cond);
+
+        template <typename T>
+        std::optional<event::match> eval_target(const condition &cond, T &it,
+            const rule_processor::base::ptr &processor,
+            const std::vector<PW_TRANSFORM_ID> & /*transformers*/);
+
+        ddwaf::timer &deadline;
+        const ddwaf::object_limits &limits;
+        const std::vector<condition> &conditions;
+        const object_store &store;
+        const std::unordered_set<const ddwaf_object *> &objects_excluded;
+        cache_type &cache;
+    };
+
+    explicit expression(
+        std::vector<condition> &&conditions, ddwaf::object_limits limits = ddwaf::object_limits())
+        : limits_(limits), conditions_(std::move(conditions))
+    {}
 
     bool eval(cache_type &cache, const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
         ddwaf::timer &deadline) const;
 
 protected:
-
     template <typename T>
-    std::optional<event::match> eval_target(condition &cond, cache_type &cache, T &it,
-        const rule_processor::base::ptr &processor, const std::vector<PW_TRANSFORM_ID> &transformers,
-        ddwaf::timer &deadline) const;
+    std::optional<event::match> eval_target(T &it, const rule_processor::base::ptr &processor,
+        const std::vector<PW_TRANSFORM_ID> &transformers, ddwaf::timer &deadline) const;
 
     bool eval_condition(std::size_t index, cache_type &cache, const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
@@ -118,4 +161,4 @@ protected:
     std::vector<condition> conditions_;
 };
 
-} // namespace ddwaf
+} // namespace ddwaf::experimental
