@@ -27,20 +27,23 @@ class expression {
 public:
     enum class data_source : uint8_t { values, keys };
     enum class address_scope : uint8_t { global, local };
-    enum class match_type : uint8_t {resolved, scalar, object};
+    enum class eval_target : uint8_t {resolved, scalar, object};
 
     struct target_type {
         address_scope scope{address_scope::global};
-
-        // Global scope
-        target_index root;
         std::string name;
 
-        // Local scope
-        std::size_t condition_index;
-        match_type match{match_type::object};
+        // Global scope
+        struct {
+            target_index root;
+            std::vector<std::string> key_path{};
+        } global;
 
-        std::vector<std::string> key_path{};
+        // Local scope
+        struct {
+            std::size_t index;
+            eval_target target{eval_target::object};
+        } local;
 
         // Transformers
         std::vector<PW_TRANSFORM_ID> transformers{};
@@ -49,32 +52,48 @@ public:
 
     struct condition {
         struct cache_type {
-            memory::unordered_set<target_index> targets_evaluated;
-            std::string resolved{};
-            ddwaf_object *scalar{nullptr};
-            ddwaf_object *object{nullptr};
+            bool result{false};
+            memory::unordered_set<target_index> evaluated_targets;
         };
 
-        std::vector<target_type> targets_;
-        std::shared_ptr<rule_processor::base> processor_;
-        std::string data_id_;
+        std::vector<target_type> targets;
+        std::shared_ptr<rule_processor::base> processor;
+    };
+
+    struct eval_result {
+        std::string resolved;
+        const ddwaf_object *scalar;
+        const ddwaf_object *object;
     };
 
     struct cache_type {
-        explicit cache_type(std::size_t num_conditions) {
-            conditions.reserve(num_conditions);
+        std::vector<eval_result> results;
+        memory::vector<condition::cache_type> condition_cache{};
+
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        void cache_result(std::size_t index, target_index target, std::optional<eval_result> &result) {
+            if (index >= condition_cache.size()) { return; }
+
+            if (result.has_value()) {
+                results[index] = std::move(*result);
+                condition_cache[index].result = true;
+            }
+            condition_cache[index].evaluated_targets.emplace(target);
         }
 
-        std::vector<condition::cache_type> conditions;
-    };
+        void invalidate(std::size_t index) {
+            if (index >= condition_cache.size()) { return; }
 
+            condition_cache[index].result = false;
+            results[index] = {};
+        }
+    };
 
     explicit expression(std::vector<condition> &&conditions, ddwaf::object_limits limits = ddwaf::object_limits()):
         limits_(limits), conditions_(std::move(conditions)) {}
 
-    bool eval(const object_store &store,
+    bool eval(cache_type &cache, const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
 protected:
