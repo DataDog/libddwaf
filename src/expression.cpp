@@ -79,6 +79,10 @@ std::optional<event::match> expression::evaluator::eval_target(const condition &
         last_result = std::move(optional_match);
         last_result->key_path = std::move(it.get_current_path());
 
+        if (cond.children.scalar.empty()) {
+            break;
+        }
+
         cache.set_eval_highlight(&cond, last_result->matched);
         cache.set_eval_scalar(&cond, *it);
 
@@ -150,18 +154,20 @@ bool expression::evaluator::eval_condition(const condition &cond, eval_scope sco
         optional_match->address = target.name;
         cond_cache.result = optional_match;
 
-        cache.set_eval_object(&cond, object);
+        if (!cond.children.object.empty()) {
+            cache.set_eval_object(&cond, object);
 
-        bool chain_result = true;
-        for (const auto *next_cond : cond.children.object) {
-            if (!eval_condition(*next_cond, eval_scope::local)) {
-                chain_result = false;
-                break;
+            bool chain_result = true;
+            for (const auto *next_cond : cond.children.object) {
+                if (!eval_condition(*next_cond, eval_scope::local)) {
+                    chain_result = false;
+                    break;
+                }
             }
-        }
 
-        if (!chain_result) {
-            continue;
+            if (!chain_result) {
+                continue;
+            }
         }
 
         DDWAF_TRACE("Target %s matched parameter value %s", target.name.c_str(),
