@@ -36,13 +36,12 @@ std::optional<event::match> expression::evaluator::eval_target(const condition &
         }
 
         last_result->key_path = std::move(it.get_current_path());
-        cache.set_eval_highlight(cond.index, last_result->matched);
-        cache.set_eval_scalar(cond.index, *it);
+        cache.set_eval_highlight(&cond, last_result->matched);
+        cache.set_eval_scalar(&cond, *it);
 
         bool chain_result = true;
-        for (auto index : cond.dependents.scalar) {
-            const auto &next_cond = conditions[index];
-            if (!eval_condition(next_cond, condition::eval_scope::local)) {
+        for (const auto *next_cond : cond.children.scalar) {
+            if (!eval_condition(*next_cond, eval_scope::local)) {
                 chain_result = false;
                 break;
             }
@@ -59,9 +58,9 @@ std::optional<event::match> expression::evaluator::eval_target(const condition &
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-bool expression::evaluator::eval_condition(const condition &cond, condition::eval_scope scope)
+bool expression::evaluator::eval_condition(const condition &cond, eval_scope scope)
 {
-    auto &cond_cache = cache.get_condition_cache(cond.index);
+    auto &cond_cache = cache.get_condition_cache(cond);
 
     if (cond_cache.result.has_value()) {
         return true;
@@ -79,22 +78,18 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::eva
 
         // TODO: iterators could be cached to avoid reinitialisation
         const ddwaf_object *object = nullptr;
-        if (target.scope == condition::eval_scope::global) {
+        if (target.scope == eval_scope::global) {
             object = store.get_target(target.root);
         } else {
-            object = cache.get_eval_entity(target.condition_index, target.entity);
+            object = cache.get_eval_entity(target.parent, target.entity);
         }
 
         if (object == nullptr) {
-            DDWAF_TRACE("No object found for target %s", target.name.c_str());
             continue;
         }
 
-        DDWAF_TRACE("Original object %p", object);
-        DDWAF_TRACE("Value %.*s", (int)object->nbEntries, object->stringValue);
-
         std::optional<event::match> optional_match;
-        if (target.source == condition::data_source::keys) {
+        if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
             optional_match = eval_target(cond, it, cond.processor, target.transformers);
         } else {
@@ -103,7 +98,7 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::eva
         }
 
         // Only cache global targets
-        if (target.scope == condition::eval_scope::global) {
+        if (target.scope == eval_scope::global) {
             cond_cache.targets.emplace(target.root);
         }
 
@@ -114,14 +109,11 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::eva
         optional_match->address = target.name;
         cond_cache.result = optional_match;
 
-        cache.set_eval_object(cond.index, object);
+        cache.set_eval_object(&cond, object);
 
-        DDWAF_TRACE("Match! Checking chain");
         bool chain_result = true;
-        for (auto index : cond.dependents.object) {
-            const auto &next_cond = conditions[index];
-            if (!eval_condition(next_cond, condition::eval_scope::local)) {
-                DDWAF_TRACE("Chain %lu didn't match", index)
+        for (const auto *next_cond : cond.children.object) {
+            if (!eval_condition(*next_cond, eval_scope::local)) {
                 chain_result = false;
                 break;
             }
@@ -144,8 +136,7 @@ bool expression::evaluator::eval()
 {
     // NOLINTNEXTLINE(readability-use-anyofallof)
     for (const auto &cond : conditions) {
-        DDWAF_TRACE("Condition %lu", cond.index);
-        if (!eval_condition(cond, condition::eval_scope::global)) {
+        if (!eval_condition(*cond, eval_scope::global)) {
             return false;
         }
     }

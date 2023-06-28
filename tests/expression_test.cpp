@@ -10,22 +10,24 @@
 
 using namespace ddwaf;
 
+using expression = experimental::expression;
+
 TEST(TestExpression, SimpleMatch)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
         cond.processor = std::make_unique<rule_processor::regex_match>(".*", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -37,40 +39,39 @@ TEST(TestExpression, SimpleMatch)
 
     ddwaf::timer deadline{2s};
 
-    experimental::expression::cache_type cache;
+    expression::cache_type cache;
     EXPECT_TRUE(expr.eval(cache, store, {}, deadline));
 }
 
 TEST(TestExpression, MultiInputMatchOnSecond)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition cond;
+        expression::condition cond;
 
         {
-            experimental::condition::target_type target;
+            expression::condition::target_type target;
             target.name = "server.request.query";
             target.root = get_target_index(target.name);
             cond.targets.emplace_back(std::move(target));
         }
 
         {
-            experimental::condition::target_type target;
+            expression::condition::target_type target;
             target.name = "server.request.body";
             target.root = get_target_index(target.name);
             cond.targets.emplace_back(std::move(target));
         }
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("^value$", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
     ddwaf::object_store store;
-    experimental::expression::cache_type cache;
+    expression::cache_type cache;
 
     {
         ddwaf_object root;
@@ -101,24 +102,23 @@ TEST(TestExpression, MultiInputMatchOnSecond)
 
 TEST(TestExpression, DuplicateInput)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("^value$", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
-    experimental::expression::cache_type cache;
+    expression::cache_type cache;
 
     {
         ddwaf_object root;
@@ -151,22 +151,21 @@ TEST(TestExpression, DuplicateInput)
 
 TEST(TestExpression, MatchDuplicateInputNoCache)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("^value$", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
     {
         ddwaf_object root;
@@ -179,7 +178,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
         ddwaf::timer deadline{2s};
 
-        experimental::expression::cache_type cache;
+        expression::cache_type cache;
         EXPECT_FALSE(expr.eval(cache, store, {}, deadline));
     }
 
@@ -194,45 +193,43 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
         ddwaf::timer deadline{2s};
 
-        experimental::expression::cache_type cache;
+        expression::cache_type cache;
         EXPECT_TRUE(expr.eval(cache, store, {}, deadline));
     }
 }
 
 TEST(TestExpression, TwoConditionsSingleInputNoMatch)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("value", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
     {
 
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 1;
         cond.processor = std::make_unique<rule_processor::regex_match>("^value$", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
-    experimental::expression::cache_type cache;
+    expression::cache_type cache;
 
     {
         ddwaf_object root;
@@ -265,36 +262,34 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
 
 TEST(TestExpression, TwoConditionsSingleInputMatch)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("value", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
     {
 
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 1;
         cond.processor = std::make_unique<rule_processor::regex_match>("^value$", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -306,45 +301,43 @@ TEST(TestExpression, TwoConditionsSingleInputMatch)
 
     ddwaf::timer deadline{2s};
 
-    experimental::expression::cache_type cache;
+    expression::cache_type cache;
     EXPECT_TRUE(expr.eval(cache, store, {}, deadline));
 }
 
 TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("query", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
     {
 
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.body";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 1;
         cond.processor = std::make_unique<rule_processor::regex_match>("body", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
     ddwaf::object_store store;
-    experimental::expression::cache_type cache;
+    expression::cache_type cache;
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -361,39 +354,37 @@ TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
 
 TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("query", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
     {
 
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.body";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 1;
         cond.processor = std::make_unique<rule_processor::regex_match>("body", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
     ddwaf::object_store store;
-    experimental::expression::cache_type cache;
+    expression::cache_type cache;
 
     {
         ddwaf_object root;
@@ -426,40 +417,39 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
 
 TEST(TestExpression, SingleObjectChain)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("query", 0, true);
-        cond.dependents.object.emplace(1);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
     {
 
-        experimental::condition::target_type target;
-        target.scope = experimental::condition::eval_scope::local;
-        target.condition_index = 0;
-        target.entity = experimental::condition::eval_entity::object;
+        expression::condition::target_type target;
+        target.scope = expression::eval_scope::local;
+        target.parent = conditions[0].get();
+        target.entity = expression::eval_entity::object;
         target.name = "match.0.object";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 1;
         cond.processor = std::make_unique<rule_processor::regex_match>("^thermometer$", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
+
+        conditions[0]->children.object.emplace(conditions.back().get());
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
     {
         ddwaf_object root;
@@ -472,7 +462,7 @@ TEST(TestExpression, SingleObjectChain)
 
         ddwaf::timer deadline{2s};
 
-        experimental::expression::cache_type cache;
+        expression::cache_type cache;
         EXPECT_FALSE(expr.eval(cache, store, {}, deadline));
     }
 
@@ -492,47 +482,46 @@ TEST(TestExpression, SingleObjectChain)
 
         ddwaf::timer deadline{2s};
 
-        experimental::expression::cache_type cache;
+        expression::cache_type cache;
         EXPECT_TRUE(expr.eval(cache, store, {}, deadline));
     }
 }
 
 TEST(TestExpression, SingleScalarChain)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("query", 0, true);
-        cond.dependents.object.emplace(1);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
     {
 
-        experimental::condition::target_type target;
-        target.scope = experimental::condition::eval_scope::local;
-        target.condition_index = 0;
-        target.entity = experimental::condition::eval_entity::scalar;
+        expression::condition::target_type target;
+        target.scope = expression::eval_scope::local;
+        target.parent = conditions[0].get();
+        target.entity = expression::eval_entity::scalar;
         target.name = "match.0.scalar";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 1;
         cond.processor = std::make_unique<rule_processor::regex_match>("^query$", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
+
+        conditions[0]->children.object.emplace(conditions.back().get());
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
     {
         ddwaf_object root;
@@ -551,7 +540,7 @@ TEST(TestExpression, SingleScalarChain)
 
         ddwaf::timer deadline{2s};
 
-        experimental::expression::cache_type cache;
+        expression::cache_type cache;
         EXPECT_FALSE(expr.eval(cache, store, {}, deadline));
     }
 
@@ -572,47 +561,46 @@ TEST(TestExpression, SingleScalarChain)
 
         ddwaf::timer deadline{2s};
 
-        experimental::expression::cache_type cache;
+        expression::cache_type cache;
         EXPECT_TRUE(expr.eval(cache, store, {}, deadline));
     }
 }
 
 TEST(TestExpression, SingleHighlightChain)
 {
-    std::vector<experimental::condition> conditions;
+    std::vector<expression::condition::ptr> conditions;
 
     {
-        experimental::condition::target_type target;
+        expression::condition::target_type target;
         target.name = "server.request.query";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 0;
         cond.processor = std::make_unique<rule_processor::regex_match>("(query).*", 0, true);
-        cond.dependents.object.emplace(1);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
     }
 
     {
 
-        experimental::condition::target_type target;
-        target.scope = experimental::condition::eval_scope::local;
-        target.condition_index = 0;
-        target.entity = experimental::condition::eval_entity::highlight;
+        expression::condition::target_type target;
+        target.scope = expression::eval_scope::local;
+        target.parent = conditions[0].get();
+        target.entity = expression::eval_entity::highlight;
         target.name = "match.0.highlight";
         target.root = get_target_index(target.name);
 
-        experimental::condition cond;
+        expression::condition cond;
         cond.targets.emplace_back(std::move(target));
 
-        cond.index = 1;
         cond.processor = std::make_unique<rule_processor::regex_match>("^query$", 0, true);
-        conditions.emplace_back(std::move(cond));
+        conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
+
+        conditions[0]->children.object.emplace(conditions.back().get());
     }
 
-    experimental::expression expr(std::move(conditions));
+    expression expr(std::move(conditions));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -624,6 +612,6 @@ TEST(TestExpression, SingleHighlightChain)
 
     ddwaf::timer deadline{2s};
 
-    experimental::expression::cache_type cache;
+    expression::cache_type cache;
     EXPECT_TRUE(expr.eval(cache, store, {}, deadline));
 }
