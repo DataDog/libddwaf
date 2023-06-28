@@ -518,7 +518,7 @@ TEST(TestExpression, SingleScalarChain)
         cond.processor = std::make_unique<rule_processor::regex_match>("^query$", 0, true);
         conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
 
-        conditions[0]->children.object.emplace(conditions.back().get());
+        conditions[0]->children.scalar.emplace(conditions.back().get());
     }
 
     expression expr(std::move(conditions));
@@ -530,7 +530,6 @@ TEST(TestExpression, SingleScalarChain)
 
         ddwaf_object_map(&query);
         ddwaf_object_map_add(&query, "value1", ddwaf_object_string(&tmp, "some query"));
-        ddwaf_object_map_add(&query, "value2", ddwaf_object_string(&tmp, "query"));
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", &query);
@@ -550,8 +549,8 @@ TEST(TestExpression, SingleScalarChain)
         ddwaf_object query;
 
         ddwaf_object_map(&query);
-        ddwaf_object_map_add(&query, "value1", ddwaf_object_string(&tmp, "query"));
         ddwaf_object_map_add(&query, "value2", ddwaf_object_string(&tmp, "some query"));
+        ddwaf_object_map_add(&query, "value1", ddwaf_object_string(&tmp, "query"));
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", &query);
@@ -597,7 +596,7 @@ TEST(TestExpression, SingleHighlightChain)
         cond.processor = std::make_unique<rule_processor::regex_match>("^query$", 0, true);
         conditions.emplace_back(std::make_shared<expression::condition>(std::move(cond)));
 
-        conditions[0]->children.object.emplace(conditions.back().get());
+        conditions[0]->children.scalar.emplace(conditions.back().get());
     }
 
     expression expr(std::move(conditions));

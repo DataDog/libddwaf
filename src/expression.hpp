@@ -84,7 +84,8 @@ public:
 
         void set_eval_highlight(const condition *cond, const memory::string &str)
         {
-            ddwaf_object_stringl(&store[cond].highlight, str.c_str(), str.size());
+            auto &res = store[cond];
+            ddwaf_object_stringl_nc(&res.highlight, str.c_str(), str.size());
         }
 
         void set_eval_scalar(const condition *cond, const ddwaf_object *obj)

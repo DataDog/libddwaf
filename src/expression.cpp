@@ -36,6 +36,7 @@ std::optional<event::match> expression::evaluator::eval_target(const condition &
         }
 
         last_result->key_path = std::move(it.get_current_path());
+
         cache.set_eval_highlight(&cond, last_result->matched);
         cache.set_eval_scalar(&cond, *it);
 
