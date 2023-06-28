@@ -11,10 +11,54 @@
 
 namespace ddwaf::experimental {
 
+std::optional<event::match> expression::evaluator::eval_object(const ddwaf_object *object,
+    const rule_processor::base::ptr &processor,
+    const std::vector<PW_TRANSFORM_ID> &transformers) const
+{
+    const bool has_transform = !transformers.empty();
+    bool transform_required = false;
+
+    if (has_transform) {
+        // This codepath is shared with the mutable path. The structure can't be const :/
+        transform_required =
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+            PWTransformer::doesNeedTransform(transformers, const_cast<ddwaf_object *>(object));
+    }
+
+    const size_t length =
+        find_string_cutoff(object->stringValue, object->nbEntries, limits.max_string_length);
+
+    // If we don't have transform to perform, or if they're irrelevant, no need to waste time
+    // copying and allocating data
+    if (!has_transform || !transform_required) {
+        return processor->match({object->stringValue, length});
+    }
+
+    ddwaf_object copy;
+    ddwaf_object_stringl(&copy, (const char *)object->stringValue, length);
+
+    const std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> scope(
+        &copy, ddwaf_object_free);
+
+    // Transform it and pick the pointer to process
+    bool transformFailed = false;
+    for (const PW_TRANSFORM_ID &transform : transformers) {
+        transformFailed = !PWTransformer::transform(transform, &copy);
+        if (transformFailed || (copy.type == DDWAF_OBJ_STRING && copy.nbEntries == 0)) {
+            break;
+        }
+    }
+
+    if (transformFailed) {
+        return processor->match({object->stringValue, length});
+    }
+
+    return processor->match_object(&copy);
+}
+
 template <typename T>
 std::optional<event::match> expression::evaluator::eval_target(const condition &cond, T &it,
-    const rule_processor::base::ptr &processor,
-    const std::vector<PW_TRANSFORM_ID> & /*transformers*/)
+    const rule_processor::base::ptr &processor, const std::vector<PW_TRANSFORM_ID> &transformers)
 {
     std::optional<event::match> last_result = std::nullopt;
 
@@ -27,14 +71,12 @@ std::optional<event::match> expression::evaluator::eval_target(const condition &
             continue;
         }
 
-        {
-            auto optional_match = processor->match_object(*it);
-            if (!optional_match.has_value()) {
-                continue;
-            }
-            last_result = std::move(optional_match);
+        auto optional_match = eval_object(*it, processor, transformers);
+        if (!optional_match.has_value()) {
+            continue;
         }
 
+        last_result = std::move(optional_match);
         last_result->key_path = std::move(it.get_current_path());
 
         cache.set_eval_highlight(&cond, last_result->matched);
@@ -48,11 +90,9 @@ std::optional<event::match> expression::evaluator::eval_target(const condition &
             }
         }
 
-        if (!chain_result) {
-            continue;
+        if (chain_result) {
+            break;
         }
-
-        break;
     }
 
     return last_result;

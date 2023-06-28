@@ -7,11 +7,13 @@
 #pragma once
 
 #include "log.hpp"
+#include "utils.hpp"
 #include <atomic>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <PWTransformer.h>
@@ -122,7 +124,11 @@ public:
         template <typename T>
         std::optional<event::match> eval_target(const condition &cond, T &it,
             const rule_processor::base::ptr &processor,
-            const std::vector<PW_TRANSFORM_ID> & /*transformers*/);
+            const std::vector<PW_TRANSFORM_ID> &transformers);
+
+        std::optional<event::match> eval_object(const ddwaf_object *object,
+            const rule_processor::base::ptr &processor,
+            const std::vector<PW_TRANSFORM_ID> &transformers) const;
 
         ddwaf::timer &deadline;
         const ddwaf::object_limits &limits;
@@ -132,8 +138,7 @@ public:
         cache_type &cache;
     };
 
-    explicit expression(std::vector<condition::ptr> &&conditions,
-        ddwaf::object_limits limits = ddwaf::object_limits())
+    explicit expression(std::vector<condition::ptr> &&conditions, ddwaf::object_limits limits = {})
         : limits_(limits), conditions_(std::move(conditions))
     {}
 
@@ -148,9 +153,75 @@ protected:
 
 class expression_builder {
 public:
-    expression_builder() = default;
+    explicit expression_builder(std::size_t num_conditions, ddwaf::object_limits limits = {})
+        : limits_(limits)
+    {
+        conditions_.reserve(num_conditions);
+    }
+
+    template <typename T, typename... Args> void start_condition(Args... args)
+    {
+        auto cond = std::make_shared<expression::condition>();
+        cond->processor = std::make_unique<T>(args...);
+        conditions_.emplace_back(std::move(cond));
+    }
+
+    void add_global_target(std::string name, std::vector<std::string> key_path = {},
+        std::vector<PW_TRANSFORM_ID> transformers = {},
+        expression::data_source source = expression::data_source::values)
+    {
+        expression::condition::target_type target;
+        target.scope = expression::eval_scope::global;
+        target.root = get_target_index(name);
+        target.key_path = std::move(key_path);
+        target.name = std::move(name);
+        target.transformers = std::move(transformers);
+        target.source = source;
+
+        auto &cond = conditions_.back();
+        cond->targets.emplace_back(std::move(target));
+    }
+
+    void add_local_target(std::string name, std::size_t cond_idx, expression::eval_entity entity,
+        std::vector<std::string> key_path = {}, std::vector<PW_TRANSFORM_ID> transformers = {},
+        expression::data_source source = expression::data_source::values)
+    {
+        if (cond_idx >= (conditions_.size() - 1)) {
+            throw std::invalid_argument(
+                "local target references subsequent condition (or itself): current = " +
+                std::to_string(conditions_.size() - 1) +
+                ", referenced = " + std::to_string(cond_idx));
+        }
+
+        auto &parent = conditions_[cond_idx];
+        auto &cond = conditions_.back();
+
+        if (entity == expression::eval_entity::object) {
+            parent->children.object.emplace(cond.get());
+        } else {
+            parent->children.scalar.emplace(cond.get());
+        }
+
+        expression::condition::target_type target;
+        target.scope = expression::eval_scope::local;
+        target.parent = parent.get();
+        target.entity = entity;
+        target.key_path = std::move(key_path);
+        target.name = std::move(name);
+        target.transformers = std::move(transformers);
+        target.source = source;
+
+        cond->targets.emplace_back(std::move(target));
+    }
+
+    expression::ptr build()
+    {
+        return std::make_shared<expression>(std::move(conditions_), limits_);
+    }
 
 protected:
+    ddwaf::object_limits limits_;
+    std::vector<expression::condition::ptr> conditions_;
 };
 
 } // namespace ddwaf::experimental
