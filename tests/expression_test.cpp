@@ -521,7 +521,7 @@ TEST(TestExpression, SingleScalarChain)
         target.scope = experimental::condition::eval_scope::local;
         target.condition_index = 0;
         target.entity = experimental::condition::eval_entity::scalar;
-        target.name = "match.0.object";
+        target.name = "match.0.scalar";
         target.root = get_target_index(target.name);
 
         experimental::condition cond;
@@ -575,4 +575,55 @@ TEST(TestExpression, SingleScalarChain)
         experimental::expression::cache_type cache;
         EXPECT_TRUE(expr.eval(cache, store, {}, deadline));
     }
+}
+
+TEST(TestExpression, SingleHighlightChain)
+{
+    std::vector<experimental::condition> conditions;
+
+    {
+        experimental::condition::target_type target;
+        target.name = "server.request.query";
+        target.root = get_target_index(target.name);
+
+        experimental::condition cond;
+        cond.targets.emplace_back(std::move(target));
+
+        cond.index = 0;
+        cond.processor = std::make_unique<rule_processor::regex_match>("(query).*", 0, true);
+        cond.dependents.object.emplace(1);
+        conditions.emplace_back(std::move(cond));
+    }
+
+    {
+
+        experimental::condition::target_type target;
+        target.scope = experimental::condition::eval_scope::local;
+        target.condition_index = 0;
+        target.entity = experimental::condition::eval_entity::highlight;
+        target.name = "match.0.highlight";
+        target.root = get_target_index(target.name);
+
+        experimental::condition cond;
+        cond.targets.emplace_back(std::move(target));
+
+        cond.index = 1;
+        cond.processor = std::make_unique<rule_processor::regex_match>("^query$", 0, true);
+        conditions.emplace_back(std::move(cond));
+    }
+
+    experimental::expression expr(std::move(conditions));
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "some query"));
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    experimental::expression::cache_type cache;
+    EXPECT_TRUE(expr.eval(cache, store, {}, deadline));
 }

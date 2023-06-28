@@ -36,7 +36,7 @@ std::optional<event::match> expression::evaluator::eval_target(const condition &
         }
 
         last_result->key_path = std::move(it.get_current_path());
-        cache.set_eval_resolved(cond.index, last_result->resolved);
+        cache.set_eval_highlight(cond.index, last_result->matched);
         cache.set_eval_scalar(cond.index, *it);
 
         bool chain_result = true;
@@ -91,6 +91,7 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::eva
         }
 
         DDWAF_TRACE("Original object %p", object);
+        DDWAF_TRACE("Value %.*s", (int)object->nbEntries, object->stringValue);
 
         std::optional<event::match> optional_match;
         if (target.source == condition::data_source::keys) {

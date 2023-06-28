@@ -35,7 +35,7 @@ struct condition {
 
     enum class data_source : uint8_t { values, keys };
     enum class eval_scope : uint8_t { global, local };
-    enum class eval_entity : uint8_t { resolved, scalar, object };
+    enum class eval_entity : uint8_t { highlight, scalar, object };
 
     struct target_type {
         eval_scope scope{eval_scope::global};
@@ -70,7 +70,7 @@ public:
     using ptr = std::shared_ptr<expression>;
 
     struct eval_result {
-        ddwaf_object resolved{nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID};
+        ddwaf_object highlight{nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID};
         const ddwaf_object *scalar{nullptr};
         const ddwaf_object *object{nullptr};
     };
@@ -84,9 +84,9 @@ public:
             return conditions[index];
         }
 
-        void set_eval_resolved(condition::index_type index, const memory::string &str)
+        void set_eval_highlight(condition::index_type index, const memory::string &str)
         {
-            ddwaf_object_stringl_nc(&store[index].resolved, str.c_str(), str.size());
+            ddwaf_object_stringl(&store[index].highlight, str.c_str(), str.size());
         }
 
         void set_eval_scalar(condition::index_type index, const ddwaf_object *obj)
@@ -99,24 +99,13 @@ public:
             store[index].object = obj;
         }
 
-        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-        void set_eval_entities(condition::index_type index, const ddwaf_object *scalar,
-            const ddwaf_object *object, const memory::string &resolved)
-        {
-            auto &eval_res = store[index];
-            eval_res.scalar = scalar;
-            DDWAF_TRACE("Object %p", object);
-            eval_res.object = object;
-            ddwaf_object_stringl_nc(&eval_res.resolved, resolved.c_str(), resolved.size());
-        }
-
         const ddwaf_object *get_eval_entity(
             condition::index_type index, condition::eval_entity entity)
         {
             auto it = store.find(index);
             if (it != store.end()) {
-                if (entity == condition::eval_entity::resolved) {
-                    return &it->second.resolved;
+                if (entity == condition::eval_entity::highlight) {
+                    return &it->second.highlight;
                 }
 
                 if (entity == condition::eval_entity::scalar) {
