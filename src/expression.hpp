@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "log.hpp"
 #include <atomic>
 #include <memory>
 #include <string>
@@ -28,8 +29,8 @@ struct condition {
     using index_type = std::size_t;
 
     struct cache_type {
-        std::unordered_set<target_index> targets;
-        std::optional<event::match> result;
+        std::unordered_set<target_index> targets{};
+        std::optional<event::match> result{std::nullopt};
     };
 
     enum class data_source : uint8_t { values, keys };
@@ -44,7 +45,7 @@ struct condition {
         target_index root;
 
         // Local scope
-        std::size_t condition_index;
+        std::size_t condition_index{0};
         eval_entity entity{eval_entity::object};
 
         // Applicable to either scope
@@ -54,9 +55,6 @@ struct condition {
         std::vector<PW_TRANSFORM_ID> transformers{};
         data_source source{data_source::values};
     };
-
-    condition(index_type index_, std::vector<target_type> targets_,
-        std::shared_ptr<rule_processor::base> processor_);
 
     index_type index;
     std::vector<target_type> targets;
@@ -72,19 +70,33 @@ public:
     using ptr = std::shared_ptr<expression>;
 
     struct eval_result {
-        bool valid{false};
         ddwaf_object resolved{nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID};
         const ddwaf_object *scalar{nullptr};
         const ddwaf_object *object{nullptr};
     };
 
     struct cache_type {
-        std::vector<condition::cache_type> conditions{};
-        std::vector<eval_result> store{};
+        std::unordered_map<std::size_t, condition::cache_type> conditions{};
+        std::unordered_map<std::size_t, eval_result> store{};
 
         condition::cache_type &get_condition_cache(condition::index_type index)
         {
             return conditions[index];
+        }
+
+        void set_eval_resolved(condition::index_type index, const memory::string &str)
+        {
+            ddwaf_object_stringl_nc(&store[index].resolved, str.c_str(), str.size());
+        }
+
+        void set_eval_scalar(condition::index_type index, const ddwaf_object *obj)
+        {
+            store[index].scalar = obj;
+        }
+
+        void set_eval_object(condition::index_type index, const ddwaf_object *obj)
+        {
+            store[index].object = obj;
         }
 
         // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -92,8 +104,8 @@ public:
             const ddwaf_object *object, const memory::string &resolved)
         {
             auto &eval_res = store[index];
-            eval_res.valid = true;
             eval_res.scalar = scalar;
+            DDWAF_TRACE("Object %p", object);
             eval_res.object = object;
             ddwaf_object_stringl_nc(&eval_res.resolved, resolved.c_str(), resolved.size());
         }
@@ -101,21 +113,19 @@ public:
         const ddwaf_object *get_eval_entity(
             condition::index_type index, condition::eval_entity entity)
         {
-            auto &result = store[index];
-            if (!result.valid) {
-                return nullptr;
-            }
+            auto it = store.find(index);
+            if (it != store.end()) {
+                if (entity == condition::eval_entity::resolved) {
+                    return &it->second.resolved;
+                }
 
-            if (entity == condition::eval_entity::resolved) {
-                return &result.resolved;
-            }
+                if (entity == condition::eval_entity::scalar) {
+                    return it->second.scalar;
+                }
 
-            if (entity == condition::eval_entity::scalar) {
-                return result.scalar;
-            }
-
-            if (entity == condition::eval_entity::object) {
-                return result.object;
+                if (entity == condition::eval_entity::object) {
+                    return it->second.object;
+                }
             }
 
             return nullptr;
@@ -124,7 +134,7 @@ public:
 
     struct evaluator {
         bool eval();
-        bool eval_condition(const condition &cond);
+        bool eval_condition(const condition &cond, condition::eval_scope scope);
 
         template <typename T>
         std::optional<event::match> eval_target(const condition &cond, T &it,
