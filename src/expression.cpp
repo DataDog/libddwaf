@@ -102,7 +102,10 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::eva
             optional_match = eval_target(cond, it, cond.processor, target.transformers);
         }
 
-        cond_cache.targets.emplace(target.root);
+        // Only cache global targets
+        if (target.scope == condition::eval_scope::global) {
+            cond_cache.targets.emplace(target.root);
+        }
 
         if (!optional_match.has_value()) {
             continue;

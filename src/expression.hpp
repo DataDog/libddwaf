@@ -160,4 +160,13 @@ protected:
     std::vector<condition> conditions_;
 };
 
+class expression_builder
+{
+public:
+    expression_builder() = default;
+
+protected:
+
+};
+
 } // namespace ddwaf::experimental
