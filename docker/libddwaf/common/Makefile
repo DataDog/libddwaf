@@ -171,6 +171,6 @@ libddwaf:
 			-DCMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE=PRE_TEST \
 			-DLIBDDWAF_TEST_COVERAGE=OFF \
 			../../src/libddwaf && \
-		make -j $(shell nproc) && make -j $(shell nproc) estPowerWAF && patchelf --remove-needed libc.so libddwaf.so && make package
+		make -j $(shell nproc) && make -j $(shell nproc) testPowerWAF && patchelf --remove-needed libc.so libddwaf.so && make package
 
 .PHONY: libddwaf
