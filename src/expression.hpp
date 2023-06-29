@@ -165,6 +165,9 @@ public:
         }
     }
 
+    // For testing
+    [[nodiscard]] constexpr std::size_t get_num_conditions() const { return conditions_.size(); }
+
 protected:
     ddwaf::object_limits limits_;
     std::vector<condition::ptr> conditions_;
@@ -182,7 +185,7 @@ public:
     template <typename T, typename... Args> void start_condition(Args... args)
     {
         auto cond = std::make_shared<expression::condition>();
-        cond->processor = std::make_unique<T>(args...);
+        cond->processor = std::make_unique<T>(std::forward<Args>(args)...);
         conditions_.emplace_back(std::move(cond));
     }
 

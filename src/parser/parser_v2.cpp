@@ -176,6 +176,7 @@ expression::ptr parse_expression(const parameter::vector &conditions_array,
                 builder.add_target(address, std::move(kp), transformers, source);
             } else {
                 auto input_transformers = static_cast<parameter::vector>(it->second);
+                source = expression::data_source::values;
                 auto new_transformers = parse_transformers(input_transformers, source);
                 builder.add_target(address, std::move(kp), std::move(new_transformers), source);
             }

@@ -141,7 +141,7 @@ TEST(TestCondition, MatchOnKeys)
     std::vector<ddwaf::condition::target_type> targets;
 
     targets.push_back({get_target_index("server.request.query"), "server.request.query", {}, {},
-        condition::data_source::keys});
+        expression::data_source::keys});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>("value", 0, true));
@@ -176,7 +176,7 @@ TEST(TestCondition, MatchOnKeysWithTransformer)
     std::vector<ddwaf::condition::target_type> targets;
 
     targets.push_back({get_target_index("server.request.query"), "server.request.query", {},
-        {PWT_LOWERCASE}, condition::data_source::keys});
+        {PWT_LOWERCASE}, expression::data_source::keys});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>("value", 0, true));

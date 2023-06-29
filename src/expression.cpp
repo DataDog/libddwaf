@@ -72,6 +72,7 @@ std::optional<event::match> expression::evaluator::eval_target(const condition &
             continue;
         }
 
+        DDWAF_TRACE("Value %s", (*it)->stringValue);
         auto optional_match = eval_object(*it, processor, transformers);
         if (!optional_match.has_value()) {
             continue;
@@ -127,6 +128,10 @@ bool expression::evaluator::eval_condition(const condition &cond, eval_scope sco
     }
 
     const auto &processor = get_processor(cond);
+    if (!processor) {
+        DDWAF_DEBUG("Condition doesn't have a valid processor");
+        return false;
+    }
 
     for (std::size_t ti = 0; ti < cond.targets.size(); ++ti) {
         const auto &target = cond.targets[ti];
@@ -151,6 +156,8 @@ bool expression::evaluator::eval_condition(const condition &cond, eval_scope sco
             continue;
         }
 
+        DDWAF_TRACE("Evaluating target %s", target.name.c_str());
+
         std::optional<event::match> optional_match;
         if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
@@ -160,14 +167,11 @@ bool expression::evaluator::eval_condition(const condition &cond, eval_scope sco
             optional_match = eval_target(cond, it, processor, target.transformers);
         }
 
-        // Only cache global targets
-        if (target.scope == eval_scope::global) {
-            cond_cache.targets.emplace(target.root);
-        }
-
         if (!optional_match.has_value()) {
             continue;
         }
+
+        cond_cache.targets.emplace(ti);
 
         optional_match->address = target.name;
         cond_cache.result = optional_match;

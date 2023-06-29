@@ -43,7 +43,7 @@ TEST(TestParserV2Rules, ParseRule)
 
     parser::rule_spec &rule = rules["1"];
     EXPECT_TRUE(rule.enabled);
-    EXPECT_EQ(rule.conditions.size(), 3);
+    EXPECT_EQ(rule.expr->get_num_conditions(), 3);
     EXPECT_EQ(rule.actions.size(), 0);
     EXPECT_STR(rule.name, "rule1");
     EXPECT_EQ(rule.tags.size(), 2);
@@ -175,7 +175,7 @@ TEST(TestParserV2Rules, ParseMultipleRules)
     {
         parser::rule_spec &rule = rules["1"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 3);
+        EXPECT_EQ(rule.expr->get_num_conditions(), 3);
         EXPECT_EQ(rule.actions.size(), 0);
         EXPECT_STR(rule.name, "rule1");
         EXPECT_EQ(rule.tags.size(), 2);
@@ -186,7 +186,7 @@ TEST(TestParserV2Rules, ParseMultipleRules)
     {
         parser::rule_spec &rule = rules["secondrule"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 1);
+        EXPECT_EQ(rule.expr->get_num_conditions(), 1);
         EXPECT_EQ(rule.actions.size(), 1);
         EXPECT_STR(rule.actions[0], "block");
         EXPECT_STR(rule.name, "rule2");
@@ -245,7 +245,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneInvalid)
     {
         parser::rule_spec &rule = rules["1"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 3);
+        EXPECT_EQ(rule.expr->get_num_conditions(), 3);
         EXPECT_EQ(rule.actions.size(), 0);
         EXPECT_STR(rule.name, "rule1");
         EXPECT_EQ(rule.tags.size(), 2);
@@ -256,7 +256,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneInvalid)
     {
         parser::rule_spec &rule = rules["secondrule"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 1);
+        EXPECT_EQ(rule.expr->get_num_conditions(), 1);
         EXPECT_EQ(rule.actions.size(), 1);
         EXPECT_STR(rule.actions[0], "block");
         EXPECT_STR(rule.name, "rule2");
@@ -314,7 +314,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
     {
         parser::rule_spec &rule = rules["1"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 3);
+        EXPECT_EQ(rule.expr->get_num_conditions(), 3);
         EXPECT_EQ(rule.actions.size(), 0);
         EXPECT_STR(rule.name, "rule1");
         EXPECT_EQ(rule.tags.size(), 2);
