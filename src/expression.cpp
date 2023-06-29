@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <charconv>
 #include <exception.hpp>
 #include <expression.hpp>
 #include <log.hpp>
@@ -198,8 +199,141 @@ bool expression::eval(cache_type &cache, const object_store &store,
         cache.store.reserve(conditions_.size());
     }
 
-    evaluator runner{deadline, limits_, conditions_, store, objects_excluded, cache};
-    return runner.eval();
+    // TODO the cache result alone might be insufficient
+    if (!cache.result) {
+        evaluator runner{deadline, limits_, conditions_, store, objects_excluded, cache};
+        cache.result = runner.eval();
+    }
+
+    return cache.result;
+}
+
+memory::vector<event::match> expression::get_matches(cache_type &cache)
+{
+    if (!cache.result) {
+        return {};
+    }
+
+    memory::vector<event::match> matches;
+
+    for (const auto &cond : conditions_) {
+        auto it = cache.conditions.find(cond.get());
+        if (it == cache.conditions.end()) {
+            // Bug
+            return {};
+        }
+
+        auto &cond_cache = it->second;
+
+        // clang-tidy has trouble with an optional after two levels of indirection
+        auto &result = cond_cache.result;
+        if (result.has_value()) {
+            matches.emplace_back(std::move(result.value()));
+        } else {
+            // Bug
+            return {};
+        }
+    }
+
+    return matches;
+}
+
+namespace {
+std::tuple<bool, std::size_t, expression::eval_entity> explode_local_address(std::string_view str)
+{
+    constexpr std::string_view prefix = "match.";
+    auto pos = str.find(prefix);
+    if (pos == std::string_view::npos) {
+        return {false, 0, {}};
+    }
+    str.remove_prefix(prefix.size());
+
+    // TODO everything below this point should throw instead of returning false
+    pos = str.find('.');
+    if (pos == std::string_view::npos) {
+        return {false, 0, {}};
+    }
+
+    auto index_str = str.substr(0, pos);
+    std::size_t index = 0;
+    auto result = std::from_chars(index_str.data(), index_str.data() + index_str.size(), index);
+    if (result.ec == std::errc::invalid_argument) {
+        return {false, 0, {}};
+    }
+
+    expression::eval_entity entity;
+    auto entity_str = str.substr(pos + 1, str.size() - (pos + 1));
+    if (entity_str == "object") {
+        entity = expression::eval_entity::object;
+    } else if (entity_str == "scalar") {
+        entity = expression::eval_entity::scalar;
+    } else if (entity_str == "highlight") {
+        entity = expression::eval_entity::highlight;
+    } else {
+        return {false, 0, {}};
+    }
+
+    return {true, index, entity};
+}
+
+} // namespace
+  //
+void expression_builder::add_target(std::string name, std::vector<std::string> key_path,
+    std::vector<PW_TRANSFORM_ID> transformers, expression::data_source source)
+{
+    auto [res, index, entity] = explode_local_address(name);
+    if (res) {
+        add_local_target(
+            std::move(name), index, entity, std::move(key_path), std::move(transformers), source);
+    } else {
+        add_global_target(std::move(name), std::move(key_path), std::move(transformers), source);
+    }
+}
+
+void expression_builder::add_global_target(std::string name, std::vector<std::string> key_path,
+    std::vector<PW_TRANSFORM_ID> transformers, expression::data_source source)
+{
+    expression::condition::target_type target;
+    target.scope = expression::eval_scope::global;
+    target.root = get_target_index(name);
+    target.key_path = std::move(key_path);
+    target.name = std::move(name);
+    target.transformers = std::move(transformers);
+    target.source = source;
+
+    auto &cond = conditions_.back();
+    cond->targets.emplace_back(std::move(target));
+}
+
+void expression_builder::add_local_target(std::string name, std::size_t cond_idx,
+    expression::eval_entity entity, std::vector<std::string> key_path,
+    std::vector<PW_TRANSFORM_ID> transformers, expression::data_source source)
+{
+    if (cond_idx >= (conditions_.size() - 1)) {
+        throw std::invalid_argument(
+            "local target references subsequent condition (or itself): current = " +
+            std::to_string(conditions_.size() - 1) + ", referenced = " + std::to_string(cond_idx));
+    }
+
+    auto &parent = conditions_[cond_idx];
+    auto &cond = conditions_.back();
+
+    if (entity == expression::eval_entity::object) {
+        parent->children.object.emplace(cond.get());
+    } else {
+        parent->children.scalar.emplace(cond.get());
+    }
+
+    expression::condition::target_type target;
+    target.scope = expression::eval_scope::local;
+    target.parent = parent.get();
+    target.entity = entity;
+    target.key_path = std::move(key_path);
+    target.name = std::move(name);
+    target.transformers = std::move(transformers);
+    target.source = source;
+
+    cond->targets.emplace_back(std::move(target));
 }
 
 } // namespace ddwaf::experimental
