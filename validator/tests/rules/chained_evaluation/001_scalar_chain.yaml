@@ -1,0 +1,31 @@
+{
+  name: "Basic run with match",
+  runs: [
+    {
+      input: {
+        server.request.query: processbuilder.base64data
+      },
+      rules: [
+        {
+          exp-000-001: [
+            {
+              address: server.request.query,
+              value: processbuilder.base64data,
+              highlight: [
+                processbuilder
+              ]
+            },
+            {
+              address: match.0.scalar,
+              value: processbuilder.base64data,
+              highlight: [
+                base64data
+              ]
+            },
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+version: '2.1'
+rules:
+  - id: exp-000-001
+    name: 'Chained scalar'
+    tags:
+      type: java_code_injection
+      crs_id: '944110'
+      category: attack_attempt
+    conditions:
+      - parameters:
+          inputs:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: server.request.headers.no_cookies
+            - address: grpc.server.request.message
+          regex: (?:runtime|processbuilder)
+          options:
+            case_sensitive: true
+            min_length: 7
+        operator: match_regex
+      - parameters:
+          inputs:
+            - address: match.0.scalar
+          regex: (?:unmarshaller|base64data|java\.)
+          options:
+            case_sensitive: true
+            min_length: 5
+        operator: match_regex
+    transformers:
+      - lowercase
+  - id: exp-000-002
+    name: 'Chained highlight'
+    tags:
+      type: java_code_injection
+      category: attack_attempt
+    conditions:
+      - parameters:
+          inputs:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: server.request.headers.no_cookies
+            - address: grpc.server.request.message
+          regex: evil_exploit:[A-Za-z0-9+/=]+
+          options:
+            case_sensitive: true
+        operator: match_regex
+      - parameters:
+          inputs:
+            - address: match.0.highlight
+          regex: "[A-Za-z0-9+/]+={0,3}$"
+          options:
+            case_sensitive: true
+            min_length: 4
+        operator: match_regex
+      - parameters:
+          inputs:
+            - address: match.1.highlight
+              transformers:
+                - base64Decode
+          regex: \bexec\b
+          options:
+            case_sensitive: true
+            min_length: 5
+        operator: match_regex
+  - id: exp-000-003
+    name: 'Chained object'
+    tags:
+      type: java_code_injection
+      category: attack_attempt
+    conditions:
+      - parameters:
+          inputs:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: server.request.headers.no_cookies
+            - address: grpc.server.request.message
+          regex: \bexec\(
+          options:
+            case_sensitive: true
+            min_length: 5
+        operator: match_regex
+      - parameters:
+          inputs:
+            - address: match.0.object
+              transformers:
+                - keys_only
+          regex: \bcomment\b
+          options:
+            case_sensitive: true
+            min_length: 5
+        operator: match_regex
