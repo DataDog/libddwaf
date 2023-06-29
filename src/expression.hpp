@@ -166,7 +166,7 @@ public:
     }
 
     // For testing
-    [[nodiscard]] constexpr std::size_t get_num_conditions() const { return conditions_.size(); }
+    [[nodiscard]] std::size_t get_num_conditions() const { return conditions_.size(); }
 
 protected:
     ddwaf::object_limits limits_;
