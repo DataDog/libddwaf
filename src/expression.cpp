@@ -10,7 +10,7 @@
 #include <log.hpp>
 #include <memory>
 
-namespace ddwaf::experimental {
+namespace ddwaf {
 
 std::optional<event::match> expression::evaluator::eval_object(const ddwaf_object *object,
     const rule_processor::base::ptr &processor,
@@ -103,6 +103,20 @@ std::optional<event::match> expression::evaluator::eval_target(const condition &
     return last_result;
 }
 
+const rule_processor::base::ptr &expression::evaluator::get_processor(const condition &cond) const
+{
+    if (cond.processor || cond.data_id.empty()) {
+        return cond.processor;
+    }
+
+    auto it = dynamic_processors.find(cond.data_id);
+    if (it == dynamic_processors.end()) {
+        return cond.processor;
+    }
+
+    return it->second;
+}
+
 // NOLINTNEXTLINE(misc-no-recursion)
 bool expression::evaluator::eval_condition(const condition &cond, eval_scope scope)
 {
@@ -112,13 +126,16 @@ bool expression::evaluator::eval_condition(const condition &cond, eval_scope sco
         return true;
     }
 
-    for (const auto &target : cond.targets) {
+    const auto &processor = get_processor(cond);
+
+    for (std::size_t ti = 0; ti < cond.targets.size(); ++ti) {
+        const auto &target = cond.targets[ti];
+
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (scope != target.scope ||
-            cond_cache.targets.find(target.root) != cond_cache.targets.end()) {
+        if (scope != target.scope || cond_cache.targets.find(ti) != cond_cache.targets.end()) {
             continue;
         }
 
@@ -137,10 +154,10 @@ bool expression::evaluator::eval_condition(const condition &cond, eval_scope sco
         std::optional<event::match> optional_match;
         if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(cond, it, cond.processor, target.transformers);
+            optional_match = eval_target(cond, it, processor, target.transformers);
         } else {
             object::value_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(cond, it, cond.processor, target.transformers);
+            optional_match = eval_target(cond, it, processor, target.transformers);
         }
 
         // Only cache global targets
@@ -192,7 +209,9 @@ bool expression::evaluator::eval()
 }
 
 bool expression::eval(cache_type &cache, const object_store &store,
-    const std::unordered_set<const ddwaf_object *> &objects_excluded, ddwaf::timer &deadline) const
+    const std::unordered_set<const ddwaf_object *> &objects_excluded,
+    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
+    ddwaf::timer &deadline) const
 {
     if (cache.conditions.size() != conditions_.size()) {
         cache.conditions.reserve(conditions_.size());
@@ -201,7 +220,8 @@ bool expression::eval(cache_type &cache, const object_store &store,
 
     // TODO the cache result alone might be insufficient
     if (!cache.result) {
-        evaluator runner{deadline, limits_, conditions_, store, objects_excluded, cache};
+        evaluator runner{
+            deadline, limits_, conditions_, store, objects_excluded, dynamic_processors, cache};
         cache.result = runner.eval();
     }
 
@@ -336,4 +356,4 @@ void expression_builder::add_local_target(std::string name, std::size_t cond_idx
     cond->targets.emplace_back(std::move(target));
 }
 
-} // namespace ddwaf::experimental
+} // namespace ddwaf

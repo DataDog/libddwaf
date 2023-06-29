@@ -10,9 +10,6 @@
 
 using namespace ddwaf;
 
-using expression = experimental::expression;
-using expression_builder = experimental::expression_builder;
-
 TEST(TestExpression, SimpleMatch)
 {
     expression_builder builder(1);
@@ -36,11 +33,11 @@ TEST(TestExpression, SimpleMatch)
 
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
-                             .op_value = ".*",
-                             .address = "server.request.query",
-                             .path = {},
-                             .value = "value",
-                             .highlight = "value"});
+                                .op_value = ".*",
+                                .address = "server.request.query",
+                                .path = {},
+                                .value = "value",
+                                .highlight = "value"});
 }
 
 TEST(TestExpression, MultiInputMatchOnSecond)
@@ -82,11 +79,11 @@ TEST(TestExpression, MultiInputMatchOnSecond)
 
         auto matches = expr->get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
-                                 .op_value = "^value$",
-                                 .address = "server.request.body",
-                                 .path = {},
-                                 .value = "value",
-                                 .highlight = "value"});
+                                    .op_value = "^value$",
+                                    .address = "server.request.body",
+                                    .path = {},
+                                    .value = "value",
+                                    .highlight = "value"});
     }
 }
 
@@ -168,11 +165,11 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
         auto matches = expr->get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
-                                 .op_value = "^value$",
-                                 .address = "server.request.query",
-                                 .path = {},
-                                 .value = "value",
-                                 .highlight = "value"});
+                                    .op_value = "^value$",
+                                    .address = "server.request.query",
+                                    .path = {},
+                                    .value = "value",
+                                    .highlight = "value"});
     }
 }
 
@@ -418,18 +415,19 @@ TEST(TestExpression, SingleScalarChain)
         EXPECT_TRUE(expr->eval(cache, store, {}, deadline));
 
         auto matches = expr->get_matches(cache);
-        EXPECT_MATCHES(matches, {.op = "match_regex",
-                                 .op_value = "query",
-                                 .address = "server.request.query",
-                                 .path = {"value1"},
-                                 .value = "query",
-                                 .highlight = "query"},
-                                {.op = "match_regex",
-                                 .op_value = "^query$",
-                                 .address = "match.0.scalar",
-                                 .path = {},
-                                 .value = "query",
-                                 .highlight = "query"});
+        EXPECT_MATCHES(matches,
+            {.op = "match_regex",
+                .op_value = "query",
+                .address = "server.request.query",
+                .path = {"value1"},
+                .value = "query",
+                .highlight = "query"},
+            {.op = "match_regex",
+                .op_value = "^query$",
+                .address = "match.0.scalar",
+                .path = {},
+                .value = "query",
+                .highlight = "query"});
     }
 }
 
@@ -459,16 +457,17 @@ TEST(TestExpression, SingleHighlightChain)
     EXPECT_TRUE(expr->eval(cache, store, {}, deadline));
 
     auto matches = expr->get_matches(cache);
-    EXPECT_MATCHES(matches, {.op = "match_regex",
-                             .op_value = "query",
-                             .address = "server.request.query",
-                             .path = {},
-                             .value = "some query",
-                             .highlight = "query"},
-                            {.op = "match_regex",
-                             .op_value = "^query$",
-                             .address = "match.0.highlight",
-                             .path = {},
-                             .value = "query",
-                             .highlight = "query"});
+    EXPECT_MATCHES(matches,
+        {.op = "match_regex",
+            .op_value = "query",
+            .address = "server.request.query",
+            .path = {},
+            .value = "some query",
+            .highlight = "query"},
+        {.op = "match_regex",
+            .op_value = "^query$",
+            .address = "match.0.highlight",
+            .path = {},
+            .value = "query",
+            .highlight = "query"});
 }

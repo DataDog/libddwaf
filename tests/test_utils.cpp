@@ -38,7 +38,6 @@ std::ostream &operator<<(std::ostream &os, const indent &offset)
 
 } // namespace
 
-
 std::ostream &operator<<(std::ostream &os, const event::match &m)
 {
     os << indent(4) << "{\n"
@@ -433,7 +432,6 @@ void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream
     for (const auto &m : matches) { *os << m; }
 }
 
-
 WafResultActionMatcher::WafResultActionMatcher(std::vector<std::string_view> &&values)
     : expected_(std::move(values))
 {
@@ -496,7 +494,8 @@ bool WafResultDataMatcher::MatchAndExplain(
     return events.empty();
 }
 
-bool MatchMatcher::MatchAndExplain(std::list<ddwaf::test::event::match> matches, ::testing::MatchResultListener * /*unused*/) const
+bool MatchMatcher::MatchAndExplain(
+    std::list<ddwaf::test::event::match> matches, ::testing::MatchResultListener * /*unused*/) const
 {
     if (matches.size() != expected_matches_.size()) {
         return false;
@@ -520,8 +519,8 @@ bool MatchMatcher::MatchAndExplain(std::list<ddwaf::test::event::match> matches,
     return matches.empty();
 }
 
-
-std::list<ddwaf::test::event::match> from_matches(const ddwaf::memory::vector<ddwaf::event::match> &matches)
+std::list<ddwaf::test::event::match> from_matches(
+    const ddwaf::memory::vector<ddwaf::event::match> &matches)
 {
     std::list<ddwaf::test::event::match> match_list;
 
@@ -532,9 +531,7 @@ std::list<ddwaf::test::event::match> from_matches(const ddwaf::memory::vector<dd
         new_match.op = m.operator_name;
         new_match.op_value = m.operator_value;
         new_match.address = m.address;
-        for (const auto &k : m.key_path) {
-            new_match.path.emplace_back(k);
-        }
+        for (const auto &k : m.key_path) { new_match.path.emplace_back(k); }
 
         match_list.emplace_back(std::move(new_match));
     }

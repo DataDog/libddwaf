@@ -24,7 +24,7 @@
 #include <object_store.hpp>
 #include <rule_processor/base.hpp>
 
-namespace ddwaf::experimental {
+namespace ddwaf {
 
 class expression {
 public:
@@ -63,6 +63,7 @@ public:
 
         std::vector<target_type> targets;
         std::shared_ptr<rule_processor::base> processor;
+        std::string data_id;
         struct {
             std::unordered_set<const condition *> scalar{};
             std::unordered_set<const condition *> object{};
@@ -131,11 +132,14 @@ public:
             const rule_processor::base::ptr &processor,
             const std::vector<PW_TRANSFORM_ID> &transformers) const;
 
+        [[nodiscard]] const rule_processor::base::ptr &get_processor(const condition &cond) const;
+
         ddwaf::timer &deadline;
         const ddwaf::object_limits &limits;
         const std::vector<condition::ptr> &conditions;
         const object_store &store;
         const std::unordered_set<const ddwaf_object *> &objects_excluded;
+        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors;
         cache_type &cache;
     };
 
@@ -145,6 +149,7 @@ public:
 
     bool eval(cache_type &cache, const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
+        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
     memory::vector<event::match> get_matches(cache_type &cache);
@@ -160,7 +165,6 @@ public:
         }
     }
 
-
 protected:
     ddwaf::object_limits limits_;
     std::vector<condition::ptr> conditions_;
@@ -174,11 +178,37 @@ public:
         conditions_.reserve(num_conditions);
     }
 
+    void start_condition() { conditions_.emplace_back(std::make_shared<expression::condition>()); }
     template <typename T, typename... Args> void start_condition(Args... args)
     {
         auto cond = std::make_shared<expression::condition>();
         cond->processor = std::make_unique<T>(args...);
         conditions_.emplace_back(std::move(cond));
+    }
+
+    void start_condition(std::string data_id)
+    {
+        auto cond = std::make_shared<expression::condition>();
+        cond->data_id = std::move(data_id);
+        conditions_.emplace_back(std::move(cond));
+    }
+
+    void set_data_id(std::string data_id)
+    {
+        auto &cond = conditions_.back();
+        cond->data_id = std::move(data_id);
+    }
+
+    template <typename T, typename... Args> void set_processor(Args... args)
+    {
+        auto &cond = conditions_.back();
+        cond->processor = std::make_unique<T>(args...);
+    }
+
+    void set_processor(rule_processor::base::ptr &&processor)
+    {
+        auto &cond = conditions_.back();
+        cond->processor = std::move(processor);
     }
 
     void add_target(std::string name, std::vector<std::string> key_path = {},
@@ -203,4 +233,4 @@ protected:
     std::vector<expression::condition::ptr> conditions_;
 };
 
-} // namespace ddwaf::experimental
+} // namespace ddwaf

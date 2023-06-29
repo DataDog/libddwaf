@@ -133,7 +133,8 @@ public:
         : expected_matches_(std::move(expected_matches))
     {}
 
-    bool MatchAndExplain(std::list<ddwaf::test::event::match>, ::testing::MatchResultListener *) const;
+    bool MatchAndExplain(
+        std::list<ddwaf::test::event::match>, ::testing::MatchResultListener *) const;
 
     void DescribeTo(::std::ostream *os) const
     {
@@ -161,14 +162,14 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected)));
 }
 
-
 inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
     std::vector<ddwaf::test::event::match> &&expected)
 {
     return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected)));
 }
 
-std::list<ddwaf::test::event::match> from_matches(const ddwaf::memory::vector<ddwaf::event::match> &matches);
+std::list<ddwaf::test::event::match> from_matches(
+    const ddwaf::memory::vector<ddwaf::event::match> &matches);
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
@@ -181,9 +182,7 @@ std::list<ddwaf::test::event::match> from_matches(const ddwaf::memory::vector<dd
   }
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define EXPECT_MATCHES(matches, ...)                                                               \
-    EXPECT_THAT(from_matches(matches), WithMatches({__VA_ARGS__}));
-
+#define EXPECT_MATCHES(matches, ...) EXPECT_THAT(from_matches(matches), WithMatches({__VA_ARGS__}));
 
 ddwaf_object readFile(std::string_view filename, std::string_view base = "./");
 ddwaf_object readRule(const char *rule);

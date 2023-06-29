@@ -21,7 +21,7 @@ struct rule_spec {
     rule::source_type source;
     std::string name;
     std::unordered_map<std::string, std::string> tags;
-    std::vector<condition::ptr> conditions;
+    expression::ptr expr;
     std::vector<std::string> actions;
 };
 
