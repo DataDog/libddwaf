@@ -42,7 +42,7 @@ std::ostream &operator<<(std::ostream &os, const event::match &m)
 {
     os << indent(4) << "{\n"
        << indent(8) << "operator: " << m.op << ",\n"
-       << indent(8) << "operator_value:" << m.op_value << ",\n"
+       << indent(8) << "operator_value: " << m.op_value << ",\n"
        << indent(8) << "address: " << m.address << ",\n"
        << indent(8) << "path: [";
 
@@ -99,7 +99,7 @@ std::ostream &operator<<(std::ostream &os, const event &e)
         os << indent(8) << "{\n";
 
         os << indent(12) << "operator: " << m.op << ",\n"
-           << indent(12) << "operator_value:" << m.op_value << ",\n"
+           << indent(12) << "operator_value: " << m.op_value << ",\n"
            << indent(12) << "address: " << m.address << ",\n"
            << indent(12) << "path: [";
 

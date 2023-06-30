@@ -577,3 +577,198 @@ TEST(TestExpression, HybridObjectChain)
                 .highlight = "thermometer"});
     }
 }
+
+TEST(TestExpression, MatchWithKeyPath)
+{
+    expression_builder builder(1);
+    builder.start_condition<rule_processor::regex_match>(".*", 0, true);
+    builder.add_target("server.request.query", {"key"});
+    auto expr = builder.build();
+
+    ddwaf_object root;
+    ddwaf_object submap;
+    ddwaf_object tmp;
+    ddwaf_object_map(&submap);
+    ddwaf_object_map_add(&submap, "key", ddwaf_object_string(&tmp, "value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", &submap);
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline));
+    auto matches = expr->get_matches(cache);
+    EXPECT_MATCHES(matches, {.op = "match_regex",
+                                .op_value = ".*",
+                                .address = "server.request.query",
+                                .path = {"key"},
+                                .value = "value",
+                                .highlight = "value"});
+}
+
+TEST(TestExpression, MatchWithTransformer)
+{
+    expression_builder builder(1);
+    builder.start_condition<rule_processor::regex_match>("value", 0, true);
+    builder.add_target("server.request.query", {}, {PWT_LOWERCASE});
+    auto expr = builder.build();
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "VALUE"));
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline));
+    auto matches = expr->get_matches(cache);
+    EXPECT_MATCHES(matches, {.op = "match_regex",
+                                .op_value = "value",
+                                .address = "server.request.query",
+                                .path = {},
+                                .value = "value",
+                                .highlight = "value"});
+}
+
+TEST(TestExpression, MatchWithMultipleTransformers)
+{
+    expression_builder builder(1);
+    builder.start_condition<rule_processor::regex_match>("^ value $", 0, true);
+    builder.add_target("server.request.query", {}, {PWT_COMPRESS_WHITE, PWT_LOWERCASE});
+    auto expr = builder.build();
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "    VALUE    "));
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline));
+    auto matches = expr->get_matches(cache);
+    EXPECT_MATCHES(matches, {.op = "match_regex",
+                                .op_value = "^ value $",
+                                .address = "server.request.query",
+                                .path = {},
+                                .value = " value ",
+                                .highlight = " value "});
+}
+
+TEST(TestExpression, MatchOnKeys)
+{
+    expression_builder builder(1);
+    builder.start_condition<rule_processor::regex_match>("value", 0, true);
+    builder.add_target("server.request.query", {}, {}, expression::data_source::keys);
+    auto expr = builder.build();
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object value;
+    ddwaf_object_map(&value);
+    ddwaf_object_map_add(&value, "value", ddwaf_object_string(&tmp, "1729"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", &value);
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline));
+    auto matches = expr->get_matches(cache);
+    EXPECT_MATCHES(matches, {.op = "match_regex",
+                                .op_value = "value",
+                                .address = "server.request.query",
+                                .path = {"value"},
+                                .value = "value",
+                                .highlight = "value"});
+}
+
+TEST(TestExpression, MatchOnKeysWithTransformer)
+{
+    expression_builder builder(1);
+    builder.start_condition<rule_processor::regex_match>("value", 0, true);
+    builder.add_target("server.request.query", {}, {PWT_LOWERCASE}, expression::data_source::keys);
+    auto expr = builder.build();
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object value;
+    ddwaf_object_map(&value);
+    ddwaf_object_map_add(&value, "VALUE", ddwaf_object_string(&tmp, "1729"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", &value);
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline));
+    auto matches = expr->get_matches(cache);
+    EXPECT_MATCHES(matches, {.op = "match_regex",
+                                .op_value = "value",
+                                .address = "server.request.query",
+                                .path = {"VALUE"},
+                                .value = "value",
+                                .highlight = "value"});
+}
+
+TEST(TestExpression, ExcludeInput)
+{
+    expression_builder builder(1);
+    builder.start_condition<rule_processor::regex_match>(".*", 0, true);
+    builder.add_target("server.request.query");
+    auto expr = builder.build();
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    EXPECT_FALSE(expr->eval(cache, store, {&root.array[0]}, {}, deadline));
+}
+
+TEST(TestExpression, ExcludeKeyPath)
+{
+    expression_builder builder(1);
+    builder.start_condition<rule_processor::regex_match>(".*", 0, true);
+    builder.add_target("server.request.query");
+    auto expr = builder.build();
+
+    ddwaf_object root;
+    ddwaf_object map;
+    ddwaf_object tmp;
+    ddwaf_object_map(&map);
+    ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "value"));
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", &map);
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    EXPECT_FALSE(expr->eval(cache, store, {&map.array[0]}, {}, deadline));
+}
