@@ -198,7 +198,7 @@ bool expression::evaluator::eval_condition(const condition &cond, eval_scope sco
         return true;
     }
 
-    return false;
+    return cond_cache.result.has_value();
 }
 
 bool expression::evaluator::eval()

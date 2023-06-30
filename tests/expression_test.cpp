@@ -471,3 +471,109 @@ TEST(TestExpression, SingleHighlightChain)
             .value = "query",
             .highlight = "query"});
 }
+
+TEST(TestExpression, HybridScalarChain)
+{
+    expression_builder builder(2);
+
+    builder.start_condition<rule_processor::regex_match>("query", 0, true);
+    builder.add_target("server.request.query");
+
+    builder.start_condition<rule_processor::regex_match>("^query$", 0, true);
+    builder.add_target("match.0.scalar");
+    builder.add_target("server.request.body");
+
+    auto expr = builder.build();
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "some query"));
+    ddwaf_object_map_add(&root, "server.request.body", ddwaf_object_string(&tmp, "query"));
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline));
+
+    auto matches = expr->get_matches(cache);
+    EXPECT_MATCHES(matches,
+        {.op = "match_regex",
+            .op_value = "query",
+            .address = "server.request.query",
+            .path = {},
+            .value = "some query",
+            .highlight = "query"},
+        {.op = "match_regex",
+            .op_value = "^query$",
+            .address = "server.request.body",
+            .path = {},
+            .value = "query",
+            .highlight = "query"});
+}
+
+TEST(TestExpression, HybridObjectChain)
+{
+    expression_builder builder(2);
+
+    builder.start_condition<rule_processor::regex_match>("query", 0, true);
+    builder.add_target("server.request.query");
+
+    builder.start_condition<rule_processor::regex_match>("^thermometer$", 0, true);
+    builder.add_target("match.0.object");
+    builder.add_target("server.request.body");
+
+    auto expr = builder.build();
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, "some query"));
+        ddwaf::object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        expression::cache_type cache;
+        EXPECT_FALSE(expr->eval(cache, store, {}, {}, deadline));
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, "some query"));
+        ddwaf_object_map_add(
+            &root, "server.request.body", ddwaf_object_string(&tmp, "thermometer"));
+
+        ddwaf::object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        expression::cache_type cache;
+        EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline));
+
+        auto matches = expr->get_matches(cache);
+        EXPECT_MATCHES(matches,
+            {.op = "match_regex",
+                .op_value = "query",
+                .address = "server.request.query",
+                .path = {},
+                .value = "some query",
+                .highlight = "query"},
+            {.op = "match_regex",
+                .op_value = "^thermometer$",
+                .address = "server.request.body",
+                .path = {},
+                .value = "thermometer",
+                .highlight = "thermometer"});
+    }
+}
