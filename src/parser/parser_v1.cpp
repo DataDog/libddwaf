@@ -81,9 +81,7 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
         }
         builder.set_processor(std::move(processor));
 
-        std::vector<condition::target_type> targets;
         auto inputs = at<parameter::vector>(params, "inputs");
-        targets.reserve(inputs.size());
         for (const auto &input_param : inputs) {
             auto input = static_cast<std::string>(input_param);
             if (input.empty()) {
