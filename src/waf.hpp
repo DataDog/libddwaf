@@ -28,7 +28,7 @@ public:
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses() const
     {
-        return ruleset_->manifest.get_root_addresses();
+        return ruleset_->get_root_addresses();
     }
 
 protected:

@@ -19,8 +19,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+    targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
     auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
@@ -36,7 +35,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
     rule_collection.insert(rule);
 
     collection_cache cache;
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     {
         ddwaf_object root;
         ddwaf_object tmp;
@@ -72,10 +71,9 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 {
     std::vector<rule::ptr> rules;
     TypeParam rule_collection;
-    ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
@@ -95,7 +93,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -113,7 +111,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     collection_cache cache;
 
     {
@@ -150,10 +148,9 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 {
     std::vector<rule::ptr> rules;
     TypeParam rule_collection;
-    ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
@@ -172,7 +169,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -189,7 +186,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     collection_cache cache;
 
     {
@@ -224,11 +221,10 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 // Validate that the rule cache is acted on
 TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 {
-    ddwaf::manifest manifest;
     std::vector<condition::ptr> conditions;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         conditions.emplace_back(std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
@@ -237,7 +233,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         conditions.emplace_back(std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"})));
@@ -258,7 +254,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         memory::vector<event> events;
@@ -274,7 +270,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         memory::vector<event> events;
@@ -291,10 +287,9 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
     std::vector<rule::ptr> rules;
     collection regular;
     priority_collection priority;
-    ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
@@ -313,7 +308,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -331,7 +326,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
 
     collection_cache cache;
     {
@@ -371,10 +366,9 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
     std::vector<rule::ptr> rules;
     collection regular;
     priority_collection priority;
-    ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
@@ -393,7 +387,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -411,7 +405,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
 
     collection_cache cache;
     {
@@ -451,10 +445,9 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 {
     std::vector<rule::ptr> rules;
     priority_collection priority;
-    ddwaf::manifest manifest;
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
@@ -473,7 +466,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 
     {
         std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
@@ -491,7 +484,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
 
     collection_cache cache;
     {

@@ -8,16 +8,16 @@
 
 #include <context_allocator.hpp>
 #include <ddwaf.h>
-#include <manifest.hpp>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utils.hpp>
 
 namespace ddwaf {
 
 class object_store {
 public:
-    explicit object_store(const manifest &m, ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    explicit object_store(ddwaf_object_free_fn free_fn = ddwaf_object_free);
     ~object_store();
     object_store(const object_store &) = default;
     object_store(object_store &&) = default;
@@ -26,9 +26,9 @@ public:
 
     bool insert(const ddwaf_object &input);
 
-    const ddwaf_object *get_target(manifest::target_type target) const;
+    const ddwaf_object *get_target(target_index target) const;
 
-    bool is_new_target(const manifest::target_type target) const
+    bool is_new_target(const target_index target) const
     {
         return latest_batch_.find(target) != latest_batch_.cend();
     }
@@ -38,10 +38,10 @@ public:
     explicit operator bool() const { return !objects_.empty(); }
 
 protected:
-    const ddwaf::manifest &manifest_;
+    static constexpr unsigned default_num_objects = 8;
 
-    memory::unordered_set<manifest::target_type> latest_batch_;
-    memory::unordered_map<manifest::target_type, const ddwaf_object *> objects_;
+    memory::unordered_set<target_index> latest_batch_;
+    memory::unordered_map<target_index, const ddwaf_object *> objects_;
 
     memory::vector<ddwaf_object> objects_to_free_;
     ddwaf_object_free_fn obj_free_;

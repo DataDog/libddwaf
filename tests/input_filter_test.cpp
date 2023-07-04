@@ -12,10 +12,9 @@ using namespace ddwaf::exclusion;
 
 TEST(TestInputFilter, InputExclusionNoConditions)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -24,7 +23,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, {});
+    obj_filter->insert(query, "query", {});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", {}, {rule.get()}, std::move(obj_filter));
 
@@ -40,10 +39,9 @@ TEST(TestInputFilter, InputExclusionNoConditions)
 
 TEST(TestInputFilter, ObjectExclusionNoConditions)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root;
     ddwaf_object child;
@@ -57,7 +55,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, {"params"});
+    obj_filter->insert(query, "query", {"params"});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", {}, {rule.get()}, std::move(obj_filter));
 
@@ -73,8 +71,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
 
 TEST(TestInputFilter, InputExclusionWithCondition)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
+    auto client_ip = get_target_index("http.client_ip");
 
     std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
     auto cond = std::make_shared<condition>(std::move(targets),
@@ -87,11 +84,11 @@ TEST(TestInputFilter, InputExclusionWithCondition)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip, {});
+    obj_filter->insert(client_ip, "client_ip", {});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
@@ -107,8 +104,7 @@ TEST(TestInputFilter, InputExclusionWithCondition)
 
 TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("usr.id");
+    auto client_ip = get_target_index("usr.id");
 
     std::vector<condition::target_type> targets{{client_ip, "usr.id", {}, {PWT_LOWERCASE}}};
     auto cond = std::make_shared<condition>(std::move(targets),
@@ -121,11 +117,11 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "ADMIN"));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip, {});
+    obj_filter->insert(client_ip, "client_ip", {});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
@@ -141,8 +137,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 
 TEST(TestInputFilter, InputExclusionFailedCondition)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
+    auto client_ip = get_target_index("http.client_ip");
 
     std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
     auto cond = std::make_shared<condition>(std::move(targets),
@@ -155,11 +150,11 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip, {});
+    obj_filter->insert(client_ip, "client_ip", {});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
@@ -172,9 +167,8 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
 
 TEST(TestInputFilter, ObjectExclusionWithCondition)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto query = manifest.insert("query");
+    auto client_ip = get_target_index("http.client_ip");
+    auto query = get_target_index("query");
 
     std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
     auto cond = std::make_shared<condition>(std::move(targets),
@@ -192,11 +186,11 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ddwaf_object_map_add(&root, "query", &child);
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, {"params"});
+    obj_filter->insert(query, "query", {"params"});
 
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
@@ -213,9 +207,8 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
 
 TEST(TestInputFilter, ObjectExclusionFailedCondition)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto query = manifest.insert("query");
+    auto client_ip = get_target_index("http.client_ip");
+    auto query = get_target_index("query");
 
     std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
     auto cond = std::make_shared<condition>(std::move(targets),
@@ -233,11 +226,11 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
     ddwaf_object_map_add(&root, "query", &child);
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, {"params"});
+    obj_filter->insert(query, "query", {"params"});
 
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
@@ -251,9 +244,8 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
 
 TEST(TestInputFilter, InputValidateCachedMatch)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto usr_id = manifest.insert("usr.id");
+    auto client_ip = get_target_index("http.client_ip");
+    auto usr_id = get_target_index("usr.id");
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
@@ -272,7 +264,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     }
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(usr_id);
+    obj_filter->insert(usr_id, "usr.id");
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
@@ -286,7 +278,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -299,7 +291,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -313,9 +305,8 @@ TEST(TestInputFilter, InputValidateCachedMatch)
 
 TEST(TestInputFilter, InputMatchWithoutCache)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto usr_id = manifest.insert("usr.id");
+    auto client_ip = get_target_index("http.client_ip");
+    auto usr_id = get_target_index("usr.id");
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
@@ -334,7 +325,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     }
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip);
+    obj_filter->insert(client_ip, "client_ip");
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
@@ -346,7 +337,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -360,7 +351,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -371,9 +362,8 @@ TEST(TestInputFilter, InputMatchWithoutCache)
 
 TEST(TestInputFilter, InputNoMatchWithoutCache)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto usr_id = manifest.insert("usr.id");
+    auto client_ip = get_target_index("http.client_ip");
+    auto usr_id = get_target_index("usr.id");
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
@@ -392,14 +382,14 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     }
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip);
+    obj_filter->insert(client_ip, "client_ip");
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
 
     {
         ddwaf_object root;
@@ -436,9 +426,8 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
 TEST(TestInputFilter, InputCachedMatchSecondRun)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto usr_id = manifest.insert("usr.id");
+    auto client_ip = get_target_index("http.client_ip");
+    auto usr_id = get_target_index("usr.id");
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
@@ -457,14 +446,14 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     }
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip);
+    obj_filter->insert(client_ip, "client_ip");
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     input_filter::cache_type cache;
 
     {
@@ -499,10 +488,9 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
 
 TEST(TestInputFilter, ObjectValidateCachedMatch)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto usr_id = manifest.insert("usr.id");
-    auto query = manifest.insert("query");
+    auto client_ip = get_target_index("http.client_ip");
+    auto usr_id = get_target_index("usr.id");
+    auto query = get_target_index("query");
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
@@ -521,7 +509,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
     }
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, {"params"});
+    obj_filter->insert(query, "query", {"params"});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
@@ -540,7 +528,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "query", &object);
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -558,7 +546,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&root, "query", &object);
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -571,10 +559,9 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
 
 TEST(TestInputFilter, ObjectMatchWithoutCache)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto usr_id = manifest.insert("usr.id");
-    auto query = manifest.insert("query");
+    auto client_ip = get_target_index("http.client_ip");
+    auto usr_id = get_target_index("usr.id");
+    auto query = get_target_index("query");
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
@@ -593,7 +580,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
     }
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, {"params"});
+    obj_filter->insert(query, "query", {"params"});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
@@ -610,7 +597,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "query", &object);
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -629,7 +616,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&root, "query", &object);
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -640,10 +627,9 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
 TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto usr_id = manifest.insert("usr.id");
-    auto query = manifest.insert("query");
+    auto client_ip = get_target_index("http.client_ip");
+    auto usr_id = get_target_index("usr.id");
+    auto query = get_target_index("query");
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
@@ -662,14 +648,14 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     }
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, {"params"});
+    obj_filter->insert(query, "query", {"params"});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
 
     {
         ddwaf_object root;
@@ -708,10 +694,9 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 
 TEST(TestInputFilter, ObjectCachedMatchSecondRun)
 {
-    ddwaf::manifest manifest;
-    auto client_ip = manifest.insert("http.client_ip");
-    auto usr_id = manifest.insert("usr.id");
-    auto query = manifest.insert("query");
+    auto client_ip = get_target_index("http.client_ip");
+    auto usr_id = get_target_index("usr.id");
+    auto query = get_target_index("query");
 
     std::vector<std::shared_ptr<condition>> conditions;
     {
@@ -730,14 +715,14 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     }
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, {"params"});
+    obj_filter->insert(query, "query", {"params"});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     input_filter::cache_type cache;
 
     {

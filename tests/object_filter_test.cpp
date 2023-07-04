@@ -12,10 +12,9 @@ using namespace ddwaf::exclusion;
 
 TEST(TestObjectFilter, RootTarget)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root, child, tmp;
     ddwaf_object_map(&child);
@@ -27,7 +26,7 @@ TEST(TestObjectFilter, RootTarget)
     store.insert(root);
 
     object_filter filter;
-    filter.insert(query, {});
+    filter.insert(query, "query", {});
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
@@ -39,10 +38,9 @@ TEST(TestObjectFilter, RootTarget)
 
 TEST(TestObjectFilter, SingleTarget)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root, child, tmp;
     ddwaf_object_map(&child);
@@ -54,7 +52,7 @@ TEST(TestObjectFilter, SingleTarget)
     store.insert(root);
 
     object_filter filter;
-    filter.insert(query, {"params"});
+    filter.insert(query, "query", {"params"});
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
@@ -66,11 +64,10 @@ TEST(TestObjectFilter, SingleTarget)
 
 TEST(TestObjectFilter, MultipleTargets)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
-    auto path_params = manifest.insert("path_params");
+    auto query = get_target_index("query");
+    auto path_params = get_target_index("path_params");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root, child, sibling, object, tmp;
 
@@ -96,8 +93,8 @@ TEST(TestObjectFilter, MultipleTargets)
     store.insert(root);
 
     object_filter filter;
-    filter.insert(query, {"uri"});
-    filter.insert(path_params, {"token", "value"});
+    filter.insert(query, "query", {"uri"});
+    filter.insert(path_params, "path_params", {"token", "value"});
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
@@ -110,12 +107,11 @@ TEST(TestObjectFilter, MultipleTargets)
 
 TEST(TestObjectFilter, MissingTarget)
 {
-    ddwaf::manifest manifest;
-    manifest.insert("query");
-    manifest.insert("path_params");
-    auto status = manifest.insert("status");
+    get_target_index("query");
+    get_target_index("path_params");
+    auto status = get_target_index("status");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root, child, sibling, object, tmp;
 
@@ -141,7 +137,7 @@ TEST(TestObjectFilter, MissingTarget)
     store.insert(root);
 
     object_filter filter;
-    filter.insert(status, {"value"});
+    filter.insert(status, "status", {"value"});
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
@@ -151,10 +147,9 @@ TEST(TestObjectFilter, MissingTarget)
 
 TEST(TestObjectFilter, SingleTargetCache)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
-    object_store store(manifest);
+    object_store store;
 
     ddwaf_object root, child, tmp;
     ddwaf_object_map(&child);
@@ -166,7 +161,7 @@ TEST(TestObjectFilter, SingleTargetCache)
     store.insert(root);
 
     object_filter filter;
-    filter.insert(query, {"params"});
+    filter.insert(query, "query", {"params"});
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
@@ -184,15 +179,14 @@ TEST(TestObjectFilter, SingleTargetCache)
 
 TEST(TestObjectFilter, MultipleTargetsCache)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
-    auto path_params = manifest.insert("path_params");
+    auto query = get_target_index("query");
+    auto path_params = get_target_index("path_params");
 
-    object_store store(manifest);
+    object_store store;
 
     object_filter filter;
-    filter.insert(query, {"uri"});
-    filter.insert(path_params, {"token", "value"});
+    filter.insert(query, "query", {"uri"});
+    filter.insert(path_params, "path_params", {"token", "value"});
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
@@ -245,15 +239,14 @@ TEST(TestObjectFilter, MultipleTargetsCache)
 
 TEST(TestObjectFilter, SingleGlobTarget)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
     object_filter filter;
-    filter.insert(query, {"*"});
+    filter.insert(query, "query", {"*"});
 
     ddwaf::timer deadline{2s};
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, tmp;
         // Query
@@ -274,7 +267,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
     }
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, grandchild, tmp;
         // Query
@@ -298,7 +291,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
     }
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, tmp;
         // Root object
@@ -314,16 +307,15 @@ TEST(TestObjectFilter, SingleGlobTarget)
 
 TEST(TestObjectFilter, GlobAndKeyTarget)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
     object_filter filter;
-    filter.insert(query, {"*"});
-    filter.insert(query, {"uri"});
+    filter.insert(query, "query", {"*"});
+    filter.insert(query, "query", {"uri"});
 
     ddwaf::timer deadline{2s};
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, tmp;
         // Query
@@ -344,7 +336,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
     }
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, grandchild, tmp;
         // Query
@@ -368,7 +360,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
     }
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, tmp;
         // Root object
@@ -384,17 +376,16 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
 
 TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
     object_filter filter;
-    filter.insert(query, {"*", "value"});
-    filter.insert(query, {"uri", "other"});
+    filter.insert(query, "query", {"*", "value"});
+    filter.insert(query, "query", {"uri", "other"});
 
     ddwaf::timer deadline{2s};
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, grandchild, grandnephew, tmp;
         // Query
@@ -420,7 +411,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     }
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, grandchild, grandnephew, tmp;
         // Query
@@ -447,7 +438,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     }
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, grandchild, grandnephew, tmp;
         // Query
@@ -472,7 +463,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     }
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, tmp;
 
@@ -492,16 +483,15 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 
 TEST(TestObjectFilter, MultipleGlobsTargets)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
     object_filter filter;
-    filter.insert(query, {"*", "*", "*"});
+    filter.insert(query, "query", {"*", "*", "*"});
 
     ddwaf::timer deadline{2s};
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, grandchild, grandnephew, greatgrandchild, greatgrandnephew, tmp;
 
@@ -540,7 +530,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
     }
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, grandchild, grandnephew, tmp;
 
@@ -565,7 +555,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
     }
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, child, tmp;
 
@@ -586,14 +576,13 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
 
 TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
     object_filter filter;
-    filter.insert(query, {"a", "b", "c"});
-    filter.insert(query, {"a", "*", "d", "e"});
-    filter.insert(query, {"a", "*", "e", "*"});
-    filter.insert(query, {"a", "*", "f", "*", "g"});
+    filter.insert(query, "query", {"a", "b", "c"});
+    filter.insert(query, "query", {"a", "*", "d", "e"});
+    filter.insert(query, "query", {"a", "*", "e", "*"});
+    filter.insert(query, "query", {"a", "*", "f", "*", "g"});
 
     // Successful tests
     {
@@ -611,7 +600,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         };
 
         for (auto &[object, result] : tests) {
-            object_store store(manifest);
+            object_store store;
             object_filter::cache_type cache;
             ddwaf_object root = json_to_object(object);
             store.insert(root);
@@ -637,7 +626,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         };
 
         for (auto &object : tests) {
-            object_store store(manifest);
+            object_store store;
             object_filter::cache_type cache;
             ddwaf_object root = json_to_object(object);
             store.insert(root);
@@ -651,14 +640,13 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
 
 TEST(TestObjectFilter, ArrayWithGlobTargets)
 {
-    ddwaf::manifest manifest;
-    auto query = manifest.insert("query");
+    auto query = get_target_index("query");
 
     object_filter filter;
-    filter.insert(query, {"a", "*", "c", "d"});
+    filter.insert(query, "query", {"a", "*", "c", "d"});
 
     {
-        object_store store(manifest);
+        object_store store;
         object_filter::cache_type cache;
         ddwaf_object root, a, b, c, d, tmp;
 

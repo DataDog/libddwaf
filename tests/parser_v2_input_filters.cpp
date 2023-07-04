@@ -8,16 +8,15 @@
 
 TEST(TestParserV2InputFilters, ParseEmpty)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
+    get_target_index("http.client_ip");
+    get_target_index("usr.id");
 
     auto object = readRule(R"([{id: 1, inputs: []}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -51,14 +50,13 @@ TEST(TestParserV2InputFilters, ParseEmpty)
 
 TEST(TestParserV2InputFilters, ParseFilterWithoutID)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
 
     auto object = readRule(R"([{inputs: [{address: http.client_ip}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -92,17 +90,16 @@ TEST(TestParserV2InputFilters, ParseFilterWithoutID)
 
 TEST(TestParserV2InputFilters, ParseDuplicateFilters)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
+    get_target_index("http.client_ip");
+    get_target_index("usr.id");
 
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}]}, {id: 1, inputs: [{address: usr.id}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -137,16 +134,15 @@ TEST(TestParserV2InputFilters, ParseDuplicateFilters)
 
 TEST(TestParserV2InputFilters, ParseUnconditionalNoTargets)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
+    get_target_index("http.client_ip");
+    get_target_index("usr.id");
 
     auto object = readRule(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -182,17 +178,16 @@ TEST(TestParserV2InputFilters, ParseUnconditionalNoTargets)
 
 TEST(TestParserV2InputFilters, ParseUnconditionalTargetID)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
+    get_target_index("http.client_ip");
+    get_target_index("usr.id");
 
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -233,17 +228,16 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetID)
 
 TEST(TestParserV2InputFilters, ParseUnconditionalTargetTags)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
+    get_target_index("http.client_ip");
+    get_target_index("usr.id");
 
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -286,17 +280,16 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetTags)
 
 TEST(TestParserV2InputFilters, ParseUnconditionalTargetPriority)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
+    get_target_index("http.client_ip");
+    get_target_index("usr.id");
 
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -337,17 +330,16 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetPriority)
 
 TEST(TestParserV2InputFilters, ParseUnconditionalMultipleTargets)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
+    get_target_index("http.client_ip");
+    get_target_index("usr.id");
 
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}, {tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -399,17 +391,16 @@ TEST(TestParserV2InputFilters, ParseUnconditionalMultipleTargets)
 
 TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
+    get_target_index("http.client_ip");
+    get_target_index("usr.id");
 
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}, {id: 2, inputs: [{address: usr.id}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -470,17 +461,16 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
 
 TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
+    get_target_index("http.client_ip");
+    get_target_index("usr.id");
 
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -521,17 +511,13 @@ TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
 
 TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
 {
-    ddwaf::manifest manifest;
     ddwaf::object_limits limits;
-    manifest.insert("http.client_ip");
-    manifest.insert("usr.id");
-
     auto object = readRule(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, manifest, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
     ddwaf_object_free(&object);
 
     {
