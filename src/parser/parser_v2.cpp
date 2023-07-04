@@ -9,7 +9,6 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <log.hpp>
-#include <manifest.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <parser/parser.hpp>
@@ -130,7 +129,7 @@ std::vector<PW_TRANSFORM_ID> parse_transformers(
     return transformers;
 }
 
-condition::ptr parse_rule_condition(const parameter::map &root, manifest &target_manifest,
+condition::ptr parse_rule_condition(const parameter::map &root,
     std::unordered_map<std::string, std::string> &rule_data_ids, condition::data_source source,
     const std::vector<PW_TRANSFORM_ID> &transformers, const object_limits &limits)
 {
@@ -163,7 +162,7 @@ condition::ptr parse_rule_condition(const parameter::map &root, manifest &target
         }
 
         condition::target_type target;
-        target.root = target_manifest.insert(address);
+        target.root = get_target_index(address);
         target.name = address;
         target.key_path = std::move(kp);
 
@@ -183,7 +182,7 @@ condition::ptr parse_rule_condition(const parameter::map &root, manifest &target
         std::move(targets), std::move(processor), std::move(rule_data_id), limits);
 }
 
-rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
+rule_spec parse_rule(parameter::map &rule,
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source)
 {
@@ -198,8 +197,8 @@ rule_spec parse_rule(parameter::map &rule, manifest &target_manifest,
 
     for (const auto &cond_param : conditions_array) {
         auto cond = static_cast<parameter::map>(cond_param);
-        conditions.push_back(parse_rule_condition(
-            cond, target_manifest, rule_data_ids, data_source, rule_transformers, limits));
+        conditions.push_back(
+            parse_rule_condition(cond, rule_data_ids, data_source, rule_transformers, limits));
     }
 
     std::unordered_map<std::string, std::string> tags;
@@ -283,8 +282,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
     return {current, type};
 }
 
-condition::ptr parse_filter_condition(
-    const parameter::map &root, manifest &target_manifest, const object_limits &limits)
+condition::ptr parse_filter_condition(const parameter::map &root, const object_limits &limits)
 {
     auto operation = at<std::string_view>(root, "operator");
     auto params = at<parameter::map>(root, "parameters");
@@ -316,7 +314,7 @@ condition::ptr parse_filter_condition(
         }
 
         condition::target_type target;
-        target.root = target_manifest.insert(address);
+        target.root = get_target_index(address);
         target.name = address;
         target.key_path = std::move(key_path);
         target.source = condition::data_source::values;
@@ -334,9 +332,7 @@ condition::ptr parse_filter_condition(
         std::move(targets), std::move(processor), std::string{}, limits);
 }
 
-input_filter_spec parse_input_filter(
-    const parameter::map &filter, manifest &target_manifest, const object_limits &limits)
-
+input_filter_spec parse_input_filter(const parameter::map &filter, const object_limits &limits)
 {
     // Check for conditions first
     std::vector<condition::ptr> conditions;
@@ -345,8 +341,7 @@ input_filter_spec parse_input_filter(
         conditions.reserve(conditions_array.size());
 
         for (const auto &cond : conditions_array) {
-            conditions.push_back(
-                parse_filter_condition(static_cast<parameter::map>(cond), target_manifest, limits));
+            conditions.push_back(parse_filter_condition(static_cast<parameter::map>(cond), limits));
         }
     }
 
@@ -360,7 +355,7 @@ input_filter_spec parse_input_filter(
         }
     }
 
-    std::unordered_set<manifest::target_type> input_targets;
+    std::unordered_set<target_index> input_targets;
     auto obj_filter = std::make_shared<exclusion::object_filter>(limits);
     auto inputs_array = at<parameter::vector>(filter, "inputs");
 
@@ -373,23 +368,16 @@ input_filter_spec parse_input_filter(
         auto input_map = static_cast<parameter::map>(input_param);
         auto address = at<std::string>(input_map, "address");
 
-        auto optional_target = target_manifest.find(address);
-        if (!optional_target.has_value()) {
-            // This address isn't used by any rule so we skip it.
-            DDWAF_DEBUG("Address %s not used by any existing rule", address.c_str());
-            continue;
-        }
-
+        auto target = get_target_index(address);
         auto key_path = at<std::vector<std::string_view>>(input_map, "key_path", {});
 
-        obj_filter->insert(*optional_target, key_path);
+        obj_filter->insert(target, std::move(address), key_path);
     }
 
     return {std::move(conditions), std::move(obj_filter), std::move(rules_target)};
 }
 
-rule_filter_spec parse_rule_filter(
-    const parameter::map &filter, manifest &target_manifest, const object_limits &limits)
+rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_limits &limits)
 {
     // Check for conditions first
     std::vector<condition::ptr> conditions;
@@ -398,8 +386,7 @@ rule_filter_spec parse_rule_filter(
         conditions.reserve(conditions_array.size());
 
         for (const auto &cond : conditions_array) {
-            conditions.push_back(
-                parse_filter_condition(static_cast<parameter::map>(cond), target_manifest, limits));
+            conditions.push_back(parse_filter_condition(static_cast<parameter::map>(cond), limits));
         }
     }
 
@@ -425,8 +412,8 @@ std::string index_to_id(unsigned idx) { return "index:" + std::to_string(idx); }
 } // namespace
 
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
-    manifest &target_manifest, std::unordered_map<std::string, std::string> &rule_data_ids,
-    const object_limits &limits, rule::source_type source)
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    rule::source_type source)
 {
     rule_spec_container rules;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
@@ -441,7 +428,7 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
                 continue;
             }
 
-            auto rule = parse_rule(rule_map, target_manifest, rule_data_ids, limits, source);
+            auto rule = parse_rule(rule_map, rule_data_ids, limits, source);
             DDWAF_DEBUG("Parsed rule %s", id.c_str());
             info.add_loaded(id);
             rules.emplace(std::move(id), std::move(rule));
@@ -552,8 +539,8 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
     return overrides;
 }
 
-filter_spec_container parse_filters(parameter::vector &filter_array, base_section_info &info,
-    manifest &target_manifest, const object_limits &limits)
+filter_spec_container parse_filters(
+    parameter::vector &filter_array, base_section_info &info, const object_limits &limits)
 {
     filter_spec_container filters;
     for (unsigned i = 0; i < filter_array.size(); i++) {
@@ -569,11 +556,11 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
             }
 
             if (node.find("inputs") != node.end()) {
-                auto filter = parse_input_filter(node, target_manifest, limits);
+                auto filter = parse_input_filter(node, limits);
                 filters.ids.emplace(id);
                 filters.input_filters.emplace(id, std::move(filter));
             } else {
-                auto filter = parse_rule_filter(node, target_manifest, limits);
+                auto filter = parse_rule_filter(node, limits);
                 filters.ids.emplace(id);
                 filters.rule_filters.emplace(id, std::move(filter));
             }

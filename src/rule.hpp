@@ -86,6 +86,13 @@ public:
 
     const std::vector<std::string> &get_actions() const { return actions_; }
 
+    void get_addresses(std::unordered_set<std::string> &addresses) const
+    {
+        for (const auto &cond : conditions_) {
+            for (const auto &target : cond->get_targets()) { addresses.emplace(target.name); }
+        }
+    }
+
     void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
 
 protected:

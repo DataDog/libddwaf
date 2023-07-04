@@ -12,8 +12,7 @@ TEST(TestRuleFilter, Match)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+    targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
     auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
@@ -27,7 +26,7 @@ TEST(TestRuleFilter, Match)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -40,8 +39,7 @@ TEST(TestRuleFilter, NoMatch)
 {
     std::vector<condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+    targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
     auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
@@ -54,7 +52,7 @@ TEST(TestRuleFilter, NoMatch)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -65,12 +63,11 @@ TEST(TestRuleFilter, NoMatch)
 
 TEST(TestRuleFilter, ValidateCachedMatch)
 {
-    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
         auto cond = std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
@@ -79,7 +76,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
         auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
@@ -98,7 +95,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -110,7 +107,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -120,12 +117,11 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
 TEST(TestRuleFilter, MatchWithoutCache)
 {
-    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
         auto cond = std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
@@ -134,7 +130,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
         auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
@@ -146,7 +142,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     {
         ddwaf::exclusion::rule_filter::cache_type cache;
         ddwaf_object root, tmp;
@@ -174,12 +170,11 @@ TEST(TestRuleFilter, MatchWithoutCache)
 
 TEST(TestRuleFilter, NoMatchWithoutCache)
 {
-    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
         auto cond = std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
@@ -188,7 +183,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
         auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
@@ -205,7 +200,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -218,7 +213,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf::object_store store(manifest);
+        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -228,12 +223,11 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
 
 TEST(TestRuleFilter, FullCachedMatchSecondRun)
 {
-    ddwaf::manifest manifest;
     std::vector<std::shared_ptr<condition>> conditions;
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("http.client_ip"), "http.client_ip", {}, {}});
+        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
         auto cond = std::make_shared<condition>(
             std::move(targets), std::make_unique<rule_processor::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
@@ -242,7 +236,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
 
     {
         std::vector<condition::target_type> targets;
-        targets.push_back({manifest.insert("usr.id"), "usr.id", {}, {}});
+        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
         auto cond = std::make_shared<condition>(std::move(targets),
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
@@ -251,7 +245,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     ddwaf::exclusion::rule_filter::cache_type cache;
 
     // In this test we validate that when a match has already occurred, the

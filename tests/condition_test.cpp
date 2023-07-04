@@ -13,8 +13,7 @@ TEST(TestCondition, Match)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("server.request.query"), "server.request.query"});
+    targets.push_back({get_target_index("server.request.query"), "server.request.query"});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
@@ -24,7 +23,7 @@ TEST(TestCondition, Match)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -44,9 +43,8 @@ TEST(TestCondition, MatchWithKeyPath)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
     targets.push_back(
-        {manifest.insert("server.request.query"), "server.request.query", {"key"}, {}});
+        {get_target_index("server.request.query"), "server.request.query", {"key"}, {}});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
@@ -59,7 +57,7 @@ TEST(TestCondition, MatchWithKeyPath)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", &submap);
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -80,9 +78,8 @@ TEST(TestCondition, MatchWithTransformer)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
     targets.push_back(
-        {manifest.insert("server.request.query"), "server.request.query", {}, {PWT_LOWERCASE}});
+        {get_target_index("server.request.query"), "server.request.query", {}, {PWT_LOWERCASE}});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>("value", 0, true));
@@ -92,7 +89,7 @@ TEST(TestCondition, MatchWithTransformer)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "VALUE"));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -112,8 +109,7 @@ TEST(TestCondition, MatchWithMultipleTransformers)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {},
+    targets.push_back({get_target_index("server.request.query"), "server.request.query", {},
         {PWT_COMPRESS_WHITE, PWT_LOWERCASE}});
 
     auto cond = std::make_shared<condition>(
@@ -124,7 +120,7 @@ TEST(TestCondition, MatchWithMultipleTransformers)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "    VALUE    "));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -144,8 +140,7 @@ TEST(TestCondition, MatchOnKeys)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {}, {},
+    targets.push_back({get_target_index("server.request.query"), "server.request.query", {}, {},
         condition::data_source::keys});
 
     auto cond = std::make_shared<condition>(
@@ -159,7 +154,7 @@ TEST(TestCondition, MatchOnKeys)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", &value);
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -180,8 +175,7 @@ TEST(TestCondition, MatchOnKeysWithTransformer)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("server.request.query"), "server.request.query", {},
+    targets.push_back({get_target_index("server.request.query"), "server.request.query", {},
         {PWT_LOWERCASE}, condition::data_source::keys});
 
     auto cond = std::make_shared<condition>(
@@ -195,7 +189,7 @@ TEST(TestCondition, MatchOnKeysWithTransformer)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", &value);
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -216,8 +210,7 @@ TEST(TestCondition, NoMatch)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("http.client_ip"), "http.client_ip"});
+    targets.push_back({get_target_index("http.client_ip"), "http.client_ip"});
 
     auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
@@ -227,7 +220,7 @@ TEST(TestCondition, NoMatch)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -240,8 +233,7 @@ TEST(TestCondition, ExcludeInput)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("server.request.query"), "server.request.query"});
+    targets.push_back({get_target_index("server.request.query"), "server.request.query"});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
@@ -251,7 +243,7 @@ TEST(TestCondition, ExcludeInput)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
@@ -264,8 +256,7 @@ TEST(TestCondition, ExcludeKeyPath)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    ddwaf::manifest manifest;
-    targets.push_back({manifest.insert("server.request.query"), "server.request.query"});
+    targets.push_back({get_target_index("server.request.query"), "server.request.query"});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
@@ -279,7 +270,7 @@ TEST(TestCondition, ExcludeKeyPath)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "server.request.query", &map);
 
-    ddwaf::object_store store(manifest);
+    ddwaf::object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
