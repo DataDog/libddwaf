@@ -253,15 +253,13 @@ TEST(TestRule, NoMatchWithoutCache)
 
 TEST(TestRule, FullCachedMatchSecondRun)
 {
-    std::vector<std::shared_ptr<condition>> conditions;
-
-    expression_builder builder(2);
+      expression_builder builder(2);
     builder.start_condition<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
     builder.start_condition<rule_processor::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
-
+  
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), builder.build());
@@ -301,7 +299,6 @@ TEST(TestRule, FullCachedMatchSecondRun)
 
 TEST(TestRule, ExcludeObject)
 {
-
     expression_builder builder(1);
     builder.start_condition<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");

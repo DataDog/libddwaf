@@ -333,6 +333,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 
         ruleset->insert_rule(rule);
     }
+
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
 
@@ -713,7 +714,6 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
-
     {
         expression_builder builder(1);
         builder.start_condition<rule_processor::ip_match>(

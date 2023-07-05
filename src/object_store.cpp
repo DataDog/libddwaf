@@ -61,7 +61,6 @@ bool object_store::insert(const ddwaf_object &input)
         }
 
         std::string key(array[i].parameterName, length);
-        DDWAF_TRACE("Adding target %s", key.data());
         auto target = get_target_index(key);
         objects_[target] = &array[i];
         latest_batch_.emplace(target);
