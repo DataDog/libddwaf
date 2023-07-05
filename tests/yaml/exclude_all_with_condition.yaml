@@ -6,6 +6,7 @@ exclusions:
         parameters:
           inputs:
             - address: usr.id
+            - address: usr.id2
           list:
             - admin
 rules:
