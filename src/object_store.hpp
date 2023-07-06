@@ -17,6 +17,10 @@ namespace ddwaf {
 
 class object_store {
 public:
+    enum class attribute : uint8_t { none = 0, owned = 1, ephemeral = 2 };
+
+    using object_and_attribute = std::pair<const ddwaf_object *, attribute>;
+
     explicit object_store(ddwaf_object_free_fn free_fn = ddwaf_object_free);
     ~object_store();
     object_store(const object_store &) = default;
@@ -24,9 +28,9 @@ public:
     object_store &operator=(const object_store &) = delete;
     object_store &operator=(object_store &&) = delete;
 
-    bool insert(const ddwaf_object &input);
+    bool insert(const ddwaf_object &input, attribute attr = attribute::none);
 
-    const ddwaf_object *get_target(target_index target) const;
+    object_and_attribute get_target(target_index target) const;
 
     bool is_new_target(const target_index target) const
     {
@@ -41,7 +45,7 @@ protected:
     static constexpr unsigned default_num_objects = 8;
 
     memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, const ddwaf_object *> objects_;
+    memory::unordered_map<target_index, object_and_attribute> objects_;
 
     memory::vector<ddwaf_object> objects_to_free_;
     ddwaf_object_free_fn obj_free_;

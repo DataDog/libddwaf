@@ -122,7 +122,7 @@ std::optional<event::match> condition::match(const object_store &store,
         }
 
         // TODO: iterators could be cached to avoid reinitialisation
-        const auto *object = store.get_target(target);
+        auto [object, attr] = store.get_target(target);
         if (object == nullptr) {
             continue;
         }

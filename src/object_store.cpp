@@ -9,6 +9,7 @@
 #include <vector>
 
 namespace ddwaf {
+using object_and_attribute = object_store::object_and_attribute;
 
 object_store::object_store(ddwaf_object_free_fn free_fn) : obj_free_(free_fn)
 {
@@ -25,7 +26,7 @@ object_store::~object_store()
     for (auto &obj : objects_to_free_) { obj_free_(&obj); }
 }
 
-bool object_store::insert(const ddwaf_object &input)
+bool object_store::insert(const ddwaf_object &input, attribute attr)
 {
     if (obj_free_ != nullptr) {
         objects_to_free_.emplace_back(input);
@@ -62,17 +63,17 @@ bool object_store::insert(const ddwaf_object &input)
 
         std::string key(array[i].parameterName, length);
         auto target = get_target_index(key);
-        objects_[target] = &array[i];
+        objects_[target] = {&array[i], attr};
         latest_batch_.emplace(target);
     }
 
     return true;
 }
 
-const ddwaf_object *object_store::get_target(target_index target) const
+object_and_attribute object_store::get_target(target_index target) const
 {
     auto it = objects_.find(target);
-    return it != objects_.end() ? it->second : nullptr;
+    return it != objects_.end() ? it->second : object_and_attribute{nullptr, attribute::none};
 }
 
 } // namespace ddwaf
