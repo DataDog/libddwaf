@@ -31,15 +31,15 @@ struct Record : BaseContainer {};
 
 struct Array : BaseContainer {};
 
-struct Tree {
+struct Schema {
     using Node = std::variant<Scalar, Key, Record, Array>;
     using Store = std::vector<Node>;
 
-    Tree() { store = std::make_shared<Store>(); }
+    Schema() { store = std::make_shared<Store>(); }
 
-    Tree(const Tree &tree, std::size_t n) : size_(tree.size_ - n), store(tree.store) {}
+    Schema(const Schema &tree, std::size_t n) : size_(tree.size_ - n), store(tree.store) {}
 
-    [[nodiscard]] Tree advance(std::size_t n) const { return {*this, n}; }
+    [[nodiscard]] Schema advance(std::size_t n) const { return {*this, n}; }
 
     [[nodiscard]] Node &root() const { return store->at(size_ - 1); }
 
@@ -76,15 +76,19 @@ struct Tree {
         return acc;
     }
 
-    bool operator==(const Tree &other) const;
+    std::size_t fill_from(ddwaf_object const *obj);
+
+    std::size_t serialize(rapidjson::Writer<rapidjson::StringBuffer> &writer) const;
+
+    bool operator==(const Schema &other) const;
 
     std::size_t size_{};
     std::shared_ptr<Store> store;
 };
 
-template <> struct std::hash<Tree> {
+template <> struct std::hash<Schema> {
 
-    std::size_t operator()(Tree const &tree) const noexcept
+    std::size_t operator()(Schema const &tree) const noexcept
     {
         if (tree.size_ == 0) {
             return 0;
@@ -95,15 +99,15 @@ template <> struct std::hash<Tree> {
             return std::hash<Scalar>{}(std::get<Scalar>(node));
         case 1: {
             std::size_t h = std::hash<Key>{}(std::get<Key>(node));
-            return h ^ (std::hash<Tree>{}(tree.advance(1)) << 1);
+            return h ^ (std::hash<Schema>{}(tree.advance(1)) << 1);
         }
         case 2: {
             std::size_t h = 42424242;
             std::size_t read = 1;
             while (read <= std::get<Record>(node).children) {
-                Tree st = tree.advance(read);
+                Schema st = tree.advance(read);
                 read += st.size();
-                h ^= (std::hash<Tree>{}(st) << 1);
+                h ^= (std::hash<Schema>{}(st) << 1);
             }
             return h;
         }
@@ -111,9 +115,9 @@ template <> struct std::hash<Tree> {
             std::size_t h = 89898989;
             std::size_t read = 1;
             while (read <= std::get<Array>(node).children) {
-                Tree st = tree.advance(read);
+                Schema st = tree.advance(read);
                 read += st.size();
-                h ^= (std::hash<Tree>{}(st) << 1);
+                h ^= (std::hash<Schema>{}(st) << 1);
             }
             return h;
         }
@@ -122,7 +126,7 @@ template <> struct std::hash<Tree> {
     }
 };
 
-bool Tree::operator==(const Tree &other) const
+bool Schema::operator==(const Schema &other) const
 {
     if (size_ == 0 or other.size_ == 0) {
         return false;
@@ -141,34 +145,34 @@ bool Tree::operator==(const Tree &other) const
         }
         return advance(1) == other.advance(1);
     case 2: {
-        std::unordered_set<Tree> ma;
-        std::unordered_set<Tree> mb;
+        std::unordered_set<Schema> ma;
+        std::unordered_set<Schema> mb;
         std::size_t read = 1;
         while (read <= std::get<Record>(na).children) {
-            Tree st = advance(read);
+            Schema st = advance(read);
             read += st.size();
             ma.insert(st);
         }
         read = 1;
         while (read <= std::get<Record>(nb).children) {
-            Tree st = advance(read);
+            Schema st = advance(read);
             read += st.size();
             mb.insert(st);
         }
         return ma == mb;
     }
     case 3: {
-        std::unordered_set<Tree> ma;
-        std::unordered_set<Tree> mb;
+        std::unordered_set<Schema> ma;
+        std::unordered_set<Schema> mb;
         std::size_t read = 1;
         while (read <= std::get<Array>(na).children) {
-            Tree st = advance(read);
+            Schema st = advance(read);
             read += st.size();
             ma.insert(st);
         }
         read = 1;
         while (read <= std::get<Array>(nb).children) {
-            Tree st = advance(read);
+            Schema st = advance(read);
             read += st.size();
             mb.insert(st);
         }
@@ -178,9 +182,9 @@ bool Tree::operator==(const Tree &other) const
     return false;
 }
 
-std::size_t serialize_schema(Tree &tree, rapidjson::Writer<rapidjson::StringBuffer> &writer)
+std::size_t Schema::serialize(rapidjson::Writer<rapidjson::StringBuffer> &writer) const
 {
-    auto &node = tree.root();
+    auto &node = root();
     std::size_t read = 1;
     switch (node.index()) {
     case 0:
@@ -191,82 +195,70 @@ std::size_t serialize_schema(Tree &tree, rapidjson::Writer<rapidjson::StringBuff
     case 1:
         writer.Key(std::get<Key>(node));
         break;
-    case 2: {
+    case 2:
         writer.StartArray();
         writer.StartObject();
         while (read <= std::get<Record>(node).children) {
-            auto st = tree.advance(read);
-            read += serialize_schema(st, writer);
-            st = tree.advance(read);
-            read += serialize_schema(st, writer);
+            // key
+            read += advance(read).serialize(writer);
+            // value
+            read += advance(read).serialize(writer);
         }
         writer.EndObject();
         writer.EndArray();
         break;
-    }
-    case 3: {
+    case 3:
         writer.StartArray();
         writer.StartArray();
-        while (read <= std::get<Array>(node).children) {
-            auto st = tree.advance(read);
-            read += serialize_schema(st, writer);
-        }
+        while (read <= std::get<Array>(node).children) { read += advance(read).serialize(writer); }
         writer.EndArray();
         writer.EndArray();
         break;
-    }
     }
     return read;
 }
 
-std::size_t compute_schema(const ddwaf_object *node, Tree &tree)
+std::size_t Schema::fill_from(const ddwaf_object *obj)
 {
     std::size_t added = 0;
 
-    switch (node->type) {
+    switch (obj->type) {
     case DDWAF_OBJ_BOOL:
-        tree.add(Scalar::Bool);
-        added += 1;
-        break;
+        add(Scalar::Bool);
+        return 1;
     case DDWAF_OBJ_STRING:
-        tree.add(Scalar::Str);
-        added += 1;
-        break;
+        add(Scalar::Str);
+        return 1;
     case DDWAF_OBJ_SIGNED:
     case DDWAF_OBJ_UNSIGNED:
-        tree.add(Scalar::Int);
-        added += 1;
-        break;
-    case DDWAF_OBJ_MAP: {
-        for (std::size_t i = 0; i < node->nbEntries; i++) {
-            added += 1 + compute_schema(&node->array[i], tree);
-            tree.add(Key(node->array[i].parameterName, node->array[i].parameterNameLength));
+        add(Scalar::Int);
+        return 1;
+    case DDWAF_OBJ_MAP:
+        for (std::size_t i = 0; i < obj->nbEntries; i++) {
+            added += 1 + fill_from(&obj->array[i]);
+            add(Key(obj->array[i].parameterName, obj->array[i].parameterNameLength));
         }
-        tree.add(Record{added});
-        added += 1;
-        break;
-    }
+        add(Record{added});
+        return 1 + added;
     case DDWAF_OBJ_ARRAY: {
-        std::unordered_set<Tree> children;
-        for (std::size_t i = 0; i < node->nbEntries; i++) {
-            auto n = compute_schema(&node->array[i], tree);
-            auto r = children.insert(tree);
+        std::unordered_set<Schema> children;
+        for (std::size_t i = 0; i < obj->nbEntries; i++) {
+            auto n = fill_from(&obj->array[i]);
+            auto r = children.insert(*this);
             if (r.second) {
                 added += n;
             } else {
-                tree.prune(n);
+                prune(n);
             }
         }
-        tree.add(Array{added});
-        added += 1;
-        break;
+        add(Array{added});
+        return 1 + added;
     }
     default:
-        tree.add(Scalar::Unknown);
-        added += 1;
-        break;
+        add(Scalar::Unknown);
+        return 1;
     }
-    return added;
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -282,18 +274,18 @@ int main(int argc, char *argv[])
         std::string raw_payload = read_file(argv[i]);
         auto payload = YAML::Load(raw_payload).as<ddwaf_object>();
 
-        Tree tree;
+        Schema s;
 
-        std::size_t added = compute_schema(&payload, tree);
+        std::size_t added = s.fill_from(&payload);
 
-        std::cerr << "number of nodes: " << tree.size() << " added: " << added << '\n';
+        std::cerr << "number of nodes: " << s.size() << " added: " << added << '\n';
 
-        rapidjson::StringBuffer s;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(s);
+        rapidjson::StringBuffer buf;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
 
-        serialize_schema(tree, writer);
+        s.serialize(writer);
 
-        std::cout << s.GetString() << '\n';
+        std::cout << buf.GetString() << '\n';
 
         ddwaf_object_free(&payload);
     }
