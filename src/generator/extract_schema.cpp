@@ -139,28 +139,94 @@ struct node_equal {
     }
 };
 
-schema_node *compute_schema(const ddwaf_object *object, object_limits &limits)
+class type_inference {
+public:
+    type_inference()
+    {
+        constexpr unsigned regex_max_mem = 512 * 1024;
+
+        re2::RE2::Options options;
+        options.set_max_mem(regex_max_mem);
+        options.set_log_errors(false);
+        options.set_case_sensitive(false);
+
+        int_regex = std::make_unique<re2::RE2>("^[0-9]+$", options);
+        float_regex = std::make_unique<re2::RE2>("^[0-9]+.[0-9]+$", options);
+        bool_regex = std::make_unique<re2::RE2>("^(?:true|false)$", options);
+    }
+
+    schema_scalar_type infer(std::string_view value)
+    {
+        const re2::StringPiece ref(value.data(), value.size());
+        if (int_regex->Match(ref, 0, value.size(), re2::RE2::UNANCHORED, nullptr, 0)) {
+            return schema_scalar_type::integer;
+        }
+
+        if (bool_regex->Match(ref, 0, value.size(), re2::RE2::UNANCHORED, nullptr, 0)) {
+            return schema_scalar_type::boolean;
+        }
+
+        if (float_regex->Match(ref, 0, value.size(), re2::RE2::UNANCHORED, nullptr, 0)) {
+            return schema_scalar_type::real;
+        }
+
+        return schema_scalar_type::string;
+    }
+
+protected:
+    std::unique_ptr<re2::RE2> int_regex{nullptr};
+    std::unique_ptr<re2::RE2> float_regex{nullptr};
+    std::unique_ptr<re2::RE2> bool_regex{nullptr};
+};
+
+class schema_generator {
+public:
+    explicit schema_generator(const object_limits &limits) : limits_(limits) {}
+
+    schema_node *generate(const ddwaf_object *object, std::size_t depth);
+
+protected:
+    type_inference inferencer_;
+    const object_limits &limits_;
+};
+
+// NOLINTNEXTLINE(misc-no-recursion)
+schema_node *schema_generator::generate(const ddwaf_object *object, std::size_t depth)
 {
+    if (depth == 0) {
+        return nullptr;
+    }
+
     switch (object->type) {
     case DDWAF_OBJ_BOOL:
         return new schema_scalar{schema_scalar_type::boolean, {}};
-    case DDWAF_OBJ_STRING:
-        // TODO: Infer type
-        return new schema_scalar{schema_scalar_type::string, {}};
+    case DDWAF_OBJ_STRING: {
+        auto type = inferencer_.infer({object->stringValue, object->nbEntries});
+        return new schema_scalar{type, {}};
+    }
     case DDWAF_OBJ_SIGNED:
     case DDWAF_OBJ_UNSIGNED:
         return new schema_scalar{schema_scalar_type::integer, {}};
     case DDWAF_OBJ_MAP: {
         auto *node = new schema_record{};
         auto length = static_cast<std::size_t>(object->nbEntries);
-        if (length > limits.max_container_size) {
+        if (length > limits_.max_container_size) {
             node->truncated = true;
-            length = limits.max_container_size;
+            length = limits_.max_container_size;
         }
         for (std::size_t i = 0; i < length; i++) {
             const auto *child = &object->array[i];
+            if (child->parameterName == nullptr) {
+                continue;
+            }
+
+            auto *schema = generate(child, depth - 1);
+            if (schema == nullptr) {
+                continue;
+            }
+
             std::string_view key{child->parameterName, child->parameterNameLength};
-            node->children.emplace(key, compute_schema(child, limits));
+            node->children.emplace(key, schema);
         }
         return node;
     }
@@ -169,13 +235,16 @@ schema_node *compute_schema(const ddwaf_object *object, object_limits &limits)
         auto *node = new schema_array{};
         node->length = object->nbEntries;
         auto length = static_cast<std::size_t>(object->nbEntries);
-        if (length > limits.max_container_size) {
+        if (length > limits_.max_container_size) {
             node->truncated = true;
-            length = limits.max_container_size;
+            length = limits_.max_container_size;
         }
         for (std::size_t i = 0; i < length; i++) {
             const auto *child = &object->array[i];
-            auto *schema = compute_schema(child, limits);
+            auto *schema = generate(child, depth - 1);
+            if (schema == nullptr) {
+                continue;
+            }
             auto [it, res] = subtypes.emplace(schema);
             if (res) {
                 node->children.emplace_back(schema);
@@ -215,6 +284,7 @@ ddwaf_object serialize(schema_scalar &node)
     return array;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object serialize(schema_array &node)
 {
     ddwaf_object tmp;
@@ -241,6 +311,7 @@ ddwaf_object serialize(schema_array &node)
     return array;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object serialize(schema_record &node)
 {
     ddwaf_object tmp;
@@ -265,6 +336,7 @@ ddwaf_object serialize(schema_record &node)
     return array;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object serialize(schema_node &node)
 {
     switch (node.type) {
@@ -289,8 +361,8 @@ ddwaf_object extract_schema::generate(const ddwaf_object *input)
         return {};
     }
 
-    object_limits limits;
-    std::shared_ptr<schema_node> schema{compute_schema(input, limits)};
+    schema_generator gen(limits_);
+    std::shared_ptr<schema_node> schema{gen.generate(input, limits_.max_container_depth)};
     if (schema == nullptr) {
         return {};
     }
