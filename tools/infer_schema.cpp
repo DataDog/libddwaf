@@ -37,47 +37,44 @@ struct Tree {
 
     Tree() { store = std::make_shared<Store>(); }
 
-    Tree(const Tree &tree, std::size_t idx) : size_(tree.size_ - idx), store(tree.store) {}
+    Tree(const Tree &tree, std::size_t n) : size_(tree.size_ - n), store(tree.store) {}
 
-    Node &operator[](std::ptrdiff_t idx) const
-    {
-        // reverse idx access
-        return store->at(size_ - idx - 1);
-    }
+    [[nodiscard]] Tree advance(std::size_t n) const { return {*this, n}; }
 
-    void push_back(const Node &node)
+    [[nodiscard]] Node &root() const { return store->at(size_ - 1); }
+
+    void add(const Node &node)
     {
         store->push_back(node);
         size_ += 1;
     }
 
-    void insert(const Tree &tree)
+    void prune(std::ptrdiff_t n)
     {
-        std::copy_n(tree.store->begin(), tree.size_, std::back_inserter(*store));
-        size_ += tree.size_;
+        store->erase(store->end() - n, store->end());
+        size_ -= n;
     }
 
-    [[nodiscard]] std::size_t size() const
+    [[nodiscard]] std::size_t size(std::size_t acc = 0) const
     {
         if (size_ == 0) {
-            return size_;
+            return acc;
         }
-        auto node = (*this)[0];
+        auto node = root();
         switch (node.index()) {
         case 0:
-            return 1;
+            return acc + 1;
         case 1:
             // key + value
-            return 1 + subtree(1).size();
+            // should be tail recursive thanks to acc
+            return advance(1).size(1 + acc);
         case 2:
-            return 1 + std::get<Record>(node).children;
+            return acc + 1 + std::get<Record>(node).children;
         case 3:
-            return 1 + std::get<Array>(node).children;
+            return acc + 1 + std::get<Array>(node).children;
         }
-        return 0;
+        return acc;
     }
-
-    [[nodiscard]] Tree subtree(std::size_t idx) const { return {*this, idx}; }
 
     bool operator==(const Tree &other) const;
 
@@ -86,26 +83,27 @@ struct Tree {
 };
 
 template <> struct std::hash<Tree> {
+
     std::size_t operator()(Tree const &tree) const noexcept
     {
         if (tree.size_ == 0) {
             return 0;
         }
-        auto node = tree[0];
+        auto node = tree.root();
         switch (node.index()) {
         case 0:
             return std::hash<Scalar>{}(std::get<Scalar>(node));
         case 1: {
             std::size_t h = std::hash<Key>{}(std::get<Key>(node));
-            return h ^ (std::hash<Tree>{}(tree.subtree(1)) << 1);
+            return h ^ (std::hash<Tree>{}(tree.advance(1)) << 1);
         }
         case 2: {
             std::size_t h = 42424242;
             std::size_t read = 1;
             while (read <= std::get<Record>(node).children) {
-                Tree st = tree.subtree(read);
+                Tree st = tree.advance(read);
                 read += st.size();
-                h ^= std::hash<Tree>{}(st);
+                h ^= (std::hash<Tree>{}(st) << 1);
             }
             return h;
         }
@@ -113,9 +111,9 @@ template <> struct std::hash<Tree> {
             std::size_t h = 89898989;
             std::size_t read = 1;
             while (read <= std::get<Array>(node).children) {
-                Tree st = tree.subtree(read);
+                Tree st = tree.advance(read);
                 read += st.size();
-                h ^= std::hash<Tree>{}(st);
+                h ^= (std::hash<Tree>{}(st) << 1);
             }
             return h;
         }
@@ -129,8 +127,8 @@ bool Tree::operator==(const Tree &other) const
     if (size_ == 0 or other.size_ == 0) {
         return false;
     }
-    auto na = (*this)[0];
-    auto nb = other[0];
+    auto na = root();
+    auto nb = other.root();
     if (na.index() != nb.index()) {
         return false;
     }
@@ -141,19 +139,19 @@ bool Tree::operator==(const Tree &other) const
         if (std::get<Key>(na) != std::get<Key>(nb)) {
             return false;
         }
-        return subtree(1) == other.subtree(1);
+        return advance(1) == other.advance(1);
     case 2: {
         std::unordered_set<Tree> ma;
         std::unordered_set<Tree> mb;
         std::size_t read = 1;
         while (read <= std::get<Record>(na).children) {
-            Tree st = subtree(read);
+            Tree st = advance(read);
             read += st.size();
             ma.insert(st);
         }
         read = 1;
         while (read <= std::get<Record>(nb).children) {
-            Tree st = subtree(read);
+            Tree st = advance(read);
             read += st.size();
             mb.insert(st);
         }
@@ -164,13 +162,13 @@ bool Tree::operator==(const Tree &other) const
         std::unordered_set<Tree> mb;
         std::size_t read = 1;
         while (read <= std::get<Array>(na).children) {
-            Tree st = subtree(read);
+            Tree st = advance(read);
             read += st.size();
             ma.insert(st);
         }
         read = 1;
         while (read <= std::get<Array>(nb).children) {
-            Tree st = subtree(read);
+            Tree st = advance(read);
             read += st.size();
             mb.insert(st);
         }
@@ -182,37 +180,42 @@ bool Tree::operator==(const Tree &other) const
 
 std::size_t serialize_schema(Tree &tree, rapidjson::Writer<rapidjson::StringBuffer> &writer)
 {
-    auto &node = tree[0];
+    auto &node = tree.root();
     std::size_t read = 1;
-    writer.StartArray();
     switch (node.index()) {
     case 0:
+        writer.StartArray();
         writer.Uint(to_underlying(std::get<Scalar>(node)));
+        writer.EndArray();
         break;
     case 1:
-        throw std::logic_error("unexpected key");
+        writer.Key(std::get<Key>(node));
+        break;
     case 2: {
+        writer.StartArray();
         writer.StartObject();
         while (read <= std::get<Record>(node).children) {
-            writer.Key(std::get<Key>(tree[read]));
-            read += 1;
-            auto st = tree.subtree(read);
+            auto st = tree.advance(read);
+            read += serialize_schema(st, writer);
+            st = tree.advance(read);
             read += serialize_schema(st, writer);
         }
         writer.EndObject();
+        writer.EndArray();
         break;
     }
     case 3: {
         writer.StartArray();
+        writer.StartArray();
         while (read <= std::get<Array>(node).children) {
-            auto st = tree.subtree(read);
+            auto st = tree.advance(read);
             read += serialize_schema(st, writer);
         }
+        writer.EndArray();
         writer.EndArray();
         break;
     }
     }
-    writer.EndArray();
     return read;
 }
 
@@ -222,45 +225,44 @@ std::size_t compute_schema(const ddwaf_object *node, Tree &tree)
 
     switch (node->type) {
     case DDWAF_OBJ_BOOL:
-        tree.push_back(Scalar::Bool);
+        tree.add(Scalar::Bool);
         added += 1;
         break;
     case DDWAF_OBJ_STRING:
-        tree.push_back(Scalar::Str);
+        tree.add(Scalar::Str);
         added += 1;
         break;
     case DDWAF_OBJ_SIGNED:
     case DDWAF_OBJ_UNSIGNED:
-        tree.push_back(Scalar::Int);
+        tree.add(Scalar::Int);
         added += 1;
         break;
     case DDWAF_OBJ_MAP: {
-        std::size_t subadded = 0;
         for (std::size_t i = 0; i < node->nbEntries; i++) {
-            subadded += 1 + compute_schema(&node->array[i], tree);
-            tree.push_back(Key(node->array[i].parameterName, node->array[i].parameterNameLength));
+            added += 1 + compute_schema(&node->array[i], tree);
+            tree.add(Key(node->array[i].parameterName, node->array[i].parameterNameLength));
         }
-        tree.push_back(Record{subadded});
-        added += 1 + subadded;
+        tree.add(Record{added});
+        added += 1;
         break;
     }
     case DDWAF_OBJ_ARRAY: {
         std::unordered_set<Tree> children;
         for (std::size_t i = 0; i < node->nbEntries; i++) {
-            Tree subtree;
-            compute_schema(&node->array[i], subtree);
-            children.insert(subtree);
+            auto n = compute_schema(&node->array[i], tree);
+            auto r = children.insert(tree);
+            if (r.second) {
+                added += n;
+            } else {
+                tree.prune(n);
+            }
         }
-        std::for_each(children.cbegin(), children.cend(), [&](const Tree &subtree) {
-            tree.insert(subtree);
-            added += subtree.size();
-        });
-        tree.push_back(Array{added});
+        tree.add(Array{added});
         added += 1;
         break;
     }
     default:
-        tree.push_back(Scalar::Unknown);
+        tree.add(Scalar::Unknown);
         added += 1;
         break;
     }
