@@ -31,6 +31,17 @@ struct schema_node {
     schema_node_type type{schema_node_type::unknown};
 };
 
+struct node_hash {
+    std::size_t operator()(const schema_node *node) const noexcept
+    {
+        return node == nullptr ? 0 : node->hash();
+    }
+};
+
+struct node_equal {
+    constexpr bool operator()(const schema_node *lhs, const schema_node *rhs) const;
+};
+
 struct schema_record : schema_node {
     schema_record() : schema_node(schema_node_type::record) {}
     schema_record(const schema_record &) = delete;
@@ -73,7 +84,7 @@ struct schema_array : schema_node {
 
     bool truncated{false};
     std::size_t length{0};
-    std::vector<schema_node *> children{};
+    std::unordered_set<schema_node *, node_hash, node_equal> children{};
 };
 
 enum class schema_scalar_type : uint8_t {
@@ -105,39 +116,34 @@ struct schema_scalar : schema_node {
     std::string_view value_class{};
 };
 
-struct node_hash {
-    std::size_t operator()(const schema_node *node) const noexcept
-    {
-        if (node == nullptr) {
-            return 0;
-        }
-        return node->hash();
-    }
-};
-
-struct node_equal {
-    constexpr bool operator()(const schema_node *lhs, const schema_node *rhs) const
-    {
-        if (lhs->type != rhs->type) {
-            return false;
-        }
-
-        switch (lhs->type) {
-        case schema_node_type::array:
-        case schema_node_type::record:
-            break;
-        case schema_node_type::scalar: {
-            const auto *rhs_scalar = dynamic_cast<const schema_scalar *>(rhs);
-            const auto *lhs_scalar = dynamic_cast<const schema_scalar *>(lhs);
-            return rhs_scalar->scalar_type == lhs_scalar->scalar_type;
-        }
-        case schema_node_type::unknown:
-            return rhs->type == schema_node_type::unknown;
-        }
-
+constexpr bool node_equal::operator()(const schema_node *lhs, const schema_node *rhs) const
+{
+    if (lhs->type != rhs->type) {
         return false;
     }
-};
+
+    switch (lhs->type) {
+    case schema_node_type::array: {
+        const auto *rhs_array = dynamic_cast<const schema_array *>(rhs);
+        const auto *lhs_array = dynamic_cast<const schema_array *>(lhs);
+        return lhs_array->length == rhs_array->length && lhs_array->children == rhs_array->children;
+    }
+    case schema_node_type::record: {
+        const auto *rhs_record = dynamic_cast<const schema_record *>(rhs);
+        const auto *lhs_record = dynamic_cast<const schema_record *>(lhs);
+        return lhs_record->children == rhs_record->children;
+    }
+    case schema_node_type::scalar: {
+        const auto *rhs_scalar = dynamic_cast<const schema_scalar *>(rhs);
+        const auto *lhs_scalar = dynamic_cast<const schema_scalar *>(lhs);
+        return lhs_scalar->scalar_type == rhs_scalar->scalar_type;
+    }
+    case schema_node_type::unknown:
+        return rhs->type == schema_node_type::unknown;
+    }
+
+    return false;
+}
 
 class type_inference {
 public:
@@ -231,7 +237,6 @@ schema_node *schema_generator::generate(const ddwaf_object *object, std::size_t 
         return node;
     }
     case DDWAF_OBJ_ARRAY: {
-        std::unordered_set<schema_node *, node_hash, node_equal> subtypes;
         auto *node = new schema_array{};
         node->length = object->nbEntries;
         auto length = static_cast<std::size_t>(object->nbEntries);
@@ -245,10 +250,8 @@ schema_node *schema_generator::generate(const ddwaf_object *object, std::size_t 
             if (schema == nullptr) {
                 continue;
             }
-            auto [it, res] = subtypes.emplace(schema);
-            if (res) {
-                node->children.emplace_back(schema);
-            } else {
+            auto [it, res] = node->children.emplace(schema);
+            if (!res) {
                 delete schema;
             }
         }
