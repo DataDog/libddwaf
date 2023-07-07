@@ -19,6 +19,7 @@ namespace {
 enum class schema_node_type { unknown, scalar, array, record };
 
 struct schema_node {
+    using ptr = std::unique_ptr<schema_node>;
     explicit schema_node(schema_node_type type_) : type(type_) {}
     schema_node(const schema_node &) = delete;
     schema_node(schema_node &&oth) noexcept = default;
@@ -32,14 +33,14 @@ struct schema_node {
 };
 
 struct node_hash {
-    std::size_t operator()(const schema_node *node) const noexcept
+    std::size_t operator()(const schema_node::ptr &node) const noexcept
     {
         return node == nullptr ? 0 : node->hash();
     }
 };
 
 struct node_equal {
-    constexpr bool operator()(const schema_node *lhs, const schema_node *rhs) const;
+    bool operator()(const schema_node::ptr &lhs, const schema_node::ptr &rhs) const;
 };
 
 struct schema_record : schema_node {
@@ -48,20 +49,17 @@ struct schema_record : schema_node {
     schema_record(schema_record &&oth) noexcept = default;
     schema_record &operator=(const schema_record &) = delete;
     schema_record &operator=(schema_record &&oth) noexcept = default;
-    ~schema_record() override
-    {
-        for (auto [key, node] : children) { delete node; }
-    }
+    ~schema_record() override = default;
 
     [[nodiscard]] std::size_t hash() const override
     {
         std::size_t value = 0;
-        for (auto [key, node] : children) { value ^= node->hash(); }
+        for (const auto &[key, node] : children) { value ^= node->hash(); }
         return value;
     }
 
     bool truncated{false};
-    std::map<std::string_view, schema_node *> children{};
+    std::map<std::string_view, schema_node::ptr> children{};
 };
 
 struct schema_array : schema_node {
@@ -70,21 +68,18 @@ struct schema_array : schema_node {
     schema_array(schema_array &&oth) noexcept = default;
     schema_array &operator=(const schema_array &) = delete;
     schema_array &operator=(schema_array &&oth) noexcept = default;
-    ~schema_array() override
-    {
-        for (auto *node : children) { delete node; }
-    }
+    ~schema_array() override = default;
 
     [[nodiscard]] std::size_t hash() const override
     {
         std::size_t value = 0;
-        for (auto *node : children) { value ^= node->hash(); }
+        for (const auto &node : children) { value ^= node->hash(); }
         return value;
     }
 
     bool truncated{false};
     std::size_t length{0};
-    std::unordered_set<schema_node *, node_hash, node_equal> children{};
+    std::unordered_set<schema_node::ptr, node_hash, node_equal> children{};
 };
 
 enum class schema_scalar_type : uint8_t {
@@ -97,7 +92,7 @@ enum class schema_scalar_type : uint8_t {
 };
 
 struct schema_scalar : schema_node {
-    schema_scalar(schema_scalar_type type_, std::string_view class_)
+    explicit schema_scalar(schema_scalar_type type_, std::string_view class_ = {})
         : schema_node(schema_node_type::scalar), scalar_type(type_), value_class(class_)
     {}
     schema_scalar(const schema_scalar &) = delete;
@@ -116,7 +111,7 @@ struct schema_scalar : schema_node {
     std::string_view value_class{};
 };
 
-constexpr bool node_equal::operator()(const schema_node *lhs, const schema_node *rhs) const
+bool node_equal::operator()(const schema_node::ptr &lhs, const schema_node::ptr &rhs) const
 {
     if (lhs->type != rhs->type) {
         return false;
@@ -124,22 +119,23 @@ constexpr bool node_equal::operator()(const schema_node *lhs, const schema_node 
 
     switch (lhs->type) {
     case schema_node_type::array: {
-        const auto *rhs_array = dynamic_cast<const schema_array *>(rhs);
-        const auto *lhs_array = dynamic_cast<const schema_array *>(lhs);
-        return lhs_array->length == rhs_array->length && lhs_array->children == rhs_array->children;
+        const auto &rhs_array = dynamic_cast<const schema_array &>(*rhs);
+        const auto &lhs_array = dynamic_cast<const schema_array &>(*lhs);
+        return lhs_array.length == rhs_array.length && lhs_array.children == rhs_array.children;
     }
     case schema_node_type::record: {
-        const auto *rhs_record = dynamic_cast<const schema_record *>(rhs);
-        const auto *lhs_record = dynamic_cast<const schema_record *>(lhs);
-        return lhs_record->children == rhs_record->children;
+        const auto &rhs_record = dynamic_cast<const schema_record &>(*rhs);
+        const auto &lhs_record = dynamic_cast<const schema_record &>(*lhs);
+        return lhs_record.children == rhs_record.children;
     }
     case schema_node_type::scalar: {
-        const auto *rhs_scalar = dynamic_cast<const schema_scalar *>(rhs);
-        const auto *lhs_scalar = dynamic_cast<const schema_scalar *>(lhs);
-        return lhs_scalar->scalar_type == rhs_scalar->scalar_type;
+        const auto &rhs_scalar = dynamic_cast<const schema_scalar &>(*rhs);
+        const auto &lhs_scalar = dynamic_cast<const schema_scalar &>(*lhs);
+        return lhs_scalar.scalar_type == rhs_scalar.scalar_type &&
+               lhs_scalar.value_class == rhs_scalar.value_class;
     }
     case schema_node_type::unknown:
-        return rhs->type == schema_node_type::unknown;
+        return true;
     }
 
     return false;
@@ -189,7 +185,7 @@ class schema_generator {
 public:
     explicit schema_generator(const object_limits &limits) : limits_(limits) {}
 
-    schema_node *generate(const ddwaf_object *object, std::size_t depth);
+    schema_node::ptr generate(const ddwaf_object *object, std::size_t depth);
 
 protected:
     type_inference inferencer_;
@@ -197,7 +193,7 @@ protected:
 };
 
 // NOLINTNEXTLINE(misc-no-recursion)
-schema_node *schema_generator::generate(const ddwaf_object *object, std::size_t depth)
+schema_node::ptr schema_generator::generate(const ddwaf_object *object, std::size_t depth)
 {
     if (depth == 0) {
         return nullptr;
@@ -205,16 +201,16 @@ schema_node *schema_generator::generate(const ddwaf_object *object, std::size_t 
 
     switch (object->type) {
     case DDWAF_OBJ_BOOL:
-        return new schema_scalar{schema_scalar_type::boolean, {}};
+        return std::make_unique<schema_scalar>(schema_scalar_type::boolean);
     case DDWAF_OBJ_STRING: {
         auto type = inferencer_.infer({object->stringValue, object->nbEntries});
-        return new schema_scalar{type, {}};
+        return std::make_unique<schema_scalar>(type);
     }
     case DDWAF_OBJ_SIGNED:
     case DDWAF_OBJ_UNSIGNED:
-        return new schema_scalar{schema_scalar_type::integer, {}};
+        return std::make_unique<schema_scalar>(schema_scalar_type::integer);
     case DDWAF_OBJ_MAP: {
-        auto *node = new schema_record{};
+        auto node = std::make_unique<schema_record>();
         auto length = static_cast<std::size_t>(object->nbEntries);
         if (length > limits_.max_container_size) {
             node->truncated = true;
@@ -226,18 +222,18 @@ schema_node *schema_generator::generate(const ddwaf_object *object, std::size_t 
                 continue;
             }
 
-            auto *schema = generate(child, depth - 1);
+            auto schema = generate(child, depth - 1);
             if (schema == nullptr) {
                 continue;
             }
 
             std::string_view key{child->parameterName, child->parameterNameLength};
-            node->children.emplace(key, schema);
+            node->children.emplace(key, std::move(schema));
         }
         return node;
     }
     case DDWAF_OBJ_ARRAY: {
-        auto *node = new schema_array{};
+        auto node = std::make_unique<schema_array>();
         node->length = object->nbEntries;
         auto length = static_cast<std::size_t>(object->nbEntries);
         if (length > limits_.max_container_size) {
@@ -246,14 +242,11 @@ schema_node *schema_generator::generate(const ddwaf_object *object, std::size_t 
         }
         for (std::size_t i = 0; i < length; i++) {
             const auto *child = &object->array[i];
-            auto *schema = generate(child, depth - 1);
+            auto schema = generate(child, depth - 1);
             if (schema == nullptr) {
                 continue;
             }
-            auto [it, res] = node->children.emplace(schema);
-            if (!res) {
-                delete schema;
-            }
+            node->children.emplace(std::move(schema));
         }
         return node;
     }
@@ -261,12 +254,12 @@ schema_node *schema_generator::generate(const ddwaf_object *object, std::size_t 
         break;
     }
 
-    return new schema_scalar{schema_scalar_type::unknown, {}};
+    return std::make_unique<schema_scalar>(schema_scalar_type::unknown);
 }
 
-ddwaf_object serialize(schema_node &node);
+ddwaf_object serialize(const schema_node &node);
 
-ddwaf_object serialize(schema_scalar &node)
+ddwaf_object serialize(const schema_scalar &node)
 {
     ddwaf_object tmp;
     ddwaf_object array;
@@ -288,7 +281,7 @@ ddwaf_object serialize(schema_scalar &node)
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object serialize(schema_array &node)
+ddwaf_object serialize(const schema_array &node)
 {
     ddwaf_object tmp;
     ddwaf_object array;
@@ -297,7 +290,7 @@ ddwaf_object serialize(schema_array &node)
     ddwaf_object types;
     ddwaf_object_array(&types);
 
-    for (auto *child : node.children) {
+    for (const auto &child : node.children) {
         auto res = serialize(*child);
         ddwaf_object_array_add(&types, &res);
     }
@@ -315,7 +308,7 @@ ddwaf_object serialize(schema_array &node)
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object serialize(schema_record &node)
+ddwaf_object serialize(const schema_record &node)
 {
     ddwaf_object tmp;
     ddwaf_object array;
@@ -323,7 +316,7 @@ ddwaf_object serialize(schema_record &node)
 
     ddwaf_object map;
     ddwaf_object_map(&map);
-    for (auto [key, child] : node.children) {
+    for (const auto &[key, child] : node.children) {
         auto res = serialize(*child);
         ddwaf_object_map_addl(&map, key.data(), key.size(), &res);
     }
@@ -340,15 +333,15 @@ ddwaf_object serialize(schema_record &node)
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object serialize(schema_node &node)
+ddwaf_object serialize(const schema_node &node)
 {
     switch (node.type) {
     case schema_node_type::scalar:
-        return serialize(dynamic_cast<schema_scalar &>(node));
+        return serialize(dynamic_cast<const schema_scalar &>(node));
     case schema_node_type::array:
-        return serialize(dynamic_cast<schema_array &>(node));
+        return serialize(dynamic_cast<const schema_array &>(node));
     case schema_node_type::record:
-        return serialize(dynamic_cast<schema_record &>(node));
+        return serialize(dynamic_cast<const schema_record &>(node));
     default:
         break;
     }

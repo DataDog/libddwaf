@@ -32,6 +32,8 @@ public:
 
     object_and_attribute get_target(target_index target) const;
 
+    bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }
+
     bool is_new_target(const target_index target) const
     {
         return latest_batch_.find(target) != latest_batch_.cend();
