@@ -40,7 +40,7 @@ public:
     context &operator=(context &&) = delete;
     ~context() = default;
 
-    DDWAF_RET_CODE run(const ddwaf_object &, optional_ref<ddwaf_result>, uint64_t);
+    DDWAF_RET_CODE run(ddwaf_object &, optional_ref<ddwaf_result>, uint64_t);
 
     // These two functions below return references to internal objects,
     // however using them this way helps with testing
@@ -93,7 +93,7 @@ public:
     context_wrapper &operator=(context_wrapper &&) noexcept = delete;
     context_wrapper &operator=(const context_wrapper &) = delete;
 
-    DDWAF_RET_CODE run(const ddwaf_object &data, optional_ref<ddwaf_result> res, uint64_t timeout)
+    DDWAF_RET_CODE run(ddwaf_object &data, optional_ref<ddwaf_result> res, uint64_t timeout)
     {
         memory::memory_resource_guard guard(&mr_);
         return ctx_->run(data, res, timeout);

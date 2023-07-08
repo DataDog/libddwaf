@@ -23,8 +23,8 @@ TEST(TestObjectStore, InsertInvalidObject)
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_EQ(store.get_target(query), nullptr);
-    EXPECT_EQ(store.get_target(url), nullptr);
+    EXPECT_EQ(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
 }
 
 TEST(TestObjectStore, InsertMalformedMap)
@@ -73,8 +73,8 @@ TEST(TestObjectStore, InsertStringObject)
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_EQ(store.get_target(query), nullptr);
-    EXPECT_EQ(store.get_target(url), nullptr);
+    EXPECT_EQ(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
 }
 
 TEST(TestObjectStore, InsertAndGetObject)
@@ -95,8 +95,8 @@ TEST(TestObjectStore, InsertAndGetObject)
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_TRUE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_EQ(store.get_target(url), nullptr);
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
 }
 
 TEST(TestObjectStore, InsertMultipleUniqueObjects)
@@ -119,8 +119,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_TRUE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_EQ(store.get_target(url), nullptr);
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
 
     ddwaf_object_map(&second);
     ddwaf_object_map_add(&second, "url", ddwaf_object_string(&tmp, "hello"));
@@ -131,8 +131,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
     EXPECT_TRUE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_NE(store.get_target(url), nullptr);
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_NE(store.get_target(url).first, nullptr);
 
     third = DDWAF_OBJECT_INVALID;
     store.insert(third);
@@ -140,8 +140,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_NE(store.get_target(url), nullptr);
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_NE(store.get_target(url).first, nullptr);
 }
 
 TEST(TestObjectStore, InsertMultipleOverlappingObjects)
@@ -163,11 +163,11 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_TRUE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query), nullptr);
-    EXPECT_EQ(store.get_target(url), nullptr);
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
 
     {
-        const ddwaf_object *object = store.get_target(query);
+        auto [object, attr] = store.get_target(query);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "hello");
@@ -185,14 +185,14 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     EXPECT_TRUE(store.is_new_target(url));
 
     {
-        const ddwaf_object *object = store.get_target(url);
+        auto [object, attr] = store.get_target(url);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "hello");
     }
 
     {
-        const ddwaf_object *object = store.get_target(query);
+        auto [object, attr] = store.get_target(query);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "bye");
@@ -207,10 +207,10 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
     EXPECT_TRUE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query), nullptr);
+    EXPECT_NE(store.get_target(query).first, nullptr);
 
     {
-        const ddwaf_object *object = store.get_target(url);
+        auto [object, attr] = store.get_target(url);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "bye");

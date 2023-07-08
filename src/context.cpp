@@ -16,7 +16,7 @@
 namespace ddwaf {
 
 DDWAF_RET_CODE context::run(
-    const ddwaf_object &newParameters, optional_ref<ddwaf_result> res, uint64_t timeout)
+    ddwaf_object &newParameters, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
     if (res.has_value()) {
         ddwaf_result &output = *res;
