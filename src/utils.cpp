@@ -71,7 +71,7 @@ ddwaf_object clone(ddwaf_object *input)
     ddwaf_object_invalid(&tmp);
 
     ddwaf_object copy;
-    std::list<std::pair<ddwaf_object*,ddwaf_object*>> queue;
+    std::list<std::pair<ddwaf_object *, ddwaf_object *>> queue;
 
     clone_helper(*input, copy);
     if (is_container(input)) {
@@ -84,7 +84,8 @@ ddwaf_object clone(ddwaf_object *input)
             const auto &child = source->array[i];
             clone_helper(child, tmp);
             if (source->type == DDWAF_OBJ_MAP) {
-                ddwaf_object_map_addl(destination, child.parameterName, child.parameterNameLength, &tmp);
+                ddwaf_object_map_addl(
+                    destination, child.parameterName, child.parameterNameLength, &tmp);
             } else if (source->type == DDWAF_OBJ_ARRAY) {
                 ddwaf_object_array_add(destination, &tmp);
             }

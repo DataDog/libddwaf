@@ -4,34 +4,27 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "ddwaf.h"
 #include <log.hpp>
 #include <object_store.hpp>
 #include <vector>
 
 namespace ddwaf {
-using object_and_attribute = std::pair<ddwaf_object *, object_store::attribute>;
 
-object_store::object_store(ddwaf_object_free_fn free_fn) : obj_free_(free_fn)
-{
-    if (obj_free_ != nullptr) {
-        objects_to_free_.reserve(default_num_objects);
-    }
-    ddwaf_object_map(&derivatives_);
-}
+using object_and_attribute = std::pair<ddwaf_object *, object_store::attribute>;
 
 object_store::~object_store()
 {
-    if (obj_free_ == nullptr) {
-        return;
+    for (auto [obj, free_fn] : input_objects_) {
+        if (free_fn != nullptr) {
+            free_fn(&obj);
+        }
     }
-    for (auto &obj : objects_to_free_) { obj_free_(&obj); }
 }
 
-bool object_store::insert(ddwaf_object &input, attribute attr)
+bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn, attribute attr)
 {
-    if (obj_free_ != nullptr) {
-        objects_to_free_.emplace_back(input);
-    }
+    input_objects_.emplace_back(input, free_fn);
 
     latest_batch_.clear();
 
@@ -71,18 +64,14 @@ bool object_store::insert(ddwaf_object &input, attribute attr)
     return true;
 }
 
-
-bool object_store::insert(const std::string &key, ddwaf_object &input, attribute attr)
+bool object_store::insert(
+    target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn, attribute attr)
 {
-    if ((attr | attribute::eval) != attribute::none) {
-        if (obj_free_ != nullptr) {
-            objects_to_free_.emplace_back(input);
-        }
+    input_objects_.emplace_back(input, free_fn);
 
-        auto target = get_target_index(key);
-        objects_[target] = {input, attr};
-        latest_batch_.emplace(target);
-    }
+    auto *object = &input_objects_.back().first;
+    objects_[target] = {object, attr};
+    latest_batch_.emplace(target);
 
     return true;
 }

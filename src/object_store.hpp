@@ -17,20 +17,22 @@ namespace ddwaf {
 
 class object_store {
 public:
-    enum class attribute : uint8_t { none = 0, eval = 1,ephemeral = 2, derived = 4 };
+    enum class attribute : uint8_t { none = 0, immutable = 1 /*, ephemeral = 2 */ };
 
     using object_and_attribute = std::pair<ddwaf_object *, attribute>;
 
-    explicit object_store(ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    object_store() = default;
     ~object_store();
     object_store(const object_store &) = default;
     object_store(object_store &&) = default;
     object_store &operator=(const object_store &) = delete;
     object_store &operator=(object_store &&) = delete;
 
-    bool insert(ddwaf_object &input, attribute attr = attribute::none);
+    bool insert(ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free,
+        attribute attr = attribute::none);
     // This function doesn't clear the latest batch
-    bool insert(const std::string &key, ddwaf_object &input, attribute attr = attribute::none);
+    bool insert(target_index target, ddwaf_object &input,
+        ddwaf_object_free_fn free_fn = ddwaf_object_free, attribute attr = attribute::none);
     object_and_attribute get_target(target_index target) const;
 
     bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }
@@ -45,15 +47,10 @@ public:
     explicit operator bool() const { return !objects_.empty(); }
 
 protected:
-    static constexpr unsigned default_num_objects = 8;
+    memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
 
     memory::unordered_set<target_index> latest_batch_;
     memory::unordered_map<target_index, object_and_attribute> objects_;
-
-    ddwaf_object derivatives_{};
-
-    memory::vector<ddwaf_object> objects_to_free_;
-    ddwaf_object_free_fn obj_free_;
 };
 
 inline constexpr object_store::attribute operator|(

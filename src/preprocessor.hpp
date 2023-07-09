@@ -93,7 +93,7 @@ public:
     preprocessor &operator=(preprocessor &&rhs) noexcept = default;
     ~preprocessor() = default;
 
-    void eval(object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
+    void eval(object_store &store, ddwaf_object &derived, cache_type &cache, ddwaf::timer &deadline) const;
 
 protected:
     std::string id_;

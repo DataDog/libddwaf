@@ -10,7 +10,7 @@
 
 namespace ddwaf {
 
-void preprocessor::eval(object_store &store, cache_type &cache, ddwaf::timer &deadline) const
+void preprocessor::eval(object_store &store, ddwaf_object &derived, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (!cache.result) {
         std::vector<condition::ptr>::const_iterator cond_iter;
@@ -57,16 +57,15 @@ void preprocessor::eval(object_store &store, cache_type &cache, ddwaf::timer &de
             continue;
         }
 
-        attr = object_store::attribute::none;
-        if (evaluate_) {
-            attr = attr | object_store::attribute::eval;
-        }
-
         if (output_) {
-            attr = attr | object_store::attribute::derived;
+            auto copy = ddwaf::object::clone(&object);
+            ddwaf_object_map_add(&derived, mapping.output_address.c_str(), &copy);
         }
 
-        store.insert(mapping.output_address, object, attr);
+        if (evaluate_) {
+            store.insert(mapping.output, object);
+        }
+
     }
 }
 
