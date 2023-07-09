@@ -56,6 +56,7 @@ inline bool is_scalar(const ddwaf_object *obj)
     return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
 }
 
+ddwaf_object clone(ddwaf_object *input);
 } // namespace object
 
 inline bool isdigit(char c) { return (c >= '0' && c <= '9'); }

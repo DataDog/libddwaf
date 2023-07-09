@@ -57,7 +57,16 @@ void preprocessor::eval(object_store &store, cache_type &cache, ddwaf::timer &de
             continue;
         }
 
-        // TODO insert object to store
+        attr = object_store::attribute::none;
+        if (evaluate_) {
+            attr = attr | object_store::attribute::eval;
+        }
+
+        if (output_) {
+            attr = attr | object_store::attribute::derived;
+        }
+
+        store.insert(mapping.output_address, object, attr);
     }
 }
 

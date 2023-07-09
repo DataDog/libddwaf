@@ -17,37 +17,9 @@ namespace ddwaf {
 
 class object_store {
 public:
-    enum class attribute : uint8_t { none = 0, immutable = 1, ephemeral = 2, derived = 4 };
+    enum class attribute : uint8_t { none = 0, eval = 1,ephemeral = 2, derived = 4 };
 
     using object_and_attribute = std::pair<ddwaf_object *, attribute>;
-
-    class eval_scope {
-    public:
-        explicit eval_scope(object_store &store): store_(store) {}
-        ~eval_scope();
-        eval_scope(const eval_scope &) = delete;
-        eval_scope(eval_scope &&) = delete;
-        eval_scope &operator=(const eval_scope &) = delete;
-        eval_scope &operator=(eval_scope &&) = delete;
-
-        bool insert(ddwaf_object &input, attribute attr = attribute::none);
-        [[nodiscard]] object_and_attribute get_target(target_index target) const;
-        [[nodiscard]] bool has_target(target_index target) const {
-            return store_.objects_.find(target) != store_.objects_.end(); 
-        }
-        [[nodiscard]] bool is_new_target(const target_index target) const {
-            return latest_batch_.find(target) != latest_batch_.cend();
-        }
-        [[nodiscard]] bool has_new_targets() const {
-            return !latest_batch_.empty();
-        }
-    protected:
-        memory::unordered_set<target_index> latest_batch_{};
-        memory::unordered_set<target_index> ephemeral_{};
-        memory::vector<ddwaf_object> ephemeral_to_free_{};
-
-        object_store &store_;
-    };
 
     explicit object_store(ddwaf_object_free_fn free_fn = ddwaf_object_free);
     ~object_store();
@@ -57,7 +29,8 @@ public:
     object_store &operator=(object_store &&) = delete;
 
     bool insert(ddwaf_object &input, attribute attr = attribute::none);
-
+    // This function doesn't clear the latest batch
+    bool insert(const std::string &key, ddwaf_object &input, attribute attr = attribute::none);
     object_and_attribute get_target(target_index target) const;
 
     bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }

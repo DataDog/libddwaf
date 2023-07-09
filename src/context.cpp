@@ -23,7 +23,7 @@ DDWAF_RET_CODE context::run(
         output = DDWAF_RESULT_INITIALISER;
     }
 
-    if (!store_.insert(newParameters)) {
+    if (!store_.insert(newParameters, object_store::attribute::eval)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }
