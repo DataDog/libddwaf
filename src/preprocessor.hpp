@@ -17,54 +17,6 @@
 
 namespace ddwaf {
 
-/*
-{
-  "preprocessors": [
-    {
-      "id": "preprocessor-001",
-      "generator": "extract_schema",
-      "conditions": [
-        {
-          "operator": "equals",
-          "parameters": {
-            "inputs": [
-              {
-                "address": "waf.context.settings",
-                "key_path": [
-                  "generate-schema"
-                ]
-              }
-            ],
-            "type": "boolean",
-            "value": true
-          }
-        }
-      ],
-      "parameters": {
-        "mappings": [
-          {
-            "input": {
-              "address": "server.request.body"
-            },
-            "output": "server.request.body.schema"
-          },
-          {
-            "input": {
-              "address": "server.request.headers.no_cookies"
-            },
-            "output": "server.request.headers.no_cookies.schema"
-          }
-        ],
-        "scanners": [
-          "ecd38ebc-930d-499e-b4aa-c1f6606386f4"
-        ]
-      },
-      "evaluate": false,
-      "output": true
-    }
-  ]
-}
-*/
 class preprocessor {
 public:
     using ptr = std::shared_ptr<preprocessor>;
