@@ -810,3 +810,25 @@ TEST(TestRuleFilter, MonitorSingleRule)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+TEST(TestRuleFilter, FilterModePrecedence)
+{
+    auto rule = readFile("monitor_bypass_precedence.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    EXPECT_EQ(ddwaf_run(context, &root, nullptr, LONG_TIME), DDWAF_OK);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
