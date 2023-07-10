@@ -67,6 +67,7 @@ namespace ddwaf {
 */
 class preprocessor {
 public:
+    using ptr = std::shared_ptr<preprocessor>;
     struct target_mapping {
         // TODO implement n:1 support
         target_index input;
@@ -93,7 +94,8 @@ public:
     preprocessor &operator=(preprocessor &&rhs) noexcept = default;
     ~preprocessor() = default;
 
-    void eval(object_store &store, ddwaf_object &derived, cache_type &cache, ddwaf::timer &deadline) const;
+    void eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
+        ddwaf::timer &deadline) const;
 
 protected:
     std::string id_;

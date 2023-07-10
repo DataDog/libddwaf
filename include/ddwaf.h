@@ -159,8 +159,8 @@ struct _ddwaf_result
     ddwaf_object events;
     /** Array of actions generated, this is guaranteed to be an array **/
     ddwaf_object actions;
-    /** Map containing all derivations in the format (address, value) **/
-    ddwaf_object derivations;
+    /** Map containing all derived objects in the format (address, value) **/
+    ddwaf_object derivatives;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
 };

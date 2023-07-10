@@ -10,8 +10,15 @@
 
 namespace ddwaf {
 
-void preprocessor::eval(object_store &store, ddwaf_object &derived, cache_type &cache, ddwaf::timer &deadline) const
+void preprocessor::eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
+    ddwaf::timer &deadline) const
 {
+    // No result structure, but this preprocessor only produces derived objects
+    // so it makes no sense to evaluate.
+    if (!derived.has_value() && !evaluate_ && output_) {
+        return;
+    }
+
     if (!cache.result) {
         std::vector<condition::ptr>::const_iterator cond_iter;
         bool run_on_new;
@@ -57,15 +64,19 @@ void preprocessor::eval(object_store &store, ddwaf_object &derived, cache_type &
             continue;
         }
 
-        if (output_) {
-            auto copy = ddwaf::object::clone(&object);
-            ddwaf_object_map_add(&derived, mapping.output_address.c_str(), &copy);
-        }
-
         if (evaluate_) {
             store.insert(mapping.output, object);
         }
 
+        if (output_ && derived.has_value()) {
+            ddwaf_object &output = derived.value();
+            if (evaluate_) {
+                auto copy = ddwaf::object::clone(&object);
+                ddwaf_object_map_add(&output, mapping.output_address.c_str(), &copy);
+            } else {
+                ddwaf_object_map_add(&output, mapping.output_address.c_str(), &object);
+            }
+        }
     }
 }
 

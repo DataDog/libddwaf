@@ -42,6 +42,7 @@ public:
 
     DDWAF_RET_CODE run(ddwaf_object &, optional_ref<ddwaf_result>, uint64_t);
 
+    void eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
     // These two functions below return references to internal objects,
     // however using them this way helps with testing
     const memory::unordered_set<rule *> &filter_rules(ddwaf::timer &deadline);
@@ -61,7 +62,9 @@ protected:
     using input_filter = exclusion::input_filter;
     using rule_filter = exclusion::rule_filter;
 
-    // Cache of filters and conditions
+    memory::unordered_map<preprocessor *, preprocessor::cache_type> preprocessor_cache_;
+
+    // Caches of filters and conditions
     memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;
     memory::unordered_map<input_filter *, input_filter::cache_type> input_filter_cache_;
 
