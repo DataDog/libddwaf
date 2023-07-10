@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "generator/extract_schema.hpp"
+#include "utils.hpp"
 #include <PWTransformer.h>
 #include <algorithm>
 #include <exception.hpp>
@@ -282,7 +284,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
     return {current, type};
 }
 
-condition::ptr parse_filter_condition(const parameter::map &root, const object_limits &limits)
+condition::ptr parse_simplified_condition(const parameter::map &root, const object_limits &limits)
 {
     auto operation = at<std::string_view>(root, "operator");
     auto params = at<parameter::map>(root, "parameters");
@@ -341,7 +343,8 @@ input_filter_spec parse_input_filter(const parameter::map &filter, const object_
         conditions.reserve(conditions_array.size());
 
         for (const auto &cond : conditions_array) {
-            conditions.push_back(parse_filter_condition(static_cast<parameter::map>(cond), limits));
+            conditions.push_back(
+                parse_simplified_condition(static_cast<parameter::map>(cond), limits));
         }
     }
 
@@ -386,7 +389,8 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
         conditions.reserve(conditions_array.size());
 
         for (const auto &cond : conditions_array) {
-            conditions.push_back(parse_filter_condition(static_cast<parameter::map>(cond), limits));
+            conditions.push_back(
+                parse_simplified_condition(static_cast<parameter::map>(cond), limits));
         }
     }
 
@@ -405,6 +409,33 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
     }
 
     return {std::move(conditions), std::move(rules_target)};
+}
+
+std::vector<preprocessor::target_mapping> parse_preprocessor_mappings(const parameter::vector &root)
+{
+    if (root.empty()) {
+        throw ddwaf::parsing_error("empty mappings");
+    }
+
+    std::vector<preprocessor::target_mapping> mappings;
+    for (const auto &node : root) {
+        auto mapping = static_cast<parameter::map>(node);
+
+        // TODO support n:1 mappings and key paths
+        auto inputs = at<parameter::vector>(mapping, "inputs");
+        if (inputs.empty()) {
+            throw ddwaf::parsing_error("empty preprocessor input mapping");
+        }
+
+        auto input = static_cast<parameter::map>(inputs[0]);
+        auto input_address = at<std::string_view>(input, "address");
+        auto output = at<std::string>(mapping, "output");
+
+        mappings.emplace_back(preprocessor::target_mapping{
+            get_target_index(input_address), get_target_index(output), std::move(output)});
+    }
+
+    return mappings;
 }
 
 std::string index_to_id(unsigned idx) { return "index:" + std::to_string(idx); }
@@ -576,6 +607,67 @@ filter_spec_container parse_filters(
     }
 
     return filters;
+}
+
+preprocessor_container parse_preprocessors(
+    parameter::vector &preprocessor_array, base_section_info &info, const object_limits &limits)
+{
+    preprocessor_container preprocessors;
+
+    for (unsigned i = 0; i < preprocessor_array.size(); i++) {
+        const auto &node_param = preprocessor_array[i];
+        auto node = static_cast<parameter::map>(node_param);
+        std::string id;
+        try {
+            id = at<std::string>(node, "id");
+            if (preprocessors.find(id) != preprocessors.end()) {
+                DDWAF_WARN("Duplicate preprocessor: %s", id.c_str());
+                info.add_failed(id, "duplicate preprocessor");
+                continue;
+            }
+
+            std::unique_ptr<generator::base> generator;
+            auto generator_id = at<std::string>(node, "generator");
+            if (generator_id == "extract_schema") {
+                generator = std::make_unique<generator::extract_schema>(limits);
+            } else {
+                DDWAF_WARN("Unknown generator: %s", generator_id.c_str());
+                info.add_failed(id, "unknown generator" + generator_id);
+                continue;
+            }
+
+            std::vector<condition::ptr> conditions;
+            auto conditions_array = at<parameter::vector>(node, "conditions", {});
+            if (!conditions_array.empty()) {
+                conditions.reserve(conditions_array.size());
+
+                for (const auto &cond : conditions_array) {
+                    conditions.push_back(
+                        parse_simplified_condition(static_cast<parameter::map>(cond), limits));
+                }
+            }
+
+            auto params = at<parameter::map>(node, "parameters");
+            auto mappings_vec = at<parameter::vector>(params, "mappings");
+            auto mappings = parse_preprocessor_mappings(mappings_vec);
+
+            DDWAF_DEBUG("Parsed preprocessor %s", id.c_str());
+            auto preproc = std::make_shared<preprocessor>(preprocessor{std::move(id),
+                std::move(generator), std::move(conditions), std::move(mappings),
+                at<bool>(node, "evaluate", true), at<bool>(node, "output", false)});
+
+            preprocessors.emplace(preproc->get_id(), preproc);
+
+            info.add_loaded(preproc->get_id());
+        } catch (const std::exception &e) {
+            if (id.empty()) {
+                id = index_to_id(i);
+            }
+            DDWAF_WARN("Failed to parse preprocessor '%s': %s", id.c_str(), e.what());
+            info.add_failed(id, e.what());
+        }
+    }
+    return preprocessors;
 }
 
 } // namespace ddwaf::parser::v2

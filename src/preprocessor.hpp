@@ -97,6 +97,8 @@ public:
     void eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
         ddwaf::timer &deadline) const;
 
+    [[nodiscard]] const std::string &get_id() const { return id_; }
+
 protected:
     std::string id_;
     std::unique_ptr<generator::base> generator_;

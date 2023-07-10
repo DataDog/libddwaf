@@ -48,7 +48,8 @@ protected:
         custom_rules = 2,
         overrides = 4,
         filters = 8,
-        data = 16
+        data = 16,
+        preprocessors = 32,
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
@@ -83,6 +84,8 @@ protected:
     parser::override_spec_container overrides_;
     // Obtained from 'exclusions'
     parser::filter_spec_container exclusions_;
+    // Obtained from 'preprocessors'
+    parser::preprocessor_container preprocessors_;
 
     // These are the contents of the latest generated ruleset
 

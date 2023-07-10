@@ -10,6 +10,7 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <parameter.hpp>
+#include <preprocessor.hpp>
 #include <rule.hpp>
 
 #include <string>
@@ -55,6 +56,7 @@ struct input_filter_spec {
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
 using rule_data_container = std::unordered_map<std::string, rule_processor::base::ptr>;
+using preprocessor_container = std::unordered_map<std::string_view, preprocessor::ptr>;
 
 struct override_spec_container {
     [[nodiscard]] bool empty() const { return by_ids.empty() && by_tags.empty(); }

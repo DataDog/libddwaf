@@ -169,6 +169,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->dynamic_processors = dynamic_processors_;
     rs->rule_filters = rule_filters_;
     rs->input_filters = input_filters_;
+    rs->preprocessors = preprocessors_;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
@@ -299,6 +300,25 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             state = state | change_state::filters;
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse exclusions: %s", e.what());
+            section.set_error(e.what());
+        }
+    }
+
+    it = root.find("preprocessors");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing preprocessors");
+        auto &section = info.add_section("");
+        try {
+            auto preprocessors = static_cast<parameter::vector>(it->second);
+            if (!preprocessors.empty()) {
+                preprocessors_ = parser::v2::parse_preprocessors(preprocessors, section, limits_);
+            } else {
+                DDWAF_DEBUG("Clearing all preprocessors");
+                preprocessors_.clear();
+            }
+            state = state | change_state::preprocessors;
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse preprocessors: %s", e.what());
             section.set_error(e.what());
         }
     }

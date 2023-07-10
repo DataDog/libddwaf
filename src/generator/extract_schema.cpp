@@ -199,11 +199,12 @@ schema_node::ptr schema_generator::generate(const ddwaf_object *object, std::siz
         return nullptr;
     }
 
+    auto length = static_cast<std::size_t>(object->nbEntries);
     switch (object->type) {
     case DDWAF_OBJ_BOOL:
         return std::make_unique<schema_scalar>(schema_scalar_type::boolean);
     case DDWAF_OBJ_STRING: {
-        auto type = inferencer_.infer({object->stringValue, object->nbEntries});
+        auto type = inferencer_.infer({object->stringValue, length});
         return std::make_unique<schema_scalar>(type);
     }
     case DDWAF_OBJ_SIGNED:
@@ -211,7 +212,6 @@ schema_node::ptr schema_generator::generate(const ddwaf_object *object, std::siz
         return std::make_unique<schema_scalar>(schema_scalar_type::integer);
     case DDWAF_OBJ_MAP: {
         auto node = std::make_unique<schema_record>();
-        auto length = static_cast<std::size_t>(object->nbEntries);
         if (length > limits_.max_container_size) {
             node->truncated = true;
             length = limits_.max_container_size;
@@ -227,15 +227,15 @@ schema_node::ptr schema_generator::generate(const ddwaf_object *object, std::siz
                 continue;
             }
 
-            std::string_view key{child->parameterName, child->parameterNameLength};
+            std::string_view key{
+                child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
             node->children.emplace(key, std::move(schema));
         }
         return node;
     }
     case DDWAF_OBJ_ARRAY: {
         auto node = std::make_unique<schema_array>();
-        node->length = object->nbEntries;
-        auto length = static_cast<std::size_t>(object->nbEntries);
+        node->length = length;
         if (length > limits_.max_container_size) {
             node->truncated = true;
             length = limits_.max_container_size;
