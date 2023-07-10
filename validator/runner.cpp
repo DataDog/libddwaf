@@ -93,6 +93,7 @@ bool test_runner::run_test(const YAML::Node &runs)
         out.SetMapFormat(YAML::Block);
         out.SetSeqFormat(YAML::Block);
         out << object_to_yaml(res->events);
+        out << object_to_yaml(res->actions);
     }
 
     return passed;

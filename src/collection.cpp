@@ -34,10 +34,11 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     auto exclude_it = rules_to_exclude.find(rule);
     if (exclude_it != rules_to_exclude.end()) {
         if (exclude_it->second == exclusion::filter_mode::bypass) {
-            DDWAF_DEBUG("Excluding Rule %s", id.c_str());
+            DDWAF_DEBUG("Bypassing Rule %s", id.c_str());
             return std::nullopt;
         }
 
+        DDWAF_DEBUG("Monitoring Rule %s", id.c_str());
         skip_actions = true;
     }
 
