@@ -22,7 +22,8 @@ TEST(TestRuleFilter, Match)
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -48,7 +49,8 @@ TEST(TestRuleFilter, NoMatch)
 
     ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {}};
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -91,7 +93,8 @@ TEST(TestRuleFilter, ValidateCachedMatch)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -103,7 +106,8 @@ TEST(TestRuleFilter, ValidateCachedMatch)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
@@ -145,7 +149,8 @@ TEST(TestRuleFilter, MatchWithoutCache)
     ddwaf::object_store store;
     {
         ddwaf::exclusion::rule_filter::cache_type cache;
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -157,7 +162,8 @@ TEST(TestRuleFilter, MatchWithoutCache)
 
     {
         ddwaf::exclusion::rule_filter::cache_type cache;
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
@@ -196,7 +202,8 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
     // address is passed, the filter doesn't match (as it should be).
     {
         ddwaf::exclusion::rule_filter::cache_type cache;
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -209,7 +216,8 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
 
     {
         ddwaf::exclusion::rule_filter::cache_type cache;
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
@@ -251,7 +259,8 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     // In this test we validate that when a match has already occurred, the
     // second run for the same filter returns nothing.
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -264,7 +273,8 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "random", ddwaf_object_string(&tmp, "random"));
 
@@ -287,7 +297,8 @@ TEST(TestRuleFilter, ExcludeSingleRule)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -317,7 +328,8 @@ TEST(TestRuleFilter, ExcludeByType)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -347,7 +359,8 @@ TEST(TestRuleFilter, ExcludeByCategory)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -371,7 +384,8 @@ TEST(TestRuleFilter, ExcludeByTags)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -402,7 +416,8 @@ TEST(TestRuleFilter, ExcludeAllWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -418,7 +433,8 @@ TEST(TestRuleFilter, ExcludeAllWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -458,7 +474,8 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -481,7 +498,8 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -521,7 +539,8 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithConditionAndTransformers)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "AD      MIN"));
@@ -544,7 +563,8 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithConditionAndTransformers)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -583,7 +603,8 @@ TEST(TestRuleFilter, ExcludeByTypeWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -606,7 +627,8 @@ TEST(TestRuleFilter, ExcludeByTypeWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -646,7 +668,8 @@ TEST(TestRuleFilter, ExcludeByCategoryWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -662,7 +685,8 @@ TEST(TestRuleFilter, ExcludeByCategoryWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -702,7 +726,8 @@ TEST(TestRuleFilter, ExcludeByTagsWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
@@ -725,7 +750,8 @@ TEST(TestRuleFilter, ExcludeByTagsWithCondition)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
