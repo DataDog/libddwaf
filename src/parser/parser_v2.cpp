@@ -407,7 +407,7 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
     } else if (on_match_str == "monitor") {
         on_match = exclusion::filter_mode::monitor;
     } else {
-        throw ddwaf::parsing_error("usupported on_match value" + std::string(on_match_str));
+        throw ddwaf::parsing_error("unsupported on_match value: " + std::string(on_match_str));
     }
 
     if (conditions.empty() && rules_target.empty()) {
