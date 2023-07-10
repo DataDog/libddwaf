@@ -8,12 +8,16 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
 #include <string_view>
 #include <utility>
 #include <yaml-cpp/yaml.h>
 
 #include "ddwaf.h"
 #include "utils.hpp"
+
+using namespace std::literals;
 
 namespace YAML {
 
@@ -40,7 +44,7 @@ ddwaf_object yaml_to_object(const Node& node)
             ddwaf_object_map(&arg);
             for (auto it = node.begin(); it != node.end(); ++it)
             {
-                std::string key    = it->first.as<std::string>();
+                auto key    = it->first.as<std::string>();
                 ddwaf_object child = yaml_to_object(it->second);
                 ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
             }
@@ -121,6 +125,104 @@ YAML::Node object_to_yaml(const ddwaf_object &obj)
     YAML::Node root;
     object_to_yaml_helper(obj, root);
     return root;
+}
+
+namespace {
+class string_buffer {
+public:
+    using Ch = char;
+
+protected:
+    static constexpr std::size_t default_capacity = 1024;
+
+public:
+    string_buffer() { buffer_.reserve(default_capacity); }
+
+    void Put(Ch c) { buffer_.push_back(c); }
+    void PutUnsafe(Ch c) { Put(c); }
+    void Flush() {}
+    void Clear() { buffer_.clear(); }
+    void ShrinkToFit() { buffer_.shrink_to_fit(); }
+    void Reserve(size_t count) { buffer_.reserve(count); }
+
+    [[nodiscard]] const Ch *GetString() const { return buffer_.c_str(); }
+    [[nodiscard]] size_t GetSize() const { return buffer_.size(); }
+
+    [[nodiscard]] size_t GetLength() const { return GetSize(); }
+
+    std::string &get_string_ref() { return buffer_; }
+
+protected:
+    std::string buffer_;
+};
+
+template <typename T>
+// NOLINTNEXTLINE(misc-no-recursion, google-runtime-references)
+void object_to_json_helper(
+    const ddwaf_object &obj, T &output, rapidjson::Document::AllocatorType &alloc)
+{
+    switch (obj.type) {
+    case DDWAF_OBJ_BOOL: {
+        std::string_view value = "false"sv;
+        if (obj.boolean) {
+            value = "true"sv;
+        }
+        output.SetString(value.data(), value.size(), alloc);
+    } break;
+    case DDWAF_OBJ_SIGNED:
+        output.SetInt64(obj.intValue);
+        break;
+    case DDWAF_OBJ_UNSIGNED:
+        output.SetUint64(obj.uintValue);
+        break;
+    case DDWAF_OBJ_STRING: {
+        auto sv = std::string_view(obj.stringValue, obj.nbEntries);
+        output.SetString(sv.data(), sv.size(), alloc);
+    } break;
+    case DDWAF_OBJ_MAP:
+        output.SetObject();
+        for (unsigned i = 0; i < obj.nbEntries; i++) {
+            rapidjson::Value key;
+            rapidjson::Value value;
+
+            auto child = obj.array[i];
+            object_to_json_helper(child, value, alloc);
+
+            key.SetString(child.parameterName, child.parameterNameLength, alloc);
+            output.AddMember(key, value, alloc);
+        }
+        break;
+    case DDWAF_OBJ_ARRAY:
+        output.SetArray();
+        for (unsigned i = 0; i < obj.nbEntries; i++) {
+            rapidjson::Value value;
+            auto child = obj.array[i];
+            object_to_json_helper(child, value, alloc);
+            output.PushBack(value, alloc);
+        }
+        break;
+    case DDWAF_OBJ_INVALID:
+        throw std::runtime_error("invalid parameter in structure");
+    };
+}
+
+} // namespace
+
+std::string object_to_json(const ddwaf_object &obj)
+{
+    rapidjson::Document document;
+    rapidjson::Document::AllocatorType &alloc = document.GetAllocator();
+
+    object_to_json_helper(obj, document, alloc);
+
+    string_buffer buffer;
+    rapidjson::Writer<decltype(buffer)> writer(buffer);
+
+    if (document.Accept(writer)) {
+        return std::move(buffer.get_string_ref());
+    }
+
+    return {};
 }
 
 

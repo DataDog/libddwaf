@@ -44,6 +44,7 @@ struct as_if<ddwaf_object, void>
 
 
 YAML::Node object_to_yaml(const ddwaf_object &obj);
+std::string object_to_json(const ddwaf_object &obj);
 
 const char* level_to_str(DDWAF_LOG_LEVEL level);
 
