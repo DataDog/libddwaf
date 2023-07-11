@@ -17,7 +17,7 @@ TEST(TestCompressWhitespace, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-    EXPECT_STREQ(str.data(), nullptr);
+    EXPECT_FALSE(str.modified());
 }
 
 TEST(TestCompressWhitespace, ValidTransform)
@@ -82,42 +82,42 @@ TEST(TestCompressWhitespace, InvalidTransform)
     {
         lazy_string str("c");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str(" c");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("c ");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str(" c ");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("c w");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("compress_whitespace");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("compress_whitespace but it doesn't matter");
         EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 }

@@ -17,7 +17,7 @@ TEST(TestNormalizePath, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::normalize_path::transform(str));
-    EXPECT_STREQ(str.data(), nullptr);
+    EXPECT_FALSE(str.modified());
 }
 
 TEST(TestNormalizePath, ValidTransform)
@@ -58,31 +58,31 @@ TEST(TestNormalizePath, InvalidTransform)
     {
         lazy_string str("/normal/path");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("/normal/path/to/dir/");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("path/to/somewhere");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("./");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("/");
         EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 }
 
@@ -96,7 +96,7 @@ TEST(TestNormalizePathWin, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-    EXPECT_STREQ(str.data(), nullptr);
+    EXPECT_FALSE(str.modified());
 }
 
 TEST(TestNormalizePathWin, ValidTransform)
@@ -137,30 +137,30 @@ TEST(TestNormalizePathWin, InvalidTransform)
     {
         lazy_string str("/normal/path");
         EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("/normal/path/to/dir/");
         EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("path/to/somewhere");
         EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("./");
         EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("/");
         EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 }

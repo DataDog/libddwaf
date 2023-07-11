@@ -6,6 +6,7 @@
 
 #include "test.h"
 #include <lazy_string.hpp>
+#include <stdexcept>
 
 TEST(TestLazyString, ConstRead)
 {
@@ -16,7 +17,7 @@ TEST(TestLazyString, ConstRead)
     for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str.at(i)); }
 
     EXPECT_FALSE(str.modified());
-    EXPECT_EQ(str.data(), nullptr);
+    EXPECT_NE(str.data(), nullptr);
 }
 
 TEST(TestLazyString, NonConstRead)
@@ -47,7 +48,7 @@ TEST(TestLazyString, WriteAndFinalize)
 
 TEST(TestLazyString, EmptyString)
 {
-    lazy_string str({});
+    lazy_string str("");
     EXPECT_EQ(str.length(), 0);
 
     str.finalize(str.length());
@@ -56,3 +57,5 @@ TEST(TestLazyString, EmptyString)
     EXPECT_NE(str.data(), nullptr);
     EXPECT_STREQ(str.data(), "");
 }
+
+TEST(TestLazyString, NullString) { EXPECT_THROW(lazy_string({}), std::runtime_error); }

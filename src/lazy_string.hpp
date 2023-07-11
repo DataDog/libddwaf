@@ -18,58 +18,45 @@ class lazy_string {
 public:
     explicit lazy_string(std::string_view original)
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-        : copy_(const_cast<char *>(original.data())), length_(original.length())
-    {}
+        : buffer_(const_cast<char *>(original.data())), length_(original.length())
+    {
+        if (buffer_ == nullptr) {
+            throw std::runtime_error{"lazy_string initialised with nullptr"};
+        }
+    }
 
     lazy_string(const lazy_string &) = delete;
     lazy_string &operator=(const lazy_string &) = delete;
-
-    lazy_string(lazy_string &&other) noexcept
-        : modified_(other.modified_), copy_(other.copy_), length_(other.length_)
-    {
-        other.modified_ = false;
-        other.copy_ = nullptr;
-    }
-
-    lazy_string &operator=(lazy_string &&other) noexcept
-    {
-        modified_ = other.modified_;
-        copy_ = other.copy_;
-
-        other.modified_ = false;
-        other.copy_ = nullptr;
-
-        return *this;
-    }
+    lazy_string(lazy_string &&other) = delete;
+    lazy_string &operator=(lazy_string &&other) = delete;
 
     ~lazy_string()
     {
         if (modified_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-            free(copy_);
+            free(buffer_);
         }
     }
 
-    [[nodiscard]] constexpr const char &at(std::size_t idx) const { return copy_[idx]; }
+    [[nodiscard]] constexpr const char &at(std::size_t idx) const { return buffer_[idx]; }
 
     char &operator[](std::size_t idx)
     {
         force_copy(length_);
-        return copy_[idx];
+        return buffer_[idx];
     }
 
-    constexpr explicit operator std::string_view() { return {copy_, length_}; }
+    constexpr explicit operator std::string_view() { return {buffer_, length_}; }
 
     [[nodiscard]] constexpr std::size_t length() const { return length_; }
     [[nodiscard]] constexpr bool modified() const { return modified_; }
-    [[nodiscard]] constexpr const char *value() const { return copy_; }
-    [[nodiscard]] constexpr char *data() { return modified_ ? copy_ : nullptr; }
+    [[nodiscard]] constexpr const char *data() { return buffer_; }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     [[nodiscard]] std::pair<bool, std::size_t> find(char c, std::size_t start) const
     {
         for (std::size_t i = start; i < length_; ++i) {
-            if (copy_[i] == c) {
+            if (buffer_[i] == c) {
                 return {true, i};
             }
         }
@@ -81,11 +68,11 @@ public:
     {
         if (modified_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-            free(copy_);
+            free(buffer_);
         }
 
         modified_ = true;
-        copy_ = str;
+        buffer_ = str;
         length_ = length;
     }
 
@@ -95,7 +82,7 @@ public:
     {
         if (modified_) {
             length_ = length;
-            copy_[length] = '\0';
+            buffer_[length] = '\0';
         } else {
             force_copy(length);
         }
@@ -112,16 +99,16 @@ protected:
                 throw std::bad_alloc();
             }
 
-            memcpy(new_copy, copy_, bytes);
+            memcpy(new_copy, buffer_, bytes);
             new_copy[bytes] = '\0';
 
-            copy_ = new_copy;
+            buffer_ = new_copy;
             modified_ = true;
         }
     }
 
     bool modified_{false};
-    char *copy_{nullptr};
+    char *buffer_{nullptr};
     std::size_t length_;
 };
 

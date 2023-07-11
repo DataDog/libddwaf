@@ -17,7 +17,7 @@ TEST(TestUnicodeNormalize, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-    EXPECT_STREQ(str.data(), nullptr);
+    EXPECT_FALSE(str.modified());
 }
 
 TEST(TestUnicodeNormalize, ValidTransform)
@@ -124,24 +124,24 @@ TEST(TestUnicodeNormalize, InvalidTransform)
     {
         lazy_string str("u");
         EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("`");
         EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("unicode_normalize");
         EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("unicode_normalize but it doesn't matter");
         EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 }

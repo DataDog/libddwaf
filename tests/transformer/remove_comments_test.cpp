@@ -17,7 +17,7 @@ TEST(TestRemoveComments, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::remove_comments::transform(str));
-    EXPECT_STREQ(str.data(), nullptr);
+    EXPECT_FALSE(str.modified());
 }
 
 TEST(TestRemoveComments, ValidTransformShellComment)
@@ -246,54 +246,54 @@ TEST(TestRemoveComments, InvalidTransform)
     {
         lazy_string str("-");
         EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("/");
         EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("<");
         EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("<!");
         EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("<!-");
         EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("r");
         EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("rc");
         EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("remove_comments");
         EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("remove_comments but it doesn't matter");
         EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 }

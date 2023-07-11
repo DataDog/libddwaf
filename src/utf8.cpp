@@ -377,7 +377,7 @@ bool normalize_string(lazy_string &str)
 
     uint32_t codepoint;
     uint64_t position = 0;
-    while ((codepoint = fetch_next_codepoint(str.value(), position, str.length())) != UTF8_EOF) {
+    while ((codepoint = fetch_next_codepoint(str.data(), position, str.length())) != UTF8_EOF) {
         // Ignore invalid glyphs
         if (codepoint == UTF8_INVALID) {
             continue;

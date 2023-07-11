@@ -17,7 +17,7 @@ TEST(TestLowercase, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::lowercase::transform(str));
-    EXPECT_STREQ(str.data(), nullptr);
+    EXPECT_FALSE(str.modified());
 }
 
 TEST(TestLowercase, ValidTransform)
@@ -64,24 +64,24 @@ TEST(TestLowercase, InvalidTransform)
     {
         lazy_string str("l");
         EXPECT_FALSE(transformer::lowercase::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("le");
         EXPECT_FALSE(transformer::lowercase::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("lowercase");
         EXPECT_FALSE(transformer::lowercase::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("lowercase but it doesn't matter");
         EXPECT_FALSE(transformer::lowercase::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 }

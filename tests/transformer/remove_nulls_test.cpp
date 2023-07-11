@@ -17,7 +17,7 @@ TEST(TestRemoveNulls, EmptyString)
 {
     lazy_string str("");
     EXPECT_FALSE(transformer::remove_nulls::transform(str));
-    EXPECT_STREQ(str.data(), nullptr);
+    EXPECT_FALSE(str.modified());
 }
 
 TEST(TestRemoveNulls, ValidTransform)
@@ -70,24 +70,24 @@ TEST(TestRemoveNulls, InvalidTransform)
     {
         lazy_string str("r");
         EXPECT_FALSE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("rs");
         EXPECT_FALSE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("remove_nulls");
         EXPECT_FALSE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 
     {
         lazy_string str("remove_nulls but it doesn't matter");
         EXPECT_FALSE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), nullptr);
+        EXPECT_FALSE(str.modified());
     }
 }
