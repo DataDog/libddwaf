@@ -1,0 +1,22 @@
+{
+  name: "Monitor all rules through condition-based exclusion filter",
+  runs: [
+    {
+      input: {
+        rule1-input: "rule1"
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: rule1
+            }
+          ]
+        }
+      ],
+      code: match,
+      actions: [ block ]
+    }
+  ]
+}
