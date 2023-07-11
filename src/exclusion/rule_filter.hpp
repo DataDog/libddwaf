@@ -47,7 +47,7 @@ protected:
     std::string id_;
     std::vector<condition::ptr> conditions_;
     std::unordered_set<rule *> rule_targets_;
-    filter_mode mode_{filter_mode::bypass};
+    filter_mode mode_;
 };
 
 } // namespace ddwaf::exclusion
