@@ -1362,7 +1362,7 @@ TEST(TestContext, InputFilterExcludeRule)
     // The rule is added to the filter stage so that it's excluded from the
     // final result, since we're not actually excluding the rule from the match
     // stage we still get an event.
-    auto objects_to_exclude = ctx.filter_inputs({rule.get()}, deadline);
+    auto objects_to_exclude = ctx.filter_inputs({{rule.get(), filter_mode::bypass}}, deadline);
     EXPECT_EQ(objects_to_exclude.size(), 0);
     auto events = ctx.match({}, objects_to_exclude, deadline);
     EXPECT_EQ(events.size(), 1);

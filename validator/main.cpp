@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
                         continue;
                     }
 
-                    auto it = add_dir(sample_path.root_directory(), files);
+                    auto it = add_dir(sample_path.parent_path(), files);
                     if (it == files.end()) {
                         continue;
                     }
