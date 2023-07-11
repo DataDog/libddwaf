@@ -1,0 +1,43 @@
+{
+    "title": "Serialized schema types for API Security",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$defs": {
+        "type": {
+            "oneOf": [
+                {
+                    "enum": [0, 1, 2, 4, 8, 16],
+                    "description": "scalar types"
+                },
+                {
+                    "type": "array",
+                    "description": "array of types",
+                    "items": {
+                        "$ref": "#"
+                    },
+                    "minItems": 1
+                },
+                {
+                    "type": "object",
+                    "description": "record type",
+                    "additionalProperties": {
+                        "$ref": "#"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9\\.\\-\\_:\\/]{0,199}$"
+            },
+            "minItems": 1
+        }
+    },
+    "type": "array",
+    "prefixItems": [
+        { "$ref": "#/$defs/type" },
+        { "$ref": "#/$defs/metadata" }
+    ],
+    "minItems": 1
+}
