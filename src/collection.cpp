@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "exclusion/rule_filter.hpp"
 #include <collection.hpp>
 #include <exception.hpp>
 #include <log.hpp>
@@ -12,7 +13,7 @@ namespace ddwaf {
 
 std::optional<event> match_rule(rule *rule, const object_store &store,
     memory::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
-    const memory::unordered_set<ddwaf::rule *> &rules_to_exclude,
+    const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
     const memory::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline)
@@ -29,9 +30,16 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
         return std::nullopt;
     }
 
-    if (rules_to_exclude.find(rule) != rules_to_exclude.end()) {
-        DDWAF_DEBUG("Excluding Rule %s", id.c_str());
-        return std::nullopt;
+    bool skip_actions = false;
+    auto exclude_it = rules_to_exclude.find(rule);
+    if (exclude_it != rules_to_exclude.end()) {
+        if (exclude_it->second == exclusion::filter_mode::bypass) {
+            DDWAF_DEBUG("Bypassing Rule %s", id.c_str());
+            return std::nullopt;
+        }
+
+        DDWAF_DEBUG("Monitoring Rule %s", id.c_str());
+        skip_actions = true;
     }
 
     DDWAF_DEBUG("Running the WAF on rule %s", id.c_str());
@@ -53,6 +61,10 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
             event = rule->match(store, rule_cache, {}, dynamic_processors, deadline);
         }
 
+        if (event.has_value() && skip_actions) {
+            event->skip_actions = true;
+        }
+
         return event;
     } catch (const ddwaf::timeout_exception &) {
         DDWAF_INFO("Ran out of time while processing %s", id.c_str());
@@ -64,7 +76,8 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
 
 template <typename Derived>
 void base_collection<Derived>::match(memory::vector<event> &events, const object_store &store,
-    collection_cache &cache, const memory::unordered_set<rule *> &rules_to_exclude,
+    collection_cache &cache,
+    const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
     const memory::unordered_map<rule *, object_set> &objects_to_exclude,
     const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const

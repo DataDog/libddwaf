@@ -31,6 +31,7 @@ struct event {
 
     const ddwaf::rule *rule{nullptr};
     memory::vector<match> matches;
+    bool skip_actions{false};
 };
 
 using optional_event = std::optional<event>;

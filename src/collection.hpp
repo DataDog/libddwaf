@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "exclusion/rule_filter.hpp"
 #include <context_allocator.hpp>
 #include <event.hpp>
 #include <rule.hpp>
@@ -48,7 +49,8 @@ public:
     void insert(const rule::ptr &rule) { rules_.emplace_back(rule.get()); }
 
     void match(memory::vector<event> &events /* output */, const object_store &store,
-        collection_cache &cache, const memory::unordered_set<ddwaf::rule *> &rules_to_exclude,
+        collection_cache &cache,
+        const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
         const memory::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
