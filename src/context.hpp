@@ -23,6 +23,8 @@
 
 namespace ddwaf {
 
+using filter_mode = exclusion::filter_mode;
+
 class context {
 public:
     using object_set = std::unordered_set<const ddwaf_object *>;
@@ -45,11 +47,11 @@ public:
     void eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
     // These two functions below return references to internal objects,
     // however using them this way helps with testing
-    const memory::unordered_set<rule *> &filter_rules(ddwaf::timer &deadline);
+    const memory::unordered_map<rule *, filter_mode> &filter_rules(ddwaf::timer &deadline);
     const memory::unordered_map<rule *, object_set> &filter_inputs(
-        const memory::unordered_set<rule *> &rules_to_exclude, ddwaf::timer &deadline);
+        const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline);
 
-    memory::vector<event> match(const memory::unordered_set<rule *> &rules_to_exclude,
+    memory::vector<event> match(const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
         const memory::unordered_map<rule *, object_set> &objects_to_exclude,
         ddwaf::timer &deadline);
 
@@ -68,7 +70,7 @@ protected:
     memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;
     memory::unordered_map<input_filter *, input_filter::cache_type> input_filter_cache_;
 
-    memory::unordered_set<rule *> rules_to_exclude_;
+    memory::unordered_map<rule *, filter_mode> rules_to_exclude_;
     memory::unordered_map<rule *, object_set> objects_to_exclude_;
 
     // Cache of collections to avoid processing once a result has been obtained

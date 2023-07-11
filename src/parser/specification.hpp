@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "exclusion/rule_filter.hpp"
 #include <condition.hpp>
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
@@ -45,6 +46,7 @@ struct override_spec {
 struct rule_filter_spec {
     std::vector<condition::ptr> conditions;
     std::vector<rule_target_spec> targets;
+    exclusion::filter_mode on_match;
 };
 
 struct input_filter_spec {

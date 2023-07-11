@@ -3,10 +3,12 @@ exclusions:
   - id: 1
     rules_target:
       - rule_id: 1
+    on_match: bypass
   - id: 2
     rules_target:
       - tags:
           type: flow2
+    on_match: bypass
   - id: 3
     rules_target:
       - tags:
@@ -22,6 +24,23 @@ exclusions:
           type: flow7
           category: category7
       - rule_id: 8
+    on_match: bypass
+  - id: 6
+    rules_target:
+      - rule_id: 9
+    on_match: monitor
+  - id: 7
+    rules_target:
+      - tags:
+          type: flow10
+          category: category10
+    on_match: monitor
+  # Test precedence of bypass over monitor
+  - id: 8
+    rules_target:
+      - rule_id: 1
+    on_match: monitor
+
 rules:
   - id: 1
     name: rule1-exclude-by-id
@@ -111,3 +130,27 @@ rules:
           inputs:
             - address: rule8-input
           regex: rule8
+  - id: 9
+    name: rule9-monitor-by-id
+    tags:
+      type: flow9
+      category: category9
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule9-input
+          regex: rule9
+    on_match: [ block ]
+  - id: 10
+    name: rule10-monitor-by-tags
+    tags:
+      type: flow10
+      category: category10
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule10-input
+          regex: rule10
+    on_match: [ block ]

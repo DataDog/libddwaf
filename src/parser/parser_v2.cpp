@@ -404,11 +404,21 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
         }
     }
 
+    exclusion::filter_mode on_match;
+    auto on_match_str = at<std::string_view>(filter, "on_match", "bypass");
+    if (on_match_str == "bypass") {
+        on_match = exclusion::filter_mode::bypass;
+    } else if (on_match_str == "monitor") {
+        on_match = exclusion::filter_mode::monitor;
+    } else {
+        throw ddwaf::parsing_error("unsupported on_match value: " + std::string(on_match_str));
+    }
+
     if (conditions.empty() && rules_target.empty()) {
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 
-    return {std::move(conditions), std::move(rules_target)};
+    return {std::move(conditions), std::move(rules_target), on_match};
 }
 
 std::vector<preprocessor::target_mapping> parse_preprocessor_mappings(const parameter::vector &root)

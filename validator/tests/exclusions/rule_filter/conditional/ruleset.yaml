@@ -7,6 +7,7 @@ exclusions:
           inputs:
             - address: exclusion-filter-1-input
           regex: exclusion-filter-1
+    on_match: bypass
   - id: 2
     conditions:
       - operator: match_regex
@@ -31,6 +32,16 @@ exclusions:
           type: flow2
           category: category2
       - rule_id: 3
+    on_match: bypass
+  - id: 4
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: exclusion-filter-4-input
+          regex: exclusion-filter-4
+    on_match: monitor
+
 rules:
   - id: 1
     name: rule1-basic-single-input
@@ -43,6 +54,7 @@ rules:
           inputs:
             - address: rule1-input
           regex: rule1
+    on_match: [ block ]
   - id: 2
     name: rule2-target-excluded-through-conditions
     tags:

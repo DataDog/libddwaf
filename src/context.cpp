@@ -76,7 +76,7 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
     return code;
 }
 
-const memory::unordered_set<rule *> &context::filter_rules(ddwaf::timer &deadline)
+const memory::unordered_map<rule *, filter_mode> &context::filter_rules(ddwaf::timer &deadline)
 {
     for (const auto &[id, filter] : ruleset_->rule_filters) {
         if (deadline.expired()) {
@@ -94,7 +94,13 @@ const memory::unordered_set<rule *> &context::filter_rules(ddwaf::timer &deadlin
         rule_filter::cache_type &cache = it->second;
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
-            for (auto &&rule : exclusion->get()) { rules_to_exclude_.insert(rule); }
+            for (auto &&rule : exclusion->get()) {
+                auto [it, res] = rules_to_exclude_.emplace(rule, filter->get_mode());
+                // Bypass has precedence over monitor
+                if (!res && it != rules_to_exclude_.end() && it->second != filter_mode::bypass) {
+                    it->second = filter->get_mode();
+                }
+            }
         }
     }
     return rules_to_exclude_;
@@ -120,7 +126,7 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
 }
 
 const memory::unordered_map<rule *, context::object_set> &context::filter_inputs(
-    const memory::unordered_set<rule *> &rules_to_exclude, ddwaf::timer &deadline)
+    const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline)
 {
     for (const auto &[id, filter] : ruleset_->input_filters) {
         if (deadline.expired()) {
@@ -139,7 +145,9 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                if (rules_to_exclude.find(rule) != rules_to_exclude.end()) {
+                auto exclude_it = rules_to_exclude.find(rule);
+                if (exclude_it != rules_to_exclude.end() &&
+                    exclude_it->second == filter_mode::bypass) {
                     continue;
                 }
 
@@ -152,7 +160,8 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
     return objects_to_exclude_;
 }
 
-memory::vector<event> context::match(const memory::unordered_set<rule *> &rules_to_exclude,
+memory::vector<event> context::match(
+    const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
     const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
     memory::vector<ddwaf::event> events;
