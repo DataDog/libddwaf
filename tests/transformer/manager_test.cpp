@@ -38,7 +38,7 @@ std::optional<std::string> transform(std::string_view input, const std::vector<t
         return std::nullopt;
     }
 
-    std::string output{dst.stringValue, dst.nbEntries};
+    std::string output{dst.stringValue, static_cast<std::size_t>(dst.nbEntries)};
     ddwaf_object_free(&dst);
 
     return {output};
