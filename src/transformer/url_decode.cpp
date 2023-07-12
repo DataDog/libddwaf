@@ -8,8 +8,6 @@
 #include "transformer/utf8.hpp"
 #include "utils.hpp"
 
-#include <iostream>
-
 namespace ddwaf::transformer {
 
 namespace {

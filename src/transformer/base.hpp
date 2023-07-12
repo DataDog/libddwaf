@@ -42,19 +42,15 @@ enum class transformer_id : uint8_t {
 
 namespace transformer {
 
-template <typename Derived> class base {
+template <typename T> class base {
 public:
     static bool transform(lazy_string &str)
     {
-        if (str.length() == 0) {
+        if (str.length() == 0 || !T::needs_transform(static_cast<std::string_view>(str))) {
             return false;
         }
 
-        if (!Derived::needs_transform(static_cast<std::string_view>(str))) {
-            return false;
-        }
-
-        return Derived::transform_impl(str);
+        return T::transform_impl(str);
     }
 };
 

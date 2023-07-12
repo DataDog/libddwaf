@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "../test.h"
 #include <stdexcept>
 #include <transformer/lazy_string.hpp>
 
@@ -59,3 +59,22 @@ TEST(TestLazyString, EmptyString)
 }
 
 TEST(TestLazyString, NullString) { EXPECT_THROW(lazy_string({}), std::runtime_error); }
+
+TEST(TestLazyString, MoveString)
+{
+    lazy_string str("value");
+    EXPECT_EQ(str.length(), 5);
+
+    str[3] = 'e';
+    EXPECT_TRUE(str.modified());
+    EXPECT_NE(str.data(), nullptr);
+
+    auto [buffer, length] = str.move();
+    EXPECT_STREQ(buffer, "valee");
+    EXPECT_EQ(length, 5);
+    free(buffer);
+
+    EXPECT_EQ(str.length(), 0);
+    EXPECT_FALSE(str.modified());
+    EXPECT_EQ(str.data(), nullptr);
+}

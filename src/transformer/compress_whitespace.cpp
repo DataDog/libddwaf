@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/compress_whitespace.hpp"
-#include <iostream>
 
 namespace ddwaf::transformer {
 
