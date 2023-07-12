@@ -119,6 +119,10 @@ std::ostream &operator<<(std::ostream &os, const std::set<std::string> &set)
 void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
 {
     switch (obj.type) {
+    case DDWAF_OBJ_INVALID:
+    case DDWAF_OBJ_NULL:
+        output = "(null)";
+        break;
     case DDWAF_OBJ_BOOL:
         output = obj.boolean ? "true" : "false";
         break;
@@ -127,6 +131,9 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         break;
     case DDWAF_OBJ_UNSIGNED:
         output = obj.uintValue;
+        break;
+    case DDWAF_OBJ_FLOAT:
+        output = obj.floatValue;
         break;
     case DDWAF_OBJ_STRING:
         output = std::string{obj.stringValue, obj.nbEntries};
@@ -152,8 +159,6 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
             output.push_back(value);
         }
         break;
-    case DDWAF_OBJ_INVALID:
-        throw std::runtime_error("invalid parameter in structure");
     };
 }
 

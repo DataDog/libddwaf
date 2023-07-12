@@ -141,46 +141,6 @@ bool node_equal::operator()(const schema_node::ptr &lhs, const schema_node::ptr 
     return false;
 }
 
-class type_inference {
-public:
-    type_inference()
-    {
-        constexpr unsigned regex_max_mem = 512 * 1024;
-
-        re2::RE2::Options options;
-        options.set_max_mem(regex_max_mem);
-        options.set_log_errors(false);
-        options.set_case_sensitive(false);
-
-        int_regex = std::make_unique<re2::RE2>("^[0-9]+$", options);
-        float_regex = std::make_unique<re2::RE2>("^[0-9]+.[0-9]+$", options);
-        bool_regex = std::make_unique<re2::RE2>("^(?:true|false)$", options);
-    }
-
-    schema_scalar_type infer(std::string_view value)
-    {
-        const re2::StringPiece ref(value.data(), value.size());
-        if (int_regex->Match(ref, 0, value.size(), re2::RE2::UNANCHORED, nullptr, 0)) {
-            return schema_scalar_type::integer;
-        }
-
-        if (bool_regex->Match(ref, 0, value.size(), re2::RE2::UNANCHORED, nullptr, 0)) {
-            return schema_scalar_type::boolean;
-        }
-
-        if (float_regex->Match(ref, 0, value.size(), re2::RE2::UNANCHORED, nullptr, 0)) {
-            return schema_scalar_type::real;
-        }
-
-        return schema_scalar_type::string;
-    }
-
-protected:
-    std::unique_ptr<re2::RE2> int_regex{nullptr};
-    std::unique_ptr<re2::RE2> float_regex{nullptr};
-    std::unique_ptr<re2::RE2> bool_regex{nullptr};
-};
-
 class schema_generator {
 public:
     explicit schema_generator(const object_limits &limits) : limits_(limits) {}
@@ -188,7 +148,6 @@ public:
     schema_node::ptr generate(const ddwaf_object *object, std::size_t depth);
 
 protected:
-    type_inference inferencer_;
     const object_limits &limits_;
 };
 
@@ -201,12 +160,14 @@ schema_node::ptr schema_generator::generate(const ddwaf_object *object, std::siz
 
     auto length = static_cast<std::size_t>(object->nbEntries);
     switch (object->type) {
+    case DDWAF_OBJ_NULL:
+        return std::make_unique<schema_scalar>(schema_scalar_type::null);
+    case DDWAF_OBJ_FLOAT:
+        return std::make_unique<schema_scalar>(schema_scalar_type::real);
     case DDWAF_OBJ_BOOL:
         return std::make_unique<schema_scalar>(schema_scalar_type::boolean);
-    case DDWAF_OBJ_STRING: {
-        auto type = inferencer_.infer({object->stringValue, length});
-        return std::make_unique<schema_scalar>(type);
-    }
+    case DDWAF_OBJ_STRING:
+        return std::make_unique<schema_scalar>(schema_scalar_type::string);
     case DDWAF_OBJ_SIGNED:
     case DDWAF_OBJ_UNSIGNED:
         return std::make_unique<schema_scalar>(schema_scalar_type::integer);

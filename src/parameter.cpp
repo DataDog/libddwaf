@@ -27,6 +27,10 @@ std::string strtype(int type)
         return "unsigned";
     case DDWAF_OBJ_SIGNED:
         return "signed";
+    case DDWAF_OBJ_FLOAT:
+        return "float";
+    case DDWAF_OBJ_NULL:
+        return "null";
     default:
         break;
     }
@@ -42,48 +46,67 @@ static void print_(parameter args, uint64_t depth)
 
     switch (args.type) {
     case DDWAF_OBJ_INVALID:
-        std::printf("- invalid\n");
+        if (args.parameterName != nullptr) {
+            std::printf("- %s: invalid\n", args.parameterName);
+        } else {
+            std::printf("- invalid\n");
+        }
+        break;
+    case DDWAF_OBJ_NULL:
+        if (args.parameterName != nullptr) {
+            std::printf("- %s: null\n", args.parameterName);
+        } else {
+            std::printf("- null\n");
+        }
         break;
     case DDWAF_OBJ_BOOL:
-        std::printf("- %s\n", args.boolean ? "true" : "false");
+        if (args.parameterName != nullptr) {
+            std::printf("- %s: %s\n", args.parameterName, args.boolean ? "true" : "false");
+        } else {
+            std::printf("- %s\n", args.boolean ? "true" : "false");
+        }
         break;
-    case DDWAF_OBJ_SIGNED: {
-        if (args.parameterName != nullptr)
+    case DDWAF_OBJ_SIGNED:
+        if (args.parameterName != nullptr) {
             std::printf("- %s: %" PRId64 "\n", args.parameterName, args.intValue);
-        else
+        } else {
             std::printf("- %" PRId64 "\n", args.intValue);
+        }
         break;
-    }
-
-    case DDWAF_OBJ_UNSIGNED: {
-        if (args.parameterName != nullptr)
+    case DDWAF_OBJ_UNSIGNED:
+        if (args.parameterName != nullptr) {
             std::printf("- %s: %" PRIu64 "\n", args.parameterName, args.uintValue);
-        else
+        } else {
             std::printf("- %" PRIu64 "\n", args.uintValue);
+        }
         break;
-    }
-
-    case DDWAF_OBJ_STRING: {
-        if (args.parameterName != nullptr)
+    case DDWAF_OBJ_FLOAT:
+        if (args.parameterName != nullptr) {
+            std::printf("- %s: %lf\n", args.parameterName, args.floatValue);
+        } else {
+            std::printf("- %lf\n", args.floatValue);
+        }
+        break;
+    case DDWAF_OBJ_STRING:
+        if (args.parameterName != nullptr) {
             std::printf("- %s: %s\n", args.parameterName, args.stringValue);
-        else
+        } else {
             std::printf("- %s\n", args.stringValue);
+        }
         break;
-    }
-
     case DDWAF_OBJ_ARRAY: {
-        if (args.parameterName != nullptr)
+        if (args.parameterName != nullptr) {
             std::printf("- %s:\n", args.parameterName);
-
-        for (uint64_t i = 0; i < args.nbEntries; ++i) print_(args.array[i], depth + 1);
+        }
+        for (uint64_t i = 0; i < args.nbEntries; ++i) { print_(args.array[i], depth + 1); }
         break;
     }
 
     case DDWAF_OBJ_MAP: {
-        if (args.parameterName != nullptr)
+        if (args.parameterName != nullptr) {
             std::printf("- %s:\n", args.parameterName);
-
-        for (uint64_t i = 0; i < args.nbEntries; ++i) print_(args.array[i], depth + 1);
+        }
+        for (uint64_t i = 0; i < args.nbEntries; ++i) { print_(args.array[i], depth + 1); }
         break;
     }
     }

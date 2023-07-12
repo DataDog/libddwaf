@@ -31,6 +31,17 @@ ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
     return object;
 }
 
+ddwaf_object *ddwaf_object_null(ddwaf_object *object)
+{
+    if (object == nullptr) {
+        return nullptr;
+    }
+
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_NULL};
+
+    return object;
+}
+
 static ddwaf_object *ddwaf_object_string_helper(
     ddwaf_object *object, const char *string, size_t length)
 {
@@ -157,6 +168,18 @@ ddwaf_object *ddwaf_object_bool(ddwaf_object *object, bool value)
     return object;
 }
 
+ddwaf_object *ddwaf_object_float(ddwaf_object *object, double value)
+{
+    if (object == nullptr) {
+        return nullptr;
+    }
+
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_FLOAT};
+    object->floatValue = value;
+
+    return object;
+}
+
 ddwaf_object *ddwaf_object_array(ddwaf_object *object)
 {
     if (object == nullptr) {
@@ -215,8 +238,10 @@ bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object)
     if (array == nullptr || array->type != DDWAF_OBJ_ARRAY) {
         DDWAF_DEBUG("Invalid call, this API can only be called with an array as first parameter");
         return false;
-    } else if (object == nullptr || object->type == DDWAF_OBJ_INVALID) {
-        DDWAF_DEBUG("Tried to add an invalid entry to an array");
+    }
+
+    if (object == nullptr) {
+        DDWAF_DEBUG("Tried to add a nullptr to an array");
         return false;
     }
     return ddwaf_object_insert(array, *object);
@@ -251,11 +276,15 @@ static inline bool ddwaf_object_map_add_valid(
     if (map == nullptr || map->type != DDWAF_OBJ_MAP || key == nullptr) {
         DDWAF_DEBUG("Invalid call, this API can only be called with a map as first parameter");
         return false;
-    } else if (key == nullptr) {
+    }
+
+    if (key == nullptr) {
         DDWAF_DEBUG("Invalid call, nullptr key");
         return false;
-    } else if (object == nullptr || object->type == DDWAF_OBJ_INVALID) {
-        DDWAF_DEBUG("Tried to add an invalid entry to a map");
+    }
+
+    if (object == nullptr) {
+        DDWAF_DEBUG("Tried to add a nullptr to a map");
         return false;
     }
     return true;
@@ -292,8 +321,9 @@ bool ddwaf_object_map_addl_nc(
 
 void ddwaf_object_free(ddwaf_object *object)
 {
-    if (object == nullptr || object->type == DDWAF_OBJ_INVALID)
+    if (object == nullptr) {
         return;
+    }
 
     free((void *)object->parameterName);
 

@@ -46,8 +46,12 @@ typedef enum
     DDWAF_OBJ_ARRAY    = 1 << 3,
     /** Value shall be decoded as an array of ddwaf_object of length nbEntries, each item having a parameterName. **/
     DDWAF_OBJ_MAP      = 1 << 4,
-
+    /** **/
     DDWAF_OBJ_BOOL     = 1 << 5,
+    /** **/
+    DDWAF_OBJ_FLOAT    = 1 << 6,
+    /** **/
+    DDWAF_OBJ_NULL     = 1 << 7,
 } DDWAF_OBJ_TYPE;
 
 /**
@@ -102,6 +106,7 @@ struct _ddwaf_object
         const char* stringValue;
         uint64_t uintValue;
         int64_t intValue;
+        double floatValue;
         ddwaf_object* array;
         bool boolean;
     };
@@ -318,6 +323,16 @@ void ddwaf_result_free(ddwaf_result *result);
 ddwaf_object* ddwaf_object_invalid(ddwaf_object *object);
 
 /**
+ * ddwaf_object_null
+ *
+ * Creates an null object.
+ *
+ * @param object Object to perform the operation on. (nonnull)
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+ddwaf_object* ddwaf_object_null(ddwaf_object *object);
+/**
  * ddwaf_object_string
  *
  * Creates an object from a string.
@@ -423,6 +438,19 @@ ddwaf_object* ddwaf_object_signed_force(ddwaf_object *object, int64_t value);
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
 ddwaf_object* ddwaf_object_bool(ddwaf_object *object, bool value);
+
+/**
+ * ddwaf_object_float
+ *
+ * Creates an object using a double, the resulting object will contain a
+ * double as opposed to a string.
+ *
+ * @param object Object to perform the operation on. (nonnull)
+ * @param value Double to initialise the object with.
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+ddwaf_object* ddwaf_object_float(ddwaf_object *object, double value);
 
 /**
  * ddwaf_object_array

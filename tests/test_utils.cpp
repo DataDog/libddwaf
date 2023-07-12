@@ -147,6 +147,11 @@ void object_to_json_helper(
     case DDWAF_OBJ_UNSIGNED:
         output.SetUint64(obj.uintValue);
         break;
+    case DDWAF_OBJ_FLOAT: {
+        auto str = std::to_string(obj.floatValue);
+        output.SetString(str.c_str(), str.size(), alloc);
+        break;
+    }
     case DDWAF_OBJ_STRING: {
         auto sv = std::string_view(obj.stringValue, obj.nbEntries);
         output.SetString(sv.data(), sv.size(), alloc);
@@ -173,8 +178,10 @@ void object_to_json_helper(
             output.PushBack(value, alloc);
         }
         break;
+    case DDWAF_OBJ_NULL:
     case DDWAF_OBJ_INVALID:
-        throw std::runtime_error("invalid parameter in structure");
+        output.SetString("(null)", alloc);
+        break;
     };
 }
 
