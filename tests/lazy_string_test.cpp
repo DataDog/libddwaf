@@ -5,8 +5,8 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test.h"
-#include <lazy_string.hpp>
 #include <stdexcept>
+#include <transformer/lazy_string.hpp>
 
 TEST(TestLazyString, ConstRead)
 {

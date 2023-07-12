@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <transformer/unicode_normalize.hpp>
-#include <utf8.hpp>
+#include "transformer/unicode_normalize.hpp"
+#include "transformer/utf8.hpp"
 
 namespace ddwaf::transformer {
 bool unicode_normalize::needs_transform(std::string_view str)

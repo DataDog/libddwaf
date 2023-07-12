@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include "transformer/base.hpp"
 #include <ddwaf.h>
-#include <transformer/base.hpp>
 #include <vector>
 
 namespace ddwaf::transformer {

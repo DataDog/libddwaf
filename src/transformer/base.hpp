@@ -11,7 +11,7 @@
 #include <ddwaf.h>
 #include <string_view>
 
-#include <lazy_string.hpp>
+#include "transformer/lazy_string.hpp"
 
 namespace ddwaf {
 

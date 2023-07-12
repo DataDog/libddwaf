@@ -4,14 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "transformer/manager.hpp"
 #include "ddwaf.h"
-#include <transformer/compress_whitespace.hpp>
-#include <transformer/lowercase.hpp>
-#include <transformer/manager.hpp>
-#include <transformer/normalize_path.hpp>
-#include <transformer/remove_comments.hpp>
-#include <transformer/remove_nulls.hpp>
-#include <transformer/unicode_normalize.hpp>
+#include "transformer/compress_whitespace.hpp"
+#include "transformer/lowercase.hpp"
+#include "transformer/normalize_path.hpp"
+#include "transformer/remove_comments.hpp"
+#include "transformer/remove_nulls.hpp"
+#include "transformer/unicode_normalize.hpp"
+#include "transformer/url_decode.hpp"
 
 namespace ddwaf::transformer {
 
@@ -33,7 +34,9 @@ bool call_transformer(transformer_id id, lazy_string &str)
     case transformer_id::remove_comments:
         return remove_comments::transform(str);
     case transformer_id::url_decode:
+        return url_decode::transform(str);
     case transformer_id::url_decode_iis:
+        return url_decode_iis::transform(str);
     case transformer_id::css_decode:
     case transformer_id::js_decode:
     case transformer_id::html_entity_decode:
@@ -50,6 +53,7 @@ bool call_transformer(transformer_id id, lazy_string &str)
 
     return false;
 }
+
 bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
     const std::vector<transformer_id> &transformers)
 {

@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "transformer/compress_whitespace.hpp"
 #include <iostream>
-#include <transformer/compress_whitespace.hpp>
 
 namespace ddwaf::transformer {
 

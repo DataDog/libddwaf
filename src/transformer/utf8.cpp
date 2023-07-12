@@ -11,8 +11,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <utf8.hpp>
-#include <utils.hpp>
+#include "transformer/utf8.hpp"
+#include "utils.hpp"
 
 extern "C" {
 #include <stdint.h>

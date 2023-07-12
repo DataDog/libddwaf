@@ -7,13 +7,14 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include <PWTransformer.h>
 
-#include <utf8.hpp>
+#include "transformer/utf8.hpp"
 #include <utils.hpp>
 
 static uint8_t fromHex(char c);

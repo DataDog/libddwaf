@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <transformer/base.hpp>
+#include "transformer/base.hpp"
 
 namespace ddwaf::transformer {
 
@@ -20,6 +20,18 @@ protected:
     static bool transform_impl(lazy_string &str);
 
     friend class base<url_decode>;
+};
+
+class url_decode_iis : public base<url_decode_iis> {
+public:
+    static transformer_id id() { return transformer_id::url_decode_iis; }
+    static std::string_view name() { return "url_decode_iis"; }
+
+protected:
+    static bool needs_transform(std::string_view /*str*/) { return true; }
+    static bool transform_impl(lazy_string &str);
+
+    friend class base<url_decode_iis>;
 };
 
 } // namespace ddwaf::transformer
