@@ -121,7 +121,7 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
     switch (obj.type) {
     case DDWAF_OBJ_INVALID:
     case DDWAF_OBJ_NULL:
-        output = "(null)";
+        output = YAML::Null;
         break;
     case DDWAF_OBJ_BOOL:
         output = obj.boolean ? "true" : "false";
