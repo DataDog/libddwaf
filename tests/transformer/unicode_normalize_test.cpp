@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "../test.h"
-#include <transformer/unicode_normalize.hpp>
+#include "transformer/unicode_normalize.hpp"
 
 TEST(TestUnicodeNormalize, NameAndID)
 {

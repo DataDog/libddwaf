@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "../test.h"
-#include <transformer/lowercase.hpp>
+#include "transformer/lowercase.hpp"
 
 TEST(TestLowercase, NameAndID)
 {

@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "../test.h"
-#include <transformer/compress_whitespace.hpp>
+#include "transformer/compress_whitespace.hpp"
 
 TEST(TestCompressWhitespace, NameAndID)
 {

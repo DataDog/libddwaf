@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "../test.h"
-#include <transformer/normalize_path.hpp>
+#include "transformer/normalize_path.hpp"
 
 TEST(TestNormalizePath, NameAndID)
 {

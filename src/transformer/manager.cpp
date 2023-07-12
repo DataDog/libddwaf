@@ -74,7 +74,8 @@ bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
 
     // Note that this object might contain a string which is greater in
     // capacity than the length specified
-    ddwaf_object_stringl_nc(&destination, str.data(), str.length());
+    auto [buffer, length] = str.move();
+    ddwaf_object_stringl_nc(&destination, buffer, length);
 
     return true;
 }

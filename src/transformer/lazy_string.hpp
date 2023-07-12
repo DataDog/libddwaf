@@ -76,6 +76,20 @@ public:
         length_ = length;
     }
 
+    // Moves the contents and invalidates the string if the buffer has been
+    // modified, otherwise it does nothing
+    std::pair<char *, std::size_t> move()
+    {
+        if (modified_) {
+            std::pair<char *, std::size_t> res{buffer_, length_};
+            modified_ = false;
+            buffer_ = nullptr;
+            length_ = 0;
+            return res;
+        }
+        return {nullptr, 0};
+    }
+
     // Update length and nul-terminate, allocate if not allocated
     void finalize() { return finalize(length_); }
     void finalize(std::size_t length)

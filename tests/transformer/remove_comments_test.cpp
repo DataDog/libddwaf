@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "../test.h"
-#include <transformer/remove_comments.hpp>
+#include "transformer/remove_comments.hpp"
 
 TEST(TestRemoveComments, NameAndID)
 {
