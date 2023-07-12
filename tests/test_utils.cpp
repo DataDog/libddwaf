@@ -8,6 +8,7 @@
 #include "ddwaf.h"
 #include <fstream>
 #include <memory>
+#include <string_view>
 
 namespace ddwaf::test {
 
@@ -324,9 +325,9 @@ ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(
 
 } // namespace YAML
 
-event_schema_validator::event_schema_validator()
+schema_validator::schema_validator(const std::string &path)
 {
-    std::ifstream rule_file("../schema/events.json", std::ios::in);
+    std::ifstream rule_file(path, std::ios::in);
     if (!rule_file) {
         throw std::system_error(errno, std::generic_category());
     }
@@ -347,7 +348,7 @@ event_schema_validator::event_schema_validator()
     validator_ = std::make_unique<rapidjson::SchemaValidator>(*schema_);
 }
 
-std::optional<std::string> event_schema_validator::validate(const char *events)
+std::optional<std::string> schema_validator::validate(const char *events)
 {
     validator_->Reset();
 
@@ -372,7 +373,7 @@ std::optional<std::string> event_schema_validator::validate(const char *events)
 
 ::testing::AssertionResult ValidateSchema(const std::string &result)
 {
-    static event_schema_validator schema;
+    static schema_validator schema("../schema/events.json");
     auto error = schema.validate(result.c_str());
     if (error) {
         return ::testing::AssertionFailure() << *error;

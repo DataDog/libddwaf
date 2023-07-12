@@ -69,9 +69,9 @@ template <> struct as_if<ddwaf::test::event, void> {
 
 } // namespace YAML
 
-class event_schema_validator {
+class schema_validator {
 public:
-    event_schema_validator();
+    explicit schema_validator(const std::string &path);
     std::optional<std::string> validate(const char *events);
 
 protected:
