@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
 
 namespace ddwaf::memory {
 extern thread_local std::pmr::memory_resource *local_memory_resource;
@@ -99,9 +101,9 @@ template <typename T> using vector = std::vector<T, context_allocator<T>>;
 
 template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>>
 using unordered_map =
-    std::unordered_map<Key, T, Hash, Pred, context_allocator<std::pair<const Key, T>>>;
+    absl::flat_hash_map<Key, T, Hash, Pred, context_allocator<std::pair<const Key, T>>>;
 
 template <class T, class Hash = std::hash<T>, class Pred = std::equal_to<T>>
-using unordered_set = std::unordered_set<T, Hash, Pred, context_allocator<T>>;
+using unordered_set = absl::flat_hash_set<T, Hash, Pred, context_allocator<T>>;
 
 } // namespace ddwaf::memory

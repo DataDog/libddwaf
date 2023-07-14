@@ -122,7 +122,7 @@ install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
-set(LIBDDWAF_PRIVATE_LIBRARIES lib_re2 lib_ac lib_injection lib_radix lib_utf8proc)
+set(LIBDDWAF_PRIVATE_LIBRARIES lib_re2 lib_ac lib_injection lib_radix lib_utf8proc absl::flat_hash_map)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 # needed for glibc <2.17. We compile with --as-needed so the library won't
