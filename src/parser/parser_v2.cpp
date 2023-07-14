@@ -130,7 +130,7 @@ std::vector<PW_TRANSFORM_ID> parse_transformers(
 }
 
 condition::ptr parse_rule_condition(const parameter::map &root,
-    std::unordered_map<std::string, std::string> &rule_data_ids, condition::data_source source,
+    absl::flat_hash_map<std::string, std::string> &rule_data_ids, condition::data_source source,
     const std::vector<PW_TRANSFORM_ID> &transformers, const object_limits &limits)
 {
     auto operation = at<std::string_view>(root, "operator");
@@ -183,7 +183,7 @@ condition::ptr parse_rule_condition(const parameter::map &root,
 }
 
 rule_spec parse_rule(parameter::map &rule,
-    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    absl::flat_hash_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source)
 {
     std::vector<PW_TRANSFORM_ID> rule_transformers;
@@ -201,7 +201,7 @@ rule_spec parse_rule(parameter::map &rule,
             parse_rule_condition(cond, rule_data_ids, data_source, rule_transformers, limits));
     }
 
-    std::unordered_map<std::string, std::string> tags;
+    absl::flat_hash_map<std::string, std::string> tags;
     for (auto &[key, value] : at<parameter::map>(rule, "tags")) {
         try {
             tags.emplace(key, std::string(value));
@@ -227,7 +227,7 @@ rule_target_spec parse_rules_target(const parameter::map &target)
 
     auto tag_map = at<parameter::map>(target, "tags", {});
     if (!tag_map.empty()) {
-        std::unordered_map<std::string, std::string> tags;
+        absl::flat_hash_map<std::string, std::string> tags;
         for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
 
         return {target_type::tags, {}, std::move(tags)};
@@ -355,7 +355,7 @@ input_filter_spec parse_input_filter(const parameter::map &filter, const object_
         }
     }
 
-    std::unordered_set<target_index> input_targets;
+    absl::flat_hash_set<target_index> input_targets;
     auto obj_filter = std::make_shared<exclusion::object_filter>(limits);
     auto inputs_array = at<parameter::vector>(filter, "inputs");
 
@@ -422,7 +422,7 @@ std::string index_to_id(unsigned idx) { return "index:" + std::to_string(idx); }
 } // namespace
 
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
-    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    absl::flat_hash_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source)
 {
     rule_spec_container rules;
@@ -455,7 +455,7 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
 }
 
 rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_info &info,
-    std::unordered_map<std::string, std::string> &rule_data_ids)
+    absl::flat_hash_map<std::string, std::string> &rule_data_ids)
 {
     rule_data_container processors;
     for (unsigned i = 0; i < rule_data.size(); ++i) {

@@ -11,7 +11,7 @@ using namespace ddwaf;
 
 namespace {
 rule::ptr make_rule(std::string id, std::string name,
-    std::unordered_map<std::string, std::string> tags, std::vector<std::string> actions,
+    absl::flat_hash_map<std::string, std::string> tags, std::vector<std::string> actions,
     rule::source_type source = rule::source_type::base)
 {
     return std::make_shared<ddwaf::rule>(std::move(id), std::move(name), std::move(tags),
@@ -44,7 +44,7 @@ TEST(TestRuleset, InsertSingleRegularBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
+        absl::flat_hash_map<std::string_view, rule::ptr> final_rules;
         for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
@@ -80,7 +80,7 @@ TEST(TestRuleset, InsertSinglePriorityBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
+        absl::flat_hash_map<std::string_view, rule::ptr> final_rules;
         for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
@@ -116,7 +116,7 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
+        absl::flat_hash_map<std::string_view, rule::ptr> final_rules;
         for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
@@ -159,7 +159,7 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
     {
         ddwaf::ruleset ruleset;
 
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
+        absl::flat_hash_map<std::string_view, rule::ptr> final_rules;
         for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
@@ -200,7 +200,7 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
+        absl::flat_hash_map<std::string_view, rule::ptr> final_rules;
         for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
@@ -242,7 +242,7 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
+        absl::flat_hash_map<std::string_view, rule::ptr> final_rules;
         for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
@@ -284,7 +284,7 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
+        absl::flat_hash_map<std::string_view, rule::ptr> final_rules;
         for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
@@ -325,7 +325,7 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
+        absl::flat_hash_map<std::string_view, rule::ptr> final_rules;
         for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 
@@ -373,7 +373,7 @@ TEST(TestRuleset, InsertSingleMixedMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
+        absl::flat_hash_map<std::string_view, rule::ptr> final_rules;
         for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
         ruleset.insert_rules(final_rules);
 

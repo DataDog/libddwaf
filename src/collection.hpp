@@ -36,7 +36,7 @@ struct collection_cache {
 
 template <typename Derived> class base_collection {
 public:
-    using object_set = std::unordered_set<const ddwaf_object *>;
+    using object_set = absl::flat_hash_set<const ddwaf_object *>;
     using cache_type = collection_cache;
 
     base_collection() = default;
@@ -52,7 +52,7 @@ public:
         collection_cache &cache,
         const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
         const memory::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
-        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
+        const absl::flat_hash_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
 protected:

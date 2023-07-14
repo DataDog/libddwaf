@@ -108,7 +108,7 @@ condition::ptr parseCondition(
 }
 
 void parseRule(parameter::map &rule, base_section_info &info,
-    std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
+    absl::flat_hash_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
     if (rule_ids.find(id) != rule_ids.end()) {
@@ -137,7 +137,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
             conditions.push_back(parseCondition(cond, rule_transformers, limits));
         }
 
-        std::unordered_map<std::string, std::string> tags;
+        absl::flat_hash_map<std::string, std::string> tags;
         for (auto &[key, value] : at<parameter::map>(rule, "tags")) {
             try {
                 tags.emplace(key, std::string(value));
@@ -172,7 +172,7 @@ void parse(
 
     auto &section = info.add_section("rules");
 
-    std::unordered_set<std::string_view> rule_ids;
+    absl::flat_hash_set<std::string_view> rule_ids;
     for (unsigned i = 0; i < rules_array.size(); ++i) {
         const auto &rule_param = rules_array[i];
         try {

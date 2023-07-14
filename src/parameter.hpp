@@ -14,13 +14,16 @@
 #include <unordered_set>
 #include <vector>
 
+#include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
+
 namespace ddwaf {
 
 class parameter : public ddwaf_object {
 public:
-    using map = std::unordered_map<std::string_view, parameter>;
+    using map = absl::flat_hash_map<std::string_view, parameter>;
     using vector = std::vector<parameter>;
-    using string_set = std::unordered_set<std::string_view>;
+    using string_set = absl::flat_hash_set<std::string_view>;
 
     parameter() = default;
     parameter(const ddwaf_object &arg) : _ddwaf_object() { *((ddwaf_object *)this) = arg; }

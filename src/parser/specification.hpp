@@ -21,7 +21,7 @@ struct rule_spec {
     bool enabled;
     rule::source_type source;
     std::string name;
-    std::unordered_map<std::string, std::string> tags;
+    absl::flat_hash_map<std::string, std::string> tags;
     std::vector<condition::ptr> conditions;
     std::vector<std::string> actions;
 };
@@ -31,7 +31,7 @@ enum class target_type { none, id, tags };
 struct rule_target_spec {
     target_type type;
     std::string rule_id;
-    std::unordered_map<std::string, std::string> tags;
+    absl::flat_hash_map<std::string, std::string> tags;
 };
 
 struct override_spec {
@@ -55,8 +55,8 @@ struct input_filter_spec {
 };
 
 // Containers
-using rule_spec_container = std::unordered_map<std::string, rule_spec>;
-using rule_data_container = std::unordered_map<std::string, rule_processor::base::ptr>;
+using rule_spec_container = absl::flat_hash_map<std::string, rule_spec>;
+using rule_data_container = absl::flat_hash_map<std::string, rule_processor::base::ptr>;
 
 struct override_spec_container {
     [[nodiscard]] bool empty() const { return by_ids.empty() && by_tags.empty(); }
@@ -80,9 +80,9 @@ struct filter_spec_container {
         input_filters.clear();
     }
 
-    std::unordered_set<std::string> ids;
-    std::unordered_map<std::string, rule_filter_spec> rule_filters;
-    std::unordered_map<std::string, input_filter_spec> input_filters;
+    absl::flat_hash_set<std::string> ids;
+    absl::flat_hash_map<std::string, rule_filter_spec> rule_filters;
+    absl::flat_hash_map<std::string, input_filter_spec> input_filters;
 };
 
 } // namespace ddwaf::parser

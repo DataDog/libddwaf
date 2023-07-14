@@ -1,7 +1,7 @@
 include(GoogleTest)
 
 file(GLOB_RECURSE LIBDDWAF_TEST_SOURCE *.cpp)
-add_executable(testPowerWAF ${LIBDDWAF_SOURCE} ${LIBDDWAF_TEST_SOURCE})
+add_executable(testPowerWAF ${LIBDDWAF_TEST_SOURCE})
 
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 
@@ -36,7 +36,7 @@ endif()
 target_link_libraries(testPowerWAF
     PRIVATE lib_gtest ${COVERAGE_LINK_FLAGS}
     ${LIBDDWAF_PRIVATE_LIBRARIES} ${LIBDDWAF_INTERFACE_LIBRARIES}
-    ${LIBDDWAF_EXE_LINKER_FLAGS} lib_yamlcpp lib_rapidjson)
+    ${LIBDDWAF_EXE_LINKER_FLAGS} libddwaf_objects lib_yamlcpp lib_rapidjson)
 
 add_custom_target(test
     COMMAND ${CMAKE_BINARY_DIR}/tests/testPowerWAF

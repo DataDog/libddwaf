@@ -34,7 +34,7 @@ constexpr ruleset_builder::change_state operator&(
 namespace {
 
 std::set<rule *> target_to_rules(const std::vector<parser::rule_target_spec> &targets,
-    const std::unordered_map<std::string_view, rule::ptr> &rules, const rule_tag_map &rules_by_tags)
+    const absl::flat_hash_map<std::string_view, rule::ptr> &rules, const rule_tag_map &rules_by_tags)
 {
     std::set<rule *> rule_targets;
     if (!targets.empty()) {

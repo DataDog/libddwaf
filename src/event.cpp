@@ -77,7 +77,7 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
     ddwaf_object_array(&output.events);
     ddwaf_object_array(&output.actions);
 
-    std::unordered_set<std::string_view> all_actions;
+    absl::flat_hash_set<std::string_view> all_actions;
     for (const auto &event : events) {
         ddwaf_object root_map;
         ddwaf_object rule_map;

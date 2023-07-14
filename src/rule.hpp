@@ -34,7 +34,7 @@ public:
         std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
     };
 
-    rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
+    rule(std::string id, std::string name, absl::flat_hash_map<std::string, std::string> tags,
         std::vector<condition::ptr> conditions, std::vector<std::string> actions = {},
         bool enabled = true, source_type source = source_type::base)
         : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
@@ -65,8 +65,8 @@ public:
     ~rule() = default;
 
     std::optional<event> match(const object_store &store, cache_type &cache,
-        const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
+        const absl::flat_hash_set<const ddwaf_object *> &objects_excluded,
+        const absl::flat_hash_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
@@ -82,11 +82,11 @@ public:
         return it == tags_.end() ? std::string_view() : it->second;
     }
 
-    const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
+    const absl::flat_hash_map<std::string, std::string> &get_tags() const { return tags_; }
 
     const std::vector<std::string> &get_actions() const { return actions_; }
 
-    void get_addresses(std::unordered_set<std::string> &addresses) const
+    void get_addresses(absl::flat_hash_set<std::string> &addresses) const
     {
         for (const auto &cond : conditions_) {
             for (const auto &target : cond->get_targets()) { addresses.emplace(target.name); }
@@ -100,7 +100,7 @@ protected:
     source_type source_;
     std::string id_;
     std::string name_;
-    std::unordered_map<std::string, std::string> tags_;
+    absl::flat_hash_map<std::string, std::string> tags_;
     std::vector<condition::ptr> conditions_;
     std::vector<std::string> actions_;
 };

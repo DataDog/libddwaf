@@ -51,8 +51,8 @@ public:
     condition &operator=(const condition &) = delete;
 
     std::optional<event::match> match(const object_store &store,
-        const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
-        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
+        const absl::flat_hash_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
+        const absl::flat_hash_map<std::string, rule_processor::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] const std::vector<condition::target_type> &get_targets() const
@@ -70,7 +70,7 @@ protected:
         const std::vector<PW_TRANSFORM_ID> &transformers, ddwaf::timer &deadline) const;
 
     [[nodiscard]] const rule_processor::base::ptr &get_processor(
-        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors) const;
+        const absl::flat_hash_map<std::string, rule_processor::base::ptr> &dynamic_processors) const;
     std::vector<condition::target_type> targets_;
     std::shared_ptr<rule_processor::base> processor_;
     std::string data_id_;

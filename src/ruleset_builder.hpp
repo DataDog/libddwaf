@@ -64,7 +64,7 @@ protected:
 
     // Map representing rule data IDs to processor type, this is obtained
     // from parsing the ruleset ('rules' key).
-    std::unordered_map<std::string, std::string> rule_data_ids_;
+    absl::flat_hash_map<std::string, std::string> rule_data_ids_;
 
     // These contain the specification of each main component obtained directly
     // from the parser. These are only modified on update, if the relevant key
@@ -87,16 +87,16 @@ protected:
     // These are the contents of the latest generated ruleset
 
     // Rules
-    std::unordered_map<std::string_view, rule::ptr> final_base_rules_;
-    std::unordered_map<std::string_view, rule::ptr> final_user_rules_;
+    absl::flat_hash_map<std::string_view, rule::ptr> final_base_rules_;
+    absl::flat_hash_map<std::string_view, rule::ptr> final_user_rules_;
 
     // An mkmap organising rules by their tags, used for overrides and exclusion filters
     rule_tag_map base_rules_by_tags_;
     rule_tag_map user_rules_by_tags_;
 
     // Filters
-    std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters_;
-    std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters_;
+    absl::flat_hash_map<std::string_view, exclusion::rule_filter::ptr> rule_filters_;
+    absl::flat_hash_map<std::string_view, exclusion::input_filter::ptr> input_filters_;
     // The list of targets used by rule_filters_, input_filters_ and their internal
 };
 

@@ -26,7 +26,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    absl::flat_hash_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<ddwaf::rule>(
         "id", "name", std::move(tags), std::move(conditions), std::vector<std::string>{});
@@ -81,7 +81,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
@@ -100,7 +100,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
@@ -158,7 +158,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
         auto rule = std::make_shared<ddwaf::rule>(
             "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
@@ -176,7 +176,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
         auto rule = std::make_shared<ddwaf::rule>(
             "id2", "name2", std::move(tags), std::move(conditions), std::vector<std::string>{});
@@ -239,7 +239,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
             std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"})));
     }
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    absl::flat_hash_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<ddwaf::rule>(
         "id", "name", std::move(tags), std::move(conditions), std::vector<std::string>{});
@@ -297,7 +297,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
         auto rule = std::make_shared<ddwaf::rule>(
             "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
@@ -315,7 +315,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
@@ -376,7 +376,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
         auto rule = std::make_shared<ddwaf::rule>(
             "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
@@ -394,7 +394,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
@@ -455,7 +455,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
             std::move(conditions), std::vector<std::string>{"block"});
@@ -473,7 +473,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-        std::unordered_map<std::string, std::string> tags{
+        absl::flat_hash_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),

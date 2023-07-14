@@ -32,7 +32,7 @@ public:
 
 protected:
     std::vector<std::string> data_;
-    std::unordered_map<std::string_view, uint64_t> values_;
+    absl::flat_hash_map<std::string_view, uint64_t> values_;
 };
 
 } // namespace ddwaf::rule_processor

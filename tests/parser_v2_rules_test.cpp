@@ -10,7 +10,7 @@ TEST(TestParserV2Rules, ParseRule)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
+    absl::flat_hash_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = readRule(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
@@ -55,7 +55,7 @@ TEST(TestParserV2Rules, ParseRuleWithoutType)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
+    absl::flat_hash_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = readRule(
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
@@ -96,7 +96,7 @@ TEST(TestParserV2Rules, ParseRuleWithoutID)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
+    absl::flat_hash_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = readRule(
         R"([{name: rule1, tags: {type: type1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
@@ -137,7 +137,7 @@ TEST(TestParserV2Rules, ParseMultipleRules)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
+    absl::flat_hash_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = readRule(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: secondrule, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}])");
@@ -201,7 +201,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneInvalid)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
+    absl::flat_hash_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = readRule(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: secondrule, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}, {id: error}])");
@@ -271,7 +271,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
+    absl::flat_hash_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = readRule(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: 1, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}])");
