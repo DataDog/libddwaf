@@ -6,6 +6,7 @@
 
 #include "../test.h"
 #include "transformer/remove_nulls.hpp"
+#include "transformer_utils.hpp"
 
 TEST(TestRemoveNulls, NameAndID)
 {
@@ -13,81 +14,23 @@ TEST(TestRemoveNulls, NameAndID)
     EXPECT_EQ(transformer::remove_nulls::id(), transformer_id::remove_nulls);
 }
 
-TEST(TestRemoveNulls, EmptyString)
-{
-    cow_string str("");
-    EXPECT_FALSE(transformer::remove_nulls::transform(str));
-    EXPECT_FALSE(str.modified());
-}
+TEST(TestRemoveNulls, EmptyString) { EXPECT_NO_TRANSFORM(remove_nulls, ""); }
 
 TEST(TestRemoveNulls, ValidTransform)
 {
-    {
-        cow_string str({"r\0", sizeof("r\0") - 1});
-        EXPECT_TRUE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), "r");
-    }
-
-    {
-        cow_string str({"re\0", sizeof("re\0") - 1});
-        EXPECT_TRUE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), "re");
-    }
-
-    {
-        cow_string str({"\0re", sizeof("\0re") - 1});
-        EXPECT_TRUE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), "re");
-    }
-
-    {
-        cow_string str({"r\0e", sizeof("r\0e") - 1});
-        EXPECT_TRUE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), "re");
-    }
-
-    {
-        cow_string str({"removenulls\0", sizeof("removenulls\0") - 1});
-        EXPECT_TRUE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), "removenulls");
-    }
-
-    {
-        cow_string str({"remove\0nulls", sizeof("remove\0nulls") - 1});
-        EXPECT_TRUE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), "removenulls");
-    }
-
-    {
-        cow_string str({"\0removenulls", sizeof("\0removenulls") - 1});
-        EXPECT_TRUE(transformer::remove_nulls::transform(str));
-        EXPECT_STREQ(str.data(), "removenulls");
-    }
+    EXPECT_TRANSFORM(remove_nulls, "r\0", "r");
+    EXPECT_TRANSFORM(remove_nulls, "re\0", "re");
+    EXPECT_TRANSFORM(remove_nulls, "\0re", "re");
+    EXPECT_TRANSFORM(remove_nulls, "r\0e", "re");
+    EXPECT_TRANSFORM(remove_nulls, "removenulls\0", "removenulls");
+    EXPECT_TRANSFORM(remove_nulls, "remove\0nulls", "removenulls");
+    EXPECT_TRANSFORM(remove_nulls, "\0removenulls", "removenulls");
 }
 
 TEST(TestRemoveNulls, InvalidTransform)
 {
-    {
-        cow_string str("r");
-        EXPECT_FALSE(transformer::remove_nulls::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("rs");
-        EXPECT_FALSE(transformer::remove_nulls::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("remove_nulls");
-        EXPECT_FALSE(transformer::remove_nulls::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("remove_nulls but it doesn't matter");
-        EXPECT_FALSE(transformer::remove_nulls::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
+    EXPECT_NO_TRANSFORM(remove_nulls, "r");
+    EXPECT_NO_TRANSFORM(remove_nulls, "rs");
+    EXPECT_NO_TRANSFORM(remove_nulls, "remove_nulls");
+    EXPECT_NO_TRANSFORM(remove_nulls, "remove_nulls but it doesn't matter");
 }

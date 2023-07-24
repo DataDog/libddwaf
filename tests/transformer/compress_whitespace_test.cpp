@@ -6,6 +6,7 @@
 
 #include "../test.h"
 #include "transformer/compress_whitespace.hpp"
+#include "transformer_utils.hpp"
 
 TEST(TestCompressWhitespace, NameAndID)
 {
@@ -13,111 +14,29 @@ TEST(TestCompressWhitespace, NameAndID)
     EXPECT_EQ(transformer::compress_whitespace::id(), transformer_id::compress_whitespace);
 }
 
-TEST(TestCompressWhitespace, EmptyString)
-{
-    cow_string str("");
-    EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-    EXPECT_FALSE(str.modified());
-}
+TEST(TestCompressWhitespace, EmptyString) { EXPECT_NO_TRANSFORM(compress_whitespace, ""); }
 
 TEST(TestCompressWhitespace, ValidTransform)
 {
-    {
-        cow_string str("  c");
-        EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), " c");
-    }
-
-    {
-        cow_string str("c  w");
-        EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), "c w");
-    }
-
-    {
-        cow_string str("c  ");
-        EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), "c ");
-    }
-
-    {
-        cow_string str("  c  ");
-        EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), " c ");
-    }
-
-    {
-        cow_string str("        c");
-        EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), " c");
-    }
-
-    {
-        cow_string str("c      w");
-        EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), "c w");
-    }
-
-    {
-        cow_string str("c      ");
-        EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), "c ");
-    }
-
-    {
-        cow_string str("      c     ");
-        EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), " c ");
-    }
-
-    {
-        cow_string str("      compress  white     space transformer     ");
-        EXPECT_TRUE(transformer::compress_whitespace::transform(str));
-        EXPECT_STREQ(str.data(), " compress white space transformer ");
-    }
+    EXPECT_TRANSFORM(compress_whitespace, "  c", " c");
+    EXPECT_TRANSFORM(compress_whitespace, "c  w", "c w");
+    EXPECT_TRANSFORM(compress_whitespace, "c  ", "c ");
+    EXPECT_TRANSFORM(compress_whitespace, "  c  ", " c ");
+    EXPECT_TRANSFORM(compress_whitespace, "        c", " c");
+    EXPECT_TRANSFORM(compress_whitespace, "c      w", "c w");
+    EXPECT_TRANSFORM(compress_whitespace, "c      ", "c ");
+    EXPECT_TRANSFORM(compress_whitespace, "      c     ", " c ");
+    EXPECT_TRANSFORM(compress_whitespace, "      compress  white     space transformer     ",
+        " compress white space transformer ");
 }
 
 TEST(TestCompressWhitespace, InvalidTransform)
 {
-    {
-        cow_string str("c");
-        EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str(" c");
-        EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("c ");
-        EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str(" c ");
-        EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("c w");
-        EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("compress_whitespace");
-        EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("compress_whitespace but it doesn't matter");
-        EXPECT_FALSE(transformer::compress_whitespace::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
+    EXPECT_NO_TRANSFORM(compress_whitespace, "c");
+    EXPECT_NO_TRANSFORM(compress_whitespace, " c");
+    EXPECT_NO_TRANSFORM(compress_whitespace, "c ");
+    EXPECT_NO_TRANSFORM(compress_whitespace, " c ");
+    EXPECT_NO_TRANSFORM(compress_whitespace, "c w");
+    EXPECT_NO_TRANSFORM(compress_whitespace, "compress_whitespace");
+    EXPECT_NO_TRANSFORM(compress_whitespace, "compress_whitespace but it doesn't matter");
 }

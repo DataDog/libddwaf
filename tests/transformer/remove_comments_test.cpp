@@ -6,6 +6,7 @@
 
 #include "../test.h"
 #include "transformer/remove_comments.hpp"
+#include "transformer_utils.hpp"
 
 TEST(TestRemoveComments, NameAndID)
 {
@@ -13,287 +14,73 @@ TEST(TestRemoveComments, NameAndID)
     EXPECT_EQ(transformer::remove_comments::id(), transformer_id::remove_comments);
 }
 
-TEST(TestRemoveComments, EmptyString)
-{
-    cow_string str("");
-    EXPECT_FALSE(transformer::remove_comments::transform(str));
-    EXPECT_FALSE(str.modified());
-}
+TEST(TestRemoveComments, EmptyString) { EXPECT_NO_TRANSFORM(remove_comments, ""); }
 
 TEST(TestRemoveComments, ValidTransformShellComment)
 {
-    {
-        cow_string str("#");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "");
-    }
-
-    {
-        cow_string str("#foo");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "");
-    }
-
-    {
-        cow_string str("bar#foo");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar#");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
+    EXPECT_TRANSFORM(remove_comments, "#", "");
+    EXPECT_TRANSFORM(remove_comments, "#foo", "");
+    EXPECT_TRANSFORM(remove_comments, "bar#foo", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar#", "bar");
 }
 
 TEST(TestRemoveComments, ValidTransformSQLComment)
 {
-    {
-        cow_string str("--");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "");
-    }
-
-    {
-        cow_string str("--foo");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "");
-    }
-
-    {
-        cow_string str("bar--foo");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar--");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
+    EXPECT_TRANSFORM(remove_comments, "--", "");
+    EXPECT_TRANSFORM(remove_comments, "--foo", "");
+    EXPECT_TRANSFORM(remove_comments, "bar--foo", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar--", "bar");
 }
 
 TEST(TestRemoveComments, ValidTransformCPPComment)
 {
-    {
-        cow_string str("//");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "");
-    }
-
-    {
-        cow_string str("//foo");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "");
-    }
-
-    {
-        cow_string str("bar//foo");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar//");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
+    EXPECT_TRANSFORM(remove_comments, "//", "");
+    EXPECT_TRANSFORM(remove_comments, "//foo", "");
+    EXPECT_TRANSFORM(remove_comments, "bar//foo", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar//", "bar");
 }
 
 TEST(TestRemoveComments, ValidTransformHTMLComment)
 {
-    {
-        cow_string str("<!--foo-->");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "");
-    }
-
-    {
-        cow_string str("<!--foo-->bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar<!--foo-->");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar<!--foo-->bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "barbar");
-    }
-
-    {
-        cow_string str("bar<!--foo--><!--foo-->bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "barbar");
-    }
-
-    {
-        cow_string str("bar<!--foo--><!--foo-->bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "barbar");
-    }
-
-    {
-        cow_string str("bar<!--foo-->bar<!--foo-->bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "barbarbar");
-    }
-
-    {
-        // This is a strange case, out algorithm is quite simple and will
-        // detect the final -->bar as an SQL comment
-        cow_string str("bar<!--<!--foo-->-->bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar<!--");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar<!--foo bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("foo<!---->bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "foobar");
-    }
+    EXPECT_TRANSFORM(remove_comments, "<!--foo-->", "");
+    EXPECT_TRANSFORM(remove_comments, "<!--foo-->bar", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar<!--foo-->", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar<!--foo-->bar", "barbar");
+    EXPECT_TRANSFORM(remove_comments, "bar<!--foo--><!--foo-->bar", "barbar");
+    EXPECT_TRANSFORM(remove_comments, "bar<!--foo--><!--foo-->bar", "barbar");
+    EXPECT_TRANSFORM(remove_comments, "bar<!--foo-->bar<!--foo-->bar", "barbarbar");
+    // This is a strange case, out algorithm is quite simple and will
+    // detect the final -->bar as an SQL comment
+    EXPECT_TRANSFORM(remove_comments, "bar<!--<!--foo-->-->bar", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar<!--", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar<!--foo bar", "bar");
+    EXPECT_TRANSFORM(remove_comments, "foo<!---->bar", "foobar");
 }
 
 TEST(TestRemoveComments, ValidTransformCComment)
 {
-    {
-        cow_string str("/*foo*/");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "");
-    }
-
-    {
-        cow_string str("/*foo*/bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar/*foo*/");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar/*foo*/bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "barbar");
-    }
-
-    {
-        cow_string str("bar/*foo*//*foo*/bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "barbar");
-    }
-
-    {
-        cow_string str("bar/*foo*//*foo*/bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "barbar");
-    }
-
-    {
-        cow_string str("bar/*foo*/bar/*foo*/bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "barbarbar");
-    }
-
-    {
-        cow_string str("bar/*/*foo*/*/bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar*/bar");
-    }
-
-    {
-        cow_string str("bar/*");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("bar/*foo bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "bar");
-    }
-
-    {
-        cow_string str("foo/**/bar");
-        EXPECT_TRUE(transformer::remove_comments::transform(str));
-        EXPECT_STREQ(str.data(), "foobar");
-    }
+    EXPECT_TRANSFORM(remove_comments, "/*foo*/", "");
+    EXPECT_TRANSFORM(remove_comments, "/*foo*/bar", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar/*foo*/", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar/*foo*/bar", "barbar");
+    EXPECT_TRANSFORM(remove_comments, "bar/*foo*//*foo*/bar", "barbar");
+    EXPECT_TRANSFORM(remove_comments, "bar/*foo*//*foo*/bar", "barbar");
+    EXPECT_TRANSFORM(remove_comments, "bar/*foo*/bar/*foo*/bar", "barbarbar");
+    EXPECT_TRANSFORM(remove_comments, "bar/*/*foo*/*/bar", "bar*/bar");
+    EXPECT_TRANSFORM(remove_comments, "bar/*", "bar");
+    EXPECT_TRANSFORM(remove_comments, "bar/*foo bar", "bar");
+    EXPECT_TRANSFORM(remove_comments, "foo/**/bar", "foobar");
 }
 
 TEST(TestRemoveComments, InvalidTransform)
 {
-    {
-        cow_string str("-");
-        EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("/");
-        EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("<");
-        EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("<!");
-        EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("<!-");
-        EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("r");
-        EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("rc");
-        EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("remove_comments");
-        EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("remove_comments but it doesn't matter");
-        EXPECT_FALSE(transformer::remove_comments::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
+    EXPECT_NO_TRANSFORM(remove_comments, "-");
+    EXPECT_NO_TRANSFORM(remove_comments, "/");
+    EXPECT_NO_TRANSFORM(remove_comments, "<");
+    EXPECT_NO_TRANSFORM(remove_comments, "<!");
+    EXPECT_NO_TRANSFORM(remove_comments, "<!-");
+    EXPECT_NO_TRANSFORM(remove_comments, "r");
+    EXPECT_NO_TRANSFORM(remove_comments, "rc");
+    EXPECT_NO_TRANSFORM(remove_comments, "remove_comments");
+    EXPECT_NO_TRANSFORM(remove_comments, "remove_comments but it doesn't matter");
 }

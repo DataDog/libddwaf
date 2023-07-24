@@ -6,6 +6,7 @@
 
 #include "../test.h"
 #include "transformer/normalize_path.hpp"
+#include "transformer_utils.hpp"
 
 TEST(TestNormalizePath, NameAndID)
 {
@@ -13,77 +14,24 @@ TEST(TestNormalizePath, NameAndID)
     EXPECT_EQ(transformer::normalize_path::id(), transformer_id::normalize_path);
 }
 
-TEST(TestNormalizePath, EmptyString)
-{
-    cow_string str("");
-    EXPECT_FALSE(transformer::normalize_path::transform(str));
-    EXPECT_FALSE(str.modified());
-}
+TEST(TestNormalizePath, EmptyString) { EXPECT_NO_TRANSFORM(normalize_path, ""); }
 
 TEST(TestNormalizePath, ValidTransform)
 {
-    {
-        cow_string str("./file");
-        EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), "file");
-    }
-
-    {
-        cow_string str("./a/simple/path");
-        EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), "a/simple/path");
-    }
-
-    {
-        cow_string str("a/simple/./path");
-        EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), "a/simple/path");
-    }
-
-    {
-        cow_string str("./a/simple/wrong/../path");
-        EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), "a/simple/path");
-    }
-
-    {
-        cow_string str("a/simple/../../../../path");
-        EXPECT_TRUE(transformer::normalize_path::transform(str));
-        EXPECT_STREQ(str.data(), "/path");
-    }
+    EXPECT_TRANSFORM(normalize_path, "./file", "file");
+    EXPECT_TRANSFORM(normalize_path, "./a/simple/path", "a/simple/path");
+    EXPECT_TRANSFORM(normalize_path, "a/simple/./path", "a/simple/path");
+    EXPECT_TRANSFORM(normalize_path, "./a/simple/wrong/../path", "a/simple/path");
+    EXPECT_TRANSFORM(normalize_path, "a/simple/../../../../path", "/path");
 }
 
 TEST(TestNormalizePath, InvalidTransform)
 {
-    {
-        cow_string str("/normal/path");
-        EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("/normal/path/to/dir/");
-        EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("path/to/somewhere");
-        EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("./");
-        EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("/");
-        EXPECT_FALSE(transformer::normalize_path::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
+    EXPECT_NO_TRANSFORM(normalize_path, "/normal/path");
+    EXPECT_NO_TRANSFORM(normalize_path, "/normal/path/to/dir/");
+    EXPECT_NO_TRANSFORM(normalize_path, "path/to/somewhere");
+    EXPECT_NO_TRANSFORM(normalize_path, "./");
+    EXPECT_NO_TRANSFORM(normalize_path, "/");
 }
 
 TEST(TestNormalizePathWin, NameAndID)
@@ -92,75 +40,22 @@ TEST(TestNormalizePathWin, NameAndID)
     EXPECT_EQ(transformer::normalize_path_win::id(), transformer_id::normalize_path_win);
 }
 
-TEST(TestNormalizePathWin, EmptyString)
-{
-    cow_string str("");
-    EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-    EXPECT_FALSE(str.modified());
-}
+TEST(TestNormalizePathWin, EmptyString) { EXPECT_NO_TRANSFORM(normalize_path_win, ""); }
 
 TEST(TestNormalizePathWin, ValidTransform)
 {
-    {
-        cow_string str(R"(.\file)");
-        EXPECT_TRUE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), "file");
-    }
-
-    {
-        cow_string str(R"(.\a\simple\path)");
-        EXPECT_TRUE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), "a/simple/path");
-    }
-
-    {
-        cow_string str(R"(a\simple\.\path)");
-        EXPECT_TRUE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), "a/simple/path");
-    }
-
-    {
-        cow_string str(R"(.\a\simple\wrong\..\path)");
-        EXPECT_TRUE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), "a/simple/path");
-    }
-
-    {
-        cow_string str(R"(a\simple\..\..\..\..\path)");
-        EXPECT_TRUE(transformer::normalize_path_win::transform(str));
-        EXPECT_STREQ(str.data(), "/path");
-    }
+    EXPECT_TRANSFORM(normalize_path_win, R"(.\file)", "file");
+    EXPECT_TRANSFORM(normalize_path_win, R"(.\a\simple\path)", "a/simple/path");
+    EXPECT_TRANSFORM(normalize_path_win, R"(a\simple\.\path)", "a/simple/path");
+    EXPECT_TRANSFORM(normalize_path_win, R"(.\a\simple\wrong\..\path)", "a/simple/path");
+    EXPECT_TRANSFORM(normalize_path_win, R"(a\simple\..\..\..\..\path)", "/path");
 }
 
 TEST(TestNormalizePathWin, InvalidTransform)
 {
-    {
-        cow_string str("/normal/path");
-        EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("/normal/path/to/dir/");
-        EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("path/to/somewhere");
-        EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("./");
-        EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("/");
-        EXPECT_FALSE(transformer::normalize_path_win::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
+    EXPECT_NO_TRANSFORM(normalize_path_win, "/normal/path");
+    EXPECT_NO_TRANSFORM(normalize_path_win, "/normal/path/to/dir/");
+    EXPECT_NO_TRANSFORM(normalize_path_win, "path/to/somewhere");
+    EXPECT_NO_TRANSFORM(normalize_path_win, "./");
+    EXPECT_NO_TRANSFORM(normalize_path_win, "/");
 }

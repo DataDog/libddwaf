@@ -6,6 +6,7 @@
 
 #include "../test.h"
 #include "transformer/unicode_normalize.hpp"
+#include "transformer_utils.hpp"
 
 TEST(TestUnicodeNormalize, NameAndID)
 {
@@ -13,135 +14,35 @@ TEST(TestUnicodeNormalize, NameAndID)
     EXPECT_EQ(transformer::unicode_normalize::id(), transformer_id::unicode_normalize);
 }
 
-TEST(TestUnicodeNormalize, EmptyString)
-{
-    cow_string str("");
-    EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-    EXPECT_FALSE(str.modified());
-}
+TEST(TestUnicodeNormalize, EmptyString) { EXPECT_NO_TRANSFORM(unicode_normalize, ""); }
 
 TEST(TestUnicodeNormalize, ValidTransform)
 {
-    {
-        cow_string str("⃝");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "");
-    }
-
-    {
-        cow_string str("ß");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "ss");
-    }
-
-    {
-        cow_string str("é");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "e");
-    }
-
-    {
-        cow_string str("ı");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "i");
-    }
-
-    {
-        cow_string str("–");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "-");
-    }
-
-    {
-        cow_string str("—");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "-");
-    }
-
-    {
-        cow_string str("⁵");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "5");
-    }
-
-    {
-        cow_string str("⅖");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "2/5");
-    }
-
-    {
-        cow_string str("ﬁ");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "fi");
-    }
-
-    {
-        cow_string str("𝑎");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "a");
-    }
-
-    {
-        cow_string str("Å👨‍👩‍👧‍👦");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "A👨‍👩‍👧‍👦");
-    }
-
-    {
-        cow_string str("👨‍👩‍👧‍👦Å");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "👨‍👩‍👧‍👦A");
-    }
-
-    {
-        cow_string str("Aa𝑎éßıﬁ2⁵—⅖");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "Aaaessifi25-2/5");
-    }
-
-    {
-        cow_string str("Aẞé");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "ASSe");
-    }
-
-    {
-        cow_string str("Àße");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "Asse");
-    }
-
-    {
-        cow_string str("${${::-j}nd${upper:ı}:gopher//127.0.0.1:1389}");
-        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), "${${::-j}nd${upper:i}:gopher//127.0.0.1:1389}");
-    }
+    EXPECT_TRANSFORM(unicode_normalize, "⃝", "");
+    EXPECT_TRANSFORM(unicode_normalize, "ß", "ss");
+    EXPECT_TRANSFORM(unicode_normalize, "é", "e");
+    EXPECT_TRANSFORM(unicode_normalize, "ı", "i");
+    EXPECT_TRANSFORM(unicode_normalize, "–", "-");
+    EXPECT_TRANSFORM(unicode_normalize, "—", "-");
+    EXPECT_TRANSFORM(unicode_normalize, "⁵", "5");
+    EXPECT_TRANSFORM(unicode_normalize, "⅖", "2/5");
+    EXPECT_TRANSFORM(unicode_normalize, "ﬁ", "fi");
+    EXPECT_TRANSFORM(unicode_normalize, "𝑎", "a");
+    EXPECT_TRANSFORM(
+        unicode_normalize, "Å👨‍👩‍👧‍👦", "A👨‍👩‍👧‍👦");
+    EXPECT_TRANSFORM(
+        unicode_normalize, "👨‍👩‍👧‍👦Å", "👨‍👩‍👧‍👦A");
+    EXPECT_TRANSFORM(unicode_normalize, "Aa𝑎éßıﬁ2⁵—⅖", "Aaaessifi25-2/5");
+    EXPECT_TRANSFORM(unicode_normalize, "Aẞé", "ASSe");
+    EXPECT_TRANSFORM(unicode_normalize, "Àße", "Asse");
+    EXPECT_TRANSFORM(unicode_normalize, "${${::-j}nd${upper:ı}:gopher//127.0.0.1:1389}",
+        "${${::-j}nd${upper:i}:gopher//127.0.0.1:1389}");
 }
 
 TEST(TestUnicodeNormalize, InvalidTransform)
 {
-    {
-        cow_string str("u");
-        EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("`");
-        EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("unicode_normalize");
-        EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
-
-    {
-        cow_string str("unicode_normalize but it doesn't matter");
-        EXPECT_FALSE(transformer::unicode_normalize::transform(str));
-        EXPECT_FALSE(str.modified());
-    }
+    EXPECT_NO_TRANSFORM(unicode_normalize, "u");
+    EXPECT_NO_TRANSFORM(unicode_normalize, "`");
+    EXPECT_NO_TRANSFORM(unicode_normalize, "unicode_normalize");
+    EXPECT_NO_TRANSFORM(unicode_normalize, "unicode_normalize but it doesn't matter");
 }
