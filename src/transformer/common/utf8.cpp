@@ -234,8 +234,8 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
                             UTF8PROC_STRIPMARK | UTF8PROC_STRIPNA | UTF8PROC_CASEFOLD),
         nullptr);
 
-    // This decomposition is unfortunately not complete. It leaves behind a few chars like Ä± (i)
-    //  Moreover, some conversions like Ã (ss) require casefolding, which changes the case of
+    // This decomposition is unfortunately not complete. It leaves behind a few chars like ı (i)
+    //  Moreover, some conversions like ß (ss) require casefolding, which changes the case of
     //  characters We're trying to address what's left
     if (decomposedLength > 0 && decomposedLength <= wbBufferLength) {
         // If casefolding happened, we check what was the case of the original codepoint and move it
@@ -257,7 +257,7 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
             }
         } else {
             // We're forcing a case conversion back and forth if necessary to catch the few
-            // stragglers like Ä± (i)
+            // stragglers like ı (i)
             for (size_t wbIndex = 0; wbIndex < decomposedLength; ++wbIndex) {
                 const utf8proc_property_t *codepointProperty =
                     utf8proc_get_property(wbBuffer[wbIndex]);
@@ -362,7 +362,7 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
     return true;
 }
 
-bool normalize_string(lazy_string &str)
+bool normalize_string(cow_string &str)
 {
     int32_t inFlightBuffer[INFLIGHT_BUFFER_SIZE];
     std::vector<ScratchpadChunck> scratchPad;

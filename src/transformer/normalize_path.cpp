@@ -8,7 +8,7 @@
 
 namespace ddwaf::transformer {
 
-bool normalize_path::transform_impl(lazy_string &str)
+bool normalize_path::transform_impl(cow_string &str)
 {
     bool modified = false;
     std::size_t read = 0;
@@ -71,7 +71,7 @@ bool normalize_path::transform_impl(lazy_string &str)
     return true;
 }
 
-bool normalize_path_win::transform_impl(lazy_string &str)
+bool normalize_path_win::transform_impl(cow_string &str)
 {
     bool normalized = false;
     // That's quite a blunt conversion but that's what ModSecurity is doing so ¯\_(ツ)_/¯

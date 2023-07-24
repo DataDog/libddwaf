@@ -8,7 +8,7 @@
 
 namespace ddwaf::transformer {
 
-bool remove_comments::transform_impl(lazy_string &str)
+bool remove_comments::transform_impl(cow_string &str)
 {
     enum class comment_type { unknown, html, c, eol } type = comment_type::unknown;
 

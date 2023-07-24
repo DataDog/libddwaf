@@ -26,7 +26,7 @@ uint8_t from_hex(char c)
  * Bypasses are documented here:
  * https://www.postexplo.com/forum/ids-ips/network-based/764-ids-evasion-techniques-using-url-encoding
  */
-bool url_decode_common(lazy_string &str, bool read_iis)
+bool url_decode_common(cow_string &str, bool read_iis)
 {
     std::size_t read = 0;
     // Fast forward to a space or an hex encode char
@@ -100,9 +100,9 @@ bool url_decode_common(lazy_string &str, bool read_iis)
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 } // namespace
 
-bool url_decode::transform_impl(lazy_string &str) { return url_decode_common(str, false); }
+bool url_decode::transform_impl(cow_string &str) { return url_decode_common(str, false); }
 
-bool url_decode_iis::transform_impl(lazy_string &str)
+bool url_decode_iis::transform_impl(cow_string &str)
 {
     bool output = false;
     while (url_decode_common(str, true)) { output = true; }

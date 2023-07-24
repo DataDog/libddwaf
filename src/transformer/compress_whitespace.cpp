@@ -8,7 +8,7 @@
 
 namespace ddwaf::transformer {
 
-bool compress_whitespace::transform_impl(lazy_string &str)
+bool compress_whitespace::transform_impl(cow_string &str)
 {
     // First loop looking for the first two consecutives space char
     std::size_t read = 1;

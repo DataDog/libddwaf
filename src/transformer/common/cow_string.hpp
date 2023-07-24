@@ -14,23 +14,23 @@
 
 namespace ddwaf {
 
-class lazy_string {
+class cow_string {
 public:
-    explicit lazy_string(std::string_view original)
+    explicit cow_string(std::string_view original)
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
         : buffer_(const_cast<char *>(original.data())), length_(original.length())
     {
         if (buffer_ == nullptr) {
-            throw std::runtime_error{"lazy_string initialised with nullptr"};
+            throw std::runtime_error{"cow_string initialised with nullptr"};
         }
     }
 
-    lazy_string(const lazy_string &) = delete;
-    lazy_string &operator=(const lazy_string &) = delete;
-    lazy_string(lazy_string &&other) = delete;
-    lazy_string &operator=(lazy_string &&other) = delete;
+    cow_string(const cow_string &) = delete;
+    cow_string &operator=(const cow_string &) = delete;
+    cow_string(cow_string &&other) = delete;
+    cow_string &operator=(cow_string &&other) = delete;
 
-    ~lazy_string()
+    ~cow_string()
     {
         if (modified_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)

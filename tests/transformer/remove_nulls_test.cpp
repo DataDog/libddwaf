@@ -15,7 +15,7 @@ TEST(TestRemoveNulls, NameAndID)
 
 TEST(TestRemoveNulls, EmptyString)
 {
-    lazy_string str("");
+    cow_string str("");
     EXPECT_FALSE(transformer::remove_nulls::transform(str));
     EXPECT_FALSE(str.modified());
 }
@@ -23,43 +23,43 @@ TEST(TestRemoveNulls, EmptyString)
 TEST(TestRemoveNulls, ValidTransform)
 {
     {
-        lazy_string str({"r\0", sizeof("r\0") - 1});
+        cow_string str({"r\0", sizeof("r\0") - 1});
         EXPECT_TRUE(transformer::remove_nulls::transform(str));
         EXPECT_STREQ(str.data(), "r");
     }
 
     {
-        lazy_string str({"re\0", sizeof("re\0") - 1});
+        cow_string str({"re\0", sizeof("re\0") - 1});
         EXPECT_TRUE(transformer::remove_nulls::transform(str));
         EXPECT_STREQ(str.data(), "re");
     }
 
     {
-        lazy_string str({"\0re", sizeof("\0re") - 1});
+        cow_string str({"\0re", sizeof("\0re") - 1});
         EXPECT_TRUE(transformer::remove_nulls::transform(str));
         EXPECT_STREQ(str.data(), "re");
     }
 
     {
-        lazy_string str({"r\0e", sizeof("r\0e") - 1});
+        cow_string str({"r\0e", sizeof("r\0e") - 1});
         EXPECT_TRUE(transformer::remove_nulls::transform(str));
         EXPECT_STREQ(str.data(), "re");
     }
 
     {
-        lazy_string str({"removenulls\0", sizeof("removenulls\0") - 1});
+        cow_string str({"removenulls\0", sizeof("removenulls\0") - 1});
         EXPECT_TRUE(transformer::remove_nulls::transform(str));
         EXPECT_STREQ(str.data(), "removenulls");
     }
 
     {
-        lazy_string str({"remove\0nulls", sizeof("remove\0nulls") - 1});
+        cow_string str({"remove\0nulls", sizeof("remove\0nulls") - 1});
         EXPECT_TRUE(transformer::remove_nulls::transform(str));
         EXPECT_STREQ(str.data(), "removenulls");
     }
 
     {
-        lazy_string str({"\0removenulls", sizeof("\0removenulls") - 1});
+        cow_string str({"\0removenulls", sizeof("\0removenulls") - 1});
         EXPECT_TRUE(transformer::remove_nulls::transform(str));
         EXPECT_STREQ(str.data(), "removenulls");
     }
@@ -68,25 +68,25 @@ TEST(TestRemoveNulls, ValidTransform)
 TEST(TestRemoveNulls, InvalidTransform)
 {
     {
-        lazy_string str("r");
+        cow_string str("r");
         EXPECT_FALSE(transformer::remove_nulls::transform(str));
         EXPECT_FALSE(str.modified());
     }
 
     {
-        lazy_string str("rs");
+        cow_string str("rs");
         EXPECT_FALSE(transformer::remove_nulls::transform(str));
         EXPECT_FALSE(str.modified());
     }
 
     {
-        lazy_string str("remove_nulls");
+        cow_string str("remove_nulls");
         EXPECT_FALSE(transformer::remove_nulls::transform(str));
         EXPECT_FALSE(str.modified());
     }
 
     {
-        lazy_string str("remove_nulls but it doesn't matter");
+        cow_string str("remove_nulls but it doesn't matter");
         EXPECT_FALSE(transformer::remove_nulls::transform(str));
         EXPECT_FALSE(str.modified());
     }

@@ -31,6 +31,6 @@ bool unicode_normalize::needs_transform(std::string_view str)
     return false;
 }
 
-bool unicode_normalize::transform_impl(lazy_string &str) { return utf8::normalize_string(str); }
+bool unicode_normalize::transform_impl(cow_string &str) { return utf8::normalize_string(str); }
 
 } // namespace ddwaf::transformer

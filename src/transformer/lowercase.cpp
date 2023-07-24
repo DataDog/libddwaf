@@ -8,7 +8,7 @@
 
 namespace ddwaf::transformer {
 
-bool lowercase::transform_impl(lazy_string &str)
+bool lowercase::transform_impl(cow_string &str)
 {
     std::size_t pos = 0;
 

@@ -15,7 +15,7 @@ TEST(TestLowercase, NameAndID)
 
 TEST(TestLowercase, EmptyString)
 {
-    lazy_string str("");
+    cow_string str("");
     EXPECT_FALSE(transformer::lowercase::transform(str));
     EXPECT_FALSE(str.modified());
 }
@@ -23,37 +23,37 @@ TEST(TestLowercase, EmptyString)
 TEST(TestLowercase, ValidTransform)
 {
     {
-        lazy_string str("L");
+        cow_string str("L");
         EXPECT_TRUE(transformer::lowercase::transform(str));
         EXPECT_STREQ(str.data(), "l");
     }
 
     {
-        lazy_string str("LE");
+        cow_string str("LE");
         EXPECT_TRUE(transformer::lowercase::transform(str));
         EXPECT_STREQ(str.data(), "le");
     }
 
     {
-        lazy_string str("LoWeRCase");
+        cow_string str("LoWeRCase");
         EXPECT_TRUE(transformer::lowercase::transform(str));
         EXPECT_STREQ(str.data(), "lowercase");
     }
 
     {
-        lazy_string str("LowercasE");
+        cow_string str("LowercasE");
         EXPECT_TRUE(transformer::lowercase::transform(str));
         EXPECT_STREQ(str.data(), "lowercase");
     }
 
     {
-        lazy_string str("lowercasE");
+        cow_string str("lowercasE");
         EXPECT_TRUE(transformer::lowercase::transform(str));
         EXPECT_STREQ(str.data(), "lowercase");
     }
 
     {
-        lazy_string str("lowercasEasndasnjdkans1823712nka");
+        cow_string str("lowercasEasndasnjdkans1823712nka");
         EXPECT_TRUE(transformer::lowercase::transform(str));
         EXPECT_STREQ(str.data(), "lowercaseasndasnjdkans1823712nka");
     }
@@ -62,25 +62,25 @@ TEST(TestLowercase, ValidTransform)
 TEST(TestLowercase, InvalidTransform)
 {
     {
-        lazy_string str("l");
+        cow_string str("l");
         EXPECT_FALSE(transformer::lowercase::transform(str));
         EXPECT_FALSE(str.modified());
     }
 
     {
-        lazy_string str("le");
+        cow_string str("le");
         EXPECT_FALSE(transformer::lowercase::transform(str));
         EXPECT_FALSE(str.modified());
     }
 
     {
-        lazy_string str("lowercase");
+        cow_string str("lowercase");
         EXPECT_FALSE(transformer::lowercase::transform(str));
         EXPECT_FALSE(str.modified());
     }
 
     {
-        lazy_string str("lowercase but it doesn't matter");
+        cow_string str("lowercase but it doesn't matter");
         EXPECT_FALSE(transformer::lowercase::transform(str));
         EXPECT_FALSE(str.modified());
     }

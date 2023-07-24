@@ -8,7 +8,7 @@
 
 namespace ddwaf::transformer {
 
-bool remove_nulls::transform_impl(lazy_string &str)
+bool remove_nulls::transform_impl(cow_string &str)
 {
     // First loop looking for the first null char
     std::size_t read = 0;

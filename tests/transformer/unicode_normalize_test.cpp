@@ -15,7 +15,7 @@ TEST(TestUnicodeNormalize, NameAndID)
 
 TEST(TestUnicodeNormalize, EmptyString)
 {
-    lazy_string str("");
+    cow_string str("");
     EXPECT_FALSE(transformer::unicode_normalize::transform(str));
     EXPECT_FALSE(str.modified());
 }
@@ -23,97 +23,97 @@ TEST(TestUnicodeNormalize, EmptyString)
 TEST(TestUnicodeNormalize, ValidTransform)
 {
     {
-        lazy_string str("⃝");
+        cow_string str("⃝");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "");
     }
 
     {
-        lazy_string str("ß");
+        cow_string str("ß");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "ss");
     }
 
     {
-        lazy_string str("é");
+        cow_string str("é");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "e");
     }
 
     {
-        lazy_string str("ı");
+        cow_string str("ı");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "i");
     }
 
     {
-        lazy_string str("–");
+        cow_string str("–");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "-");
     }
 
     {
-        lazy_string str("—");
+        cow_string str("—");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "-");
     }
 
     {
-        lazy_string str("⁵");
+        cow_string str("⁵");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "5");
     }
 
     {
-        lazy_string str("⅖");
+        cow_string str("⅖");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "2/5");
     }
 
     {
-        lazy_string str("ﬁ");
+        cow_string str("ﬁ");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "fi");
     }
 
     {
-        lazy_string str("𝑎");
+        cow_string str("𝑎");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "a");
     }
 
     {
-        lazy_string str("Å👨‍👩‍👧‍👦");
+        cow_string str("Å👨‍👩‍👧‍👦");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "A👨‍👩‍👧‍👦");
     }
 
     {
-        lazy_string str("👨‍👩‍👧‍👦Å");
+        cow_string str("👨‍👩‍👧‍👦Å");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "👨‍👩‍👧‍👦A");
     }
 
     {
-        lazy_string str("Aa𝑎éßıﬁ2⁵—⅖");
+        cow_string str("Aa𝑎éßıﬁ2⁵—⅖");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "Aaaessifi25-2/5");
     }
 
     {
-        lazy_string str("Aẞé");
+        cow_string str("Aẞé");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "ASSe");
     }
 
     {
-        lazy_string str("Àße");
+        cow_string str("Àße");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "Asse");
     }
 
     {
-        lazy_string str("${${::-j}nd${upper:ı}:gopher//127.0.0.1:1389}");
+        cow_string str("${${::-j}nd${upper:ı}:gopher//127.0.0.1:1389}");
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
         EXPECT_STREQ(str.data(), "${${::-j}nd${upper:i}:gopher//127.0.0.1:1389}");
     }
@@ -122,25 +122,25 @@ TEST(TestUnicodeNormalize, ValidTransform)
 TEST(TestUnicodeNormalize, InvalidTransform)
 {
     {
-        lazy_string str("u");
+        cow_string str("u");
         EXPECT_FALSE(transformer::unicode_normalize::transform(str));
         EXPECT_FALSE(str.modified());
     }
 
     {
-        lazy_string str("`");
+        cow_string str("`");
         EXPECT_FALSE(transformer::unicode_normalize::transform(str));
         EXPECT_FALSE(str.modified());
     }
 
     {
-        lazy_string str("unicode_normalize");
+        cow_string str("unicode_normalize");
         EXPECT_FALSE(transformer::unicode_normalize::transform(str));
         EXPECT_FALSE(str.modified());
     }
 
     {
-        lazy_string str("unicode_normalize but it doesn't matter");
+        cow_string str("unicode_normalize but it doesn't matter");
         EXPECT_FALSE(transformer::unicode_normalize::transform(str));
         EXPECT_FALSE(str.modified());
     }

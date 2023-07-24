@@ -6,12 +6,12 @@
 
 #include "../test.h"
 #include <stdexcept>
-#include <transformer/common/lazy_string.hpp>
+#include <transformer/common/cow_string.hpp>
 
-TEST(TestLazyString, ConstRead)
+TEST(TestCoWString, ConstRead)
 {
     constexpr std::string_view original = "value";
-    lazy_string str(original);
+    cow_string str(original);
 
     EXPECT_EQ(original.length(), str.length());
     for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str.at(i)); }
@@ -20,10 +20,10 @@ TEST(TestLazyString, ConstRead)
     EXPECT_NE(str.data(), nullptr);
 }
 
-TEST(TestLazyString, NonConstRead)
+TEST(TestCoWString, NonConstRead)
 {
     constexpr std::string_view original = "value";
-    lazy_string str(original);
+    cow_string str(original);
 
     EXPECT_EQ(original.length(), str.length());
     for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str[i]); }
@@ -32,9 +32,9 @@ TEST(TestLazyString, NonConstRead)
     EXPECT_NE(str.data(), nullptr);
 }
 
-TEST(TestLazyString, WriteAndTruncate)
+TEST(TestCoWString, WriteAndTruncate)
 {
-    lazy_string str("value");
+    cow_string str("value");
     EXPECT_EQ(str.length(), 5);
 
     str[3] = 'e';
@@ -46,9 +46,9 @@ TEST(TestLazyString, WriteAndTruncate)
     EXPECT_STREQ(str.data(), "vale");
 }
 
-TEST(TestLazyString, EmptyString)
+TEST(TestCoWString, EmptyString)
 {
-    lazy_string str("");
+    cow_string str("");
     EXPECT_EQ(str.length(), 0);
 
     str.truncate(str.length());
@@ -58,11 +58,11 @@ TEST(TestLazyString, EmptyString)
     EXPECT_STREQ(str.data(), "");
 }
 
-TEST(TestLazyString, NullString) { EXPECT_THROW(lazy_string({}), std::runtime_error); }
+TEST(TestCoWString, NullString) { EXPECT_THROW(cow_string({}), std::runtime_error); }
 
-TEST(TestLazyString, MoveString)
+TEST(TestCoWString, MoveString)
 {
-    lazy_string str("value");
+    cow_string str("value");
     EXPECT_EQ(str.length(), 5);
 
     str[3] = 'e';

@@ -11,7 +11,7 @@
 #include <ddwaf.h>
 #include <string_view>
 
-#include "transformer/common/lazy_string.hpp"
+#include "transformer/common/cow_string.hpp"
 
 namespace ddwaf {
 
@@ -44,7 +44,7 @@ namespace transformer {
 
 template <typename T> class base {
 public:
-    static bool transform(lazy_string &str)
+    static bool transform(cow_string &str)
     {
         if (str.length() == 0 || !T::needs_transform(static_cast<std::string_view>(str))) {
             return false;

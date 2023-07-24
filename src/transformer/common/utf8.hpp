@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "transformer/common/lazy_string.hpp"
+#include "transformer/common/cow_string.hpp"
 #include <cstdint>
 
 namespace ddwaf::utf8 {
@@ -22,6 +22,6 @@ uint32_t fetch_next_codepoint(const char *utf8_buffer, uint64_t &position, uint6
 size_t normalize_codepoint(uint32_t codepoint, int32_t *wb_buffer, size_t wb_buffer_length);
 
 bool normalize_string(char **utf8_buffer, uint64_t &buffer_length);
-bool normalize_string(lazy_string &str);
+bool normalize_string(cow_string &str);
 
 } // namespace ddwaf::utf8

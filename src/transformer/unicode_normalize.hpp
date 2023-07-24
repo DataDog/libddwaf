@@ -17,7 +17,7 @@ public:
 
 protected:
     static bool needs_transform(std::string_view str);
-    static bool transform_impl(lazy_string &str);
+    static bool transform_impl(cow_string &str);
 
     friend class base<unicode_normalize>;
 };
