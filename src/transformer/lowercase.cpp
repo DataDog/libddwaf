@@ -29,8 +29,6 @@ bool lowercase::transform_impl(lazy_string &str)
         }
     }
 
-    str.finalize();
-
     return true;
 }
 

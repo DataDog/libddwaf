@@ -68,7 +68,7 @@ bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
         transformed = transformed || res;
     }
 
-    if (!transformed || !str.modified()) {
+    if (!transformed) {
         return false;
     }
 

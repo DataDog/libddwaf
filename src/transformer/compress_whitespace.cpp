@@ -38,7 +38,7 @@ bool compress_whitespace::transform_impl(lazy_string &str)
         str[write++] = str.at(read++);
     }
 
-    str.finalize(write);
+    str.truncate(write);
 
     return true;
 }

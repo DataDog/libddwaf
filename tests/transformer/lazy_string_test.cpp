@@ -6,7 +6,7 @@
 
 #include "../test.h"
 #include <stdexcept>
-#include <transformer/lazy_string.hpp>
+#include <transformer/common/lazy_string.hpp>
 
 TEST(TestLazyString, ConstRead)
 {
@@ -32,7 +32,7 @@ TEST(TestLazyString, NonConstRead)
     EXPECT_NE(str.data(), nullptr);
 }
 
-TEST(TestLazyString, WriteAndFinalize)
+TEST(TestLazyString, WriteAndTruncate)
 {
     lazy_string str("value");
     EXPECT_EQ(str.length(), 5);
@@ -41,7 +41,7 @@ TEST(TestLazyString, WriteAndFinalize)
     EXPECT_TRUE(str.modified());
     EXPECT_NE(str.data(), nullptr);
 
-    str.finalize(4);
+    str.truncate(4);
     EXPECT_EQ(str.length(), 4);
     EXPECT_STREQ(str.data(), "vale");
 }
@@ -51,7 +51,7 @@ TEST(TestLazyString, EmptyString)
     lazy_string str("");
     EXPECT_EQ(str.length(), 0);
 
-    str.finalize(str.length());
+    str.truncate(str.length());
     EXPECT_EQ(str.length(), 0);
     EXPECT_TRUE(str.modified());
     EXPECT_NE(str.data(), nullptr);

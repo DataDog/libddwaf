@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "lazy_string.hpp"
+#include "transformer/common/lazy_string.hpp"
 #include <cstdint>
 
 namespace ddwaf::utf8 {

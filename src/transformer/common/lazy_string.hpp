@@ -49,8 +49,9 @@ public:
     constexpr explicit operator std::string_view() { return {buffer_, length_}; }
 
     [[nodiscard]] constexpr std::size_t length() const { return length_; }
-    [[nodiscard]] constexpr bool modified() const { return modified_; }
     [[nodiscard]] constexpr const char *data() { return buffer_; }
+    // Used for testing purposes
+    [[nodiscard]] constexpr bool modified() const { return modified_; }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     [[nodiscard]] std::pair<bool, std::size_t> find(char c, std::size_t start) const
@@ -63,8 +64,8 @@ public:
         return {false, 0};
     }
 
-    // Reset the internal buffer, ownership is transferred
-    void reset(char *str, std::size_t length)
+    // Replaces the internal buffer, ownership is transferred
+    void replace_buffer(char *str, std::size_t length)
     {
         if (modified_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
@@ -80,19 +81,19 @@ public:
     // modified, otherwise it does nothing
     std::pair<char *, std::size_t> move()
     {
-        if (modified_) {
-            std::pair<char *, std::size_t> res{buffer_, length_};
-            modified_ = false;
-            buffer_ = nullptr;
-            length_ = 0;
-            return res;
+        if (!modified_) {
+            force_copy(length_);
         }
-        return {nullptr, 0};
+
+        std::pair<char *, std::size_t> res{buffer_, length_};
+        modified_ = false;
+        buffer_ = nullptr;
+        length_ = 0;
+        return res;
     }
 
     // Update length and nul-terminate, allocate if not allocated
-    void finalize() { return finalize(length_); }
-    void finalize(std::size_t length)
+    void truncate(std::size_t length)
     {
         if (modified_) {
             length_ = length;

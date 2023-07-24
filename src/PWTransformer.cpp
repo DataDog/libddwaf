@@ -13,7 +13,7 @@
 
 #include <PWTransformer.h>
 
-#include "transformer/utf8.hpp"
+#include "transformer/common/utf8.hpp"
 #include <utils.hpp>
 
 static uint8_t fromHex(char c);

@@ -12,6 +12,8 @@ bool remove_comments::transform_impl(lazy_string &str)
 {
     enum class comment_type { unknown, html, c, eol } type = comment_type::unknown;
 
+    bool comment_found = false;
+
     std::size_t read = 0;
     std::size_t write = 0;
     while (read < str.length()) {
@@ -50,7 +52,7 @@ bool remove_comments::transform_impl(lazy_string &str)
                 }
             }
 
-            if (str.modified()) {
+            if (comment_found) {
                 str[write] = str.at(read);
             }
 
@@ -62,10 +64,7 @@ bool remove_comments::transform_impl(lazy_string &str)
             break;
         }
 
-        if (!str.modified()) {
-            // Force a copy
-            str.finalize();
-        }
+        comment_found = true;
 
         while (read < str.length()) {
             std::pair<bool, std::size_t> result;
@@ -95,11 +94,11 @@ bool remove_comments::transform_impl(lazy_string &str)
         }
     }
 
-    if (!str.modified() && type == comment_type::unknown) {
+    if (!comment_found && type == comment_type::unknown) {
         return false;
     }
 
-    str.finalize(write);
+    str.truncate(write);
 
     return true;
 }

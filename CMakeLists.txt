@@ -103,7 +103,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/transformer/remove_comments.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/unicode_normalize.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/url_decode.cpp
-    ${libddwaf_SOURCE_DIR}/src/transformer/utf8.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/common/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/libcxx-compat/monotonic_buffer_resource.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})

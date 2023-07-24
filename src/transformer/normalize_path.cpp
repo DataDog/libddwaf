@@ -10,6 +10,7 @@ namespace ddwaf::transformer {
 
 bool normalize_path::transform_impl(lazy_string &str)
 {
+    bool modified = false;
     std::size_t read = 0;
     std::size_t write = 0;
 
@@ -22,6 +23,7 @@ bool normalize_path::transform_impl(lazy_string &str)
         if (str.at(read) != '.' || (read + 1 != str.length() && str.at(read + 1) != '/')) {
             if (read != write) {
                 str[write] = str.at(read);
+                modified = true;
             }
             ++read;
             ++write;
@@ -46,50 +48,40 @@ bool normalize_path::transform_impl(lazy_string &str)
             // Move forward the read head, and add back the / to the write head
             str[write++] = '/';
             read += 2;
+            modified = true;
         }
 
         // nvm, false alarm, just a dir ending with .
         else {
             if (read != write) {
                 str[write] = str.at(read);
+                modified = true;
             }
             ++read;
             ++write;
         }
     }
 
-    if (!str.modified()) {
+    if (!modified) {
         return false;
     }
 
-    str.finalize(write);
+    str.truncate(write);
 
     return true;
 }
 
 bool normalize_path_win::transform_impl(lazy_string &str)
 {
-    // Look for any backslash
-    std::size_t pos = 0;
-    for (; pos < str.length() && str.at(pos) != '\\'; ++pos) {}
-
     bool normalized = false;
-    // If it found one, then that mean we will need to transform this string
-    if (pos < str.length()) {
-        // That's quite a blunt conversion but that's what ModSecurity is doing so ¯\_(ツ)_/¯
-        //  https://github.com/SpiderLabs/ModSecurity/blob/b66224853b4e9d30e0a44d16b29d5ed3842a6b11/src/actions/transformations/normalise_path.cc#L64
-        do {
-            if (str.at(pos) == '\\') {
-                normalized = true;
-                str[pos] = '/';
-            }
-
-        } while (++pos < str.length());
-
-        // Ensure the next transformer uses the outcome of this operation
-        str.finalize();
+    // That's quite a blunt conversion but that's what ModSecurity is doing so ¯\_(ツ)_/¯
+    //  https://github.com/SpiderLabs/ModSecurity/blob/b66224853b4e9d30e0a44d16b29d5ed3842a6b11/src/actions/transformations/normalise_path.cc#L64
+    for (std::size_t pos = 0; pos < str.length(); ++pos) {
+        if (str.at(pos) == '\\') {
+            normalized = true;
+            str[pos] = '/';
+        }
     }
-
     auto res = normalize_path::transform_impl(str);
     return res || normalized;
 }

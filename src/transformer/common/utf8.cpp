@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "transformer/utf8.hpp"
+#include "transformer/common/utf8.hpp"
 #include "utils.hpp"
 
 extern "C" {
@@ -434,7 +434,7 @@ bool normalize_string(lazy_string &str)
     }
 
     new_buffer[new_length] = '\0';
-    str.reset(new_buffer, new_length);
+    str.replace_buffer(new_buffer, new_length);
 
     return true;
 }

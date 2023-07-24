@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/unicode_normalize.hpp"
-#include "transformer/utf8.hpp"
+#include "transformer/common/utf8.hpp"
 
 namespace ddwaf::transformer {
 bool unicode_normalize::needs_transform(std::string_view str)

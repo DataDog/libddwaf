@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/url_decode.hpp"
-#include "transformer/utf8.hpp"
+#include "transformer/common/utf8.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::transformer {
@@ -93,7 +93,7 @@ bool url_decode_common(lazy_string &str, bool read_iis)
         }
     }
 
-    str.finalize(write);
+    str.truncate(write);
 
     return true;
 }

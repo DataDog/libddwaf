@@ -30,7 +30,7 @@ bool remove_nulls::transform_impl(lazy_string &str)
         str[write++] = c;
     }
 
-    str.finalize(write);
+    str.truncate(write);
 
     return true;
 }
