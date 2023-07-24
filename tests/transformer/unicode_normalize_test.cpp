@@ -37,6 +37,19 @@ TEST(TestUnicodeNormalize, ValidTransform)
     EXPECT_TRANSFORM(unicode_normalize, "Àße", "Asse");
     EXPECT_TRANSFORM(unicode_normalize, "${${::-j}nd${upper:ı}:gopher//127.0.0.1:1389}",
         "${${::-j}nd${upper:i}:gopher//127.0.0.1:1389}");
+
+    {
+        std::string original;
+        std::string result;
+        for (unsigned i = 0; i < 1024; ++i) {
+            result += "2/5";
+            original += "⅖";
+        }
+
+        cow_string str(original);
+        EXPECT_TRUE(transformer::unicode_normalize::transform(str));
+        EXPECT_STREQ(str.data(), result.c_str());
+    }
 }
 
 TEST(TestUnicodeNormalize, InvalidTransform)
