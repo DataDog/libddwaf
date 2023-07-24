@@ -38,7 +38,7 @@ public:
         }
     }
 
-    [[nodiscard]] constexpr const char &at(std::size_t idx) const { return buffer_[idx]; }
+    [[nodiscard]] constexpr char at(std::size_t idx) const { return buffer_[idx]; }
 
     char &operator[](std::size_t idx)
     {
