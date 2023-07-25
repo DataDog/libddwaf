@@ -1,7 +1,7 @@
 include(GoogleTest)
 
 file(GLOB_RECURSE LIBDDWAF_TEST_SOURCE *.cpp)
-add_executable(testPowerWAF ${LIBDDWAF_TEST_SOURCE})
+add_executable(testPowerWAF ${LIBDDWAF_SOURCE} ${LIBDDWAF_TEST_SOURCE})
 
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 
@@ -12,6 +12,7 @@ set_target_properties(testPowerWAF PROPERTIES
 
 target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/include)
 target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/src)
+target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/src/rule_processor)
 target_compile_definitions(testPowerWAF PRIVATE TESTING=1 SPDLOG_ACTIVE_LEVEL=0)
 if(NOT STDLIB_MAP_RECURSIVE)
     target_compile_definitions(testPowerWAF PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
@@ -33,7 +34,8 @@ else()
 endif()
 
 target_link_libraries(testPowerWAF
-    PRIVATE lib_gtest ${COVERAGE_LINK_FLAGS} libddwaf_objects ${LIBDDWAF_PRIVATE_LIBRARIES}
+    PRIVATE lib_gtest ${COVERAGE_LINK_FLAGS}
+    ${LIBDDWAF_PRIVATE_LIBRARIES} ${LIBDDWAF_INTERFACE_LIBRARIES}
     ${LIBDDWAF_EXE_LINKER_FLAGS} lib_yamlcpp lib_rapidjson)
 
 add_custom_target(test

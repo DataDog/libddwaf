@@ -27,7 +27,7 @@ TEST(TestBase64Encode, ValidTransform)
     EXPECT_TRANSFORM(base64_encode, "d", "ZA==");
     EXPECT_TRANSFORM(base64_encode, "fooba@", "Zm9vYmFA");
     // Regression, negative characters resulted in a buffer overflow
-    //EXPECT_TRANSFORM(base64_encode, "\x80\x80\x80\x80\x80\x80", "gICAgICA");
+    EXPECT_TRANSFORM(base64_encode, "\x80\x80\x80\x80\x80\x80", "gICAgICA");
 }
 
 TEST(TestBase64Encode, InvalidTransform)

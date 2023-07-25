@@ -6,8 +6,6 @@
 
 #include "transformer/base64_encode.hpp"
 #include <array>
-#include <iostream>
-#include <ostream>
 
 namespace ddwaf::transformer {
 
@@ -36,10 +34,10 @@ bool base64_encode::transform_impl(cow_string &str)
     uint64_t write = 0;
 
     for (; read + 2 < str.length(); read += 3) {
-        const std::array<uint8_t, 4> quartet{static_cast<uint8_t>(str.at(read) >> 2),
-            static_cast<uint8_t>((str.at(read) & 0x3) << 4 | (str.at(read + 1) >> 4)),
-            static_cast<uint8_t>((str.at(read + 1) & 0xf) << 2 | str.at(read + 2) >> 6),
-            static_cast<uint8_t>(str.at(read + 2) & 0x3f)};
+        const std::array<uint8_t, 4> quartet{str.at<uint8_t>(read) >> 2,
+            (str.at<uint8_t>(read) & 0x3) << 4 | (str.at<uint8_t>(read + 1) >> 4),
+            (str.at<uint8_t>(read + 1) & 0xf) << 2 | str.at<uint8_t>(read + 2) >> 6,
+            str.at<uint8_t>(read + 2) & 0x3f};
 
         new_string[write++] = b64Encoding[quartet[0]];
         new_string[write++] = b64Encoding[quartet[1]];
@@ -47,14 +45,13 @@ bool base64_encode::transform_impl(cow_string &str)
         new_string[write++] = b64Encoding[quartet[3]];
     }
 
-    std::cout << new_string << std::endl;
     if (read != str.length()) {
         // We want to keep our logic simple so let's copy the bytes left in an appropriately sized
         // buffer
         //  We know that must have either one, or two bytes to process (otherwise the loop above
         //  would have run one more time)
         const std::array<uint8_t, 2> originalBytes{
-            str.at(read), read + 1 == str.length() ? (uint8_t)0 : str.at(read + 1)};
+            str.at(read), read + 1 == str.length() ? 0 : str.at(read + 1)};
 
         // Compute the codes, only three as the forth is only set by the third, missing input byte
         const std::array<uint8_t, 3> convertedBytes{static_cast<uint8_t>(originalBytes[0] >> 2),
