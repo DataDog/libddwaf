@@ -12,6 +12,7 @@ TEST(TestCoWString, ConstRead)
 {
     constexpr std::string_view original = "value";
     cow_string str(original);
+    EXPECT_FALSE(str.modified());
 
     EXPECT_EQ(original.length(), str.length());
     for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str.at(i)); }
@@ -24,6 +25,7 @@ TEST(TestCoWString, NonConstRead)
 {
     constexpr std::string_view original = "value";
     cow_string str(original);
+    EXPECT_FALSE(str.modified());
 
     EXPECT_EQ(original.length(), str.length());
     for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str[i]); }
@@ -36,6 +38,7 @@ TEST(TestCoWString, WriteAndTruncate)
 {
     cow_string str("value");
     EXPECT_EQ(str.length(), 5);
+    EXPECT_FALSE(str.modified());
 
     str[3] = 'e';
     EXPECT_TRUE(str.modified());
@@ -50,6 +53,7 @@ TEST(TestCoWString, EmptyString)
 {
     cow_string str("");
     EXPECT_EQ(str.length(), 0);
+    EXPECT_FALSE(str.modified());
 
     str.truncate(str.length());
     EXPECT_EQ(str.length(), 0);
@@ -64,6 +68,7 @@ TEST(TestCoWString, MoveString)
 {
     cow_string str("value");
     EXPECT_EQ(str.length(), 5);
+    EXPECT_FALSE(str.modified());
 
     str[3] = 'e';
     EXPECT_TRUE(str.modified());

@@ -46,6 +46,16 @@ public:
         return buffer_[idx];
     }
 
+    bool copy_char(std::size_t from, std::size_t to)
+    {
+        if (to != from) {
+            force_copy(length_);
+            buffer_[to] = buffer_[from];
+            return true;
+        }
+        return false;
+    }
+
     constexpr explicit operator std::string_view() { return {buffer_, length_}; }
 
     [[nodiscard]] constexpr std::size_t length() const { return length_; }
@@ -54,7 +64,7 @@ public:
     [[nodiscard]] constexpr bool modified() const { return modified_; }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    [[nodiscard]] std::pair<bool, std::size_t> find(char c, std::size_t start) const
+    [[nodiscard]] std::pair<bool, std::size_t> find(char c, std::size_t start = 0) const
     {
         for (std::size_t i = start; i < length_; ++i) {
             if (buffer_[i] == c) {
@@ -81,9 +91,7 @@ public:
     // modified, otherwise it does nothing
     std::pair<char *, std::size_t> move()
     {
-        if (!modified_) {
-            force_copy(length_);
-        }
+        force_copy(length_);
 
         std::pair<char *, std::size_t> res{buffer_, length_};
         modified_ = false;
