@@ -6,6 +6,8 @@
 
 #include "transformer/base64_encode.hpp"
 #include <array>
+#include <iostream>
+#include <ostream>
 
 namespace ddwaf::transformer {
 
@@ -45,6 +47,7 @@ bool base64_encode::transform_impl(cow_string &str)
         new_string[write++] = b64Encoding[quartet[3]];
     }
 
+    std::cout << new_string << std::endl;
     if (read != str.length()) {
         // We want to keep our logic simple so let's copy the bytes left in an appropriately sized
         // buffer
