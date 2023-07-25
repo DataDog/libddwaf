@@ -38,8 +38,8 @@ public:
         }
     }
 
-    template <typename T = char>
-    [[nodiscard]] constexpr T at(std::size_t idx) const {
+    template <typename T = char> [[nodiscard]] constexpr T at(std::size_t idx) const
+    {
         return static_cast<T>(buffer_[idx]);
     }
 
