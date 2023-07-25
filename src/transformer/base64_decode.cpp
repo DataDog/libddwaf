@@ -6,6 +6,7 @@
 
 #include "transformer/base64_decode.hpp"
 #include "utils.hpp"
+#include <array>
 
 namespace ddwaf::transformer {
 

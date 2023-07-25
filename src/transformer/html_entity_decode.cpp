@@ -21,7 +21,7 @@ bool replace_if_match(cow_string &str, size_t &read, size_t &write, const char *
     }
 
     // Case incensitive match (assume the token is lowercase)
-    for (uint32_t pos = 0; pos < token_length; ++pos) {
+    for (size_t pos = 0; pos < token_length; ++pos) {
         if ((str.at(read + pos) | 0x20) != *token++) {
             return false;
         }
@@ -53,7 +53,7 @@ bool html_entity_decode::transform_impl(cow_string &str)
     size_t read = 0;
     for (; read < str.length() && str.at(read) != '&'; ++read) {}
 
-    uint64_t write = read;
+    size_t write = read;
     while (read < str.length()) {
         if (str.at(read) != '&' || read == str.length() - 1) {
             str.copy_char(read++, write++);
