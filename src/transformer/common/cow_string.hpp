@@ -12,6 +12,8 @@
 #include <stdexcept>
 #include <string_view>
 
+#include "utils.hpp"
+
 namespace ddwaf {
 
 class cow_string {
@@ -118,7 +120,7 @@ protected:
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void force_copy(std::size_t bytes)
     {
-        if (!modified_) {
+        if (UNLIKELY(!modified_)) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
             char *new_copy = static_cast<char *>(malloc(bytes + 1));
             if (new_copy == nullptr) {
