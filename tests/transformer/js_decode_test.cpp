@@ -33,4 +33,4 @@ TEST(TestJsDecode, ValidTransform)
     EXPECT_TRANSFORM(js_decode, "Test\\x20\\ud801", "Test \xef\xbf\xbd");
 }
 
-TEST(TestJsDecode, InvalidTransform) { EXPECT_NO_TRANSFORM(js_decode, "no KS transformations"); }
+TEST(TestJsDecode, InvalidTransform) { EXPECT_NO_TRANSFORM(js_decode, "no JS transformations"); }
