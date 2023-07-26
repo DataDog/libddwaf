@@ -13,7 +13,6 @@
 #include <functional>
 #include <list>
 #include <log.hpp>
-#include <manifest.hpp>
 #include <map>
 #include <object_store.hpp>
 #include <ostream>
