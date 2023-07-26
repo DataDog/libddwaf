@@ -64,7 +64,7 @@ bool base64_decode::transform_impl(cow_string &str)
 
         for (; pos < 4 && read < str.length(); ++read) {
             // If a valid base64 character
-            auto idx = static_cast<unsigned char>(str.at(read));
+            auto idx = str.at<uint8_t>(read);
             auto c = b64Reverse[idx];
             if ((c & 0x40) == 0) {
                 quartet[pos++] = c;
