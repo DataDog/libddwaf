@@ -47,6 +47,54 @@ std::optional<std::string> transform(std::string_view input, const std::vector<t
 
 } // namespace
 
+TEST(TestTransformerManager, InvalidTypes)
+{
+    ddwaf_object src;
+    ddwaf_object dst;
+    ddwaf_object_unsigned_force(&src, 29);
+
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::compress_whitespace}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::lowercase}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::normalize_path}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::normalize_path_win}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::remove_comments}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::remove_nulls}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::unicode_normalize}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::url_decode}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::url_decode_iis}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::base64_decode}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::base64_encode}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::url_path}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::url_basename}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::url_querystring}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::shell_unescape}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::js_decode}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::html_entity_decode}));
+    EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::css_decode}));
+}
+
+TEST(TestTransformerManager, EmptyStrings)
+{
+    EXPECT_NO_TRANSFORM("", transformer_id::compress_whitespace);
+    EXPECT_NO_TRANSFORM("", transformer_id::lowercase);
+    EXPECT_NO_TRANSFORM("", transformer_id::normalize_path);
+    EXPECT_NO_TRANSFORM("", transformer_id::normalize_path_win);
+    EXPECT_NO_TRANSFORM("", transformer_id::remove_comments);
+    EXPECT_NO_TRANSFORM("", transformer_id::remove_nulls);
+    EXPECT_NO_TRANSFORM("", transformer_id::unicode_normalize);
+    EXPECT_NO_TRANSFORM("", transformer_id::url_decode);
+    EXPECT_NO_TRANSFORM("", transformer_id::url_decode_iis);
+    EXPECT_NO_TRANSFORM("", transformer_id::base64_decode);
+    EXPECT_NO_TRANSFORM("", transformer_id::base64_encode);
+    EXPECT_NO_TRANSFORM("", transformer_id::url_path);
+    EXPECT_NO_TRANSFORM("", transformer_id::url_basename);
+    EXPECT_NO_TRANSFORM("", transformer_id::url_querystring);
+    EXPECT_NO_TRANSFORM("", transformer_id::shell_unescape);
+    EXPECT_NO_TRANSFORM("", transformer_id::js_decode);
+    EXPECT_NO_TRANSFORM("", transformer_id::html_entity_decode);
+    EXPECT_NO_TRANSFORM("", transformer_id::css_decode);
+}
+
 TEST(TestTransformerManager, ValidSingleTransforms)
 {
     EXPECT_TRANSFORM("  wh  ite  ", " wh ite ", transformer_id::compress_whitespace);
@@ -112,6 +160,11 @@ TEST(TestTransformerManager, ValidMultipleTransforms)
         transformer_id::unicode_normalize, transformer_id::remove_comments,
         transformer_id::lowercase, transformer_id::compress_whitespace,
         transformer_id::base64_encode, transformer_id::base64_decode);
+
+    EXPECT_TRANSFORM("CSS\\%0a tran\\sformations", "CSS transformations",
+        transformer_id::url_decode, transformer_id::css_decode);
+    EXPECT_TRANSFORM("CSS transformations\\", "CSS transformations", transformer_id::url_decode,
+        transformer_id::css_decode);
 }
 
 TEST(TestTransformerManager, InvalidMultipleTransforms)
