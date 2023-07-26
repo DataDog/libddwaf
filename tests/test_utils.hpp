@@ -171,7 +171,7 @@ inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
 std::list<ddwaf::test::event::match> from_matches(
     const ddwaf::memory::vector<ddwaf::event::match> &matches);
 
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
   {                                                                                                \
     auto data = ddwaf::test::object_to_json(result.events);                                        \
@@ -181,8 +181,8 @@ std::list<ddwaf::test::event::match> from_matches(
     EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                                \
   }
 
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define EXPECT_MATCHES(matches, ...) EXPECT_THAT(from_matches(matches), WithMatches({__VA_ARGS__}));
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 ddwaf_object readFile(std::string_view filename, std::string_view base = "./");
 ddwaf_object readRule(const char *rule);
