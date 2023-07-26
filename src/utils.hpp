@@ -18,14 +18,6 @@
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
-#ifdef HAS_BUILTIN_EXPECT
-#  define LIKELY(condition) __builtin_expect(!!(condition), 1)
-#  define UNLIKELY(condition) __builtin_expect(!!(condition), 0)
-#else
-#  define LIKELY(condition) (condition)
-#  define UNLIKELY(condition) (condition)
-#endif
-
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
 
 size_t find_string_cutoff(

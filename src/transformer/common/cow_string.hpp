@@ -22,7 +22,7 @@ public:
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
         : buffer_(const_cast<char *>(original.data())), length_(original.length())
     {
-        if (buffer_ == nullptr) {
+        if (buffer_ == nullptr) [[unlikely]] {
             throw std::runtime_error{"cow_string initialised with nullptr"};
         }
     }
@@ -34,7 +34,7 @@ public:
 
     ~cow_string()
     {
-        if (modified_) {
+        if (modified_) [[likely]] {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
             free(buffer_);
         }
@@ -82,7 +82,7 @@ public:
     // Replaces the internal buffer, ownership is transferred
     void replace_buffer(char *str, std::size_t length)
     {
-        if (modified_) {
+        if (modified_) [[likely]] {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
             free(buffer_);
         }
@@ -108,7 +108,7 @@ public:
     // Update length and nul-terminate, allocate if not allocated
     void truncate(std::size_t length)
     {
-        if (modified_) {
+        if (modified_) [[likely]] {
             length_ = length;
             buffer_[length] = '\0';
         } else {
@@ -120,7 +120,7 @@ protected:
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void force_copy(std::size_t bytes)
     {
-        if (UNLIKELY(!modified_)) {
+        if (!modified_) [[unlikely]] {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
             char *new_copy = static_cast<char *>(malloc(bytes + 1));
             if (new_copy == nullptr) {
