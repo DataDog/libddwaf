@@ -16,6 +16,7 @@
 namespace ddwaf {
 
 enum class transformer_id : uint8_t {
+
     lowercase,
     remove_nulls,
     compress_whitespace,

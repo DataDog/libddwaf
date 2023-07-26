@@ -23,6 +23,7 @@
 #include "transformer/url_path.hpp"
 #include "transformer/url_querystring.hpp"
 
+
 namespace ddwaf::transformer {
 
 bool call_transformer(transformer_id id, cow_string &str)

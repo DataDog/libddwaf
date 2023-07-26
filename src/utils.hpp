@@ -88,7 +88,7 @@ inline uint8_t from_hex(char c)
     return static_cast<uint8_t>((c | 0x20) - 'a' + 0xa);
 }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-//
+
 template <class Fn> class scope_exit {
 public:
     explicit scope_exit(Fn &&fn) noexcept : fn_(std::move(fn)) {}
