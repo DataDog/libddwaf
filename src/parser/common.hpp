@@ -6,7 +6,9 @@
 
 #pragma once
 
+#include "transformer/base.hpp"
 #include <exception.hpp>
+#include <optional>
 #include <parameter.hpp>
 
 #include <string>
@@ -33,5 +35,7 @@ template <typename T> T at(const parameter::map &map, const std::string &key, co
         throw invalid_type(key, e);
     }
 }
+
+std::optional<transformer_id> transformer_from_string(std::string_view str);
 
 } // namespace ddwaf::parser
