@@ -23,6 +23,13 @@ class test_runner {
 public:
     using result = std::tuple<bool, bool, std::string, std::string>;
     explicit test_runner(const std::string &rule_file);
+
+    test_runner(const test_runner &) = delete;
+    test_runner(test_runner &&) = delete;
+
+    test_runner &operator=(const test_runner &) = delete;
+    test_runner &operator=(test_runner &&) = delete;
+
     ~test_runner();
 
     result run(const fs::path &sample_file);
@@ -32,9 +39,10 @@ protected:
     bool run_self_test(const YAML::Node &runs);
 
     void validate(const YAML::Node &expected, const YAML::Node &obtained);
-    void validate_rule(const YAML::Node &expected, const YAML::Node &obtained);
-    void validate_conditions(const YAML::Node &expected, const YAML::Node &obtained);
-    void validate_matches(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_rule(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_conditions(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_matches(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_actions(const YAML::Node &expected, const YAML::Node &obtained);
 
     static constexpr unsigned timeout = 1000000;
     ddwaf_handle handle_;

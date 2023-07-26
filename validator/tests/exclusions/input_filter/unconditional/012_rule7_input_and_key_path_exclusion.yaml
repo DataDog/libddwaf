@@ -1,0 +1,14 @@
+{
+  name: "Exclude on multi-key path on multiple inputs",
+  runs: [
+    {
+      input: {
+        rule7-input1: {
+          parent: rule7
+        },
+        rule7-input2: rule7
+      },
+      code: ok
+    },
+  ],
+}

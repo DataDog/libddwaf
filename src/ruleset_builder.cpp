@@ -71,8 +71,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     constexpr static change_state base_rule_update = change_state::rules | change_state::overrides;
     constexpr static change_state filters_update =
         base_rule_update | change_state::custom_rules | change_state::filters;
-    constexpr static change_state manifest_update =
-        change_state::rules | change_state::custom_rules | change_state::filters;
 
     // When a configuration with 'rules' or 'rules_override' is received, we
     // need to regenerate the ruleset from the base rules as we want to ensure
@@ -80,16 +78,9 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     if ((state & base_rule_update) != change_state::none) {
         final_base_rules_.clear();
         base_rules_by_tags_.clear();
-        inputs_from_base_rules_.clear();
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : base_rules_) {
-            for (const auto &cond : spec.conditions) {
-                for (const auto &target : cond->get_targets()) {
-                    inputs_from_base_rules_.emplace(target.root);
-                }
-            }
-
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
 
@@ -130,16 +121,9 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     if ((state & change_state::custom_rules) != change_state::none) {
         final_user_rules_.clear();
         user_rules_by_tags_.clear();
-        inputs_from_user_rules_.clear();
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : user_rules_) {
-            for (const auto &cond : spec.conditions) {
-                for (const auto &target : cond->get_targets()) {
-                    inputs_from_user_rules_.emplace(target.root);
-                }
-            }
-
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
 
@@ -153,7 +137,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     if ((state & filters_update) != change_state::none) {
         rule_filters_.clear();
         input_filters_.clear();
-        inputs_from_filters_.clear();
 
         // First generate rule filters
         for (const auto &[id, filter] : exclusions_.rule_filters) {
@@ -163,14 +146,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 target_to_rules(filter.targets, final_user_rules_, user_rules_by_tags_));
 
             auto filter_ptr = std::make_shared<exclusion::rule_filter>(
-                id, filter.conditions, std::move(rule_targets));
+                id, filter.conditions, std::move(rule_targets), filter.on_match);
             rule_filters_.emplace(filter_ptr->get_id(), filter_ptr);
-
-            for (const auto &cond : filter.conditions) {
-                for (const auto &target : cond->get_targets()) {
-                    inputs_from_filters_.emplace(target.root);
-                }
-            }
         }
 
         // Finally input filters
@@ -183,32 +160,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
             auto filter_ptr = std::make_shared<exclusion::input_filter>(
                 id, filter.conditions, std::move(rule_targets), filter.filter);
             input_filters_.emplace(filter_ptr->get_id(), filter_ptr);
-
-            for (const auto &target : filter.filter->get_targets()) {
-                inputs_from_filters_.emplace(target);
-            }
-
-            for (const auto &cond : filter.conditions) {
-                for (const auto &target : cond->get_targets()) {
-                    inputs_from_filters_.emplace(target.root);
-                }
-            }
         }
     }
 
-    if ((state & manifest_update) != change_state::none) {
-        // Remove unnecessary targets using all the targets contained within
-        // rule conditions, filter conditions and object filters
-        std::unordered_set<manifest::target_type> all_targets;
-        all_targets.insert(inputs_from_base_rules_.begin(), inputs_from_base_rules_.end());
-        all_targets.insert(inputs_from_user_rules_.begin(), inputs_from_user_rules_.end());
-        all_targets.insert(inputs_from_filters_.begin(), inputs_from_filters_.end());
-
-        target_manifest_.remove_unused(all_targets);
-    }
-
     auto rs = std::make_shared<ddwaf::ruleset>();
-    rs->manifest = target_manifest_;
     rs->insert_rules(final_base_rules_);
     rs->insert_rules(final_user_rules_);
     rs->dynamic_processors = dynamic_processors_;
@@ -232,25 +187,28 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
 
     auto it = root.find("rules");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing base rules");
         auto &section = info.add_section("rules");
         try {
             auto rules = static_cast<parameter::vector>(it->second);
             rule_data_ids_.clear();
 
             if (!rules.empty()) {
-                base_rules_ = parser::v2::parse_rules(
-                    rules, section, target_manifest_, rule_data_ids_, limits_);
+                base_rules_ = parser::v2::parse_rules(rules, section, rule_data_ids_, limits_);
             } else {
+                DDWAF_DEBUG("Clearing all base rules");
                 base_rules_.clear();
             }
             state = state | change_state::rules;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse rules: %s", e.what());
             section.set_error(e.what());
         }
     }
 
     it = root.find("custom_rules");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing custom rules");
         auto &section = info.add_section("custom_rules");
         try {
             auto rules = static_cast<parameter::vector>(it->second);
@@ -259,14 +217,16 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
                 // be discarded after
                 decltype(rule_data_ids_) rule_data_ids;
 
-                auto new_user_rules = parser::v2::parse_rules(rules, section, target_manifest_,
-                    rule_data_ids, limits_, rule::source_type::user);
+                auto new_user_rules = parser::v2::parse_rules(
+                    rules, section, rule_data_ids, limits_, rule::source_type::user);
                 user_rules_ = std::move(new_user_rules);
             } else {
+                DDWAF_DEBUG("Clearing all custom rules");
                 user_rules_.clear();
             }
             state = state | change_state::custom_rules;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse custom rules: %s", e.what());
             section.set_error(e.what());
         }
     }
@@ -274,11 +234,13 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
     if (base_rules_.empty() && user_rules_.empty()) {
         // If we haven't received rules and our base ruleset is empty, the
         // WAF can't proceed.
+        DDWAF_WARN("No valid rules found");
         throw ddwaf::parsing_error("no valid rules found");
     }
 
     it = root.find("rules_data");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing rule data");
         auto &section = info.add_section("rules_data");
         try {
             auto rules_data = static_cast<parameter::vector>(it->second);
@@ -293,43 +255,50 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
                     dynamic_processors_ = std::move(new_processors);
                 }
             } else {
+                DDWAF_DEBUG("Clearing all rule data");
                 dynamic_processors_.clear();
             }
             state = state | change_state::data;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse rule data: %s", e.what());
             section.set_error(e.what());
         }
     }
 
     it = root.find("rules_override");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing overrides");
         auto &section = info.add_section("rules_override");
         try {
             auto overrides = static_cast<parameter::vector>(it->second);
             if (!overrides.empty()) {
                 overrides_ = parser::v2::parse_overrides(overrides, section);
             } else {
+                DDWAF_DEBUG("Clearing all overrides");
                 overrides_.clear();
             }
             state = state | change_state::overrides;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse overrides: %s", e.what());
             section.set_error(e.what());
         }
     }
 
     it = root.find("exclusions");
     if (it != root.end()) {
+        DDWAF_DEBUG("Parsing exclusions");
         auto &section = info.add_section("exclusions");
         try {
             auto exclusions = static_cast<parameter::vector>(it->second);
             if (!exclusions.empty()) {
-                exclusions_ =
-                    parser::v2::parse_filters(exclusions, section, target_manifest_, limits_);
+                exclusions_ = parser::v2::parse_filters(exclusions, section, limits_);
             } else {
+                DDWAF_DEBUG("Clearing all exclusions");
                 exclusions_.clear();
             }
             state = state | change_state::filters;
         } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse exclusions: %s", e.what());
             section.set_error(e.what());
         }
     }

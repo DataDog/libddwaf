@@ -1,0 +1,62 @@
+{
+    "title": "Ruleset Diagnostics Schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "schema/diagnostics.json",
+    "$defs": {
+        "feature": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "description": "The single error which prevented parsing this feature"
+                },
+                "loaded": {
+                    "type": "array",
+                    "description": "A list of the unique identifiers from successfully loaded elements",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "failed": {
+                    "type": "array",
+                    "description": "",
+                    "description": "A list of the unique identifiers from the elements which couldn't be loaded",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "errors": {
+                    "type": "object",
+                    "description": "Each key corresponds to a parsing error, each value corresponds to a list of the unique identifiers of the elements which failed with said error"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        }
+    },
+
+    "type": "object",
+    "properties": {
+        "ruleset_version": {
+            "type": "string",
+            "description": "The version of the parsed ruleset if available",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+"
+        },
+        "rules": {
+            "$ref": "#/$defs/feature"
+        },
+        "custom_rules": {
+            "$ref": "#/$defs/feature"
+        },
+        "exclusions": {
+            "$ref": "#/$defs/feature"
+        },
+        "rules_override": {
+            "$ref": "#/$defs/feature"
+        },
+        "rules_data": {
+            "$ref": "#/$defs/feature"
+        }
+    }
+}
+

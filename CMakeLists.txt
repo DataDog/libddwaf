@@ -14,7 +14,7 @@ if(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR
 endif()
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(LIBDDWAF_SHARED_LINKER_FLAGS "-static-libstdc++" CACHE STRING "Shared library extra linker flags")
@@ -70,7 +70,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
     ${libddwaf_SOURCE_DIR}/src/event.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
-    ${libddwaf_SOURCE_DIR}/src/manifest.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/collection.cpp
     ${libddwaf_SOURCE_DIR}/src/condition.cpp
@@ -80,7 +79,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/iterator.cpp
     ${libddwaf_SOURCE_DIR}/src/PWTransformer.cpp
     ${libddwaf_SOURCE_DIR}/src/utils.cpp
-    ${libddwaf_SOURCE_DIR}/src/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
     ${libddwaf_SOURCE_DIR}/src/waf.cpp
@@ -97,6 +95,15 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule_processor/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/ip_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/exact_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/lowercase.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/compress_whitespace.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/normalize_path.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/manager.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/remove_nulls.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/remove_comments.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/unicode_normalize.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/url_decode.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/common/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/libcxx-compat/monotonic_buffer_resource.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})
@@ -357,7 +364,7 @@ if (LIBDDWAF_TESTING)
     add_subdirectory(validator EXCLUDE_FROM_ALL)
     add_subdirectory(perf EXCLUDE_FROM_ALL)
     add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
-    add_subdirectory(examples EXCLUDE_FROM_ALL)
+    add_subdirectory(tools EXCLUDE_FROM_ALL)
 
     include(cmake/clang-tidy.cmake)
     include(cmake/clang-format.cmake)

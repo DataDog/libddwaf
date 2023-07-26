@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test.h"
-#include <utf8.hpp>
+#include <transformer/common/utf8.hpp>
 
 namespace ddwaf::utf8 {
 uint8_t codepoint_to_bytes(uint32_t codepoint, char *utf8_buffer);

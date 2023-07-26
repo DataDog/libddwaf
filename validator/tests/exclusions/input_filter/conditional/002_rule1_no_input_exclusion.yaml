@@ -1,0 +1,22 @@
+{
+  name: "No input exclusion with condition",
+  runs: [
+    {
+      input: {
+        rule1-input2: rule1
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input2,
+              key_path: [],
+              value: rule1
+            }
+          ]
+        }
+      ],
+      code: match
+    },
+  ],
+}

@@ -226,13 +226,15 @@ void ddwaf_destroy(ddwaf_handle handle);
 /**
  * ddwaf_required_addresses
  *
- * Get a list of required (root) addresses. The memory is owned by the WAF and
+ * Get an array of required (root) addresses. The memory is owned by the WAF and
  * should not be freed.
  *
  * @param Handle to the WAF instance.
  * @param size Output parameter in which the size will be returned. The value of
  *             size will be 0 if the return value is NULL.
  * @return NULL if empty, otherwise a pointer to an array with size elements.
+ *
+ * @Note The returned array should be considered invalid after calling ddwaf_destroy on the handle used to obtain it.
  **/
 const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size);
 

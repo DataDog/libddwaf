@@ -326,7 +326,7 @@ ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(
 
 event_schema_validator::event_schema_validator()
 {
-    std::ifstream rule_file("../schema/appsec-event-1.1.0.json", std::ios::in);
+    std::ifstream rule_file("../schema/events.json", std::ios::in);
     if (!rule_file) {
         throw std::system_error(errno, std::generic_category());
     }
@@ -396,12 +396,9 @@ void PrintTo(const ddwaf_object &actions, ::std::ostream *os)
     *os << "]";
 }
 
-void PrintTo(const ddwaf_result &result, ::std::ostream *os)
+void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os)
 {
-    auto data = ddwaf::test::object_to_json(result.events);
-    YAML::Node doc = YAML::Load(data.c_str());
-    auto events = doc.as<std::vector<ddwaf::test::event>>();
-    for (auto e : events) { *os << e; }
+    for (const auto &e : events) { *os << e; }
 }
 
 WafResultActionMatcher::WafResultActionMatcher(std::vector<std::string_view> &&values)
@@ -442,11 +439,8 @@ bool WafResultActionMatcher::MatchAndExplain(
 }
 
 bool WafResultDataMatcher::MatchAndExplain(
-    const std::string &result, ::testing::MatchResultListener * /*unused*/) const
+    std::list<ddwaf::test::event> events, ::testing::MatchResultListener * /*unused*/) const
 {
-    YAML::Node doc = YAML::Load(result.c_str());
-    auto events = doc.as<std::list<ddwaf::test::event>>();
-
     if (events.size() != expected_events_.size()) {
         return false;
     }

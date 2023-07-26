@@ -13,16 +13,6 @@ namespace ddwaf {
 
 namespace {
 
-char *to_cstr(std::string_view input)
-{
-    const std::size_t size = input.size();
-    // NOLINTNEXTLINE
-    char *str = static_cast<char *>(malloc(size + 1));
-    memcpy(str, input.data(), size);
-    str[size] = '\0';
-    return str;
-}
-
 bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
 {
     for (const auto &key : match.key_path) {
@@ -112,7 +102,9 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
                 ddwaf_object actions_array;
                 ddwaf_object_array(&actions_array);
                 for (const auto &action : actions) {
-                    all_actions.emplace(action);
+                    if (!event.skip_actions) {
+                        all_actions.emplace(action);
+                    }
                     ddwaf_object_array_add(&actions_array, to_object(tmp, action));
                 }
                 ddwaf_object_map_add(&rule_map, "on_match", &actions_array);

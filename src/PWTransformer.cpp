@@ -13,7 +13,7 @@
 
 #include <PWTransformer.h>
 
-#include <utf8.hpp>
+#include "transformer/common/utf8.hpp"
 #include <utils.hpp>
 
 static uint8_t fromHex(char c);
@@ -1403,7 +1403,7 @@ PW_TRANSFORM_ID PWTransformer::getIDForString(std::string_view str)
     else if (str == "keys_only")
         return PWT_KEYS_ONLY;
     else if (str == "values_only")
-        return PWT_KEYS_ONLY;
+        return PWT_VALUES_ONLY;
     else if (str == "unicode_normalize")
         return PWT_UNICODE_NORMALIZE;
 

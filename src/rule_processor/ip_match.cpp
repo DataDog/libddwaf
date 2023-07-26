@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cstring>
-#include <iostream>
 #include <ip_utils.hpp>
 #include <rule_processor/ip_match.hpp>
 #include <stdexcept>

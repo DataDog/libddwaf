@@ -61,6 +61,9 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
     out.SetStringFormat(YAML::DoubleQuoted);
 
     switch (o.type) {
+    case DDWAF_OBJ_BOOL:
+        out << o.boolean;
+        break;
     case DDWAF_OBJ_SIGNED:
         out << o.intValue;
         break;

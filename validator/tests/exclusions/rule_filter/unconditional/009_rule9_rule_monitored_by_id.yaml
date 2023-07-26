@@ -1,0 +1,22 @@
+{
+  name: "Rule monitored by ID",
+  runs: [
+    {
+      input: {
+        rule9-input: "rule9"
+      },
+      rules: [
+        {
+          9: [
+            {
+              address: rule9-input,
+              value: rule9
+            }
+          ]
+        }
+      ],
+      code: match,
+      actions: []
+    }
+  ]
+}

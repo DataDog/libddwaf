@@ -11,6 +11,7 @@
 #include <functional>
 #include <iterator>
 #include <optional>
+#include <string>
 #include <unordered_map>
 
 // Convert numbers to strings
@@ -30,6 +31,13 @@ size_t find_string_cutoff(
 // clang-format on
 
 namespace ddwaf {
+
+using target_index = std::size_t;
+
+inline target_index get_target_index(const std::string &address)
+{
+    return std::hash<std::string>{}(address);
+}
 
 namespace object {
 
@@ -51,6 +59,10 @@ inline bool is_scalar(const ddwaf_object *obj)
 } // namespace object
 
 inline bool isdigit(char c) { return (c >= '0' && c <= '9'); }
+inline bool isxdigit(char c)
+{
+    return ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+}
 
 template <class Fn> class scope_exit {
 public:
@@ -65,4 +77,5 @@ public:
 protected:
     Fn fn_;
 };
+
 } // namespace ddwaf

@@ -1,0 +1,12 @@
+{
+  name: "Exclude all rules through condition-based exclusion filter",
+  runs: [
+    {
+      input: {
+        exclusion-filter-1-input: "exclusion-filter-1",
+        rule1-input: "rule1",
+      },
+      code: ok
+    }
+  ]
+}

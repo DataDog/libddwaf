@@ -6,7 +6,6 @@
 
 #include <exception.hpp>
 #include <log.hpp>
-#include <manifest.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <parser/parser.hpp>
@@ -28,8 +27,8 @@ namespace ddwaf::parser::v1 {
 
 namespace {
 
-condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
-    std::vector<PW_TRANSFORM_ID> transformers, ddwaf::object_limits limits)
+condition::ptr parseCondition(
+    parameter::map &rule, std::vector<PW_TRANSFORM_ID> transformers, ddwaf::object_limits limits)
 {
     auto operation = at<std::string_view>(rule, "operation");
     auto params = at<parameter::map>(rule, "parameters");
@@ -95,19 +94,20 @@ condition::ptr parseCondition(parameter::map &rule, manifest &target_manifest,
         }
 
         condition::target_type target;
-        target.root = target_manifest.insert(root);
+        target.root = get_target_index(root);
         target.name = std::move(root);
         if (!key_path.empty()) {
             target.key_path.emplace_back(key_path);
         }
+        target.transformers = transformers;
         targets.emplace_back(std::move(target));
     }
 
     return std::make_shared<condition>(
-        std::move(targets), std::move(transformers), std::move(processor), std::string{}, limits);
+        std::move(targets), std::move(processor), std::string{}, limits);
 }
 
-void parseRule(parameter::map &rule, base_section_info &info, manifest &target_manifest,
+void parseRule(parameter::map &rule, base_section_info &info,
     std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
@@ -134,7 +134,7 @@ void parseRule(parameter::map &rule, base_section_info &info, manifest &target_m
         conditions.reserve(conditions_array.size());
         for (const auto &cond_param : conditions_array) {
             auto cond = static_cast<parameter::map>(cond_param);
-            conditions.push_back(parseCondition(cond, target_manifest, rule_transformers, limits));
+            conditions.push_back(parseCondition(cond, rule_transformers, limits));
         }
 
         std::unordered_map<std::string, std::string> tags;
@@ -177,7 +177,7 @@ void parse(
         const auto &rule_param = rules_array[i];
         try {
             auto rule = static_cast<parameter::map>(rule_param);
-            parseRule(rule, section, rs.manifest, rule_ids, rs, limits);
+            parseRule(rule, section, rule_ids, rs, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("%s", e.what());
             section.add_failed("index:" + std::to_string(i), e.what());

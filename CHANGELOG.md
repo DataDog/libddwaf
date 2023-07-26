@@ -1,5 +1,27 @@
 # libddwaf release
 
+### v1.11.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### API & Breaking Changes
+- Full ruleset parsing diagnostics ([#161](https://github.com/DataDog/libddwaf/pull/161))
+- Event result as `ddwaf_object` ([#162](https://github.com/DataDog/libddwaf/pull/162))
+- Replace `ddwaf_result.actions` with a `ddwaf_object` array ([#165](https://github.com/DataDog/libddwaf/pull/165))
+
+#### Changes
+- Add logging and remove dead code ([#169](https://github.com/DataDog/libddwaf/pull/169))
+- Support for per-input transformers ([#170](https://github.com/DataDog/libddwaf/pull/170))
+
+#### Miscellaneous
+- Multithreaded fuzzer ([#166](https://github.com/DataDog/libddwaf/pull/166))
+- Fix benchmark, test output and update ruleset to 1.7.0 ([#171](https://github.com/DataDog/libddwaf/pull/171))
+- Validator: add support for per-directory tests and ruleset ([#172](https://github.com/DataDog/libddwaf/pull/172))
+- Rename examples directory to tools ([#173](https://github.com/DataDog/libddwaf/pull/173))
+- Update ruleset to 1.7.1 ([#173](https://github.com/DataDog/libddwaf/pull/173))
+- Refactor and simplify tools to reduce code duplication ([#173](https://github.com/DataDog/libddwaf/pull/173))
+
+### v1.10.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Add all rule tags to event ([#160](https://github.com/DataDog/libddwaf/pull/160))
+
 ### v1.9.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Remove a libinjection signature ([#145](https://github.com/DataDog/libddwaf/pull/145))

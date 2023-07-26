@@ -1,0 +1,29 @@
+{
+  name: "Match on key within map",
+  runs: [
+    {
+      input: {
+        rule2-input: {
+          something: {
+            rule2: value
+          }
+        }
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input,
+              key_path: [
+                something,
+                rule2
+              ],
+              value: rule2
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

@@ -1,0 +1,22 @@
+{
+  name: "Rule monitored by rags",
+  runs: [
+    {
+      input: {
+        rule10-input: "rule10"
+      },
+      rules: [
+        {
+          10: [
+            {
+              address: rule10-input,
+              value: rule10
+            }
+          ]
+        }
+      ],
+      code: match,
+      actions: []
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  name: "ip_match operator, match IPv6 CIDR",
+  runs: [
+    {
+      input: {
+        rule2-input: "abcd::1234:0:ab11:0"
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input,
+              value: "abcd::1234:0:ab11:0"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

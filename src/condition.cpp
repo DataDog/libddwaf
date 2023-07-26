@@ -12,17 +12,18 @@
 
 namespace ddwaf {
 
-std::optional<event::match> condition::match_object(
-    const ddwaf_object *object, const rule_processor::base::ptr &processor) const
+std::optional<event::match> condition::match_object(const ddwaf_object *object,
+    const rule_processor::base::ptr &processor,
+    const std::vector<PW_TRANSFORM_ID> &transformers) const
 {
-    const bool has_transform = !transformers_.empty();
+    const bool has_transform = !transformers.empty();
     bool transform_required = false;
 
     if (has_transform) {
         // This codepath is shared with the mutable path. The structure can't be const :/
         transform_required =
             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-            PWTransformer::doesNeedTransform(transformers_, const_cast<ddwaf_object *>(object));
+            PWTransformer::doesNeedTransform(transformers, const_cast<ddwaf_object *>(object));
     }
 
     const size_t length =
@@ -42,7 +43,7 @@ std::optional<event::match> condition::match_object(
 
     // Transform it and pick the pointer to process
     bool transformFailed = false;
-    for (const PW_TRANSFORM_ID &transform : transformers_) {
+    for (const PW_TRANSFORM_ID &transform : transformers) {
         transformFailed = !PWTransformer::transform(transform, &copy);
         if (transformFailed || (copy.type == DDWAF_OBJ_STRING && copy.nbEntries == 0)) {
             break;
@@ -57,8 +58,9 @@ std::optional<event::match> condition::match_object(
 }
 
 template <typename T>
-std::optional<event::match> condition::match_target(
-    T &it, const rule_processor::base::ptr &processor, ddwaf::timer &deadline) const
+std::optional<event::match> condition::match_target(T &it,
+    const rule_processor::base::ptr &processor, const std::vector<PW_TRANSFORM_ID> &transformers,
+    ddwaf::timer &deadline) const
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -69,7 +71,7 @@ std::optional<event::match> condition::match_target(
             continue;
         }
 
-        auto optional_match = match_object(*it, processor);
+        auto optional_match = match_object(*it, processor, transformers);
         if (!optional_match.has_value()) {
             continue;
         }
@@ -108,7 +110,7 @@ std::optional<event::match> condition::match(const object_store &store,
         return std::nullopt;
     }
 
-    for (const auto &[target, name, key_path] : targets_) {
+    for (const auto &[target, name, key_path, transformers, source] : targets_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
@@ -126,12 +128,12 @@ std::optional<event::match> condition::match(const object_store &store,
         }
 
         std::optional<event::match> optional_match;
-        if (source_ == data_source::keys) {
+        if (source == data_source::keys) {
             object::key_iterator it(object, key_path, objects_excluded, limits_);
-            optional_match = match_target(it, processor, deadline);
+            optional_match = match_target(it, processor, transformers, deadline);
         } else {
             object::value_iterator it(object, key_path, objects_excluded, limits_);
-            optional_match = match_target(it, processor, deadline);
+            optional_match = match_target(it, processor, transformers, deadline);
         }
 
         if (optional_match.has_value()) {

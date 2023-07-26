@@ -263,25 +263,26 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = std::unordered_set<manifest::target_type>;
+    using cache_type = std::unordered_set<target_index>;
 
     explicit object_filter(const ddwaf::object_limits &limits = {}) : limits_(limits) {}
 
-    void insert(manifest::target_type target, const std::vector<std::string_view> &key_path = {})
+    void insert(
+        target_index target, std::string name, const std::vector<std::string_view> &key_path = {})
     {
         target_paths_[target].insert(key_path);
-        targets_.emplace(target);
+        targets_.emplace(std::move(name), target);
     }
 
     memory::unordered_set<const ddwaf_object *> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
-    const std::unordered_set<manifest::target_type> &get_targets() const { return targets_; }
+    const std::unordered_map<std::string, target_index> &get_targets() const { return targets_; }
 
 protected:
     object_limits limits_;
-    std::unordered_map<manifest::target_type, path_trie> target_paths_;
-    std::unordered_set<manifest::target_type> targets_;
+    std::unordered_map<target_index, path_trie> target_paths_;
+    std::unordered_map<std::string, target_index> targets_;
 };
 
 } // namespace ddwaf::exclusion
