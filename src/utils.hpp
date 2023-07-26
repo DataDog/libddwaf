@@ -60,6 +60,10 @@ ddwaf_object clone(ddwaf_object *input);
 } // namespace object
 
 inline bool isdigit(char c) { return (c >= '0' && c <= '9'); }
+inline bool isxdigit(char c)
+{
+    return ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+}
 
 template <class Fn> class scope_exit {
 public:
