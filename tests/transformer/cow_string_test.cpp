@@ -34,6 +34,18 @@ TEST(TestCoWString, NonConstRead)
     EXPECT_NE(str.data(), nullptr);
 }
 
+TEST(TestCoWString, TruncateUnmodified)
+{
+    cow_string str("value");
+    EXPECT_EQ(str.length(), 5);
+    EXPECT_FALSE(str.modified());
+
+    str.truncate(4);
+
+    EXPECT_EQ(str.length(), 4);
+    EXPECT_STREQ(str.data(), "valu");
+}
+
 TEST(TestCoWString, WriteAndTruncate)
 {
     cow_string str("value");
@@ -64,7 +76,7 @@ TEST(TestCoWString, EmptyString)
 
 TEST(TestCoWString, NullString) { EXPECT_THROW(cow_string({}), std::runtime_error); }
 
-TEST(TestCoWString, MoveString)
+TEST(TestCoWString, WriteAndMove)
 {
     cow_string str("value");
     EXPECT_EQ(str.length(), 5);
@@ -77,6 +89,40 @@ TEST(TestCoWString, MoveString)
     auto [buffer, length] = str.move();
     EXPECT_STREQ(buffer, "valee");
     EXPECT_EQ(length, 5);
+    free(buffer);
+
+    EXPECT_EQ(str.length(), 0);
+    EXPECT_FALSE(str.modified());
+    EXPECT_EQ(str.data(), nullptr);
+}
+
+TEST(TestCoWString, MoveUnmodified)
+{
+    cow_string str("value");
+    EXPECT_EQ(str.length(), 5);
+    EXPECT_FALSE(str.modified());
+
+    auto [buffer, length] = str.move();
+    EXPECT_STREQ(buffer, "value");
+    EXPECT_EQ(length, 5);
+    free(buffer);
+
+    EXPECT_EQ(str.length(), 0);
+    EXPECT_FALSE(str.modified());
+    EXPECT_EQ(str.data(), nullptr);
+}
+
+TEST(TestCoWString, MoveAfterTruncate)
+{
+    cow_string str("value");
+    EXPECT_EQ(str.length(), 5);
+    EXPECT_FALSE(str.modified());
+
+    str.truncate(4);
+
+    auto [buffer, length] = str.move();
+    EXPECT_STREQ(buffer, "valu");
+    EXPECT_EQ(length, 4);
     free(buffer);
 
     EXPECT_EQ(str.length(), 0);

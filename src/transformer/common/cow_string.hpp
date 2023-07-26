@@ -132,6 +132,7 @@ protected:
 
             buffer_ = new_copy;
             modified_ = true;
+            length_ = bytes;
         }
     }
 
