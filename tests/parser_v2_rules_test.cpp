@@ -92,6 +92,46 @@ TEST(TestParserV2Rules, ParseRuleWithoutType)
     EXPECT_EQ(rules.size(), 0);
 }
 
+TEST(TestParserV2Rules, ParseRuleInvalidTransformer)
+{
+    ddwaf::object_limits limits;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = readRule(
+        R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y], transformers: [unknown]}], regex: .*}}]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("invalid transformer unknown");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(rules.size(), 0);
+}
 TEST(TestParserV2Rules, ParseRuleWithoutID)
 {
     ddwaf::object_limits limits;
