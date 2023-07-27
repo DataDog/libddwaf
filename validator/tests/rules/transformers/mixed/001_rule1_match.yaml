@@ -1,0 +1,21 @@
+{
+  name: "Match with transformer",
+  runs: [
+    {
+      input: {
+        rule1-input: "L3AgIGEgIHRIL3QgIE8vRmlsRS5QSFA/YT1iI2ZyYWc="
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: "L3AgYSB0aC90IG8vZmlsZS5waHA="
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}
