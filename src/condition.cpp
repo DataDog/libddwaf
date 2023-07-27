@@ -20,18 +20,20 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object,
     const size_t length =
         find_string_cutoff(object->stringValue, object->nbEntries, limits_.max_string_length);
 
-    ddwaf_object src;
-    ddwaf_object dst;
-    ddwaf_object_stringl_nc(&src, object->stringValue, length);
+    if (!transformers.empty()) {
+        ddwaf_object src;
+        ddwaf_object dst;
+        ddwaf_object_stringl_nc(&src, object->stringValue, length);
+        ddwaf_object_invalid(&dst);
 
-    auto transformed = transformer::manager::transform(src, dst, transformers);
-    if (!transformed) {
-        return processor->match({object->stringValue, length});
+        auto transformed = transformer::manager::transform(src, dst, transformers);
+        scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
+        if (transformed) {
+            return processor->match_object(&dst);
+        }
     }
 
-    scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
-
-    return processor->match_object(&dst);
+    return processor->match({object->stringValue, length});
 }
 
 template <typename T>
