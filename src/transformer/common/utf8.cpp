@@ -11,8 +11,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <utf8.hpp>
-#include <utils.hpp>
+#include "transformer/common/utf8.hpp"
+#include "utils.hpp"
 
 extern "C" {
 #include <stdint.h>
@@ -22,11 +22,11 @@ extern "C" {
 
 namespace ddwaf::utf8 {
 
-uint8_t codepoint_to_bytes(uint32_t codepoint, char *utf8Buffer)
+uint8_t codepoint_to_bytes(uint32_t codepoint, char *utf8_buffer)
 {
     // Handle the easy case of ASCII
     if (codepoint <= 0x7F) {
-        *utf8Buffer = (char)codepoint;
+        *utf8_buffer = (char)codepoint;
         return 1;
     }
 
@@ -41,30 +41,31 @@ uint8_t codepoint_to_bytes(uint32_t codepoint, char *utf8Buffer)
      */
 
     // Out of range codepoint
-    if (codepoint > UTF8_MAX_CODEPOINT)
+    if (codepoint > UTF8_MAX_CODEPOINT) {
         return 0;
+    }
 
     // 4 bytes representation
     if (codepoint > 0xFFFF) {
-        *utf8Buffer++ = (char)(0xF0 | ((codepoint >> 18) & 0x07));
-        *utf8Buffer++ = (char)(0x80 | ((codepoint >> 12) & 0x3F));
-        *utf8Buffer++ = (char)(0x80 | ((codepoint >> 06) & 0x3F));
-        *utf8Buffer++ = (char)(0x80 | (codepoint & 0x3F));
+        *utf8_buffer++ = (char)(0xF0 | ((codepoint >> 18) & 0x07));
+        *utf8_buffer++ = (char)(0x80 | ((codepoint >> 12) & 0x3F));
+        *utf8_buffer++ = (char)(0x80 | ((codepoint >> 06) & 0x3F));
+        *utf8_buffer++ = (char)(0x80 | (codepoint & 0x3F));
         return 4;
     }
+
     // Three bytes
-    else if (codepoint > 0x7FF) {
-        *utf8Buffer++ = (char)(0xE0 | ((codepoint >> 12) & 0x0F));
-        *utf8Buffer++ = (char)(0x80 | ((codepoint >> 06) & 0x3F));
-        *utf8Buffer++ = (char)(0x80 | (codepoint & 0x3F));
+    if (codepoint > 0x7FF) {
+        *utf8_buffer++ = (char)(0xE0 | ((codepoint >> 12) & 0x0F));
+        *utf8_buffer++ = (char)(0x80 | ((codepoint >> 06) & 0x3F));
+        *utf8_buffer++ = (char)(0x80 | (codepoint & 0x3F));
         return 3;
     }
+
     // Two bytes
-    else {
-        *utf8Buffer++ = (char)(0xC0 | ((codepoint >> 06) & 0x1F));
-        *utf8Buffer++ = (char)(0x80 | (codepoint & 0x3F));
-        return 2;
-    }
+    *utf8_buffer++ = (char)(0xC0 | ((codepoint >> 06) & 0x1F));
+    *utf8_buffer++ = (char)(0x80 | (codepoint & 0x3F));
+    return 2;
 }
 
 uint8_t write_codepoint(uint32_t codepoint, char *utf8Buffer, uint64_t lengthLeft)
@@ -199,7 +200,8 @@ struct ScratchpadChunck {
 
     ScratchpadChunck(uint64_t chunckLength) : length(chunckLength), used(0)
     {
-        scratchpad = (char *)malloc(length);
+        // Allow for potential \0
+        scratchpad = (char *)malloc(length + 1);
     }
 
     ScratchpadChunck(ScratchpadChunck &) = delete;
@@ -219,8 +221,8 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
         return 0;
     }
 
-    // Zero-width joiner (0x200D) are used in emojis, let's keep them around
-    else if (codepoint == 0x200D) {
+    // ASCII or Zero-width joiner (0x200D) are used in emojis, let's keep them around
+    else if (codepoint <= 0x7F || codepoint == 0x200D) {
         if (wbBufferLength > 0) {
             wbBuffer[0] = (int32_t)codepoint;
         }
@@ -280,9 +282,8 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
 // We empirically measured that no codepoint decomposition exceeded 18 codepoints.
 #define INFLIGHT_BUFFER_SIZE 24
 
-bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
+bool normalize_string(cow_string &str)
 {
-    const char *utf8Buffer = *_utf8Buffer;
     int32_t inFlightBuffer[INFLIGHT_BUFFER_SIZE];
     std::vector<ScratchpadChunck> scratchPad;
 
@@ -292,11 +293,11 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
     // semi-fixed buffer (the scratchpad) Only when the conversion is over will we allocate the
     // final buffer and copy everything in there.
     scratchPad.reserve(8);
-    scratchPad.emplace_back(bufferLength > 1024 ? bufferLength : 1024);
+    scratchPad.emplace_back(str.length() > 1024 ? str.length() : 1024);
 
     uint32_t codepoint;
     uint64_t position = 0;
-    while ((codepoint = fetch_next_codepoint(utf8Buffer, position, bufferLength)) != UTF8_EOF) {
+    while ((codepoint = fetch_next_codepoint(str.data(), position, str.length())) != UTF8_EOF) {
         // Ignore invalid glyphs
         if (codepoint == UTF8_INVALID) {
             continue;
@@ -328,35 +329,32 @@ bool normalize_string(char **_utf8Buffer, uint64_t &bufferLength)
         }
     }
 
+    std::size_t new_length = 0;
+    char *new_buffer = nullptr;
     if (scratchPad.size() == 1) {
         // We have a single scratchpad, we can simply swap the pointers :D
-        free(*_utf8Buffer);
-        *_utf8Buffer = scratchPad.front().scratchpad;
-        bufferLength = scratchPad.front().used;
-
+        new_buffer = scratchPad.front().scratchpad;
+        new_length = scratchPad.front().used;
         // Prevent the destructor from freeing the pointer we're now using.
         scratchPad.front().scratchpad = nullptr;
     } else {
         // Compile the scratch pads into the final normalized string
-        uint64_t outputLength = 0;
-        for (ScratchpadChunck &chunck : scratchPad) { outputLength += chunck.used; }
+        for (ScratchpadChunck &chunck : scratchPad) { new_length += chunck.used; }
 
-        if (outputLength > bufferLength) {
-            void *newUTF8Buffer = realloc((void *)*_utf8Buffer, outputLength);
-            if (newUTF8Buffer == nullptr) {
-                return false;
-            }
-            *_utf8Buffer = (char *)newUTF8Buffer;
+        new_buffer = (char *)malloc(new_length + 1);
+        if (new_buffer == nullptr) {
+            return false;
         }
 
         uint64_t writeIndex = 0;
         for (ScratchpadChunck &chunck : scratchPad) {
-            memcpy(&(*_utf8Buffer)[writeIndex], chunck.scratchpad, chunck.used);
+            memcpy(&new_buffer[writeIndex], chunck.scratchpad, chunck.used);
             writeIndex += chunck.used;
         }
-
-        bufferLength = writeIndex;
     }
+
+    new_buffer[new_length] = '\0';
+    str.replace_buffer(new_buffer, new_length);
 
     return true;
 }

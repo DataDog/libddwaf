@@ -14,7 +14,7 @@ if(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR
 endif()
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(LIBDDWAF_SHARED_LINKER_FLAGS "-static-libstdc++" CACHE STRING "Shared library extra linker flags")
@@ -44,8 +44,6 @@ if(NOT MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wno-narrowing -ggdb")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wno-narrowing -ggdb")
-
-    add_definitions(-D__STDC_FORMAT_MACROS)
 else()
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${LIBDDWAF_MSVC_RUNTIME_LIBRARY}")
     set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELEASE} ${LIBDDWAF_MSVC_RUNTIME_LIBRARY}")
@@ -77,15 +75,14 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp
     ${libddwaf_SOURCE_DIR}/src/ip_utils.cpp
     ${libddwaf_SOURCE_DIR}/src/iterator.cpp
-    ${libddwaf_SOURCE_DIR}/src/PWTransformer.cpp
     ${libddwaf_SOURCE_DIR}/src/utils.cpp
-    ${libddwaf_SOURCE_DIR}/src/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
     ${libddwaf_SOURCE_DIR}/src/waf.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/common.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
@@ -96,6 +93,24 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule_processor/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/ip_match.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_processor/exact_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/lowercase.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/compress_whitespace.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/normalize_path.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/manager.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/remove_nulls.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/remove_comments.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/shell_unescape.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/unicode_normalize.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/url_basename.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/url_decode.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/url_querystring.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/url_path.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/base64_decode.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/base64_encode.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/css_decode.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/html_entity_decode.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/js_decode.cpp
+    ${libddwaf_SOURCE_DIR}/src/transformer/common/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/libcxx-compat/monotonic_buffer_resource.cpp
 )
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})

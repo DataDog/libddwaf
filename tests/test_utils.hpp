@@ -137,7 +137,7 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected)));
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
   {                                                                                                \
     auto data = ddwaf::test::object_to_json(result.events);                                        \
@@ -146,6 +146,7 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     auto events = doc.as<std::list<ddwaf::test::event>>();                                         \
     EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                                \
   }
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 ddwaf_object readFile(std::string_view filename, std::string_view base = "./");
 ddwaf_object readRule(const char *rule);

@@ -12,7 +12,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <PWTransformer.h>
 #include <clock.hpp>
 #include <condition.hpp>
 #include <event.hpp>
