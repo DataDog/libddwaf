@@ -1,0 +1,26 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+              transformers: [ normalize_path_win ]
+          regex: /etc/passwd
+  - id: 2
+    name: rule2
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value2
+              transformers: [ normalizePathWin ]
+          regex: /etc/passwd
