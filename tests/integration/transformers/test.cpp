@@ -273,3 +273,894 @@ TEST(TestTransformers, CssDecodeAlias)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+TEST(TestTransformers, HtmlEntityDecode)
+{
+    auto rule = readFile("html_entity_decode.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "HTML &#x0000000000000000000000000000041 &#x41; transformation");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "HTML A A transformation",
+                               .address = "value1",
+                               .value = "HTML A A transformation",
+                               .highlight = "HTML A A transformation"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, HtmlEntityDecodeAlias)
+{
+    auto rule = readFile("html_entity_decode.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "HTML &#x0000000000000000000000000000041 &#x41; transformation");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "HTML A A transformation",
+                               .address = "value2",
+                               .value = "HTML A A transformation",
+                               .highlight = "HTML A A transformation"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, JsDecode)
+{
+    auto rule = readFile("js_decode.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, R"(\x41\x20\x4aS\x20transf\x6Frmation)");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "A JS transformation",
+                               .address = "value1",
+                               .value = "A JS transformation",
+                               .highlight = "A JS transformation"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, JsDecodeAlias)
+{
+    auto rule = readFile("js_decode.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, R"(\x41\x20\x4aS\x20transf\x6Frmation)");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "A JS transformation",
+                               .address = "value2",
+                               .value = "A JS transformation",
+                               .highlight = "A JS transformation"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, Lowercase)
+{
+    auto rule = readFile("lowercase.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "ArAcHnI");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "arachni",
+                               .address = "value1",
+                               .value = "arachni",
+                               .highlight = "arachni"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, NormalizePath)
+{
+    auto rule = readFile("normalize_path.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/etc/dir1/dir2/../../passwd");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/etc/passwd",
+                               .address = "value1",
+                               .value = "/etc/passwd",
+                               .highlight = "/etc/passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, NormalizePathAlias)
+{
+    auto rule = readFile("normalize_path.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/etc/dir1/dir2/../../passwd");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/etc/passwd",
+                               .address = "value2",
+                               .value = "/etc/passwd",
+                               .highlight = "/etc/passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, NormalizePathWin)
+{
+    auto rule = readFile("normalize_path_win.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, R"(\etc\dir1\dir2\..\..\passwd)");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/etc/passwd",
+                               .address = "value1",
+                               .value = "/etc/passwd",
+                               .highlight = "/etc/passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, NormalizePathAliasWin)
+{
+    auto rule = readFile("normalize_path_win.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, R"(\etc\dir1\dir2\..\..\passwd)");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/etc/passwd",
+                               .address = "value2",
+                               .value = "/etc/passwd",
+                               .highlight = "/etc/passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, RemoveComments)
+{
+    auto rule = readFile("remove_comments.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "passwd#asdsd");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "passwd",
+                               .address = "value1",
+                               .value = "passwd",
+                               .highlight = "passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, RemoveCommentsAlias)
+{
+    auto rule = readFile("remove_comments.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "passwd#asdsd");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "passwd",
+                               .address = "value2",
+                               .value = "passwd",
+                               .highlight = "passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, RemoveNulls)
+{
+    auto rule = readFile("remove_nulls.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_stringl(&string, "/etc/\0passwd", sizeof("/etc/\0passwd") - 1);
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/etc/passwd",
+                               .address = "value1",
+                               .value = "/etc/passwd",
+                               .highlight = "/etc/passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, RemoveNullsAlias)
+{
+    auto rule = readFile("remove_nulls.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_stringl(&string, "/etc/\0passwd", sizeof("/etc/\0passwd") - 1);
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/etc/passwd",
+                               .address = "value2",
+                               .value = "/etc/passwd",
+                               .highlight = "/etc/passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, ShellUnescape)
+{
+    auto rule = readFile("shell_unescape.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/\\etc/\"pass^wd");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/etc/passwd",
+                               .address = "value1",
+                               .value = "/etc/passwd",
+                               .highlight = "/etc/passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, ShellUnescapeAlias)
+{
+    auto rule = readFile("shell_unescape.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/\\etc/\"pass^wd");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/etc/passwd",
+                               .address = "value2",
+                               .value = "/etc/passwd",
+                               .highlight = "/etc/passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UnicodeNormalize)
+{
+    auto rule = readFile("unicode_normalize.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/étc/p𝑎ßwd");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/etc/passwd",
+                               .address = "value1",
+                               .value = "/etc/passwd",
+                               .highlight = "/etc/passwd"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlBasename)
+{
+    auto rule = readFile("url_basename.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "index.php",
+                               .address = "value1",
+                               .value = "index.php",
+                               .highlight = "index.php"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlBasenameAlias)
+{
+    auto rule = readFile("url_basename.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "index.php",
+                               .address = "value2",
+                               .value = "index.php",
+                               .highlight = "index.php"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlDecode)
+{
+    auto rule = readFile("url_decode.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "an attack value",
+                               .address = "value1",
+                               .value = "an attack value",
+                               .highlight = "an attack value"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlDecodeAlias)
+{
+    auto rule = readFile("url_decode.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "an attack value",
+                               .address = "value2",
+                               .value = "an attack value",
+                               .highlight = "an attack value"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlDecodeIis)
+{
+    auto rule = readFile("url_decode_iis.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "an attack value",
+                               .address = "value1",
+                               .value = "an attack value",
+                               .highlight = "an attack value"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlDecodeIisAlias)
+{
+    auto rule = readFile("url_decode_iis.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "an attack value",
+                               .address = "value2",
+                               .value = "an attack value",
+                               .highlight = "an attack value"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlPath)
+{
+    auto rule = readFile("url_path.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/path/to/index.php",
+                               .address = "value1",
+                               .value = "/path/to/index.php",
+                               .highlight = "/path/to/index.php"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlPathAlias)
+{
+    auto rule = readFile("url_path.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "/path/to/index.php",
+                               .address = "value2",
+                               .value = "/path/to/index.php",
+                               .highlight = "/path/to/index.php"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlQuerystring)
+{
+    auto rule = readFile("url_querystring.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "a=b",
+                               .address = "value1",
+                               .value = "a=b",
+                               .highlight = "a=b"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, UrlQuerystringAlias)
+{
+    auto rule = readFile("url_querystring.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
+    ddwaf_object_map_add(&map, "value2", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "2",
+                           .name = "rule2",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "a=b",
+                               .address = "value2",
+                               .value = "a=b",
+                               .highlight = "a=b"}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestTransformers, Mixed)
+{
+    auto rule = readFile("mixed.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "L3AgIGEgIHRIL3QgIE8vRmlsRS5QSFA/YT1iI2ZyYWc=");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
+                               .address = "value1",
+                               .value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
+                               .highlight = "L3AgYSB0aC90IG8vZmlsZS5waHA="}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}

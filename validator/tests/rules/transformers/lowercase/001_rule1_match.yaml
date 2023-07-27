@@ -1,0 +1,21 @@
+{
+  name: "Match with transformer",
+  runs: [
+    {
+      input: {
+        rule1-input: aRaCHnI
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: arachni
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

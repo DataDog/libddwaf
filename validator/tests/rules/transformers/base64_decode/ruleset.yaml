@@ -1,0 +1,24 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: is_sqli
+        parameters:
+          inputs:
+            - address: rule1-input
+              transformers: [ base64_decode ]
+  - id: 2
+    name: rule2
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: is_sqli
+        parameters:
+          inputs:
+            - address: rule2-input
+              transformers: [ base64Decode ]
