@@ -1,0 +1,21 @@
+{
+  name: "Match with transformer",
+  runs: [
+    {
+      input: {
+        rule1-input: "HTML &#x0000000000000000000000000000041 &#x41; transformation"
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: "HTML A A transformation"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}

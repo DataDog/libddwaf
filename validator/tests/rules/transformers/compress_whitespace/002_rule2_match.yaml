@@ -1,0 +1,21 @@
+{
+  name: "Match with transformer",
+  runs: [
+    {
+      input: {
+        rule2-input: attack      value
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input,
+              value: attack value
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ],
+}
