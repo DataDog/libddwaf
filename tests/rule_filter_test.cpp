@@ -800,7 +800,7 @@ TEST(TestRuleFilter, MonitorSingleRule)
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
-                           .actions = {"block"},
+                           .actions = {"monitor"},
                            .matches = {{.op = "ip_match",
                                .address = "http.client_ip",
                                .value = "192.168.0.1",

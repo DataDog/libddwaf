@@ -105,7 +105,12 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
                     if (!event.skip_actions) {
                         all_actions.emplace(action);
                     }
-                    ddwaf_object_array_add(&actions_array, to_object(tmp, action));
+
+                    if (event.skip_actions && action == "block") {
+                        ddwaf_object_array_add(&actions_array, to_object(tmp, "monitor"));
+                    } else {
+                        ddwaf_object_array_add(&actions_array, to_object(tmp, action));
+                    }
                 }
                 ddwaf_object_map_add(&rule_map, "on_match", &actions_array);
             }
