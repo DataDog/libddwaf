@@ -28,7 +28,7 @@ namespace ddwaf::parser::v1 {
 namespace {
 
 expression::ptr parse_expression(parameter::vector &conditions_array,
-    const std::vector<PW_TRANSFORM_ID> &transformers, ddwaf::object_limits limits)
+    const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
 {
     expression_builder builder(conditions_array.size(), limits);
     for (const auto &cond_param : conditions_array) {
@@ -116,15 +116,15 @@ void parseRule(parameter::map &rule, base_section_info &info,
     }
 
     try {
-        std::vector<PW_TRANSFORM_ID> rule_transformers;
+        std::vector<transformer_id> rule_transformers;
         auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
         for (const auto &transformer_param : transformers) {
             auto transformer = static_cast<std::string_view>(transformer_param);
-            PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
-            if (transform_id == PWT_INVALID) {
+            auto id = transformer_from_string(transformer);
+            if (!id.has_value()) {
                 throw ddwaf::parsing_error("invalid transformer" + std::string(transformer));
             }
-            rule_transformers.push_back(transform_id);
+            rule_transformers.emplace_back(id.value());
         }
 
         auto conditions_array = at<parameter::vector>(rule, "conditions");

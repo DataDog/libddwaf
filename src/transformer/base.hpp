@@ -16,7 +16,6 @@
 namespace ddwaf {
 
 enum class transformer_id : uint8_t {
-    invalid = 0,
     lowercase,
     remove_nulls,
     compress_whitespace,
@@ -28,16 +27,13 @@ enum class transformer_id : uint8_t {
     js_decode,
     html_entity_decode,
     base64_decode,
-    base64_decode_rfc2045,
     base64_encode,
     shell_unescape,
     url_basename,
     url_path,
     url_querystring,
     remove_comments,
-    unicode_normalize,
-    keys_only,
-    values_only,
+    unicode_normalize
 };
 
 namespace transformer {

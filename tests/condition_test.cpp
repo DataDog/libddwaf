@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "PWTransformer.h"
 #include "test.h"
 
 using namespace ddwaf;
@@ -78,8 +77,8 @@ TEST(TestCondition, MatchWithTransformer)
 {
     std::vector<ddwaf::condition::target_type> targets;
 
-    targets.push_back(
-        {get_target_index("server.request.query"), "server.request.query", {}, {PWT_LOWERCASE}});
+    targets.push_back({get_target_index("server.request.query"), "server.request.query", {},
+        {transformer_id::lowercase}});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>("value", 0, true));
@@ -110,7 +109,7 @@ TEST(TestCondition, MatchWithMultipleTransformers)
     std::vector<ddwaf::condition::target_type> targets;
 
     targets.push_back({get_target_index("server.request.query"), "server.request.query", {},
-        {PWT_COMPRESS_WHITE, PWT_LOWERCASE}});
+        {transformer_id::compress_whitespace, transformer_id::lowercase}});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>("^ value $", 0, true));
@@ -176,7 +175,7 @@ TEST(TestCondition, MatchOnKeysWithTransformer)
     std::vector<ddwaf::condition::target_type> targets;
 
     targets.push_back({get_target_index("server.request.query"), "server.request.query", {},
-        {PWT_LOWERCASE}, expression::data_source::keys});
+        {transformer_id::lowercase}, expression::data_source::keys});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<rule_processor::regex_match>("value", 0, true));

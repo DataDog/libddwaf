@@ -13,7 +13,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <PWTransformer.h>
 #include <clock.hpp>
 #include <context_allocator.hpp>
 #include <event.hpp>
@@ -21,6 +20,8 @@
 #include <iterator.hpp>
 #include <object_store.hpp>
 #include <rule_processor/base.hpp>
+
+#include "transformer/manager.hpp"
 
 namespace ddwaf {
 
@@ -32,7 +33,7 @@ public:
         target_index root;
         std::string name;
         std::vector<std::string> key_path{};
-        std::vector<PW_TRANSFORM_ID> transformers{};
+        std::vector<transformer_id> transformers{};
         expression::data_source source{expression::data_source::values};
     };
 
@@ -62,11 +63,11 @@ public:
 protected:
     std::optional<event::match> match_object(const ddwaf_object *object,
         const rule_processor::base::ptr &processor,
-        const std::vector<PW_TRANSFORM_ID> &transformers) const;
+        const std::vector<transformer_id> &transformers) const;
 
     template <typename T>
     std::optional<event::match> match_target(T &it, const rule_processor::base::ptr &processor,
-        const std::vector<PW_TRANSFORM_ID> &transformers, ddwaf::timer &deadline) const;
+        const std::vector<transformer_id> &transformers, ddwaf::timer &deadline) const;
 
     [[nodiscard]] const rule_processor::base::ptr &get_processor(
         const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors) const;
