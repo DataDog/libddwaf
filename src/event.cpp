@@ -101,11 +101,13 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
             if (!actions.empty()) {
                 ddwaf_object actions_array;
                 ddwaf_object_array(&actions_array);
-                for (const auto &action : actions) {
-                    if (!event.skip_actions) {
+                if (!event.skip_actions) {
+                    for (const auto &action : actions) {
                         all_actions.emplace(action);
+                        ddwaf_object_array_add(&actions_array, to_object(tmp, action));
                     }
-                    ddwaf_object_array_add(&actions_array, to_object(tmp, action));
+                } else {
+                    ddwaf_object_array_add(&actions_array, to_object(tmp, "monitor"));
                 }
                 ddwaf_object_map_add(&rule_map, "on_match", &actions_array);
             }
