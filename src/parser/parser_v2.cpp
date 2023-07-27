@@ -6,7 +6,6 @@
 
 #include "generator/extract_schema.hpp"
 #include "utils.hpp"
-#include <PWTransformer.h>
 #include <algorithm>
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
@@ -101,31 +100,27 @@ std::pair<std::string, rule_processor::base::ptr> parse_processor(
     return {std::move(rule_data_id), std::move(processor)};
 }
 
-std::vector<PW_TRANSFORM_ID> parse_transformers(
+std::vector<transformer_id> parse_transformers(
     const parameter::vector &root, condition::data_source &source)
 {
     if (root.empty()) {
         return {};
     }
 
-    std::vector<PW_TRANSFORM_ID> transformers;
+    std::vector<transformer_id> transformers;
     transformers.reserve(root.size());
 
     for (const auto &transformer_param : root) {
         auto transformer = static_cast<std::string_view>(transformer_param);
-        PW_TRANSFORM_ID transform_id = PWTransformer::getIDForString(transformer);
-        switch (transform_id) {
-        case PWT_KEYS_ONLY:
+        auto id = transformer_from_string(transformer);
+        if (id.has_value()) {
+            transformers.emplace_back(id.value());
+        } else if (transformer == "keys_only") {
             source = ddwaf::condition::data_source::keys;
-            break;
-        case PWT_VALUES_ONLY:
+        } else if (transformer == "values_only") {
             source = ddwaf::condition::data_source::values;
-            break;
-        case PWT_INVALID:
+        } else {
             throw ddwaf::parsing_error("invalid transformer " + std::string(transformer));
-        default:
-            transformers.push_back(transform_id);
-            break;
         }
     }
     return transformers;
@@ -133,7 +128,7 @@ std::vector<PW_TRANSFORM_ID> parse_transformers(
 
 condition::ptr parse_rule_condition(const parameter::map &root,
     std::unordered_map<std::string, std::string> &rule_data_ids, condition::data_source source,
-    const std::vector<PW_TRANSFORM_ID> &transformers, const object_limits &limits)
+    const std::vector<transformer_id> &transformers, const object_limits &limits)
 {
     auto operation = at<std::string_view>(root, "operator");
     auto params = at<parameter::map>(root, "parameters");
@@ -188,7 +183,7 @@ rule_spec parse_rule(parameter::map &rule,
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source)
 {
-    std::vector<PW_TRANSFORM_ID> rule_transformers;
+    std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::condition::data_source::values;
     auto transformers = at<parameter::vector>(rule, "transformers", {});
     rule_transformers = parse_transformers(transformers, data_source);

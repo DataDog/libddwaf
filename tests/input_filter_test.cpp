@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "PWTransformer.h"
 #include "test.h"
 
 using namespace ddwaf;
@@ -106,7 +105,8 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 {
     auto client_ip = get_target_index("usr.id");
 
-    std::vector<condition::target_type> targets{{client_ip, "usr.id", {}, {PWT_LOWERCASE}}};
+    std::vector<condition::target_type> targets{
+        {client_ip, "usr.id", {}, {transformer_id::lowercase}}};
     auto cond = std::make_shared<condition>(std::move(targets),
         std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
 

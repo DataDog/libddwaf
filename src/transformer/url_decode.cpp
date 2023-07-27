@@ -13,15 +13,6 @@ namespace ddwaf::transformer {
 namespace {
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-uint8_t from_hex(char c)
-{
-    if (ddwaf::isdigit(c)) {
-        return static_cast<uint8_t>(c - '0');
-    }
-
-    return static_cast<uint8_t>((c | 0x20) - 'a' + 0xa);
-}
-
 /*
  * Bypasses are documented here:
  * https://www.postexplo.com/forum/ids-ips/network-based/764-ids-evasion-techniques-using-url-encoding

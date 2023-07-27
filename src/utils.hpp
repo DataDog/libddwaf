@@ -59,11 +59,28 @@ inline bool is_scalar(const ddwaf_object *obj)
 ddwaf_object clone(ddwaf_object *input);
 } // namespace object
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+inline bool isalpha(char c) { return (static_cast<unsigned>(c) | 32) - 'a' < 26; }
 inline bool isdigit(char c) { return (c >= '0' && c <= '9'); }
 inline bool isxdigit(char c)
 {
     return ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
 }
+inline bool isspace(char c)
+{
+    return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
+}
+inline bool isupper(char c) { return (c >= 'A' && c <= 'Z'); }
+inline bool isalnum(char c) { return isalpha(c) || isdigit(c); }
+inline char tolower(char c) { return isupper(c) ? static_cast<char>(c | 0x20) : c; }
+inline uint8_t from_hex(char c)
+{
+    if (ddwaf::isdigit(c)) {
+        return static_cast<uint8_t>(c - '0');
+    }
+    return static_cast<uint8_t>((c | 0x20) - 'a' + 0xa);
+}
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
 template <class Fn> class scope_exit {
 public:

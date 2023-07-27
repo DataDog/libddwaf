@@ -23,6 +23,7 @@ TEST(TestNormalizePath, ValidTransform)
     EXPECT_TRANSFORM(normalize_path, "a/simple/./path", "a/simple/path");
     EXPECT_TRANSFORM(normalize_path, "./a/simple/wrong/../path", "a/simple/path");
     EXPECT_TRANSFORM(normalize_path, "a/simple/../../../../path", "/path");
+    EXPECT_TRANSFORM(normalize_path, "a/simple/../../../../path.", "/path.");
 }
 
 TEST(TestNormalizePath, InvalidTransform)
@@ -32,6 +33,7 @@ TEST(TestNormalizePath, InvalidTransform)
     EXPECT_NO_TRANSFORM(normalize_path, "path/to/somewhere");
     EXPECT_NO_TRANSFORM(normalize_path, "./");
     EXPECT_NO_TRANSFORM(normalize_path, "/");
+    EXPECT_NO_TRANSFORM(normalize_path, "/path.");
 }
 
 TEST(TestNormalizePathWin, NameAndID)
@@ -49,6 +51,7 @@ TEST(TestNormalizePathWin, ValidTransform)
     EXPECT_TRANSFORM(normalize_path_win, R"(a\simple\.\path)", "a/simple/path");
     EXPECT_TRANSFORM(normalize_path_win, R"(.\a\simple\wrong\..\path)", "a/simple/path");
     EXPECT_TRANSFORM(normalize_path_win, R"(a\simple\..\..\..\..\path)", "/path");
+    EXPECT_TRANSFORM(normalize_path_win, R"(a\simple\..\..\..\..\path.)", "/path.");
 }
 
 TEST(TestNormalizePathWin, InvalidTransform)
@@ -58,4 +61,5 @@ TEST(TestNormalizePathWin, InvalidTransform)
     EXPECT_NO_TRANSFORM(normalize_path_win, "path/to/somewhere");
     EXPECT_NO_TRANSFORM(normalize_path_win, "./");
     EXPECT_NO_TRANSFORM(normalize_path_win, "/");
+    EXPECT_NO_TRANSFORM(normalize_path_win, "/path.");
 }
