@@ -146,7 +146,6 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     auto events = doc.as<std::list<ddwaf::test::event>>();                                         \
     EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                                \
   }
-
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 ddwaf_object readFile(std::string_view filename, std::string_view base = "./");

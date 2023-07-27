@@ -74,9 +74,9 @@ void pop_string(Data *data, ddwaf_object *object)
 
 bool popBoolean(Data *data)
 {
-    bool result = false;
+    uint8_t result = 0;
     popBytes(data, &result, 1);
-    return result;
+    return result > 0;
 }
 
 uint64_t popUnsignedInteger(Data *data)

@@ -7,13 +7,14 @@
 #include "transformer/unicode_normalize.hpp"
 #include "transformer/common/utf8.hpp"
 
+using namespace ddwaf::utf8;
+
 namespace ddwaf::transformer {
 bool unicode_normalize::needs_transform(std::string_view str)
 {
     uint32_t codepoint;
     uint64_t position = 0;
-    while ((codepoint = ddwaf::utf8::fetch_next_codepoint(str.data(), position, str.length())) !=
-           UTF8_EOF) {
+    while ((codepoint = fetch_next_codepoint(str.data(), position, str.length())) != UTF8_EOF) {
         // Ignore invalid glyphs or Zero-Width joiners (which we allow for emojis)
         if (codepoint == UTF8_INVALID) {
             continue;

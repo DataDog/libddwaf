@@ -21,12 +21,9 @@ bool normalize_path::transform_impl(cow_string &str)
     while (read < str.length()) {
         // Everything is cool, writing away
         if (str.at(read) != '.' || (read + 1 != str.length() && str.at(read + 1) != '/')) {
-            if (read != write) {
-                str[write] = str.at(read);
+            if (str.copy_char(read++, write++)) {
                 modified = true;
             }
-            ++read;
-            ++write;
             continue;
         }
 
@@ -53,12 +50,9 @@ bool normalize_path::transform_impl(cow_string &str)
 
         // nvm, false alarm, just a dir ending with .
         else {
-            if (read != write) {
-                str[write] = str.at(read);
+            if (str.copy_char(read++, write++)) {
                 modified = true;
             }
-            ++read;
-            ++write;
         }
     }
 
