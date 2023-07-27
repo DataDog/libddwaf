@@ -800,7 +800,40 @@ TEST(TestRuleFilter, MonitorSingleRule)
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
-                           .actions = {"block"},
+                           .actions = {"monitor"},
+                           .matches = {{.op = "ip_match",
+                               .address = "http.client_ip",
+                               .value = "192.168.0.1",
+                               .highlight = "192.168.0.1"}}});
+    EXPECT_THAT(out.actions, WithActions({}));
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestRuleFilter, AvoidHavingTwoMonitorOnActions)
+{
+    auto rule = readFile("multiple_monitor_on_match.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf_result out;
+    EXPECT_EQ(ddwaf_run(context, &root, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "type1"}, {"category", "category"}},
+                           .actions = {"monitor"},
                            .matches = {{.op = "ip_match",
                                .address = "http.client_ip",
                                .value = "192.168.0.1",
