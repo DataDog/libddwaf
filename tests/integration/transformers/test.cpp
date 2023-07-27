@@ -1131,3 +1131,36 @@ TEST(TestTransformers, UrlQuerystringAlias)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+TEST(TestTransformers, Mixed)
+{
+    auto rule = readFile("mixed.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "L3AgIGEgIHRIL3QgIE8vRmlsRS5QSFA/YT1iI2ZyYWc=");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
+                               .address = "value1",
+                               .value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
+                               .highlight = "L3AgYSB0aC90IG8vZmlsZS5waHA="}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
