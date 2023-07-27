@@ -1,0 +1,20 @@
+version: '2.1'
+exclusions:
+  - id: 1
+    rules_target:
+      - rule_id: 1
+    on_match: monitor
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: type1
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: http.client_ip
+          list:
+            - 192.168.0.1
+    on_match: [ monitor, block ]
