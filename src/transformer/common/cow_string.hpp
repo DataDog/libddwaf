@@ -12,6 +12,8 @@
 #include <stdexcept>
 #include <string_view>
 
+#include "utils.hpp"
+
 namespace ddwaf {
 
 class cow_string {
@@ -20,7 +22,7 @@ public:
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
         : buffer_(const_cast<char *>(original.data())), length_(original.length())
     {
-        if (buffer_ == nullptr) {
+        [[unlikely]] if (buffer_ == nullptr) {
             throw std::runtime_error{"cow_string initialised with nullptr"};
         }
     }
@@ -32,18 +34,31 @@ public:
 
     ~cow_string()
     {
-        if (modified_) {
+        [[likely]] if (modified_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
             free(buffer_);
         }
     }
 
-    [[nodiscard]] constexpr char at(std::size_t idx) const { return buffer_[idx]; }
+    template <typename T = char> [[nodiscard]] constexpr T at(std::size_t idx) const
+    {
+        return static_cast<T>(buffer_[idx]);
+    }
 
     char &operator[](std::size_t idx)
     {
         force_copy(length_);
         return buffer_[idx];
+    }
+
+    bool copy_char(std::size_t from, std::size_t to)
+    {
+        if (to != from) {
+            force_copy(length_);
+            buffer_[to] = buffer_[from];
+            return true;
+        }
+        return false;
     }
 
     constexpr explicit operator std::string_view() { return {buffer_, length_}; }
@@ -54,7 +69,7 @@ public:
     [[nodiscard]] constexpr bool modified() const { return modified_; }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    [[nodiscard]] std::pair<bool, std::size_t> find(char c, std::size_t start) const
+    [[nodiscard]] std::pair<bool, std::size_t> find(char c, std::size_t start = 0) const
     {
         for (std::size_t i = start; i < length_; ++i) {
             if (buffer_[i] == c) {
@@ -67,7 +82,7 @@ public:
     // Replaces the internal buffer, ownership is transferred
     void replace_buffer(char *str, std::size_t length)
     {
-        if (modified_) {
+        [[likely]] if (modified_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
             free(buffer_);
         }
@@ -81,9 +96,7 @@ public:
     // modified, otherwise it does nothing
     std::pair<char *, std::size_t> move()
     {
-        if (!modified_) {
-            force_copy(length_);
-        }
+        force_copy(length_);
 
         std::pair<char *, std::size_t> res{buffer_, length_};
         modified_ = false;
@@ -95,7 +108,7 @@ public:
     // Update length and nul-terminate, allocate if not allocated
     void truncate(std::size_t length)
     {
-        if (modified_) {
+        [[likely]] if (modified_) {
             length_ = length;
             buffer_[length] = '\0';
         } else {
@@ -107,7 +120,7 @@ protected:
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void force_copy(std::size_t bytes)
     {
-        if (!modified_) {
+        [[unlikely]] if (!modified_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
             char *new_copy = static_cast<char *>(malloc(bytes + 1));
             if (new_copy == nullptr) {
@@ -119,6 +132,7 @@ protected:
 
             buffer_ = new_copy;
             modified_ = true;
+            length_ = bytes;
         }
     }
 

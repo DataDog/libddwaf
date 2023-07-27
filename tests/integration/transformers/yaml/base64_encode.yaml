@@ -1,0 +1,26 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+              transformers: [ base64_encode ]
+          regex: J09SIDE9MS8q
+  - id: 2
+    name: rule2
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value2
+              transformers: [ base64Encode ]
+          regex: J09SIDE9MS8q
