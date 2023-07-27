@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "PWTransformer.h"
 #include "expression.hpp"
 #include "test.h"
 
@@ -613,7 +612,7 @@ TEST(TestExpression, MatchWithTransformer)
 {
     expression_builder builder(1);
     builder.start_condition<rule_processor::regex_match>("value", 0, true);
-    builder.add_target("server.request.query", {}, {PWT_LOWERCASE});
+    builder.add_target("server.request.query", {}, {transformer_id::lowercase});
     auto expr = builder.build();
 
     ddwaf_object root;
@@ -641,7 +640,8 @@ TEST(TestExpression, MatchWithMultipleTransformers)
 {
     expression_builder builder(1);
     builder.start_condition<rule_processor::regex_match>("^ value $", 0, true);
-    builder.add_target("server.request.query", {}, {PWT_COMPRESS_WHITE, PWT_LOWERCASE});
+    builder.add_target("server.request.query", {},
+        {transformer_id::compress_whitespace, transformer_id::lowercase});
     auto expr = builder.build();
 
     ddwaf_object root;
@@ -700,7 +700,8 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
 {
     expression_builder builder(1);
     builder.start_condition<rule_processor::regex_match>("value", 0, true);
-    builder.add_target("server.request.query", {}, {PWT_LOWERCASE}, expression::data_source::keys);
+    builder.add_target(
+        "server.request.query", {}, {transformer_id::lowercase}, expression::data_source::keys);
     auto expr = builder.build();
 
     ddwaf_object root;

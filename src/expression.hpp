@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include "log.hpp"
-#include "utils.hpp"
 #include <atomic>
 #include <memory>
 #include <string>
@@ -16,13 +14,15 @@
 #include <utility>
 #include <vector>
 
-#include <PWTransformer.h>
-#include <clock.hpp>
-#include <context_allocator.hpp>
-#include <event.hpp>
-#include <iterator.hpp>
-#include <object_store.hpp>
-#include <rule_processor/base.hpp>
+#include "clock.hpp"
+#include "context_allocator.hpp"
+#include "event.hpp"
+#include "iterator.hpp"
+#include "log.hpp"
+#include "object_store.hpp"
+#include "rule_processor/base.hpp"
+#include "transformer/manager.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -57,7 +57,7 @@ public:
             std::vector<std::string> key_path{};
 
             // Transformers
-            std::vector<PW_TRANSFORM_ID> transformers{};
+            std::vector<transformer_id> transformers{};
             data_source source{data_source::values};
         };
 
@@ -126,11 +126,11 @@ public:
         template <typename T>
         std::optional<event::match> eval_target(const condition &cond, T &it,
             const rule_processor::base::ptr &processor,
-            const std::vector<PW_TRANSFORM_ID> &transformers);
+            const std::vector<transformer_id> &transformers);
 
         std::optional<event::match> eval_object(const ddwaf_object *object,
             const rule_processor::base::ptr &processor,
-            const std::vector<PW_TRANSFORM_ID> &transformers) const;
+            const std::vector<transformer_id> &transformers) const;
 
         [[nodiscard]] const rule_processor::base::ptr &get_processor(const condition &cond) const;
 
@@ -215,7 +215,7 @@ public:
     }
 
     void add_target(std::string name, std::vector<std::string> key_path = {},
-        std::vector<PW_TRANSFORM_ID> transformers = {},
+        std::vector<transformer_id> transformers = {},
         expression::data_source source = expression::data_source::values);
 
     expression::ptr build()
@@ -225,11 +225,11 @@ public:
 
 protected:
     void add_global_target(std::string name, std::vector<std::string> key_path = {},
-        std::vector<PW_TRANSFORM_ID> transformers = {},
+        std::vector<transformer_id> transformers = {},
         expression::data_source source = expression::data_source::values);
 
     void add_local_target(std::string name, std::size_t cond_idx, expression::eval_entity entity,
-        std::vector<std::string> key_path = {}, std::vector<PW_TRANSFORM_ID> transformers = {},
+        std::vector<std::string> key_path = {}, std::vector<transformer_id> transformers = {},
         expression::data_source source = expression::data_source::values);
 
     ddwaf::object_limits limits_;

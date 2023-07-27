@@ -5,61 +5,41 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <charconv>
-#include <exception.hpp>
-#include <expression.hpp>
-#include <log.hpp>
 #include <memory>
+
+#include "exception.hpp"
+#include "expression.hpp"
+#include "log.hpp"
+#include "transformer/manager.hpp"
 
 namespace ddwaf {
 
 std::optional<event::match> expression::evaluator::eval_object(const ddwaf_object *object,
     const rule_processor::base::ptr &processor,
-    const std::vector<PW_TRANSFORM_ID> &transformers) const
+    const std::vector<transformer_id> &transformers) const
 {
-    const bool has_transform = !transformers.empty();
-    bool transform_required = false;
-
-    if (has_transform) {
-        // This codepath is shared with the mutable path. The structure can't be const :/
-        transform_required =
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-            PWTransformer::doesNeedTransform(transformers, const_cast<ddwaf_object *>(object));
-    }
-
     const size_t length =
         find_string_cutoff(object->stringValue, object->nbEntries, limits.max_string_length);
 
-    // If we don't have transform to perform, or if they're irrelevant, no need to waste time
-    // copying and allocating data
-    if (!has_transform || !transform_required) {
-        return processor->match({object->stringValue, length});
-    }
+    if (!transformers.empty()) {
+        ddwaf_object src;
+        ddwaf_object dst;
+        ddwaf_object_stringl_nc(&src, object->stringValue, length);
+        ddwaf_object_invalid(&dst);
 
-    ddwaf_object copy;
-    ddwaf_object_stringl(&copy, (const char *)object->stringValue, length);
-
-    const std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> scope(
-        &copy, ddwaf_object_free);
-
-    // Transform it and pick the pointer to process
-    bool transformFailed = false;
-    for (const PW_TRANSFORM_ID &transform : transformers) {
-        transformFailed = !PWTransformer::transform(transform, &copy);
-        if (transformFailed || (copy.type == DDWAF_OBJ_STRING && copy.nbEntries == 0)) {
-            break;
+        auto transformed = transformer::manager::transform(src, dst, transformers);
+        scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
+        if (transformed) {
+            return processor->match_object(&dst);
         }
     }
 
-    if (transformFailed) {
-        return processor->match({object->stringValue, length});
-    }
-
-    return processor->match_object(&copy);
+    return processor->match({object->stringValue, length});
 }
 
 template <typename T>
 std::optional<event::match> expression::evaluator::eval_target(const condition &cond, T &it,
-    const rule_processor::base::ptr &processor, const std::vector<PW_TRANSFORM_ID> &transformers)
+    const rule_processor::base::ptr &processor, const std::vector<transformer_id> &transformers)
 {
     std::optional<event::match> last_result = std::nullopt;
 
@@ -303,7 +283,7 @@ std::tuple<bool, std::size_t, expression::eval_entity> explode_local_address(std
 } // namespace
   //
 void expression_builder::add_target(std::string name, std::vector<std::string> key_path,
-    std::vector<PW_TRANSFORM_ID> transformers, expression::data_source source)
+    std::vector<transformer_id> transformers, expression::data_source source)
 {
     auto [res, index, entity] = explode_local_address(name);
     if (res) {
@@ -315,7 +295,7 @@ void expression_builder::add_target(std::string name, std::vector<std::string> k
 }
 
 void expression_builder::add_global_target(std::string name, std::vector<std::string> key_path,
-    std::vector<PW_TRANSFORM_ID> transformers, expression::data_source source)
+    std::vector<transformer_id> transformers, expression::data_source source)
 {
     expression::condition::target_type target;
     target.scope = expression::eval_scope::global;
@@ -331,7 +311,7 @@ void expression_builder::add_global_target(std::string name, std::vector<std::st
 
 void expression_builder::add_local_target(std::string name, std::size_t cond_idx,
     expression::eval_entity entity, std::vector<std::string> key_path,
-    std::vector<PW_TRANSFORM_ID> transformers, expression::data_source source)
+    std::vector<transformer_id> transformers, expression::data_source source)
 {
     if (cond_idx >= (conditions_.size() - 1)) {
         throw std::invalid_argument(
