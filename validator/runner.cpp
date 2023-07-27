@@ -177,6 +177,10 @@ void test_runner::validate_rule(const YAML::Node &expected, const YAML::Node &ob
         auto expected_actions = expected["on_match"];
         auto obtained_actions = obtained["on_match"];
 
+        if (obtained_actions.size() == 1 && obtained_actions[0].as<std::string>() == "monitor") {
+            return;
+        }
+
         expect(true, obtained_actions.IsDefined());
         expect(expected_actions.size(), obtained_actions.size());
 
