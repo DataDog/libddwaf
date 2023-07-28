@@ -1,5 +1,18 @@
 # libddwaf release
 
+### v1.12.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Per-input transformers support on exclusion filter conditions ([#177](https://github.com/DataDog/libddwaf/pull/177))
+- Read-only transformers ([#178](https://github.com/DataDog/libddwaf/pull/178))([#185](https://github.com/DataDog/libddwaf/pull/185))([#190](https://github.com/DataDog/libddwaf/pull/190))
+- Rule filter bypass / monitor mode support ([#184](https://github.com/DataDog/libddwaf/pull/184))([#188](https://github.com/DataDog/libddwaf/pull/188))
+
+#### Miscellaneous
+- Object schemas ([#174](https://github.com/DataDog/libddwaf/pull/174))
+- Simple IP Match Benchmark ([#176](https://github.com/DataDog/libddwaf/pull/176))
+- Remove Manifest ([#179](https://github.com/DataDog/libddwaf/pull/179))
+- Reduce build parallelism ([#183](https://github.com/DataDog/libddwaf/pull/183))
+- Change standard to C++20 ([#186](https://github.com/DataDog/libddwaf/pull/186))
+
 ### v1.11.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### API & Breaking Changes
 - Full ruleset parsing diagnostics ([#161](https://github.com/DataDog/libddwaf/pull/161))
