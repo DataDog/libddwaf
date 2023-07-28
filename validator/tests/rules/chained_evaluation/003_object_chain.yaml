@@ -1,0 +1,35 @@
+{
+  name: "Basic run with match",
+  runs: [
+    {
+      input: {
+        server.request.query: {
+          comment : {
+            text: "we're going to try to exec() something"
+          }
+        }
+      },
+      rules: [
+        {
+          exp-000-003: [
+            {
+              address: server.request.query,
+              value: "we're going to try to exec() something",
+              highlight: [
+                exec(
+              ]
+            },
+            {
+              address: match.0.object,
+              value: comment,
+              highlight: [
+                comment
+              ]
+            },
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  name: "Basic run with match",
+  runs: [
+    {
+      input: {
+        server.request.query: "evil_exploit:ZXhlYyh0YWtlX292ZXJfd29ybGQp"
+      },
+      rules: [
+        {
+          exp-000-002: [
+            {
+              address: server.request.query,
+              value: "evil_exploit:ZXhlYyh0YWtlX292ZXJfd29ybGQp",
+              highlight: [
+                "evil_exploit:ZXhlYyh0YWtlX292ZXJfd29ybGQp"
+              ]
+            },
+            {
+              address: match.0.highlight,
+              value: "evil_exploit:ZXhlYyh0YWtlX292ZXJfd29ybGQp",
+              highlight: [
+                ZXhlYyh0YWtlX292ZXJfd29ybGQp
+              ]
+            },
+            {
+              address: match.1.highlight,
+              value: exec(take_over_world),
+              highlight: [
+                exec
+              ]
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

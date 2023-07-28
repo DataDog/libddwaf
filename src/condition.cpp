@@ -107,7 +107,7 @@ std::optional<event::match> condition::match(const object_store &store,
         }
 
         std::optional<event::match> optional_match;
-        if (source == data_source::keys) {
+        if (source == expression::data_source::keys) {
             object::key_iterator it(object, key_path, objects_excluded, limits_);
             optional_match = match_target(it, processor, transformers, deadline);
         } else {

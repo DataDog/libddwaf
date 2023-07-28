@@ -82,7 +82,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : base_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
+                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
             final_base_rules_.emplace(rule_ptr->get_id(), rule_ptr);
@@ -125,7 +125,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : user_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
+                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
             final_user_rules_.emplace(rule_ptr->get_id(), rule_ptr);
