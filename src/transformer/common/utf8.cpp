@@ -111,7 +111,7 @@ int8_t findNextGlyphLength(const char *utf8Buffer, uint64_t lengthLeft)
     int8_t expectedSequenceLength = -1;
 
     // Looking for 0xxxxxxx
-    // Of the highest bit is 0, we know it's a single byte sequence.
+    // If the highest bit is 0, we know it's a single byte sequence.
     if ((firstByte & 0x80) == 0) {
         return 1;
     }
