@@ -6,14 +6,14 @@
 
 #include <exception.hpp>
 #include <log.hpp>
-#include <parameter.hpp>
-#include <parser/common.hpp>
-#include <parser/parser.hpp>
-#include <rule.hpp>
 #include <operation/is_sqli.hpp>
 #include <operation/is_xss.hpp>
 #include <operation/phrase_match.hpp>
 #include <operation/regex_match.hpp>
+#include <parameter.hpp>
+#include <parser/common.hpp>
+#include <parser/parser.hpp>
+#include <rule.hpp>
 #include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <set>
@@ -27,84 +27,81 @@ namespace ddwaf::parser::v1 {
 
 namespace {
 
-condition::ptr parseCondition(
-    parameter::map &rule, std::vector<transformer_id> transformers, ddwaf::object_limits limits)
+expression::ptr parse_expression(parameter::vector &conditions_array,
+    const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
 {
-    auto operation = at<std::string_view>(rule, "operation");
-    auto params = at<parameter::map>(rule, "parameters");
+    expression_builder builder(conditions_array.size(), limits);
+    for (const auto &cond_param : conditions_array) {
+        auto cond = static_cast<parameter::map>(cond_param);
 
-    parameter::map options;
-    std::shared_ptr<base> processor;
-    if (operation == "phrase_match") {
-        auto list = at<parameter::vector>(params, "list");
+        builder.start_condition();
 
-        std::vector<const char *> patterns;
-        std::vector<uint32_t> lengths;
+        auto operation = at<std::string_view>(cond, "operation");
+        auto params = at<parameter::map>(cond, "parameters");
 
-        patterns.reserve(list.size());
-        lengths.reserve(list.size());
+        parameter::map options;
+        std::shared_ptr<base> processor;
+        if (operation == "phrase_match") {
+            auto list = at<parameter::vector>(params, "list");
 
-        for (auto &pattern : list) {
-            if (pattern.type != DDWAF_OBJ_STRING) {
-                throw ddwaf::parsing_error("phrase_match list item not a string");
+            std::vector<const char *> patterns;
+            std::vector<uint32_t> lengths;
+
+            patterns.reserve(list.size());
+            lengths.reserve(list.size());
+
+            for (auto &pattern : list) {
+                if (pattern.type != DDWAF_OBJ_STRING) {
+                    throw ddwaf::parsing_error("phrase_match list item not a string");
+                }
+
+                patterns.push_back(pattern.stringValue);
+                lengths.push_back((uint32_t)pattern.nbEntries);
             }
 
-            patterns.push_back(pattern.stringValue);
-            lengths.push_back((uint32_t)pattern.nbEntries);
-        }
+            processor = std::make_shared<operation::phrase_match>(patterns, lengths);
+        } else if (operation == "match_regex") {
+            auto regex = at<std::string>(params, "regex");
+            options = at<parameter::map>(params, "options", options);
 
-        processor = std::make_shared<operation::phrase_match>(patterns, lengths);
-    } else if (operation == "match_regex") {
-        auto regex = at<std::string>(params, "regex");
-        options = at<parameter::map>(params, "options", options);
+            auto case_sensitive = at<bool>(options, "case_sensitive", false);
+            auto min_length = at<int64_t>(options, "min_length", 0);
+            if (min_length < 0) {
+                throw ddwaf::parsing_error("min_length is a negative number");
+            }
 
-        auto case_sensitive = at<bool>(options, "case_sensitive", false);
-        auto min_length = at<int64_t>(options, "min_length", 0);
-        if (min_length < 0) {
-            throw ddwaf::parsing_error("min_length is a negative number");
-        }
-
-        processor =
-            std::make_shared<operation::regex_match>(regex, min_length, case_sensitive);
-    } else if (operation == "is_xss") {
-        processor = std::make_shared<operation::is_xss>();
-    } else if (operation == "is_sqli") {
-        processor = std::make_shared<operation::is_sqli>();
-    } else {
-        throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
-    }
-
-    std::vector<condition::target_type> targets;
-    auto inputs = at<parameter::vector>(params, "inputs");
-    targets.reserve(inputs.size());
-    for (const auto &input_param : inputs) {
-        auto input = static_cast<std::string>(input_param);
-        if (input.empty()) {
-            throw ddwaf::parsing_error("empty address");
-        }
-
-        std::string root;
-        std::string key_path;
-        size_t pos = input.find(':', 0);
-        if (pos == std::string::npos || pos + 1 >= input.size()) {
-            root = input;
+            processor = std::make_shared<operation::regex_match>(regex, min_length, case_sensitive);
+        } else if (operation == "is_xss") {
+            processor = std::make_shared<operation::is_xss>();
+        } else if (operation == "is_sqli") {
+            processor = std::make_shared<operation::is_sqli>();
         } else {
-            root = input.substr(0, pos);
-            key_path = input.substr(pos + 1, input.size());
+            throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
         }
+        builder.set_processor(std::move(processor));
 
-        condition::target_type target;
-        target.root = get_target_index(root);
-        target.name = std::move(root);
-        if (!key_path.empty()) {
-            target.key_path.emplace_back(key_path);
+        auto inputs = at<parameter::vector>(params, "inputs");
+        for (const auto &input_param : inputs) {
+            auto input = static_cast<std::string>(input_param);
+            if (input.empty()) {
+                throw ddwaf::parsing_error("empty address");
+            }
+
+            std::string root;
+            std::vector<std::string> key_path;
+            size_t pos = input.find(':', 0);
+            if (pos == std::string::npos || pos + 1 >= input.size()) {
+                root = input;
+            } else {
+                root = input.substr(0, pos);
+                key_path.emplace_back(input.substr(pos + 1, input.size()));
+            }
+
+            builder.add_target(std::move(root), std::move(key_path), transformers);
         }
-        target.transformers = transformers;
-        targets.emplace_back(std::move(target));
     }
 
-    return std::make_shared<condition>(
-        std::move(targets), std::move(processor), std::string{}, limits);
+    return builder.build();
 }
 
 void parseRule(parameter::map &rule, base_section_info &info,
@@ -129,13 +126,8 @@ void parseRule(parameter::map &rule, base_section_info &info,
             rule_transformers.emplace_back(id.value());
         }
 
-        std::vector<condition::ptr> conditions;
         auto conditions_array = at<parameter::vector>(rule, "conditions");
-        conditions.reserve(conditions_array.size());
-        for (const auto &cond_param : conditions_array) {
-            auto cond = static_cast<parameter::map>(cond_param);
-            conditions.push_back(parseCondition(cond, rule_transformers, limits));
-        }
+        auto expression = parse_expression(conditions_array, rule_transformers, limits);
 
         std::unordered_map<std::string, std::string> tags;
         for (auto &[key, value] : at<parameter::map>(rule, "tags")) {
@@ -151,7 +143,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
         }
 
         auto rule_ptr = std::make_shared<ddwaf::rule>(
-            std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(conditions));
+            std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(expression));
 
         rule_ids.emplace(rule_ptr->get_id());
         rs.insert_rule(rule_ptr);

@@ -16,6 +16,7 @@
 #include <clock.hpp>
 #include <context_allocator.hpp>
 #include <event.hpp>
+#include <expression.hpp>
 #include <iterator.hpp>
 #include <object_store.hpp>
 #include <operation/base.hpp>
@@ -28,14 +29,12 @@ class condition {
 public:
     using ptr = std::shared_ptr<condition>;
 
-    enum class data_source : uint8_t { values, keys };
-
     struct target_type {
         target_index root;
         std::string name;
         std::vector<std::string> key_path{};
         std::vector<transformer_id> transformers{};
-        data_source source{data_source::values};
+        expression::data_source source{expression::data_source::values};
     };
 
     condition(std::vector<target_type> targets, std::shared_ptr<operation::base> processor,

@@ -250,9 +250,8 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     std::vector<std::shared_ptr<condition>> conditions;
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<operation::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -311,9 +310,8 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     std::vector<std::shared_ptr<condition>> conditions;
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<operation::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -368,9 +366,8 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     std::vector<std::shared_ptr<condition>> conditions;
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<operation::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -432,9 +429,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     std::vector<std::shared_ptr<condition>> conditions;
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<operation::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -495,9 +491,8 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
     std::vector<std::shared_ptr<condition>> conditions;
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<operation::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -566,9 +561,8 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
     std::vector<std::shared_ptr<condition>> conditions;
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<operation::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -634,9 +628,8 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     std::vector<std::shared_ptr<condition>> conditions;
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<operation::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -701,9 +694,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     std::vector<std::shared_ptr<condition>> conditions;
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<operation::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
+        auto cond = std::make_shared<condition>(std::move(targets),
+            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
 

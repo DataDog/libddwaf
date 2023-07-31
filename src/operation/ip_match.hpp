@@ -8,8 +8,8 @@
 
 #include <ip_utils.hpp>
 #include <memory>
-#include <radixlib.h>
 #include <operation/base.hpp>
+#include <radixlib.h>
 
 namespace ddwaf::operation {
 

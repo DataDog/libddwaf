@@ -7,8 +7,8 @@
 #pragma once
 
 #include <memory>
-#include <re2/re2.h>
 #include <operation/base.hpp>
+#include <re2/re2.h>
 #include <utils.hpp>
 
 namespace ddwaf::operation {

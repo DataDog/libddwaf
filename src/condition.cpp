@@ -14,8 +14,7 @@
 namespace ddwaf {
 
 std::optional<event::match> condition::match_object(const ddwaf_object *object,
-    const operation::base::ptr &processor,
-    const std::vector<transformer_id> &transformers) const
+    const operation::base::ptr &processor, const std::vector<transformer_id> &transformers) const
 {
     const size_t length =
         find_string_cutoff(object->stringValue, object->nbEntries, limits_.max_string_length);
@@ -37,9 +36,8 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object,
 }
 
 template <typename T>
-std::optional<event::match> condition::match_target(T &it,
-    const operation::base::ptr &processor, const std::vector<transformer_id> &transformers,
-    ddwaf::timer &deadline) const
+std::optional<event::match> condition::match_target(T &it, const operation::base::ptr &processor,
+    const std::vector<transformer_id> &transformers, ddwaf::timer &deadline) const
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -107,7 +105,7 @@ std::optional<event::match> condition::match(const object_store &store,
         }
 
         std::optional<event::match> optional_match;
-        if (source == data_source::keys) {
+        if (source == expression::data_source::keys) {
             object::key_iterator it(object, key_path, objects_excluded, limits_);
             optional_match = match_target(it, processor, transformers, deadline);
         } else {

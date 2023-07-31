@@ -140,7 +140,7 @@ TEST(TestCondition, MatchOnKeys)
     std::vector<ddwaf::condition::target_type> targets;
 
     targets.push_back({get_target_index("server.request.query"), "server.request.query", {}, {},
-        condition::data_source::keys});
+        expression::data_source::keys});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<operation::regex_match>("value", 0, true));
@@ -175,7 +175,7 @@ TEST(TestCondition, MatchOnKeysWithTransformer)
     std::vector<ddwaf::condition::target_type> targets;
 
     targets.push_back({get_target_index("server.request.query"), "server.request.query", {},
-        {transformer_id::lowercase}, condition::data_source::keys});
+        {transformer_id::lowercase}, expression::data_source::keys});
 
     auto cond = std::make_shared<condition>(
         std::move(targets), std::make_unique<operation::regex_match>("value", 0, true));
@@ -211,8 +211,8 @@ TEST(TestCondition, NoMatch)
 
     targets.push_back({get_target_index("http.client_ip"), "http.client_ip"});
 
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<operation::ip_match>(std::vector<std::string_view>{}));
+    auto cond = std::make_shared<condition>(
+        std::move(targets), std::make_unique<operation::ip_match>(std::vector<std::string_view>{}));
 
     ddwaf_object root;
     ddwaf_object tmp;
