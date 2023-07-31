@@ -6,11 +6,11 @@
 
 #include <cstring>
 #include <ip_utils.hpp>
-#include <rule_processor/ip_match.hpp>
+#include <operation/ip_match.hpp>
 #include <stdexcept>
 #include <string_view>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 ip_match::ip_match(const std::vector<std::string_view> &ip_list)
     : rtree_(radix_new(radix_tree_bits), radix_free)
@@ -87,4 +87,4 @@ std::optional<event::match> ip_match::match(std::string_view str) const
     return make_event(str, str);
 }
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

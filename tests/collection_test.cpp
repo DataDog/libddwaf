@@ -22,7 +22,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
     targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -76,7 +76,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -96,7 +96,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -153,7 +153,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -172,7 +172,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -227,7 +227,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         conditions.emplace_back(std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"})));
     }
 
@@ -236,7 +236,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         conditions.emplace_back(std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"})));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"})));
     }
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
@@ -292,7 +292,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -311,7 +311,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -371,7 +371,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -390,7 +390,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -450,7 +450,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -469,7 +469,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 

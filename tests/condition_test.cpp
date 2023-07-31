@@ -15,7 +15,7 @@ TEST(TestCondition, Match)
     targets.push_back({get_target_index("server.request.query"), "server.request.query"});
 
     auto cond = std::make_shared<condition>(
-        std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
+        std::move(targets), std::make_unique<operation::regex_match>(".*", 0, true));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -46,7 +46,7 @@ TEST(TestCondition, MatchWithKeyPath)
         {get_target_index("server.request.query"), "server.request.query", {"key"}, {}});
 
     auto cond = std::make_shared<condition>(
-        std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
+        std::move(targets), std::make_unique<operation::regex_match>(".*", 0, true));
 
     ddwaf_object root;
     ddwaf_object submap;
@@ -81,7 +81,7 @@ TEST(TestCondition, MatchWithTransformer)
         {transformer_id::lowercase}});
 
     auto cond = std::make_shared<condition>(
-        std::move(targets), std::make_unique<rule_processor::regex_match>("value", 0, true));
+        std::move(targets), std::make_unique<operation::regex_match>("value", 0, true));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -112,7 +112,7 @@ TEST(TestCondition, MatchWithMultipleTransformers)
         {transformer_id::compress_whitespace, transformer_id::lowercase}});
 
     auto cond = std::make_shared<condition>(
-        std::move(targets), std::make_unique<rule_processor::regex_match>("^ value $", 0, true));
+        std::move(targets), std::make_unique<operation::regex_match>("^ value $", 0, true));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -143,7 +143,7 @@ TEST(TestCondition, MatchOnKeys)
         condition::data_source::keys});
 
     auto cond = std::make_shared<condition>(
-        std::move(targets), std::make_unique<rule_processor::regex_match>("value", 0, true));
+        std::move(targets), std::make_unique<operation::regex_match>("value", 0, true));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -178,7 +178,7 @@ TEST(TestCondition, MatchOnKeysWithTransformer)
         {transformer_id::lowercase}, condition::data_source::keys});
 
     auto cond = std::make_shared<condition>(
-        std::move(targets), std::make_unique<rule_processor::regex_match>("value", 0, true));
+        std::move(targets), std::make_unique<operation::regex_match>("value", 0, true));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -212,7 +212,7 @@ TEST(TestCondition, NoMatch)
     targets.push_back({get_target_index("http.client_ip"), "http.client_ip"});
 
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{}));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -235,7 +235,7 @@ TEST(TestCondition, ExcludeInput)
     targets.push_back({get_target_index("server.request.query"), "server.request.query"});
 
     auto cond = std::make_shared<condition>(
-        std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
+        std::move(targets), std::make_unique<operation::regex_match>(".*", 0, true));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -258,7 +258,7 @@ TEST(TestCondition, ExcludeKeyPath)
     targets.push_back({get_target_index("server.request.query"), "server.request.query"});
 
     auto cond = std::make_shared<condition>(
-        std::move(targets), std::make_unique<rule_processor::regex_match>(".*", 0, true));
+        std::move(targets), std::make_unique<operation::regex_match>(".*", 0, true));
 
     ddwaf_object root;
     ddwaf_object map;

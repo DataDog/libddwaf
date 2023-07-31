@@ -51,12 +51,12 @@ using namespace std;
 #include <waf.hpp>
 #include <yaml-cpp/yaml.h>
 
-#include <rule_processor/exact_match.hpp>
-#include <rule_processor/ip_match.hpp>
-#include <rule_processor/is_sqli.hpp>
-#include <rule_processor/is_xss.hpp>
-#include <rule_processor/phrase_match.hpp>
-#include <rule_processor/regex_match.hpp>
+#include <operation/exact_match.hpp>
+#include <operation/ip_match.hpp>
+#include <operation/is_sqli.hpp>
+#include <operation/is_xss.hpp>
+#include <operation/phrase_match.hpp>
+#include <operation/regex_match.hpp>
 
 #include "test_utils.hpp"
 

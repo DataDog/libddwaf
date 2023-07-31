@@ -14,12 +14,12 @@
 #include <parser/rule_data_parser.hpp>
 #include <parser/specification.hpp>
 #include <rule.hpp>
-#include <rule_processor/exact_match.hpp>
-#include <rule_processor/ip_match.hpp>
-#include <rule_processor/is_sqli.hpp>
-#include <rule_processor/is_xss.hpp>
-#include <rule_processor/phrase_match.hpp>
-#include <rule_processor/regex_match.hpp>
+#include <operation/exact_match.hpp>
+#include <operation/ip_match.hpp>
+#include <operation/is_sqli.hpp>
+#include <operation/is_xss.hpp>
+#include <operation/phrase_match.hpp>
+#include <operation/regex_match.hpp>
 #include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <set>
@@ -27,13 +27,13 @@
 #include <unordered_map>
 #include <vector>
 
-using ddwaf::rule_processor::base;
+using ddwaf::operation::base;
 
 namespace ddwaf::parser::v2 {
 
 namespace {
 
-std::pair<std::string, rule_processor::base::ptr> parse_processor(
+std::pair<std::string, operation::base::ptr> parse_processor(
     std::string_view operation, const parameter::map &params)
 {
     parameter::map options;
@@ -58,7 +58,7 @@ std::pair<std::string, rule_processor::base::ptr> parse_processor(
             lengths.push_back((uint32_t)pattern.nbEntries);
         }
 
-        processor = std::make_shared<rule_processor::phrase_match>(patterns, lengths);
+        processor = std::make_shared<operation::phrase_match>(patterns, lengths);
     } else if (operation == "match_regex") {
         auto regex = at<std::string>(params, "regex");
         options = at<parameter::map>(params, "options", options);
@@ -70,17 +70,17 @@ std::pair<std::string, rule_processor::base::ptr> parse_processor(
         }
 
         processor =
-            std::make_shared<rule_processor::regex_match>(regex, min_length, case_sensitive);
+            std::make_shared<operation::regex_match>(regex, min_length, case_sensitive);
     } else if (operation == "is_xss") {
-        processor = std::make_shared<rule_processor::is_xss>();
+        processor = std::make_shared<operation::is_xss>();
     } else if (operation == "is_sqli") {
-        processor = std::make_shared<rule_processor::is_sqli>();
+        processor = std::make_shared<operation::is_sqli>();
     } else if (operation == "ip_match") {
         auto it = params.find("list");
         if (it == params.end()) {
             rule_data_id = at<std::string>(params, "data");
         } else {
-            processor = std::make_shared<rule_processor::ip_match>(
+            processor = std::make_shared<operation::ip_match>(
                 static_cast<std::vector<std::string_view>>(it->second));
         }
     } else if (operation == "exact_match") {
@@ -88,7 +88,7 @@ std::pair<std::string, rule_processor::base::ptr> parse_processor(
         if (it == params.end()) {
             rule_data_id = at<std::string>(params, "data");
         } else {
-            processor = std::make_shared<rule_processor::exact_match>(
+            processor = std::make_shared<operation::exact_match>(
                 static_cast<std::vector<std::string>>(it->second));
         }
     } else {
@@ -481,15 +481,15 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 operation = it->second;
             }
 
-            rule_processor::base::ptr processor;
+            operation::base::ptr processor;
             if (operation == "ip_match") {
-                using rule_data_type = rule_processor::ip_match::rule_data_type;
+                using rule_data_type = operation::ip_match::rule_data_type;
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
-                processor = std::make_shared<rule_processor::ip_match>(parsed_data);
+                processor = std::make_shared<operation::ip_match>(parsed_data);
             } else if (operation == "exact_match") {
-                using rule_data_type = rule_processor::exact_match::rule_data_type;
+                using rule_data_type = operation::exact_match::rule_data_type;
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
-                processor = std::make_shared<rule_processor::exact_match>(parsed_data);
+                processor = std::make_shared<operation::exact_match>(parsed_data);
             } else {
                 DDWAF_WARN("Processor %s doesn't support dynamic rule data", operation.data());
                 info.add_failed(id,

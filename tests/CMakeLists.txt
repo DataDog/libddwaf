@@ -12,7 +12,7 @@ set_target_properties(testPowerWAF PROPERTIES
 
 target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/include)
 target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/src)
-target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/src/rule_processor)
+target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/src/operation)
 if(NOT STDLIB_MAP_RECURSIVE)
     target_compile_definitions(testPowerWAF PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
 endif()

@@ -6,10 +6,10 @@
 
 #include <array>
 #include <libinjection.h>
-#include <rule_processor/is_sqli.hpp>
+#include <operation/is_sqli.hpp>
 #include <utils.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 std::optional<event::match> is_sqli::match(std::string_view pattern) const
 {
@@ -26,4 +26,4 @@ std::optional<event::match> is_sqli::match(std::string_view pattern) const
     return make_event(pattern, fingerprint.data());
 }
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

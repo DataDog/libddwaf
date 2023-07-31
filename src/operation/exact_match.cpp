@@ -5,9 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <exception.hpp>
-#include <rule_processor/exact_match.hpp>
+#include <operation/exact_match.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 exact_match::exact_match(std::vector<std::string> &&data) : data_(std::move(data))
 {
@@ -53,4 +53,4 @@ std::optional<event::match> exact_match::match(std::string_view str) const
     return make_event(str, str);
 }
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

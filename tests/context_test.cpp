@@ -27,7 +27,7 @@ TEST(TestContext, MatchTimeout)
     targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -58,7 +58,7 @@ TEST(TestContext, NoMatch)
     targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -90,7 +90,7 @@ TEST(TestContext, Match)
     targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -123,7 +123,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -142,7 +142,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -194,7 +194,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -213,7 +213,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -276,7 +276,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -295,7 +295,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -359,7 +359,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -378,7 +378,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -462,7 +462,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -481,7 +481,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -547,7 +547,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -566,7 +566,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -648,7 +648,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -667,7 +667,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -702,7 +702,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -721,7 +721,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -756,7 +756,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -775,7 +775,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -822,7 +822,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -841,7 +841,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -891,7 +891,7 @@ TEST(TestContext, RuleFilterWithCondition)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -910,7 +910,7 @@ TEST(TestContext, RuleFilterWithCondition)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -949,7 +949,7 @@ TEST(TestContext, RuleFilterTimeout)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -968,7 +968,7 @@ TEST(TestContext, RuleFilterTimeout)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -1002,7 +1002,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -1021,7 +1021,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -1259,7 +1259,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -1275,7 +1275,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -1351,7 +1351,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
 
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
@@ -1367,7 +1367,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
 
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
         std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -1423,7 +1423,7 @@ TEST(TestContext, InputFilterExclude)
 
     std::vector<ddwaf::condition::target_type> targets{client_ip};
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -1465,7 +1465,7 @@ TEST(TestContext, InputFilterExcludeRule)
 
     std::vector<ddwaf::condition::target_type> targets{client_ip};
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -1514,7 +1514,7 @@ TEST(TestContext, InputFilterWithCondition)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::condition::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.emplace_back(std::move(cond));
 
@@ -1534,7 +1534,7 @@ TEST(TestContext, InputFilterWithCondition)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::condition::target_type> targets{usr_id};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
 
         std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
@@ -1608,7 +1608,7 @@ TEST(TestContext, InputFilterMultipleRules)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::condition::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.emplace_back(std::move(cond));
 
@@ -1625,7 +1625,7 @@ TEST(TestContext, InputFilterMultipleRules)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::condition::target_type> targets{usr_id};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
 
         std::unordered_map<std::string, std::string> tags{
@@ -1720,7 +1720,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::condition::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.emplace_back(std::move(cond));
 
@@ -1737,7 +1737,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::condition::target_type> targets{usr_id};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
 
         std::unordered_map<std::string, std::string> tags{
@@ -1845,7 +1845,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::condition::target_type> targets{client_ip};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.emplace_back(std::move(cond));
 
@@ -1862,7 +1862,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::condition::target_type> targets{usr_id};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.emplace_back(std::move(cond));
 
         std::unordered_map<std::string, std::string> tags{
@@ -1878,7 +1878,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         std::vector<std::shared_ptr<condition>> conditions;
         std::vector<ddwaf::condition::target_type> targets{cookie_header};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"mycookie"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"mycookie"}));
         conditions.emplace_back(std::move(cond));
 
         std::unordered_map<std::string, std::string> tags{

@@ -17,7 +17,7 @@ namespace ddwaf {
 
 std::optional<event> rule::match(const object_store &store, cache_type &cache,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
-    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
+    const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule

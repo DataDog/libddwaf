@@ -10,10 +10,10 @@
 #include <parser/common.hpp>
 #include <parser/parser.hpp>
 #include <rule.hpp>
-#include <rule_processor/is_sqli.hpp>
-#include <rule_processor/is_xss.hpp>
-#include <rule_processor/phrase_match.hpp>
-#include <rule_processor/regex_match.hpp>
+#include <operation/is_sqli.hpp>
+#include <operation/is_xss.hpp>
+#include <operation/phrase_match.hpp>
+#include <operation/regex_match.hpp>
 #include <ruleset.hpp>
 #include <ruleset_info.hpp>
 #include <set>
@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <vector>
 
-using ddwaf::rule_processor::base;
+using ddwaf::operation::base;
 
 namespace ddwaf::parser::v1 {
 
@@ -53,7 +53,7 @@ condition::ptr parseCondition(
             lengths.push_back((uint32_t)pattern.nbEntries);
         }
 
-        processor = std::make_shared<rule_processor::phrase_match>(patterns, lengths);
+        processor = std::make_shared<operation::phrase_match>(patterns, lengths);
     } else if (operation == "match_regex") {
         auto regex = at<std::string>(params, "regex");
         options = at<parameter::map>(params, "options", options);
@@ -65,11 +65,11 @@ condition::ptr parseCondition(
         }
 
         processor =
-            std::make_shared<rule_processor::regex_match>(regex, min_length, case_sensitive);
+            std::make_shared<operation::regex_match>(regex, min_length, case_sensitive);
     } else if (operation == "is_xss") {
-        processor = std::make_shared<rule_processor::is_xss>();
+        processor = std::make_shared<operation::is_xss>();
     } else if (operation == "is_sqli") {
-        processor = std::make_shared<rule_processor::is_sqli>();
+        processor = std::make_shared<operation::is_sqli>();
     } else {
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
     }

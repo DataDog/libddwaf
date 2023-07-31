@@ -18,7 +18,7 @@
 #include <event.hpp>
 #include <iterator.hpp>
 #include <object_store.hpp>
-#include <rule_processor/base.hpp>
+#include <operation/base.hpp>
 
 #include "transformer/manager.hpp"
 
@@ -38,7 +38,7 @@ public:
         data_source source{data_source::values};
     };
 
-    condition(std::vector<target_type> targets, std::shared_ptr<rule_processor::base> processor,
+    condition(std::vector<target_type> targets, std::shared_ptr<operation::base> processor,
         std::string data_id = {}, ddwaf::object_limits limits = ddwaf::object_limits())
         : targets_(std::move(targets)), processor_(std::move(processor)),
           data_id_(std::move(data_id)), limits_(limits)
@@ -53,7 +53,7 @@ public:
 
     std::optional<event::match> match(const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
-        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
+        const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] const std::vector<condition::target_type> &get_targets() const
@@ -63,17 +63,17 @@ public:
 
 protected:
     std::optional<event::match> match_object(const ddwaf_object *object,
-        const rule_processor::base::ptr &processor,
+        const operation::base::ptr &processor,
         const std::vector<transformer_id> &transformers) const;
 
     template <typename T>
-    std::optional<event::match> match_target(T &it, const rule_processor::base::ptr &processor,
+    std::optional<event::match> match_target(T &it, const operation::base::ptr &processor,
         const std::vector<transformer_id> &transformers, ddwaf::timer &deadline) const;
 
-    [[nodiscard]] const rule_processor::base::ptr &get_processor(
-        const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors) const;
+    [[nodiscard]] const operation::base::ptr &get_processor(
+        const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors) const;
     std::vector<condition::target_type> targets_;
-    std::shared_ptr<rule_processor::base> processor_;
+    std::shared_ptr<operation::base> processor_;
     std::string data_id_;
     ddwaf::object_limits limits_;
 };

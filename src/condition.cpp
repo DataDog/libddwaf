@@ -14,7 +14,7 @@
 namespace ddwaf {
 
 std::optional<event::match> condition::match_object(const ddwaf_object *object,
-    const rule_processor::base::ptr &processor,
+    const operation::base::ptr &processor,
     const std::vector<transformer_id> &transformers) const
 {
     const size_t length =
@@ -38,7 +38,7 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object,
 
 template <typename T>
 std::optional<event::match> condition::match_target(T &it,
-    const rule_processor::base::ptr &processor, const std::vector<transformer_id> &transformers,
+    const operation::base::ptr &processor, const std::vector<transformer_id> &transformers,
     ddwaf::timer &deadline) const
 {
     for (; it; ++it) {
@@ -63,8 +63,8 @@ std::optional<event::match> condition::match_target(T &it,
     return std::nullopt;
 }
 
-const rule_processor::base::ptr &condition::get_processor(
-    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors) const
+const operation::base::ptr &condition::get_processor(
+    const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors) const
 {
     if (processor_ || data_id_.empty()) {
         return processor_;
@@ -80,7 +80,7 @@ const rule_processor::base::ptr &condition::get_processor(
 
 std::optional<event::match> condition::match(const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded, bool run_on_new,
-    const std::unordered_map<std::string, rule_processor::base::ptr> &dynamic_processors,
+    const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
     const auto &processor = get_processor(dynamic_processors);

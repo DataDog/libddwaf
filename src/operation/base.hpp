@@ -15,7 +15,7 @@
 #include <event.hpp>
 #include <utils.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 class base {
 public:
@@ -51,4 +51,4 @@ public:
     }
 };
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

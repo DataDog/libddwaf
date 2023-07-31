@@ -8,9 +8,9 @@
 
 #include <ac.h>
 #include <memory>
-#include <rule_processor/base.hpp>
+#include <operation/base.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 class phrase_match : public base {
 public:
@@ -22,4 +22,4 @@ protected:
     std::unique_ptr<ac_t, void (*)(void *)> ac{nullptr, nullptr};
 };
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

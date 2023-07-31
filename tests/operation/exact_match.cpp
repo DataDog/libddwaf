@@ -7,7 +7,7 @@
 #include "../test.h"
 #include <algorithm>
 
-using namespace ddwaf::rule_processor;
+using namespace ddwaf::operation;
 
 TEST(TestExactMatch, Basic)
 {

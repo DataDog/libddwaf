@@ -7,15 +7,18 @@
 #pragma once
 
 #include <libinjection.h>
-#include <rule_processor/base.hpp>
+#include <operation/base.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
-class is_xss : public base {
+class is_sqli : public base {
 public:
-    is_xss() = default;
-    [[nodiscard]] std::string_view name() const override { return "is_xss"; }
+    is_sqli() = default;
+    [[nodiscard]] std::string_view name() const override { return "is_sqli"; }
     [[nodiscard]] std::optional<event::match> match(std::string_view pattern) const override;
+
+protected:
+    static constexpr unsigned fingerprint_length = 16;
 };
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

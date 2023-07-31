@@ -74,7 +74,7 @@ TEST(TestInputFilter, InputExclusionWithCondition)
 
     std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -108,7 +108,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     std::vector<condition::target_type> targets{
         {client_ip, "usr.id", {}, {transformer_id::lowercase}}};
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+        std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -141,7 +141,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
 
     std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -172,7 +172,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
 
     std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -212,7 +212,7 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
 
     std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
     auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
+        std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
@@ -251,7 +251,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
@@ -259,7 +259,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     {
         std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -312,7 +312,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
@@ -320,7 +320,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     {
         std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -369,7 +369,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
@@ -377,7 +377,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     {
         std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -433,7 +433,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
@@ -441,7 +441,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     {
         std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -496,7 +496,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
@@ -504,7 +504,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
     {
         std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -567,7 +567,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
@@ -575,7 +575,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
     {
         std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -635,7 +635,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
@@ -643,7 +643,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     {
         std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
@@ -702,7 +702,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     {
         std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
         auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
+            std::move(targets), std::make_unique<operation::ip_match>(
                                     std::vector<std::string_view>{"192.168.0.1"}));
         conditions.push_back(std::move(cond));
     }
@@ -710,7 +710,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     {
         std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
         auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
+            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
         conditions.push_back(std::move(cond));
     }
 
