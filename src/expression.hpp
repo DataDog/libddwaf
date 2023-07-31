@@ -36,8 +36,9 @@ public:
         using ptr = std::shared_ptr<condition>;
 
         struct cache_type {
+            bool result{false};
             std::unordered_set<target_index> targets{};
-            std::optional<event::match> result{std::nullopt};
+            std::optional<event::match> match;
         };
 
         struct target_type {
@@ -56,11 +57,13 @@ public:
     struct cache_type {
         bool result{false};
         std::vector<condition::cache_type> conditions{};
+        memory::vector<event::match> matches{};
     };
 
     struct evaluator {
         bool eval();
-        bool eval_condition(const condition &cond, condition::cache_type &cond_cache);
+        std::optional<event::match> eval_condition(
+            const condition &cond, condition::cache_type &cond_cache);
 
         template <typename T>
         std::optional<event::match> eval_target(T &it, const operation::base::ptr &processor,
@@ -90,14 +93,19 @@ public:
         const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
-    static memory::vector<event::match> get_matches(cache_type &cache);
-
     void get_addresses(std::unordered_set<std::string> &addresses) const
     {
         for (const auto &cond : conditions_) {
             for (const auto &target : cond->targets) { addresses.emplace(target.name); }
         }
     }
+
+    static memory::vector<event::match> &&get_matches(cache_type &cache)
+    {
+        return std::move(cache.matches);
+    }
+
+    static bool get_result(cache_type &cache) { return cache.result; }
 
     // For testing
     [[nodiscard]] std::size_t get_num_conditions() const { return conditions_.size(); }

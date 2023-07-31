@@ -29,7 +29,7 @@ std::optional<event::match> expression::evaluator::eval_object(const ddwaf_objec
         auto transformed = transformer::manager::transform(src, dst, transformers);
         scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
         if (transformed) {
-            return processor->match_object(&dst);
+            return processor->match({dst.stringValue, dst.nbEntries});
         }
     }
 
@@ -51,12 +51,11 @@ std::optional<event::match> expression::evaluator::eval_target(
 
         DDWAF_TRACE("Value %s", (*it)->stringValue);
         auto optional_match = eval_object(*it, processor, transformers);
-        if (!optional_match.has_value()) {
-            continue;
+        if (optional_match.has_value()) {
+            optional_match->key_path = std::move(it.get_current_path());
+            // If this target matched, we can stop processing
+            return optional_match;
         }
-
-        optional_match->key_path = std::move(it.get_current_path());
-        return optional_match;
     }
 
     return std::nullopt;
@@ -77,16 +76,13 @@ const operation::base::ptr &expression::evaluator::get_processor(const condition
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-bool expression::evaluator::eval_condition(const condition &cond, condition::cache_type &cond_cache)
+std::optional<event::match> expression::evaluator::eval_condition(
+    const condition &cond, condition::cache_type &cond_cache)
 {
-    if (cond_cache.result.has_value()) {
-        return true;
-    }
-
     const auto &processor = get_processor(cond);
     if (!processor) {
         DDWAF_DEBUG("Condition doesn't have a valid processor");
-        return false;
+        return std::nullopt;
     }
 
     for (std::size_t ti = 0; ti < cond.targets.size(); ++ti) {
@@ -96,11 +92,11 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::cac
             throw ddwaf::timeout_exception();
         }
 
-        if (cond_cache.targets.find(ti) != cond_cache.targets.end()) {
+        if (cond_cache.targets.find(ti) != cond_cache.targets.end() &&
+            !store.is_new_target(target.root)) {
             continue;
         }
 
-        // TODO: iterators could be cached to avoid reinitialisation
         const ddwaf_object *object = store.get_target(target.root);
         if (object == nullptr) {
             continue;
@@ -109,6 +105,7 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::cac
         DDWAF_TRACE("Evaluating target %s", target.name.c_str());
 
         std::optional<event::match> optional_match;
+        // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
             optional_match = eval_target(it, processor, target.transformers);
@@ -117,22 +114,22 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::cac
             optional_match = eval_target(it, processor, target.transformers);
         }
 
+        cond_cache.targets.emplace(ti);
+
         if (!optional_match.has_value()) {
             continue;
         }
 
-        cond_cache.targets.emplace(ti);
-
-        optional_match->address = target.name;
-        cond_cache.result = optional_match;
-
         DDWAF_TRACE("Target %s matched parameter value %s", target.name.c_str(),
             optional_match->resolved.c_str());
 
-        return true;
+        optional_match->address = target.name;
+        cond_cache.result = true;
+
+        return optional_match;
     }
 
-    return cond_cache.result.has_value();
+    return std::nullopt;
 }
 
 bool expression::evaluator::eval()
@@ -148,10 +145,18 @@ bool expression::evaluator::eval()
         }
 
         auto &cond_cache = cache.conditions[i];
-        if (!eval_condition(*conditions[i], cond_cache)) {
+        if (cond_cache.result) {
+            continue;
+        }
+
+        auto optional_match = eval_condition(*conditions[i], cond_cache);
+        if (!optional_match) {
             return false;
         }
+
+        cache.matches.emplace_back(std::move(*optional_match));
     }
+
     return true;
 }
 
@@ -160,7 +165,6 @@ bool expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
-    // TODO the cache result alone might be insufficient
     if (!cache.result) {
         evaluator runner{
             deadline, limits_, conditions_, store, objects_excluded, dynamic_processors, cache};
@@ -168,27 +172,6 @@ bool expression::eval(cache_type &cache, const object_store &store,
     }
 
     return cache.result;
-}
-
-memory::vector<event::match> expression::get_matches(cache_type &cache)
-{
-    if (!cache.result) {
-        return {};
-    }
-
-    memory::vector<event::match> matches;
-    for (auto cond_cache : cache.conditions) {
-        // clang-tidy has trouble with an optional after two levels of indirection
-        auto &result = cond_cache.result;
-        if (result.has_value()) {
-            matches.emplace_back(std::move(result.value()));
-        } else {
-            // Bug
-            return {};
-        }
-    }
-
-    return matches;
 }
 
 void expression_builder::add_target(std::string name, std::vector<std::string> key_path,

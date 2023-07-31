@@ -21,15 +21,15 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
     ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
-    if (cache.result || !expression_->eval(cache.expr_cache, store, objects_excluded,
-                            dynamic_processors, deadline)) {
+    if (expression::get_result(cache)) {
         return std::nullopt;
     }
 
-    cache.result = true;
+    if (!expression_->eval(cache, store, objects_excluded, dynamic_processors, deadline)) {
+        return std::nullopt;
+    }
 
-    ddwaf::event evt{this, expression_->get_matches(cache.expr_cache)};
-    return {std::move(evt)};
+    return {ddwaf::event{this, expression::get_matches(cache)}};
 }
 
 } // namespace ddwaf

@@ -28,10 +28,7 @@ public:
 
     enum class source_type : uint8_t { base = 1, user = 2 };
 
-    struct cache_type {
-        bool result{false};
-        expression::cache_type expr_cache;
-    };
+    using cache_type = expression::cache_type;
 
     rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
         expression::ptr expr, std::vector<std::string> actions = {}, bool enabled = true,
