@@ -33,11 +33,11 @@ public:
     enum class data_source : uint8_t { values, keys };
 
     struct condition {
-        using ptr = std::shared_ptr<condition>;
+        using ptr = std::unique_ptr<condition>;
 
         struct cache_type {
             bool result{false};
-            std::unordered_set<target_index> targets{};
+            memory::unordered_set<target_index> targets{};
             std::optional<event::match> match;
         };
 
@@ -50,13 +50,13 @@ public:
         };
 
         std::vector<target_type> targets;
-        std::shared_ptr<operation::base> processor;
+        operation::base::ptr processor;
         std::string data_id;
     };
 
     struct cache_type {
         bool result{false};
-        std::vector<condition::cache_type> conditions{};
+        memory::vector<condition::cache_type> conditions{};
         memory::vector<event::match> matches{};
     };
 
@@ -123,17 +123,17 @@ public:
         conditions_.reserve(num_conditions);
     }
 
-    void start_condition() { conditions_.emplace_back(std::make_shared<expression::condition>()); }
+    void start_condition() { conditions_.emplace_back(std::make_unique<expression::condition>()); }
     template <typename T, typename... Args> void start_condition(Args... args)
     {
-        auto cond = std::make_shared<expression::condition>();
-        cond->processor = std::make_unique<T>(std::forward<Args>(args)...);
+        auto cond = std::make_unique<expression::condition>();
+        cond->processor = std::make_shared<T>(std::forward<Args>(args)...);
         conditions_.emplace_back(std::move(cond));
     }
 
     void start_condition(std::string data_id)
     {
-        auto cond = std::make_shared<expression::condition>();
+        auto cond = std::make_unique<expression::condition>();
         cond->data_id = std::move(data_id);
         conditions_.emplace_back(std::move(cond));
     }
@@ -147,7 +147,7 @@ public:
     template <typename T, typename... Args> void set_processor(Args... args)
     {
         auto &cond = conditions_.back();
-        cond->processor = std::make_unique<T>(args...);
+        cond->processor = std::make_shared<T>(args...);
     }
 
     void set_processor(operation::base::ptr &&processor)

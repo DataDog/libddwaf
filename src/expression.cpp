@@ -49,7 +49,6 @@ std::optional<event::match> expression::evaluator::eval_target(
             continue;
         }
 
-        DDWAF_TRACE("Value %s", (*it)->stringValue);
         auto optional_match = eval_object(*it, processor, transformers);
         if (optional_match.has_value()) {
             optional_match->key_path = std::move(it.get_current_path());
@@ -101,8 +100,6 @@ std::optional<event::match> expression::evaluator::eval_condition(
         if (object == nullptr) {
             continue;
         }
-
-        DDWAF_TRACE("Evaluating target %s", target.name.c_str());
 
         std::optional<event::match> optional_match;
         // TODO: iterators could be cached to avoid reinitialisation

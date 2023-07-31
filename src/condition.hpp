@@ -37,7 +37,7 @@ public:
         expression::data_source source{expression::data_source::values};
     };
 
-    condition(std::vector<target_type> targets, std::shared_ptr<operation::base> processor,
+    condition(std::vector<target_type> targets, operation::base::ptr processor,
         std::string data_id = {}, ddwaf::object_limits limits = ddwaf::object_limits())
         : targets_(std::move(targets)), processor_(std::move(processor)),
           data_id_(std::move(data_id)), limits_(limits)
@@ -72,7 +72,7 @@ protected:
     [[nodiscard]] const operation::base::ptr &get_processor(
         const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors) const;
     std::vector<condition::target_type> targets_;
-    std::shared_ptr<operation::base> processor_;
+    operation::base::ptr processor_;
     std::string data_id_;
     ddwaf::object_limits limits_;
 };
