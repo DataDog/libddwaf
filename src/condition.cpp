@@ -28,7 +28,7 @@ std::optional<event::match> condition::match_object(const ddwaf_object *object,
         auto transformed = transformer::manager::transform(src, dst, transformers);
         scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
         if (transformed) {
-            return processor->match({dst.stringValue, dst.nbEntries});
+            return processor->match({dst.stringValue, static_cast<std::size_t>(dst.nbEntries)});
         }
     }
 
