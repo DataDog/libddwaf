@@ -23,7 +23,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     obj_filter->insert(get_target_index("query"), "query", {});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter(
-        "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
+        "filter", expression::ptr{}, {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -54,7 +54,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     obj_filter->insert(get_target_index("query"), "query", {"params"});
     auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
     input_filter filter(
-        "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
+        "filter", expression::ptr{}, {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
