@@ -7,9 +7,9 @@
 #pragma once
 
 #include "exclusion/rule_filter.hpp"
-#include <condition.hpp>
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
+#include <expression.hpp>
 #include <parameter.hpp>
 #include <rule.hpp>
 
@@ -40,16 +40,14 @@ struct override_spec {
     std::vector<rule_target_spec> targets;
 };
 
-// Filter conditions don't need to be regenerated, so we don't need to use
-// the condition_spec
 struct rule_filter_spec {
-    std::vector<condition::ptr> conditions;
+    expression::ptr expr;
     std::vector<rule_target_spec> targets;
     exclusion::filter_mode on_match;
 };
 
 struct input_filter_spec {
-    std::vector<condition::ptr> conditions;
+    expression::ptr expr;
     std::shared_ptr<exclusion::object_filter> filter;
     std::vector<rule_target_spec> targets;
 };

@@ -780,16 +780,12 @@ TEST(TestContext, RuleFilterWithCondition)
 
     // Generate filter
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
         auto filter = std::make_shared<rule_filter>(
-            "1", std::move(conditions), std::set<ddwaf::rule *>{rule.get()});
+            "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
@@ -832,16 +828,12 @@ TEST(TestContext, RuleFilterTimeout)
 
     // Generate filter
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
         auto filter = std::make_shared<rule_filter>(
-            "1", std::move(conditions), std::set<ddwaf::rule *>{rule.get()});
+            "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
@@ -879,16 +871,12 @@ TEST(TestContext, NoRuleFilterWithCondition)
 
     // Generate filter
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
         auto filter = std::make_shared<rule_filter>(
-            "1", std::move(conditions), std::set<ddwaf::rule *>{rule.get()});
+            "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
@@ -923,7 +911,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<ddwaf::rule>("id" + std::to_string(i), "name",
-            std::move(tags), expression::ptr{}, std::vector<std::string>{}));
+            std::move(tags), std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -937,7 +925,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("1", std::vector<condition::ptr>{},
+        auto filter = std::make_shared<rule_filter>("1", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -949,7 +937,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("2", std::vector<condition::ptr>{},
+        auto filter = std::make_shared<rule_filter>("2", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(), rules[5].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -964,7 +952,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("3", std::vector<condition::ptr>{},
+        auto filter = std::make_shared<rule_filter>("3", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[6].get(), rules[7].get(), rules[8].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -997,7 +985,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", std::move(tags),
-            expression::ptr{}, std::vector<std::string>{}));
+            std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -1011,7 +999,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("1", std::vector<condition::ptr>{},
+        auto filter = std::make_shared<rule_filter>("1", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{
                 rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
@@ -1025,7 +1013,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("2", std::vector<condition::ptr>{},
+        auto filter = std::make_shared<rule_filter>("2", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[2].get(), rules[3].get(), rules[4].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1039,7 +1027,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("3", std::vector<condition::ptr>{},
+        auto filter = std::make_shared<rule_filter>("3", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[5].get(), rules[6].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1055,7 +1043,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("4", std::vector<condition::ptr>{},
+        auto filter = std::make_shared<rule_filter>("4", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[7].get(), rules[8].get(), rules[6].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1073,7 +1061,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("5", std::vector<condition::ptr>{},
+        auto filter = std::make_shared<rule_filter>("5", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(),
                 rules[4].get(), rules[5].get(), rules[6].get(), rules[7].get(), rules[8].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
@@ -1107,7 +1095,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", std::move(tags),
-            expression::ptr{}, std::vector<std::string>{}));
+            std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -1116,30 +1104,22 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     ddwaf::test::context ctx(ruleset);
 
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
+        expression_builder builder(1);
+        builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
-
-        auto filter = std::make_shared<rule_filter>("1", std::move(conditions),
+        auto filter = std::make_shared<rule_filter>("1", builder.build(),
             std::set<ddwaf::rule *>{
                 rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(), rules[4].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
+        expression_builder builder(1);
+        builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
 
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
-
-        auto filter = std::make_shared<rule_filter>("2", std::move(conditions),
+        auto filter = std::make_shared<rule_filter>("2", builder.build(),
             std::set<ddwaf::rule *>{
                 rules[5].get(), rules[6].get(), rules[7].get(), rules[8].get(), rules[9].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
@@ -1198,7 +1178,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", std::move(tags),
-            expression::ptr{}, std::vector<std::string>{}));
+            std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -1207,30 +1187,22 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     ddwaf::test::context ctx(ruleset);
 
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
+        expression_builder builder(1);
+        builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
-
-        auto filter = std::make_shared<rule_filter>("1", std::move(conditions),
+        auto filter = std::make_shared<rule_filter>("1", builder.build(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(),
                 rules[4].get(), rules[5].get(), rules[6].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
     }
 
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
+        expression_builder builder(1);
+        builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
 
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
-
-        auto filter = std::make_shared<rule_filter>("2", std::move(conditions),
+        auto filter = std::make_shared<rule_filter>("2", builder.build(),
             std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(), rules[5].get(), rules[6].get(),
                 rules[7].get(), rules[8].get(), rules[9].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
@@ -1289,10 +1261,9 @@ TEST(TestContext, InputFilterExclude)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-    std::vector<condition::ptr> filter_conditions;
     std::set<ddwaf::rule *> filter_rules{rule.get()};
     auto filter = std::make_shared<input_filter>(
-        "1", std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
+        "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
@@ -1326,10 +1297,9 @@ TEST(TestContext, InputFilterExcludeRule)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-    std::vector<condition::ptr> filter_conditions;
     std::set<ddwaf::rule *> filter_rules{rule.get()};
     auto filter = std::make_shared<input_filter>(
-        "1", std::move(filter_conditions), std::move(filter_rules), std::move(obj_filter));
+        "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
@@ -1370,21 +1340,18 @@ TEST(TestContext, InputFilterWithCondition)
     }
 
     {
-        condition::target_type client_ip{get_target_index("http.client_ip"), "http.client_ip", {}};
+        expression_builder builder(1);
+        builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
         condition::target_type usr_id{get_target_index("usr.id"), "usr.id", {}};
 
         auto obj_filter = std::make_shared<object_filter>();
-        obj_filter->insert(client_ip.root, client_ip.name);
-
-        std::vector<std::shared_ptr<condition>> conditions;
-        std::vector<ddwaf::condition::target_type> targets{usr_id};
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<operation::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.emplace_back(std::move(cond));
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
         std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
         auto filter = std::make_shared<input_filter>(
-            "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "1", builder.build(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1475,17 +1442,13 @@ TEST(TestContext, InputFilterMultipleRules)
     }
 
     {
-        condition::target_type client_ip{get_target_index("http.client_ip"), "http.client_ip", {}};
-        condition::target_type usr_id{get_target_index("usr.id"), "usr.id", {}};
-
         auto obj_filter = std::make_shared<object_filter>();
-        obj_filter->insert(client_ip.root, client_ip.name);
-        obj_filter->insert(usr_id.root, usr_id.name);
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+        obj_filter->insert(get_target_index("usr.id"), "usr.id");
 
-        std::vector<std::shared_ptr<condition>> conditions;
         std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get(), ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
-            "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1582,29 +1545,23 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
     }
 
     {
-        condition::target_type client_ip{get_target_index("http.client_ip"), "http.client_ip", {}};
-
         auto obj_filter = std::make_shared<object_filter>();
-        obj_filter->insert(client_ip.root, client_ip.name);
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-        std::vector<std::shared_ptr<condition>> conditions;
         std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
         auto filter = std::make_shared<input_filter>(
-            "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
 
     {
-        condition::target_type usr_id{get_target_index("usr.id"), "usr.id", {}};
-
         auto obj_filter = std::make_shared<object_filter>();
-        obj_filter->insert(usr_id.root, usr_id.name);
+        obj_filter->insert(get_target_index("usr.id"), "usr.id");
 
-        std::vector<std::shared_ptr<condition>> conditions;
         std::set<ddwaf::rule *> filter_rules{ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
-            "2", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "2", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1727,10 +1684,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         obj_filter->insert(client_ip.root, client_ip.name);
         obj_filter->insert(cookie_header.root, cookie_header.name);
 
-        std::vector<std::shared_ptr<condition>> conditions;
         std::set<ddwaf::rule *> filter_rules{ip_rule.get(), cookie_rule.get()};
         auto filter = std::make_shared<input_filter>(
-            "1", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1740,10 +1696,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         obj_filter->insert(usr_id.root, usr_id.name);
         obj_filter->insert(client_ip.root, client_ip.name);
 
-        std::vector<std::shared_ptr<condition>> conditions;
         std::set<ddwaf::rule *> filter_rules{usr_rule.get(), ip_rule.get()};
         auto filter = std::make_shared<input_filter>(
-            "2", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "2", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1753,10 +1708,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         obj_filter->insert(usr_id.root, usr_id.name);
         obj_filter->insert(cookie_header.root, cookie_header.name);
 
-        std::vector<std::shared_ptr<condition>> conditions;
         std::set<ddwaf::rule *> filter_rules{usr_rule.get(), cookie_rule.get()};
         auto filter = std::make_shared<input_filter>(
-            "3", std::move(conditions), std::move(filter_rules), std::move(obj_filter));
+            "3", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }

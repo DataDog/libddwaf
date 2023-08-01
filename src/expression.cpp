@@ -166,7 +166,7 @@ bool expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
-    if (cache.result) {
+    if (cache.result || conditions_.empty()) {
         return true;
     }
 

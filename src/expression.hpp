@@ -83,6 +83,8 @@ public:
         cache_type &cache;
     };
 
+    expression() = default;
+
     explicit expression(std::vector<condition::ptr> &&conditions, ddwaf::object_limits limits = {})
         : limits_(limits), conditions_(std::move(conditions))
     {}
@@ -105,6 +107,8 @@ public:
     }
 
     static bool get_result(cache_type &cache) { return cache.result; }
+
+    [[nodiscard]] bool is_valid() const { return !conditions_.empty(); }
 
     // For testing
     [[nodiscard]] std::size_t get_num_conditions() const { return conditions_.size(); }
@@ -165,8 +169,8 @@ public:
     }
 
 protected:
-    ddwaf::object_limits limits_;
-    std::vector<expression::condition::ptr> conditions_;
+    ddwaf::object_limits limits_{};
+    std::vector<expression::condition::ptr> conditions_{};
 };
 
 } // namespace ddwaf
