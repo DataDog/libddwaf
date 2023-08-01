@@ -22,12 +22,7 @@ bool lowercase::transform_impl(cow_string &str)
     }
 
     //  If we're mutating the string, then we have the starting offset
-    for (; pos < str.length(); ++pos) {
-        char c = str.at(pos);
-        if (isupper(c)) {
-            str[pos] = static_cast<char>(c | 32);
-        }
-    }
+    for (; pos < str.length(); ++pos) { str[pos] = tolower(str.at(pos)); }
 
     return true;
 }
