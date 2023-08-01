@@ -13,7 +13,6 @@
 #include <vector>
 
 #include <clock.hpp>
-#include <condition.hpp>
 #include <event.hpp>
 #include <expression.hpp>
 #include <iterator.hpp>

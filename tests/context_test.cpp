@@ -1344,8 +1344,6 @@ TEST(TestContext, InputFilterWithCondition)
         builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
         builder.add_target("usr.id");
 
-        condition::target_type usr_id{get_target_index("usr.id"), "usr.id", {}};
-
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
@@ -1430,7 +1428,7 @@ TEST(TestContext, InputFilterMultipleRules)
     {
         expression_builder builder(1);
         builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
-        builder.add_target("usr_id");
+        builder.add_target("usr.id");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "usr_type"}, {"category", "category"}};
@@ -1674,15 +1672,11 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
     auto ip_rule = ruleset->rules[0];
     auto usr_rule = ruleset->rules[1];
     auto cookie_rule = ruleset->rules[2];
-    condition::target_type client_ip{get_target_index("http.client_ip"), "http.client_ip", {}};
-    condition::target_type usr_id{get_target_index("usr.id"), "usr.id", {}};
-    condition::target_type cookie_header{
-        get_target_index("server.request.headers"), "server.request.headers", {"cookie"}};
 
     {
         auto obj_filter = std::make_shared<object_filter>();
-        obj_filter->insert(client_ip.root, client_ip.name);
-        obj_filter->insert(cookie_header.root, cookie_header.name);
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+        obj_filter->insert(get_target_index("server.request.headers"), "server.request.headers");
 
         std::set<ddwaf::rule *> filter_rules{ip_rule.get(), cookie_rule.get()};
         auto filter = std::make_shared<input_filter>(
@@ -1693,8 +1687,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
     {
         auto obj_filter = std::make_shared<object_filter>();
-        obj_filter->insert(usr_id.root, usr_id.name);
-        obj_filter->insert(client_ip.root, client_ip.name);
+        obj_filter->insert(get_target_index("usr.id"), "usr.id");
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
         std::set<ddwaf::rule *> filter_rules{usr_rule.get(), ip_rule.get()};
         auto filter = std::make_shared<input_filter>(
@@ -1705,8 +1699,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
     {
         auto obj_filter = std::make_shared<object_filter>();
-        obj_filter->insert(usr_id.root, usr_id.name);
-        obj_filter->insert(cookie_header.root, cookie_header.name);
+        obj_filter->insert(get_target_index("usr.id"), "usr.id");
+        obj_filter->insert(get_target_index("server.request.headers"), "server.request.headers");
 
         std::set<ddwaf::rule *> filter_rules{usr_rule.get(), cookie_rule.get()};
         auto filter = std::make_shared<input_filter>(

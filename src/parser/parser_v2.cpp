@@ -144,7 +144,6 @@ expression::ptr parse_expression(const parameter::vector &conditions_array,
             rule_data_ids.emplace(rule_data_id, operation);
         }
 
-        std::vector<condition::target_type> targets;
         auto inputs = at<parameter::vector>(params, "inputs");
         if (inputs.empty()) {
             throw ddwaf::parsing_error("empty inputs");
@@ -298,7 +297,6 @@ expression::ptr parse_filter_expression(
 
         builder.set_processor(std::move(processor));
 
-        std::vector<condition::target_type> targets;
         auto inputs = at<parameter::vector>(params, "inputs");
         if (inputs.empty()) {
             throw ddwaf::parsing_error("empty inputs");
