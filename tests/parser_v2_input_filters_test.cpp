@@ -171,7 +171,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalNoTargets)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.expr->get_num_conditions(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 0);
     EXPECT_TRUE(filter.filter);
 }
@@ -216,7 +216,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetID)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.expr->get_num_conditions(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 
@@ -266,7 +266,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetTags)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.expr->get_num_conditions(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 
@@ -318,7 +318,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetPriority)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.expr->get_num_conditions(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 
@@ -368,7 +368,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalMultipleTargets)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.expr->get_num_conditions(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 2);
     EXPECT_TRUE(filter.filter);
 
@@ -431,7 +431,7 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
         EXPECT_STR(filter_it->first, "1");
 
         const auto &filter = filter_it->second;
-        EXPECT_EQ(filter.expr->get_num_conditions(), 0);
+        EXPECT_EQ(filter.expr->size(), 0);
         EXPECT_EQ(filter.targets.size(), 1);
         EXPECT_TRUE(filter.filter);
 
@@ -446,7 +446,7 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
         EXPECT_STR(filter_it->first, "2");
 
         const auto &filter = filter_it->second;
-        EXPECT_EQ(filter.expr->get_num_conditions(), 0);
+        EXPECT_EQ(filter.expr->size(), 0);
         EXPECT_EQ(filter.targets.size(), 1);
         EXPECT_TRUE(filter.filter);
 
@@ -499,7 +499,7 @@ TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.expr->get_num_conditions(), 1);
+    EXPECT_EQ(filter.expr->size(), 1);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 
@@ -546,7 +546,7 @@ TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.expr->get_num_conditions(), 3);
+    EXPECT_EQ(filter.expr->size(), 3);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 

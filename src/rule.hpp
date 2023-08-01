@@ -33,7 +33,7 @@ public:
         expression::ptr expr, std::vector<std::string> actions = {}, bool enabled = true,
         source_type source = source_type::base)
         : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
-          tags_(std::move(tags)), expression_(std::move(expr)), actions_(std::move(actions))
+          tags_(std::move(tags)), expr_(std::move(expr)), actions_(std::move(actions))
     {}
 
     rule(const rule &) = delete;
@@ -41,8 +41,8 @@ public:
 
     rule(rule &&rhs) noexcept
         : enabled_(rhs.enabled_), source_(rhs.source_), id_(std::move(rhs.id_)),
-          name_(std::move(rhs.name_)), tags_(std::move(rhs.tags_)),
-          expression_(std::move(rhs.expression_)), actions_(std::move(rhs.actions_))
+          name_(std::move(rhs.name_)), tags_(std::move(rhs.tags_)), expr_(std::move(rhs.expr_)),
+          actions_(std::move(rhs.actions_))
     {}
 
     rule &operator=(rule &&rhs) noexcept
@@ -52,7 +52,7 @@ public:
         id_ = std::move(rhs.id_);
         name_ = std::move(rhs.name_);
         tags_ = std::move(rhs.tags_);
-        expression_ = std::move(rhs.expression_);
+        expr_ = std::move(rhs.expr_);
         actions_ = std::move(rhs.actions_);
         return *this;
     }
@@ -83,7 +83,7 @@ public:
 
     void get_addresses(std::unordered_set<std::string> &addresses) const
     {
-        return expression_->get_addresses(addresses);
+        return expr_->get_addresses(addresses);
     }
 
     void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
@@ -94,7 +94,7 @@ protected:
     std::string id_;
     std::string name_;
     std::unordered_map<std::string, std::string> tags_;
-    expression::ptr expression_;
+    expression::ptr expr_;
     std::vector<std::string> actions_;
 };
 

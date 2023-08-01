@@ -108,10 +108,8 @@ public:
 
     static bool get_result(cache_type &cache) { return cache.result; }
 
-    [[nodiscard]] bool is_valid() const { return !conditions_.empty(); }
-
-    // For testing
-    [[nodiscard]] std::size_t get_num_conditions() const { return conditions_.size(); }
+    [[nodiscard]] bool empty() const { return conditions_.empty(); }
+    [[nodiscard]] std::size_t size() const { return conditions_.size(); }
 
 protected:
     ddwaf::object_limits limits_;
