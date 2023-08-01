@@ -17,7 +17,7 @@ TEST(TestIsSQLi, TestBasic)
     ddwaf_object param;
     ddwaf_object_string(&param, "'OR 1=1/*");
 
-    auto match = processor.match({param.stringValue, param.nbEntries});
+    auto match = processor.match_object(param);
     EXPECT_TRUE(match);
     EXPECT_STREQ(match->resolved.c_str(), "'OR 1=1/*");
 
@@ -31,7 +31,7 @@ TEST(TestIsSQLi, TestNoMatch)
     ddwaf_object param;
     ddwaf_object_string(&param, "*");
 
-    EXPECT_FALSE(processor.match({param.stringValue, param.nbEntries}));
+    EXPECT_FALSE(processor.match_object(param));
 
     ddwaf_object_free(&param);
 }

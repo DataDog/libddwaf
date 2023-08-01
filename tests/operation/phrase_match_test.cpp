@@ -22,7 +22,7 @@ TEST(TestPhraseMatch, TestBasic)
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    auto match = processor.match({param.stringValue, param.nbEntries});
+    auto match = processor.match_object(param);
     EXPECT_TRUE(match);
 
     EXPECT_STREQ(match->resolved.c_str(), "bbbb");
@@ -31,7 +31,7 @@ TEST(TestPhraseMatch, TestBasic)
     ddwaf_object param2;
     ddwaf_object_string(&param2, "dddd");
 
-    EXPECT_FALSE(processor.match({param2.stringValue, param2.nbEntries}));
+    EXPECT_FALSE(processor.match_object(param2));
 
     ddwaf_object_free(&param2);
     ddwaf_object_free(&param);
@@ -48,7 +48,7 @@ TEST(TestPhraseMatch, TestEmptyArrays)
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    EXPECT_FALSE(processor.match({param.stringValue, param.nbEntries}));
+    EXPECT_FALSE(processor.match_object(param));
 
     ddwaf_object_free(&param);
 }
@@ -73,12 +73,12 @@ TEST(TestPhraseMatch, TestComplex)
         ddwaf_object param;
         ddwaf_object_string(&param, str);
         if (expect) {
-            auto match = processor.match({param.stringValue, param.nbEntries});
+            auto match = processor.match_object(param);
             EXPECT_TRUE(match);
             EXPECT_STREQ(match->resolved.c_str(), str);
             EXPECT_STREQ(match->matched.c_str(), expect);
         } else {
-            EXPECT_FALSE(processor.match({param.stringValue, param.nbEntries}));
+            EXPECT_FALSE(processor.match_object(param));
         }
         ddwaf_object_free(&param);
     };

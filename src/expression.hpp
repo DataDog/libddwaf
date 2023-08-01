@@ -56,14 +56,13 @@ public:
 
     struct cache_type {
         bool result{false};
-        memory::vector<condition::cache_type> conditions{};
         memory::vector<event::match> matches{};
+        std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
     };
 
     struct evaluator {
         bool eval();
-        std::optional<event::match> eval_condition(
-            const condition &cond, condition::cache_type &cond_cache);
+        std::optional<event::match> eval_condition(const condition &cond, bool run_on_new);
 
         template <typename T>
         std::optional<event::match> eval_target(T &it, const operation::base::ptr &processor,

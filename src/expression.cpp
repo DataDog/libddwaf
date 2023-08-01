@@ -29,7 +29,7 @@ std::optional<event::match> expression::evaluator::eval_object(const ddwaf_objec
         auto transformed = transformer::manager::transform(src, dst, transformers);
         scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
         if (transformed) {
-            return processor->match({dst.stringValue, static_cast<std::size_t>(dst.nbEntries)});
+            return processor->match_object(dst);
         }
     }
 
@@ -50,11 +50,13 @@ std::optional<event::match> expression::evaluator::eval_target(
         }
 
         auto optional_match = eval_object(*it, processor, transformers);
-        if (optional_match.has_value()) {
-            optional_match->key_path = std::move(it.get_current_path());
-            // If this target matched, we can stop processing
-            return optional_match;
+        if (!optional_match.has_value()) {
+            continue;
         }
+
+        optional_match->key_path = std::move(it.get_current_path());
+        // If this target matched, we can stop processing
+        return optional_match;
     }
 
     return std::nullopt;
@@ -76,7 +78,7 @@ const operation::base::ptr &expression::evaluator::get_processor(const condition
 
 // NOLINTNEXTLINE(misc-no-recursion)
 std::optional<event::match> expression::evaluator::eval_condition(
-    const condition &cond, condition::cache_type &cond_cache)
+    const condition &cond, bool run_on_new)
 {
     const auto &processor = get_processor(cond);
     if (!processor) {
@@ -91,8 +93,7 @@ std::optional<event::match> expression::evaluator::eval_condition(
             throw ddwaf::timeout_exception();
         }
 
-        if (cond_cache.targets.find(ti) != cond_cache.targets.end() &&
-            !store.is_new_target(target.root)) {
+        if (run_on_new && !store.is_new_target(target.root)) {
             continue;
         }
 
@@ -111,19 +112,13 @@ std::optional<event::match> expression::evaluator::eval_condition(
             optional_match = eval_target(it, processor, target.transformers);
         }
 
-        cond_cache.targets.emplace(ti);
+        if (optional_match.has_value()) {
+            optional_match->address = target.name;
+            DDWAF_TRACE("Target %s matched parameter value %s", target.name.c_str(),
+                optional_match->resolved.c_str());
 
-        if (!optional_match.has_value()) {
-            continue;
+            return optional_match;
         }
-
-        DDWAF_TRACE("Target %s matched parameter value %s", target.name.c_str(),
-            optional_match->resolved.c_str());
-
-        optional_match->address = target.name;
-        cond_cache.result = true;
-
-        return optional_match;
     }
 
     return std::nullopt;
@@ -131,27 +126,36 @@ std::optional<event::match> expression::evaluator::eval_condition(
 
 bool expression::evaluator::eval()
 {
-    if (cache.conditions.capacity() != conditions.size()) {
-        cache.conditions.reserve(conditions.size());
+    // On the first run, go through the conditions. Stop either at the first
+    // condition that didn't match and return no event or go through all
+    // and return an event.
+    // On subsequent runs, we can start at the first condition that did not
+    // match, because if the conditions matched with the data of the first
+    // run, then they having new data will make them match again. The condition
+    // that failed (and stopped the processing), we can run it again, but only
+    // on the new data. The subsequent conditions, we need to run with all data.
+    std::vector<condition::ptr>::const_iterator cond_iter;
+    bool run_on_new;
+    if (cache.last_cond.has_value()) {
+        cond_iter = *cache.last_cond;
+        run_on_new = true;
+    } else {
+        cond_iter = conditions.cbegin();
+        run_on_new = false;
     }
 
-    // NOLINTNEXTLINE(readability-use-anyofallof)
-    for (std::size_t i = 0; i < conditions.size(); i++) {
-        if (cache.conditions.size() == i) {
-            cache.conditions.emplace_back(condition::cache_type{});
-        }
-
-        auto &cond_cache = cache.conditions[i];
-        if (cond_cache.result) {
-            continue;
-        }
-
-        auto optional_match = eval_condition(*conditions[i], cond_cache);
-        if (!optional_match) {
+    while (cond_iter != conditions.cend()) {
+        auto &&cond = *cond_iter;
+        auto optional_match = eval_condition(*cond, run_on_new);
+        if (!optional_match.has_value()) {
+            cache.last_cond = cond_iter;
             return false;
         }
 
         cache.matches.emplace_back(std::move(*optional_match));
+
+        run_on_new = false;
+        cond_iter++;
     }
 
     return true;
@@ -162,12 +166,13 @@ bool expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
-    if (!cache.result) {
-        evaluator runner{
-            deadline, limits_, conditions_, store, objects_excluded, dynamic_processors, cache};
-        cache.result = runner.eval();
+    if (cache.result) {
+        return true;
     }
 
+    evaluator runner{
+        deadline, limits_, conditions_, store, objects_excluded, dynamic_processors, cache};
+    cache.result = runner.eval();
     return cache.result;
 }
 
