@@ -191,7 +191,7 @@ rule_spec parse_rule(parameter::map &rule,
     auto conditions_array = at<parameter::vector>(rule, "conditions");
     auto expr =
         parse_expression(conditions_array, rule_data_ids, data_source, rule_transformers, limits);
-    if (!expr || expr->empty()) {
+    if (expr->empty()) {
         // This is likely unreachable
         throw ddwaf::parsing_error("rule has no valid conditions");
     }
@@ -354,7 +354,7 @@ input_filter_spec parse_input_filter(const parameter::map &filter, const object_
     auto inputs_array = at<parameter::vector>(filter, "inputs");
 
     // TODO: add empty method to object filter and check after
-    if ((!expr || expr->empty()) && inputs_array.empty() && rules_target.empty()) {
+    if (expr->empty() && inputs_array.empty() && rules_target.empty()) {
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 
@@ -397,7 +397,7 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
         throw ddwaf::parsing_error("unsupported on_match value: " + std::string(on_match_str));
     }
 
-    if ((!expr || expr->empty()) && rules_target.empty()) {
+    if (expr->empty() && rules_target.empty()) {
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 

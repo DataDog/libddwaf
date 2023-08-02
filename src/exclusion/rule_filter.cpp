@@ -13,6 +13,10 @@ rule_filter::rule_filter(
     std::string id, expression::ptr expr, std::set<rule *> rule_targets, filter_mode mode)
     : id_(std::move(id)), expr_(std::move(expr)), mode_(mode)
 {
+    if (!expr_) {
+        throw std::invalid_argument("rule filter constructed with null expression");
+    }
+
     rule_targets_.reserve(rule_targets.size());
     for (auto it = rule_targets.begin(); it != rule_targets.end();) {
         rule_targets_.emplace(rule_targets.extract(it++).value());
@@ -22,6 +26,7 @@ rule_filter::rule_filter(
 optional_ref<const std::unordered_set<rule *>> rule_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
+    // Note that conditions in a filter are optional
     if (expr_) {
         if (expression::get_result(cache)) {
             return std::nullopt;

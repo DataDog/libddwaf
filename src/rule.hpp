@@ -34,7 +34,11 @@ public:
         source_type source = source_type::base)
         : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
           tags_(std::move(tags)), expr_(std::move(expr)), actions_(std::move(actions))
-    {}
+    {
+        if (!expr_) {
+            throw std::invalid_argument("rule constructed with null expression");
+        }
+    }
 
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;

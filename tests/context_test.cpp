@@ -911,7 +911,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<ddwaf::rule>("id" + std::to_string(i), "name",
-            std::move(tags), expression::ptr{}, std::vector<std::string>{}));
+            std::move(tags), std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -925,7 +925,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("1", expression::ptr{},
+        auto filter = std::make_shared<rule_filter>("1", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -937,7 +937,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("2", expression::ptr{},
+        auto filter = std::make_shared<rule_filter>("2", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(), rules[5].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -952,7 +952,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("3", expression::ptr{},
+        auto filter = std::make_shared<rule_filter>("3", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[6].get(), rules[7].get(), rules[8].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -985,7 +985,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", std::move(tags),
-            expression::ptr{}, std::vector<std::string>{}));
+            std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -999,7 +999,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("1", expression::ptr{},
+        auto filter = std::make_shared<rule_filter>("1", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{
                 rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
@@ -1013,7 +1013,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("2", expression::ptr{},
+        auto filter = std::make_shared<rule_filter>("2", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[2].get(), rules[3].get(), rules[4].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1027,7 +1027,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("3", expression::ptr{},
+        auto filter = std::make_shared<rule_filter>("3", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[5].get(), rules[6].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1043,7 +1043,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("4", expression::ptr{},
+        auto filter = std::make_shared<rule_filter>("4", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[7].get(), rules[8].get(), rules[6].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
 
@@ -1061,7 +1061,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 
     {
-        auto filter = std::make_shared<rule_filter>("5", expression::ptr{},
+        auto filter = std::make_shared<rule_filter>("5", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(),
                 rules[4].get(), rules[5].get(), rules[6].get(), rules[7].get(), rules[8].get()});
         ruleset->rule_filters.emplace(filter->get_id(), filter);
@@ -1095,7 +1095,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", std::move(tags),
-            expression::ptr{}, std::vector<std::string>{}));
+            std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -1178,7 +1178,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", std::move(tags),
-            expression::ptr{}, std::vector<std::string>{}));
+            std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -1263,7 +1263,7 @@ TEST(TestContext, InputFilterExclude)
 
     std::set<ddwaf::rule *> filter_rules{rule.get()};
     auto filter = std::make_shared<input_filter>(
-        "1", expression::ptr{}, std::move(filter_rules), std::move(obj_filter));
+        "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
@@ -1299,7 +1299,7 @@ TEST(TestContext, InputFilterExcludeRule)
 
     std::set<ddwaf::rule *> filter_rules{rule.get()};
     auto filter = std::make_shared<input_filter>(
-        "1", expression::ptr{}, std::move(filter_rules), std::move(obj_filter));
+        "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
@@ -1446,7 +1446,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
         std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get(), ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
-            "1", expression::ptr{}, std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1548,7 +1548,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
         auto filter = std::make_shared<input_filter>(
-            "1", expression::ptr{}, std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1559,7 +1559,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         std::set<ddwaf::rule *> filter_rules{ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
-            "2", expression::ptr{}, std::move(filter_rules), std::move(obj_filter));
+            "2", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1680,7 +1680,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         std::set<ddwaf::rule *> filter_rules{ip_rule.get(), cookie_rule.get()};
         auto filter = std::make_shared<input_filter>(
-            "1", expression::ptr{}, std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1692,7 +1692,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         std::set<ddwaf::rule *> filter_rules{usr_rule.get(), ip_rule.get()};
         auto filter = std::make_shared<input_filter>(
-            "2", expression::ptr{}, std::move(filter_rules), std::move(obj_filter));
+            "2", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }
@@ -1704,7 +1704,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         std::set<ddwaf::rule *> filter_rules{usr_rule.get(), cookie_rule.get()};
         auto filter = std::make_shared<input_filter>(
-            "3", expression::ptr{}, std::move(filter_rules), std::move(obj_filter));
+            "3", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
         ruleset->input_filters.emplace(filter->get_id(), filter);
     }

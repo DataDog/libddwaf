@@ -15,7 +15,7 @@ rule::ptr make_rule(std::string id, std::string name,
     rule::source_type source = rule::source_type::base)
 {
     return std::make_shared<ddwaf::rule>(std::move(id), std::move(name), std::move(tags),
-        expression::ptr{}, std::move(actions), true, source);
+        std::make_shared<expression>(), std::move(actions), true, source);
 }
 
 } // namespace

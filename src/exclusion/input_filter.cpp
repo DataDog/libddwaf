@@ -15,12 +15,17 @@ input_filter::input_filter(std::string id, expression::ptr expr, std::set<rule *
     std::shared_ptr<object_filter> filter)
     : id_(std::move(id)), expr_(std::move(expr)), rule_targets_(std::move(rule_targets)),
       filter_(std::move(filter))
-{}
+{
+    if (!expr_) {
+        throw std::invalid_argument("rule filter constructed with null expression");
+    }
+}
 
 std::optional<excluded_set> input_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     // An event was already produced, so we skip the rule
+    // Note that conditions in a filter are optional
     if (expr_ && !expression::get_result(cache.expr_cache)) {
         if (!expr_->eval(cache.expr_cache, store, {}, {}, deadline)) {
             return std::nullopt;

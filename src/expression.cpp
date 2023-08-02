@@ -86,9 +86,7 @@ std::optional<event::match> expression::evaluator::eval_condition(
         return std::nullopt;
     }
 
-    for (std::size_t ti = 0; ti < cond.targets.size(); ++ti) {
-        const auto &target = cond.targets[ti];
-
+    for (const auto &target : cond.targets) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
@@ -172,8 +170,7 @@ bool expression::eval(cache_type &cache, const object_store &store,
 
     evaluator runner{
         deadline, limits_, conditions_, store, objects_excluded, dynamic_processors, cache};
-    cache.result = runner.eval();
-    return cache.result;
+    return (cache.result = runner.eval());
 }
 
 void expression_builder::add_target(std::string name, std::vector<std::string> key_path,
