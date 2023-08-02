@@ -26,7 +26,7 @@ std::optional<excluded_set> input_filter::match(
 {
     // An event was already produced, so we skip the rule
     // Note that conditions in a filter are optional
-    if (expr_ && !expression::get_result(cache.expr_cache)) {
+    if (!expr_->empty() && !expression::get_result(cache.expr_cache)) {
         if (!expr_->eval(cache.expr_cache, store, {}, {}, deadline)) {
             return std::nullopt;
         }
