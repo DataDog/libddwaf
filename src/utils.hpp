@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <array>
 #include <charconv>
 #include <cstdint>
 #include <ddwaf.h>
@@ -13,6 +14,7 @@
 #include <iterator>
 #include <optional>
 #include <string>
+#include <system_error>
 #include <type_traits>
 #include <unordered_map>
 
