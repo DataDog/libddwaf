@@ -22,12 +22,7 @@ bool lowercase::transform_impl(cow_string &str)
     }
 
     //  If we're mutating the string, then we have the starting offset
-    for (; pos < str.length(); ++pos) {
-        auto c = str.at(pos);
-        if (c >= 'A' && c <= 'Z') {
-            str[pos] += 'a' - 'A';
-        }
-    }
+    for (; pos < str.length(); ++pos) { str[pos] = tolower(str.at(pos)); }
 
     return true;
 }
