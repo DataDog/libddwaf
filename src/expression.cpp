@@ -20,20 +20,30 @@ std::optional<event::match> expression::evaluator::eval_object(const ddwaf_objec
     const size_t length =
         find_string_cutoff(object->stringValue, object->nbEntries, limits.max_string_length);
 
+    ddwaf_object src;
+    ddwaf_object_stringl_nc(&src, object->stringValue, length);
+
     if (!transformers.empty()) {
-        ddwaf_object src;
         ddwaf_object dst;
-        ddwaf_object_stringl_nc(&src, object->stringValue, length);
         ddwaf_object_invalid(&dst);
 
         auto transformed = transformer::manager::transform(src, dst, transformers);
         scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
         if (transformed) {
-            return processor->match_object(dst);
+            auto [res, highlight] = processor->match(dst);
+            if (!res) {
+                return std::nullopt;
+            }
+            return {{{dst.stringValue, dst.nbEntries}, std::move(highlight), processor->name(),
+                processor->to_string(), {}, {}}};
         }
     }
-
-    return processor->match({object->stringValue, length});
+    auto [res, highlight] = processor->match(src);
+    if (!res) {
+        return std::nullopt;
+    }
+    return {{{src.stringValue, src.nbEntries}, std::move(highlight), processor->name(),
+        processor->to_string(), {}, {}}};
 }
 
 template <typename T>
@@ -45,7 +55,7 @@ std::optional<event::match> expression::evaluator::eval_target(
             throw ddwaf::timeout_exception();
         }
 
-        if (it.type() != DDWAF_OBJ_STRING) {
+        if (it.type() != processor->supported_type()) {
             continue;
         }
 

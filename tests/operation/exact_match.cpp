@@ -18,44 +18,41 @@ TEST(TestExactMatch, Basic)
 
     {
         std::string_view input{"aaaa"};
-        auto match = processor.match(input);
-        EXPECT_TRUE(match);
-        EXPECT_STREQ(match->resolved.c_str(), input.data());
-        EXPECT_STREQ(match->matched.c_str(), input.data());
+        auto [res, highlight] = processor.match(input);
+        EXPECT_TRUE(res);
+        EXPECT_STREQ(highlight.c_str(), input.data());
     }
 
     {
         std::string_view input{"bbbb"};
-        auto match = processor.match(input);
-        EXPECT_TRUE(match);
-        EXPECT_STREQ(match->resolved.c_str(), input.data());
-        EXPECT_STREQ(match->matched.c_str(), input.data());
+        auto [res, highlight] = processor.match(input);
+        EXPECT_TRUE(res);
+        EXPECT_STREQ(highlight.c_str(), input.data());
     }
 
     {
         std::string_view input{"cccc"};
-        auto match = processor.match(input);
-        EXPECT_TRUE(match);
-        EXPECT_STREQ(match->resolved.c_str(), input.data());
-        EXPECT_STREQ(match->matched.c_str(), input.data());
+        auto [res, highlight] = processor.match(input);
+        EXPECT_TRUE(res);
+        EXPECT_STREQ(highlight.c_str(), input.data());
     }
 
     {
         std::string_view input{"cc"};
-        auto match = processor.match(input);
-        EXPECT_FALSE(match);
+        auto [res, highlight] = processor.match(input);
+        EXPECT_FALSE(res);
     }
 
     {
         std::string_view input{"aaaaaa"};
-        auto match = processor.match(input);
-        EXPECT_FALSE(match);
+        auto [res, highlight] = processor.match(input);
+        EXPECT_FALSE(res);
     }
 
     {
         std::string_view input{"ddddd"};
-        auto match = processor.match(input);
-        EXPECT_FALSE(match);
+        auto [res, highlight] = processor.match(input);
+        EXPECT_FALSE(res);
     }
 }
 
@@ -72,25 +69,25 @@ TEST(TestExactMatch, Expiration)
     EXPECT_STREQ(processor.name().data(), "exact_match");
     EXPECT_STREQ(processor.to_string().data(), "");
 
-    EXPECT_FALSE(processor.match("aaaa"));
-    EXPECT_FALSE(processor.match("cccc"));
+    EXPECT_FALSE(processor.match("aaaa").first);
+    EXPECT_FALSE(processor.match("cccc").first);
 
     std::string_view input{"bbbb"};
-    auto match = processor.match(input);
-    EXPECT_TRUE(match);
-    EXPECT_STREQ(match->resolved.c_str(), input.data());
-    EXPECT_STREQ(match->matched.c_str(), input.data());
+    auto [res, highlight] = processor.match(input);
+    EXPECT_TRUE(res);
+    EXPECT_STREQ(highlight.c_str(), input.data());
 
-    EXPECT_TRUE(processor.match("dddd"));
-    EXPECT_TRUE(processor.match("eeee"));
-    EXPECT_TRUE(processor.match("ffff"));
+    EXPECT_TRUE(processor.match("dddd").first);
+    EXPECT_TRUE(processor.match("eeee").first);
+    EXPECT_TRUE(processor.match("ffff").first);
 }
 
 TEST(TestExactMatch, InvalidMatchInput)
 {
     exact_match processor({"aaaa", "bbbb", "cccc"});
 
-    EXPECT_FALSE(processor.match({nullptr, 0}));
-    EXPECT_FALSE(processor.match({nullptr, 30}));
-    EXPECT_FALSE(processor.match({"aaaa", 0}));
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    // NOLINTNEXTLINE(bugprone-string-constructor)
+    EXPECT_FALSE(processor.match(std::string_view{"aaaa", 0}).first);
 }

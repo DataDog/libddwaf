@@ -25,11 +25,11 @@ phrase_match::phrase_match(std::vector<const char *> pattern, std::vector<uint32
     ac = std::unique_ptr<ac_t, void (*)(void *)>(ac_, ac_free);
 }
 
-std::optional<event::match> phrase_match::match(std::string_view pattern) const
+std::pair<bool, memory::string> phrase_match::match_impl(std::string_view pattern) const
 {
     ac_t *acStructure = ac.get();
     if (pattern.empty() || pattern.data() == nullptr || acStructure == nullptr) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     ac_result_t result =
@@ -38,16 +38,16 @@ std::optional<event::match> phrase_match::match(std::string_view pattern) const
     bool didMatch =
         result.match_begin >= 0 && result.match_end >= 0 && result.match_begin < result.match_end;
     if (!didMatch) {
-        return std::nullopt;
+        return {false, {}};
     }
 
-    std::string_view matched_value;
-    if (pattern.size() > (uint32_t)result.match_end) {
+    memory::string matched_value;
+    if (pattern.size() > static_cast<std::size_t>(result.match_end)) {
         matched_value =
             pattern.substr(result.match_begin, (result.match_end - result.match_begin + 1));
     }
 
-    return make_event(pattern, matched_value);
+    return {true, matched_value};
 }
 
 } // namespace ddwaf::operation

@@ -9,7 +9,7 @@
 
 using namespace ddwaf::operation;
 
-bool match(ip_match &processor, std::string_view ip) { return processor.match(ip).has_value(); }
+bool match(ip_match &processor, std::string_view ip) { return processor.match(ip).first; }
 
 TEST(TestIPMatch, Basic)
 {
@@ -95,9 +95,10 @@ TEST(TestIPMatch, InvalidInput)
         "1234:0:0:0:0:0:0:5678",
     });
 
-    EXPECT_FALSE(processor.match({nullptr, 0}));
-    EXPECT_FALSE(processor.match({nullptr, 30}));
-    EXPECT_FALSE(processor.match({"*", 0}));
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    // NOLINTNEXTLINE(bugprone-string-constructor)
+    EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
 }
 
 TEST(TestIPMatch, Expiration)

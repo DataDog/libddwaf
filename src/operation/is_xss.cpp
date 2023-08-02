@@ -10,17 +10,14 @@
 
 namespace ddwaf::operation {
 
-std::optional<event::match> is_xss::match(std::string_view pattern) const
+std::pair<bool, memory::string> is_xss::match_impl(std::string_view pattern)
 {
-    if (pattern.empty() || pattern.data() == nullptr) {
-        return std::nullopt;
+    if (pattern.empty() || pattern.data() == nullptr ||
+        libinjection_xss(pattern.data(), pattern.size()) == 0) {
+        return {false, {}};
     }
 
-    if (libinjection_xss(pattern.data(), pattern.size()) == 0) {
-        return std::nullopt;
-    }
-
-    return make_event(pattern, {});
+    return {true, {}};
 }
 
 } // namespace ddwaf::operation

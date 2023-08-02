@@ -3,6 +3,7 @@
 /build
 PowerWAF.xcodeproj
 CMakeLists.txt.user
+compile_commands.json
 
 .DS_Store
 tests/default.profraw

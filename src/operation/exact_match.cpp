@@ -31,15 +31,15 @@ exact_match::exact_match(const std::vector<std::pair<std::string_view, uint64_t>
     }
 }
 
-std::optional<event::match> exact_match::match(std::string_view str) const
+std::pair<bool, memory::string> exact_match::match_impl(std::string_view str) const
 {
     if (values_.empty() || str.empty() || str.data() == nullptr) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     auto it = values_.find(str);
     if (it == values_.end()) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     if (it->second > 0) {
@@ -47,10 +47,10 @@ std::optional<event::match> exact_match::match(std::string_view str) const
             std::chrono::system_clock::now().time_since_epoch())
                            .count();
         if (it->second < now) {
-            return std::nullopt;
+            return {false, {}};
         }
     }
-    return make_event(str, str);
+    return {true, memory::string{str}};
 }
 
 } // namespace ddwaf::operation

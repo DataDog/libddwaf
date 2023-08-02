@@ -17,11 +17,9 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    auto match = processor.match_object(param);
-    EXPECT_TRUE(match);
-
-    EXPECT_STREQ(match->resolved.c_str(), "regex");
-    EXPECT_STREQ(match->matched.c_str(), "regex");
+    auto [res, highlight] = processor.match(param);
+    EXPECT_TRUE(res);
+    EXPECT_STREQ(highlight.c_str(), "regex");
 
     ddwaf_object_free(&param);
 }
@@ -33,16 +31,14 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    EXPECT_FALSE(processor.match_object(param));
+    EXPECT_FALSE(processor.match(param).first);
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "rEgEx");
 
-    auto match = processor.match_object(param2);
-    EXPECT_TRUE(match);
-
-    EXPECT_STREQ(match->resolved.c_str(), "rEgEx");
-    EXPECT_STREQ(match->matched.c_str(), "rEgEx");
+    auto [res, highlight] = processor.match(param2);
+    EXPECT_TRUE(res);
+    EXPECT_STREQ(highlight.c_str(), "rEgEx");
 
     ddwaf_object_free(&param);
     ddwaf_object_free(&param2);
@@ -52,16 +48,16 @@ TEST(TestRegexMatch, TestMinLength)
 {
     regex_match processor("^rEgEx.*$", 6, true);
 
-    ddwaf_object param, param2;
+    ddwaf_object param;
+    ddwaf_object param2;
     ddwaf_object_string(&param, "rEgEx");
     ddwaf_object_string(&param2, "rEgExe");
 
-    EXPECT_FALSE(processor.match_object(param));
+    EXPECT_FALSE(processor.match(param).first);
 
-    auto match = processor.match_object(param2);
-    EXPECT_TRUE(match);
-    EXPECT_STREQ(match->resolved.c_str(), "rEgExe");
-    EXPECT_STREQ(match->matched.c_str(), "rEgExe");
+    auto [res, highlight] = processor.match(param2);
+    EXPECT_TRUE(res);
+    EXPECT_STREQ(highlight.c_str(), "rEgExe");
 
     ddwaf_object_free(&param);
     ddwaf_object_free(&param2);
@@ -71,9 +67,10 @@ TEST(TestRegexMatch, TestInvalidInput)
 {
     regex_match processor("^rEgEx.*$", 6, true);
 
-    EXPECT_FALSE(processor.match({nullptr, 0}));
-    EXPECT_FALSE(processor.match({nullptr, 30}));
-    EXPECT_FALSE(processor.match({"*", 0}));
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    // NOLINTNEXTLINE(bugprone-string-constructor)
+    EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
 }
 
 TEST(TestRegexMatch, TestRulesetCaseSensitive)
@@ -91,7 +88,8 @@ TEST(TestRegexMatch, TestRulesetCaseSensitive)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object param, tmp;
+        ddwaf_object param;
+        ddwaf_object tmp;
         ddwaf_object_map(&param);
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
@@ -120,7 +118,8 @@ TEST(TestRegexMatch, TestRulesetCaseSensitive)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object param, tmp;
+        ddwaf_object param;
+        ddwaf_object tmp;
         ddwaf_object_map(&param);
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
@@ -152,7 +151,8 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object param, tmp;
+        ddwaf_object param;
+        ddwaf_object tmp;
         ddwaf_object_map(&param);
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
@@ -181,7 +181,8 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object param, tmp;
+        ddwaf_object param;
+        ddwaf_object tmp;
         ddwaf_object_map(&param);
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
@@ -224,7 +225,8 @@ TEST(TestRegexMatch, TestRulesetMinLength)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object param, tmp;
+        ddwaf_object param;
+        ddwaf_object tmp;
         ddwaf_object_map(&param);
         ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "alert("));
 
@@ -241,7 +243,8 @@ TEST(TestRegexMatch, TestRulesetMinLength)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object param, tmp;
+        ddwaf_object param;
+        ddwaf_object tmp;
         ddwaf_object_map(&param);
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
