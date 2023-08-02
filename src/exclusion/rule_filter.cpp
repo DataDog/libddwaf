@@ -27,7 +27,7 @@ optional_ref<const std::unordered_set<rule *>> rule_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     // Note that conditions in a filter are optional
-    if (expr_) {
+    if (!expr_->empty()) {
         if (expression::get_result(cache)) {
             return std::nullopt;
         }
