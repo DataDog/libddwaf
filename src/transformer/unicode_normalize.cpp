@@ -16,7 +16,7 @@ bool unicode_normalize::needs_transform(std::string_view str)
     uint64_t position = 0;
     while ((codepoint = fetch_next_codepoint(str.data(), position, str.length())) != UTF8_EOF) {
         // Ignore invalid glyphs or Zero-Width joiners (which we allow for emojis)
-        if (codepoint == UTF8_INVALID) {
+        if (codepoint == UTF8_INVALID || codepoint < 0x80) {
             continue;
         }
 
