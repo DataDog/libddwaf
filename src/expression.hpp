@@ -50,7 +50,7 @@ public:
         };
 
         std::vector<target_type> targets;
-        operation::base::ptr processor;
+        operation::base::unique_ptr processor;
         std::string data_id;
     };
 
@@ -65,21 +65,21 @@ public:
         std::optional<event::match> eval_condition(const condition &cond, bool run_on_new);
 
         template <typename T>
-        std::optional<event::match> eval_target(T &it, const operation::base::ptr &processor,
+        std::optional<event::match> eval_target(T &it, const operation::base *processor,
             const std::vector<transformer_id> &transformers);
 
         std::optional<event::match> eval_object(const ddwaf_object *object,
-            const operation::base::ptr &processor,
+            const operation::base *processor,
             const std::vector<transformer_id> &transformers) const;
 
-        [[nodiscard]] const operation::base::ptr &get_processor(const condition &cond) const;
+        [[nodiscard]] const operation::base *get_processor(const condition &cond) const;
 
         ddwaf::timer &deadline;
         const ddwaf::object_limits &limits;
         const std::vector<condition::ptr> &conditions;
         const object_store &store;
         const std::unordered_set<const ddwaf_object *> &objects_excluded;
-        const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors;
+        const std::unordered_map<std::string, operation::base::shared_ptr> &dynamic_processors;
         cache_type &cache;
     };
 
@@ -91,7 +91,7 @@ public:
 
     bool eval(cache_type &cache, const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors,
+        const std::unordered_map<std::string, operation::base::shared_ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_set<std::string> &addresses) const
@@ -128,7 +128,7 @@ public:
     template <typename T, typename... Args> void start_condition(Args... args)
     {
         auto cond = std::make_unique<expression::condition>();
-        cond->processor = std::make_shared<T>(std::forward<Args>(args)...);
+        cond->processor = std::make_unique<T>(std::forward<Args>(args)...);
         conditions_.emplace_back(std::move(cond));
     }
 
@@ -148,10 +148,10 @@ public:
     template <typename T, typename... Args> void set_processor(Args... args)
     {
         auto &cond = conditions_.back();
-        cond->processor = std::make_shared<T>(args...);
+        cond->processor = std::make_unique<T>(args...);
     }
 
-    void set_processor(operation::base::ptr &&processor)
+    void set_processor(operation::base::unique_ptr &&processor)
     {
         auto &cond = conditions_.back();
         cond->processor = std::move(processor);
