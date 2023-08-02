@@ -78,6 +78,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/iterator.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
+    ${libddwaf_SOURCE_DIR}/src/utils.cpp
     ${libddwaf_SOURCE_DIR}/src/waf.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
