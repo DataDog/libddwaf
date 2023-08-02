@@ -8,6 +8,7 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <log.hpp>
+#include <operation/equals.hpp>
 #include <operation/exact_match.hpp>
 #include <operation/ip_match.hpp>
 #include <operation/is_sqli.hpp>
@@ -89,6 +90,23 @@ std::pair<std::string, operation::base::ptr> parse_processor(
         } else {
             processor = std::make_shared<operation::exact_match>(
                 static_cast<std::vector<std::string>>(it->second));
+        }
+    } else if (operation == "equals") {
+        auto value_type = at<std::string>(params, "type");
+        if (value_type == "string") {
+            auto value = at<std::string>(params, "value");
+            processor = std::make_shared<operation::equals<std::string>>(std::move(value));
+        } else if (value_type == "boolean") {
+            auto value = at<bool>(params, "value");
+            processor = std::make_shared<operation::equals<bool>>(value);
+        } else if (value_type == "unsigned") {
+            auto value = at<uint64_t>(params, "value");
+            processor = std::make_shared<operation::equals<uint64_t>>(value);
+        } else if (value_type == "signed") {
+            auto value = at<int64_t>(params, "value");
+            processor = std::make_shared<operation::equals<int64_t>>(value);
+        } else {
+            throw ddwaf::parsing_error("invalid type for processor equals" + value_type);
         }
     } else {
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));

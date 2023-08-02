@@ -17,33 +17,63 @@ namespace ddwaf {
 std::optional<event::match> expression::evaluator::eval_object(const ddwaf_object *object,
     const operation::base::ptr &processor, const std::vector<transformer_id> &transformers) const
 {
-    const size_t length =
-        find_string_cutoff(object->stringValue, object->nbEntries, limits.max_string_length);
+    if (object->type == DDWAF_OBJ_STRING) {
+        const size_t length =
+            find_string_cutoff(object->stringValue, object->nbEntries, limits.max_string_length);
 
-    ddwaf_object src;
-    ddwaf_object_stringl_nc(&src, object->stringValue, length);
+        ddwaf_object src;
+        ddwaf_object_stringl_nc(&src, object->stringValue, length);
 
-    if (!transformers.empty()) {
-        ddwaf_object dst;
-        ddwaf_object_invalid(&dst);
+        if (!transformers.empty()) {
+            ddwaf_object dst;
+            ddwaf_object_invalid(&dst);
 
-        auto transformed = transformer::manager::transform(src, dst, transformers);
-        scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
-        if (transformed) {
-            auto [res, highlight] = processor->match(dst);
-            if (!res) {
-                return std::nullopt;
+            auto transformed = transformer::manager::transform(src, dst, transformers);
+            scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
+            if (transformed) {
+                auto [res, highlight] = processor->match(dst);
+                if (!res) {
+                    return std::nullopt;
+                }
+                return {{{dst.stringValue, dst.nbEntries}, std::move(highlight), processor->name(),
+                    processor->to_string(), {}, {}}};
             }
-            return {{{dst.stringValue, dst.nbEntries}, std::move(highlight), processor->name(),
-                processor->to_string(), {}, {}}};
         }
+        auto [res, highlight] = processor->match(src);
+        if (!res) {
+            return std::nullopt;
+        }
+        return {{{src.stringValue, src.nbEntries}, std::move(highlight), processor->name(),
+            processor->to_string(), {}, {}}};
     }
-    auto [res, highlight] = processor->match(src);
-    if (!res) {
-        return std::nullopt;
+
+    if (object->type == DDWAF_OBJ_BOOL) {
+        auto [res, highlight] = processor->match(*object);
+        if (!res) {
+            return std::nullopt;
+        }
+        memory::string value = object->boolean ? "true" : "false";
+        return {{std::move(value), std::move(highlight), processor->name(), processor->to_string(),
+            {}, {}}};
     }
-    return {{{src.stringValue, src.nbEntries}, std::move(highlight), processor->name(),
-        processor->to_string(), {}, {}}};
+
+    if (object->type == DDWAF_OBJ_SIGNED) {
+        auto [res, highlight] = processor->match(*object);
+        if (!res) {
+            return std::nullopt;
+        }
+        return {{"", std::move(highlight), processor->name(), processor->to_string(), {}, {}}};
+    }
+
+    if (object->type == DDWAF_OBJ_UNSIGNED) {
+        auto [res, highlight] = processor->match(*object);
+        if (!res) {
+            return std::nullopt;
+        }
+        return {{"", std::move(highlight), processor->name(), processor->to_string(), {}, {}}};
+    }
+
+    return std::nullopt;
 }
 
 template <typename T>
