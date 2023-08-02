@@ -5,11 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <exception.hpp>
-#include <rule_processor/phrase_match.hpp>
+#include <operation/phrase_match.hpp>
 #include <stdexcept>
 #include <vector>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 phrase_match::phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths)
 {
@@ -50,4 +50,4 @@ std::optional<event::match> phrase_match::match(std::string_view pattern) const
     return make_event(pattern, matched_value);
 }
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

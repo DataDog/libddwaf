@@ -5,10 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <libinjection.h>
-#include <rule_processor/is_xss.hpp>
+#include <operation/is_xss.hpp>
 #include <utils.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 std::optional<event::match> is_xss::match(std::string_view pattern) const
 {
@@ -23,4 +23,4 @@ std::optional<event::match> is_xss::match(std::string_view pattern) const
     return make_event(pattern, {});
 }
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

@@ -6,7 +6,7 @@
 
 #include "../test.h"
 
-using namespace ddwaf::rule_processor;
+using namespace ddwaf::operation;
 
 TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {
@@ -17,7 +17,7 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    auto match = processor.match_object(&param);
+    auto match = processor.match_object(param);
     EXPECT_TRUE(match);
 
     EXPECT_STREQ(match->resolved.c_str(), "regex");
@@ -33,12 +33,12 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    EXPECT_FALSE(processor.match_object(&param));
+    EXPECT_FALSE(processor.match_object(param));
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "rEgEx");
 
-    auto match = processor.match_object(&param2);
+    auto match = processor.match_object(param2);
     EXPECT_TRUE(match);
 
     EXPECT_STREQ(match->resolved.c_str(), "rEgEx");
@@ -56,9 +56,9 @@ TEST(TestRegexMatch, TestMinLength)
     ddwaf_object_string(&param, "rEgEx");
     ddwaf_object_string(&param2, "rEgExe");
 
-    EXPECT_FALSE(processor.match_object(&param));
+    EXPECT_FALSE(processor.match_object(param));
 
-    auto match = processor.match_object(&param2);
+    auto match = processor.match_object(param2);
     EXPECT_TRUE(match);
     EXPECT_STREQ(match->resolved.c_str(), "rEgExe");
     EXPECT_STREQ(match->matched.c_str(), "rEgExe");

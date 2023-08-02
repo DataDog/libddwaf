@@ -6,9 +6,9 @@
 
 #include <array>
 #include <exception.hpp>
-#include <rule_processor/regex_match.hpp>
+#include <operation/regex_match.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive)
     : min_length(minLength)
@@ -44,4 +44,4 @@ std::optional<event::match> regex_match::match(std::string_view pattern) const
     return make_event(pattern, {match[0].data(), match[0].size()});
 }
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

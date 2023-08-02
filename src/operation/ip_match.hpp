@@ -8,10 +8,10 @@
 
 #include <ip_utils.hpp>
 #include <memory>
+#include <operation/base.hpp>
 #include <radixlib.h>
-#include <rule_processor/base.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 class ip_match : public base {
 public:
@@ -34,4 +34,4 @@ protected:
     std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_{nullptr, nullptr};
 };
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

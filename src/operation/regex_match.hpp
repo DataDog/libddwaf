@@ -7,11 +7,11 @@
 #pragma once
 
 #include <memory>
+#include <operation/base.hpp>
 #include <re2/re2.h>
-#include <rule_processor/base.hpp>
 #include <utils.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 class regex_match : public base {
 public:
@@ -32,4 +32,4 @@ protected:
     std::size_t min_length;
 };
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

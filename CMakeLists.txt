@@ -70,7 +70,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/object.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/collection.cpp
-    ${libddwaf_SOURCE_DIR}/src/condition.cpp
+    ${libddwaf_SOURCE_DIR}/src/expression.cpp
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp
     ${libddwaf_SOURCE_DIR}/src/ip_utils.cpp
@@ -86,12 +86,12 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/rule_processor/phrase_match.cpp
-    ${libddwaf_SOURCE_DIR}/src/rule_processor/regex_match.cpp
-    ${libddwaf_SOURCE_DIR}/src/rule_processor/is_sqli.cpp
-    ${libddwaf_SOURCE_DIR}/src/rule_processor/is_xss.cpp
-    ${libddwaf_SOURCE_DIR}/src/rule_processor/ip_match.cpp
-    ${libddwaf_SOURCE_DIR}/src/rule_processor/exact_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/operation/phrase_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/operation/regex_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/operation/is_sqli.cpp
+    ${libddwaf_SOURCE_DIR}/src/operation/is_xss.cpp
+    ${libddwaf_SOURCE_DIR}/src/operation/ip_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/operation/exact_match.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/lowercase.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/compress_whitespace.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/normalize_path.cpp
@@ -130,7 +130,7 @@ endif()
 
 target_include_directories(libddwaf_objects PUBLIC ${libddwaf_SOURCE_DIR}/include)
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src)
-target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/rule_processor)
+target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/operation)
 
 install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 

@@ -21,14 +21,10 @@ enum class filter_mode { bypass, monitor };
 class rule_filter {
 public:
     using ptr = std::shared_ptr<rule_filter>;
+    using cache_type = expression::cache_type;
 
-    struct cache_type {
-        bool result{false};
-        std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
-    };
-
-    rule_filter(std::string id, std::vector<condition::ptr> conditions,
-        std::set<rule *> rule_targets, filter_mode mode = filter_mode::bypass);
+    rule_filter(std::string id, expression::ptr expr, std::set<rule *> rule_targets,
+        filter_mode mode = filter_mode::bypass);
 
     optional_ref<const std::unordered_set<rule *>> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
@@ -38,14 +34,12 @@ public:
 
     void get_addresses(std::unordered_set<std::string> &addresses) const
     {
-        for (const auto &cond : conditions_) {
-            for (const auto &target : cond->get_targets()) { addresses.emplace(target.name); }
-        }
+        expr_->get_addresses(addresses);
     }
 
 protected:
     std::string id_;
-    std::vector<condition::ptr> conditions_;
+    expression::ptr expr_;
     std::unordered_set<rule *> rule_targets_;
     filter_mode mode_;
 };

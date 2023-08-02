@@ -27,13 +27,12 @@ public:
     };
 
     struct cache_type {
-        bool result{false};
-        std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
+        expression::cache_type expr_cache;
         object_filter::cache_type object_filter_cache;
     };
 
-    input_filter(std::string id, std::vector<condition::ptr> conditions,
-        std::set<rule *> rule_targets, std::shared_ptr<object_filter> filter);
+    input_filter(std::string id, expression::ptr expr, std::set<rule *> rule_targets,
+        std::shared_ptr<object_filter> filter);
 
     std::optional<excluded_set> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
@@ -42,16 +41,13 @@ public:
 
     void get_addresses(std::unordered_set<std::string> &addresses) const
     {
-        for (const auto &cond : conditions_) {
-            for (const auto &target : cond->get_targets()) { addresses.emplace(target.name); }
-        }
-
+        expr_->get_addresses(addresses);
         for (const auto &[name, target] : filter_->get_targets()) { addresses.emplace(name); }
     }
 
 protected:
     std::string id_;
-    std::vector<condition::ptr> conditions_;
+    expression::ptr expr_;
     const std::set<rule *> rule_targets_;
     std::shared_ptr<object_filter> filter_;
 };

@@ -6,7 +6,7 @@
 
 #include "../test.h"
 
-using namespace ddwaf::rule_processor;
+using namespace ddwaf::operation;
 
 TEST(TestIsXSS, TestBasic)
 {
@@ -17,7 +17,7 @@ TEST(TestIsXSS, TestBasic)
     ddwaf_object param;
     ddwaf_object_string(&param, "<script>alert(1);</script>");
 
-    auto match = processor.match_object(&param);
+    auto match = processor.match_object(param);
     EXPECT_TRUE(match.has_value());
 
     EXPECT_STREQ(match->resolved.c_str(), "<script>alert(1);</script>");
@@ -32,7 +32,7 @@ TEST(TestIsXSS, TestNoMatch)
     ddwaf_object param;
     ddwaf_object_string(&param, "non-xss");
 
-    EXPECT_FALSE(processor.match_object(&param));
+    EXPECT_FALSE(processor.match_object(param));
 
     ddwaf_object_free(&param);
 }

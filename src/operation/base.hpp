@@ -15,7 +15,7 @@
 #include <event.hpp>
 #include <utils.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 class base {
 public:
@@ -30,12 +30,12 @@ public:
 
     [[nodiscard]] virtual std::optional<event::match> match(std::string_view str) const = 0;
 
-    virtual std::optional<event::match> match_object(const ddwaf_object *obj) const
+    [[nodiscard]] virtual std::optional<event::match> match_object(const ddwaf_object &obj) const
     {
-        if (obj->stringValue == nullptr) {
+        if (obj.stringValue == nullptr) {
             return std::nullopt;
         }
-        return match({obj->stringValue, static_cast<std::size_t>(obj->nbEntries)});
+        return match({obj.stringValue, static_cast<std::size_t>(obj.nbEntries)});
     }
 
     [[nodiscard]] virtual std::string_view to_string() const { return ""; }
@@ -51,4 +51,4 @@ public:
     }
 };
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation

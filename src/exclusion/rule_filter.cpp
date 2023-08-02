@@ -9,10 +9,14 @@
 
 namespace ddwaf::exclusion {
 
-rule_filter::rule_filter(std::string id, std::vector<condition::ptr> conditions,
-    std::set<rule *> rule_targets, filter_mode mode)
-    : id_(std::move(id)), conditions_(std::move(conditions)), mode_(mode)
+rule_filter::rule_filter(
+    std::string id, expression::ptr expr, std::set<rule *> rule_targets, filter_mode mode)
+    : id_(std::move(id)), expr_(std::move(expr)), mode_(mode)
 {
+    if (!expr_) {
+        throw std::invalid_argument("rule filter constructed with null expression");
+    }
+
     rule_targets_.reserve(rule_targets.size());
     for (auto it = rule_targets.begin(); it != rule_targets.end();) {
         rule_targets_.emplace(rule_targets.extract(it++).value());
@@ -22,34 +26,16 @@ rule_filter::rule_filter(std::string id, std::vector<condition::ptr> conditions,
 optional_ref<const std::unordered_set<rule *>> rule_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
-    if (cache.result) {
-        return {};
-    }
-
-    std::vector<condition::ptr>::const_iterator cond_iter;
-    bool run_on_new;
-    if (cache.last_cond.has_value()) {
-        cond_iter = *cache.last_cond;
-        run_on_new = true;
-    } else {
-        cond_iter = conditions_.cbegin();
-        run_on_new = false;
-    }
-
-    while (cond_iter != conditions_.cend()) {
-        auto &&cond = *cond_iter;
-        // TODO: Condition interface without events
-        auto opt_match = cond->match(store, {}, run_on_new, {}, deadline);
-        if (!opt_match.has_value()) {
-            cache.last_cond = cond_iter;
-            return {};
+    // Note that conditions in a filter are optional
+    if (!expr_->empty()) {
+        if (expression::get_result(cache)) {
+            return std::nullopt;
         }
 
-        run_on_new = false;
-        cond_iter++;
+        if (!expr_->eval(cache, store, {}, {}, deadline)) {
+            return std::nullopt;
+        }
     }
-
-    cache.result = true;
 
     return {rule_targets_};
 }

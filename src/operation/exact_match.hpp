@@ -7,12 +7,12 @@
 #pragma once
 
 #include <clock.hpp>
-#include <rule_processor/base.hpp>
+#include <operation/base.hpp>
 #include <string_view>
 #include <unordered_map>
 #include <utils.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::operation {
 
 class exact_match : public base {
 public:
@@ -35,4 +35,4 @@ protected:
     std::unordered_map<std::string_view, uint64_t> values_;
 };
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::operation
