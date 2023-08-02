@@ -46,7 +46,7 @@ struct ruleset {
         }
     }
 
-    void insert_rules(const std::unordered_map<std::string_view, rule::ptr> &rules_)
+    void insert_rules(const absl::flat_hash_map<std::string_view, rule::ptr> &rules_)
     {
         for (const auto &[id, rule] : rules_) { insert_rule(rule); }
     }
@@ -75,21 +75,21 @@ struct ruleset {
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
-    std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
-    std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
+    absl::flat_hash_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
+    absl::flat_hash_map<std::string_view, exclusion::input_filter::ptr> input_filters;
 
     std::vector<rule::ptr> rules;
-    std::unordered_map<std::string, rule_processor::base::ptr> dynamic_processors;
+    absl::flat_hash_map<std::string, rule_processor::base::ptr> dynamic_processors;
 
     // The key used to organise collections is rule.type
-    std::unordered_set<std::string_view> collection_types;
-    std::unordered_map<std::string_view, priority_collection> user_priority_collections;
-    std::unordered_map<std::string_view, priority_collection> base_priority_collections;
-    std::unordered_map<std::string_view, collection> user_collections;
-    std::unordered_map<std::string_view, collection> base_collections;
+    absl::flat_hash_set<std::string_view> collection_types;
+    absl::flat_hash_map<std::string_view, priority_collection> user_priority_collections;
+    absl::flat_hash_map<std::string_view, priority_collection> base_priority_collections;
+    absl::flat_hash_map<std::string_view, collection> user_collections;
+    absl::flat_hash_map<std::string_view, collection> base_collections;
 
     // Root addresses, lazily computed
-    std::unordered_set<std::string> unique_root_addresses;
+    absl::flat_hash_set<std::string> unique_root_addresses;
     // Root address memory to be returned to the API caller
     std::vector<const char *> root_addresses;
 };

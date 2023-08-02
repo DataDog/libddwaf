@@ -120,7 +120,7 @@ public:
     [[nodiscard]] bool empty() const { return data_.empty(); }
 
 protected:
-    std::unordered_map<Key, std::unordered_map<Key, std::set<T>>> data_;
+    absl::flat_hash_map<Key, absl::flat_hash_map<Key, std::set<T>>> data_;
 };
 
 } // namespace ddwaf

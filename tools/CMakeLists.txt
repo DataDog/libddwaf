@@ -5,7 +5,7 @@ foreach(EXAMPLE ${LIBDDWAF_EXAMPLE_SOURCE})
     get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME_WLE)
 
     add_executable(${EXAMPLE_NAME} ${EXAMPLE} ${LIBDDWAF_EXAMPLE_COMMON_SOURCE})
-    target_link_libraries(${EXAMPLE_NAME} PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson)
+    target_link_libraries(${EXAMPLE_NAME} PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson absl::flat_hash_map benchmark)
     target_include_directories(${EXAMPLE_NAME} PRIVATE ${libddwaf_SOURCE_DIR}/src)
 
     set_target_properties(${EXAMPLE_NAME} PROPERTIES

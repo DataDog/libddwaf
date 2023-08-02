@@ -101,7 +101,7 @@ parameter::operator parameter::map() const
         return parameter::map();
     }
 
-    std::unordered_map<std::string_view, parameter> map;
+    absl::flat_hash_map<std::string_view, parameter> map;
     map.reserve(nbEntries);
     for (unsigned i = 0; i < nbEntries; i++) {
         const parameter &kv = array[i];

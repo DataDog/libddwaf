@@ -19,7 +19,7 @@ rule_filter::rule_filter(std::string id, std::vector<condition::ptr> conditions,
     }
 }
 
-optional_ref<const std::unordered_set<rule *>> rule_filter::match(
+optional_ref<const absl::flat_hash_set<rule *>> rule_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     if (cache.result) {

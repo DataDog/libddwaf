@@ -19,7 +19,7 @@ TEST(TestRule, Match)
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    absl::flat_hash_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
     ddwaf::rule rule(
         "id", "name", std::move(tags), std::move(conditions), {"update", "block", "passlist"});
 
@@ -63,7 +63,7 @@ TEST(TestRule, NoMatch)
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    absl::flat_hash_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
     ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
 
     ddwaf_object root, tmp;
@@ -101,7 +101,7 @@ TEST(TestRule, ValidateCachedMatch)
         conditions.push_back(std::move(cond));
     }
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    absl::flat_hash_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
     ddwaf::rule::cache_type cache;
@@ -182,7 +182,7 @@ TEST(TestRule, MatchWithoutCache)
         conditions.push_back(std::move(cond));
     }
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    absl::flat_hash_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
 
@@ -257,7 +257,7 @@ TEST(TestRule, NoMatchWithoutCache)
         conditions.push_back(std::move(cond));
     }
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    absl::flat_hash_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
 
@@ -313,7 +313,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
         conditions.push_back(std::move(cond));
     }
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    absl::flat_hash_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
 
@@ -360,7 +360,7 @@ TEST(TestRule, ExcludeObject)
         std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
 
     std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    absl::flat_hash_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule(
         "id", "name", std::move(tags), std::move(conditions), {"update", "block", "passlist"});

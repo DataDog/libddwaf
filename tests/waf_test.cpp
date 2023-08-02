@@ -68,7 +68,7 @@ TEST(TestWaf, RuleDisabledInRuleset)
 
 TEST(TestWaf, AddressUniqueness)
 {
-    std::unordered_set<std::size_t> indices;
+    absl::flat_hash_set<std::size_t> indices;
 
     {
         std::size_t hash = std::hash<std::string>()("grpc.server.request.message");

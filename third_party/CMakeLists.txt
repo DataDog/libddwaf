@@ -194,4 +194,22 @@ ExternalProject_Add(proj_event_rules
     INSTALL_COMMAND "")
 
 set_target_properties(proj_event_rules PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+include(FetchContent)
+
+# Set the path to the Abseil source directory
+set(Abseil_SOURCE_DIR ${CMAKE_SOURCE_DIR}/abseil-cpp)
+
+# Download and build Abseil using FetchContent
+FetchContent_Declare(
+    abseil-cpp
+    GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(abseil-cpp)
+
+# Specify the include directories
+include_directories(${Abseil_SOURCE_DIR})
+
+
 # vim: et

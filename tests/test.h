@@ -24,6 +24,9 @@
 #include <gtest/gtest.h>
 #include <re2/re2.h>
 
+#include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
+
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <rapidjson/filereadstream.h>

@@ -71,7 +71,7 @@ class path_trie {
         // because trie_node is an incomplete type at this point
         template <typename K, typename V> using MapType = std::map<K, V>;
 #else
-        template <typename K, typename V> using MapType = std::unordered_map<K, V>;
+        template <typename K, typename V> using MapType = absl::flat_hash_map<K, V>;
 #endif
         MapType<std::string_view, trie_node> children_{};
     };
@@ -237,7 +237,7 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = std::unordered_set<target_index>;
+    using cache_type = absl::flat_hash_set<target_index>;
 
     explicit object_filter(const ddwaf::object_limits &limits = {}) : limits_(limits) {}
 
@@ -251,12 +251,12 @@ public:
     memory::unordered_set<const ddwaf_object *> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
-    const std::unordered_map<std::string, target_index> &get_targets() const { return targets_; }
+    const absl::flat_hash_map<std::string, target_index> &get_targets() const { return targets_; }
 
 protected:
     object_limits limits_;
-    std::unordered_map<target_index, path_trie> target_paths_;
-    std::unordered_map<std::string, target_index> targets_;
+    absl::flat_hash_map<target_index, path_trie> target_paths_;
+    absl::flat_hash_map<std::string, target_index> targets_;
 };
 
 } // namespace ddwaf::exclusion
