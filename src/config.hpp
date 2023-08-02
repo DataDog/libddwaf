@@ -9,12 +9,4 @@
 #include <obfuscator.hpp>
 #include <utils.hpp>
 
-namespace ddwaf {
-
-struct object_limits {
-    uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
-    uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
-    uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
-};
-
-} // namespace ddwaf
+namespace ddwaf {} // namespace ddwaf

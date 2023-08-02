@@ -6,12 +6,14 @@
 
 #pragma once
 
+#include <charconv>
 #include <cstdint>
 #include <ddwaf.h>
 #include <functional>
 #include <iterator>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 
 // Convert numbers to strings
@@ -29,6 +31,12 @@ template <typename T> using optional_ref = std::optional<std::reference_wrapper<
 
 namespace ddwaf {
 
+struct object_limits {
+    uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
+    uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
+    uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
+};
+
 using target_index = std::size_t;
 
 inline target_index get_target_index(const std::string &address)
@@ -36,11 +44,10 @@ inline target_index get_target_index(const std::string &address)
     return std::hash<std::string>{}(address);
 }
 
-inline size_t find_string_cutoff(
-    const char *str, size_t length, uint32_t max_string_length = DDWAF_MAX_STRING_LENGTH)
+inline size_t find_string_cutoff(const char *str, size_t length, object_limits limits = {})
 {
     // If the string is shorter than our cap, then fine
-    if (length <= max_string_length) {
+    if (length <= limits.max_string_length) {
         return length;
     }
 
@@ -57,7 +64,7 @@ inline size_t find_string_cutoff(
     //  - 10: Middle of multi byte sequence, we need to step back
     //  We therefore loop as long as we see the '10' sequence
 
-    size_t pos = max_string_length;
+    size_t pos = limits.max_string_length;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     while (pos != 0 && (str[pos] & 0xC0) == 0x80) { pos -= 1; }
 
@@ -115,5 +122,23 @@ public:
 protected:
     Fn fn_;
 };
+
+template <typename StringType, typename T,
+    std::enable_if_t<std::is_integral<T>::value, bool> = true>
+StringType to_string(T value)
+{
+    // Maximum number of characters required to represent a 64 bit integer as a string
+    // 20 bytes for UINT64_MAX or INT64_MIN + null byte
+    constexpr size_t uint64_max_chars = 21;
+
+    std::array<char, uint64_max_chars> str{};
+    auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
+    if (ec == std::errc()) {
+        return {str.data(), ptr};
+    }
+    return {};
+}
+
+template <typename StringType> StringType to_string(bool value) { return value ? "true" : "false"; }
 
 } // namespace ddwaf

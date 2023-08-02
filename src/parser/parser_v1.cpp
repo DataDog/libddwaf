@@ -172,7 +172,7 @@ void parse(
             parseRule(rule, section, rule_ids, rs, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("%s", e.what());
-            section.add_failed("index:" + std::to_string(i), e.what());
+            section.add_failed("index:" + to_string<std::string>(i), e.what());
         }
     }
 

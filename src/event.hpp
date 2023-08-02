@@ -14,6 +14,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <variant>
 
 namespace ddwaf {
 

@@ -422,7 +422,7 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
     return {std::move(expr), std::move(rules_target), on_match};
 }
 
-std::string index_to_id(unsigned idx) { return "index:" + std::to_string(idx); }
+std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
 } // namespace
 

@@ -92,13 +92,11 @@ TEST(TestIntegrationOperation, SignedEquals)
     ddwaf_result out;
     ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
-    EXPECT_EVENTS(out, {.id = "3",
-                           .name = "rule3-signed-equals",
-                           .tags = {{"type", "flow"}, {"category", "category"}},
-                           .matches = {{.op = "equals",
-                               .address = "input",
-                               .value = "", // TODO show value
-                               .highlight = ""}}});
+    EXPECT_EVENTS(out,
+        {.id = "3",
+            .name = "rule3-signed-equals",
+            .tags = {{"type", "flow"}, {"category", "category"}},
+            .matches = {{.op = "equals", .address = "input", .value = "-42", .highlight = ""}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -124,13 +122,11 @@ TEST(TestIntegrationOperation, UnsignedEquals)
     ddwaf_result out;
     ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
-    EXPECT_EVENTS(out, {.id = "4",
-                           .name = "rule4-unsigned-equals",
-                           .tags = {{"type", "flow"}, {"category", "category"}},
-                           .matches = {{.op = "equals",
-                               .address = "input",
-                               .value = "", // TODO show value
-                               .highlight = ""}}});
+    EXPECT_EVENTS(out,
+        {.id = "4",
+            .name = "rule4-unsigned-equals",
+            .tags = {{"type", "flow"}, {"category", "category"}},
+            .matches = {{.op = "equals", .address = "input", .value = "42", .highlight = ""}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
