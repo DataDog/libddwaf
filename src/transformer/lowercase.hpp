@@ -16,7 +16,12 @@ public:
     static std::string_view name() { return "lowercase"; }
 
 protected:
+#ifndef __SSE2__
     static bool needs_transform(std::string_view /*str*/) { return true; }
+#else
+    static bool needs_transform(std::string_view str);
+#endif
+
     static bool transform_impl(cow_string &str);
 
     friend class base<lowercase>;
