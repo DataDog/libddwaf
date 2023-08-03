@@ -50,12 +50,12 @@ using namespace std;
 #include <waf.hpp>
 #include <yaml-cpp/yaml.h>
 
-#include <operation/exact_match.hpp>
-#include <operation/ip_match.hpp>
-#include <operation/is_sqli.hpp>
-#include <operation/is_xss.hpp>
-#include <operation/phrase_match.hpp>
-#include <operation/regex_match.hpp>
+#include <matcher/exact_match.hpp>
+#include <matcher/ip_match.hpp>
+#include <matcher/is_sqli.hpp>
+#include <matcher/is_xss.hpp>
+#include <matcher/phrase_match.hpp>
+#include <matcher/regex_match.hpp>
 
 #include "test_utils.hpp"
 

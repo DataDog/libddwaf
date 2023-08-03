@@ -104,7 +104,7 @@ public:
         void add_loaded(std::string_view id) override;
         void add_failed(std::string_view id, std::string_view error) override;
 
-        // This operation effectively moves the contents
+        // This matcher effectively moves the contents
         void to_object(ddwaf_object &output)
         {
             ddwaf_object_map(&output);
@@ -153,7 +153,7 @@ public:
 
     void set_ruleset_version(std::string_view version) override { ruleset_version_ = version; }
 
-    // This operation effectively moves the contents
+    // This matcher effectively moves the contents
     void to_object(ddwaf_object &output) override
     {
         ddwaf_object_map(&output);

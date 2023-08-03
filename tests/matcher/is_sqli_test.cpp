@@ -6,39 +6,39 @@
 
 #include "../test.h"
 
-using namespace ddwaf::operation;
+using namespace ddwaf::matcher;
 
-TEST(TestIsXSS, TestBasic)
+TEST(TestIsSQLi, TestBasic)
 {
-    is_xss processor;
+    is_sqli processor;
     EXPECT_STREQ(processor.to_string().data(), "");
-    EXPECT_STREQ(processor.name().data(), "is_xss");
+    EXPECT_STREQ(processor.name().data(), "is_sqli");
 
     ddwaf_object param;
-    ddwaf_object_string(&param, "<script>alert(1);</script>");
+    ddwaf_object_string(&param, "'OR 1=1/*");
 
     auto [res, highlight] = processor.match(param);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "");
+    EXPECT_STREQ(highlight.c_str(), "s&1c");
 
     ddwaf_object_free(&param);
 }
 
-TEST(TestIsXSS, TestNoMatch)
+TEST(TestIsSQLi, TestNoMatch)
 {
-    is_xss processor;
+    is_sqli processor;
 
     ddwaf_object param;
-    ddwaf_object_string(&param, "non-xss");
+    ddwaf_object_string(&param, "*");
 
     EXPECT_FALSE(processor.match(param).first);
 
     ddwaf_object_free(&param);
 }
 
-TEST(TestIsXSS, TestInvalidInput)
+TEST(TestIsSQLi, TestInvalidInput)
 {
-    is_xss processor;
+    is_sqli processor;
 
     EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
     EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
@@ -46,11 +46,11 @@ TEST(TestIsXSS, TestInvalidInput)
     EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
 }
 
-TEST(TestIsXSS, TestRuleset)
+TEST(TestIsSQLi, TestRuleset)
 {
     // Initialize a PowerWAF rule
     auto rule = readRule(
-        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_xss, parameters: {inputs: [{address: arg1}]}}]}]})");
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_sqli, parameters: {inputs: [{address: arg1}]}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -63,21 +63,19 @@ TEST(TestIsXSS, TestRuleset)
     ddwaf_object param;
     ddwaf_object tmp;
     ddwaf_object_map(&param);
-    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
+    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "'OR 1=1/*"));
 
     ddwaf_result ret;
 
     auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_EVENTS(ret, {.id = "1",
-                           .name = "rule1",
-                           .tags = {{"type", "flow1"}, {"category", "category1"}},
-                           .matches = {{
-                               .op = "is_xss",
-                               .address = "arg1",
-                               .value = "<script>alert(1);</script>",
-                           }}});
+    EXPECT_EVENTS(ret,
+        {.id = "1",
+            .name = "rule1",
+            .tags = {{"type", "flow1"}, {"category", "category1"}},
+            .matches = {
+                {.op = "is_sqli", .address = "arg1", .value = "'OR 1=1/*", .highlight = "s&1c"}}});
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

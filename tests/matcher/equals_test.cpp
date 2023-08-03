@@ -5,21 +5,21 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "../test.h"
-#include "operation/equals.hpp"
+#include "matcher/equals.hpp"
 
 #include <algorithm>
 
 TEST(TestEqualsBool, Basic)
 {
     {
-        operation::equals<bool> processor(false);
+        matcher::equals<bool> processor(false);
 
         EXPECT_TRUE(processor.match(false).first);
         EXPECT_FALSE(processor.match(true).first);
     }
 
     {
-        operation::equals<bool> processor(true);
+        matcher::equals<bool> processor(true);
 
         EXPECT_TRUE(processor.match(true).first);
         EXPECT_FALSE(processor.match(false).first);
@@ -28,7 +28,7 @@ TEST(TestEqualsBool, Basic)
 
 TEST(TestEqualsInt, Basic)
 {
-    operation::equals<int64_t> processor(5);
+    matcher::equals<int64_t> processor(5);
 
     EXPECT_TRUE(processor.match(5).first);
     EXPECT_FALSE(processor.match(1).first);
@@ -37,7 +37,7 @@ TEST(TestEqualsInt, Basic)
 
 TEST(TestEqualsUint, Basic)
 {
-    operation::equals<uint64_t> processor(2132132);
+    matcher::equals<uint64_t> processor(2132132);
 
     EXPECT_TRUE(processor.match(2132132).first);
     EXPECT_FALSE(processor.match(1).first);
@@ -45,7 +45,7 @@ TEST(TestEqualsUint, Basic)
 
 TEST(TestEqualsString, Basic)
 {
-    operation::equals<std::string> processor("aaaa");
+    matcher::equals<std::string> processor("aaaa");
 
     EXPECT_TRUE(processor.match("aaaa"sv).first);
     EXPECT_TRUE(processor.match("aaaa"s).first);
@@ -59,7 +59,7 @@ TEST(TestEqualsString, Basic)
 
 TEST(TestEqualsString, InvalidMatchInput)
 {
-    operation::equals<std::string> processor("aaaa");
+    matcher::equals<std::string> processor("aaaa");
 
     EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
     EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);

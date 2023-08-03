@@ -7,7 +7,7 @@
 #include "../test.h"
 #include <algorithm>
 
-using namespace ddwaf::operation;
+using namespace ddwaf::matcher;
 
 TEST(TestPhraseMatch, TestBasic)
 {

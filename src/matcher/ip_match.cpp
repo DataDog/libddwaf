@@ -6,11 +6,11 @@
 
 #include <cstring>
 #include <ip_utils.hpp>
-#include <operation/ip_match.hpp>
+#include <matcher/ip_match.hpp>
 #include <stdexcept>
 #include <string_view>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 ip_match::ip_match(const std::vector<std::string_view> &ip_list)
     : rtree_(radix_new(radix_tree_bits), radix_free)
@@ -87,4 +87,4 @@ std::pair<bool, memory::string> ip_match::match_impl(std::string_view str) const
     return {true, memory::string{str}};
 }
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

@@ -42,7 +42,7 @@ memory::string object_to_string(const ddwaf_object &object)
 } // namespace
 
 std::optional<event::match> expression::evaluator::eval_object(const ddwaf_object *object,
-    const operation::base &processor, const std::vector<transformer_id> &transformers) const
+    const matcher::base &processor, const std::vector<transformer_id> &transformers) const
 {
     ddwaf_object src = *object;
 
@@ -76,7 +76,7 @@ std::optional<event::match> expression::evaluator::eval_object(const ddwaf_objec
 
 template <typename T>
 std::optional<event::match> expression::evaluator::eval_target(
-    T &it, const operation::base &processor, const std::vector<transformer_id> &transformers)
+    T &it, const matcher::base &processor, const std::vector<transformer_id> &transformers)
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -100,7 +100,7 @@ std::optional<event::match> expression::evaluator::eval_target(
     return std::nullopt;
 }
 
-const operation::base *expression::evaluator::get_processor(const condition &cond) const
+const matcher::base *expression::evaluator::get_processor(const condition &cond) const
 {
     if (cond.processor || cond.data_id.empty()) {
         return cond.processor.get();
@@ -199,7 +199,7 @@ bool expression::evaluator::eval()
 
 bool expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
-    const std::unordered_map<std::string, operation::base::shared_ptr> &dynamic_processors,
+    const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
     if (cache.result || conditions_.empty()) {

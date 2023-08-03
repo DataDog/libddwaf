@@ -5,9 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <exception.hpp>
-#include <operation/exact_match.hpp>
+#include <matcher/exact_match.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 exact_match::exact_match(std::vector<std::string> &&data) : data_(std::move(data))
 {
@@ -53,4 +53,4 @@ std::pair<bool, memory::string> exact_match::match_impl(std::string_view str) co
     return {true, memory::string{str}};
 }
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include <matcher/base.hpp>
 #include <memory>
-#include <operation/base.hpp>
 #include <re2/re2.h>
 #include <utils.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 class regex_match : public base_impl<regex_match> {
 public:
@@ -36,4 +36,4 @@ protected:
     friend class base_impl<regex_match>;
 };
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

@@ -52,7 +52,7 @@ public:
         collection_cache &cache,
         const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
         const memory::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
-        const std::unordered_map<std::string, operation::base::shared_ptr> &dynamic_processors,
+        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
 protected:

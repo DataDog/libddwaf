@@ -7,11 +7,11 @@
 #pragma once
 
 #include <ip_utils.hpp>
+#include <matcher/base.hpp>
 #include <memory>
-#include <operation/base.hpp>
 #include <radixlib.h>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 class ip_match : public base_impl<ip_match> {
 public:
@@ -39,4 +39,4 @@ protected:
     friend class base_impl<ip_match>;
 };
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

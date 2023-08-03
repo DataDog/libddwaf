@@ -15,7 +15,7 @@
 #include <event.hpp>
 #include <utils.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 class base {
 public:
@@ -101,4 +101,4 @@ public:
     }
 };
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

@@ -11,7 +11,7 @@ using namespace ddwaf;
 TEST(TestRule, Match)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
@@ -52,7 +52,7 @@ TEST(TestRule, Match)
 TEST(TestRule, NoMatch)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{});
     builder.add_target("http.client_ip");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
@@ -76,10 +76,10 @@ TEST(TestRule, NoMatch)
 TEST(TestRule, ValidateCachedMatch)
 {
     expression_builder builder(2);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
@@ -147,10 +147,10 @@ TEST(TestRule, ValidateCachedMatch)
 TEST(TestRule, MatchWithoutCache)
 {
     expression_builder builder(2);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
@@ -210,10 +210,10 @@ TEST(TestRule, MatchWithoutCache)
 TEST(TestRule, NoMatchWithoutCache)
 {
     expression_builder builder(2);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
@@ -254,10 +254,10 @@ TEST(TestRule, NoMatchWithoutCache)
 TEST(TestRule, FullCachedMatchSecondRun)
 {
     expression_builder builder(2);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
@@ -300,7 +300,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
 TEST(TestRule, ExcludeObject)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};

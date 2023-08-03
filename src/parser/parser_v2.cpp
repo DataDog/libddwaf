@@ -8,13 +8,13 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <log.hpp>
-#include <operation/equals.hpp>
-#include <operation/exact_match.hpp>
-#include <operation/ip_match.hpp>
-#include <operation/is_sqli.hpp>
-#include <operation/is_xss.hpp>
-#include <operation/phrase_match.hpp>
-#include <operation/regex_match.hpp>
+#include <matcher/equals.hpp>
+#include <matcher/exact_match.hpp>
+#include <matcher/ip_match.hpp>
+#include <matcher/is_sqli.hpp>
+#include <matcher/is_xss.hpp>
+#include <matcher/phrase_match.hpp>
+#include <matcher/regex_match.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <parser/parser.hpp>
@@ -28,20 +28,20 @@
 #include <unordered_map>
 #include <vector>
 
-using ddwaf::operation::base;
+using ddwaf::matcher::base;
 
 namespace ddwaf::parser::v2 {
 
 namespace {
 
-std::pair<std::string, operation::base::unique_ptr> parse_processor(
-    std::string_view operation, const parameter::map &params)
+std::pair<std::string, matcher::base::unique_ptr> parse_processor(
+    std::string_view matcher, const parameter::map &params)
 {
     parameter::map options;
     std::unique_ptr<base> processor;
     std::string rule_data_id;
 
-    if (operation == "phrase_match") {
+    if (matcher == "phrase_match") {
         auto list = at<parameter::vector>(params, "list");
 
         std::vector<const char *> patterns;
@@ -59,8 +59,8 @@ std::pair<std::string, operation::base::unique_ptr> parse_processor(
             lengths.push_back((uint32_t)pattern.nbEntries);
         }
 
-        processor = std::make_unique<operation::phrase_match>(patterns, lengths);
-    } else if (operation == "match_regex") {
+        processor = std::make_unique<matcher::phrase_match>(patterns, lengths);
+    } else if (matcher == "match_regex") {
         auto regex = at<std::string>(params, "regex");
         options = at<parameter::map>(params, "options", options);
 
@@ -70,46 +70,46 @@ std::pair<std::string, operation::base::unique_ptr> parse_processor(
             throw ddwaf::parsing_error("min_length is a negative number");
         }
 
-        processor = std::make_unique<operation::regex_match>(regex, min_length, case_sensitive);
-    } else if (operation == "is_xss") {
-        processor = std::make_unique<operation::is_xss>();
-    } else if (operation == "is_sqli") {
-        processor = std::make_unique<operation::is_sqli>();
-    } else if (operation == "ip_match") {
+        processor = std::make_unique<matcher::regex_match>(regex, min_length, case_sensitive);
+    } else if (matcher == "is_xss") {
+        processor = std::make_unique<matcher::is_xss>();
+    } else if (matcher == "is_sqli") {
+        processor = std::make_unique<matcher::is_sqli>();
+    } else if (matcher == "ip_match") {
         auto it = params.find("list");
         if (it == params.end()) {
             rule_data_id = at<std::string>(params, "data");
         } else {
-            processor = std::make_unique<operation::ip_match>(
+            processor = std::make_unique<matcher::ip_match>(
                 static_cast<std::vector<std::string_view>>(it->second));
         }
-    } else if (operation == "exact_match") {
+    } else if (matcher == "exact_match") {
         auto it = params.find("list");
         if (it == params.end()) {
             rule_data_id = at<std::string>(params, "data");
         } else {
-            processor = std::make_unique<operation::exact_match>(
+            processor = std::make_unique<matcher::exact_match>(
                 static_cast<std::vector<std::string>>(it->second));
         }
-    } else if (operation == "equals") {
+    } else if (matcher == "equals") {
         auto value_type = at<std::string>(params, "type");
         if (value_type == "string") {
             auto value = at<std::string>(params, "value");
-            processor = std::make_unique<operation::equals<std::string>>(std::move(value));
+            processor = std::make_unique<matcher::equals<std::string>>(std::move(value));
         } else if (value_type == "boolean") {
             auto value = at<bool>(params, "value");
-            processor = std::make_unique<operation::equals<bool>>(value);
+            processor = std::make_unique<matcher::equals<bool>>(value);
         } else if (value_type == "unsigned") {
             auto value = at<uint64_t>(params, "value");
-            processor = std::make_unique<operation::equals<uint64_t>>(value);
+            processor = std::make_unique<matcher::equals<uint64_t>>(value);
         } else if (value_type == "signed") {
             auto value = at<int64_t>(params, "value");
-            processor = std::make_unique<operation::equals<int64_t>>(value);
+            processor = std::make_unique<matcher::equals<int64_t>>(value);
         } else {
             throw ddwaf::parsing_error("invalid type for processor equals" + value_type);
         }
     } else {
-        throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
+        throw ddwaf::parsing_error("unknown processor: " + std::string(matcher));
     }
 
     return {std::move(rule_data_id), std::move(processor)};
@@ -152,14 +152,14 @@ expression::ptr parse_expression(const parameter::vector &conditions_array,
 
         builder.start_condition();
 
-        auto operation = at<std::string_view>(root, "operator");
+        auto matcher = at<std::string_view>(root, "operator");
         auto params = at<parameter::map>(root, "parameters");
 
-        auto [rule_data_id, processor] = parse_processor(operation, params);
+        auto [rule_data_id, processor] = parse_processor(matcher, params);
         builder.set_data_id(rule_data_id);
         builder.set_processor(std::move(processor));
         if (!processor && !rule_data_id.empty()) {
-            rule_data_ids.emplace(rule_data_id, operation);
+            rule_data_ids.emplace(rule_data_id, matcher);
         }
 
         auto inputs = at<parameter::vector>(params, "inputs");
@@ -305,10 +305,10 @@ expression::ptr parse_filter_expression(
 
         builder.start_condition();
 
-        auto operation = at<std::string_view>(root, "operator");
+        auto matcher = at<std::string_view>(root, "operator");
         auto params = at<parameter::map>(root, "parameters");
 
-        auto [rule_data_id, processor] = parse_processor(operation, params);
+        auto [rule_data_id, processor] = parse_processor(matcher, params);
         if (!rule_data_id.empty()) {
             throw ddwaf::parsing_error("filter conditions don't support dynamic data");
         }
@@ -474,36 +474,36 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
             auto type = at<std::string_view>(entry, "type");
             auto data = at<parameter>(entry, "data");
 
-            std::string_view operation;
+            std::string_view matcher;
             auto it = rule_data_ids.find(id);
             if (it == rule_data_ids.end()) {
                 // Infer processor from data type
                 if (type == "ip_with_expiration") {
-                    operation = "ip_match";
+                    matcher = "ip_match";
                 } else if (type == "data_with_expiration") {
-                    operation = "exact_match";
+                    matcher = "exact_match";
                 } else {
                     DDWAF_DEBUG("Failed to process rule data id '%s", id.c_str());
                     info.add_failed(id, "failed to infer processor");
                     continue;
                 }
             } else {
-                operation = it->second;
+                matcher = it->second;
             }
 
-            operation::base::shared_ptr processor;
-            if (operation == "ip_match") {
-                using rule_data_type = operation::ip_match::rule_data_type;
+            matcher::base::shared_ptr processor;
+            if (matcher == "ip_match") {
+                using rule_data_type = matcher::ip_match::rule_data_type;
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
-                processor = std::make_shared<operation::ip_match>(parsed_data);
-            } else if (operation == "exact_match") {
-                using rule_data_type = operation::exact_match::rule_data_type;
+                processor = std::make_shared<matcher::ip_match>(parsed_data);
+            } else if (matcher == "exact_match") {
+                using rule_data_type = matcher::exact_match::rule_data_type;
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
-                processor = std::make_shared<operation::exact_match>(parsed_data);
+                processor = std::make_shared<matcher::exact_match>(parsed_data);
             } else {
-                DDWAF_WARN("Processor %s doesn't support dynamic rule data", operation.data());
-                info.add_failed(id,
-                    "processor " + std::string(operation) + " doesn't support dynamic rule data");
+                DDWAF_WARN("Processor %s doesn't support dynamic rule data", matcher.data());
+                info.add_failed(
+                    id, "processor " + std::string(matcher) + " doesn't support dynamic rule data");
                 continue;
             }
 

@@ -7,7 +7,7 @@
 #include "../test.h"
 #include <algorithm>
 
-using namespace ddwaf::operation;
+using namespace ddwaf::matcher;
 
 bool match(ip_match &processor, std::string_view ip) { return processor.match(ip).first; }
 

@@ -6,10 +6,10 @@
 
 #include <exception.hpp>
 #include <log.hpp>
-#include <operation/is_sqli.hpp>
-#include <operation/is_xss.hpp>
-#include <operation/phrase_match.hpp>
-#include <operation/regex_match.hpp>
+#include <matcher/is_sqli.hpp>
+#include <matcher/is_xss.hpp>
+#include <matcher/phrase_match.hpp>
+#include <matcher/regex_match.hpp>
 #include <parameter.hpp>
 #include <parser/common.hpp>
 #include <parser/parser.hpp>
@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <vector>
 
-using ddwaf::operation::base;
+using ddwaf::matcher::base;
 
 namespace ddwaf::parser::v1 {
 
@@ -36,12 +36,12 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
 
         builder.start_condition();
 
-        auto operation = at<std::string_view>(cond, "operation");
+        auto matcher = at<std::string_view>(cond, "operation");
         auto params = at<parameter::map>(cond, "parameters");
 
         parameter::map options;
-        operation::base::unique_ptr processor;
-        if (operation == "phrase_match") {
+        matcher::base::unique_ptr processor;
+        if (matcher == "phrase_match") {
             auto list = at<parameter::vector>(params, "list");
 
             std::vector<const char *> patterns;
@@ -59,8 +59,8 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
                 lengths.push_back((uint32_t)pattern.nbEntries);
             }
 
-            processor = std::make_unique<operation::phrase_match>(patterns, lengths);
-        } else if (operation == "match_regex") {
+            processor = std::make_unique<matcher::phrase_match>(patterns, lengths);
+        } else if (matcher == "match_regex") {
             auto regex = at<std::string>(params, "regex");
             options = at<parameter::map>(params, "options", options);
 
@@ -70,13 +70,13 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
                 throw ddwaf::parsing_error("min_length is a negative number");
             }
 
-            processor = std::make_unique<operation::regex_match>(regex, min_length, case_sensitive);
-        } else if (operation == "is_xss") {
-            processor = std::make_unique<operation::is_xss>();
-        } else if (operation == "is_sqli") {
-            processor = std::make_unique<operation::is_sqli>();
+            processor = std::make_unique<matcher::regex_match>(regex, min_length, case_sensitive);
+        } else if (matcher == "is_xss") {
+            processor = std::make_unique<matcher::is_xss>();
+        } else if (matcher == "is_sqli") {
+            processor = std::make_unique<matcher::is_sqli>();
         } else {
-            throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
+            throw ddwaf::parsing_error("unknown processor: " + std::string(matcher));
         }
         builder.set_processor(std::move(processor));
 

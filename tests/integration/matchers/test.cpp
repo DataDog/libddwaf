@@ -9,7 +9,7 @@
 using namespace ddwaf;
 
 namespace {
-constexpr std::string_view base_dir = "integration/operations/";
+constexpr std::string_view base_dir = "integration/matchers/";
 } // namespace
 
 TEST(TestIntegrationOperation, StringEquals)

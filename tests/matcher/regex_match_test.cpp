@@ -6,7 +6,7 @@
 
 #include "../test.h"
 
-using namespace ddwaf::operation;
+using namespace ddwaf::matcher;
 
 TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {

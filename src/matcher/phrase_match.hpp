@@ -7,10 +7,10 @@
 #pragma once
 
 #include <ac.h>
+#include <matcher/base.hpp>
 #include <memory>
-#include <operation/base.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 class phrase_match : public base_impl<phrase_match> {
 public:
@@ -33,4 +33,4 @@ protected:
     friend class base_impl<phrase_match>;
 };
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

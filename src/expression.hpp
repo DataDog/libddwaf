@@ -19,8 +19,8 @@
 #include "event.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
+#include "matcher/base.hpp"
 #include "object_store.hpp"
-#include "operation/base.hpp"
 #include "transformer/manager.hpp"
 #include "utils.hpp"
 
@@ -50,7 +50,7 @@ public:
         };
 
         std::vector<target_type> targets;
-        operation::base::unique_ptr processor;
+        matcher::base::unique_ptr processor;
         std::string data_id;
     };
 
@@ -65,21 +65,20 @@ public:
         std::optional<event::match> eval_condition(const condition &cond, bool run_on_new);
 
         template <typename T>
-        std::optional<event::match> eval_target(T &it, const operation::base &processor,
-            const std::vector<transformer_id> &transformers);
+        std::optional<event::match> eval_target(
+            T &it, const matcher::base &processor, const std::vector<transformer_id> &transformers);
 
         std::optional<event::match> eval_object(const ddwaf_object *object,
-            const operation::base &processor,
-            const std::vector<transformer_id> &transformers) const;
+            const matcher::base &processor, const std::vector<transformer_id> &transformers) const;
 
-        [[nodiscard]] const operation::base *get_processor(const condition &cond) const;
+        [[nodiscard]] const matcher::base *get_processor(const condition &cond) const;
 
         ddwaf::timer &deadline;
         const ddwaf::object_limits &limits;
         const std::vector<condition::ptr> &conditions;
         const object_store &store;
         const std::unordered_set<const ddwaf_object *> &objects_excluded;
-        const std::unordered_map<std::string, operation::base::shared_ptr> &dynamic_processors;
+        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_processors;
         cache_type &cache;
     };
 
@@ -91,7 +90,7 @@ public:
 
     bool eval(cache_type &cache, const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, operation::base::shared_ptr> &dynamic_processors,
+        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_processors,
         ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_set<std::string> &addresses) const
@@ -151,7 +150,7 @@ public:
         cond->processor = std::make_unique<T>(args...);
     }
 
-    void set_processor(operation::base::unique_ptr &&processor)
+    void set_processor(matcher::base::unique_ptr &&processor)
     {
         auto &cond = conditions_.back();
         cond->processor = std::move(processor);
