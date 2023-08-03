@@ -16,12 +16,15 @@
 #  include <dlfcn.h>
 #  include <log.hpp>
 
-#  ifdef __aarch64__
-#    define VDSO_CLOCK_GETTIME "__kernel_clock_gettime"
-#  else
-#    define VDSO_CLOCK_GETTIME "__vdso_clock_gettime"
-#  endif
 namespace ddwaf {
+namespace {
+#  ifdef __aarch64__
+constexpr const char *VDSO_CLOCK_GETTIME = "__kernel_clock_gettime";
+#  else
+constexpr const char *VDSO_CLOCK_GETTIME = "__vdso_clock_gettime";
+#  endif
+} // namespace
+
 using clock_gettime_t = int (*)(clockid_t, timespec *);
 
 static clock_gettime_t clock_gettime = &::clock_gettime;

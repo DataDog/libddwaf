@@ -166,7 +166,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     auto rs = std::make_shared<ddwaf::ruleset>();
     rs->insert_rules(final_base_rules_);
     rs->insert_rules(final_user_rules_);
-    rs->dynamic_processors = dynamic_processors_;
+    rs->dynamic_matchers = dynamic_matchers_;
     rs->rule_filters = rule_filters_;
     rs->input_filters = input_filters_;
     rs->free_fn = free_fn_;
@@ -245,18 +245,18 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto rules_data = static_cast<parameter::vector>(it->second);
             if (!rules_data.empty()) {
-                auto new_processors =
+                auto new_matchers =
                     parser::v2::parse_rule_data(rules_data, section, rule_data_ids_);
-                if (new_processors.empty()) {
+                if (new_matchers.empty()) {
                     // The rules_data array might have unrelated IDs, so we need
                     // to consider "no valid IDs" as an empty rules_data
-                    dynamic_processors_.clear();
+                    dynamic_matchers_.clear();
                 } else {
-                    dynamic_processors_ = std::move(new_processors);
+                    dynamic_matchers_ = std::move(new_matchers);
                 }
             } else {
                 DDWAF_DEBUG("Clearing all rule data");
-                dynamic_processors_.clear();
+                dynamic_matchers_.clear();
             }
             state = state | change_state::data;
         } catch (const std::exception &e) {

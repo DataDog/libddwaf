@@ -7,9 +7,9 @@
 #pragma once
 
 #include <libinjection.h>
-#include <operation/base.hpp>
+#include <matcher/base.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 class is_sqli : public base_impl<is_sqli> {
 public:
@@ -32,4 +32,4 @@ protected:
     friend class base_impl<is_sqli>;
 };
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

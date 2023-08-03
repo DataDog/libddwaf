@@ -5,10 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <libinjection.h>
-#include <operation/is_xss.hpp>
+#include <matcher/is_xss.hpp>
 #include <utils.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 std::pair<bool, memory::string> is_xss::match_impl(std::string_view pattern)
 {
@@ -20,4 +20,4 @@ std::pair<bool, memory::string> is_xss::match_impl(std::string_view pattern)
     return {true, {}};
 }
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

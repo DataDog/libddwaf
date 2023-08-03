@@ -202,7 +202,7 @@ TEST(TestParserV1, TestMultipleDiffInvalidRules)
     }
 
     {
-        auto it = errors.find("unknown processor: squash");
+        auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -252,7 +252,7 @@ TEST(TestParserV1, TestMultipleMixInvalidRules)
     }
 
     {
-        auto it = errors.find("unknown processor: squash");
+        auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);

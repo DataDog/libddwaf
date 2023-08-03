@@ -86,12 +86,12 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/operation/phrase_match.cpp
-    ${libddwaf_SOURCE_DIR}/src/operation/regex_match.cpp
-    ${libddwaf_SOURCE_DIR}/src/operation/is_sqli.cpp
-    ${libddwaf_SOURCE_DIR}/src/operation/is_xss.cpp
-    ${libddwaf_SOURCE_DIR}/src/operation/ip_match.cpp
-    ${libddwaf_SOURCE_DIR}/src/operation/exact_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/phrase_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/regex_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/is_sqli.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/is_xss.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/ip_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/exact_match.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/lowercase.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/compress_whitespace.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/normalize_path.cpp

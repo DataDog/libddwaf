@@ -71,7 +71,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
 TEST(TestInputFilter, InputExclusionWithCondition)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
     ddwaf_object root;
@@ -101,7 +101,7 @@ TEST(TestInputFilter, InputExclusionWithCondition)
 TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id", {}, {transformer_id::lowercase});
 
     ddwaf_object root;
@@ -131,7 +131,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 TEST(TestInputFilter, InputExclusionFailedCondition)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
     ddwaf_object root;
@@ -158,7 +158,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
 TEST(TestInputFilter, ObjectExclusionWithCondition)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
     ddwaf_object root;
@@ -194,7 +194,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
 TEST(TestInputFilter, ObjectExclusionFailedCondition)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
     ddwaf_object root;
@@ -228,10 +228,10 @@ TEST(TestInputFilter, InputValidateCachedMatch)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -279,10 +279,10 @@ TEST(TestInputFilter, InputMatchWithoutCache)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -326,10 +326,10 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -380,10 +380,10 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -432,10 +432,10 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -492,10 +492,10 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -549,10 +549,10 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -605,10 +605,10 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();

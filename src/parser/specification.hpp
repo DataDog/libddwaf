@@ -54,7 +54,7 @@ struct input_filter_spec {
 
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
-using rule_data_container = std::unordered_map<std::string, operation::base::shared_ptr>;
+using rule_data_container = std::unordered_map<std::string, matcher::base::shared_ptr>;
 
 struct override_spec_container {
     [[nodiscard]] bool empty() const { return by_ids.empty() && by_tags.empty(); }

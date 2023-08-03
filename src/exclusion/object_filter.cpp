@@ -58,7 +58,7 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
             if (child->parameterName == nullptr || child->parameterNameLength == 0) {
                 child_traverser = current_trie.descend_wildcard();
             } else {
-                std::string_view key{
+                const std::string_view key{
                     child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
                 child_traverser = current_trie.descend(key);
             }

@@ -5,11 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <exception.hpp>
-#include <operation/phrase_match.hpp>
+#include <matcher/phrase_match.hpp>
 #include <stdexcept>
 #include <vector>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 phrase_match::phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths)
 {
@@ -32,10 +32,10 @@ std::pair<bool, memory::string> phrase_match::match_impl(std::string_view patter
         return {false, {}};
     }
 
-    ac_result_t result =
+    const ac_result_t result =
         ac_match(acStructure, pattern.data(), static_cast<uint32_t>(pattern.size()));
 
-    bool didMatch =
+    const bool didMatch =
         result.match_begin >= 0 && result.match_end >= 0 && result.match_begin < result.match_end;
     if (!didMatch) {
         return {false, {}};
@@ -50,4 +50,4 @@ std::pair<bool, memory::string> phrase_match::match_impl(std::string_view patter
     return {true, matched_value};
 }
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

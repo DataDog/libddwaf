@@ -7,12 +7,12 @@
 #pragma once
 
 #include <clock.hpp>
-#include <operation/base.hpp>
+#include <matcher/base.hpp>
 #include <string_view>
 #include <unordered_map>
 #include <utils.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 template <typename T> class equals : public base_impl<equals<T>> {
 public:
@@ -64,4 +64,4 @@ protected:
     friend class base_impl<equals<T>>;
 };
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

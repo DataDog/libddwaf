@@ -6,10 +6,10 @@
 
 #include <array>
 #include <libinjection.h>
-#include <operation/is_sqli.hpp>
+#include <matcher/is_sqli.hpp>
 #include <utils.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 std::pair<bool, memory::string> is_sqli::match_impl(std::string_view pattern)
 {
@@ -26,4 +26,4 @@ std::pair<bool, memory::string> is_sqli::match_impl(std::string_view pattern)
     return {true, fingerprint.data()};
 }
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

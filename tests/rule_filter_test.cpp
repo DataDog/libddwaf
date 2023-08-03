@@ -11,7 +11,7 @@ using namespace ddwaf;
 TEST(TestRuleFilter, Match)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
     auto rule =
@@ -35,7 +35,7 @@ TEST(TestRuleFilter, Match)
 TEST(TestRuleFilter, NoMatch)
 {
     expression_builder builder(1);
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{});
     builder.add_target("http.client_ip");
 
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {}};
@@ -58,10 +58,10 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto rule =
@@ -104,10 +104,10 @@ TEST(TestRuleFilter, MatchWithoutCache)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto rule =
@@ -149,10 +149,10 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto rule =
@@ -194,10 +194,10 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
 {
     expression_builder builder(2);
 
-    builder.start_condition<operation::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
     builder.add_target("http.client_ip");
 
-    builder.start_condition<operation::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
     builder.add_target("usr.id");
 
     auto rule =

@@ -7,12 +7,12 @@
 #pragma once
 
 #include <clock.hpp>
-#include <operation/base.hpp>
+#include <matcher/base.hpp>
 #include <string_view>
 #include <unordered_map>
 #include <utils.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 class exact_match : public base_impl<exact_match> {
 public:
@@ -40,4 +40,4 @@ protected:
     friend class base_impl<exact_match>;
 };
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

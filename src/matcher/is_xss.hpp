@@ -7,9 +7,9 @@
 #pragma once
 
 #include <libinjection.h>
-#include <operation/base.hpp>
+#include <matcher/base.hpp>
 
-namespace ddwaf::operation {
+namespace ddwaf::matcher {
 
 class is_xss : public base_impl<is_xss> {
 public:
@@ -30,4 +30,4 @@ protected:
     friend class base_impl<is_xss>;
 };
 
-} // namespace ddwaf::operation
+} // namespace ddwaf::matcher

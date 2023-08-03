@@ -6,18 +6,18 @@
 
 #include "../test.h"
 
-using namespace ddwaf::operation;
+using namespace ddwaf::matcher;
 
 TEST(TestIsSQLi, TestBasic)
 {
-    is_sqli processor;
-    EXPECT_STREQ(processor.to_string().data(), "");
-    EXPECT_STREQ(processor.name().data(), "is_sqli");
+    is_sqli matcher;
+    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STREQ(matcher.name().data(), "is_sqli");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "'OR 1=1/*");
 
-    auto [res, highlight] = processor.match(param);
+    auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "s&1c");
 
@@ -26,24 +26,24 @@ TEST(TestIsSQLi, TestBasic)
 
 TEST(TestIsSQLi, TestNoMatch)
 {
-    is_sqli processor;
+    is_sqli matcher;
 
     ddwaf_object param;
     ddwaf_object_string(&param, "*");
 
-    EXPECT_FALSE(processor.match(param).first);
+    EXPECT_FALSE(matcher.match(param).first);
 
     ddwaf_object_free(&param);
 }
 
 TEST(TestIsSQLi, TestInvalidInput)
 {
-    is_sqli processor;
+    is_sqli matcher;
 
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
 
 TEST(TestIsSQLi, TestRuleset)

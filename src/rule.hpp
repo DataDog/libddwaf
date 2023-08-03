@@ -16,8 +16,8 @@
 #include <event.hpp>
 #include <expression.hpp>
 #include <iterator.hpp>
+#include <matcher/base.hpp>
 #include <object_store.hpp>
-#include <operation/base.hpp>
 
 namespace ddwaf {
 
@@ -65,7 +65,7 @@ public:
 
     std::optional<event> match(const object_store &store, cache_type &cache,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, operation::base::shared_ptr> &dynamic_processors,
+        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
