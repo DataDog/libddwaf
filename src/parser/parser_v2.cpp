@@ -8,6 +8,7 @@
 #include <exception.hpp>
 #include <exclusion/object_filter.hpp>
 #include <log.hpp>
+#include <operation/equals.hpp>
 #include <operation/exact_match.hpp>
 #include <operation/ip_match.hpp>
 #include <operation/is_sqli.hpp>
@@ -33,11 +34,11 @@ namespace ddwaf::parser::v2 {
 
 namespace {
 
-std::pair<std::string, operation::base::ptr> parse_processor(
+std::pair<std::string, operation::base::unique_ptr> parse_processor(
     std::string_view operation, const parameter::map &params)
 {
     parameter::map options;
-    std::shared_ptr<base> processor;
+    std::unique_ptr<base> processor;
     std::string rule_data_id;
 
     if (operation == "phrase_match") {
@@ -58,7 +59,7 @@ std::pair<std::string, operation::base::ptr> parse_processor(
             lengths.push_back((uint32_t)pattern.nbEntries);
         }
 
-        processor = std::make_shared<operation::phrase_match>(patterns, lengths);
+        processor = std::make_unique<operation::phrase_match>(patterns, lengths);
     } else if (operation == "match_regex") {
         auto regex = at<std::string>(params, "regex");
         options = at<parameter::map>(params, "options", options);
@@ -69,17 +70,17 @@ std::pair<std::string, operation::base::ptr> parse_processor(
             throw ddwaf::parsing_error("min_length is a negative number");
         }
 
-        processor = std::make_shared<operation::regex_match>(regex, min_length, case_sensitive);
+        processor = std::make_unique<operation::regex_match>(regex, min_length, case_sensitive);
     } else if (operation == "is_xss") {
-        processor = std::make_shared<operation::is_xss>();
+        processor = std::make_unique<operation::is_xss>();
     } else if (operation == "is_sqli") {
-        processor = std::make_shared<operation::is_sqli>();
+        processor = std::make_unique<operation::is_sqli>();
     } else if (operation == "ip_match") {
         auto it = params.find("list");
         if (it == params.end()) {
             rule_data_id = at<std::string>(params, "data");
         } else {
-            processor = std::make_shared<operation::ip_match>(
+            processor = std::make_unique<operation::ip_match>(
                 static_cast<std::vector<std::string_view>>(it->second));
         }
     } else if (operation == "exact_match") {
@@ -87,8 +88,25 @@ std::pair<std::string, operation::base::ptr> parse_processor(
         if (it == params.end()) {
             rule_data_id = at<std::string>(params, "data");
         } else {
-            processor = std::make_shared<operation::exact_match>(
+            processor = std::make_unique<operation::exact_match>(
                 static_cast<std::vector<std::string>>(it->second));
+        }
+    } else if (operation == "equals") {
+        auto value_type = at<std::string>(params, "type");
+        if (value_type == "string") {
+            auto value = at<std::string>(params, "value");
+            processor = std::make_unique<operation::equals<std::string>>(std::move(value));
+        } else if (value_type == "boolean") {
+            auto value = at<bool>(params, "value");
+            processor = std::make_unique<operation::equals<bool>>(value);
+        } else if (value_type == "unsigned") {
+            auto value = at<uint64_t>(params, "value");
+            processor = std::make_unique<operation::equals<uint64_t>>(value);
+        } else if (value_type == "signed") {
+            auto value = at<int64_t>(params, "value");
+            processor = std::make_unique<operation::equals<int64_t>>(value);
+        } else {
+            throw ddwaf::parsing_error("invalid type for processor equals" + value_type);
         }
     } else {
         throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
@@ -404,7 +422,7 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
     return {std::move(expr), std::move(rules_target), on_match};
 }
 
-std::string index_to_id(unsigned idx) { return "index:" + std::to_string(idx); }
+std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
 } // namespace
 
@@ -473,7 +491,7 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 operation = it->second;
             }
 
-            operation::base::ptr processor;
+            operation::base::shared_ptr processor;
             if (operation == "ip_match") {
                 using rule_data_type = operation::ip_match::rule_data_type;
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);

@@ -53,7 +53,7 @@ template <typename T> memory::vector<memory::string> iterator_base<T>::get_curre
         if (parent->type == DDWAF_OBJ_MAP && child->parameterName != nullptr) {
             keys.emplace_back(child->parameterName, child->parameterNameLength);
         } else if (parent->type == DDWAF_OBJ_ARRAY) {
-            keys.emplace_back(std::to_string(parent_index - 1));
+            keys.emplace_back(to_string<std::string>(parent_index - 1));
         }
 
         parent = child;
@@ -63,7 +63,7 @@ template <typename T> memory::vector<memory::string> iterator_base<T>::get_curre
     if (parent->type == DDWAF_OBJ_MAP && current_->parameterName != nullptr) {
         keys.emplace_back(current_->parameterName, current_->parameterNameLength);
     } else if (parent->type == DDWAF_OBJ_ARRAY) {
-        keys.emplace_back(std::to_string(parent_index - 1));
+        keys.emplace_back(to_string<std::string>(parent_index - 1));
     }
 
     return keys;

@@ -11,11 +11,23 @@
 
 namespace ddwaf::operation {
 
-class is_xss : public base {
+class is_xss : public base_impl<is_xss> {
 public:
     is_xss() = default;
-    [[nodiscard]] std::string_view name() const override { return "is_xss"; }
-    [[nodiscard]] std::optional<event::match> match(std::string_view pattern) const override;
+    ~is_xss() override = default;
+    is_xss(const is_xss &) = delete;
+    is_xss(is_xss &&) noexcept = default;
+    is_xss &operator=(const is_xss &) = delete;
+    is_xss &operator=(is_xss &&) noexcept = default;
+
+protected:
+    static constexpr std::string_view to_string_impl() { return ""; }
+    static constexpr std::string_view name_impl() { return "is_xss"; }
+    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
+
+    static std::pair<bool, memory::string> match_impl(std::string_view pattern);
+
+    friend class base_impl<is_xss>;
 };
 
 } // namespace ddwaf::operation

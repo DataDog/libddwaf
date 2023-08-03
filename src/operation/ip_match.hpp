@@ -13,7 +13,7 @@
 
 namespace ddwaf::operation {
 
-class ip_match : public base {
+class ip_match : public base_impl<ip_match> {
 public:
     using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
@@ -26,12 +26,17 @@ public:
     ip_match &operator=(const ip_match &) = delete;
     ip_match &operator=(ip_match &&) = default;
 
-    [[nodiscard]] std::string_view name() const override { return "ip_match"; }
-    [[nodiscard]] std::optional<event::match> match(std::string_view str) const override;
-
 protected:
+    static constexpr std::string_view to_string_impl() { return ""; }
+    static constexpr std::string_view name_impl() { return "ip_match"; }
+    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
+
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view str) const;
+
     static constexpr unsigned radix_tree_bits = 128; // IPv6
     std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_{nullptr, nullptr};
+
+    friend class base_impl<ip_match>;
 };
 
 } // namespace ddwaf::operation

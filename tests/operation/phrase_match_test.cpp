@@ -22,16 +22,14 @@ TEST(TestPhraseMatch, TestBasic)
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    auto match = processor.match_object(param);
-    EXPECT_TRUE(match);
-
-    EXPECT_STREQ(match->resolved.c_str(), "bbbb");
-    EXPECT_STREQ(match->matched.c_str(), "bbbb");
+    auto [res, highlight] = processor.match(param);
+    EXPECT_TRUE(res);
+    EXPECT_STREQ(highlight.c_str(), "bbbb");
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "dddd");
 
-    EXPECT_FALSE(processor.match_object(param2));
+    EXPECT_FALSE(processor.match(param2).first);
 
     ddwaf_object_free(&param2);
     ddwaf_object_free(&param);
@@ -48,7 +46,7 @@ TEST(TestPhraseMatch, TestEmptyArrays)
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    EXPECT_FALSE(processor.match_object(param));
+    EXPECT_FALSE(processor.match(param).first);
 
     ddwaf_object_free(&param);
 }
@@ -72,13 +70,12 @@ TEST(TestPhraseMatch, TestComplex)
     auto run = [&processor](const char *str, const char *expect) {
         ddwaf_object param;
         ddwaf_object_string(&param, str);
-        if (expect) {
-            auto match = processor.match_object(param);
-            EXPECT_TRUE(match);
-            EXPECT_STREQ(match->resolved.c_str(), str);
-            EXPECT_STREQ(match->matched.c_str(), expect);
+        if (expect != nullptr) {
+            auto [res, highlight] = processor.match(param);
+            EXPECT_TRUE(res);
+            EXPECT_STREQ(highlight.c_str(), expect);
         } else {
-            EXPECT_FALSE(processor.match_object(param));
+            EXPECT_FALSE(processor.match(param).first);
         }
         ddwaf_object_free(&param);
     };
@@ -89,11 +86,11 @@ TEST(TestPhraseMatch, TestComplex)
     run("string_4bla", "string_4");
     run("string21", "string2");
 
-    run("", NULL);
-    run("String", NULL);
-    run("string_", NULL);
-    run("String21", NULL);
-    run("nonsense", NULL);
+    run("", nullptr);
+    run("String", nullptr);
+    run("string_", nullptr);
+    run("String21", nullptr);
+    run("nonsense", nullptr);
 }
 
 TEST(TestPhraseMatch, TestInvalidInput)
@@ -103,7 +100,8 @@ TEST(TestPhraseMatch, TestInvalidInput)
 
     phrase_match processor(strings, lengths);
 
-    EXPECT_FALSE(processor.match({nullptr, 0}));
-    EXPECT_FALSE(processor.match({nullptr, 30}));
-    EXPECT_FALSE(processor.match({"*", 0}));
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    // NOLINTNEXTLINE(bugprone-string-constructor)
+    EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
 }

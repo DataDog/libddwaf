@@ -17,9 +17,9 @@ TEST(TestIsSQLi, TestBasic)
     ddwaf_object param;
     ddwaf_object_string(&param, "'OR 1=1/*");
 
-    auto match = processor.match_object(param);
-    EXPECT_TRUE(match);
-    EXPECT_STREQ(match->resolved.c_str(), "'OR 1=1/*");
+    auto [res, highlight] = processor.match(param);
+    EXPECT_TRUE(res);
+    EXPECT_STREQ(highlight.c_str(), "s&1c");
 
     ddwaf_object_free(&param);
 }
@@ -31,7 +31,7 @@ TEST(TestIsSQLi, TestNoMatch)
     ddwaf_object param;
     ddwaf_object_string(&param, "*");
 
-    EXPECT_FALSE(processor.match_object(param));
+    EXPECT_FALSE(processor.match(param).first);
 
     ddwaf_object_free(&param);
 }
@@ -40,9 +40,10 @@ TEST(TestIsSQLi, TestInvalidInput)
 {
     is_sqli processor;
 
-    EXPECT_FALSE(processor.match({nullptr, 0}));
-    EXPECT_FALSE(processor.match({nullptr, 30}));
-    EXPECT_FALSE(processor.match({"*", 0}));
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    // NOLINTNEXTLINE(bugprone-string-constructor)
+    EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
 }
 
 TEST(TestIsSQLi, TestRuleset)
@@ -59,7 +60,8 @@ TEST(TestIsSQLi, TestRuleset)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object param, tmp;
+    ddwaf_object param;
+    ddwaf_object tmp;
     ddwaf_object_map(&param);
     ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "'OR 1=1/*"));
 

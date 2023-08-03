@@ -11,41 +11,79 @@
 #include "expression.hpp"
 #include "log.hpp"
 #include "transformer/manager.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
-std::optional<event::match> expression::evaluator::eval_object(const ddwaf_object *object,
-    const operation::base::ptr &processor, const std::vector<transformer_id> &transformers) const
+namespace {
+
+// TODO store as std::variant<memory::string, bool, int64_t, uint64_t>?
+memory::string object_to_string(const ddwaf_object &object)
 {
-    const size_t length =
-        find_string_cutoff(object->stringValue, object->nbEntries, limits.max_string_length);
+    if (object.type == DDWAF_OBJ_STRING) {
+        return memory::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
+    }
 
-    if (!transformers.empty()) {
-        ddwaf_object src;
-        ddwaf_object dst;
-        ddwaf_object_stringl_nc(&src, object->stringValue, length);
-        ddwaf_object_invalid(&dst);
+    if (object.type == DDWAF_OBJ_BOOL) {
+        return to_string<memory::string>(object.boolean);
+    }
 
-        auto transformed = transformer::manager::transform(src, dst, transformers);
-        scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
-        if (transformed) {
-            return processor->match_object(dst);
+    if (object.type == DDWAF_OBJ_SIGNED) {
+        return to_string<memory::string>(object.intValue);
+    }
+
+    if (object.type == DDWAF_OBJ_UNSIGNED) {
+        return to_string<memory::string>(object.uintValue);
+    }
+
+    return {};
+}
+
+} // namespace
+
+std::optional<event::match> expression::evaluator::eval_object(const ddwaf_object *object,
+    const operation::base &processor, const std::vector<transformer_id> &transformers) const
+{
+    ddwaf_object src = *object;
+
+    if (object->type == DDWAF_OBJ_STRING) {
+        src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
+        if (!transformers.empty()) {
+            ddwaf_object dst;
+            ddwaf_object_invalid(&dst);
+
+            auto transformed = transformer::manager::transform(src, dst, transformers);
+            scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
+            if (transformed) {
+                auto [res, highlight] = processor.match(dst);
+                if (!res) {
+                    return std::nullopt;
+                }
+                return {{object_to_string(dst), std::move(highlight), processor.name(),
+                    processor.to_string(), {}, {}}};
+            }
         }
     }
 
-    return processor->match({object->stringValue, length});
+    auto [res, highlight] = processor.match(src);
+    if (!res) {
+        return std::nullopt;
+    }
+
+    return {{object_to_string(src), std::move(highlight), processor.name(), processor.to_string(),
+        {}, {}}};
 }
 
 template <typename T>
 std::optional<event::match> expression::evaluator::eval_target(
-    T &it, const operation::base::ptr &processor, const std::vector<transformer_id> &transformers)
+    T &it, const operation::base &processor, const std::vector<transformer_id> &transformers)
 {
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (it.type() != DDWAF_OBJ_STRING) {
+        if (it.type() != processor.supported_type()) {
             continue;
         }
 
@@ -62,26 +100,26 @@ std::optional<event::match> expression::evaluator::eval_target(
     return std::nullopt;
 }
 
-const operation::base::ptr &expression::evaluator::get_processor(const condition &cond) const
+const operation::base *expression::evaluator::get_processor(const condition &cond) const
 {
     if (cond.processor || cond.data_id.empty()) {
-        return cond.processor;
+        return cond.processor.get();
     }
 
     auto it = dynamic_processors.find(cond.data_id);
     if (it == dynamic_processors.end()) {
-        return cond.processor;
+        return cond.processor.get();
     }
 
-    return it->second;
+    return it->second.get();
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
 std::optional<event::match> expression::evaluator::eval_condition(
     const condition &cond, bool run_on_new)
 {
-    const auto &processor = get_processor(cond);
-    if (!processor) {
+    const auto *processor = get_processor(cond);
+    if (processor == nullptr) {
         DDWAF_DEBUG("Condition doesn't have a valid processor");
         return std::nullopt;
     }
@@ -104,10 +142,10 @@ std::optional<event::match> expression::evaluator::eval_condition(
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, processor, target.transformers);
+            optional_match = eval_target(it, *processor, target.transformers);
         } else {
             object::value_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, processor, target.transformers);
+            optional_match = eval_target(it, *processor, target.transformers);
         }
 
         if (optional_match.has_value()) {
@@ -161,7 +199,7 @@ bool expression::evaluator::eval()
 
 bool expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
-    const std::unordered_map<std::string, operation::base::ptr> &dynamic_processors,
+    const std::unordered_map<std::string, operation::base::shared_ptr> &dynamic_processors,
     ddwaf::timer &deadline) const
 {
     if (cache.result || conditions_.empty()) {

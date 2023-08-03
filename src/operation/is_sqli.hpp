@@ -11,14 +11,25 @@
 
 namespace ddwaf::operation {
 
-class is_sqli : public base {
+class is_sqli : public base_impl<is_sqli> {
 public:
     is_sqli() = default;
-    [[nodiscard]] std::string_view name() const override { return "is_sqli"; }
-    [[nodiscard]] std::optional<event::match> match(std::string_view pattern) const override;
+    ~is_sqli() override = default;
+    is_sqli(const is_sqli &) = delete;
+    is_sqli(is_sqli &&) noexcept = default;
+    is_sqli &operator=(const is_sqli &) = delete;
+    is_sqli &operator=(is_sqli &&) noexcept = default;
 
 protected:
     static constexpr unsigned fingerprint_length = 16;
+
+    static constexpr std::string_view to_string_impl() { return ""; }
+    static constexpr std::string_view name_impl() { return "is_sqli"; }
+    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
+
+    static std::pair<bool, memory::string> match_impl(std::string_view pattern);
+
+    friend class base_impl<is_sqli>;
 };
 
 } // namespace ddwaf::operation

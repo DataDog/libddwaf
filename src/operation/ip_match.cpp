@@ -50,15 +50,15 @@ ip_match::ip_match(const std::vector<std::pair<std::string_view, uint64_t>> &ip_
     }
 }
 
-std::optional<event::match> ip_match::match(std::string_view str) const
+std::pair<bool, memory::string> ip_match::match_impl(std::string_view str) const
 {
     if (!rtree_ || str.empty() || str.data() == nullptr) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     ddwaf::ipaddr ip{};
     if (!ddwaf::parse_ip(str, ip)) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     // Convert the IPv4 to IPv6
@@ -72,7 +72,7 @@ std::optional<event::match> ip_match::match(std::string_view str) const
     // Run the check
     auto *node = radix_matching_do(rtree_.get(), &radix_ip);
     if (node == nullptr) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     if (node->expiration > 0) {
@@ -80,11 +80,11 @@ std::optional<event::match> ip_match::match(std::string_view str) const
             std::chrono::system_clock::now().time_since_epoch())
                            .count();
         if (node->expiration < now) {
-            return std::nullopt;
+            return {false, {}};
         }
     }
 
-    return make_event(str, str);
+    return {true, memory::string{str}};
 }
 
 } // namespace ddwaf::operation

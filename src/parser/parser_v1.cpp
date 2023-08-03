@@ -40,7 +40,7 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
         auto params = at<parameter::map>(cond, "parameters");
 
         parameter::map options;
-        std::shared_ptr<base> processor;
+        operation::base::unique_ptr processor;
         if (operation == "phrase_match") {
             auto list = at<parameter::vector>(params, "list");
 
@@ -59,7 +59,7 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
                 lengths.push_back((uint32_t)pattern.nbEntries);
             }
 
-            processor = std::make_shared<operation::phrase_match>(patterns, lengths);
+            processor = std::make_unique<operation::phrase_match>(patterns, lengths);
         } else if (operation == "match_regex") {
             auto regex = at<std::string>(params, "regex");
             options = at<parameter::map>(params, "options", options);
@@ -70,11 +70,11 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
                 throw ddwaf::parsing_error("min_length is a negative number");
             }
 
-            processor = std::make_shared<operation::regex_match>(regex, min_length, case_sensitive);
+            processor = std::make_unique<operation::regex_match>(regex, min_length, case_sensitive);
         } else if (operation == "is_xss") {
-            processor = std::make_shared<operation::is_xss>();
+            processor = std::make_unique<operation::is_xss>();
         } else if (operation == "is_sqli") {
-            processor = std::make_shared<operation::is_sqli>();
+            processor = std::make_unique<operation::is_sqli>();
         } else {
             throw ddwaf::parsing_error("unknown processor: " + std::string(operation));
         }
@@ -172,7 +172,7 @@ void parse(
             parseRule(rule, section, rule_ids, rs, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("%s", e.what());
-            section.add_failed("index:" + std::to_string(i), e.what());
+            section.add_failed("index:" + to_string<std::string>(i), e.what());
         }
     }
 

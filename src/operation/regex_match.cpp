@@ -27,10 +27,10 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
     }
 }
 
-std::optional<event::match> regex_match::match(std::string_view pattern) const
+std::pair<bool, memory::string> regex_match::match_impl(std::string_view pattern) const
 {
     if (pattern.data() == nullptr || !regex->ok() || pattern.size() < min_length) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     const re2::StringPiece ref(pattern.data(), pattern.size());
@@ -38,10 +38,10 @@ std::optional<event::match> regex_match::match(std::string_view pattern) const
     bool didMatch = regex->Match(ref, 0, pattern.size(), re2::RE2::UNANCHORED, match.data(), 1);
 
     if (!didMatch) {
-        return std::nullopt;
+        return {false, {}};
     }
 
-    return make_event(pattern, {match[0].data(), match[0].size()});
+    return {true, {match[0].data(), match[0].size()}};
 }
 
 } // namespace ddwaf::operation
