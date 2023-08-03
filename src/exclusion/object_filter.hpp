@@ -167,7 +167,7 @@ public:
 
     template <typename StringType>
     void insert(const std::vector<StringType> &path)
-        requires std::is_constructible_v<std::string, StringType>
+        requires std::is_constructible_v<std::string_view, StringType>
     {
         if (!root) {
             root.emplace();
