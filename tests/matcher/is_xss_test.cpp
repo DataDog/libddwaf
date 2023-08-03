@@ -10,14 +10,14 @@ using namespace ddwaf::matcher;
 
 TEST(TestIsXSS, TestBasic)
 {
-    is_xss processor;
-    EXPECT_STREQ(processor.to_string().data(), "");
-    EXPECT_STREQ(processor.name().data(), "is_xss");
+    is_xss matcher;
+    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STREQ(matcher.name().data(), "is_xss");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "<script>alert(1);</script>");
 
-    auto [res, highlight] = processor.match(param);
+    auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "");
 
@@ -26,24 +26,24 @@ TEST(TestIsXSS, TestBasic)
 
 TEST(TestIsXSS, TestNoMatch)
 {
-    is_xss processor;
+    is_xss matcher;
 
     ddwaf_object param;
     ddwaf_object_string(&param, "non-xss");
 
-    EXPECT_FALSE(processor.match(param).first);
+    EXPECT_FALSE(matcher.match(param).first);
 
     ddwaf_object_free(&param);
 }
 
 TEST(TestIsXSS, TestInvalidInput)
 {
-    is_xss processor;
+    is_xss matcher;
 
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
 
 TEST(TestIsXSS, TestRuleset)

@@ -14,22 +14,22 @@ TEST(TestPhraseMatch, TestBasic)
     std::vector<const char *> strings{"aaaa", "bbbb", "cccc"};
     std::vector<uint32_t> lengths{4, 4, 4};
 
-    phrase_match processor(strings, lengths);
+    phrase_match matcher(strings, lengths);
 
-    EXPECT_STREQ(processor.name().data(), "phrase_match");
-    EXPECT_STREQ(processor.to_string().data(), "");
+    EXPECT_STREQ(matcher.name().data(), "phrase_match");
+    EXPECT_STREQ(matcher.to_string().data(), "");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    auto [res, highlight] = processor.match(param);
+    auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "bbbb");
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "dddd");
 
-    EXPECT_FALSE(processor.match(param2).first);
+    EXPECT_FALSE(matcher.match(param2).first);
 
     ddwaf_object_free(&param2);
     ddwaf_object_free(&param);
@@ -39,14 +39,14 @@ TEST(TestPhraseMatch, TestEmptyArrays)
 {
     std::vector<const char *> strings;
     std::vector<uint32_t> lengths;
-    phrase_match processor(strings, lengths);
+    phrase_match matcher(strings, lengths);
 
-    EXPECT_STREQ(processor.name().data(), "phrase_match");
+    EXPECT_STREQ(matcher.name().data(), "phrase_match");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    EXPECT_FALSE(processor.match(param).first);
+    EXPECT_FALSE(matcher.match(param).first);
 
     ddwaf_object_free(&param);
 }
@@ -65,17 +65,17 @@ TEST(TestPhraseMatch, TestComplex)
     std::generate(lengths.begin(), lengths.end(),
         [i = 0, &strings]() mutable { return strlen(strings[i++]); });
 
-    phrase_match processor(strings, lengths);
+    phrase_match matcher(strings, lengths);
 
-    auto run = [&processor](const char *str, const char *expect) {
+    auto run = [&matcher](const char *str, const char *expect) {
         ddwaf_object param;
         ddwaf_object_string(&param, str);
         if (expect != nullptr) {
-            auto [res, highlight] = processor.match(param);
+            auto [res, highlight] = matcher.match(param);
             EXPECT_TRUE(res);
             EXPECT_STREQ(highlight.c_str(), expect);
         } else {
-            EXPECT_FALSE(processor.match(param).first);
+            EXPECT_FALSE(matcher.match(param).first);
         }
         ddwaf_object_free(&param);
     };
@@ -98,10 +98,10 @@ TEST(TestPhraseMatch, TestInvalidInput)
     std::vector<const char *> strings{"aaaa", "bbbb", "cccc"};
     std::vector<uint32_t> lengths{4, 4, 4};
 
-    phrase_match processor(strings, lengths);
+    phrase_match matcher(strings, lengths);
 
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }

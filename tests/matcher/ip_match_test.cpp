@@ -9,96 +9,96 @@
 
 using namespace ddwaf::matcher;
 
-bool match(ip_match &processor, std::string_view ip) { return processor.match(ip).first; }
+bool match(ip_match &matcher, std::string_view ip) { return matcher.match(ip).first; }
 
 TEST(TestIPMatch, Basic)
 {
-    ip_match processor(std::vector<std::string_view>{"1.2.3.4", "5.6.7.254", "::ffff:0102:0304",
+    ip_match matcher(std::vector<std::string_view>{"1.2.3.4", "5.6.7.254", "::ffff:0102:0304",
         "1234:0:0:0:0:0:0:5678", "::1", "abcd::1234:5678:1234:5678", "abcd::1234:0:0:0",
         "abcd::1234:ffff:ffff:ffff", "42", "bad ip", "other"});
 
-    EXPECT_STREQ(processor.to_string().data(), "");
-    EXPECT_STREQ(processor.name().data(), "ip_match");
+    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STREQ(matcher.name().data(), "ip_match");
 
-    EXPECT_TRUE(match(processor, "1.2.3.4"));
-    EXPECT_TRUE(match(processor, "5.6.7.254"));
-    EXPECT_TRUE(match(processor, "::ffff:0102:0304"));
-    EXPECT_TRUE(match(processor, "1234:0:0:0:0:0:0:5678"));
-    EXPECT_TRUE(match(processor, "::1"));
-    EXPECT_TRUE(match(processor, "abcd::1234:5678:1234:5678"));
-    EXPECT_TRUE(match(processor, "abcd::1234:0:0:0"));
-    EXPECT_TRUE(match(processor, "abcd::1234:ffff:ffff:ffff"));
+    EXPECT_TRUE(match(matcher, "1.2.3.4"));
+    EXPECT_TRUE(match(matcher, "5.6.7.254"));
+    EXPECT_TRUE(match(matcher, "::ffff:0102:0304"));
+    EXPECT_TRUE(match(matcher, "1234:0:0:0:0:0:0:5678"));
+    EXPECT_TRUE(match(matcher, "::1"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:5678:1234:5678"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:0:0:0"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:ffff:ffff:ffff"));
 
-    EXPECT_FALSE(match(processor, "1.2.3.5"));
-    EXPECT_FALSE(match(processor, "5.6.8.0"));
-    EXPECT_FALSE(match(processor, "::ffff:0102:0305"));
-    EXPECT_FALSE(match(processor, "5.6.8.0"));
-    EXPECT_FALSE(match(processor, "::2"));
-    EXPECT_FALSE(match(processor, "0:1234::5678"));
-    EXPECT_FALSE(match(processor, "abcd:0:1233::"));
+    EXPECT_FALSE(match(matcher, "1.2.3.5"));
+    EXPECT_FALSE(match(matcher, "5.6.8.0"));
+    EXPECT_FALSE(match(matcher, "::ffff:0102:0305"));
+    EXPECT_FALSE(match(matcher, "5.6.8.0"));
+    EXPECT_FALSE(match(matcher, "::2"));
+    EXPECT_FALSE(match(matcher, "0:1234::5678"));
+    EXPECT_FALSE(match(matcher, "abcd:0:1233::"));
 
-    EXPECT_FALSE(match(processor, ""));
-    EXPECT_FALSE(match(processor, "12345678901234567890123456789012345678901"));
-    EXPECT_FALSE(match(processor, "not an ip"));
+    EXPECT_FALSE(match(matcher, ""));
+    EXPECT_FALSE(match(matcher, "12345678901234567890123456789012345678901"));
+    EXPECT_FALSE(match(matcher, "not an ip"));
 
-    EXPECT_FALSE(match(processor, "42"));
-    EXPECT_FALSE(match(processor, "bad ip"));
-    EXPECT_FALSE(match(processor, "other"));
+    EXPECT_FALSE(match(matcher, "42"));
+    EXPECT_FALSE(match(matcher, "bad ip"));
+    EXPECT_FALSE(match(matcher, "other"));
 }
 
 TEST(TestIPMatch, CIDR)
 {
-    ip_match processor(std::vector<std::string_view>{
+    ip_match matcher(std::vector<std::string_view>{
         "1.2.0.0/16",
         "1234:abdc::0/112",
     });
 
-    EXPECT_FALSE(match(processor, "1.1.0.0"));
-    EXPECT_TRUE(match(processor, "1.2.0.0"));
-    EXPECT_TRUE(match(processor, "1.2.255.255"));
-    EXPECT_FALSE(match(processor, "1.3.0.0"));
+    EXPECT_FALSE(match(matcher, "1.1.0.0"));
+    EXPECT_TRUE(match(matcher, "1.2.0.0"));
+    EXPECT_TRUE(match(matcher, "1.2.255.255"));
+    EXPECT_FALSE(match(matcher, "1.3.0.0"));
 
-    EXPECT_FALSE(match(processor, "1234:abdb::0"));
-    EXPECT_TRUE(match(processor, "1234:abdc::0"));
-    EXPECT_TRUE(match(processor, "1234:abdc::ffff"));
-    EXPECT_FALSE(match(processor, "1234:abdc::1:0"));
+    EXPECT_FALSE(match(matcher, "1234:abdb::0"));
+    EXPECT_TRUE(match(matcher, "1234:abdc::0"));
+    EXPECT_TRUE(match(matcher, "1234:abdc::ffff"));
+    EXPECT_FALSE(match(matcher, "1234:abdc::1:0"));
 }
 
 TEST(TestIPMatch, OverlappingCIDR)
 {
-    ip_match processor(std::vector<std::string_view>{
+    ip_match matcher(std::vector<std::string_view>{
         "1.2.0.0/16",
         "1.2.3.4",
         "1234:abdc::0/112",
         "1234:abdc::1",
     });
 
-    EXPECT_FALSE(match(processor, "1.1.0.0"));
-    EXPECT_TRUE(match(processor, "1.2.0.0"));
-    EXPECT_TRUE(match(processor, "1.2.3.4"));
-    EXPECT_TRUE(match(processor, "1.2.255.255"));
-    EXPECT_FALSE(match(processor, "1.3.0.0"));
+    EXPECT_FALSE(match(matcher, "1.1.0.0"));
+    EXPECT_TRUE(match(matcher, "1.2.0.0"));
+    EXPECT_TRUE(match(matcher, "1.2.3.4"));
+    EXPECT_TRUE(match(matcher, "1.2.255.255"));
+    EXPECT_FALSE(match(matcher, "1.3.0.0"));
 
-    EXPECT_FALSE(match(processor, "1234:abdb::0"));
-    EXPECT_TRUE(match(processor, "1234:abdc::0"));
-    EXPECT_TRUE(match(processor, "1234:abdc::1"));
-    EXPECT_TRUE(match(processor, "1234:abdc::ffff"));
-    EXPECT_FALSE(match(processor, "1234:abdc::1:0"));
+    EXPECT_FALSE(match(matcher, "1234:abdb::0"));
+    EXPECT_TRUE(match(matcher, "1234:abdc::0"));
+    EXPECT_TRUE(match(matcher, "1234:abdc::1"));
+    EXPECT_TRUE(match(matcher, "1234:abdc::ffff"));
+    EXPECT_FALSE(match(matcher, "1234:abdc::1:0"));
 }
 
 TEST(TestIPMatch, InvalidInput)
 {
-    ip_match processor(std::vector<std::string_view>{
+    ip_match matcher(std::vector<std::string_view>{
         "1.2.3.4",
         "5.6.7.254",
         "::ffff:0102:0304",
         "1234:0:0:0:0:0:0:5678",
     });
 
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
 
 TEST(TestIPMatch, Expiration)
@@ -107,23 +107,23 @@ TEST(TestIPMatch, Expiration)
         std::chrono::system_clock::now().time_since_epoch())
                        .count();
 
-    ip_match processor(std::vector<std::pair<std::string_view, uint64_t>>{{"1.2.3.4", now - 1},
+    ip_match matcher(std::vector<std::pair<std::string_view, uint64_t>>{{"1.2.3.4", now - 1},
         {"5.6.7.254", now + 100}, {"::ffff:0102:0304", now - 1},
         {"1234:0:0:0:0:0:0:5678", now + 100}, {"::1", now - 1},
         {"abcd::1234:5678:1234:5678", now + 100}, {"abcd::1234:0:0:0", now - 1},
         {"abcd::1234:ffff:ffff:ffff", now + 100}});
 
-    EXPECT_STREQ(processor.to_string().data(), "");
-    EXPECT_STREQ(processor.name().data(), "ip_match");
+    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STREQ(matcher.name().data(), "ip_match");
 
-    EXPECT_FALSE(match(processor, "1.2.3.4"));
-    EXPECT_TRUE(match(processor, "5.6.7.254"));
-    EXPECT_FALSE(match(processor, "::ffff:0102:0304"));
-    EXPECT_TRUE(match(processor, "1234:0:0:0:0:0:0:5678"));
-    EXPECT_FALSE(match(processor, "::1"));
-    EXPECT_TRUE(match(processor, "abcd::1234:5678:1234:5678"));
-    EXPECT_FALSE(match(processor, "abcd::1234:0:0:0"));
-    EXPECT_TRUE(match(processor, "abcd::1234:ffff:ffff:ffff"));
+    EXPECT_FALSE(match(matcher, "1.2.3.4"));
+    EXPECT_TRUE(match(matcher, "5.6.7.254"));
+    EXPECT_FALSE(match(matcher, "::ffff:0102:0304"));
+    EXPECT_TRUE(match(matcher, "1234:0:0:0:0:0:0:5678"));
+    EXPECT_FALSE(match(matcher, "::1"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:5678:1234:5678"));
+    EXPECT_FALSE(match(matcher, "abcd::1234:0:0:0"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:ffff:ffff:ffff"));
 }
 
 TEST(TestIPMatch, OverlappingExpiration)
@@ -132,26 +132,26 @@ TEST(TestIPMatch, OverlappingExpiration)
         std::chrono::system_clock::now().time_since_epoch())
                        .count();
 
-    ip_match processor(std::vector<std::pair<std::string_view, uint64_t>>{{"4.4.4.4", 0},
+    ip_match matcher(std::vector<std::pair<std::string_view, uint64_t>>{{"4.4.4.4", 0},
         {"4.4.4.4", now - 1}, {"5.5.5.5", now - 1}, {"5.5.5.5", 0}, {"1.0.0.0/8", now - 1},
         {"1.2.3.4", now + 100}, {"2.2.0.0/16", now + 100}, {"2.2.7.8", now - 100},
         {"2.3.0.0/16", 0}, {"2.3.9.1", now - 100}, {"2.4.0.0/16", now - 1}, {"2.4.3.4", 0}});
 
-    EXPECT_STREQ(processor.to_string().data(), "");
-    EXPECT_STREQ(processor.name().data(), "ip_match");
+    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STREQ(matcher.name().data(), "ip_match");
 
-    EXPECT_TRUE(match(processor, "4.4.4.4"));
-    EXPECT_TRUE(match(processor, "5.5.5.5"));
+    EXPECT_TRUE(match(matcher, "4.4.4.4"));
+    EXPECT_TRUE(match(matcher, "5.5.5.5"));
 
-    EXPECT_FALSE(match(processor, "1.1.1.1"));
-    EXPECT_TRUE(match(processor, "1.2.3.4"));
+    EXPECT_FALSE(match(matcher, "1.1.1.1"));
+    EXPECT_TRUE(match(matcher, "1.2.3.4"));
 
-    EXPECT_TRUE(match(processor, "2.2.0.1"));
-    EXPECT_TRUE(match(processor, "2.2.7.8"));
+    EXPECT_TRUE(match(matcher, "2.2.0.1"));
+    EXPECT_TRUE(match(matcher, "2.2.7.8"));
 
-    EXPECT_TRUE(match(processor, "2.3.0.1"));
-    EXPECT_TRUE(match(processor, "2.3.9.1"));
+    EXPECT_TRUE(match(matcher, "2.3.0.1"));
+    EXPECT_TRUE(match(matcher, "2.3.9.1"));
 
-    EXPECT_FALSE(match(processor, "2.4.0.1"));
-    EXPECT_TRUE(match(processor, "2.4.3.4"));
+    EXPECT_FALSE(match(matcher, "2.4.0.1"));
+    EXPECT_TRUE(match(matcher, "2.4.3.4"));
 }

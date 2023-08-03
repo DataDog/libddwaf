@@ -42,7 +42,7 @@ memory::string object_to_string(const ddwaf_object &object)
 } // namespace
 
 std::optional<event::match> expression::evaluator::eval_object(const ddwaf_object *object,
-    const matcher::base &processor, const std::vector<transformer_id> &transformers) const
+    const matcher::base &matcher, const std::vector<transformer_id> &transformers) const
 {
     ddwaf_object src = *object;
 
@@ -55,39 +55,39 @@ std::optional<event::match> expression::evaluator::eval_object(const ddwaf_objec
             auto transformed = transformer::manager::transform(src, dst, transformers);
             scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
             if (transformed) {
-                auto [res, highlight] = processor.match(dst);
+                auto [res, highlight] = matcher.match(dst);
                 if (!res) {
                     return std::nullopt;
                 }
-                return {{object_to_string(dst), std::move(highlight), processor.name(),
-                    processor.to_string(), {}, {}}};
+                return {{object_to_string(dst), std::move(highlight), matcher.name(),
+                    matcher.to_string(), {}, {}}};
             }
         }
     }
 
-    auto [res, highlight] = processor.match(src);
+    auto [res, highlight] = matcher.match(src);
     if (!res) {
         return std::nullopt;
     }
 
-    return {{object_to_string(src), std::move(highlight), processor.name(), processor.to_string(),
-        {}, {}}};
+    return {
+        {object_to_string(src), std::move(highlight), matcher.name(), matcher.to_string(), {}, {}}};
 }
 
 template <typename T>
 std::optional<event::match> expression::evaluator::eval_target(
-    T &it, const matcher::base &processor, const std::vector<transformer_id> &transformers)
+    T &it, const matcher::base &matcher, const std::vector<transformer_id> &transformers)
 {
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (it.type() != processor.supported_type()) {
+        if (it.type() != matcher.supported_type()) {
             continue;
         }
 
-        auto optional_match = eval_object(*it, processor, transformers);
+        auto optional_match = eval_object(*it, matcher, transformers);
         if (!optional_match.has_value()) {
             continue;
         }
@@ -100,15 +100,15 @@ std::optional<event::match> expression::evaluator::eval_target(
     return std::nullopt;
 }
 
-const matcher::base *expression::evaluator::get_processor(const condition &cond) const
+const matcher::base *expression::evaluator::get_matcher(const condition &cond) const
 {
-    if (cond.processor || cond.data_id.empty()) {
-        return cond.processor.get();
+    if (cond.matcher || cond.data_id.empty()) {
+        return cond.matcher.get();
     }
 
-    auto it = dynamic_processors.find(cond.data_id);
-    if (it == dynamic_processors.end()) {
-        return cond.processor.get();
+    auto it = dynamic_matchers.find(cond.data_id);
+    if (it == dynamic_matchers.end()) {
+        return cond.matcher.get();
     }
 
     return it->second.get();
@@ -118,9 +118,9 @@ const matcher::base *expression::evaluator::get_processor(const condition &cond)
 std::optional<event::match> expression::evaluator::eval_condition(
     const condition &cond, bool run_on_new)
 {
-    const auto *processor = get_processor(cond);
-    if (processor == nullptr) {
-        DDWAF_DEBUG("Condition doesn't have a valid processor");
+    const auto *matcher = get_matcher(cond);
+    if (matcher == nullptr) {
+        DDWAF_DEBUG("Condition doesn't have a valid matcher");
         return std::nullopt;
     }
 
@@ -142,10 +142,10 @@ std::optional<event::match> expression::evaluator::eval_condition(
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, *processor, target.transformers);
+            optional_match = eval_target(it, *matcher, target.transformers);
         } else {
             object::value_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, *processor, target.transformers);
+            optional_match = eval_target(it, *matcher, target.transformers);
         }
 
         if (optional_match.has_value()) {
@@ -199,7 +199,7 @@ bool expression::evaluator::eval()
 
 bool expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
-    const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_processors,
+    const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     if (cache.result || conditions_.empty()) {
@@ -207,7 +207,7 @@ bool expression::eval(cache_type &cache, const object_store &store,
     }
 
     evaluator runner{
-        deadline, limits_, conditions_, store, objects_excluded, dynamic_processors, cache};
+        deadline, limits_, conditions_, store, objects_excluded, dynamic_matchers, cache};
     return (cache.result = runner.eval());
 }
 

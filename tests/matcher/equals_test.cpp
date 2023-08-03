@@ -12,57 +12,57 @@
 TEST(TestEqualsBool, Basic)
 {
     {
-        matcher::equals<bool> processor(false);
+        matcher::equals<bool> matcher(false);
 
-        EXPECT_TRUE(processor.match(false).first);
-        EXPECT_FALSE(processor.match(true).first);
+        EXPECT_TRUE(matcher.match(false).first);
+        EXPECT_FALSE(matcher.match(true).first);
     }
 
     {
-        matcher::equals<bool> processor(true);
+        matcher::equals<bool> matcher(true);
 
-        EXPECT_TRUE(processor.match(true).first);
-        EXPECT_FALSE(processor.match(false).first);
+        EXPECT_TRUE(matcher.match(true).first);
+        EXPECT_FALSE(matcher.match(false).first);
     }
 }
 
 TEST(TestEqualsInt, Basic)
 {
-    matcher::equals<int64_t> processor(5);
+    matcher::equals<int64_t> matcher(5);
 
-    EXPECT_TRUE(processor.match(5).first);
-    EXPECT_FALSE(processor.match(1).first);
-    EXPECT_FALSE(processor.match(-1).first);
+    EXPECT_TRUE(matcher.match(5).first);
+    EXPECT_FALSE(matcher.match(1).first);
+    EXPECT_FALSE(matcher.match(-1).first);
 }
 
 TEST(TestEqualsUint, Basic)
 {
-    matcher::equals<uint64_t> processor(2132132);
+    matcher::equals<uint64_t> matcher(2132132);
 
-    EXPECT_TRUE(processor.match(2132132).first);
-    EXPECT_FALSE(processor.match(1).first);
+    EXPECT_TRUE(matcher.match(2132132).first);
+    EXPECT_FALSE(matcher.match(1).first);
 }
 
 TEST(TestEqualsString, Basic)
 {
-    matcher::equals<std::string> processor("aaaa");
+    matcher::equals<std::string> matcher("aaaa");
 
-    EXPECT_TRUE(processor.match("aaaa"sv).first);
-    EXPECT_TRUE(processor.match("aaaa"s).first);
+    EXPECT_TRUE(matcher.match("aaaa"sv).first);
+    EXPECT_TRUE(matcher.match("aaaa"s).first);
 
-    EXPECT_FALSE(processor.match("aaa"sv).first);
-    EXPECT_FALSE(processor.match("aaa"s).first);
+    EXPECT_FALSE(matcher.match("aaa"sv).first);
+    EXPECT_FALSE(matcher.match("aaa"s).first);
 
-    EXPECT_FALSE(processor.match("cccc"sv).first);
-    EXPECT_FALSE(processor.match("cccc"s).first);
+    EXPECT_FALSE(matcher.match("cccc"sv).first);
+    EXPECT_FALSE(matcher.match("cccc"s).first);
 }
 
 TEST(TestEqualsString, InvalidMatchInput)
 {
-    matcher::equals<std::string> processor("aaaa");
+    matcher::equals<std::string> matcher("aaaa");
 
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(processor.match(std::string_view{"aaaa", 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{"aaaa", 0}).first);
 }

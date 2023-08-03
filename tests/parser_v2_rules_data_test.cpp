@@ -182,7 +182,7 @@ TEST(TestParserV2RuleData, ParseUnsupportedProcessor)
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 2);
         {
-            auto it = errors.find("processor match_regex doesn't support dynamic rule data");
+            auto it = errors.find("matcher match_regex doesn't support dynamic rule data");
             EXPECT_NE(it, errors.end());
 
             auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -191,7 +191,7 @@ TEST(TestParserV2RuleData, ParseUnsupportedProcessor)
         }
 
         {
-            auto it = errors.find("processor phrase_match doesn't support dynamic rule data");
+            auto it = errors.find("matcher phrase_match doesn't support dynamic rule data");
             EXPECT_NE(it, errors.end());
 
             auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);

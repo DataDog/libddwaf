@@ -50,7 +50,7 @@ public:
         };
 
         std::vector<target_type> targets;
-        matcher::base::unique_ptr processor;
+        matcher::base::unique_ptr matcher;
         std::string data_id;
     };
 
@@ -66,19 +66,19 @@ public:
 
         template <typename T>
         std::optional<event::match> eval_target(
-            T &it, const matcher::base &processor, const std::vector<transformer_id> &transformers);
+            T &it, const matcher::base &matcher, const std::vector<transformer_id> &transformers);
 
         std::optional<event::match> eval_object(const ddwaf_object *object,
-            const matcher::base &processor, const std::vector<transformer_id> &transformers) const;
+            const matcher::base &matcher, const std::vector<transformer_id> &transformers) const;
 
-        [[nodiscard]] const matcher::base *get_processor(const condition &cond) const;
+        [[nodiscard]] const matcher::base *get_matcher(const condition &cond) const;
 
         ddwaf::timer &deadline;
         const ddwaf::object_limits &limits;
         const std::vector<condition::ptr> &conditions;
         const object_store &store;
         const std::unordered_set<const ddwaf_object *> &objects_excluded;
-        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_processors;
+        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers;
         cache_type &cache;
     };
 
@@ -90,7 +90,7 @@ public:
 
     bool eval(cache_type &cache, const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_processors,
+        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_set<std::string> &addresses) const
@@ -127,7 +127,7 @@ public:
     template <typename T, typename... Args> void start_condition(Args... args)
     {
         auto cond = std::make_unique<expression::condition>();
-        cond->processor = std::make_unique<T>(std::forward<Args>(args)...);
+        cond->matcher = std::make_unique<T>(std::forward<Args>(args)...);
         conditions_.emplace_back(std::move(cond));
     }
 
@@ -144,16 +144,16 @@ public:
         cond->data_id = std::move(data_id);
     }
 
-    template <typename T, typename... Args> void set_processor(Args... args)
+    template <typename T, typename... Args> void set_matcher(Args... args)
     {
         auto &cond = conditions_.back();
-        cond->processor = std::make_unique<T>(args...);
+        cond->matcher = std::make_unique<T>(args...);
     }
 
-    void set_processor(matcher::base::unique_ptr &&processor)
+    void set_matcher(matcher::base::unique_ptr &&matcher)
     {
         auto &cond = conditions_.back();
-        cond->processor = std::move(processor);
+        cond->matcher = std::move(matcher);
     }
 
     void add_target(std::string name, std::vector<std::string> key_path = {},

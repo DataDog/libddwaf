@@ -10,14 +10,14 @@ using namespace ddwaf::matcher;
 
 TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {
-    regex_match processor("^rEgEx$", 0, false);
-    EXPECT_STREQ(processor.to_string().data(), "^rEgEx$");
-    EXPECT_STREQ(processor.name().data(), "match_regex");
+    regex_match matcher("^rEgEx$", 0, false);
+    EXPECT_STREQ(matcher.to_string().data(), "^rEgEx$");
+    EXPECT_STREQ(matcher.name().data(), "match_regex");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    auto [res, highlight] = processor.match(param);
+    auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "regex");
 
@@ -26,17 +26,17 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
 
 TEST(TestRegexMatch, TestBasicCaseSensitive)
 {
-    regex_match processor("^rEgEx$", 0, true);
+    regex_match matcher("^rEgEx$", 0, true);
 
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    EXPECT_FALSE(processor.match(param).first);
+    EXPECT_FALSE(matcher.match(param).first);
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "rEgEx");
 
-    auto [res, highlight] = processor.match(param2);
+    auto [res, highlight] = matcher.match(param2);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "rEgEx");
 
@@ -46,16 +46,16 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
 
 TEST(TestRegexMatch, TestMinLength)
 {
-    regex_match processor("^rEgEx.*$", 6, true);
+    regex_match matcher("^rEgEx.*$", 6, true);
 
     ddwaf_object param;
     ddwaf_object param2;
     ddwaf_object_string(&param, "rEgEx");
     ddwaf_object_string(&param2, "rEgExe");
 
-    EXPECT_FALSE(processor.match(param).first);
+    EXPECT_FALSE(matcher.match(param).first);
 
-    auto [res, highlight] = processor.match(param2);
+    auto [res, highlight] = matcher.match(param2);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "rEgExe");
 
@@ -65,12 +65,12 @@ TEST(TestRegexMatch, TestMinLength)
 
 TEST(TestRegexMatch, TestInvalidInput)
 {
-    regex_match processor("^rEgEx.*$", 6, true);
+    regex_match matcher("^rEgEx.*$", 6, true);
 
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(processor.match(std::string_view{nullptr, 30}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(processor.match(std::string_view{"*", 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
 
 TEST(TestRegexMatch, TestRulesetCaseSensitive)

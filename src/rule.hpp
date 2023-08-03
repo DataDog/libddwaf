@@ -65,7 +65,7 @@ public:
 
     std::optional<event> match(const object_store &store, cache_type &cache,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_processors,
+        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }

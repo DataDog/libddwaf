@@ -36,12 +36,12 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
 
         builder.start_condition();
 
-        auto matcher = at<std::string_view>(cond, "operation");
+        auto matcher_name = at<std::string_view>(cond, "operation");
         auto params = at<parameter::map>(cond, "parameters");
 
         parameter::map options;
-        matcher::base::unique_ptr processor;
-        if (matcher == "phrase_match") {
+        matcher::base::unique_ptr matcher;
+        if (matcher_name == "phrase_match") {
             auto list = at<parameter::vector>(params, "list");
 
             std::vector<const char *> patterns;
@@ -59,8 +59,8 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
                 lengths.push_back((uint32_t)pattern.nbEntries);
             }
 
-            processor = std::make_unique<matcher::phrase_match>(patterns, lengths);
-        } else if (matcher == "match_regex") {
+            matcher = std::make_unique<matcher::phrase_match>(patterns, lengths);
+        } else if (matcher_name == "match_regex") {
             auto regex = at<std::string>(params, "regex");
             options = at<parameter::map>(params, "options", options);
 
@@ -70,15 +70,15 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
                 throw ddwaf::parsing_error("min_length is a negative number");
             }
 
-            processor = std::make_unique<matcher::regex_match>(regex, min_length, case_sensitive);
-        } else if (matcher == "is_xss") {
-            processor = std::make_unique<matcher::is_xss>();
-        } else if (matcher == "is_sqli") {
-            processor = std::make_unique<matcher::is_sqli>();
+            matcher = std::make_unique<matcher::regex_match>(regex, min_length, case_sensitive);
+        } else if (matcher_name == "is_xss") {
+            matcher = std::make_unique<matcher::is_xss>();
+        } else if (matcher_name == "is_sqli") {
+            matcher = std::make_unique<matcher::is_sqli>();
         } else {
-            throw ddwaf::parsing_error("unknown processor: " + std::string(matcher));
+            throw ddwaf::parsing_error("unknown matcher: " + std::string(matcher_name));
         }
-        builder.set_processor(std::move(processor));
+        builder.set_matcher(std::move(matcher));
 
         auto inputs = at<parameter::vector>(params, "inputs");
         for (const auto &input_param : inputs) {
