@@ -65,11 +65,11 @@ public:
         std::optional<event::match> eval_condition(const condition &cond, bool run_on_new);
 
         template <typename T>
-        std::optional<event::match> eval_target(T &it, const operation::base *processor,
+        std::optional<event::match> eval_target(T &it, const operation::base &processor,
             const std::vector<transformer_id> &transformers);
 
         std::optional<event::match> eval_object(const ddwaf_object *object,
-            const operation::base *processor,
+            const operation::base &processor,
             const std::vector<transformer_id> &transformers) const;
 
         [[nodiscard]] const operation::base *get_processor(const condition &cond) const;

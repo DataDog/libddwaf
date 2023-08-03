@@ -125,13 +125,13 @@ protected:
     Fn fn_;
 };
 
-template <typename StringType, typename T,
-    std::enable_if_t<std::is_integral<T>::value, bool> = true>
+template <typename StringType, typename T>
 StringType to_string(T value)
+    requires std::is_integral_v<T>
 {
     // Maximum number of characters required to represent a 64 bit integer as a string
     // 20 bytes for UINT64_MAX or INT64_MIN + null byte
-    constexpr size_t uint64_max_chars = 21;
+    static constexpr size_t uint64_max_chars = 21;
 
     std::array<char, uint64_max_chars> str{};
     auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);

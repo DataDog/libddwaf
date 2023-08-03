@@ -74,24 +74,30 @@ public:
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::supported_type_impl() == DDWAF_OBJ_STRING) {
-            if (obj.stringValue == nullptr) {
-                return {false, {}};
+            if (obj.type == DDWAF_OBJ_STRING && obj.stringValue != nullptr) {
+                return ptr->match_impl({obj.stringValue, static_cast<std::size_t>(obj.nbEntries)});
             }
-
-            return ptr->match_impl({obj.stringValue, static_cast<std::size_t>(obj.nbEntries)});
         }
 
         if constexpr (T::supported_type_impl() == DDWAF_OBJ_SIGNED) {
-            return ptr->match_impl(obj.intValue);
+            if (obj.type == DDWAF_OBJ_SIGNED) {
+                return ptr->match_impl(obj.intValue);
+            }
         }
 
         if constexpr (T::supported_type_impl() == DDWAF_OBJ_UNSIGNED) {
-            return ptr->match_impl(obj.uintValue);
+            if (obj.type == DDWAF_OBJ_UNSIGNED) {
+                return ptr->match_impl(obj.uintValue);
+            }
         }
 
         if constexpr (T::supported_type_impl() == DDWAF_OBJ_BOOL) {
-            return ptr->match_impl(obj.boolean);
+            if (obj.type == DDWAF_OBJ_BOOL) {
+                return ptr->match_impl(obj.boolean);
+            }
         }
+
+        return {false, {}};
     }
 };
 

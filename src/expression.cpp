@@ -42,7 +42,7 @@ memory::string object_to_string(const ddwaf_object &object)
 } // namespace
 
 std::optional<event::match> expression::evaluator::eval_object(const ddwaf_object *object,
-    const operation::base *processor, const std::vector<transformer_id> &transformers) const
+    const operation::base &processor, const std::vector<transformer_id> &transformers) const
 {
     ddwaf_object src = *object;
 
@@ -55,35 +55,35 @@ std::optional<event::match> expression::evaluator::eval_object(const ddwaf_objec
             auto transformed = transformer::manager::transform(src, dst, transformers);
             scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
             if (transformed) {
-                auto [res, highlight] = processor->match(dst);
+                auto [res, highlight] = processor.match(dst);
                 if (!res) {
                     return std::nullopt;
                 }
-                return {{object_to_string(dst), std::move(highlight), processor->name(),
-                    processor->to_string(), {}, {}}};
+                return {{object_to_string(dst), std::move(highlight), processor.name(),
+                    processor.to_string(), {}, {}}};
             }
         }
     }
 
-    auto [res, highlight] = processor->match(src);
+    auto [res, highlight] = processor.match(src);
     if (!res) {
         return std::nullopt;
     }
 
-    return {{object_to_string(src), std::move(highlight), processor->name(), processor->to_string(),
+    return {{object_to_string(src), std::move(highlight), processor.name(), processor.to_string(),
         {}, {}}};
 }
 
 template <typename T>
 std::optional<event::match> expression::evaluator::eval_target(
-    T &it, const operation::base *processor, const std::vector<transformer_id> &transformers)
+    T &it, const operation::base &processor, const std::vector<transformer_id> &transformers)
 {
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (it.type() != processor->supported_type()) {
+        if (it.type() != processor.supported_type()) {
             continue;
         }
 
@@ -142,10 +142,10 @@ std::optional<event::match> expression::evaluator::eval_condition(
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, processor, target.transformers);
+            optional_match = eval_target(it, *processor, target.transformers);
         } else {
             object::value_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, processor, target.transformers);
+            optional_match = eval_target(it, *processor, target.transformers);
         }
 
         if (optional_match.has_value()) {

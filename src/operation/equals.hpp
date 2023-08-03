@@ -29,37 +29,32 @@ protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "equals"; }
 
-    template <typename U = T, std::enable_if_t<std::is_same<U, int64_t>::value, bool> = true>
     static constexpr DDWAF_OBJ_TYPE supported_type_impl()
     {
-        return DDWAF_OBJ_SIGNED;
-    }
+        if constexpr (std::is_same_v<T, int64_t>) {
+            return DDWAF_OBJ_SIGNED;
+        }
+        if constexpr (std::is_same_v<T, uint64_t>) {
+            return DDWAF_OBJ_UNSIGNED;
+        }
 
-    template <typename U = T, std::enable_if_t<std::is_same<U, uint64_t>::value, bool> = true>
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl()
-    {
-        return DDWAF_OBJ_UNSIGNED;
-    }
+        if constexpr (std::is_same_v<T, bool>) {
+            return DDWAF_OBJ_BOOL;
+        }
 
-    template <typename U = T, std::enable_if_t<std::is_same<U, bool>::value, bool> = true>
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl()
-    {
-        return DDWAF_OBJ_BOOL;
-    }
-
-    template <typename U = T, std::enable_if_t<std::is_same<U, std::string>::value, bool> = true>
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl()
-    {
-        return DDWAF_OBJ_STRING;
+        if constexpr (std::is_same_v<T, std::string>) {
+            return DDWAF_OBJ_STRING;
+        }
     }
 
     [[nodiscard]] std::pair<bool, memory::string> match_impl(const T &obtained) const
+        requires(!std::is_same_v<T, std::string>)
     {
         return {expected_ == obtained, {}};
     }
 
-    template <typename U = T, std::enable_if_t<std::is_same<U, std::string>::value, bool> = true>
     [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view obtained) const
+        requires std::is_same_v<T, std::string>
     {
         return {expected_ == obtained, {}};
     }

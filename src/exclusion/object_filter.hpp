@@ -165,9 +165,9 @@ public:
         std::vector<const trie_node *> cur_nodes_;
     };
 
-    template <typename StringType,
-        typename = std::enable_if<std::is_constructible<std::string, StringType>::value>>
+    template <typename StringType>
     void insert(const std::vector<StringType> &path)
+        requires std::is_constructible_v<std::string, StringType>
     {
         if (!root) {
             root.emplace();
