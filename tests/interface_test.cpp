@@ -63,7 +63,7 @@ TEST(TestInterface, HandleLifetime)
     ddwaf_object tmp;
     ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
 
-    ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
+    ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
     ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
     ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));
@@ -102,7 +102,7 @@ TEST(TestInterface, HandleLifetimeMultipleContexts)
     ddwaf_object param_key = DDWAF_OBJECT_ARRAY;
     ddwaf_object param_val = DDWAF_OBJECT_ARRAY;
 
-    ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
+    ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
     ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
     ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));

@@ -86,7 +86,7 @@ TEST(TestIntegrationOperation, SignedEquals)
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_signed_force(&value, -42);
+    ddwaf_object_signed(&value, -42);
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_result out;
@@ -116,7 +116,7 @@ TEST(TestIntegrationOperation, UnsignedEquals)
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_unsigned_force(&value, 42);
+    ddwaf_object_unsigned(&value, 42);
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_result out;

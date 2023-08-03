@@ -31,6 +31,17 @@ ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
     return object;
 }
 
+ddwaf_object *ddwaf_object_null(ddwaf_object *object)
+{
+    if (object == nullptr) {
+        return nullptr;
+    }
+
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_NULL};
+
+    return object;
+}
+
 static ddwaf_object *ddwaf_object_string_helper(
     ddwaf_object *object, const char *string, size_t length)
 {
@@ -95,7 +106,7 @@ ddwaf_object *ddwaf_object_stringl_nc(ddwaf_object *object, const char *string, 
     return object;
 }
 
-ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
+ddwaf_object *ddwaf_object_string_from_signed(ddwaf_object *object, int64_t value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -108,7 +119,7 @@ ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
     return ddwaf_object_stringl(object, container, length);
 }
 
-ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
+ddwaf_object *ddwaf_object_string_from_unsigned(ddwaf_object *object, uint64_t value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -121,7 +132,7 @@ ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
     return ddwaf_object_stringl(object, container, length);
 }
 
-ddwaf_object *ddwaf_object_unsigned_force(ddwaf_object *object, uint64_t value)
+ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -133,7 +144,7 @@ ddwaf_object *ddwaf_object_unsigned_force(ddwaf_object *object, uint64_t value)
     return object;
 }
 
-ddwaf_object *ddwaf_object_signed_force(ddwaf_object *object, int64_t value)
+ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -153,6 +164,18 @@ ddwaf_object *ddwaf_object_bool(ddwaf_object *object, bool value)
 
     *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_BOOL};
     object->boolean = value;
+
+    return object;
+}
+
+ddwaf_object *ddwaf_object_float(ddwaf_object *object, double value)
+{
+    if (object == nullptr) {
+        return nullptr;
+    }
+
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_FLOAT};
+    object->f64 = value;
 
     return object;
 }

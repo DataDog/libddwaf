@@ -36,18 +36,22 @@ extern "C"
 typedef enum
 {
     DDWAF_OBJ_INVALID     = 0,
-    /** Value shall be decoded as a int64_t (or int32_t on 32bits platforms). **/
+    // 64-bit signed integer type
     DDWAF_OBJ_SIGNED   = 1 << 0,
-    /** Value shall be decoded as a uint64_t (or uint32_t on 32bits platforms). **/
+    // 64-bit unsigned integer type
     DDWAF_OBJ_UNSIGNED = 1 << 1,
-    /** Value shall be decoded as a UTF-8 string of length nbEntries. **/
+    // UTF-8 string of length nbEntries
     DDWAF_OBJ_STRING   = 1 << 2,
-    /** Value shall be decoded as an array of ddwaf_object of length nbEntries, each item having no parameterName. **/
+    // Array of ddwaf_object of length nbEntries, each item having no parameterName
     DDWAF_OBJ_ARRAY    = 1 << 3,
-    /** Value shall be decoded as an array of ddwaf_object of length nbEntries, each item having a parameterName. **/
+    // Array of ddwaf_object of length nbEntries, each item having a parameterName
     DDWAF_OBJ_MAP      = 1 << 4,
-
+    // Boolean type
     DDWAF_OBJ_BOOL     = 1 << 5,
+    // 64-bit float (or double) type
+    DDWAF_OBJ_FLOAT    = 1 << 6,
+    // Null type, only used for its semantical value
+    DDWAF_OBJ_NULL    = 1 << 7,
 } DDWAF_OBJ_TYPE;
 
 /**
@@ -104,6 +108,7 @@ struct _ddwaf_object
         int64_t intValue;
         ddwaf_object* array;
         bool boolean;
+        double f64;
     };
     uint64_t nbEntries;
     DDWAF_OBJ_TYPE type;
@@ -316,6 +321,19 @@ void ddwaf_result_free(ddwaf_result *result);
 ddwaf_object* ddwaf_object_invalid(ddwaf_object *object);
 
 /**
+ * ddwaf_object_null
+ *
+ * Creates an null object. Provides a different semantical value to invalid as
+ * it can be used to signify that a value is null rather than of an unknown type.
+ *
+ * @param object Object to perform the operation on. (nonnull)
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+ddwaf_object* ddwaf_object_null(ddwaf_object *object);
+
+
+/**
  * ddwaf_object_string
  *
  * Creates an object from a string.
@@ -356,32 +374,30 @@ ddwaf_object* ddwaf_object_stringl(ddwaf_object *object, const char *string, siz
 ddwaf_object* ddwaf_object_stringl_nc(ddwaf_object *object, const char *string, size_t length);
 
 /**
- * ddwaf_object_unsigned
+ * ddwaf_object_string_from_unsigned
  *
  * Creates an object using an unsigned integer (64-bit). The resulting object
- * will contain a string created using the integer provided. This is the
- * preferred method for passing an unsigned integer to the WAF.
+ * will contain a string created using the integer provided.
  *
  * @param object Object to perform the operation on. (nonnull)
  * @param value Integer to initialise the object with.
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_unsigned(ddwaf_object *object, uint64_t value);
+ddwaf_object* ddwaf_object_string_from_unsigned(ddwaf_object *object, uint64_t value);
 
 /**
- * ddwaf_object_signed
+ * ddwaf_object_string_from_signed
  *
  * Creates an object using a signed integer (64-bit). The resulting object
- * will contain a string created using the integer provided. This is the
- * preferred method for passing a signed integer to the WAF.
+ * will contain a string created using the integer provided.
  *
  * @param object Object to perform the operation on. (nonnull)
  * @param value Integer to initialise the object with.
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_signed(ddwaf_object *object, int64_t value);
+ddwaf_object* ddwaf_object_string_from_signed(ddwaf_object *object, int64_t value);
 
 /**
  * ddwaf_object_unsigned_force
@@ -394,7 +410,7 @@ ddwaf_object* ddwaf_object_signed(ddwaf_object *object, int64_t value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_unsigned_force(ddwaf_object *object, uint64_t value);
+ddwaf_object* ddwaf_object_unsigned(ddwaf_object *object, uint64_t value);
 
 /**
  * ddwaf_object_signed_force
@@ -407,7 +423,7 @@ ddwaf_object* ddwaf_object_unsigned_force(ddwaf_object *object, uint64_t value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_signed_force(ddwaf_object *object, int64_t value);
+ddwaf_object* ddwaf_object_signed(ddwaf_object *object, int64_t value);
 
 /**
  * ddwaf_object_bool
@@ -421,6 +437,19 @@ ddwaf_object* ddwaf_object_signed_force(ddwaf_object *object, int64_t value);
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
 ddwaf_object* ddwaf_object_bool(ddwaf_object *object, bool value);
+
+/**
+ * ddwaf_object_float
+ *
+ * Creates an object using a double, the resulting object will contain a
+ * double as opposed to a string.
+ *
+ * @param object Object to perform the operation on. (nonnull)
+ * @param value Double to initialise the object with.
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+ddwaf_object* ddwaf_object_float(ddwaf_object *object, double value);
 
 /**
  * ddwaf_object_array

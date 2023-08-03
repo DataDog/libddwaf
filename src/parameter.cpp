@@ -27,6 +27,10 @@ std::string strtype(int type)
         return "unsigned";
     case DDWAF_OBJ_SIGNED:
         return "signed";
+    case DDWAF_OBJ_FLOAT:
+        return "float";
+    case DDWAF_OBJ_NULL:
+        return "null";
     default:
         break;
     }
@@ -44,6 +48,9 @@ static void print_(parameter args, uint64_t depth)
     case DDWAF_OBJ_INVALID:
         std::printf("- invalid\n");
         break;
+    case DDWAF_OBJ_NULL:
+        std::printf("- null\n");
+        break;
     case DDWAF_OBJ_BOOL:
         std::printf("- %s\n", args.boolean ? "true" : "false");
         break;
@@ -60,6 +67,13 @@ static void print_(parameter args, uint64_t depth)
             std::printf("- %s: %" PRIu64 "\n", args.parameterName, args.uintValue);
         else
             std::printf("- %" PRIu64 "\n", args.uintValue);
+        break;
+    }
+    case DDWAF_OBJ_FLOAT: {
+        if (args.parameterName != nullptr)
+            std::printf("- %s: %lf\n", args.parameterName, args.f64);
+        else
+            std::printf("- %lf\n", args.f64);
         break;
     }
 
@@ -98,7 +112,7 @@ parameter::operator parameter::map() const
     }
 
     if (array == nullptr || nbEntries == 0) {
-        return parameter::map();
+        return {};
     }
 
     std::unordered_map<std::string_view, parameter> map;
