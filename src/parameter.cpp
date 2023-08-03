@@ -61,7 +61,6 @@ static void print_(parameter args, uint64_t depth)
             std::printf("- %" PRId64 "\n", args.intValue);
         break;
     }
-
     case DDWAF_OBJ_UNSIGNED: {
         if (args.parameterName != nullptr)
             std::printf("- %s: %" PRIu64 "\n", args.parameterName, args.uintValue);
@@ -76,7 +75,6 @@ static void print_(parameter args, uint64_t depth)
             std::printf("- %lf\n", args.f64);
         break;
     }
-
     case DDWAF_OBJ_STRING: {
         if (args.parameterName != nullptr)
             std::printf("- %s: %s\n", args.parameterName, args.stringValue);
@@ -84,7 +82,6 @@ static void print_(parameter args, uint64_t depth)
             std::printf("- %s\n", args.stringValue);
         break;
     }
-
     case DDWAF_OBJ_ARRAY: {
         if (args.parameterName != nullptr)
             std::printf("- %s:\n", args.parameterName);
@@ -92,7 +89,6 @@ static void print_(parameter args, uint64_t depth)
         for (uint64_t i = 0; i < args.nbEntries; ++i) print_(args.array[i], depth + 1);
         break;
     }
-
     case DDWAF_OBJ_MAP: {
         if (args.parameterName != nullptr)
             std::printf("- %s:\n", args.parameterName);
@@ -216,6 +212,24 @@ parameter::operator int64_t() const
     }
 
     throw bad_cast("signed", strtype(type));
+}
+
+parameter::operator double() const
+{
+    if (type == DDWAF_OBJ_FLOAT) {
+        return f64;
+    }
+
+    if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
+        double result;
+        const auto *end{&stringValue[nbEntries]};
+        auto [endConv, err] = std::from_chars(stringValue, end, result);
+        if (err == std::errc{} && endConv == end) {
+            return result;
+        }
+    }
+
+    throw bad_cast("double", strtype(type));
 }
 
 parameter::operator bool() const

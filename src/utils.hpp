@@ -127,13 +127,13 @@ protected:
 
 template <typename StringType, typename T>
 StringType to_string(T value)
-    requires std::is_integral_v<T>
+    requires std::is_integral_v<T> && (!std::is_same_v<T, bool>)
 {
     // Maximum number of characters required to represent a 64 bit integer as a string
     // 20 bytes for UINT64_MAX or INT64_MIN + null byte
-    static constexpr size_t uint64_max_chars = 21;
+    static constexpr size_t max_chars = 21;
 
-    std::array<char, uint64_max_chars> str{};
+    std::array<char, max_chars> str{};
     auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
     if (ec == std::errc()) {
         return {str.data(), ptr};
@@ -141,6 +141,26 @@ StringType to_string(T value)
     return {};
 }
 
-template <typename StringType> StringType to_string(bool value) { return value ? "true" : "false"; }
+template <typename StringType, typename T>
+StringType to_string(T value)
+    requires std::is_floating_point_v<T>
+{
+    // Doubles could potentially be quite large so we need a reasonable limit
+    static constexpr size_t max_chars = 32;
+
+    std::array<char, max_chars> str{};
+    auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
+    if (ec == std::errc()) {
+        return {str.data(), ptr};
+    }
+    return {};
+}
+
+template <typename StringType, typename T>
+StringType to_string(T value)
+    requires std::is_same_v<T, bool>
+{
+    return value ? "true" : "false";
+}
 
 } // namespace ddwaf

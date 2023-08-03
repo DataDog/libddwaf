@@ -416,6 +416,15 @@ int64_t ddwaf_object_get_signed(const ddwaf_object *object)
     return object->intValue;
 }
 
+double ddwaf_object_get_float(const ddwaf_object *object)
+{
+    if (object == nullptr || object->type != DDWAF_OBJ_FLOAT) {
+        return 0;
+    }
+
+    return object->f64;
+}
+
 bool ddwaf_object_get_bool(const ddwaf_object *object)
 {
     if (object == nullptr || object->type != DDWAF_OBJ_BOOL) {

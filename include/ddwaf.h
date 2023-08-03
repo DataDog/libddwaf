@@ -610,6 +610,17 @@ uint64_t ddwaf_object_get_unsigned(const ddwaf_object *object);
 int64_t ddwaf_object_get_signed(const ddwaf_object *object);
 
 /**
+ * ddwaf_object_get_float
+ *
+ * Returns the float64 (double) contained within the object.
+ *
+ * @param object The object from which to get the float.
+ *
+ * @return The float or 0.0 if the object is not a float.
+ **/
+double ddwaf_object_get_float(const ddwaf_object *object);
+
+/**
  * ddwaf_object_get_bool
  *
  * Returns the boolean contained within the object.

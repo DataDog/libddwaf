@@ -48,3 +48,16 @@ rules:
             - address: input
           type: unsigned
           value: 42
+  - id: 5
+    name: rule5-float-equals
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: equals
+        parameters:
+          inputs:
+            - address: input
+          type: float
+          value: 42.0
+          precision: 0.1
