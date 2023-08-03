@@ -196,8 +196,7 @@ static bool ddwaf_object_insert(ddwaf_object *array, ddwaf_object object)
         }
 
         const auto size = (size_t)(array->nbEntries + 8);
-        auto *newArray =
-            (ddwaf_object *)realloc((void *)array->array, size * sizeof(ddwaf_object));
+        auto *newArray = (ddwaf_object *)realloc((void *)array->array, size * sizeof(ddwaf_object));
         if (newArray == nullptr) {
             DDWAF_DEBUG("Allocation failure when trying to lengthen a map or an array");
             return false;

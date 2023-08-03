@@ -45,7 +45,7 @@ std::pair<bool, memory::string> exact_match::match_impl(std::string_view str) co
     if (it->second > 0) {
         const uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::system_clock::now().time_since_epoch())
-                           .count();
+                                 .count();
         if (it->second < now) {
             return {false, {}};
         }
