@@ -18,7 +18,6 @@
 #include <vector>
 
 #include <clock.hpp>
-#include <config.hpp>
 #include <context_allocator.hpp>
 #include <log.hpp>
 #include <object_store.hpp>

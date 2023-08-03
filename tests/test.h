@@ -31,7 +31,6 @@
 using namespace std;
 
 #include <clock.hpp>
-#include <config.hpp>
 #include <context.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>
