@@ -6,13 +6,16 @@
 
 #pragma once
 
+#include <alloca.h>
 #include <array>
 #include <charconv>
 #include <cstdint>
 #include <ddwaf.h>
 #include <functional>
 #include <iterator>
+#include <memory>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <type_traits>
@@ -150,15 +153,12 @@ template <typename StringType, typename T>
 StringType to_string(T value)
     requires std::is_floating_point_v<T>
 {
-    // Doubles could potentially be quite large so we need a reasonable limit
-    static constexpr size_t max_chars = 32;
-
-    std::array<char, max_chars> str{};
-    auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
-    if (ec == std::errc()) {
-        return {str.data(), ptr};
-    }
-    return {};
+    using char_type = typename StringType::char_type;
+    using traits_type = typename StringType::traits_type;
+    using allocator_type = typename StringType::allocator_type;
+    std::basic_stringstream<char_type, traits_type, allocator_type> ss;
+    ss << value;
+    return std::move(ss).str();
 }
 
 template <typename StringType, typename T>
