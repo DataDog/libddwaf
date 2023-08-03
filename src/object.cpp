@@ -238,8 +238,8 @@ bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object)
         DDWAF_DEBUG("Invalid call, this API can only be called with an array as first parameter");
         return false;
     }
-    if (object == nullptr || object->type == DDWAF_OBJ_INVALID) {
-        DDWAF_DEBUG("Tried to add an invalid entry to an array");
+    if (object == nullptr) {
+        DDWAF_DEBUG("Tried to add a null object to an array");
         return false;
     }
     return ddwaf_object_insert(array, *object);
@@ -283,8 +283,8 @@ static inline bool ddwaf_object_map_add_valid(
         DDWAF_DEBUG("Invalid call, nullptr key");
         return false;
     }
-    if (object == nullptr || object->type == DDWAF_OBJ_INVALID) {
-        DDWAF_DEBUG("Tried to add an invalid entry to a map");
+    if (object == nullptr) {
+        DDWAF_DEBUG("Tried to add a null object to a map");
         return false;
     }
     return true;
@@ -322,8 +322,9 @@ bool ddwaf_object_map_addl_nc(
 // NOLINTNEXTLINE(misc-no-recursion)
 void ddwaf_object_free(ddwaf_object *object)
 {
-    if (object == nullptr || object->type == DDWAF_OBJ_INVALID)
+    if (!ddwaf::object::is_valid(object)) {
         return;
+    }
 
     free((void *)object->parameterName);
 

@@ -42,7 +42,7 @@ TEST(TestValueIterator, TestStringScalar)
 TEST(TestValueIterator, TestUnsignedScalar)
 {
     ddwaf_object object;
-    ddwaf_object_string_from_unsigned(&object, 22);
+    ddwaf_object_unsigned(&object, 22);
 
     std::unordered_set<const ddwaf_object *> exclude;
     ddwaf::object::value_iterator it(&object, {}, exclude);
@@ -58,7 +58,7 @@ TEST(TestValueIterator, TestUnsignedScalar)
 TEST(TestValueIterator, TestSignedScalar)
 {
     ddwaf_object object;
-    ddwaf_object_string_from_signed(&object, 22);
+    ddwaf_object_signed(&object, 22);
 
     std::unordered_set<const ddwaf_object *> exclude;
     ddwaf::object::value_iterator it(&object, {}, exclude);

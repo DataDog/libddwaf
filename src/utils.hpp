@@ -90,6 +90,11 @@ inline bool is_scalar(const ddwaf_object *obj)
     return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
 }
 
+inline bool is_valid(const ddwaf_object *obj)
+{
+    return obj != nullptr && obj->type != DDWAF_OBJ_INVALID && obj->type != DDWAF_OBJ_NULL;
+}
+
 } // namespace object
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
