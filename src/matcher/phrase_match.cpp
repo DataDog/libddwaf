@@ -32,10 +32,10 @@ std::pair<bool, memory::string> phrase_match::match_impl(std::string_view patter
         return {false, {}};
     }
 
-    ac_result_t result =
+    const ac_result_t result =
         ac_match(acStructure, pattern.data(), static_cast<uint32_t>(pattern.size()));
 
-    bool didMatch =
+    const bool didMatch =
         result.match_begin >= 0 && result.match_end >= 0 && result.match_begin < result.match_end;
     if (!didMatch) {
         return {false, {}};

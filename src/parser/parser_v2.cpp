@@ -365,7 +365,6 @@ input_filter_spec parse_input_filter(const parameter::map &filter, const object_
         }
     }
 
-    std::unordered_set<target_index> input_targets;
     auto obj_filter = std::make_shared<exclusion::object_filter>(limits);
     auto inputs_array = at<parameter::vector>(filter, "inputs");
 
@@ -462,10 +461,10 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
 {
     rule_data_container matchers;
     for (unsigned i = 0; i < rule_data.size(); ++i) {
-        ddwaf::parameter object = rule_data[i];
+        const ddwaf::parameter object = rule_data[i];
         std::string id;
         try {
-            auto entry = static_cast<ddwaf::parameter::map>(object);
+            const auto entry = static_cast<ddwaf::parameter::map>(object);
 
             id = at<std::string>(entry, "id");
 

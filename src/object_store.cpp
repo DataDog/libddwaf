@@ -60,7 +60,7 @@ bool object_store::insert(const ddwaf_object &input)
             continue;
         }
 
-        std::string key(array[i].parameterName, length);
+        const std::string key(array[i].parameterName, length);
         auto target = get_target_index(key);
         objects_[target] = &array[i];
         latest_batch_.emplace(target);

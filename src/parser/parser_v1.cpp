@@ -21,8 +21,6 @@
 #include <unordered_map>
 #include <vector>
 
-using ddwaf::matcher::base;
-
 namespace ddwaf::parser::v1 {
 
 namespace {
@@ -89,7 +87,7 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
 
             std::string root;
             std::vector<std::string> key_path;
-            size_t pos = input.find(':', 0);
+            const size_t pos = input.find(':', 0);
             if (pos == std::string::npos || pos + 1 >= input.size()) {
                 root = input;
             } else {

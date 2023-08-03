@@ -76,7 +76,7 @@ std::pair<bool, memory::string> ip_match::match_impl(std::string_view str) const
     }
 
     if (node->expiration > 0) {
-        uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
+        const uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::system_clock::now().time_since_epoch())
                            .count();
         if (node->expiration < now) {

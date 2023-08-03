@@ -16,7 +16,7 @@ bool base64_encode::transform_impl(cow_string &str)
     }
 
     // We need to allocate a buffer to contain the base64 encoded string
-    size_t encoded_length = (str.length() + 2) / 3 * 4;
+    const size_t encoded_length = (str.length() + 2) / 3 * 4;
     auto *new_string = static_cast<char *>(malloc(encoded_length + 1));
 
     // We don't have a good way to make this test fail in the CI, thus crapping on the coverage
@@ -48,7 +48,7 @@ bool base64_encode::transform_impl(cow_string &str)
     if (read < str.length()) {
         //  We know that must have either one, or two bytes to process
         //  (otherwise the loop above would have run one more time)
-        uint8_t first_byte = str.at<uint8_t>(read) >> 2;
+        const uint8_t first_byte = str.at<uint8_t>(read) >> 2;
         uint8_t second_byte = (str.at<uint8_t>(read) & 0x3) << 4;
 
         new_string[write++] = b64Encoding[first_byte];
@@ -62,7 +62,7 @@ bool base64_encode::transform_impl(cow_string &str)
             // Compute the codes, only three as the forth is only set by the third,
             // missing input byte
             second_byte |= (str.at<uint8_t>(read + 1) >> 4);
-            uint8_t third_byte = (str.at<uint8_t>(read + 1) & 0xf) << 2;
+            const uint8_t third_byte = (str.at<uint8_t>(read + 1) & 0xf) << 2;
 
             new_string[write++] = b64Encoding[second_byte];
             // If we had 2 bytes to encode, we'll encode it

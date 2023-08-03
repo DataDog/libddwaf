@@ -53,7 +53,7 @@ std::optional<event::match> expression::evaluator::eval_object(const ddwaf_objec
             ddwaf_object_invalid(&dst);
 
             auto transformed = transformer::manager::transform(src, dst, transformers);
-            scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
+            const scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
             if (transformed) {
                 auto [res, highlight] = matcher.match(dst);
                 if (!res) {

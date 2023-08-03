@@ -15,7 +15,7 @@ namespace {
 bool replace_if_match(cow_string &str, size_t &read, size_t &write, const char *token,
     size_t token_length, char decoded)
 {
-    size_t remaining = str.length() - read;
+    const size_t remaining = str.length() - read;
     if (remaining < token_length) {
         return false;
     }
