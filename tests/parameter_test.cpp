@@ -148,6 +148,34 @@ TEST(TestParameter, ToInt64)
     }
 }
 
+TEST(TestParameter, ToFloat)
+{
+    {
+        ddwaf_object root;
+        ddwaf_object_float(&root, 21.23);
+
+        double value = static_cast<double>(parameter(root));
+        EXPECT_EQ(value, 21.23);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "21.23");
+
+        double value = static_cast<double>(parameter(root));
+        EXPECT_EQ(value, 21.23);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_map(&root);
+
+        EXPECT_THROW(static_cast<double>(ddwaf::parameter(root)), ddwaf::bad_cast);
+    }
+}
+
 TEST(TestParameter, ToString)
 {
     {

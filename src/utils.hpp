@@ -91,9 +91,9 @@ inline bool is_scalar(const ddwaf_object *obj)
     return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
 }
 
-inline bool is_valid(const ddwaf_object *obj)
+inline bool is_invalid_or_null(const ddwaf_object *obj)
 {
-    return obj != nullptr && obj->type != DDWAF_OBJ_INVALID && obj->type != DDWAF_OBJ_NULL;
+    return obj != nullptr && obj->type == DDWAF_OBJ_INVALID && obj->type == DDWAF_OBJ_NULL;
 }
 
 } // namespace object
@@ -131,9 +131,19 @@ protected:
     Fn fn_;
 };
 
+template <typename T>
+concept has_to_chars = requires(T v) { std::to_chars(nullptr, nullptr, std::declval<T>()); };
+
+template <typename T>
+concept has_from_chars = requires(T v) { std::from_chars(nullptr, nullptr, std::declval<T>()); };
+
 template <typename StringType, typename T>
 StringType to_string(T value)
-    requires std::is_integral_v<T> && (!std::is_same_v<T, bool>)
+    requires std::is_integral_v<T> &&
+             (!std::is_same_v<T, bool>) && std::is_same_v<typename StringType::value_type, char> &&
+             std::is_same_v<StringType,
+                 std::basic_string<typename StringType::value_type,
+                     typename StringType::traits_type, typename StringType::allocator_type>>
 {
     // Maximum number of characters required to represent a 64 bit integer as a string
     // 20 bytes for UINT64_MAX or INT64_MIN + null byte
@@ -141,29 +151,68 @@ StringType to_string(T value)
 
     std::array<char, max_chars> str{};
     auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
-    if (ec == std::errc()) {
-        return {str.data(), ptr};
+    [[unlikely]] if (ec != std::errc()) {
+        return {};
     }
-    return {};
+    return {str.data(), ptr};
 }
 
 template <typename StringType, typename T>
 StringType to_string(T value)
-    requires std::is_floating_point_v<T>
+    requires std::is_floating_point_v<T> && std::is_same_v<typename StringType::value_type, char> &&
+             std::is_same_v<StringType,
+                 std::basic_string<typename StringType::value_type,
+                     typename StringType::traits_type, typename StringType::allocator_type>>
 {
-    using char_type = typename StringType::value_type;
-    using traits_type = typename StringType::traits_type;
-    using allocator_type = typename StringType::allocator_type;
-    std::basic_ostringstream<char_type, traits_type, allocator_type> ss;
-    ss << value;
-    return std::move(ss).str();
+    if constexpr (has_to_chars<double>) {
+        // 17 significant digits + dot + minus + exponent + minus + 3 exponend digits + null byte
+        static constexpr size_t max_chars = 25;
+
+        std::array<char, max_chars> str{};
+        auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
+        [[unlikely]] if (ec != std::errc()) {
+            // This is likely unreachable if the max_chars calculation is accurate
+            return {};
+        }
+        return {str.data(), ptr};
+    } else {
+        using char_type = typename StringType::value_type;
+        using traits_type = typename StringType::traits_type;
+        using allocator_type = typename StringType::allocator_type;
+        std::basic_ostringstream<char_type, traits_type, allocator_type> ss;
+        ss << value;
+        return std::move(ss).str();
+    }
 }
 
 template <typename StringType, typename T>
 StringType to_string(T value)
-    requires std::is_same_v<T, bool>
+    requires std::is_same_v<T, bool> && std::is_same_v<typename StringType::value_type, char> &&
+             std::is_same_v<StringType,
+                 std::basic_string<typename StringType::value_type,
+                     typename StringType::traits_type, typename StringType::allocator_type>>
 {
     return value ? "true" : "false";
+}
+
+template <typename T> std::pair<bool, T> from_string(std::string_view str)
+{
+    T result;
+    if constexpr (has_from_chars<T>) {
+        const auto *end = str.data() + str.size();
+        auto [endConv, err] = std::from_chars(str.data(), end, result);
+        if (err == std::errc{} && endConv == end) {
+            return {true, result};
+        }
+    } else {
+        std::istringstream iss(std::string{str});
+        iss >> result;
+        if (!iss.fail() && iss.eof()) {
+            return {true, result};
+        }
+    }
+
+    return {false, {}};
 }
 
 } // namespace ddwaf

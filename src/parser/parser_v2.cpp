@@ -105,8 +105,8 @@ std::pair<std::string, matcher::base::unique_ptr> parse_matcher(
             matcher = std::make_unique<matcher::equals<int64_t>>(value);
         } else if (value_type == "float") {
             auto value = at<double>(params, "value");
-            auto precision = at<double>(params, "precision", 0.01);
-            matcher = std::make_unique<matcher::equals<double>>(value, precision);
+            auto delta = at<double>(params, "delta", 0.01);
+            matcher = std::make_unique<matcher::equals<double>>(value, delta);
         } else {
             throw ddwaf::parsing_error("invalid type for matcher equals" + value_type);
         }

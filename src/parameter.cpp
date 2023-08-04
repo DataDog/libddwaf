@@ -11,6 +11,8 @@
 #include <parameter.hpp>
 #include <sstream>
 
+#include "utils.hpp"
+
 namespace {
 
 std::string strtype(int type)
@@ -186,10 +188,8 @@ parameter::operator uint64_t() const
     }
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        uint64_t result;
-        const auto *end{&stringValue[nbEntries]};
-        auto [endConv, err] = std::from_chars(stringValue, end, result);
-        if (err == std::errc{} && endConv == end) {
+        auto [res, result] = from_string<uint64_t>({stringValue, static_cast<size_t>(nbEntries)});
+        if (res) {
             return result;
         }
     }
@@ -204,10 +204,8 @@ parameter::operator int64_t() const
     }
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        int64_t result;
-        const auto *end{&stringValue[nbEntries]};
-        auto [endConv, err] = std::from_chars(stringValue, end, result);
-        if (err == std::errc{} && endConv == end) {
+        auto [res, result] = from_string<int64_t>({stringValue, static_cast<size_t>(nbEntries)});
+        if (res) {
             return result;
         }
     }
@@ -222,12 +220,8 @@ parameter::operator double() const
     }
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        double result = 0.0;
-        std::string str{stringValue, static_cast<std::size_t>(nbEntries)};
-        std::istringstream iss(str);
-        iss >> result;
-
-        if (!iss.fail() && iss.eof()) {
+        auto [res, result] = from_string<double>({stringValue, static_cast<size_t>(nbEntries)});
+        if (res) {
             return result;
         }
     }

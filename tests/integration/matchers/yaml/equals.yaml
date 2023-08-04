@@ -60,4 +60,4 @@ rules:
             - address: input
           type: float
           value: 42.0
-          precision: 0.1
+          delta: 0.1

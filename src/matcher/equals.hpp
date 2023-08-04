@@ -73,7 +73,7 @@ public:
     using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    equals(double expected, double precision) : expected_(expected), precision_(precision) {}
+    equals(double expected, double delta) : expected_(expected), delta_(delta) {}
     ~equals() override = default;
     equals(const equals &) = default;
     equals(equals &&) noexcept = default;
@@ -87,11 +87,11 @@ protected:
 
     [[nodiscard]] std::pair<bool, memory::string> match_impl(double obtained) const
     {
-        return {std::abs(expected_ - obtained) < precision_, {}};
+        return {std::abs(expected_ - obtained) < delta_, {}};
     }
 
     double expected_;
-    double precision_;
+    double delta_;
 
     friend class base_impl<equals<double>>;
 };
