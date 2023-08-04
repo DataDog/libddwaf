@@ -17,8 +17,6 @@ namespace ddwaf::matcher {
 
 template <typename T> class equals : public base_impl<equals<T>> {
 public:
-    using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
-
     explicit equals(T expected)
         requires(!std::is_floating_point_v<T>)
         : expected_(std::move(expected))
@@ -70,8 +68,6 @@ protected:
 
 template <> class equals<double> : public base_impl<equals<double>> {
 public:
-    using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
-
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     equals(double expected, double delta) : expected_(expected), delta_(delta) {}
     ~equals() override = default;
