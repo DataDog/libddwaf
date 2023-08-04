@@ -6,14 +6,12 @@
 
 #pragma once
 
-#include <alloca.h>
 #include <array>
 #include <charconv>
 #include <cstdint>
 #include <ddwaf.h>
 #include <functional>
 #include <iterator>
-#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -153,10 +151,10 @@ template <typename StringType, typename T>
 StringType to_string(T value)
     requires std::is_floating_point_v<T>
 {
-    using char_type = typename StringType::char_type;
+    using char_type = typename StringType::value_type;
     using traits_type = typename StringType::traits_type;
     using allocator_type = typename StringType::allocator_type;
-    std::basic_stringstream<char_type, traits_type, allocator_type> ss;
+    std::basic_ostringstream<char_type, traits_type, allocator_type> ss;
     ss << value;
     return std::move(ss).str();
 }

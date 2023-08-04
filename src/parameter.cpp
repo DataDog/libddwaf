@@ -9,6 +9,7 @@
 #include <cinttypes>
 #include <exception.hpp>
 #include <parameter.hpp>
+#include <sstream>
 
 namespace {
 
@@ -221,10 +222,11 @@ parameter::operator double() const
     }
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        double result;
-        const auto *end{&stringValue[nbEntries]};
-        auto [endConv, err] = std::from_chars(stringValue, end, result);
-        if (err == std::errc{} && endConv == end) {
+        double result = 0.0;
+        std::istringstream iss({stringValue, static_cast<std::size_t>(nbEntries)});
+        iss >> result;
+
+        if (!iss.fail() && iss.eof()) {
             return result;
         }
     }
