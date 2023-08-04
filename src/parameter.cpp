@@ -223,7 +223,8 @@ parameter::operator double() const
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
         double result = 0.0;
-        std::istringstream iss({stringValue, static_cast<std::size_t>(nbEntries)});
+        std::string str{stringValue, static_cast<std::size_t>(nbEntries)};
+        std::istringstream iss(str);
         iss >> result;
 
         if (!iss.fail() && iss.eof()) {

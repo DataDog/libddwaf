@@ -322,7 +322,7 @@ bool ddwaf_object_map_addl_nc(
 // NOLINTNEXTLINE(misc-no-recursion)
 void ddwaf_object_free(ddwaf_object *object)
 {
-    if (!ddwaf::object::is_valid(object)) {
+    if (object == nullptr) {
         return;
     }
 
