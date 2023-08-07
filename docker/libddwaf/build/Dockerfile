@@ -4,6 +4,8 @@ COPY . /libddwaf
 
 RUN echo "Arch: $(arch), Cores: $(nproc)"
 
+RUN ln -s /usr/lib/clang/16/lib/linux/libclang_rt.builtins-*.a /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a
+
 RUN mkdir -p /libddwaf/build
 RUN cd /libddwaf/build && cmake \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -13,7 +15,7 @@ RUN cd /libddwaf/build && cmake \
     -DCMAKE_CXX_FLAGS="-stdlib=libc++ -Qunused-arguments -rtlib=compiler-rt -unwindlib=libunwind -static-libgcc -fno-omit-frame-pointer" \
     -DCMAKE_C_FLAGS="-Qunused-arguments -rtlib=compiler-rt -unwindlib=libunwind -static-libgcc -fno-omit-frame-pointer" \
     -DLIBDDWAF_BUILD_STATIC=ON \
-    -DLIBDDWAF_SHARED_LINKER_FLAGS="-v -nodefaultlibs -Wl,-Bstatic -lc++ /usr/lib/clang/16/lib/linux/libclang_rt.builtins-$(arch).a -lunwind -Wl,-Bdynamic -lc /usr/lib/clang/16/lib/linux/libclang_rt.builtins-$(arch).a" .. && \
+    -DLIBDDWAF_SHARED_LINKER_FLAGS="-v -nodefaultlibs -Wl,-Bstatic -lc++ /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a -lunwind -Wl,-Bdynamic -lc /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a" .. && \
     VERBOSE=1 make -j $(nproc)
 
 # RUN make -C /libddwaf/build -j $(nproc) validate

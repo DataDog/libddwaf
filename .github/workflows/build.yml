@@ -236,14 +236,14 @@ jobs:
             platform: linux/amd64
             qemu_action_arch: amd64
             package: libddwaf-linux-x86_64-experimental
-#          - name: x86
-            #platform: linux/i386
-            #qemu_action_arch: i386
-            #package: libddwaf-linux-x86-experimental
-          #- name: arm32
-            #platform: linux/arm/v7
-            #qemu_action_arch: arm
-            #package: libddwaf-linux-arm32-experimental
+          - name: x86
+            platform: linux/i386
+            qemu_action_arch: i386
+            package: libddwaf-linux-x86-experimental
+          - name: arm32
+            platform: linux/arm/v7
+            qemu_action_arch: arm
+            package: libddwaf-linux-arm32-experimental
     steps:
       - uses: actions/checkout@v3
         with:
