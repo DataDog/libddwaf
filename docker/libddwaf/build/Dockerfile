@@ -8,6 +8,7 @@ RUN ln -s /usr/lib/clang/16/lib/linux/libclang_rt.builtins-*.a /usr/lib/clang/16
 
 RUN mkdir -p /libddwaf/build
 RUN cd /libddwaf/build && cmake \
+    -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_C_COMPILER=clang \
