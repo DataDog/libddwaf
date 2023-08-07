@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "exclusion/rule_filter.hpp"
-#include "ruleset_info.hpp"
-#include "test.h"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "test_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestParserV2RuleFilters, ParseEmptyFilter)
 {
@@ -668,3 +672,5 @@ TEST(TestParserV2RuleFilters, ParseInvalidOnMatch)
     EXPECT_EQ(filters.rule_filters.size(), 0);
     EXPECT_EQ(filters.input_filters.size(), 0);
 }
+
+} // namespace

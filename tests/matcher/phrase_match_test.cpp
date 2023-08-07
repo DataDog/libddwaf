@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
-#include <algorithm>
+#include "../test_utils.hpp"
+#include "matcher/phrase_match.hpp"
 
 using namespace ddwaf::matcher;
+
+namespace {
 
 TEST(TestPhraseMatch, TestBasic)
 {
@@ -104,3 +106,5 @@ TEST(TestPhraseMatch, TestInvalidInput)
     // NOLINTNEXTLINE(bugprone-string-constructor)
     EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
+
+} // namespace

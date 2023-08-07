@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/compress_whitespace.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestCompressWhitespace, NameAndID)
 {
@@ -40,3 +44,5 @@ TEST(TestCompressWhitespace, InvalidTransform)
     EXPECT_NO_TRANSFORM(compress_whitespace, "compress_whitespace");
     EXPECT_NO_TRANSFORM(compress_whitespace, "compress_whitespace but it doesn't matter");
 }
+
+} // namespace

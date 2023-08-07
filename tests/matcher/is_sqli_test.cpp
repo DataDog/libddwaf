@@ -4,9 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test_utils.hpp"
+#include "matcher/is_sqli.hpp"
 
 using namespace ddwaf::matcher;
+
+namespace {
 
 TEST(TestIsSQLi, TestBasic)
 {
@@ -80,3 +83,5 @@ TEST(TestIsSQLi, TestRuleset)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

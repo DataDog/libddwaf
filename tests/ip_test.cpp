@@ -4,11 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "ip_utils.hpp"
+#include "test.hpp"
+
+namespace {
 
 TEST(TestIP, ParsingIPv4)
 {
-    ddwaf::ipaddr ip;
+    ddwaf::ipaddr ip{};
     EXPECT_TRUE(ddwaf::parse_ip("1.2.3.4", ip));
     EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4);
     EXPECT_EQ(ip.data[0], 1);
@@ -19,7 +22,7 @@ TEST(TestIP, ParsingIPv4)
 
 TEST(TestIP, ParsingIPv4Class)
 {
-    ddwaf::ipaddr ip;
+    ddwaf::ipaddr ip{};
 
     // Unless the system does, we don't support classfull IPs
     EXPECT_FALSE(ddwaf::parse_ip("1.257", ip));
@@ -27,7 +30,7 @@ TEST(TestIP, ParsingIPv4Class)
 
 TEST(TestIP, ParsingIPv6)
 {
-    ddwaf::ipaddr ip;
+    ddwaf::ipaddr ip{};
 
     EXPECT_TRUE(ddwaf::parse_ip("abcd::ef01", ip));
     EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
@@ -44,7 +47,7 @@ TEST(TestIP, ParsingIPv4MappedIPv6)
     {
         // Unfortunately inet_pton can't distinguish ipv4-mapped so the type is
         // IPv6 in this instance.
-        ddwaf::ipaddr ip;
+        ddwaf::ipaddr ip{};
         EXPECT_TRUE(ddwaf::parse_ip("0000:0000:0000:0000:0000:ffff:251.252.253.254", ip));
         EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
         for (int i = 0; i < 9; ++i) { EXPECT_EQ(ip.data[i], 0); }
@@ -58,7 +61,7 @@ TEST(TestIP, ParsingIPv4MappedIPv6)
     }
 
     {
-        ddwaf::ipaddr ip;
+        ddwaf::ipaddr ip{};
         EXPECT_TRUE(ddwaf::parse_ip("1.2.3.4", ip));
         ddwaf::ipv4_to_ipv6(ip);
 
@@ -76,7 +79,7 @@ TEST(TestIP, ParsingIPv4MappedIPv6)
 
 TEST(TestIP, ParsingBadIP)
 {
-    ddwaf::ipaddr ip;
+    ddwaf::ipaddr ip{};
     EXPECT_FALSE(ddwaf::parse_ip("not an IP", ip));
     EXPECT_FALSE(ddwaf::parse_ip("this is a very long string but not an IP"
                                  "unfortunately but that doesn't matter",
@@ -85,7 +88,7 @@ TEST(TestIP, ParsingBadIP)
 
 TEST(TestIP, ParsingIPv4CIDR)
 {
-    ddwaf::ipaddr ip;
+    ddwaf::ipaddr ip{};
     EXPECT_TRUE(ddwaf::parse_cidr("1.2.3.4/28", ip));
     EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4_mapped_ipv6);
 
@@ -105,7 +108,7 @@ TEST(TestIP, ParsingIPv4CIDR)
 TEST(TestIP, ParsingIPv4AsCIDR)
 {
     {
-        ddwaf::ipaddr ip;
+        ddwaf::ipaddr ip{};
         EXPECT_TRUE(ddwaf::parse_cidr("1.2.3.4", ip));
         EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4_mapped_ipv6);
 
@@ -123,7 +126,7 @@ TEST(TestIP, ParsingIPv4AsCIDR)
     }
 
     {
-        ddwaf::ipaddr ip;
+        ddwaf::ipaddr ip{};
         EXPECT_TRUE(ddwaf::parse_cidr("1.2.3.4/1", ip));
         EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4_mapped_ipv6);
 
@@ -141,7 +144,7 @@ TEST(TestIP, ParsingIPv4AsCIDR)
     }
 
     {
-        ddwaf::ipaddr ip;
+        ddwaf::ipaddr ip{};
         EXPECT_TRUE(ddwaf::parse_cidr("1.3.3.4/15", ip));
         EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4_mapped_ipv6);
 
@@ -161,7 +164,7 @@ TEST(TestIP, ParsingIPv4AsCIDR)
 
 TEST(TestIP, ParsingIPv6CIDR)
 {
-    ddwaf::ipaddr ip;
+    ddwaf::ipaddr ip{};
     EXPECT_TRUE(ddwaf::parse_cidr("aBcD::efff/121", ip));
     EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
 
@@ -177,7 +180,7 @@ TEST(TestIP, ParsingIPv6CIDR)
 
 TEST(TestIP, ParsingIPv4MappedIPv6CIDR)
 {
-    ddwaf::ipaddr ip;
+    ddwaf::ipaddr ip{};
     EXPECT_TRUE(ddwaf::parse_cidr("0000:0000:0000:0000:0000:ffff:251.252.253.254/125", ip));
     EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
 
@@ -197,7 +200,7 @@ TEST(TestIP, ParsingIPv4MappedIPv6CIDR)
 
 TEST(TestIP, ParsingBadNetMask)
 {
-    ddwaf::ipaddr ip;
+    ddwaf::ipaddr ip{};
     EXPECT_FALSE(ddwaf::parse_cidr("bad ip", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("1.2.3.4/", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("1.2.3.4/1234", ip));
@@ -210,3 +213,5 @@ TEST(TestIP, ParsingBadNetMask)
     EXPECT_FALSE(ddwaf::parse_cidr("1.3.4.3/-1", ip));
     EXPECT_FALSE(ddwaf::parse_cidr("0000:0000:0000:0000:0000:ffff:251.252.253.2541/125", ip));
 }
+
+} // namespace

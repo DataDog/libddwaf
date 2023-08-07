@@ -4,7 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test_utils.hpp"
+#include "version.hpp"
+
+namespace {
 
 TEST(FunctionalTests, ddwaf_run)
 {
@@ -371,3 +374,5 @@ TEST(FunctionalTests, ddwaf_runNull)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

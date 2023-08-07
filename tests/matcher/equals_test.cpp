@@ -4,10 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "matcher/equals.hpp"
 
-#include <algorithm>
+using namespace ddwaf;
+using namespace std::literals;
+
+namespace {
 
 TEST(TestEqualsBool, Basic)
 {
@@ -65,3 +68,5 @@ TEST(TestEqualsString, InvalidMatchInput)
     // NOLINTNEXTLINE(bugprone-string-constructor)
     EXPECT_FALSE(matcher.match(std::string_view{"aaaa", 0}).first);
 }
+
+} // namespace

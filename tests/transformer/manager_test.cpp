@@ -4,9 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
+
+using namespace ddwaf;
 
 namespace {
 
@@ -44,8 +46,6 @@ std::optional<std::string> transform(std::string_view input, const std::vector<t
 
     return {output};
 }
-
-} // namespace
 
 TEST(TestTransformerManager, InvalidTypes)
 {
@@ -189,3 +189,5 @@ TEST(TestTransformerManager, InvalidMultipleTransforms)
         transformer_id::remove_comments, transformer_id::lowercase, transformer_id::base64_decode,
         transformer_id::compress_whitespace);
 }
+
+} // namespace

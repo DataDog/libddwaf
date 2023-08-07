@@ -4,13 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../../test.h"
+#include "../../test_utils.hpp"
 
 using namespace ddwaf;
 
 namespace {
 constexpr std::string_view base_dir = "integration/regressions/";
-} // namespace
 
 TEST(TestRegressionsIntegration, TruncatedUTF8)
 {
@@ -85,3 +84,5 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

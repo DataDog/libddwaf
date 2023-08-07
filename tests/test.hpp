@@ -6,61 +6,8 @@
 
 #pragma once
 
-#include <algorithm>
-#include <chrono>
-#include <iostream>
-#include <limits>
-#include <list>
-#include <memory>
-#include <string>
-#include <string_view>
-#include <thread>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <re2/re2.h>
-
-#include <rapidjson/document.h>
-#include <rapidjson/error/en.h>
-#include <rapidjson/filereadstream.h>
-#include <rapidjson/prettywriter.h>
-using namespace std;
-
-#include <clock.hpp>
-#include <context.hpp>
-#include <ddwaf.h>
-#include <exception.hpp>
-#include <exclusion/input_filter.hpp>
-#include <exclusion/object_filter.hpp>
-#include <exclusion/rule_filter.hpp>
-#include <ip_utils.hpp>
-#include <log.hpp>
-#include <mkmap.hpp>
-#include <obfuscator.hpp>
-#include <parameter.hpp>
-#include <parser/common.hpp>
-#include <parser/parser.hpp>
-#include <parser/specification.hpp>
-#include <ruleset_info.hpp>
-#include <utils.hpp>
-#include <waf.hpp>
-#include <yaml-cpp/yaml.h>
-
-#include <matcher/exact_match.hpp>
-#include <matcher/ip_match.hpp>
-#include <matcher/is_sqli.hpp>
-#include <matcher/is_xss.hpp>
-#include <matcher/phrase_match.hpp>
-#include <matcher/regex_match.hpp>
-
-#include "test_utils.hpp"
-
-using namespace std::literals;
-using namespace ddwaf;
 
 // 1s and 1us
 #define LONG_TIME 1000000

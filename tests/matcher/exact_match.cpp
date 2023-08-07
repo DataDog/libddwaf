@@ -4,10 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
-#include <algorithm>
+#include "matcher/exact_match.hpp"
+#include "../test.hpp"
+
+#include <chrono>
 
 using namespace ddwaf::matcher;
+
+namespace {
 
 TEST(TestExactMatch, Basic)
 {
@@ -90,3 +94,5 @@ TEST(TestExactMatch, InvalidMatchInput)
     // NOLINTNEXTLINE(bugprone-string-constructor)
     EXPECT_FALSE(matcher.match(std::string_view{"aaaa", 0}).first);
 }
+
+} // namespace

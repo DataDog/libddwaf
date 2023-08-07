@@ -4,7 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "test_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestParserV2InputFilters, ParseEmpty)
 {
@@ -555,3 +561,5 @@ TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
     EXPECT_STR(target.rule_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
 }
+
+} // namespace

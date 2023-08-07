@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test_utils.hpp"
+#include "matcher/is_xss.hpp"
 
 using namespace ddwaf::matcher;
 
+namespace {
 TEST(TestIsXSS, TestBasic)
 {
     is_xss matcher;
@@ -82,3 +84,5 @@ TEST(TestIsXSS, TestRuleset)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

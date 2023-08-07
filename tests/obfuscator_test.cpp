@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "obfuscator.hpp"
+#include "test_utils.hpp"
 
-namespace ddwaf {
+using namespace ddwaf;
+using namespace std::literals;
+
+namespace {
 
 TEST(TestObfuscator, TestKeyValueObfuscator)
 {
@@ -602,4 +606,4 @@ TEST(TestObfuscator, TestInvalidConfigValue)
     ddwaf_destroy(handle);
 }
 
-} // namespace ddwaf
+} // namespace

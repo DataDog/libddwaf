@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "parser/common.hpp"
+#include "ruleset_info.hpp"
+#include "test.hpp"
 
 using namespace ddwaf;
+
+namespace {
 
 TEST(TestRulesetInfo, EmptyRulesetInfo)
 {
@@ -195,3 +199,4 @@ TEST(TestRulesetInfo, NullRulesetInfo)
 
     EXPECT_TRUE(true);
 }
+} // namespace

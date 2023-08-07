@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test_utils.hpp"
+#include "matcher/regex_match.hpp"
 
 using namespace ddwaf::matcher;
 
+namespace {
 TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {
     regex_match matcher("^rEgEx$", 0, false);
@@ -270,3 +272,4 @@ TEST(TestRegexMatch, TestRulesetMinLength)
     }
     ddwaf_destroy(handle);
 }
+} // namespace

@@ -6,7 +6,7 @@
 
 #include "context_allocator.hpp"
 #include "log.hpp"
-#include "test.h"
+#include "test.hpp"
 
 const char *level_to_str(DDWAF_LOG_LEVEL level)
 {

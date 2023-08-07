@@ -4,14 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../../test.h"
+#include "../../test_utils.hpp"
 #include "ddwaf.h"
 
 using namespace ddwaf;
 
 namespace {
 constexpr std::string_view base_dir = "integration/custom_rules/";
-} // namespace
 
 // Custom rules can be used instead of base rules
 TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
@@ -845,3 +844,5 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
     ddwaf_context_destroy(context2);
     ddwaf_context_destroy(context3);
 }
+
+} // namespace

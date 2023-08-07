@@ -4,12 +4,14 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "test.h"
+#include "test.hpp"
+#include "utils.hpp"
+
+using namespace ddwaf;
 
 namespace {
 constexpr char char_min = std::numeric_limits<char>::min();
 constexpr char char_max = std::numeric_limits<char>::max();
-} // namespace
 
 TEST(TestUtils, TestIsAlpha)
 {
@@ -135,3 +137,5 @@ TEST(TestUtils, TestFromHex)
         EXPECT_EQ(expected, obtained);
     }
 }
+
+} // namespace

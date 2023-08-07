@@ -4,13 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../../test.h"
+#include "../../test_utils.hpp"
 
 using namespace ddwaf;
 
 namespace {
 constexpr std::string_view base_dir = "integration/context/";
-} // namespace
 
 TEST(TestContextIntegration, Basic)
 {
@@ -204,7 +203,7 @@ TEST(TestContextIntegration, InvalidUTF8Input)
 
     auto data = ddwaf::test::object_to_json(ret.events);
     auto pos = data.find(mapItem.stringValue);
-    EXPECT_TRUE(pos != string::npos);
+    EXPECT_TRUE(pos != std::string::npos);
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -352,3 +351,5 @@ TEST(TestContextIntegration, Timeout)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace
