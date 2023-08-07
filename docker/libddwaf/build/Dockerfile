@@ -18,8 +18,8 @@ RUN cd /libddwaf/build && cmake \
     -DLIBDDWAF_SHARED_LINKER_FLAGS="-v -nodefaultlibs -Wl,-Bstatic -lc++ /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a -lunwind -Wl,-Bdynamic -lc /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a" .. && \
     VERBOSE=1 make -j $(nproc)
 
-# RUN make -C /libddwaf/build -j $(nproc) validate
-# RUN make -C /libddwaf/build -j $(nproc) test
+RUN make -C /libddwaf/build -j $(nproc) validate
+RUN make -C /libddwaf/build -j $(nproc) test
 
 RUN patchelf --remove-needed libc.musl-$(arch).so.1 /libddwaf/build/libddwaf.so
 RUN cd /libddwaf/build && make package && mv libddwaf-*.tar.gz libddwaf-$(arch)-linux.tar.gz
