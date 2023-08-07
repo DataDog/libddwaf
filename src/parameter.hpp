@@ -40,6 +40,7 @@ public:
     explicit operator std::string() const;
     explicit operator uint64_t() const;
     explicit operator int64_t() const;
+    explicit operator double() const;
     explicit operator bool() const;
     explicit operator std::vector<std::string>() const;
     explicit operator std::vector<std::string_view>() const;

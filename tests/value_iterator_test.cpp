@@ -48,7 +48,7 @@ TEST(TestValueIterator, TestStringScalar)
 TEST(TestValueIterator, TestUnsignedScalar)
 {
     ddwaf_object object;
-    ddwaf_object_unsigned_force(&object, 22);
+    ddwaf_object_unsigned(&object, 22);
 
     std::unordered_set<const ddwaf_object *> exclude;
     ddwaf::object::value_iterator it(&object, {}, exclude);
@@ -64,7 +64,7 @@ TEST(TestValueIterator, TestUnsignedScalar)
 TEST(TestValueIterator, TestSignedScalar)
 {
     ddwaf_object object;
-    ddwaf_object_signed_force(&object, 22);
+    ddwaf_object_signed(&object, 22);
 
     std::unordered_set<const ddwaf_object *> exclude;
     ddwaf::object::value_iterator it(&object, {}, exclude);
@@ -117,6 +117,39 @@ TEST(TestValueIterator, TestArrayMultipleItems)
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
         EXPECT_STREQ(path[0].c_str(), index_str.c_str());
+        ++index;
+    } while (++it);
+
+    EXPECT_FALSE(++it);
+
+    ddwaf_object_free(&object);
+}
+
+TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
+{
+    ddwaf_object object;
+    ddwaf_object tmp;
+    ddwaf_object_array(&object);
+    for (unsigned i = 0; i < 25; i++) {
+        ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
+        ddwaf_object_array_add(&object, ddwaf_object_invalid(&tmp));
+        ddwaf_object_array_add(&object, ddwaf_object_null(&tmp));
+    }
+
+    EXPECT_EQ(ddwaf_object_size(&object), 75);
+
+    std::unordered_set<const ddwaf_object *> exclude;
+    ddwaf::object::value_iterator it(&object, {}, exclude);
+
+    // Null and invalid objects should be skipped
+    unsigned index = 0;
+    do {
+        EXPECT_TRUE(it);
+        EXPECT_STREQ((*it)->stringValue, std::to_string(index).c_str());
+
+        auto path = it.get_current_path();
+        EXPECT_EQ(path.size(), 1);
+        EXPECT_STREQ(path[0].c_str(), std::to_string(index * 3).c_str());
         ++index;
     } while (++it);
 
@@ -286,6 +319,56 @@ TEST(TestValueIterator, TestMapMultipleItems)
 
     for (unsigned i = 0; i < 50; i++) {
         auto index = std::to_string(i);
+        std::string key = "key" + index;
+        std::string value = "value" + index;
+
+        EXPECT_TRUE(it);
+        EXPECT_STREQ((*it)->stringValue, value.c_str());
+        EXPECT_STREQ((*it)->parameterName, key.c_str());
+
+        auto path = it.get_current_path();
+        EXPECT_EQ(path.size(), 1);
+        EXPECT_STREQ(path[0].c_str(), key.c_str());
+        ++it;
+    }
+
+    EXPECT_FALSE(it);
+
+    ddwaf_object_free(&object);
+}
+
+TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
+{
+    ddwaf_object object;
+    ddwaf_object tmp;
+    ddwaf_object_map(&object);
+
+    for (unsigned i = 0; i < 25; i++) {
+        {
+            auto index = std::to_string(i * 3);
+            std::string key = "key" + index;
+            std::string value = "value" + index;
+            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
+        }
+
+        {
+            auto index = std::to_string(i * 3 + 1);
+            std::string key = "key" + index;
+            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_invalid(&tmp));
+        }
+
+        {
+            auto index = std::to_string(i * 3 + 2);
+            std::string key = "key" + index;
+            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_null(&tmp));
+        }
+    }
+
+    std::unordered_set<const ddwaf_object *> exclude;
+    ddwaf::object::value_iterator it(&object, {}, exclude);
+
+    for (unsigned i = 0; i < 25; i++) {
+        auto index = std::to_string(i * 3);
         std::string key = "key" + index;
         std::string value = "value" + index;
 

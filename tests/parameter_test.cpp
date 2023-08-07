@@ -81,7 +81,7 @@ TEST(TestParameter, ToUint64)
 {
     {
         ddwaf_object root;
-        ddwaf_object_unsigned_force(&root, 2123);
+        ddwaf_object_unsigned(&root, 2123);
 
         uint64_t value = static_cast<uint64_t>(parameter(root));
         EXPECT_EQ(value, 2123);
@@ -89,7 +89,7 @@ TEST(TestParameter, ToUint64)
 
     {
         ddwaf_object root;
-        ddwaf_object_unsigned(&root, 2123);
+        ddwaf_object_string_from_unsigned(&root, 2123);
 
         uint64_t value = static_cast<uint64_t>(parameter(root));
         EXPECT_EQ(value, 2123);
@@ -119,7 +119,7 @@ TEST(TestParameter, ToInt64)
 {
     {
         ddwaf_object root;
-        ddwaf_object_signed_force(&root, -2123);
+        ddwaf_object_signed(&root, -2123);
 
         int64_t value = static_cast<int64_t>(parameter(root));
         EXPECT_EQ(value, -2123);
@@ -127,7 +127,7 @@ TEST(TestParameter, ToInt64)
 
     {
         ddwaf_object root;
-        ddwaf_object_signed(&root, -2123);
+        ddwaf_object_string_from_signed(&root, -2123);
 
         int64_t value = static_cast<int64_t>(parameter(root));
         EXPECT_EQ(value, -2123);
@@ -150,6 +150,34 @@ TEST(TestParameter, ToInt64)
         ddwaf_object_map(&root);
 
         EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+    }
+}
+
+TEST(TestParameter, ToFloat)
+{
+    {
+        ddwaf_object root;
+        ddwaf_object_float(&root, 21.23);
+
+        double value = static_cast<double>(parameter(root));
+        EXPECT_EQ(value, 21.23);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "21.23");
+
+        double value = static_cast<double>(parameter(root));
+        EXPECT_EQ(value, 21.23);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_map(&root);
+
+        EXPECT_THROW(static_cast<double>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 }
 
@@ -277,7 +305,7 @@ TEST(TestParameter, ToStringVector)
         ddwaf_object root, tmp;
         ddwaf_object_array(&root);
 
-        ddwaf_object_array_add(&root, ddwaf_object_unsigned_force(&tmp, 50));
+        ddwaf_object_array_add(&root, ddwaf_object_unsigned(&tmp, 50));
 
         ddwaf::parameter param = root;
         EXPECT_THROW(param.operator std::vector<std::string>(), ddwaf::malformed_object);
@@ -316,7 +344,7 @@ TEST(TestParameter, ToStringViewVector)
         ddwaf_object root, tmp;
         ddwaf_object_array(&root);
 
-        ddwaf_object_array_add(&root, ddwaf_object_unsigned_force(&tmp, 50));
+        ddwaf_object_array_add(&root, ddwaf_object_unsigned(&tmp, 50));
 
         ddwaf::parameter param = root;
         EXPECT_THROW(param.operator std::vector<std::string_view>(), ddwaf::malformed_object);
@@ -356,7 +384,7 @@ TEST(TestParameter, ToStringViewSet)
         ddwaf_object root, tmp;
         ddwaf_object_array(&root);
 
-        ddwaf_object_array_add(&root, ddwaf_object_unsigned_force(&tmp, 50));
+        ddwaf_object_array_add(&root, ddwaf_object_unsigned(&tmp, 50));
 
         ddwaf::parameter param = root;
         EXPECT_THROW(param.operator ddwaf::parameter::string_set(), ddwaf::malformed_object);
