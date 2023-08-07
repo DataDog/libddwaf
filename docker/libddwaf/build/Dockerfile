@@ -17,13 +17,13 @@ RUN cd /libddwaf/build && cmake \
     -DCMAKE_C_FLAGS="-Qunused-arguments -rtlib=compiler-rt -unwindlib=libunwind -static-libgcc -fno-omit-frame-pointer" \
     -DLIBDDWAF_BUILD_STATIC=ON \
     -DLIBDDWAF_SHARED_LINKER_FLAGS="-v -nodefaultlibs -Wl,-Bstatic -lc++ /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a -lunwind -Wl,-Bdynamic -lc /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a" .. && \
-    VERBOSE=1 make -j $(nproc)
+    ninja
 
-RUN make -C /libddwaf/build -j $(nproc) validate
-RUN make -C /libddwaf/build -j $(nproc) test
+RUN ninja -C /libddwaf/build validate
+RUN ninja -C /libddwaf/build test
 
 RUN patchelf --remove-needed libc.musl-$(arch).so.1 /libddwaf/build/libddwaf.so
-RUN cd /libddwaf/build && make package && mv libddwaf-*.tar.gz libddwaf-$(arch)-linux.tar.gz
+RUN cd /libddwaf/build && ninja package && mv libddwaf-*.tar.gz libddwaf-$(arch)-linux.tar.gz
 RUN tar -C /usr/lib/ -czf /libddwaf/build/libc++-static-$(arch)-linux.tar.gz libc++.a libc++experimental.a libc++abi.a libunwind.a
 
 FROM scratch
