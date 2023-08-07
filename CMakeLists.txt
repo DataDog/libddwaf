@@ -123,7 +123,7 @@ set_target_properties(libddwaf_objects PROPERTIES
 
 try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp
-    CXX_STANDARD 17)
+    CXX_STANDARD 20)
 if(NOT STDLIB_MAP_RECURSIVE)
 	target_compile_definitions(libddwaf_objects PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
 endif()

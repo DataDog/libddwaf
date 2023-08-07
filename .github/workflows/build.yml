@@ -222,6 +222,51 @@ jobs:
             /tmp/packages/*.tar.gz
             /tmp/packages/*.sha256
 
+  alpine-experimental-builds:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: aarch64
+            qemu_action_arch: arm64
+            platform: linux/arm64
+            package: libddwaf-linux-arm64-experimental
+          - name: x86_64
+            platform: linux/amd64
+            qemu_action_arch: amd64
+            package: libddwaf-linux-x86_64-experimental
+#          - name: x86
+            #platform: linux/i386
+            #qemu_action_arch: i386
+            #package: libddwaf-linux-x86-experimental
+          #- name: arm32
+            #platform: linux/arm/v7
+            #qemu_action_arch: arm
+            #package: libddwaf-linux-arm32-experimental
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: docker/setup-buildx-action@v2
+        id: buildx
+        with:
+          install: true
+      - uses: docker/setup-qemu-action@v2
+        if: matrix.target.qemu_action_arch != 'amd64'
+        with:
+          platforms: ${{ matrix.target.qemu_action_arch }}
+      - run: docker build --platform ${{ matrix.target.platform }} -f docker/libddwaf/build/Dockerfile -o /tmp/packages .
+      - name: Generate Package sha256
+        working-directory: /tmp/packages
+        run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target.package }}
+          path: |
+            /tmp/packages/*.tar.gz
+            /tmp/packages/*.sha256
+
   package-nuget:
     needs: [ windows-builds, macos-build, macos-cross-build, macos-universal-package, docker-builds]
     runs-on: ubuntu-latest

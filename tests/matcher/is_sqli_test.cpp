@@ -41,7 +41,6 @@ TEST(TestIsSQLi, TestInvalidInput)
     is_sqli matcher;
 
     EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
     EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }

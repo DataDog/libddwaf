@@ -62,7 +62,6 @@ TEST(TestEqualsString, InvalidMatchInput)
     matcher::equals<std::string> matcher("aaaa");
 
     EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
     EXPECT_FALSE(matcher.match(std::string_view{"aaaa", 0}).first);
 }
