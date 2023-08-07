@@ -30,6 +30,7 @@ option(LIBDDWAF_BUILD_SHARED "Build shared library" ON)
 option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
 option(LIBDDWAF_KEEP_SYMBOL_FILE "Keep the debug symbol file" ON)
 option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
+option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -138,6 +139,11 @@ install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
 set(LIBDDWAF_PRIVATE_LIBRARIES lib_re2 lib_ac lib_injection lib_radix lib_utf8proc)
 
+if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
+    target_compile_options(libddwaf_objects PRIVATE -ggdb --coverage)
+    list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
+endif()
+
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 # needed for glibc <2.17. We compile with --as-needed so the library won't
 # be linked on more 2.17+, but dependencies might since it's part of the public
@@ -166,7 +172,7 @@ elseif(WIN32)
 endif()
 
 target_link_libraries(libddwaf_objects
-    PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
+    PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES} 
     INTERFACE ${LIBDDWAF_INTERFACE_LIBRARIES})
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
