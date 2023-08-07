@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <ddwaf.h>
 #include <functional>
+#include <iomanip>
 #include <iterator>
 #include <optional>
 #include <sstream>
@@ -93,7 +94,7 @@ inline bool is_scalar(const ddwaf_object *obj)
 
 inline bool is_invalid_or_null(const ddwaf_object *obj)
 {
-    return obj != nullptr && obj->type == DDWAF_OBJ_INVALID && obj->type == DDWAF_OBJ_NULL;
+    return obj != nullptr && (obj->type == DDWAF_OBJ_INVALID || obj->type == DDWAF_OBJ_NULL);
 }
 
 } // namespace object
@@ -139,15 +140,13 @@ concept has_from_chars = requires(T v) { std::from_chars(nullptr, nullptr, std::
 
 template <typename StringType, typename T>
 StringType to_string(T value)
-    requires std::is_integral_v<T> &&
-             (!std::is_same_v<T, bool>) && std::is_same_v<typename StringType::value_type, char> &&
-             std::is_same_v<StringType,
-                 std::basic_string<typename StringType::value_type,
-                     typename StringType::traits_type, typename StringType::allocator_type>>
+    requires std::is_integral_v<T> && (!std::is_same_v<T, bool>) &&
+             std::is_same_v<StringType, std::basic_string<char, typename StringType::traits_type,
+                                            typename StringType::allocator_type>>
 {
     // Maximum number of characters required to represent a 64 bit integer as a string
-    // 20 bytes for UINT64_MAX or INT64_MIN + null byte
-    static constexpr size_t max_chars = 21;
+    // 20 bytes for UINT64_MAX or INT64_MIN
+    static constexpr size_t max_chars = 20;
 
     std::array<char, max_chars> str{};
     auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
@@ -157,16 +156,23 @@ StringType to_string(T value)
     return {str.data(), ptr};
 }
 
+template <typename T>
+    requires std::is_same_v<T, float> || std::is_same_v<T, double>
+// XXX: add long double, though it's tricker, we don't know if it's quad-precision
+// or x87 80-bit "extended precision" or even the same as double
+inline constexpr std::size_t max_exp_digits = sizeof(T) == 4 ? 2 : 4;
+
 template <typename StringType, typename T>
 StringType to_string(T value)
-    requires std::is_floating_point_v<T> && std::is_same_v<typename StringType::value_type, char> &&
-             std::is_same_v<StringType,
-                 std::basic_string<typename StringType::value_type,
-                     typename StringType::traits_type, typename StringType::allocator_type>>
+    requires(std::is_same_v<T, float> || std::is_same_v<T, double>) &&
+            std::is_same_v<StringType, std::basic_string<char, typename StringType::traits_type,
+                                           typename StringType::allocator_type>>
 {
-    if constexpr (has_to_chars<double>) {
-        // 17 significant digits + dot + minus + exponent + minus + 3 exponend digits + null byte
-        static constexpr size_t max_chars = 25;
+    if constexpr (has_to_chars<T>) {
+        static constexpr std::size_t max_chars = std::numeric_limits<T>::digits10 + 1 +
+                                                 1 /* sign */ + 1 /* dot */ + 1 /* e */ +
+                                                 1 /* exp sign */
+                                                 + (sizeof(T) == 4 ? 2 : 4);
 
         std::array<char, max_chars> str{};
         auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
@@ -180,17 +186,16 @@ StringType to_string(T value)
         using traits_type = typename StringType::traits_type;
         using allocator_type = typename StringType::allocator_type;
         std::basic_ostringstream<char_type, traits_type, allocator_type> ss;
-        ss << value;
+        ss << std::setprecision(std::numeric_limits<T>::digits10) << value;
         return std::move(ss).str();
     }
 }
 
 template <typename StringType, typename T>
 StringType to_string(T value)
-    requires std::is_same_v<T, bool> && std::is_same_v<typename StringType::value_type, char> &&
-             std::is_same_v<StringType,
-                 std::basic_string<typename StringType::value_type,
-                     typename StringType::traits_type, typename StringType::allocator_type>>
+    requires std::is_same_v<T, bool> &&
+             std::is_same_v<StringType, std::basic_string<char, typename StringType::traits_type,
+                                            typename StringType::allocator_type>>
 {
     return value ? "true" : "false";
 }
