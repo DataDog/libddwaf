@@ -46,6 +46,15 @@ TEST(TestEqualsUint, Basic)
     EXPECT_FALSE(matcher.match(1).first);
 }
 
+TEST(TestEqualsDouble, Basic)
+{
+    matcher::equals<double> matcher(5.1, 0.0001);
+
+    EXPECT_TRUE(matcher.match(5.1).first);
+    EXPECT_FALSE(matcher.match(5.11).first);
+    EXPECT_FALSE(matcher.match(-5.1).first);
+}
+
 TEST(TestEqualsString, Basic)
 {
     matcher::equals<std::string> matcher("aaaa");

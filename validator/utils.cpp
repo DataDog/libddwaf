@@ -128,6 +128,9 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
     case DDWAF_OBJ_UNSIGNED:
         output = obj.uintValue;
         break;
+    case DDWAF_OBJ_FLOAT:
+        output = obj.f64;
+        break;
     case DDWAF_OBJ_STRING:
         output = std::string{obj.stringValue, obj.nbEntries};
         break;
@@ -153,7 +156,8 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         }
         break;
     case DDWAF_OBJ_INVALID:
-        throw std::runtime_error("invalid parameter in structure");
+    case DDWAF_OBJ_NULL:
+        output = YAML::Null;
     };
 }
 

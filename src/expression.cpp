@@ -36,6 +36,10 @@ memory::string object_to_string(const ddwaf_object &object)
         return to_string<memory::string>(object.uintValue);
     }
 
+    if (object.type == DDWAF_OBJ_FLOAT) {
+        return to_string<memory::string>(object.f64);
+    }
+
     return {};
 }
 

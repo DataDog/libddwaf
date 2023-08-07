@@ -103,6 +103,10 @@ std::pair<std::string, matcher::base::unique_ptr> parse_matcher(
         } else if (value_type == "signed") {
             auto value = at<int64_t>(params, "value");
             matcher = std::make_unique<matcher::equals<int64_t>>(value);
+        } else if (value_type == "float") {
+            auto value = at<double>(params, "value");
+            auto delta = at<double>(params, "delta", 0.01);
+            matcher = std::make_unique<matcher::equals<double>>(value, delta);
         } else {
             throw ddwaf::parsing_error("invalid type for matcher equals" + value_type);
         }

@@ -97,6 +97,12 @@ public:
             }
         }
 
+        if constexpr (T::supported_type_impl() == DDWAF_OBJ_FLOAT) {
+            if (obj.type == DDWAF_OBJ_FLOAT) {
+                return ptr->match_impl(obj.f64);
+            }
+        }
+
         return {false, {}};
     }
 };
