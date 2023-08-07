@@ -18,6 +18,11 @@ set(LIBDDWAF_TEST_LIBRARIES lib_gtest libddwaf_objects lib_yamlcpp lib_rapidjson
 if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(testPowerWAF PRIVATE -ggdb --coverage)
     list(APPEND LIBDDWAF_TEST_LIBRARIES gcov)
+else()
+  set_target_properties(testPowerWAF PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ".")
+  set_target_properties(testPowerWAF PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ".")
+  set_target_properties(testPowerWAF PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ".")
+  set_target_properties(testPowerWAF PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ".")
 endif()
 
 target_link_libraries(testPowerWAF
