@@ -70,7 +70,7 @@ TEST(TestObject, TestCreateInt)
 {
     {
         ddwaf_object object;
-        ddwaf_object_signed(&object, INT64_MIN);
+        ddwaf_object_string_from_signed(&object, INT64_MIN);
 
         EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
         EXPECT_EQ(object.nbEntries, 20);
@@ -90,7 +90,7 @@ TEST(TestObject, TestCreateInt)
 
     {
         ddwaf_object object;
-        ddwaf_object_signed(&object, INT64_MAX);
+        ddwaf_object_string_from_signed(&object, INT64_MAX);
 
         EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
         EXPECT_EQ(object.nbEntries, 19);
@@ -112,7 +112,7 @@ TEST(TestObject, TestCreateInt)
 TEST(TestObject, TestCreateIntForce)
 {
     ddwaf_object object;
-    ddwaf_object_signed_force(&object, INT64_MIN);
+    ddwaf_object_signed(&object, INT64_MIN);
 
     EXPECT_EQ(object.type, DDWAF_OBJ_SIGNED);
     EXPECT_EQ(object.intValue, INT64_MIN);
@@ -129,7 +129,7 @@ TEST(TestObject, TestCreateIntForce)
 TEST(TestObject, TestCreateUint)
 {
     ddwaf_object object;
-    ddwaf_object_unsigned(&object, UINT64_MAX);
+    ddwaf_object_string_from_unsigned(&object, UINT64_MAX);
 
     EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(object.nbEntries, 20);
@@ -150,7 +150,7 @@ TEST(TestObject, TestCreateUint)
 TEST(TestObject, TestCreateUintForce)
 {
     ddwaf_object object;
-    ddwaf_object_unsigned_force(&object, UINT64_MAX);
+    ddwaf_object_unsigned(&object, UINT64_MAX);
 
     EXPECT_EQ(object.type, DDWAF_OBJ_UNSIGNED);
     EXPECT_EQ(object.uintValue, UINT64_MAX);
@@ -247,35 +247,38 @@ TEST(TestObject, TestAddArray)
 
     EXPECT_FALSE(ddwaf_object_array_add(nullptr, &object));
     EXPECT_FALSE(ddwaf_object_array_add(&object, &container));
-    EXPECT_FALSE(ddwaf_object_array_add(&container, &object));
 
-    EXPECT_TRUE(ddwaf_object_array_add(&container, ddwaf_object_signed(&object, 42)));
-    EXPECT_TRUE(ddwaf_object_array_add(&container, ddwaf_object_unsigned(&object, 43)));
+    EXPECT_TRUE(ddwaf_object_array_add(&container, &object));
+    EXPECT_TRUE(ddwaf_object_array_add(&container, ddwaf_object_string_from_signed(&object, 42)));
+    EXPECT_TRUE(ddwaf_object_array_add(&container, ddwaf_object_string_from_unsigned(&object, 43)));
 
     EXPECT_EQ(container.type, DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(container.nbEntries, 2);
+    EXPECT_EQ(container.nbEntries, 3);
     EXPECT_EQ(container.parameterName, nullptr);
 
-    EXPECT_EQ(container.array[0].type, DDWAF_OBJ_STRING);
-    EXPECT_STREQ(container.array[0].stringValue, "42");
-
     EXPECT_EQ(container.array[1].type, DDWAF_OBJ_STRING);
-    EXPECT_STREQ(container.array[1].stringValue, "43");
+    EXPECT_STREQ(container.array[1].stringValue, "42");
+
+    EXPECT_EQ(container.array[2].type, DDWAF_OBJ_STRING);
+    EXPECT_STREQ(container.array[2].stringValue, "43");
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_ARRAY);
     EXPECT_EQ(ddwaf_object_length(&container), 0);
-    EXPECT_EQ(ddwaf_object_size(&container), 2);
+    EXPECT_EQ(ddwaf_object_size(&container), 3);
 
     const auto *internal = ddwaf_object_get_index(&container, 0);
-    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "42");
+    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_INVALID);
 
     internal = ddwaf_object_get_index(&container, 1);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
+    EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "42");
+
+    internal = ddwaf_object_get_index(&container, 2);
+    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "43");
 
-    EXPECT_EQ(ddwaf_object_get_index(&container, 2), nullptr);
+    EXPECT_EQ(ddwaf_object_get_index(&container, 3), nullptr);
 
     ddwaf_object_free(&container);
 }
@@ -287,51 +290,56 @@ TEST(TestObject, TestAddMap)
     ddwaf_object_map(&map);
     ddwaf_object_array(&array);
 
-    EXPECT_FALSE(ddwaf_object_map_add(nullptr, "key", ddwaf_object_signed(&tmp, 42)));
+    EXPECT_FALSE(ddwaf_object_map_add(nullptr, "key", ddwaf_object_string_from_signed(&tmp, 42)));
     ddwaf_object_free(&tmp);
-    EXPECT_FALSE(ddwaf_object_map_add(&array, "key", ddwaf_object_signed(&tmp, 42)));
+    EXPECT_FALSE(ddwaf_object_map_add(&array, "key", ddwaf_object_string_from_signed(&tmp, 42)));
     ddwaf_object_free(&tmp);
-    EXPECT_FALSE(ddwaf_object_map_add(&map, nullptr, ddwaf_object_signed(&tmp, 42)));
+    EXPECT_FALSE(ddwaf_object_map_add(&map, nullptr, ddwaf_object_string_from_signed(&tmp, 42)));
     ddwaf_object_free(&tmp);
-
-    EXPECT_FALSE(ddwaf_object_map_add(&map, "key", ddwaf_object_invalid(&tmp)));
     EXPECT_FALSE(ddwaf_object_map_add(&map, "key", nullptr));
 
-    ASSERT_TRUE(ddwaf_object_map_add(&map, "key", ddwaf_object_signed(&tmp, 42)));
+    EXPECT_TRUE(ddwaf_object_map_add(&map, "key", ddwaf_object_invalid(&tmp)));
     EXPECT_STREQ(map.array[0].parameterName, "key");
 
-    ASSERT_TRUE(ddwaf_object_map_addl(&map, "key2", 4, ddwaf_object_signed(&tmp, 43)));
-    EXPECT_STREQ(map.array[1].parameterName, "key2");
+    ASSERT_TRUE(ddwaf_object_map_add(&map, "key", ddwaf_object_string_from_signed(&tmp, 42)));
+    EXPECT_STREQ(map.array[1].parameterName, "key");
+
+    ASSERT_TRUE(ddwaf_object_map_addl(&map, "key2", 4, ddwaf_object_string_from_signed(&tmp, 43)));
+    EXPECT_STREQ(map.array[2].parameterName, "key2");
 
     char *str = strdup("key3");
-    ASSERT_TRUE(ddwaf_object_map_addl_nc(&map, str, 4, ddwaf_object_signed(&tmp, 44)));
-    EXPECT_EQ(map.array[2].parameterName, str);
+    ASSERT_TRUE(ddwaf_object_map_addl_nc(&map, str, 4, ddwaf_object_string_from_signed(&tmp, 44)));
+    EXPECT_EQ(map.array[3].parameterName, str);
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&map), DDWAF_OBJ_MAP);
     EXPECT_EQ(ddwaf_object_length(&map), 0);
-    EXPECT_EQ(ddwaf_object_size(&map), 3);
+    EXPECT_EQ(ddwaf_object_size(&map), 4);
 
     size_t length;
     const auto *internal = ddwaf_object_get_index(&map, 0);
+    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_INVALID);
+    EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key");
+
+    internal = ddwaf_object_get_index(&map, 1);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "42");
     EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key");
     EXPECT_EQ(length, 3);
 
-    internal = ddwaf_object_get_index(&map, 1);
+    internal = ddwaf_object_get_index(&map, 2);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "43");
     EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key2");
     EXPECT_EQ(length, 4);
 
-    internal = ddwaf_object_get_index(&map, 2);
+    internal = ddwaf_object_get_index(&map, 3);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "44");
     EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key3");
     EXPECT_EQ(length, 4);
 
-    EXPECT_EQ(ddwaf_object_get_index(&map, 3), nullptr);
+    EXPECT_EQ(ddwaf_object_get_index(&map, 4), nullptr);
 
     ddwaf_object_free(&map);
     ddwaf_object_free(&array);

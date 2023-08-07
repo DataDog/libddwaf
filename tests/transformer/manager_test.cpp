@@ -51,7 +51,7 @@ TEST(TestTransformerManager, InvalidTypes)
 {
     ddwaf_object src;
     ddwaf_object dst;
-    ddwaf_object_unsigned_force(&src, 29);
+    ddwaf_object_unsigned(&src, 29);
 
     EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::compress_whitespace}));
     EXPECT_FALSE(transformer::manager::transform(src, dst, {transformer_id::lowercase}));

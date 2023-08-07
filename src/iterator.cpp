@@ -172,6 +172,7 @@ void value_iterator::initialise_cursor_with_path(
             set_cursor_to_next_object();
         }
 
+        // If null or invalid, we ignore it
         break;
     }
 

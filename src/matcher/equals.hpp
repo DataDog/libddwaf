@@ -9,6 +9,7 @@
 #include <clock.hpp>
 #include <matcher/base.hpp>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <utils.hpp>
 
@@ -16,9 +17,10 @@ namespace ddwaf::matcher {
 
 template <typename T> class equals : public base_impl<equals<T>> {
 public:
-    using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
-
-    explicit equals(T expected) : expected_(std::move(expected)) {}
+    explicit equals(T expected)
+        requires(!std::is_floating_point_v<T>)
+        : expected_(std::move(expected))
+    {}
     ~equals() override = default;
     equals(const equals &) = default;
     equals(equals &&) noexcept = default;
@@ -62,6 +64,32 @@ protected:
     T expected_;
 
     friend class base_impl<equals<T>>;
+};
+
+template <> class equals<double> : public base_impl<equals<double>> {
+public:
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    equals(double expected, double delta) : expected_(expected), delta_(delta) {}
+    ~equals() override = default;
+    equals(const equals &) = default;
+    equals(equals &&) noexcept = default;
+    equals &operator=(const equals &) = default;
+    equals &operator=(equals &&) noexcept = default;
+
+protected:
+    static constexpr std::string_view to_string_impl() { return ""; }
+    static constexpr std::string_view name_impl() { return "equals"; }
+    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_FLOAT; }
+
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(double obtained) const
+    {
+        return {std::abs(expected_ - obtained) < delta_, {}};
+    }
+
+    double expected_;
+    double delta_;
+
+    friend class base_impl<equals<double>>;
 };
 
 } // namespace ddwaf::matcher
