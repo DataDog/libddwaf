@@ -22,10 +22,11 @@ GCC_TOOLCHAIN := /gcctoolchain
 GCC_TOOL_PREFIX := $(GCC_TOOLCHAIN)/bin/aarch64-none-linux-gnu-
 GCC_TOOLCHAIN_SYSROOT := $(GCC_TOOLCHAIN)/aarch64-none-linux-gnu/libc/
 
-GCC_TOOLCHAIN_VERSION := 10.3-2021.07
-GCC_TOOLCHAIN_FILE := gcc-arm-$(GCC_TOOLCHAIN_VERSION)-x86_64-aarch64-none-linux-gnu.tar.xz
+GCC_TOOLCHAIN_VERSION := 12.3.rel1
+GCC_TOOLCHAIN_FILE := arm-gnu-toolchain-$(GCC_TOOLCHAIN_VERSION)-x86_64-aarch64-none-linux-gnu.tar.xz
+
 $(GCC_TOOLCHAIN_FILE):
-	curl -o $@ -Lf https://sqreen-download-private.s3.amazonaws.com/libddwaf/$(GCC_TOOLCHAIN_FILE)
+	curl -o $@ -Lf https://developer.arm.com/-/media/Files/downloads/gnu/$(GCC_TOOLCHAIN_VERSION)/binrel/$(GCC_TOOLCHAIN_FILE)
 	grep -F $@ CHECKSUMS | sha512sum --check
 
 .gcc-toolchain-installed: $(GCC_TOOLCHAIN_FILE)
