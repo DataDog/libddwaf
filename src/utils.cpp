@@ -27,7 +27,7 @@ void clone_helper(const ddwaf_object &source, ddwaf_object &destination)
         ddwaf_object_unsigned(&destination, source.uintValue);
         break;
     case DDWAF_OBJ_FLOAT:
-        ddwaf_object_float(&destination, source.floatValue);
+        ddwaf_object_float(&destination, source.f64);
         break;
     case DDWAF_OBJ_INVALID:
         ddwaf_object_invalid(&destination);
