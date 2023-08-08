@@ -1,4 +1,4 @@
-MUSL_VERSION := 1.2.2
+MUSL_VERSION := 1.2.4
 LLVM_VERSION := 11.1.0
 SHELL := /bin/bash
 RELTYPE := RelWithDebInfo
