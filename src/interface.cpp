@@ -90,7 +90,7 @@ ddwaf::waf *ddwaf_init(
 {
     try {
         if (ruleset != nullptr) {
-            ddwaf::parameter input = *ruleset;
+            const ddwaf::parameter input = *ruleset;
 
             auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
             if (diagnostics == nullptr) {
@@ -100,7 +100,7 @@ ddwaf::waf *ddwaf_init(
             }
 
             ddwaf::ruleset_info ri;
-            ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
+            const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
 
             return new ddwaf::waf(
                 input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
@@ -118,14 +118,14 @@ ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_
 {
     try {
         if (handle != nullptr && ruleset != nullptr) {
-            ddwaf::parameter input = *ruleset;
+            const ddwaf::parameter input = *ruleset;
             if (diagnostics == nullptr) {
                 ddwaf::null_ruleset_info ri;
                 return handle->update(input, ri);
             }
 
             ddwaf::ruleset_info ri;
-            ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
+            const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
 
             return handle->update(input, ri);
         }

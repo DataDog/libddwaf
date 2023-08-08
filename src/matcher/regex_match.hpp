@@ -6,30 +6,34 @@
 
 #pragma once
 
+#include <matcher/base.hpp>
 #include <memory>
 #include <re2/re2.h>
-#include <rule_processor/base.hpp>
 #include <utils.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::matcher {
 
-class regex_match : public base {
+class regex_match : public base_impl<regex_match> {
 public:
     regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive);
     ~regex_match() override = default;
     regex_match(const regex_match &) = delete;
-    regex_match(regex_match &&) = default;
+    regex_match(regex_match &&) noexcept = default;
     regex_match &operator=(const regex_match &) = delete;
-    regex_match &operator=(regex_match &&) = default;
-
-    [[nodiscard]] std::string_view to_string() const override { return regex->pattern(); }
-    [[nodiscard]] std::string_view name() const override { return "match_regex"; }
-    [[nodiscard]] std::optional<event::match> match(std::string_view pattern) const override;
+    regex_match &operator=(regex_match &&) noexcept = default;
 
 protected:
+    [[nodiscard]] std::string_view to_string_impl() const { return regex->pattern(); }
+    static constexpr std::string_view name_impl() { return "match_regex"; }
+    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
+
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view pattern) const;
+
     static constexpr int max_match_count = 16;
     std::unique_ptr<re2::RE2> regex{nullptr};
     std::size_t min_length;
+
+    friend class base_impl<regex_match>;
 };
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::matcher

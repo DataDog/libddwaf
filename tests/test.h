@@ -31,7 +31,6 @@
 using namespace std;
 
 #include <clock.hpp>
-#include <config.hpp>
 #include <context.hpp>
 #include <ddwaf.h>
 #include <exception.hpp>
@@ -51,12 +50,12 @@ using namespace std;
 #include <waf.hpp>
 #include <yaml-cpp/yaml.h>
 
-#include <rule_processor/exact_match.hpp>
-#include <rule_processor/ip_match.hpp>
-#include <rule_processor/is_sqli.hpp>
-#include <rule_processor/is_xss.hpp>
-#include <rule_processor/phrase_match.hpp>
-#include <rule_processor/regex_match.hpp>
+#include <matcher/exact_match.hpp>
+#include <matcher/ip_match.hpp>
+#include <matcher/is_sqli.hpp>
+#include <matcher/is_xss.hpp>
+#include <matcher/phrase_match.hpp>
+#include <matcher/regex_match.hpp>
 
 #include "test_utils.hpp"
 

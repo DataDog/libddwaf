@@ -5,9 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <exception.hpp>
-#include <rule_processor/exact_match.hpp>
+#include <matcher/exact_match.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::matcher {
 
 exact_match::exact_match(std::vector<std::string> &&data) : data_(std::move(data))
 {
@@ -23,7 +23,7 @@ exact_match::exact_match(const std::vector<std::pair<std::string_view, uint64_t>
         const auto &ref = data_.emplace_back(str);
         auto res = values_.emplace(ref, expiration);
         if (!res.second) {
-            uint64_t prev_expiration = res.first->second;
+            const uint64_t prev_expiration = res.first->second;
             if (prev_expiration != 0 && (expiration == 0 || expiration > prev_expiration)) {
                 res.first->second = expiration;
             }
@@ -31,26 +31,26 @@ exact_match::exact_match(const std::vector<std::pair<std::string_view, uint64_t>
     }
 }
 
-std::optional<event::match> exact_match::match(std::string_view str) const
+std::pair<bool, memory::string> exact_match::match_impl(std::string_view str) const
 {
     if (values_.empty() || str.empty() || str.data() == nullptr) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     auto it = values_.find(str);
     if (it == values_.end()) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     if (it->second > 0) {
-        uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
+        const uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::system_clock::now().time_since_epoch())
-                           .count();
+                                 .count();
         if (it->second < now) {
-            return std::nullopt;
+            return {false, {}};
         }
     }
-    return make_event(str, str);
+    return {true, memory::string{str}};
 }
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::matcher

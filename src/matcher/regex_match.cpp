@@ -6,9 +6,9 @@
 
 #include <array>
 #include <exception.hpp>
-#include <rule_processor/regex_match.hpp>
+#include <matcher/regex_match.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::matcher {
 
 regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive)
     : min_length(minLength)
@@ -27,21 +27,21 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
     }
 }
 
-std::optional<event::match> regex_match::match(std::string_view pattern) const
+std::pair<bool, memory::string> regex_match::match_impl(std::string_view pattern) const
 {
     if (pattern.data() == nullptr || !regex->ok() || pattern.size() < min_length) {
-        return std::nullopt;
+        return {false, {}};
     }
 
     const re2::StringPiece ref(pattern.data(), pattern.size());
     std::array<re2::StringPiece, max_match_count> match;
-    bool didMatch = regex->Match(ref, 0, pattern.size(), re2::RE2::UNANCHORED, match.data(), 1);
+    const bool res = regex->Match(ref, 0, pattern.size(), re2::RE2::UNANCHORED, match.data(), 1);
 
-    if (!didMatch) {
-        return std::nullopt;
+    if (!res) {
+        return {false, {}};
     }
 
-    return make_event(pattern, {match[0].data(), match[0].size()});
+    return {true, {match[0].data(), match[0].size()}};
 }
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::matcher

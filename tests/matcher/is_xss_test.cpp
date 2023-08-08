@@ -6,44 +6,44 @@
 
 #include "../test.h"
 
-using namespace ddwaf::rule_processor;
+using namespace ddwaf::matcher;
 
 TEST(TestIsXSS, TestBasic)
 {
-    is_xss processor;
-    EXPECT_STREQ(processor.to_string().data(), "");
-    EXPECT_STREQ(processor.name().data(), "is_xss");
+    is_xss matcher;
+    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STREQ(matcher.name().data(), "is_xss");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "<script>alert(1);</script>");
 
-    auto match = processor.match_object(&param);
-    EXPECT_TRUE(match.has_value());
-
-    EXPECT_STREQ(match->resolved.c_str(), "<script>alert(1);</script>");
+    auto [res, highlight] = matcher.match(param);
+    EXPECT_TRUE(res);
+    EXPECT_STREQ(highlight.c_str(), "");
 
     ddwaf_object_free(&param);
 }
 
 TEST(TestIsXSS, TestNoMatch)
 {
-    is_xss processor;
+    is_xss matcher;
 
     ddwaf_object param;
     ddwaf_object_string(&param, "non-xss");
 
-    EXPECT_FALSE(processor.match_object(&param));
+    EXPECT_FALSE(matcher.match(param).first);
 
     ddwaf_object_free(&param);
 }
 
 TEST(TestIsXSS, TestInvalidInput)
 {
-    is_xss processor;
+    is_xss matcher;
 
-    EXPECT_FALSE(processor.match({nullptr, 0}));
-    EXPECT_FALSE(processor.match({nullptr, 30}));
-    EXPECT_FALSE(processor.match({"non-xss", 0}));
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
+    // NOLINTNEXTLINE(bugprone-string-constructor)
+    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
 
 TEST(TestIsXSS, TestRuleset)
@@ -60,7 +60,8 @@ TEST(TestIsXSS, TestRuleset)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object param, tmp;
+    ddwaf_object param;
+    ddwaf_object tmp;
     ddwaf_object_map(&param);
     ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
 

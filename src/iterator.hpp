@@ -7,7 +7,6 @@
 #pragma once
 
 #include "context_allocator.hpp"
-#include <config.hpp>
 #include <cstdint>
 #include <functional>
 #include <set>

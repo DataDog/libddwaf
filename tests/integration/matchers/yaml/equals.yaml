@@ -1,0 +1,63 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1-string-equals
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: equals
+        parameters:
+          inputs:
+            - address: input
+          type: string
+          value: arachni
+  - id: 2
+    name: rule2-bool-equals
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: equals
+        parameters:
+          inputs:
+            - address: input
+          type: boolean
+          value: false
+  - id: 3
+    name: rule3-signed-equals
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: equals
+        parameters:
+          inputs:
+            - address: input
+          type: signed
+          value: -42
+  - id: 4
+    name: rule4-unsigned-equals
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: equals
+        parameters:
+          inputs:
+            - address: input
+          type: unsigned
+          value: 42
+  - id: 5
+    name: rule5-float-equals
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: equals
+        parameters:
+          inputs:
+            - address: input
+          type: float
+          value: 42.0
+          delta: 0.1

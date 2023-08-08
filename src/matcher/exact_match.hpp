@@ -7,14 +7,14 @@
 #pragma once
 
 #include <clock.hpp>
-#include <rule_processor/base.hpp>
+#include <matcher/base.hpp>
 #include <string_view>
 #include <unordered_map>
 #include <utils.hpp>
 
-namespace ddwaf::rule_processor {
+namespace ddwaf::matcher {
 
-class exact_match : public base {
+class exact_match : public base_impl<exact_match> {
 public:
     using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
@@ -27,12 +27,17 @@ public:
     exact_match &operator=(const exact_match &) = default;
     exact_match &operator=(exact_match &&) = default;
 
-    std::optional<event::match> match(std::string_view str) const override;
-    std::string_view name() const override { return "exact_match"; }
-
 protected:
+    static constexpr std::string_view to_string_impl() { return ""; }
+    static constexpr std::string_view name_impl() { return "exact_match"; }
+    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
+
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view str) const;
+
     std::vector<std::string> data_;
     std::unordered_map<std::string_view, uint64_t> values_;
+
+    friend class base_impl<exact_match>;
 };
 
-} // namespace ddwaf::rule_processor
+} // namespace ddwaf::matcher

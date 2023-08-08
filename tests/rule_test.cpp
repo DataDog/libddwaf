@@ -10,20 +10,16 @@ using namespace ddwaf;
 
 TEST(TestRule, Match)
 {
-    std::vector<condition::target_type> targets;
-
-    targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
     ddwaf::rule rule(
-        "id", "name", std::move(tags), std::move(conditions), {"update", "block", "passlist"});
+        "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -55,18 +51,15 @@ TEST(TestRule, Match)
 
 TEST(TestRule, NoMatch)
 {
-    std::vector<condition::target_type> targets;
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{});
+    builder.add_target("http.client_ip");
 
-    targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
-    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
+    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -82,35 +75,24 @@ TEST(TestRule, NoMatch)
 
 TEST(TestRule, ValidateCachedMatch)
 {
-    std::vector<std::shared_ptr<condition>> conditions;
+    expression_builder builder(2);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
-
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
+    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
     ddwaf::rule::cache_type cache;
 
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
@@ -123,7 +105,8 @@ TEST(TestRule, ValidateCachedMatch)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
@@ -163,28 +146,16 @@ TEST(TestRule, ValidateCachedMatch)
 
 TEST(TestRule, MatchWithoutCache)
 {
-    std::vector<std::shared_ptr<condition>> conditions;
+    expression_builder builder(2);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
-
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
+    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -238,28 +209,16 @@ TEST(TestRule, MatchWithoutCache)
 
 TEST(TestRule, NoMatchWithoutCache)
 {
-    std::vector<std::shared_ptr<condition>> conditions;
+    expression_builder builder(2);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
-
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
+    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -294,28 +253,16 @@ TEST(TestRule, NoMatchWithoutCache)
 
 TEST(TestRule, FullCachedMatchSecondRun)
 {
-    std::vector<std::shared_ptr<condition>> conditions;
+    expression_builder builder(2);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
-
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), std::move(conditions));
+    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
 
     // In this test we validate that when a match has already occurred, the
     // second run for the same rule returns no events regardless of input.
@@ -352,18 +299,14 @@ TEST(TestRule, FullCachedMatchSecondRun)
 
 TEST(TestRule, ExcludeObject)
 {
-    std::vector<condition::target_type> targets;
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule(
-        "id", "name", std::move(tags), std::move(conditions), {"update", "block", "passlist"});
+        "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);

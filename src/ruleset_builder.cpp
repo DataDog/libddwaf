@@ -82,7 +82,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : base_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
+                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
             final_base_rules_.emplace(rule_ptr->get_id(), rule_ptr);
@@ -125,7 +125,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : user_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, spec.conditions, spec.actions, spec.enabled, spec.source);
+                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
             final_user_rules_.emplace(rule_ptr->get_id(), rule_ptr);
@@ -146,7 +146,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 target_to_rules(filter.targets, final_user_rules_, user_rules_by_tags_));
 
             auto filter_ptr = std::make_shared<exclusion::rule_filter>(
-                id, filter.conditions, std::move(rule_targets), filter.on_match);
+                id, filter.expr, std::move(rule_targets), filter.on_match);
             rule_filters_.emplace(filter_ptr->get_id(), filter_ptr);
         }
 
@@ -158,7 +158,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 target_to_rules(filter.targets, final_user_rules_, user_rules_by_tags_));
 
             auto filter_ptr = std::make_shared<exclusion::input_filter>(
-                id, filter.conditions, std::move(rule_targets), filter.filter);
+                id, filter.expr, std::move(rule_targets), filter.filter);
             input_filters_.emplace(filter_ptr->get_id(), filter_ptr);
         }
     }
@@ -166,7 +166,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     auto rs = std::make_shared<ddwaf::ruleset>();
     rs->insert_rules(final_base_rules_);
     rs->insert_rules(final_user_rules_);
-    rs->dynamic_processors = dynamic_processors_;
+    rs->dynamic_matchers = dynamic_matchers_;
     rs->rule_filters = rule_filters_;
     rs->input_filters = input_filters_;
     rs->preprocessors = preprocessors_;
@@ -246,18 +246,18 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto rules_data = static_cast<parameter::vector>(it->second);
             if (!rules_data.empty()) {
-                auto new_processors =
+                auto new_matchers =
                     parser::v2::parse_rule_data(rules_data, section, rule_data_ids_);
-                if (new_processors.empty()) {
+                if (new_matchers.empty()) {
                     // The rules_data array might have unrelated IDs, so we need
                     // to consider "no valid IDs" as an empty rules_data
-                    dynamic_processors_.clear();
+                    dynamic_matchers_.clear();
                 } else {
-                    dynamic_processors_ = std::move(new_processors);
+                    dynamic_matchers_ = std::move(new_matchers);
                 }
             } else {
                 DDWAF_DEBUG("Clearing all rule data");
-                dynamic_processors_.clear();
+                dynamic_matchers_.clear();
             }
             state = state | change_state::data;
         } catch (const std::exception &e) {

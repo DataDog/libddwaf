@@ -55,7 +55,7 @@ bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn, att
             continue;
         }
 
-        std::string key(array[i].parameterName, length);
+        const std::string key(array[i].parameterName, length);
         auto target = get_target_index(key);
         objects_[target] = {&array[i], attr};
         latest_batch_.emplace(target);

@@ -39,6 +39,32 @@ std::ostream &operator<<(std::ostream &os, const indent &offset)
 
 } // namespace
 
+std::ostream &operator<<(std::ostream &os, const event::match &m)
+{
+    os << indent(4) << "{\n"
+       << indent(8) << "operator: " << m.op << ",\n"
+       << indent(8) << "operator_value: " << m.op_value << ",\n"
+       << indent(8) << "address: " << m.address << ",\n"
+       << indent(8) << "path: [";
+
+    bool start = true;
+    for (const auto &p : m.path) {
+        if (!start) {
+            os << ", ";
+        } else {
+            start = false;
+        }
+        os << p;
+    }
+
+    os << "],\n"
+       << indent(8) << "value: " << m.value << ",\n"
+       << indent(8) << "highlight: " << m.highlight << "\n"
+       << indent(4) << "}\n";
+
+    return os;
+}
+
 std::ostream &operator<<(std::ostream &os, const event &e)
 {
     os << "{\n"
@@ -74,7 +100,7 @@ std::ostream &operator<<(std::ostream &os, const event &e)
         os << indent(8) << "{\n";
 
         os << indent(12) << "operator: " << m.op << ",\n"
-           << indent(12) << "operator_value:" << m.op_value << ",\n"
+           << indent(12) << "operator_value: " << m.op_value << ",\n"
            << indent(12) << "address: " << m.address << ",\n"
            << indent(12) << "path: [";
 
@@ -148,7 +174,7 @@ void object_to_json_helper(
         output.SetUint64(obj.uintValue);
         break;
     case DDWAF_OBJ_FLOAT:
-        output.SetDouble(obj.floatValue);
+        output.SetDouble(obj.f64);
         break;
     case DDWAF_OBJ_STRING: {
         auto sv = std::string_view(obj.stringValue, obj.nbEntries);
@@ -407,6 +433,11 @@ void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os)
     for (const auto &e : events) { *os << e; }
 }
 
+void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os)
+{
+    for (const auto &m : matches) { *os << m; }
+}
+
 WafResultActionMatcher::WafResultActionMatcher(std::vector<std::string_view> &&values)
     : expected_(std::move(values))
 {
@@ -467,6 +498,51 @@ bool WafResultDataMatcher::MatchAndExplain(
     }
 
     return events.empty();
+}
+
+bool MatchMatcher::MatchAndExplain(
+    std::list<ddwaf::test::event::match> matches, ::testing::MatchResultListener * /*unused*/) const
+{
+    if (matches.size() != expected_matches_.size()) {
+        return false;
+    }
+
+    for (const auto &expected : expected_matches_) {
+        bool found = false;
+        for (auto it = matches.begin(); it != matches.end(); ++it) {
+            auto &obtained = *it;
+            if (obtained == expected) {
+                matches.erase(it);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            return false;
+        }
+    }
+
+    return matches.empty();
+}
+
+std::list<ddwaf::test::event::match> from_matches(
+    const ddwaf::memory::vector<ddwaf::event::match> &matches)
+{
+    std::list<ddwaf::test::event::match> match_list;
+
+    for (const auto &m : matches) {
+        ddwaf::test::event::match new_match;
+        new_match.value = m.resolved;
+        new_match.highlight = m.matched;
+        new_match.op = m.operator_name;
+        new_match.op_value = m.operator_value;
+        new_match.address = m.address;
+        for (const auto &k : m.key_path) { new_match.path.emplace_back(k); }
+
+        match_list.emplace_back(std::move(new_match));
+    }
+
+    return match_list;
 }
 
 size_t getFileSize(const char *filename)

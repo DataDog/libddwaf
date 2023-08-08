@@ -63,14 +63,14 @@ protected:
     const ddwaf_object_free_fn free_fn_;
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator_;
 
-    // Map representing rule data IDs to processor type, this is obtained
+    // Map representing rule data IDs to matcher type, this is obtained
     // from parsing the ruleset ('rules' key).
     std::unordered_map<std::string, std::string> rule_data_ids_;
 
     // These contain the specification of each main component obtained directly
     // from the parser. These are only modified on update, if the relevant key
     // is present and valid, otherwise they aren't be updated.
-    // Note that in the case of dynamic_processors, overrides and exclusions
+    // Note that in the case of dynamic_matchers, overrides and exclusions
     // we allow an empty key as a way to revert or remove the contents of the
     // relevant feature.
 
@@ -79,7 +79,7 @@ protected:
     // Obtained from 'custom_rules'
     parser::rule_spec_container user_rules_;
     // Obtained from 'rules_data', depends on base_rules_
-    parser::rule_data_container dynamic_processors_;
+    parser::rule_data_container dynamic_matchers_;
     // Obtained from 'rules_override'
     parser::override_spec_container overrides_;
     // Obtained from 'exclusions'
