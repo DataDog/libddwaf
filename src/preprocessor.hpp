@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include "utils.hpp"
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "expression.hpp"
 #include "generator/base.hpp"
-#include <condition.hpp>
-#include <object_store.hpp>
+#include "object_store.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -27,15 +27,11 @@ public:
         std::string output_address;
     };
 
-    struct cache_type {
-        bool result{false};
-        std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
-    };
+    using cache_type = expression::cache_type;
 
-    preprocessor(std::string id, std::unique_ptr<generator::base> generator,
-        std::vector<condition::ptr> conditions, std::vector<target_mapping> mappings, bool evaluate,
-        bool output)
-        : id_(std::move(id)), generator_(std::move(generator)), conditions_(std::move(conditions)),
+    preprocessor(std::string id, std::unique_ptr<generator::base> generator, expression::ptr expr,
+        std::vector<target_mapping> mappings, bool evaluate, bool output)
+        : id_(std::move(id)), generator_(std::move(generator)), expr_(std::move(expr)),
           mappings_(std::move(mappings)), evaluate_(evaluate), output_(output)
     {}
 
@@ -54,7 +50,7 @@ public:
 protected:
     std::string id_;
     std::unique_ptr<generator::base> generator_;
-    std::vector<condition::ptr> conditions_;
+    expression::ptr expr_;
     std::vector<target_mapping> mappings_;
     bool evaluate_{false};
     bool output_{true};

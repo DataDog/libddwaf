@@ -6,14 +6,13 @@
 
 #pragma once
 
-#include "config.hpp"
 #include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <generator/base.hpp>
-#include <utils.hpp>
+#include "generator/base.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::generator {
 

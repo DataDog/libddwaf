@@ -62,9 +62,6 @@ static void print_(parameter args, uint64_t depth)
             std::printf("- null\n");
         }
         break;
-    case DDWAF_OBJ_NULL:
-        std::printf("- null\n");
-        break;
     case DDWAF_OBJ_BOOL:
         if (args.parameterName != nullptr) {
             std::printf("- %s: %s\n", args.parameterName, args.boolean ? "true" : "false");
@@ -79,24 +76,22 @@ static void print_(parameter args, uint64_t depth)
             std::printf("- %" PRId64 "\n", args.intValue);
         }
         break;
-    }
-    case DDWAF_OBJ_UNSIGNED: {
-        if (args.parameterName != nullptr)
+    case DDWAF_OBJ_UNSIGNED:
+        if (args.parameterName != nullptr) {
             std::printf("- %s: %" PRIu64 "\n", args.parameterName, args.uintValue);
         } else {
             std::printf("- %" PRIu64 "\n", args.uintValue);
         }
         break;
-    }
-    case DDWAF_OBJ_FLOAT: {
-        if (args.parameterName != nullptr)
+    case DDWAF_OBJ_FLOAT:
+        if (args.parameterName != nullptr) {
             std::printf("- %s: %lf\n", args.parameterName, args.f64);
-        else
+        } else {
             std::printf("- %lf\n", args.f64);
+        }
         break;
-    }
     case DDWAF_OBJ_STRING: {
-        if (args.parameterName != nullptr)
+        if (args.parameterName != nullptr) {
             std::printf("- %s: %s\n", args.parameterName, args.stringValue);
         } else {
             std::printf("- %s\n", args.stringValue);

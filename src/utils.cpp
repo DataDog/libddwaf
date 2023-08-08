@@ -21,10 +21,10 @@ void clone_helper(const ddwaf_object &source, ddwaf_object &destination)
         ddwaf_object_stringl(&destination, source.stringValue, source.nbEntries);
         break;
     case DDWAF_OBJ_SIGNED:
-        ddwaf_object_signed_force(&destination, source.intValue);
+        ddwaf_object_signed(&destination, source.intValue);
         break;
     case DDWAF_OBJ_UNSIGNED:
-        ddwaf_object_unsigned_force(&destination, source.uintValue);
+        ddwaf_object_unsigned(&destination, source.uintValue);
         break;
     case DDWAF_OBJ_FLOAT:
         ddwaf_object_float(&destination, source.floatValue);

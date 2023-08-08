@@ -19,30 +19,8 @@ void preprocessor::eval(object_store &store, optional_ref<ddwaf_object> &derived
         return;
     }
 
-    if (!cache.result) {
-        std::vector<condition::ptr>::const_iterator cond_iter;
-        bool run_on_new;
-        if (cache.last_cond.has_value()) {
-            cond_iter = *cache.last_cond;
-            run_on_new = true;
-        } else {
-            cond_iter = conditions_.cbegin();
-            run_on_new = false;
-        }
-
-        while (cond_iter != conditions_.cend()) {
-            auto &&cond = *cond_iter;
-            auto opt_match = cond->match(store, {}, run_on_new, {}, deadline);
-            if (!opt_match.has_value()) {
-                cache.last_cond = cond_iter;
-                return;
-            }
-
-            run_on_new = false;
-            cond_iter++;
-        }
-
-        cache.result = true;
+    if (!expression::get_result(cache) && !expr_->eval(cache, store, {}, {}, deadline)) {
+        return;
     }
 
     for (const auto &mapping : mappings_) {

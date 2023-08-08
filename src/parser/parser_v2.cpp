@@ -299,7 +299,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
     return {current, type};
 }
 
-expression::ptr parse_filter_expression(
+expression::ptr parse_simplified_expression(
     const parameter::vector &conditions_array, const object_limits &limits)
 {
     expression_builder builder(conditions_array.size(), limits);
@@ -359,7 +359,7 @@ input_filter_spec parse_input_filter(const parameter::map &filter, const object_
 {
     // Check for conditions first
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
-    auto expr = parse_filter_expression(conditions_array, limits);
+    auto expr = parse_simplified_expression(conditions_array, limits);
 
     std::vector<rule_target_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
@@ -396,7 +396,7 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
 {
     // Check for conditions first
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
-    auto expr = parse_filter_expression(conditions_array, limits);
+    auto expr = parse_simplified_expression(conditions_array, limits);
 
     std::vector<rule_target_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
@@ -425,7 +425,6 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
     return {std::move(expr), std::move(rules_target), on_match};
 }
 
-<<<<<<< HEAD
 std::vector<preprocessor::target_mapping> parse_preprocessor_mappings(const parameter::vector &root)
 {
     if (root.empty()) {
@@ -651,16 +650,8 @@ preprocessor_container parse_preprocessors(
                 continue;
             }
 
-            std::vector<condition::ptr> conditions;
             auto conditions_array = at<parameter::vector>(node, "conditions", {});
-            if (!conditions_array.empty()) {
-                conditions.reserve(conditions_array.size());
-
-                for (const auto &cond : conditions_array) {
-                    conditions.push_back(
-                        parse_simplified_condition(static_cast<parameter::map>(cond), limits));
-                }
-            }
+            auto expr = parse_simplified_expression(conditions_array, limits);
 
             auto params = at<parameter::map>(node, "parameters");
             auto mappings_vec = at<parameter::vector>(params, "mappings");
@@ -668,7 +659,7 @@ preprocessor_container parse_preprocessors(
 
             DDWAF_DEBUG("Parsed preprocessor %s", id.c_str());
             auto preproc = std::make_shared<preprocessor>(preprocessor{std::move(id),
-                std::move(generator), std::move(conditions), std::move(mappings),
+                std::move(generator), std::move(expr), std::move(mappings),
                 at<bool>(node, "evaluate", true), at<bool>(node, "output", false)});
 
             preprocessors.emplace(preproc->get_id(), preproc);

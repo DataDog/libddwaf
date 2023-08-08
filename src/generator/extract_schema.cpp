@@ -4,14 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "config.hpp"
-#include "ddwaf.h"
 #include <iostream>
 #include <map>
 #include <unordered_set>
 
-#include <generator/extract_schema.hpp>
-#include <utils.hpp>
+#include "generator/extract_schema.hpp"
 
 namespace ddwaf::generator {
 namespace {
@@ -227,7 +224,7 @@ ddwaf_object serialize(const schema_scalar &node)
     ddwaf_object_array(&array);
 
     ddwaf_object_array_add(
-        &array, ddwaf_object_unsigned_force(&tmp,
+        &array, ddwaf_object_unsigned(&tmp,
                     static_cast<std::underlying_type<schema_scalar_type>::type>(node.scalar_type)));
 
     if (!node.value_class.empty()) {
@@ -259,7 +256,7 @@ ddwaf_object serialize(const schema_array &node)
 
     ddwaf_object meta;
     ddwaf_object_map(&meta);
-    ddwaf_object_map_add(&meta, "len", ddwaf_object_unsigned_force(&tmp, node.length));
+    ddwaf_object_map_add(&meta, "len", ddwaf_object_unsigned(&tmp, node.length));
     if (node.truncated) {
         ddwaf_object_map_add(&meta, "truncated", ddwaf_object_bool(&tmp, true));
     }
