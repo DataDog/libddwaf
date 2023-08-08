@@ -104,7 +104,7 @@ jobs:
         working-directory: Debug
 
       - name: Generate coverage
-        run: gcovr --exclude-throw-branches -f '.*src.*' -x -d -o coverage.xml
+        run: gcovr --exclude-throw-branches -v -f '.*src.*' -x -d -o coverage.xml
         working-directory: Debug
 
       - name: Submit coverage
