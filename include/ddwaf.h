@@ -106,7 +106,6 @@ struct _ddwaf_object
         const char* stringValue;
         uint64_t uintValue;
         int64_t intValue;
-        double floatValue;
         ddwaf_object* array;
         bool boolean;
         double f64;

@@ -238,7 +238,6 @@ bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object)
         DDWAF_DEBUG("Invalid call, this API can only be called with an array as first parameter");
         return false;
     }
-
     if (object == nullptr) {
         DDWAF_DEBUG("Tried to add a null object to an array");
         return false;
@@ -280,12 +279,10 @@ static inline bool ddwaf_object_map_add_valid(
         DDWAF_DEBUG("Invalid call, this API can only be called with a map as first parameter");
         return false;
     }
-
     if (key == nullptr) {
         DDWAF_DEBUG("Invalid call, nullptr key");
         return false;
     }
-
     if (object == nullptr) {
         DDWAF_DEBUG("Tried to add a null object to a map");
         return false;
