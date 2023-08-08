@@ -114,10 +114,12 @@ jobs:
           flags: waf_test
           verbose: true
           files: coverage.xml
+        working-directory: Debug
       - uses: actions/upload-artifact@v3
         with:
           name: Upload coverage
           path: coverage.xml
+        working-directory: Debug
 
   validate:
     runs-on: ubuntu-latest
