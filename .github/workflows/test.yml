@@ -91,7 +91,6 @@ jobs:
         env:
           CC: gcc-12
           CXX: g++-12
-          GCOV: gcov-12
         run: |
           cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
         working-directory: Debug
@@ -105,7 +104,10 @@ jobs:
         working-directory: Debug
 
       - name: Generate coverage
-        run: gcovr --exclude-throw-branches -v -f '.*src.*' -x -d -o coverage.xml
+        run: |
+          gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -x  -o coverage.xml
+          mkdir -p coverage
+          gcovr --gcov-executable gcov-12 --html-details coverage/coverage.html --exclude-throw-branches -f ".*src.*" -d
         working-directory: Debug
 
       - name: Submit coverage
@@ -117,8 +119,8 @@ jobs:
           files: coverage.xml
       - uses: actions/upload-artifact@v3
         with:
-          name: Upload coverage
-          path: ${{ github.workspace }}/Debug/coverage.xml
+          name: coverage
+          path: ${{ github.workspace }}/Debug/coverage/
 
   validate:
     runs-on: ubuntu-latest
