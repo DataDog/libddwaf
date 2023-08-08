@@ -44,7 +44,7 @@ GCC_TOOLCHAIN_SYSROOT := /
 endif
 
 musl-$(MUSL_VERSION).tar.gz:
-	curl -o $@ -Lf https://musl.libc.org/releases/musl-1.2.2.tar.gz
+	curl -o $@ -Lf https://musl.libc.org/releases/musl-$(MUSL_VERSION).tar.gz
 	grep -F $@ CHECKSUMS | sha512sum --check
 
 libcxx-$(LLVM_VERSION).src.tar.xz \
