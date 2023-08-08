@@ -82,7 +82,7 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
-        run: sudo apt update ; sudo apt install -y gcovr
+        run: sudo apt update ; sudo apt install -y gcovr gcc-12
 
       - name: Create directories
         run: mkdir Debug
