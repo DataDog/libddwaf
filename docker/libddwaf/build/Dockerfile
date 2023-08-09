@@ -1,30 +1,25 @@
 FROM datadog/libddwaf:toolchain AS libddwaf_build
 
+ARG ARCH
+#-v $(pwd):/libddwaf
+
 COPY . /libddwaf
 
-RUN echo "Arch: $(arch), Cores: $(nproc)"
-
-RUN ln -s /usr/lib/clang/16/lib/linux/libclang_rt.builtins-*.a /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a
-
-RUN mkdir -p /libddwaf/build
-RUN cd /libddwaf/build && cmake \
+RUN mkdir -p build
+RUN cd build && cmake \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_C_COMPILER=clang \
-    -DCMAKE_CXX_COMPILER=clang++ \
-    -DCMAKE_CXX_FLAGS="-stdlib=libc++ -Qunused-arguments -rtlib=compiler-rt -unwindlib=libunwind -static-libgcc -fno-omit-frame-pointer" \
-    -DCMAKE_C_FLAGS="-Qunused-arguments -rtlib=compiler-rt -unwindlib=libunwind -static-libgcc -fno-omit-frame-pointer" \
-    -DLIBDDWAF_BUILD_STATIC=ON \
-    -DLIBDDWAF_SHARED_LINKER_FLAGS="-v -nodefaultlibs -Wl,-Bstatic -lc++ /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a -lunwind -Wl,-Bdynamic -lc /usr/lib/clang/16/lib/linux/libclang_rt.builtins.a" .. && \
-    ninja
+    -DCMAKE_TOOLCHAIN_FILE=/sysroot/${ARCH}-none-linux-musl/Toolchain.cmake \
+    ../libddwaf && ninja
+RUN patchelf --remove-needed $(basename /sysroot/${ARCH}-none-linux-musl/lib/libc.musl-*.so.1) /build/libddwaf.so
 
-RUN ninja -C /libddwaf/build validate
-RUN ninja -C /libddwaf/build test
+RUN ninja -C build testPowerWAF waf_validator
+#RUN patchelf --set-rpath ${SYSROOT} /build/tests/testPowerWAF
+RUN cd libddwaf/tests && qemu-${ARCH}-static /build/tests/testPowerWAF
+RUN cd libddwaf/validator && qemu-${ARCH}-static /build/validator/waf_validator
 
-RUN patchelf --remove-needed libc.musl-$(arch).so.1 /libddwaf/build/libddwaf.so
-RUN cd /libddwaf/build && ninja package && mv libddwaf-*.tar.gz libddwaf-$(arch)-linux.tar.gz
-RUN tar -C /usr/lib/ -czf /libddwaf/build/libc++-static-$(arch)-linux.tar.gz libc++.a libc++experimental.a libc++abi.a libunwind.a
+RUN cd /build && ninja package && mv libddwaf-*.tar.gz libddwaf-${ARCH}-linux.tar.gz
+RUN tar -C /sysroot/${ARCH}-none-linux-musl/usr/lib/ -czf /build/libc++-static-${ARCH}-linux.tar.gz libc++.a libc++experimental.a libc++abi.a libunwind.a
 
 FROM scratch
-COPY --from=libddwaf_build /libddwaf/build/*.tar.gz /
+COPY --from=libddwaf_build /build/*.tar.gz /

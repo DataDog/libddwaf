@@ -229,21 +229,17 @@ jobs:
       matrix:
         target:
           - name: aarch64
-            qemu_action_arch: arm64
-            platform: linux/arm64
-            package: libddwaf-linux-arm64-experimental
+            arch: aarch64
+            package: libddwaf-linux-aarch64-experimental
           - name: x86_64
-            platform: linux/amd64
-            qemu_action_arch: amd64
+            arch: x86_64
             package: libddwaf-linux-x86_64-experimental
-          - name: x86
-            platform: linux/i386
-            qemu_action_arch: i386
-            package: libddwaf-linux-x86-experimental
-          - name: arm32
-            platform: linux/arm/v7
-            qemu_action_arch: arm
-            package: libddwaf-linux-arm32-experimental
+          - name: i386
+            arch: i386
+            package: libddwaf-linux-i386-experimental
+          #- name: armv7
+          #  arch: armv7
+          #  package: libddwaf-linux-armv7-experimental
     steps:
       - uses: actions/checkout@v3
         with:
@@ -252,11 +248,7 @@ jobs:
         id: buildx
         with:
           install: true
-      - uses: docker/setup-qemu-action@v2
-        if: matrix.target.qemu_action_arch != 'amd64'
-        with:
-          platforms: ${{ matrix.target.qemu_action_arch }}
-      - run: docker build --platform ${{ matrix.target.platform }} -f docker/libddwaf/build/Dockerfile -o /tmp/packages .
+      - run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build/Dockerfile  -o /tmp/packages .
       - name: Generate Package sha256
         working-directory: /tmp/packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done

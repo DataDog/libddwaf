@@ -1,0 +1,50 @@
+FROM alpine:3.18.3 AS sysroot
+
+ARG LLVM_VERSION=16.0.6
+ARG ARCH
+
+COPY docker/libddwaf/common/Toolchain.cmake.in /Toolchain.cmake
+
+RUN echo "Building LLVM ${LLVM_VERSION} on ${ARCH}"
+
+RUN apk --no-cache add alpine-sdk coreutils sudo bash samurai python3 linux-headers compiler-rt clang wget cmake make binutils musl-dev git patchelf xz lit
+RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz && \
+    tar -xvf llvm-project-${LLVM_VERSION}.src.tar.xz
+
+RUN cd llvm-project-${LLVM_VERSION}.src && mkdir -p build && cd build && \
+    cmake -G Ninja \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_C_COMPILER=clang \
+    -DCMAKE_C_FLAGS=-fno-omit-frame-pointer \
+    -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_CXX_FLAGS=-fno-omit-frame-pointer \
+    -DLIBUNWIND_ENABLE_SHARED=OFF \
+    -DLIBUNWIND_ENABLE_STATIC=ON \
+    -DLIBUNWIND_USE_COMPILER_RT=ON \
+    -DLIBCXXABI_ENABLE_SHARED=ON \
+    -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
+    -DLIBCXXABI_ENABLE_STATIC_UNWINDER=ON \
+    -DLIBCXXABI_USE_COMPILER_RT=ON \
+    -DLIBCXX_ENABLE_SHARED=OFF \
+    -DLIBCXX_HAS_MUSL_LIBC=ON \
+    -DLIBCXX_USE_COMPILER_RT=ON \
+    -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
+    -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+    -DLLVM_EXTERNAL_LIT=/usr/bin/lit ../runtimes && \
+    ninja install-unwind install-cxxabi install-cxx
+
+RUN cd /usr/lib && ln -s gcc/*/*/ resource_dir
+RUN cd /usr/lib && ln -s clang/${LLVM_VERSION%%.*}/lib/linux/libclang_rt.builtins-*.a libclang_rt.builtins.a
+
+RUN rm -rf /llvm-project-${LLVM_VERSION}.src
+RUN rm -f llvm-project-${LLVM_VERSION}.src.tar.xz
+
+RUN sed -i "s#@LIBDDWAF_SYSROOT@#/sysroot/${ARCH}-none-linux-musl#g" /Toolchain.cmake
+RUN sed -i "s#@LIBDDWAF_ARCH@#${ARCH}#g" /Toolchain.cmake
+RUN interpreter=$(basename /lib/ld-musl-*.so.1) ; sed -i "s#@LIBDDWAF_MUSL_INTERPRETER@#${interpreter}#g" /Toolchain.cmake
+
+RUN tar -czf ${ARCH}-none-linux-musl.tar.gz /usr/lib /usr/include /lib /Toolchain.cmake
+
+FROM scratch
+COPY --from=sysroot /*-none-linux-musl.tar.gz /
