@@ -237,9 +237,9 @@ jobs:
           - name: i386
             arch: i386
             package: libddwaf-linux-i386-experimental
-          #- name: armv7
-          #  arch: armv7
-          #  package: libddwaf-linux-armv7-experimental
+          - name: armv7
+            arch: armv7
+            package: libddwaf-linux-armv7-experimental
     steps:
       - uses: actions/checkout@v3
         with:
