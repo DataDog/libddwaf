@@ -238,16 +238,17 @@ jobs:
             qemu_action_arch: amd64
             platform: linux/amd64
             package: libddwaf-linux-x86_64-experimental
-          - name: i386
-            arch: i386
-            qemu_action_arch: i386
-            platform: linux/386
-            package: libddwaf-linux-i386-experimental
-          - name: armv7
-            arch: armv7
-            qemu_action_arch: arm
-            platform: linux/arm/v7
-            package: libddwaf-linux-armv7-experimental
+          # musl > 1.2 is incompatible with glibc https://musl.libc.org/time64.html
+          #- name: i386
+            #arch: i386
+            #qemu_action_arch: i386
+            #platform: linux/386
+            #package: libddwaf-linux-i386-experimental
+          #- name: armv7
+            #arch: armv7
+            #qemu_action_arch: arm
+            #platform: linux/arm/v7
+            #package: libddwaf-linux-armv7-experimental
     steps:
       - uses: actions/checkout@v3
         with:

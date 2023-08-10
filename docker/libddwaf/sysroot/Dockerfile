@@ -11,8 +11,6 @@ RUN apk --no-cache add alpine-sdk coreutils sudo bash samurai python3 linux-head
 RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz && \
     tar -xvf llvm-project-${LLVM_VERSION}.src.tar.xz
 
-RUN if [ "$ARCH" = "armv7" ] || [ "$ARCH" = "i386" ] ; then sed -i "s/_REDIR_TIME64 1/_REDIR_TIME64 0/g" /usr/include/bits/alltypes.h ; fi
-
 RUN cd llvm-project-${LLVM_VERSION}.src && mkdir -p build && cd build && \
     cmake -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
