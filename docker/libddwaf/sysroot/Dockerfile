@@ -11,15 +11,16 @@ RUN apk --no-cache add alpine-sdk coreutils sudo bash samurai python3 linux-head
 RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz && \
     tar -xvf llvm-project-${LLVM_VERSION}.src.tar.xz
 
-RUN export FLAGS=$([ "$ARCH" = "armv7" ] || [ "$ARCH" = "i386" ] && echo "-D_REDIR_TIME64=0") ; \
-    cd llvm-project-${LLVM_VERSION}.src && mkdir -p build && cd build && \
+RUN if [ "$ARCH" = "armv7" ] || [ "$ARCH" = "i386" ] ; then sed -i "s/_REDIR_TIME64 1/_REDIR_TIME64 0/g" /usr/include/bits/alltypes.h ; fi
+
+RUN cd llvm-project-${LLVM_VERSION}.src && mkdir -p build && cd build && \
     cmake -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_C_COMPILER=clang \
-    -DCMAKE_C_FLAGS="-fno-omit-frame-pointer $FLAGS" \
+    -DCMAKE_C_FLAGS=-fno-omit-frame-pointer \
     -DCMAKE_CXX_COMPILER=clang++ \
-    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer $FLAGS" \
+    -DCMAKE_CXX_FLAGS=-fno-omit-frame-pointer \
     -DLIBUNWIND_ENABLE_SHARED=OFF \
     -DLIBUNWIND_ENABLE_STATIC=ON \
     -DLIBUNWIND_USE_COMPILER_RT=ON \
@@ -33,7 +34,7 @@ RUN export FLAGS=$([ "$ARCH" = "armv7" ] || [ "$ARCH" = "i386" ] && echo "-D_RED
     -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
     -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
     -DLLVM_EXTERNAL_LIT=/usr/bin/lit ../runtimes && \
-    ninja install-unwind install-cxxabi install-cxx
+    ninja -v install-unwind install-cxxabi install-cxx
 
 RUN cd /usr/lib && ln -s gcc/*/*/ resource_dir
 RUN cd /usr/lib && ln -s clang/${LLVM_VERSION%%.*}/lib/linux/libclang_rt.builtins-*.a libclang_rt.builtins.a
