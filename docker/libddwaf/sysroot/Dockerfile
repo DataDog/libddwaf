@@ -3,7 +3,7 @@ FROM alpine:3.18.3 AS sysroot
 ARG LLVM_VERSION=16.0.6
 ARG ARCH
 
-COPY docker/libddwaf/common/Toolchain.cmake.in /Toolchain.cmake
+COPY docker/libddwaf/sysroot/Toolchain.cmake.${ARCH} /Toolchain.cmake
 
 RUN echo "Building LLVM ${LLVM_VERSION} on ${ARCH}"
 
@@ -39,10 +39,6 @@ RUN cd /usr/lib && ln -s clang/${LLVM_VERSION%%.*}/lib/linux/libclang_rt.builtin
 
 RUN rm -rf /llvm-project-${LLVM_VERSION}.src
 RUN rm -f llvm-project-${LLVM_VERSION}.src.tar.xz
-
-RUN sed -i "s#@LIBDDWAF_SYSROOT@#/sysroot/${ARCH}-none-linux-musl#g" /Toolchain.cmake
-RUN sed -i "s#@LIBDDWAF_ARCH@#${ARCH}#g" /Toolchain.cmake
-RUN interpreter=$(basename /lib/ld-musl-*.so.1) ; sed -i "s#@LIBDDWAF_MUSL_INTERPRETER@#${interpreter}#g" /Toolchain.cmake
 
 RUN tar -czf ${ARCH}-none-linux-musl.tar.gz /usr/lib /usr/include /lib /Toolchain.cmake
 
