@@ -17,4 +17,4 @@ done
 
 docker buildx build --platform=linux/arm64,linux/amd64 --no-cache --progress=plain -t datadog/libddwaf:toolchain -f docker/libddwaf/toolchain/Dockerfile . --push
 
-#rm -rf sysroot
+rm -rf sysroot

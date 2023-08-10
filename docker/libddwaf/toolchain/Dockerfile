@@ -10,5 +10,4 @@ RUN sudo apt-get update && sudo apt-get install -y clang-16 lld-16 binutils-x86-
 RUN ln -s /usr/bin/qemu-arm-static /usr/bin/qemu-armv7-static
 
 # Unpack sysroots
-RUN ls sysroot/
 RUN for file in sysroot/*.tar.gz; do mkdir -p sysroot/$(basename $file .tar.gz) ; tar -xvzf $file -C sysroot/$(basename $file .tar.gz); rm $file; done
