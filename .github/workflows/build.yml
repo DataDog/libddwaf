@@ -222,7 +222,7 @@ jobs:
             /tmp/packages/*.tar.gz
             /tmp/packages/*.sha256
 
-  alpine-experimental-builds:
+  linux-experimental-builds:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

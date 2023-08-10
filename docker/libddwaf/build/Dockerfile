@@ -14,7 +14,7 @@ RUN cd build && cmake \
 RUN patchelf --remove-needed $(basename /sysroot/${ARCH}-none-linux-musl/lib/libc.musl-*.so.1) /build/libddwaf.so
 
 RUN ninja -C build testPowerWAF waf_validator
-RUN if [ "$ARCH" != "armv7" ]; then cd libddwaf/tests && qemu-$ARCH-static /build/tests/testPowerWAF ; fi
+RUN cd libddwaf/tests && qemu-$ARCH-static /build/tests/testPowerWAF
 RUN cd libddwaf/validator && qemu-$ARCH-static /build/validator/waf_validator
 
 RUN cd /build && ninja package && mv libddwaf-*.tar.gz libddwaf-${ARCH}-linux.tar.gz
