@@ -2,7 +2,7 @@ FROM alpine:3.18.3 AS smoketest_musl_shared
 
 ARG ARCH
 
-COPY /tmp/packages/ /packages
+COPY packages/ /packages
 COPY smoketest /smoketest
 
 RUN apk --no-cache add gcc cmake make musl-dev
