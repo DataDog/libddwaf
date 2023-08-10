@@ -17,8 +17,8 @@ RUN ninja -C build testPowerWAF waf_validator
 RUN cd libddwaf/tests && qemu-$ARCH-static /build/tests/testPowerWAF
 RUN cd libddwaf/validator && qemu-$ARCH-static /build/validator/waf_validator
 
-RUN cd /build && ninja package && mv libddwaf-*.tar.gz libddwaf-${ARCH}-linux.tar.gz
-RUN tar -C /sysroot/${ARCH}-none-linux-musl/usr/lib/ -czf /build/libc++-static-${ARCH}-linux.tar.gz libc++.a libc++experimental.a libc++abi.a libunwind.a
+RUN cd /build && ninja package && mv libddwaf-*.tar.gz libddwaf-${ARCH}-linux-experimental.tar.gz
+RUN tar -C /sysroot/${ARCH}-none-linux-musl/usr/lib/ -czf /build/libc++-static-${ARCH}-linux-experimental.tar.gz libc++.a libc++experimental.a libc++abi.a libunwind.a
 
 FROM scratch
 COPY --from=libddwaf_build /build/*.tar.gz /

@@ -230,15 +230,19 @@ jobs:
         target:
           - name: aarch64
             arch: aarch64
+            qemu_action_arch: arm64
             package: libddwaf-linux-aarch64-experimental
           - name: x86_64
             arch: x86_64
+            qemu_action_arch: amd64
             package: libddwaf-linux-x86_64-experimental
           - name: i386
             arch: i386
+            qemu_action_arch: i386
             package: libddwaf-linux-i386-experimental
           - name: armv7
             arch: armv7
+            qemu_action_arch: arm
             package: libddwaf-linux-armv7-experimental
     steps:
       - uses: actions/checkout@v3
@@ -252,6 +256,16 @@ jobs:
       - name: Generate Package sha256
         working-directory: /tmp/packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
+      - uses: docker/setup-qemu-action@v2
+        if: matrix.target.qemu_action_arch == 'arm64'
+        with:
+          platforms: ${{ matrix.target.qemu_action_arch }}
+      - name: Smoketest musl_shared
+        run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_shared/Dockerfile  .
+      - name: Smoketest musl_static_libgcc
+        run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_static_libgcc/Dockerfile  .
+      - name: Smoketest musl_static_llvm
+        run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_static_llvm/Dockerfile  .
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target.package }}
