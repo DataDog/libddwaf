@@ -7,8 +7,7 @@ declare -A platforms=(
   ["armv7"]="linux/arm/v7"
 )
 
-#architectures=("i386" "x86_64" "armv7" "aarch64")
-architectures=("x86_64" "aarch64")
+architectures=("i386" "x86_64" "armv7" "aarch64")
 
 mkdir -p sysroot
 
