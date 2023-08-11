@@ -4,9 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test_utils.hpp"
+#include "waf.hpp"
 
 using namespace ddwaf;
+
+namespace {
 
 TEST(TestWaf, RootAddresses)
 {
@@ -121,3 +124,5 @@ TEST(TestWaf, AddressUniqueness)
         indices.insert(hash);
     }
 }
+
+} // namespace

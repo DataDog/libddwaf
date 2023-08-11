@@ -4,8 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "parser/common.hpp"
 #include "parser/parser.hpp"
-#include "test.h"
+#include "test_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestParserV2RuleData, ParseIPData)
 {
@@ -322,3 +327,4 @@ TEST(TestParserV2RuleData, ParseMissingData)
 
     EXPECT_EQ(rule_data.size(), 0);
 }
+} // namespace

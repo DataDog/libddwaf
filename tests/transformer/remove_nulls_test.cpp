@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/remove_nulls.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestRemoveNulls, NameAndID)
 {
@@ -34,3 +38,5 @@ TEST(TestRemoveNulls, InvalidTransform)
     EXPECT_NO_TRANSFORM(remove_nulls, "remove_nulls");
     EXPECT_NO_TRANSFORM(remove_nulls, "remove_nulls but it doesn't matter");
 }
+
+} // namespace

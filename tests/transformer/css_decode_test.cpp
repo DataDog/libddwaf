@@ -4,10 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/css_decode.hpp"
 #include "transformer_utils.hpp"
 
+using namespace ddwaf;
+
+namespace {
 TEST(TestCssDecode, NameAndID)
 {
     EXPECT_STREQ(transformer::css_decode::name().data(), "css_decode");
@@ -30,3 +33,5 @@ TEST(TestCssDecode, ValidTransform)
 }
 
 TEST(TestCssDecode, InvalidTransform) { EXPECT_NO_TRANSFORM(css_decode, "no CSS transformations"); }
+
+} // namespace

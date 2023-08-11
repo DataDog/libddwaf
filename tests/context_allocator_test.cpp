@@ -5,11 +5,13 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "context_allocator.hpp"
-#include "ddwaf.h"
-#include "test.h"
+#include "test.hpp"
+
 #include <thread>
 
 using namespace ddwaf;
+
+namespace {
 
 class TestContextAllocator : public ::testing::Test {
 public:
@@ -43,7 +45,7 @@ TEST_F(TestContextAllocator, MonotonicLocalAllocator)
     EXPECT_EQ(memory::get_local_memory_resource(), &resource);
 
     memory::context_allocator alloc;
-    auto value = alloc.allocate(1);
+    auto *value = alloc.allocate(1);
     EXPECT_NE(value, nullptr);
     alloc.deallocate(value, 1);
 
@@ -73,7 +75,7 @@ TEST_F(TestContextAllocator, MultipleThreads)
 
     {
         memory::context_allocator alloc;
-        auto value = alloc.allocate(1);
+        auto *value = alloc.allocate(1);
         EXPECT_NE(value, nullptr);
         alloc.deallocate(value, 1);
 
@@ -94,7 +96,7 @@ TEST_F(TestContextAllocator, MultipleThreads)
         EXPECT_EQ(memory::get_local_memory_resource(), &resource);
 
         memory::context_allocator alloc;
-        auto value = alloc.allocate(1);
+        auto *value = alloc.allocate(1);
         EXPECT_NE(value, nullptr);
         alloc.deallocate(value, 1);
 
@@ -103,10 +105,12 @@ TEST_F(TestContextAllocator, MultipleThreads)
 
     {
         memory::context_allocator alloc;
-        auto value = alloc.allocate(1);
+        auto *value = alloc.allocate(1);
         EXPECT_NE(value, nullptr);
         alloc.deallocate(value, 1);
 
         EXPECT_NO_THROW(memory::string("string longer than optimisation"));
     }
 }
+
+} // namespace

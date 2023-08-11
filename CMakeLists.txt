@@ -30,6 +30,7 @@ option(LIBDDWAF_BUILD_SHARED "Build shared library" ON)
 option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
 option(LIBDDWAF_KEEP_SYMBOL_FILE "Keep the debug symbol file" ON)
 option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
+option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -123,7 +124,7 @@ set_target_properties(libddwaf_objects PROPERTIES
 
 try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp
-    CXX_STANDARD 17)
+    CXX_STANDARD 20)
 if(NOT STDLIB_MAP_RECURSIVE)
 	target_compile_definitions(libddwaf_objects PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
 endif()
@@ -137,6 +138,11 @@ install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
 set(LIBDDWAF_PRIVATE_LIBRARIES lib_re2 lib_ac lib_injection lib_radix lib_utf8proc)
+
+if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
+    target_compile_options(libddwaf_objects PRIVATE -ggdb --coverage)
+    list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
+endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 # needed for glibc <2.17. We compile with --as-needed so the library won't
@@ -166,7 +172,7 @@ elseif(WIN32)
 endif()
 
 target_link_libraries(libddwaf_objects
-    PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
+    PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES} 
     INTERFACE ${LIBDDWAF_INTERFACE_LIBRARIES})
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -229,9 +235,13 @@ if (LIBDDWAF_BUILD_STATIC)
       endif()
       if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
           if (CMAKE_SYSTEM_NAME STREQUAL Darwin OR CMAKE_SYSTEM_NAME STREQUAL Linux)
-              find_program(STRIP strip)
-              if (STRIP STREQUAL "STRIP-NOTFOUND")
-                  message(FATAL_ERROR "strip not found")
+              if (NOT CMAKE_STRIP)
+                  find_program(STRIP strip)
+                  if (STRIP STREQUAL "STRIP-NOTFOUND")
+                      message(FATAL_ERROR "strip not found")
+                  endif()
+              else()
+                  set(STRIP ${CMAKE_STRIP})
               endif()
               add_custom_command(TARGET libddwaf_static POST_BUILD
                   COMMAND ${STRIP} -x -S $<TARGET_FILE:libddwaf_static> -o $<TARGET_FILE:libddwaf_static>.stripped)

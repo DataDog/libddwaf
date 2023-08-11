@@ -4,7 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "test_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestParserV2RulesOverride, ParseRuleOverrideWithoutSideEffects)
 {
@@ -224,3 +230,5 @@ TEST(TestParserV2RulesOverride, ParseInconsistentRuleOverride)
     EXPECT_EQ(overrides.by_ids.size(), 0);
     EXPECT_EQ(overrides.by_tags.size(), 0);
 }
+
+} // namespace

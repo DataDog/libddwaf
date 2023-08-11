@@ -4,7 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "mkmap.hpp"
+#include "ruleset.hpp"
+#include "test.hpp"
+
+using namespace ddwaf;
+using namespace std::literals;
+
+namespace {
 
 TEST(TestMultiKeyMap, Find)
 {
@@ -140,3 +147,5 @@ TEST(TestMultiKeyMap, Multifind)
         EXPECT_EQ(rules.size(), 1);
     }
 }
+
+} // namespace

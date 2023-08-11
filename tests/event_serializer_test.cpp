@@ -4,7 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test_utils.hpp"
+
+#include "event.hpp"
+#include "rule.hpp"
+#include "utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestEventSerializer, SerializeNothing)
 {
@@ -248,3 +256,5 @@ TEST(TestEventSerializer, SerializeAllTags)
 
     ddwaf_result_free(&output);
 }
+
+} // namespace

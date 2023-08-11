@@ -4,9 +4,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "context.hpp"
+#include "exception.hpp"
+#include "exclusion/input_filter.hpp"
+#include "exclusion/rule_filter.hpp"
+#include "expression.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
+#include "test.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 using namespace ddwaf::exclusion;
 
 namespace ddwaf::test {
@@ -19,6 +27,8 @@ public:
 };
 
 } // namespace ddwaf::test
+
+namespace {
 
 TEST(TestContext, MatchTimeout)
 {
@@ -1855,3 +1865,5 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         EXPECT_EQ(events.size(), 0);
     }
 }
+
+} // namespace

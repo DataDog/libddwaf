@@ -5,11 +5,19 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <map>
 #include <utility>
+#include <vector>
 
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/schema.h"
-#include "test.h"
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/schema.h>
+
+#include <yaml-cpp/yaml.h>
+
+#include "context_allocator.hpp"
+#include "ddwaf.h"
+#include "event.hpp"
+#include "test.hpp"
 
 namespace ddwaf::test {
 struct event {

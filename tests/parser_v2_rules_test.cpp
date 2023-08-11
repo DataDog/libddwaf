@@ -4,7 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "test_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestParserV2Rules, ParseRule)
 {
@@ -362,3 +368,4 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
         EXPECT_STR(rule.tags["category"], "category1");
     }
 }
+} // namespace

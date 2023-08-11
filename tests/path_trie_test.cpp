@@ -4,8 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
-#include <gtest/gtest.h>
+#include "test.hpp"
+
+#include "exclusion/object_filter.hpp"
+
+namespace {
 
 using state = ddwaf::exclusion::path_trie::traverser::state;
 
@@ -194,3 +197,4 @@ TEST(TestPathTrie, SetIsFullDomain)
     auto path = it.descend("path");
     EXPECT_EQ(path.get_state(), state::found);
 }
+} // namespace

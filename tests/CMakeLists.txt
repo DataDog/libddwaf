@@ -1,9 +1,7 @@
 include(GoogleTest)
 
 file(GLOB_RECURSE LIBDDWAF_TEST_SOURCE *.cpp)
-add_executable(testPowerWAF ${LIBDDWAF_SOURCE} ${LIBDDWAF_TEST_SOURCE})
-
-option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
+add_executable(testPowerWAF ${LIBDDWAF_TEST_SOURCE})
 
 set_target_properties(testPowerWAF PROPERTIES
     CXX_STANDARD 20
@@ -12,19 +10,14 @@ set_target_properties(testPowerWAF PROPERTIES
 
 target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/include)
 target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/src)
-target_include_directories(testPowerWAF PRIVATE ${libddwaf_SOURCE_DIR}/src/matcher)
 if(NOT STDLIB_MAP_RECURSIVE)
     target_compile_definitions(testPowerWAF PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
 endif()
 
-set(COVERAGE_LINK_FLAGS "")
-if(NOT MSVC)
-    if(LIBDDWAF_TEST_COVERAGE)
-        set_target_properties(testPowerWAF PROPERTIES COMPILE_FLAGS "-ggdb --coverage")
-        set(COVERAGE_LINK_FLAGS "-lgcov --coverage")
-    else()
-        set_target_properties(testPowerWAF PROPERTIES COMPILE_FLAGS "-ggdb")
-    endif()
+set(LIBDDWAF_TEST_LIBRARIES lib_gtest libddwaf_objects lib_yamlcpp lib_rapidjson)
+if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
+    target_compile_options(testPowerWAF PRIVATE -ggdb --coverage)
+    list(APPEND LIBDDWAF_TEST_LIBRARIES gcov)
 else()
   set_target_properties(testPowerWAF PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ".")
   set_target_properties(testPowerWAF PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ".")
@@ -33,9 +26,8 @@ else()
 endif()
 
 target_link_libraries(testPowerWAF
-    PRIVATE lib_gtest ${COVERAGE_LINK_FLAGS}
-    ${LIBDDWAF_PRIVATE_LIBRARIES} ${LIBDDWAF_INTERFACE_LIBRARIES}
-    ${LIBDDWAF_EXE_LINKER_FLAGS} lib_yamlcpp lib_rapidjson)
+    PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES} ${LIBDDWAF_INTERFACE_LIBRARIES}
+           ${LIBDDWAF_EXE_LINKER_FLAGS} ${LIBDDWAF_TEST_LIBRARIES})
 
 add_custom_target(test
     COMMAND ${CMAKE_BINARY_DIR}/tests/testPowerWAF

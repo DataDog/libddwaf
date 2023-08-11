@@ -6,8 +6,11 @@
 
 #include "test_utils.hpp"
 #include "ddwaf.h"
+#include "log.hpp"
 #include <fstream>
 #include <memory>
+
+using namespace std::literals;
 
 namespace ddwaf::test {
 
