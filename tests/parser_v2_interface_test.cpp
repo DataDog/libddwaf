@@ -4,10 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ddwaf.h"
-#include "test.h"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "test_utils.hpp"
 
-static void run_test(ddwaf_handle handle)
+using namespace ddwaf;
+
+namespace {
+
+void run_test(ddwaf_handle handle)
 {
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
@@ -278,7 +283,7 @@ TEST(TestParserV2Interface, TestMultipleDiffInvalidRules)
     }
 
     {
-        auto it = errors.find("unknown processor: squash");
+        auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -330,7 +335,7 @@ TEST(TestParserV2Interface, TestMultipleMixInvalidRules)
     }
 
     {
-        auto it = errors.find("unknown processor: squash");
+        auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -423,3 +428,5 @@ TEST(TestParserV2Interface, TestInvalidRuleset)
 
     ddwaf_object_free(&diagnostics);
 }
+
+} // namespace

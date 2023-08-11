@@ -144,7 +144,7 @@ memory::vector<event> context::match(
             it = new_it;
         }
         collection.match(events, store_, it->second, rules_to_exclude, objects_to_exclude,
-            ruleset_->dynamic_processors, deadline);
+            ruleset_->dynamic_matchers, deadline);
     };
 
     // Evaluate user priority collections first

@@ -27,8 +27,8 @@ jobs:
 
       - name: CMake
         env:
-          CC: gcc-9
-          CXX: g++-9
+          CC: gcc-12
+          CXX: g++-12
         run: |
           cmake .. -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
@@ -42,10 +42,7 @@ jobs:
         working-directory: Debug
 
       - name: Test
-        run: |
-          ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" \
-            LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5 \
-            make test
+        run: ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" make test
         working-directory: Debug
 
   valgrind:
@@ -63,8 +60,8 @@ jobs:
 
       - name: CMake
         env:
-          CC: gcc-9
-          CXX: g++-9
+          CC: gcc-12
+          CXX: g++-12
         run: |
           cmake .. -DCMAKE_BUILD_TYPE=Debug
         working-directory: Debug
@@ -85,15 +82,15 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
-        run: sudo apt update ; sudo apt install -y gcovr
+        run: sudo apt update ; sudo apt install -y gcovr gcc-12
 
       - name: Create directories
         run: mkdir Debug
 
       - name: CMake
         env:
-          CC: gcc-9
-          CXX: g++-9
+          CC: gcc-12
+          CXX: g++-12
         run: |
           cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
         working-directory: Debug
@@ -107,7 +104,10 @@ jobs:
         working-directory: Debug
 
       - name: Generate coverage
-        run: gcovr -f '.*src.*' -x -d -o coverage.xml
+        run: |
+          gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -x  -o coverage.xml
+          mkdir -p coverage
+          gcovr --gcov-executable gcov-12 --html-details coverage/coverage.html --exclude-throw-branches -f ".*src.*" -d
         working-directory: Debug
 
       - name: Submit coverage
@@ -117,6 +117,10 @@ jobs:
           flags: waf_test
           verbose: true
           files: coverage.xml
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: ${{ github.workspace }}/Debug/coverage/
 
   validate:
     runs-on: ubuntu-latest
@@ -130,8 +134,8 @@ jobs:
 
       - name: CMake
         env:
-          CC: gcc-9
-          CXX: g++-9
+          CC: gcc-12
+          CXX: g++-12
         run: |
           cmake .. -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \

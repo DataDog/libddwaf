@@ -4,15 +4,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test.hpp"
+
+#include "exclusion/input_filter.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
 
 using namespace ddwaf;
 using namespace ddwaf::exclusion;
+using namespace std::literals;
 
 TEST(TestInputFilter, InputExclusionNoConditions)
 {
-    auto query = get_target_index("query");
-
     object_store store;
 
     ddwaf_object root;
@@ -22,9 +25,11 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, "query", {});
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", {}, {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("query"), "query", {});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter(
+        "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -38,8 +43,6 @@ TEST(TestInputFilter, InputExclusionNoConditions)
 
 TEST(TestInputFilter, ObjectExclusionNoConditions)
 {
-    auto query = get_target_index("query");
-
     object_store store;
 
     ddwaf_object root;
@@ -54,9 +57,11 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, "query", {"params"});
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", {}, {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("query"), "query", {"params"});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter(
+        "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -70,13 +75,9 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
 
 TEST(TestInputFilter, InputExclusionWithCondition)
 {
-    auto client_ip = get_target_index("http.client_ip");
-
-    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -87,9 +88,10 @@ TEST(TestInputFilter, InputExclusionWithCondition)
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip, "client_ip", {});
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -103,14 +105,9 @@ TEST(TestInputFilter, InputExclusionWithCondition)
 
 TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 {
-    auto client_ip = get_target_index("usr.id");
-
-    std::vector<condition::target_type> targets{
-        {client_ip, "usr.id", {}, {transformer_id::lowercase}}};
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+    expression_builder builder(1);
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id", {}, {transformer_id::lowercase});
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -121,9 +118,10 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip, "client_ip", {});
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("usr.id"), "usr.id", {});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -137,13 +135,9 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 
 TEST(TestInputFilter, InputExclusionFailedCondition)
 {
-    auto client_ip = get_target_index("http.client_ip");
-
-    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -154,9 +148,10 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip, "client_ip", {});
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -167,14 +162,9 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
 
 TEST(TestInputFilter, ObjectExclusionWithCondition)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto query = get_target_index("query");
-
-    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
     ddwaf_object root;
     ddwaf_object child;
@@ -190,10 +180,11 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, "query", {"params"});
+    obj_filter->insert(get_target_index("query"), "query", {"params"});
 
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -207,14 +198,9 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
 
 TEST(TestInputFilter, ObjectExclusionFailedCondition)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto query = get_target_index("query");
-
-    std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
     ddwaf_object root;
     ddwaf_object child;
@@ -230,10 +216,11 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, "query", {"params"});
+    obj_filter->insert(get_target_index("query"), "query", {"params"});
 
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
@@ -244,29 +231,19 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
 
 TEST(TestInputFilter, InputValidateCachedMatch)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto usr_id = get_target_index("usr.id");
+    expression_builder builder(2);
 
-    std::vector<std::shared_ptr<condition>> conditions;
-    {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(usr_id, "usr.id");
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("usr.id"), "usr.id");
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
@@ -305,29 +282,19 @@ TEST(TestInputFilter, InputValidateCachedMatch)
 
 TEST(TestInputFilter, InputMatchWithoutCache)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto usr_id = get_target_index("usr.id");
+    expression_builder builder(2);
 
-    std::vector<std::shared_ptr<condition>> conditions;
-    {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip, "client_ip");
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -362,29 +329,19 @@ TEST(TestInputFilter, InputMatchWithoutCache)
 
 TEST(TestInputFilter, InputNoMatchWithoutCache)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto usr_id = get_target_index("usr.id");
+    expression_builder builder(2);
 
-    std::vector<std::shared_ptr<condition>> conditions;
-    {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip, "client_ip");
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -412,7 +369,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
         store.insert(root);
 
-        const auto *client_ip_ptr = store.get_target(client_ip);
+        const auto *client_ip_ptr = store.get_target(get_target_index("http.client_ip"));
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -426,29 +383,19 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
 TEST(TestInputFilter, InputCachedMatchSecondRun)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto usr_id = get_target_index("usr.id");
+    expression_builder builder(2);
 
-    std::vector<std::shared_ptr<condition>> conditions;
-    {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(client_ip, "client_ip");
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -488,30 +435,19 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
 
 TEST(TestInputFilter, ObjectValidateCachedMatch)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto usr_id = get_target_index("usr.id");
-    auto query = get_target_index("query");
+    expression_builder builder(2);
 
-    std::vector<std::shared_ptr<condition>> conditions;
-    {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, "query", {"params"});
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("query"), "query", {"params"});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
@@ -559,30 +495,19 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
 
 TEST(TestInputFilter, ObjectMatchWithoutCache)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto usr_id = get_target_index("usr.id");
-    auto query = get_target_index("query");
+    expression_builder builder(2);
 
-    std::vector<std::shared_ptr<condition>> conditions;
-    {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, "query", {"params"});
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("query"), "query", {"params"});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -627,30 +552,19 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
 TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto usr_id = get_target_index("usr.id");
-    auto query = get_target_index("query");
+    expression_builder builder(2);
 
-    std::vector<std::shared_ptr<condition>> conditions;
-    {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, "query", {"params"});
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("query"), "query", {"params"});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -694,30 +608,19 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 
 TEST(TestInputFilter, ObjectCachedMatchSecondRun)
 {
-    auto client_ip = get_target_index("http.client_ip");
-    auto usr_id = get_target_index("usr.id");
-    auto query = get_target_index("query");
+    expression_builder builder(2);
 
-    std::vector<std::shared_ptr<condition>> conditions;
-    {
-        std::vector<condition::target_type> targets{{client_ip, "http.client_ip", {}, {}}};
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets{{usr_id, "usr.id", {}, {}}};
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(query, "query", {"params"});
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    input_filter filter("filter", std::move(conditions), {rule.get()}, std::move(obj_filter));
+    obj_filter->insert(get_target_index("query"), "query", {"params"});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on

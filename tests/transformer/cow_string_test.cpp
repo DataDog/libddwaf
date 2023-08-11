@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include <stdexcept>
 #include <transformer/common/cow_string.hpp>
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestCoWString, ConstRead)
 {
@@ -129,3 +133,5 @@ TEST(TestCoWString, MoveAfterTruncate)
     EXPECT_FALSE(str.modified());
     EXPECT_EQ(str.data(), nullptr);
 }
+
+} // namespace

@@ -6,12 +6,18 @@
 
 #pragma once
 
+#include <array>
+#include <charconv>
 #include <cstdint>
 #include <ddwaf.h>
 #include <functional>
+#include <iomanip>
 #include <iterator>
 #include <optional>
+#include <sstream>
 #include <string>
+#include <system_error>
+#include <type_traits>
 #include <unordered_map>
 
 // Convert numbers to strings
@@ -22,12 +28,18 @@ template <typename T> using optional_ref = std::optional<std::reference_wrapper<
 
 // Internals
 // clang-format off
-#define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING)
+#define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING | DDWAF_OBJ_BOOL | DDWAF_OBJ_FLOAT)
 #define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
 #define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, 0}
 // clang-format on
 
 namespace ddwaf {
+
+struct object_limits {
+    uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
+    uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
+    uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
+};
 
 using target_index = std::size_t;
 
@@ -36,11 +48,10 @@ inline target_index get_target_index(const std::string &address)
     return std::hash<std::string>{}(address);
 }
 
-inline size_t find_string_cutoff(
-    const char *str, size_t length, uint32_t max_string_length = DDWAF_MAX_STRING_LENGTH)
+inline size_t find_string_cutoff(const char *str, size_t length, object_limits limits = {})
 {
     // If the string is shorter than our cap, then fine
-    if (length <= max_string_length) {
+    if (length <= limits.max_string_length) {
         return length;
     }
 
@@ -57,7 +68,7 @@ inline size_t find_string_cutoff(
     //  - 10: Middle of multi byte sequence, we need to step back
     //  We therefore loop as long as we see the '10' sequence
 
-    size_t pos = max_string_length;
+    size_t pos = limits.max_string_length;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     while (pos != 0 && (str[pos] & 0xC0) == 0x80) { pos -= 1; }
 
@@ -79,6 +90,11 @@ inline bool is_map(const ddwaf_object *obj)
 inline bool is_scalar(const ddwaf_object *obj)
 {
     return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
+}
+
+inline bool is_invalid_or_null(const ddwaf_object *obj)
+{
+    return obj != nullptr && (obj->type == DDWAF_OBJ_INVALID || obj->type == DDWAF_OBJ_NULL);
 }
 
 } // namespace object
@@ -115,5 +131,93 @@ public:
 protected:
     Fn fn_;
 };
+
+template <typename T>
+concept has_to_chars = requires(T v) { std::to_chars(nullptr, nullptr, std::declval<T>()); };
+
+template <typename T>
+concept has_from_chars = requires(T v) { std::from_chars(nullptr, nullptr, std::declval<T>()); };
+
+template <typename StringType, typename T>
+StringType to_string(T value)
+    requires std::is_integral_v<T> && (!std::is_same_v<T, bool>) &&
+             std::is_same_v<StringType, std::basic_string<char, typename StringType::traits_type,
+                                            typename StringType::allocator_type>>
+{
+    // Maximum number of characters required to represent a 64 bit integer as a string
+    // 20 bytes for UINT64_MAX or INT64_MIN
+    static constexpr size_t max_chars = 20;
+
+    std::array<char, max_chars> str{};
+    auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
+    [[unlikely]] if (ec != std::errc()) {
+        return {};
+    }
+    return {str.data(), ptr};
+}
+
+template <typename T>
+    requires std::is_same_v<T, float> || std::is_same_v<T, double>
+// XXX: add long double, though it's tricker, we don't know if it's quad-precision
+// or x87 80-bit "extended precision" or even the same as double
+inline constexpr std::size_t max_exp_digits = sizeof(T) == 4 ? 2 : 4;
+
+template <typename StringType, typename T>
+StringType to_string(T value)
+    requires(std::is_same_v<T, float> || std::is_same_v<T, double>) &&
+            std::is_same_v<StringType, std::basic_string<char, typename StringType::traits_type,
+                                           typename StringType::allocator_type>>
+{
+    if constexpr (has_to_chars<T>) {
+        static constexpr std::size_t max_chars = std::numeric_limits<T>::digits10 + 1 +
+                                                 1 /* sign */ + 1 /* dot */ + 1 /* e */ +
+                                                 1 /* exp sign */
+                                                 + (sizeof(T) == 4 ? 2 : 4);
+
+        std::array<char, max_chars> str{};
+        auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), value);
+        [[unlikely]] if (ec != std::errc()) {
+            // This is likely unreachable if the max_chars calculation is accurate
+            return {};
+        }
+        return {str.data(), ptr};
+    } else {
+        using char_type = typename StringType::value_type;
+        using traits_type = typename StringType::traits_type;
+        using allocator_type = typename StringType::allocator_type;
+        std::basic_ostringstream<char_type, traits_type, allocator_type> ss;
+        ss << std::setprecision(std::numeric_limits<T>::digits10) << value;
+        return std::move(ss).str();
+    }
+}
+
+template <typename StringType, typename T>
+StringType to_string(T value)
+    requires std::is_same_v<T, bool> &&
+             std::is_same_v<StringType, std::basic_string<char, typename StringType::traits_type,
+                                            typename StringType::allocator_type>>
+{
+    return value ? "true" : "false";
+}
+
+template <typename T> std::pair<bool, T> from_string(std::string_view str)
+{
+    T result;
+    if constexpr (has_from_chars<T>) {
+        const auto *end = str.data() + str.size();
+        auto [endConv, err] = std::from_chars(str.data(), end, result);
+        if (err == std::errc{} && endConv == end) {
+            return {true, result};
+        }
+    } else {
+        std::istringstream iss(std::string{str});
+        iss >> result;
+        if (!iss.fail() && iss.eof()) {
+            return {true, result};
+        }
+    }
+
+    return {false, {}};
+}
 
 } // namespace ddwaf

@@ -4,7 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "test_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestParserV2Rules, ParseRule)
 {
@@ -43,7 +49,7 @@ TEST(TestParserV2Rules, ParseRule)
 
     parser::rule_spec &rule = rules["1"];
     EXPECT_TRUE(rule.enabled);
-    EXPECT_EQ(rule.conditions.size(), 3);
+    EXPECT_EQ(rule.expr->size(), 3);
     EXPECT_EQ(rule.actions.size(), 0);
     EXPECT_STR(rule.name, "rule1");
     EXPECT_EQ(rule.tags.size(), 2);
@@ -215,7 +221,7 @@ TEST(TestParserV2Rules, ParseMultipleRules)
     {
         parser::rule_spec &rule = rules["1"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 3);
+        EXPECT_EQ(rule.expr->size(), 3);
         EXPECT_EQ(rule.actions.size(), 0);
         EXPECT_STR(rule.name, "rule1");
         EXPECT_EQ(rule.tags.size(), 2);
@@ -226,7 +232,7 @@ TEST(TestParserV2Rules, ParseMultipleRules)
     {
         parser::rule_spec &rule = rules["secondrule"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 1);
+        EXPECT_EQ(rule.expr->size(), 1);
         EXPECT_EQ(rule.actions.size(), 1);
         EXPECT_STR(rule.actions[0], "block");
         EXPECT_STR(rule.name, "rule2");
@@ -285,7 +291,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneInvalid)
     {
         parser::rule_spec &rule = rules["1"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 3);
+        EXPECT_EQ(rule.expr->size(), 3);
         EXPECT_EQ(rule.actions.size(), 0);
         EXPECT_STR(rule.name, "rule1");
         EXPECT_EQ(rule.tags.size(), 2);
@@ -296,7 +302,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneInvalid)
     {
         parser::rule_spec &rule = rules["secondrule"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 1);
+        EXPECT_EQ(rule.expr->size(), 1);
         EXPECT_EQ(rule.actions.size(), 1);
         EXPECT_STR(rule.actions[0], "block");
         EXPECT_STR(rule.name, "rule2");
@@ -354,7 +360,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
     {
         parser::rule_spec &rule = rules["1"];
         EXPECT_TRUE(rule.enabled);
-        EXPECT_EQ(rule.conditions.size(), 3);
+        EXPECT_EQ(rule.expr->size(), 3);
         EXPECT_EQ(rule.actions.size(), 0);
         EXPECT_STR(rule.name, "rule1");
         EXPECT_EQ(rule.tags.size(), 2);
@@ -362,3 +368,4 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
         EXPECT_STR(rule.tags["category"], "category1");
     }
 }
+} // namespace

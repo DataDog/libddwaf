@@ -5,11 +5,19 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <map>
 #include <utility>
+#include <vector>
 
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/schema.h"
-#include "test.h"
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/schema.h>
+
+#include <yaml-cpp/yaml.h>
+
+#include "context_allocator.hpp"
+#include "ddwaf.h"
+#include "event.hpp"
+#include "test.hpp"
 
 namespace ddwaf::test {
 struct event {
@@ -33,6 +41,7 @@ bool operator==(const event::match &lhs, const event::match &rhs);
 bool operator==(const event &lhs, const event &rhs);
 
 std::ostream &operator<<(std::ostream &os, const event &e);
+std::ostream &operator<<(std::ostream &os, const event::match &m);
 
 std::string object_to_json(const ddwaf_object &obj);
 
@@ -88,6 +97,7 @@ protected:
 // Required by gtest to pretty print relevant types
 void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
 void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
+void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os);
 
 class WafResultActionMatcher {
 public:
@@ -125,6 +135,29 @@ protected:
     std::vector<ddwaf::test::event> expected_events_;
 };
 
+class MatchMatcher {
+public:
+    explicit MatchMatcher(std::vector<ddwaf::test::event::match> expected_matches)
+        : expected_matches_(std::move(expected_matches))
+    {}
+
+    bool MatchAndExplain(
+        std::list<ddwaf::test::event::match>, ::testing::MatchResultListener *) const;
+
+    void DescribeTo(::std::ostream *os) const
+    {
+        for (const auto &expected : expected_matches_) { *os << expected; }
+    }
+
+    void DescribeNegationTo(::std::ostream *os) const
+    {
+        for (const auto &expected : expected_matches_) { *os << expected; }
+    }
+
+protected:
+    std::vector<ddwaf::test::event::match> expected_matches_;
+};
+
 inline ::testing::PolymorphicMatcher<WafResultActionMatcher> WithActions(
     std::vector<std::string_view> &&values)
 {
@@ -137,6 +170,15 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected)));
 }
 
+inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
+    std::vector<ddwaf::test::event::match> &&expected)
+{
+    return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected)));
+}
+
+std::list<ddwaf::test::event::match> from_matches(
+    const ddwaf::memory::vector<ddwaf::event::match> &matches);
+
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
   {                                                                                                \
@@ -146,6 +188,8 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     auto events = doc.as<std::list<ddwaf::test::event>>();                                         \
     EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                                \
   }
+
+#define EXPECT_MATCHES(matches, ...) EXPECT_THAT(from_matches(matches), WithMatches({__VA_ARGS__}));
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 ddwaf_object readFile(std::string_view filename, std::string_view base = "./");

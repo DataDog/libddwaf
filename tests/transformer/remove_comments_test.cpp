@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/remove_comments.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestRemoveComments, NameAndID)
 {
@@ -84,3 +88,5 @@ TEST(TestRemoveComments, InvalidTransform)
     EXPECT_NO_TRANSFORM(remove_comments, "remove_comments");
     EXPECT_NO_TRANSFORM(remove_comments, "remove_comments but it doesn't matter");
 }
+
+} // namespace

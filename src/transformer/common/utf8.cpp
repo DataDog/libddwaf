@@ -170,7 +170,7 @@ uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64
     }
 
     // Alright, we need to read multiple byte. The first one as a variable length so we need to deal
-    // with it :( To illustrate, here is the operation with trying to perform based on
+    // with it :( To illustrate, here is the matcher with trying to perform based on
     // nextGlyphLength
     //
     //  NGL = 2, buf = 110xxxxx -> buf & 00011111

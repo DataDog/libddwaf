@@ -4,7 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test_utils.hpp"
+#include "version.hpp"
+
+namespace {
 
 TEST(FunctionalTests, ddwaf_run)
 {
@@ -35,7 +38,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));
@@ -62,7 +65,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "randomString"));
@@ -89,7 +92,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));
@@ -116,7 +119,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));
@@ -143,7 +146,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "randomString"));
@@ -183,7 +186,7 @@ TEST(FunctionalTests, HandleGood)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));
@@ -281,7 +284,7 @@ TEST(FunctionalTests, HandleBad)
 /*ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;*/
 /*ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;*/
 
-/*ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));*/
+/*ddwaf_object_map_add(&param_key, "derp", ddwaf_object_string_from_unsigned(&tmp, 4242));*/
 /*ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));*/
 
 /*ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));*/
@@ -371,3 +374,5 @@ TEST(FunctionalTests, ddwaf_runNull)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

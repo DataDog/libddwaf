@@ -4,7 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "test_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestParserV2InputFilters, ParseEmpty)
 {
@@ -171,7 +177,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalNoTargets)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.conditions.size(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 0);
     EXPECT_TRUE(filter.filter);
 }
@@ -216,7 +222,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetID)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.conditions.size(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 
@@ -266,7 +272,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetTags)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.conditions.size(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 
@@ -318,7 +324,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetPriority)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.conditions.size(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 
@@ -368,7 +374,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalMultipleTargets)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.conditions.size(), 0);
+    EXPECT_EQ(filter.expr->size(), 0);
     EXPECT_EQ(filter.targets.size(), 2);
     EXPECT_TRUE(filter.filter);
 
@@ -431,7 +437,7 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
         EXPECT_STR(filter_it->first, "1");
 
         const auto &filter = filter_it->second;
-        EXPECT_EQ(filter.conditions.size(), 0);
+        EXPECT_EQ(filter.expr->size(), 0);
         EXPECT_EQ(filter.targets.size(), 1);
         EXPECT_TRUE(filter.filter);
 
@@ -446,7 +452,7 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
         EXPECT_STR(filter_it->first, "2");
 
         const auto &filter = filter_it->second;
-        EXPECT_EQ(filter.conditions.size(), 0);
+        EXPECT_EQ(filter.expr->size(), 0);
         EXPECT_EQ(filter.targets.size(), 1);
         EXPECT_TRUE(filter.filter);
 
@@ -499,7 +505,7 @@ TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.conditions.size(), 1);
+    EXPECT_EQ(filter.expr->size(), 1);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 
@@ -546,7 +552,7 @@ TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
     EXPECT_STR(filter_it->first, "1");
 
     const auto &filter = filter_it->second;
-    EXPECT_EQ(filter.conditions.size(), 3);
+    EXPECT_EQ(filter.expr->size(), 3);
     EXPECT_EQ(filter.targets.size(), 1);
     EXPECT_TRUE(filter.filter);
 
@@ -555,3 +561,5 @@ TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
     EXPECT_STR(target.rule_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
 }
+
+} // namespace

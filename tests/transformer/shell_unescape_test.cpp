@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/shell_unescape.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestShellUnescape, NameAndID)
 {
@@ -41,3 +45,5 @@ TEST(TestShellUnescape, InvalidTransform)
 {
     EXPECT_NO_TRANSFORM(shell_unescape, "normal sentence(really)");
 }
+
+} // namespace

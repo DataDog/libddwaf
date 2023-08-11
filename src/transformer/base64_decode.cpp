@@ -21,7 +21,7 @@ bool base64_decode::needs_transform(std::string_view str)
                 while (pos + equals < str.length() && str[pos + equals] == '=') { equals += 1; }
 
                 // The = must go to the end, and there musn't be too many
-                size_t padding = 4 - (pos % 4);
+                const size_t padding = 4 - (pos % 4);
                 if (pos + equals == str.length() && equals <= 3 && equals <= padding) {
                     continue;
                 }

@@ -4,7 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test_utils.hpp"
+
+#include "event.hpp"
+#include "rule.hpp"
+#include "utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestEventSerializer, SerializeNothing)
 {
@@ -31,8 +39,8 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
 
 TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 {
-    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}}, {},
-        {"block", "monitor"}};
+    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+        std::make_shared<expression>(), {"block", "monitor"}};
 
     ddwaf::event event;
     event.rule = &rule;
@@ -63,8 +71,8 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 {
-    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}}, {},
-        {"block", "monitor"}};
+    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+        std::make_shared<expression>(), {"block", "monitor"}};
 
     ddwaf::event event;
     event.rule = &rule;
@@ -116,10 +124,10 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    ddwaf::rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}}, {},
-        {"block", "monitor"}};
-    ddwaf::rule rule2{
-        "xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}}, {}, {"unblock"}};
+    ddwaf::rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+        std::make_shared<expression>(), {"block", "monitor"}};
+    ddwaf::rule rule2{"xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}},
+        std::make_shared<expression>(), {"unblock"}};
     memory::vector<ddwaf::event> events;
     {
         ddwaf::event event;
@@ -182,7 +190,8 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
 TEST(TestEventSerializer, SerializeEventNoActions)
 {
-    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}}, {}, {}};
+    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+        std::make_shared<expression>()};
 
     ddwaf::event event;
     event.rule = &rule;
@@ -218,7 +227,7 @@ TEST(TestEventSerializer, SerializeAllTags)
     ddwaf::rule rule{"xasd1022", "random rule",
         {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
             {"confidence", "none"}},
-        {}, {"unblock"}};
+        std::make_shared<expression>(), {"unblock"}};
 
     ddwaf::event event;
     event.rule = &rule;
@@ -247,3 +256,5 @@ TEST(TestEventSerializer, SerializeAllTags)
 
     ddwaf_result_free(&output);
 }
+
+} // namespace

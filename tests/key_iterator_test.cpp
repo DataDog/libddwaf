@@ -4,7 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "context_allocator.hpp"
+#include "iterator.hpp"
+#include "test_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestKeyIterator, TestInvalidIterator)
 {
@@ -41,7 +47,7 @@ TEST(TestKeyIterator, TestStringScalar)
 TEST(TestKeyIterator, TestUnsignedScalar)
 {
     ddwaf_object object;
-    ddwaf_object_unsigned_force(&object, 22);
+    ddwaf_object_unsigned(&object, 22);
 
     std::unordered_set<const ddwaf_object *> exclude;
     ddwaf::object::key_iterator it(&object, {}, exclude);
@@ -56,7 +62,7 @@ TEST(TestKeyIterator, TestUnsignedScalar)
 TEST(TestKeyIterator, TestSignedScalar)
 {
     ddwaf_object object;
-    ddwaf_object_signed_force(&object, 22);
+    ddwaf_object_signed(&object, 22);
 
     std::unordered_set<const ddwaf_object *> exclude;
     ddwaf::object::key_iterator it(&object, {}, exclude);
@@ -247,6 +253,81 @@ TEST(TestKeyIterator, TestMapMultipleItems)
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
         EXPECT_STREQ(path[0].c_str(), key.c_str());
+        ++it;
+    }
+
+    EXPECT_FALSE(++it);
+
+    ddwaf_object_free(&object);
+}
+
+TEST(TestKeyIterator, TestMapMultipleNullAndInvalid)
+{
+    ddwaf_object object, tmp;
+    ddwaf_object_map(&object);
+
+    for (unsigned i = 0; i < 25; i++) {
+        {
+            auto index = std::to_string(i * 3);
+            std::string key = "key" + index;
+            std::string value = "value" + index;
+            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
+        }
+
+        {
+            auto index = std::to_string(i * 3 + 1);
+            std::string key = "key" + index;
+            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_null(&tmp));
+        }
+
+        {
+            auto index = std::to_string(i * 3 + 2);
+            std::string key = "key" + index;
+            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_invalid(&tmp));
+        }
+    }
+
+    std::unordered_set<const ddwaf_object *> exclude;
+    ddwaf::object::key_iterator it(&object, {}, exclude);
+
+    for (unsigned i = 0; i < 25; i++) {
+        {
+            auto index = std::to_string(i * 3);
+            std::string key = "key" + index;
+
+            EXPECT_TRUE((bool)it);
+            EXPECT_STREQ((*it)->stringValue, key.c_str());
+
+            auto path = it.get_current_path();
+            EXPECT_EQ(path.size(), 1);
+            EXPECT_STREQ(path[0].c_str(), key.c_str());
+        }
+
+        ++it;
+
+        {
+            auto index = std::to_string(i * 3 + 1);
+            std::string key = "key" + index;
+
+            EXPECT_TRUE((bool)it);
+
+            auto path = it.get_current_path();
+            EXPECT_EQ(path.size(), 1);
+            EXPECT_STREQ(path[0].c_str(), key.c_str());
+        }
+
+        ++it;
+
+        {
+            auto index = std::to_string(i * 3 + 2);
+            std::string key = "key" + index;
+
+            EXPECT_TRUE((bool)it);
+
+            auto path = it.get_current_path();
+            EXPECT_EQ(path.size(), 1);
+            EXPECT_STREQ(path[0].c_str(), key.c_str());
+        }
         ++it;
     }
 
@@ -961,3 +1042,5 @@ TEST(TestKeyIterator, TestExcludeRootOfKeyPath)
 
     ddwaf_object_free(&root);
 }
+
+} // namespace

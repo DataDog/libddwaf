@@ -9,7 +9,6 @@
 #include <memory>
 #include <optional>
 
-#include <config.hpp>
 #include <context_allocator.hpp>
 #include <ddwaf.h>
 #include <event.hpp>

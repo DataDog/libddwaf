@@ -7,7 +7,6 @@
 
 #include "ddwaf.h"
 #include "parser/parser.hpp"
-#include <config.hpp>
 #include <context.hpp>
 #include <memory>
 #include <ruleset.hpp>
