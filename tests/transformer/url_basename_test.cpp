@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/url_basename.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestUrlBasename, NameAndID)
 {
@@ -36,3 +40,5 @@ TEST(TestUrlBasename, ValidTransform)
 }
 
 TEST(TestUrlBasename, InvalidTransform) { EXPECT_NO_TRANSFORM(url_basename, "index.php"); }
+
+} // namespace

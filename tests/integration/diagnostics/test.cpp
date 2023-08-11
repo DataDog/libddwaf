@@ -4,13 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../../test.h"
+#include "../../test_utils.hpp"
+
+#include "parameter.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
 
 using namespace ddwaf;
 
 namespace {
 constexpr std::string_view base_dir = "integration/diagnostics/";
-} // namespace
 
 TEST(TestDiagnosticsIntegration, Rules)
 {
@@ -173,3 +176,5 @@ TEST(TestDiagnosticsIntegration, CustomRules)
 
     ddwaf_destroy(handle);
 }
+
+} // namespace

@@ -4,10 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/js_decode.hpp"
 #include "transformer_utils.hpp"
 
+using namespace ddwaf;
+
+namespace {
 TEST(TestJsDecode, NameAndID)
 {
     EXPECT_STREQ(transformer::js_decode::name().data(), "js_decode");
@@ -34,3 +37,5 @@ TEST(TestJsDecode, ValidTransform)
 }
 
 TEST(TestJsDecode, InvalidTransform) { EXPECT_NO_TRANSFORM(js_decode, "no JS transformations"); }
+
+} // namespace

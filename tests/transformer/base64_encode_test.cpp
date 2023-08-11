@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/base64_encode.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestBase64encode, NameAndID)
 {
@@ -34,3 +38,5 @@ TEST(TestBase64Encode, InvalidTransform)
 {
     // This transformer has no invalid cases
 }
+
+} // namespace

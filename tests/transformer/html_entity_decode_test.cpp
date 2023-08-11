@@ -4,10 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/html_entity_decode.hpp"
 #include "transformer_utils.hpp"
 
+using namespace ddwaf;
+
+namespace {
 TEST(TestHtmlEntityDecode, NameAndID)
 {
     EXPECT_STREQ(transformer::html_entity_decode::name().data(), "html_entity_decode");
@@ -52,3 +55,5 @@ TEST(TestHtmlEntityDecode, InvalidTransform)
     EXPECT_NO_TRANSFORM(html_entity_decode, "no &#HTML transformations");
     EXPECT_NO_TRANSFORM(html_entity_decode, "no");
 }
+
+} // namespace

@@ -4,10 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "exclusion/rule_filter.hpp"
+#include "expression.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
+#include "test_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
+namespace {
 TEST(TestRuleFilter, Match)
 {
     expression_builder builder(1);
@@ -816,3 +822,4 @@ TEST(TestRuleFilter, FilterModePrecedence)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+} // namespace

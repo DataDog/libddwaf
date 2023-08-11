@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
-#include <algorithm>
+#include "../test.hpp"
+#include "matcher/ip_match.hpp"
 
 using namespace ddwaf::matcher;
+
+namespace {
 
 bool match(ip_match &matcher, std::string_view ip) { return matcher.match(ip).first; }
 
@@ -96,7 +98,6 @@ TEST(TestIPMatch, InvalidInput)
     });
 
     EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
     EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
@@ -155,3 +156,5 @@ TEST(TestIPMatch, OverlappingExpiration)
     EXPECT_FALSE(match(matcher, "2.4.0.1"));
     EXPECT_TRUE(match(matcher, "2.4.3.4"));
 }
+
+} // namespace

@@ -222,6 +222,63 @@ jobs:
             /tmp/packages/*.tar.gz
             /tmp/packages/*.sha256
 
+  linux-musl-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: aarch64
+            arch: aarch64
+            qemu_action_arch: arm64
+            platform: linux/arm64
+            package: libddwaf-aarch64-linux-musl
+          - name: x86_64
+            arch: x86_64
+            qemu_action_arch: amd64
+            platform: linux/amd64
+            package: libddwaf-x86_64-linux-musl
+          - name: i386
+            arch: i386
+            qemu_action_arch: i386
+            platform: linux/386
+            package: libddwaf-i386-linux-musl
+          - name: armv7
+            arch: armv7
+            qemu_action_arch: arm
+            platform: linux/arm/v7
+            package: libddwaf-armv7-linux-musl
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: docker/setup-buildx-action@v2
+        id: buildx
+        with:
+          install: true
+      - uses: docker/setup-qemu-action@v2
+        if: matrix.target.qemu_action_arch == 'arm64'
+        with:
+          platforms: ${{ matrix.target.qemu_action_arch }}
+      - run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build/Dockerfile -o packages .
+      - name: Smoketest musl (gcc)
+        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl/Dockerfile  .
+      - name: Smoketest musl (clang)
+        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_llvm/Dockerfile  .
+      - name: Smoketest gnu (gcc)
+        # musl 32-bit >= 1.2 is incompatible with glibc https://musl.libc.org/time64.html
+        if: matrix.target.qemu_action_arch == 'arm64' || matrix.target.qemu_action_arch == 'amd64'
+        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
+      - name: Generate Package sha256
+        working-directory: packages
+        run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target.package }}
+          path: |
+            packages/*.tar.gz
+            packages/*.sha256
+
   package-nuget:
     needs: [ windows-builds, macos-build, macos-cross-build, macos-universal-package, docker-builds]
     runs-on: ubuntu-latest
@@ -279,7 +336,7 @@ jobs:
           path: ${{ github.workspace }}/output-packages
 
   release:
-    needs: [ windows-builds, macos-build, macos-cross-build, docker-builds, package-nuget]
+    needs: [ windows-builds, macos-build, macos-cross-build, docker-builds, linux-musl-build, package-nuget]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:

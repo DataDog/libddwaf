@@ -4,10 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test.hpp"
+
+#include "exclusion/input_filter.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
 
 using namespace ddwaf;
 using namespace ddwaf::exclusion;
+using namespace std::literals;
 
 TEST(TestInputFilter, InputExclusionNoConditions)
 {
