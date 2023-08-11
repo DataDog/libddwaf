@@ -19,7 +19,3 @@ add_custom_target(format_fix
     COMMAND ${CMAKE_SOURCE_DIR}/cmake/check_headers.rb --fix
     COMMAND ${CLANG_FORMAT} -i ${FILE_LIST}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-
-#add_custom_target(format_fix_chg
-#    COMMAND bash -c "git status --porcelain=1 :/ | grep -E '\.(c|h|cpp|hpp)$' | awk '{ print \"${CMAKE_SOURCE_DIR}/\" $NF }' | xargs echo '${CLANG_FORMAT}' -i"
-#    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

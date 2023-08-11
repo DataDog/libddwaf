@@ -4,11 +4,13 @@ ARG LLVM_VERSION=16.0.6
 ARG ARCH
 
 COPY docker/libddwaf/sysroot/Toolchain.cmake.${ARCH} /Toolchain.cmake
+COPY docker/libddwaf/sysroot/CHECKSUMS /CHECKSUMS
 
 RUN echo "Building LLVM ${LLVM_VERSION} on ${ARCH}"
 
 RUN apk --no-cache add alpine-sdk coreutils sudo bash samurai python3 linux-headers compiler-rt clang wget cmake make binutils musl-dev git patchelf xz lit
 RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz && \
+    grep -F llvm-project-${LLVM_VERSION}.src.tar.xz /CHECKSUMS | sha512sum --check && \
     tar -xvf llvm-project-${LLVM_VERSION}.src.tar.xz
 
 RUN cd llvm-project-${LLVM_VERSION}.src && mkdir -p build && cd build && \
