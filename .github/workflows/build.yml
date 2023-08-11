@@ -267,7 +267,7 @@ jobs:
         run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_llvm/Dockerfile  .
       - name: Smoketest gnu (gcc)
         # musl 32-bit >= 1.2 is incompatible with glibc https://musl.libc.org/time64.html
-        if: matrix.target.qemu_action_arch == 'arm64' || matrix.target.qemu_action_arch == "amd64"
+        if: matrix.target.qemu_action_arch == 'arm64' || matrix.target.qemu_action_arch == 'amd64'
         run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
       - name: Generate Package sha256
         working-directory: packages
