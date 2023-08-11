@@ -18,8 +18,10 @@
 
 namespace ddwaf {
 namespace {
-#  ifdef __aarch64__
+#  if defined(__aarch64__)
 constexpr const char *VDSO_CLOCK_GETTIME = "__kernel_clock_gettime";
+#  elif defined(__ARM_ARCH_7__) || defined(__i386__)
+constexpr const char *VDSO_CLOCK_GETTIME = "__vdso_clock_gettime64";
 #  else
 constexpr const char *VDSO_CLOCK_GETTIME = "__vdso_clock_gettime";
 #  endif
