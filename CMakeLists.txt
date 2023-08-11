@@ -60,11 +60,8 @@ include(GNUInstallDirs)
 
 add_subdirectory(third_party)
 
-add_library(glibc_compat_o OBJECT ${libddwaf_SOURCE_DIR}/src/glibc_compat.c)
-add_library(glibc_compat_a STATIC ${libddwaf_SOURCE_DIR}/src/glibc_compat.c)
-
-set_target_properties(glibc_compat_o PROPERTIES POSITION_INDEPENDENT_CODE 1)
-set_target_properties(glibc_compat_a PROPERTIES POSITION_INDEPENDENT_CODE 1)
+add_library(glibc_compat STATIC ${libddwaf_SOURCE_DIR}/src/glibc_compat.c)
+set_target_properties(glibc_compat PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/ruleset_builder.cpp
@@ -143,7 +140,7 @@ install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
-set(LIBDDWAF_PRIVATE_LIBRARIES lib_re2 lib_ac lib_injection lib_radix lib_utf8proc)
+set(LIBDDWAF_PRIVATE_LIBRARIES lib_re2 lib_ac lib_injection lib_radix lib_utf8proc glibc_compat)
 
 if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(libddwaf_objects PRIVATE -ggdb --coverage)
@@ -233,7 +230,7 @@ if (LIBDDWAF_BUILD_STATIC)
               COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_injection>
               COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_utf8proc>
               COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_radix>
-              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:glibc_compat_a>
+              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:glibc_compat>
               COMMAND ${CMAKE_AR} -qcs ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} ar_comb/*.o*
 
               COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
@@ -286,8 +283,7 @@ if (LIBDDWAF_BUILD_SHARED)
             -Wl,-version-script=${libddwaf_SOURCE_DIR}/libddwaf.version
             -Wl,--build-id=0x${BUILD_ID}
             ${LIBDDWAF_PRIVATE_LIBRARIES}
-            ${LIBDDWAF_SHARED_LINKER_FLAGS}
-            glibc_compat_o)
+            ${LIBDDWAF_SHARED_LINKER_FLAGS})
     else()
         target_link_libraries(libddwaf_shared
             PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
