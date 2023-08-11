@@ -4,9 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "collection.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
+#include "test.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
+
+namespace {
 
 template <typename T> struct TestCollection : public testing::Test {};
 
@@ -453,3 +459,5 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         ASSERT_EQ(events.size(), 0);
     }
 }
+
+} // namespace

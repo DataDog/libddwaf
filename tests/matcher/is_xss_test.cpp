@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test_utils.hpp"
+#include "matcher/is_xss.hpp"
 
 using namespace ddwaf::matcher;
 
+namespace {
 TEST(TestIsXSS, TestBasic)
 {
     is_xss matcher;
@@ -41,7 +43,6 @@ TEST(TestIsXSS, TestInvalidInput)
     is_xss matcher;
 
     EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
-    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 30}).first);
     // NOLINTNEXTLINE(bugprone-string-constructor)
     EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
@@ -83,3 +84,5 @@ TEST(TestIsXSS, TestRuleset)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

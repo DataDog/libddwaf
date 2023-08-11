@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/url_querystring.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestUrlQuerystring, NameAndID)
 {
@@ -43,3 +47,5 @@ TEST(TestUrlQuerystring, InvalidTransform)
     //   - If the query string isn't available, the result should be an empty string
     //   - If the entire string is a querystring, the question mark has to be removed
 }
+
+} // namespace

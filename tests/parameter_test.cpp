@@ -4,7 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "parameter.hpp"
+#include "test.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestParameter, ToBool)
 {
@@ -394,3 +399,5 @@ TEST(TestParameter, ToStringViewSet)
         EXPECT_THROW(param.operator ddwaf::parameter::string_set(), ddwaf::bad_cast);
     }
 }
+
+} // namespace

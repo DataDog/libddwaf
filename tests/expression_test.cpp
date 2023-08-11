@@ -5,9 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "expression.hpp"
-#include "test.h"
+#include "matcher/regex_match.hpp"
+#include "test_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 TEST(TestExpression, SimpleMatch)
 {

@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/unicode_normalize.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestUnicodeNormalize, NameAndID)
 {
@@ -59,3 +63,5 @@ TEST(TestUnicodeNormalize, InvalidTransform)
     EXPECT_NO_TRANSFORM(unicode_normalize, "unicode_normalize");
     EXPECT_NO_TRANSFORM(unicode_normalize, "unicode_normalize but it doesn't matter");
 }
+
+} // namespace

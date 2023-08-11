@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ip_utils.hpp"
-#include "test.h"
+#include "ruleset.hpp"
+#include "test.hpp"
 
 using namespace ddwaf;
 
@@ -17,8 +17,6 @@ rule::ptr make_rule(std::string id, std::string name,
     return std::make_shared<ddwaf::rule>(std::move(id), std::move(name), std::move(tags),
         std::make_shared<expression>(), std::move(actions), true, source);
 }
-
-} // namespace
 
 TEST(TestRuleset, InsertSingleRegularBaseRules)
 {
@@ -384,3 +382,5 @@ TEST(TestRuleset, InsertSingleMixedMixedRules)
         EXPECT_EQ(ruleset.user_priority_collections.size(), 2);
     }
 }
+
+} // namespace

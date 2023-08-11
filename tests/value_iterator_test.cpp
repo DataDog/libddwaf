@@ -4,7 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "context_allocator.hpp"
+#include "iterator.hpp"
+#include "test_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestValueIterator, TestInvalidIterator)
 {
@@ -1055,3 +1061,4 @@ TEST(TestValueIterator, TestExcludeRootOfKeyPath)
 
     ddwaf_object_free(&root);
 }
+} // namespace

@@ -4,10 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ddwaf.h"
-#include "test.h"
+#include "test_utils.hpp"
 
 using namespace ddwaf;
+
+namespace {
 
 TEST(TestInterface, Empty)
 {
@@ -1839,3 +1840,5 @@ TEST(TestInterface, UpdateEverything)
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle1);
 }
+
+} // namespace

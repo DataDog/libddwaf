@@ -4,9 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "object_store.hpp"
+#include "test.hpp"
 
 using namespace ddwaf;
+
+namespace {
 
 TEST(TestObjectStore, InsertInvalidObject)
 {
@@ -216,3 +219,5 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_STREQ(object->stringValue, "bye");
     }
 }
+
+} // namespace

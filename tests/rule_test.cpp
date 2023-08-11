@@ -4,10 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "expression.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
+#include "rule.hpp"
+#include "test_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
+namespace {
 TEST(TestRule, Match)
 {
     expression_builder builder(1);
@@ -321,3 +327,4 @@ TEST(TestRule, ExcludeObject)
     auto event = rule.match(store, cache, {&root.array[0]}, {}, deadline);
     EXPECT_FALSE(event.has_value());
 }
+} // namespace

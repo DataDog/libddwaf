@@ -6,12 +6,13 @@
 
 #include "transformer/base64_encode.hpp"
 #include <array>
+#include <limits>
 
 namespace ddwaf::transformer {
 
 bool base64_encode::transform_impl(cow_string &str)
 {
-    if (str.length() >= UINT64_MAX / 4 * 3) {
+    if (str.length() >= std::numeric_limits<std::size_t>::max() / 4 * 3) {
         return false;
     }
 

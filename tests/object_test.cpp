@@ -4,7 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "ddwaf.h"
+#include "test.hpp"
+#include "utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestObject, TestCreateInvalid)
 {
@@ -380,3 +386,5 @@ TEST(TestUTF8, TestLongUTF8)
     memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 3], emoji, sizeof(emoji));
     EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
 }
+
+} // namespace
