@@ -15,8 +15,6 @@
 
 namespace ddwaf {
 
-using attribute = object_store::attribute;
-
 DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
     if (res.has_value()) {
@@ -24,7 +22,7 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
         output = DDWAF_RESULT_INITIALISER;
     }
 
-    if (!store_.insert(input, ruleset_->free_fn, attribute::immutable)) {
+    if (!store_.insert(input, ruleset_->free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }

@@ -32,7 +32,7 @@ void preprocessor::eval(object_store &store, optional_ref<ddwaf_object> &derived
             continue;
         }
 
-        auto [input, attr] = store.get_target(mapping.input);
+        auto *input = store.get_target(mapping.input);
         if (input == nullptr) {
             continue;
         }

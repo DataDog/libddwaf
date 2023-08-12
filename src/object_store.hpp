@@ -17,10 +17,6 @@ namespace ddwaf {
 
 class object_store {
 public:
-    enum class attribute : uint8_t { none = 0, immutable = 1 /*, ephemeral = 2 */ };
-
-    using object_and_attribute = std::pair<ddwaf_object *, attribute>;
-
     object_store() = default;
     ~object_store();
     object_store(const object_store &) = default;
@@ -28,12 +24,11 @@ public:
     object_store &operator=(const object_store &) = delete;
     object_store &operator=(object_store &&) = delete;
 
-    bool insert(ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free,
-        attribute attr = attribute::none);
+    bool insert(ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free);
     // This function doesn't clear the latest batch
-    bool insert(target_index target, ddwaf_object &input,
-        ddwaf_object_free_fn free_fn = ddwaf_object_free, attribute attr = attribute::none);
-    object_and_attribute get_target(target_index target) const;
+    bool insert(
+        target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    ddwaf_object *get_target(target_index target) const;
 
     bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }
 
@@ -50,23 +45,7 @@ protected:
     memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
 
     memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, object_and_attribute> objects_;
+    memory::unordered_map<target_index, ddwaf_object *> objects_;
 };
-
-inline constexpr object_store::attribute operator|(
-    object_store::attribute lhs, object_store::attribute rhs)
-{
-    return static_cast<object_store::attribute>(
-        static_cast<std::underlying_type<object_store::attribute>::type>(lhs) |
-        static_cast<std::underlying_type<object_store::attribute>::type>(rhs));
-}
-
-inline constexpr object_store::attribute operator&(
-    object_store::attribute lhs, object_store::attribute rhs)
-{
-    return static_cast<object_store::attribute>(
-        static_cast<std::underlying_type<object_store::attribute>::type>(lhs) &
-        static_cast<std::underlying_type<object_store::attribute>::type>(rhs));
-}
 
 } // namespace ddwaf
