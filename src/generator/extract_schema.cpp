@@ -89,8 +89,9 @@ enum class schema_scalar_type : uint8_t {
 };
 
 struct schema_scalar : schema_node {
-    explicit schema_scalar(schema_scalar_type type_, std::string_view class_ = {})
-        : schema_node(schema_node_type::scalar), scalar_type(type_), value_class(class_)
+    explicit schema_scalar(
+        schema_scalar_type type_, std::map<std::string_view, std::string_view> tags_ = {})
+        : schema_node(schema_node_type::scalar), type(type_), tags(std::move(tags_))
     {}
     schema_scalar(const schema_scalar &) = delete;
     schema_scalar(schema_scalar &&oth) noexcept = default;
@@ -104,8 +105,8 @@ struct schema_scalar : schema_node {
         return std::hash<underlying_type>{}(static_cast<underlying_type>(type));
     }
 
-    schema_scalar_type scalar_type;
-    std::string_view value_class{};
+    schema_scalar_type type;
+    std::map<std::string_view, std::string_view> tags{};
 };
 
 bool node_equal::operator()(const schema_node::ptr &lhs, const schema_node::ptr &rhs) const
@@ -128,8 +129,7 @@ bool node_equal::operator()(const schema_node::ptr &lhs, const schema_node::ptr 
     case schema_node_type::scalar: {
         const auto &rhs_scalar = dynamic_cast<const schema_scalar &>(*rhs);
         const auto &lhs_scalar = dynamic_cast<const schema_scalar &>(*lhs);
-        return lhs_scalar.scalar_type == rhs_scalar.scalar_type &&
-               lhs_scalar.value_class == rhs_scalar.value_class;
+        return lhs_scalar.type == rhs_scalar.type && lhs_scalar.tags == rhs_scalar.tags;
     }
     case schema_node_type::unknown:
         return true;
@@ -224,14 +224,18 @@ ddwaf_object serialize(const schema_scalar &node)
     ddwaf_object_array(&array);
 
     ddwaf_object_array_add(
-        &array, ddwaf_object_unsigned(&tmp,
-                    static_cast<std::underlying_type<schema_scalar_type>::type>(node.scalar_type)));
+        &array, ddwaf_object_unsigned(
+                    &tmp, static_cast<std::underlying_type<schema_scalar_type>::type>(node.type)));
 
-    if (!node.value_class.empty()) {
+    if (!node.tags.empty()) {
         ddwaf_object meta;
         ddwaf_object_map(&meta);
-        ddwaf_object_map_add(&meta, "class",
-            ddwaf_object_stringl(&tmp, node.value_class.data(), node.value_class.size()));
+
+        for (auto [key, value] : node.tags) {
+            ddwaf_object_map_addl(&meta, key.data(), key.size(),
+                ddwaf_object_stringl(&tmp, value.data(), value.size()));
+        }
+
         ddwaf_object_array_add(&array, &meta);
     }
 
