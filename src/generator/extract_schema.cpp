@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <unordered_set>
@@ -12,21 +13,6 @@
 
 namespace ddwaf::generator {
 namespace {
-
-template <typename T> bool compare_containers(T &lhs, T &rhs)
-{
-    if (lhs.size() != rhs.size()) {
-        return false;
-    }
-
-    for (auto l_it = lhs.begin(), r_it = rhs.begin(); l_it != lhs.end() && r_it != rhs.end();
-         ++l_it, ++r_it) {
-        if (l_it != r_it) {
-            return false;
-        }
-    }
-    return true;
-}
 
 enum class schema_node_type { unknown, scalar, array, record };
 
@@ -142,23 +128,13 @@ bool node_equal::operator()(const schema_node::ptr &lhs, const schema_node::ptr 
             return false;
         }
 
-        auto lhs_it = lhs_array.children.begin();
-        auto lhs_end = lhs_array.children.end();
-
-        auto rhs_it = rhs_array.children.begin();
-        auto rhs_end = rhs_array.children.end();
-
-        for (; lhs_it != lhs_end && rhs_it != rhs_end; ++lhs_it, ++rhs_it) {
-            if (!operator()(*lhs_it, *rhs_it)) {
-                return false;
-            }
-        }
-        return true;
+        return std::ranges::all_of(lhs_array.children, [&rhs_array](const schema_node::ptr &node) {
+            return rhs_array.children.find(node) != rhs_array.children.end();
+        });
     }
     case schema_node_type::record: {
         const auto &rhs_record = dynamic_cast<const schema_record &>(*rhs);
         const auto &lhs_record = dynamic_cast<const schema_record &>(*lhs);
-        return compare_containers(lhs_record.children, rhs_record.children);
 
         if (lhs_record.children.size() != rhs_record.children.size() ||
             lhs_record.truncated != rhs_record.truncated) {
