@@ -13,6 +13,21 @@
 namespace ddwaf::generator {
 namespace {
 
+template <typename T> bool compare_containers(T &lhs, T &rhs)
+{
+    if (lhs.size() != rhs.size()) {
+        return false;
+    }
+
+    for (auto l_it = lhs.begin(), r_it = rhs.begin(); l_it != lhs.end() && r_it != rhs.end();
+         ++l_it, ++r_it) {
+        if (l_it != r_it) {
+            return false;
+        }
+    }
+    return true;
+}
+
 enum class schema_node_type { unknown, scalar, array, record };
 
 struct schema_node {
@@ -109,6 +124,7 @@ struct schema_scalar : schema_node {
     std::map<std::string_view, std::string_view> tags{};
 };
 
+// NOLINTNEXTLINE(misc-no-recursion)
 bool node_equal::operator()(const schema_node::ptr &lhs, const schema_node::ptr &rhs) const
 {
     if (lhs->type != rhs->type) {
@@ -119,12 +135,51 @@ bool node_equal::operator()(const schema_node::ptr &lhs, const schema_node::ptr 
     case schema_node_type::array: {
         const auto &rhs_array = dynamic_cast<const schema_array &>(*rhs);
         const auto &lhs_array = dynamic_cast<const schema_array &>(*lhs);
-        return lhs_array.length == rhs_array.length && lhs_array.children == rhs_array.children;
+
+        if (lhs_array.length != rhs_array.length ||
+            lhs_array.children.size() != rhs_array.children.size() ||
+            lhs_array.truncated != rhs_array.truncated) {
+            return false;
+        }
+
+        auto lhs_it = lhs_array.children.begin();
+        auto lhs_end = lhs_array.children.end();
+
+        auto rhs_it = rhs_array.children.begin();
+        auto rhs_end = rhs_array.children.end();
+
+        for (; lhs_it != lhs_end && rhs_it != rhs_end; ++lhs_it, ++rhs_it) {
+            if (!operator()(*lhs_it, *rhs_it)) {
+                return false;
+            }
+        }
+        return true;
     }
     case schema_node_type::record: {
         const auto &rhs_record = dynamic_cast<const schema_record &>(*rhs);
         const auto &lhs_record = dynamic_cast<const schema_record &>(*lhs);
-        return lhs_record.children == rhs_record.children;
+        return compare_containers(lhs_record.children, rhs_record.children);
+
+        if (lhs_record.children.size() != rhs_record.children.size() ||
+            lhs_record.truncated != rhs_record.truncated) {
+            return false;
+        }
+
+        auto lhs_it = lhs_record.children.begin();
+        auto lhs_end = lhs_record.children.end();
+
+        auto rhs_it = rhs_record.children.begin();
+        auto rhs_end = rhs_record.children.end();
+
+        for (; lhs_it != lhs_end && rhs_it != rhs_end; ++lhs_it, ++rhs_it) {
+            if (rhs_it->first != lhs_it->first) {
+                return false;
+            }
+            if (!operator()(lhs_it->second, rhs_it->second)) {
+                return false;
+            }
+        }
+        return true;
     }
     case schema_node_type::scalar: {
         const auto &rhs_scalar = dynamic_cast<const schema_scalar &>(*rhs);
