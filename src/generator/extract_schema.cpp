@@ -128,9 +128,13 @@ bool node_equal::operator()(const schema_node::ptr &lhs, const schema_node::ptr 
             return false;
         }
 
-        return std::ranges::all_of(lhs_array.children, [&rhs_array](const schema_node::ptr &node) {
-            return rhs_array.children.find(node) != rhs_array.children.end();
-        });
+        // NOLINTNEXTLINE(readability-use-anyofallof)
+        for (const auto &node : lhs_array.children) {
+            if (rhs_array.children.find(node) == rhs_array.children.end()) {
+                return false;
+            }
+        }
+        return true;
     }
     case schema_node_type::record: {
         const auto &rhs_record = dynamic_cast<const schema_record &>(*rhs);
