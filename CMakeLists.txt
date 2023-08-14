@@ -60,7 +60,7 @@ include(GNUInstallDirs)
 
 add_subdirectory(third_party)
 
-add_library(glibc_compat OBJECT ${libddwaf_SOURCE_DIR}/src/glibc_compat.c)
+add_library(glibc_compat OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/time64.c)
 set_target_properties(glibc_compat PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 set(LIBDDWAF_SOURCE
