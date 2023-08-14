@@ -74,8 +74,10 @@ add_dependencies(lib_re2 proj_re2)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtestd${CMAKE_STATIC_LIBRARY_SUFFIX})
+    set(LIBGMOCK_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gmockd${CMAKE_STATIC_LIBRARY_SUFFIX})
 else()
     set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX})
+    set(LIBGMOCK_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gmock${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
 
 
@@ -94,17 +96,24 @@ ExternalProject_Add(proj_gtest
                 -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
                 -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
                 -DBUILD_SHARED_LIBS=0
-                BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBGTEST_FILENAME}
+                -DBUILD_GMOCK=ON
+                BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBGTEST_FILENAME} ${INSTALL_DIR}/lib/${LIBGMOCK_FILENAME}
 )
 
 add_library(lib_gtest STATIC IMPORTED GLOBAL)
+add_library(lib_gmock STATIC IMPORTED GLOBAL)
 set_property(TARGET lib_gtest PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBGTEST_FILENAME})
+set_property(TARGET lib_gmock PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBGMOCK_FILENAME})
 target_include_directories(lib_gtest INTERFACE ${INSTALL_DIR}/include)
+target_include_directories(lib_gmock INTERFACE ${INSTALL_DIR}/include)
 if(NOT MSVC)
     target_link_libraries(lib_gtest INTERFACE -lpthread)
+    target_link_libraries(lib_gmock INTERFACE -lpthread)
 endif()
+
 add_dependencies(lib_gtest proj_gtest)
-set_target_properties(lib_gtest proj_gtest PROPERTIES EXCLUDE_FROM_ALL TRUE)
+add_dependencies(lib_gmock proj_gtest)
+set_target_properties(lib_gtest lib_gmock proj_gtest PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 add_library(lib_injection STATIC
     libinjection/src/xss.c
