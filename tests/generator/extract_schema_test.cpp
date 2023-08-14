@@ -9,6 +9,18 @@
 
 using namespace ddwaf;
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+#define EXPECT_SCHEMA_EQ(obtained, expected)                                                       \
+  {                                                                                                \
+    auto obtained_doc = ddwaf::test::object_to_rapidjson(obtained);                                \
+    EXPECT_TRUE(ValidateSchemaSchema(obtained_doc));                                               \
+    rapidjson::Document expected_doc;                                                              \
+    expected_doc.Parse(expected);                                                                  \
+    EXPECT_FALSE(expected_doc.HasParseError());                                                    \
+    EXPECT_TRUE(obtained_doc == expected_doc) << (expected);                                       \
+  }
+// NOLINTEND(cppcoreguidelines-macro-usage)
+
 namespace {
 
 TEST(TestExtractSchema, UnknownScalarSchema)
@@ -19,10 +31,9 @@ TEST(TestExtractSchema, UnknownScalarSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output, R"([0])");
 
-    EXPECT_STR(schema, R"([0])");
+    ddwaf_object_free(&output);
 }
 
 TEST(TestExtractSchema, NullScalarSchema)
@@ -33,10 +44,9 @@ TEST(TestExtractSchema, NullScalarSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output, R"([1])");
 
-    EXPECT_STR(schema, R"([1])");
+    ddwaf_object_free(&output);
 }
 
 TEST(TestExtractSchema, BoolScalarSchema)
@@ -47,10 +57,9 @@ TEST(TestExtractSchema, BoolScalarSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output, R"([2])");
 
-    EXPECT_STR(schema, R"([2])");
+    ddwaf_object_free(&output);
 }
 
 TEST(TestExtractSchema, IntScalarSchema)
@@ -62,10 +71,9 @@ TEST(TestExtractSchema, IntScalarSchema)
         generator::extract_schema gen;
 
         auto output = gen.generate(&input);
-        auto schema = test::object_to_json(output);
-        ddwaf_object_free(&output);
+        EXPECT_SCHEMA_EQ(output, R"([4])");
 
-        EXPECT_STR(schema, R"([4])");
+        ddwaf_object_free(&output);
     }
     {
         ddwaf_object_signed(&input, -5);
@@ -73,10 +81,9 @@ TEST(TestExtractSchema, IntScalarSchema)
         generator::extract_schema gen;
 
         auto output = gen.generate(&input);
-        auto schema = test::object_to_json(output);
-        ddwaf_object_free(&output);
+        EXPECT_SCHEMA_EQ(output, R"([4])");
 
-        EXPECT_STR(schema, R"([4])");
+        ddwaf_object_free(&output);
     }
 }
 
@@ -88,11 +95,9 @@ TEST(TestExtractSchema, StringScalarSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
+    EXPECT_SCHEMA_EQ(output, R"([8])");
+
     ddwaf_object_free(&output);
-
-    EXPECT_STR(schema, R"([8])");
-
     ddwaf_object_free(&input);
 }
 
@@ -104,10 +109,9 @@ TEST(TestExtractSchema, FloatScalarSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output, R"([16])");
 
-    EXPECT_STR(schema, R"([16])");
+    ddwaf_object_free(&output);
 }
 
 TEST(TestExtractSchema, EmptyArraySchema)
@@ -118,10 +122,9 @@ TEST(TestExtractSchema, EmptyArraySchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output, R"([[],{"len":0}])");
 
-    EXPECT_STR(schema, R"([[],{"len":0}])");
+    ddwaf_object_free(&output);
 }
 
 TEST(TestExtractSchema, ArraySchema)
@@ -137,11 +140,10 @@ TEST(TestExtractSchema, ArraySchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
+    EXPECT_SCHEMA_EQ(output, R"([[[1],[0],[8],[4]],{"len":4}])");
+
     ddwaf_object_free(&output);
     ddwaf_object_free(&input);
-
-    EXPECT_STR(schema, R"([[[1],[0],[8],[4]],{"len":4}])");
 }
 
 TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
@@ -157,11 +159,10 @@ TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
+    EXPECT_SCHEMA_EQ(output, R"([[[8]],{"len":4}])");
+
     ddwaf_object_free(&output);
     ddwaf_object_free(&input);
-
-    EXPECT_STR(schema, R"([[[8]],{"len":4}])");
 }
 
 TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
@@ -193,12 +194,11 @@ TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
+    EXPECT_SCHEMA_EQ(output,
+        R"([[[{"unsigned":[4]}],[{"signed":[4]}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
+
     ddwaf_object_free(&output);
     ddwaf_object_free(&input);
-
-    EXPECT_STR(schema,
-        R"([[[{"unsigned":[4]}],[{"signed":[4]}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
 }
 
 TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
@@ -230,11 +230,10 @@ TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
+    EXPECT_SCHEMA_EQ(output, R"([[[[[4]],{"len":1}],[[[8],[4]],{"len":2}]],{"len":4}])");
+
     ddwaf_object_free(&output);
     ddwaf_object_free(&input);
-
-    EXPECT_STR(schema, R"([[[[[4]],{"len":1}],[[[8],[4]],{"len":2}]],{"len":4}])");
 }
 
 TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
@@ -266,11 +265,10 @@ TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
+    EXPECT_SCHEMA_EQ(output, R"([[[[[4]],{"len":1}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
+
     ddwaf_object_free(&output);
     ddwaf_object_free(&input);
-
-    EXPECT_STR(schema, R"([[[[[4]],{"len":1}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
 }
 
 TEST(TestExtractSchema, EmptyMapSchema)
@@ -281,10 +279,9 @@ TEST(TestExtractSchema, EmptyMapSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output, R"([{}])");
 
-    EXPECT_STR(schema, R"([{}])");
+    ddwaf_object_free(&output);
 }
 
 TEST(TestExtractSchema, MapSchema)
@@ -300,11 +297,10 @@ TEST(TestExtractSchema, MapSchema)
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    auto schema = test::object_to_json(output);
+    EXPECT_SCHEMA_EQ(output, R"([{"invalid":[0],"null":[1],"string":[8],"unsigned":[4]}])");
+
     ddwaf_object_free(&output);
     ddwaf_object_free(&input);
-
-    EXPECT_STR(schema, R"([{"invalid":[0],"null":[1],"string":[8],"unsigned":[4]}])");
 }
 
 } // namespace

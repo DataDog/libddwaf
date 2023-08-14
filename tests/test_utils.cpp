@@ -231,6 +231,16 @@ std::string object_to_json(const ddwaf_object &obj)
     return {};
 }
 
+rapidjson::Document object_to_rapidjson(const ddwaf_object &obj)
+{
+    rapidjson::Document document;
+    rapidjson::Document::AllocatorType &alloc = document.GetAllocator();
+
+    object_to_json_helper(obj, document, alloc);
+
+    return document;
+}
+
 } // namespace ddwaf::test
 
 namespace YAML {
@@ -405,10 +415,37 @@ std::optional<std::string> schema_validator::validate(const char *events)
     return std::nullopt;
 }
 
+std::optional<std::string> schema_validator::validate(rapidjson::Document &doc)
+{
+    validator_->Reset();
+
+    if (!doc.Accept(*validator_)) {
+
+        rapidjson::StringBuffer sb;
+        rapidjson::PrettyWriter<rapidjson::StringBuffer> w(sb);
+        validator_->GetError().Accept(w);
+
+        return sb.GetString();
+    }
+
+    return std::nullopt;
+}
+
 ::testing::AssertionResult ValidateSchema(const std::string &result)
 {
     static schema_validator schema("../schema/events.json");
     auto error = schema.validate(result.c_str());
+    if (error) {
+        return ::testing::AssertionFailure() << *error;
+    }
+
+    return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc)
+{
+    static schema_validator schema("../schema/types.json");
+    auto error = schema.validate(doc);
     if (error) {
         return ::testing::AssertionFailure() << *error;
     }

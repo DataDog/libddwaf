@@ -44,6 +44,7 @@ std::ostream &operator<<(std::ostream &os, const event &e);
 std::ostream &operator<<(std::ostream &os, const event::match &m);
 
 std::string object_to_json(const ddwaf_object &obj);
+rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
 
 } // namespace ddwaf::test
 
@@ -82,6 +83,7 @@ class schema_validator {
 public:
     explicit schema_validator(const std::string &path);
     std::optional<std::string> validate(const char *events);
+    std::optional<std::string> validate(rapidjson::Document &doc);
 
 protected:
     rapidjson::Document schema_doc_;
@@ -93,6 +95,7 @@ protected:
 // classes involved in anything GTest related.
 
 ::testing::AssertionResult ValidateSchema(const std::string &result);
+::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc);
 
 // Required by gtest to pretty print relevant types
 void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
