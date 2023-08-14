@@ -12,12 +12,12 @@ using namespace ddwaf;
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_SCHEMA_EQ(obtained, expected)                                                       \
   {                                                                                                \
-    auto obtained_doc = ddwaf::test::object_to_rapidjson(obtained);                                \
+    auto obtained_doc = test::object_to_rapidjson(obtained);                                       \
     EXPECT_TRUE(ValidateSchemaSchema(obtained_doc));                                               \
     rapidjson::Document expected_doc;                                                              \
     expected_doc.Parse(expected);                                                                  \
     EXPECT_FALSE(expected_doc.HasParseError());                                                    \
-    EXPECT_TRUE(obtained_doc == expected_doc) << (expected);                                       \
+    EXPECT_TRUE(obtained_doc == expected_doc) << test::object_to_json(obtained);                   \
   }
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
