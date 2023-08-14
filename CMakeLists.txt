@@ -60,6 +60,9 @@ include(GNUInstallDirs)
 
 add_subdirectory(third_party)
 
+add_library(glibc_compat OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/time64.c)
+set_target_properties(glibc_compat PROPERTIES POSITION_INDEPENDENT_CODE 1)
+
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/ruleset_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
@@ -172,7 +175,7 @@ elseif(WIN32)
 endif()
 
 target_link_libraries(libddwaf_objects
-    PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES} 
+    PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
     INTERFACE ${LIBDDWAF_INTERFACE_LIBRARIES})
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -227,6 +230,7 @@ if (LIBDDWAF_BUILD_STATIC)
               COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_injection>
               COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_utf8proc>
               COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_radix>
+              COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:glibc_compat> ar_comb
               COMMAND ${CMAKE_AR} -qcs ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} ar_comb/*.o*
 
               COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
@@ -279,7 +283,8 @@ if (LIBDDWAF_BUILD_SHARED)
             -Wl,-version-script=${libddwaf_SOURCE_DIR}/libddwaf.version
             -Wl,--build-id=0x${BUILD_ID}
             ${LIBDDWAF_PRIVATE_LIBRARIES}
-            ${LIBDDWAF_SHARED_LINKER_FLAGS})
+            ${LIBDDWAF_SHARED_LINKER_FLAGS}
+            glibc_compat)
     else()
         target_link_libraries(libddwaf_shared
             PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
