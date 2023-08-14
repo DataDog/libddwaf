@@ -18,7 +18,7 @@ namespace ddwaf::generator {
 
 class extract_schema : public base {
 public:
-    explicit extract_schema(object_limits limits = {}) : limits_(limits) {}
+    extract_schema() = default;
     ~extract_schema() override = default;
     extract_schema(const extract_schema &) = delete;
     extract_schema(extract_schema &&) = default;
@@ -26,9 +26,6 @@ public:
     extract_schema &operator=(extract_schema &&) = default;
 
     ddwaf_object generate(const ddwaf_object *input) override;
-
-protected:
-    object_limits limits_;
 };
 
 } // namespace ddwaf::generator

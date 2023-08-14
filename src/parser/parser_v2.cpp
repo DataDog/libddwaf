@@ -643,7 +643,7 @@ preprocessor_container parse_preprocessors(
             std::unique_ptr<generator::base> generator;
             auto generator_id = at<std::string>(node, "generator");
             if (generator_id == "extract_schema") {
-                generator = std::make_unique<generator::extract_schema>(limits);
+                generator = std::make_unique<generator::extract_schema>();
             } else {
                 DDWAF_WARN("Unknown generator: %s", generator_id.c_str());
                 info.add_failed(id, "unknown generator" + generator_id);

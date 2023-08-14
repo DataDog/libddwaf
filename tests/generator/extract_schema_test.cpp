@@ -164,7 +164,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
     EXPECT_STR(schema, R"([[[8]],{"len":4}])");
 }
 
-TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
+TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
 {
     ddwaf_object tmp;
 
@@ -199,6 +199,78 @@ TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
 
     EXPECT_STR(schema,
         R"([[[{"unsigned":[4]}],[{"signed":[4]}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
+}
+
+TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object input;
+    ddwaf_object_array(&input);
+
+    ddwaf_object child;
+    ddwaf_object_array(&child);
+    ddwaf_object_array_add(&child, ddwaf_object_unsigned(&tmp, 5));
+    ddwaf_object_array_add(&child, ddwaf_object_string(&tmp, "str"));
+    ddwaf_object_array_add(&input, &child);
+
+    ddwaf_object_array(&child);
+    ddwaf_object_array_add(&child, ddwaf_object_signed(&tmp, -5));
+    ddwaf_object_array_add(&input, &child);
+
+    ddwaf_object_array(&child);
+    ddwaf_object_array_add(&child, ddwaf_object_unsigned(&tmp, 5));
+    ddwaf_object_array_add(&input, &child);
+
+    ddwaf_object_array(&child);
+    ddwaf_object_array_add(&child, ddwaf_object_unsigned(&tmp, 109));
+    ddwaf_object_array_add(&child, ddwaf_object_string(&tmp, "wahtever"));
+    ddwaf_object_array_add(&input, &child);
+
+    generator::extract_schema gen;
+
+    auto output = gen.generate(&input);
+    auto schema = test::object_to_json(output);
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+
+    EXPECT_STR(schema, R"([[[[[4]],{"len":1}],[[[8],[4]],{"len":2}]],{"len":4}])");
+}
+
+TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object input;
+    ddwaf_object_array(&input);
+
+    ddwaf_object child;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 5));
+    ddwaf_object_map_add(&child, "string", ddwaf_object_string(&tmp, "str"));
+    ddwaf_object_array_add(&input, &child);
+
+    ddwaf_object_array(&child);
+    ddwaf_object_array_add(&child, ddwaf_object_signed(&tmp, -5));
+    ddwaf_object_array_add(&input, &child);
+
+    ddwaf_object_array(&child);
+    ddwaf_object_array_add(&child, ddwaf_object_unsigned(&tmp, 5));
+    ddwaf_object_array_add(&input, &child);
+
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "string", ddwaf_object_string(&tmp, "wahtever"));
+    ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 109));
+    ddwaf_object_array_add(&input, &child);
+
+    generator::extract_schema gen;
+
+    auto output = gen.generate(&input);
+    auto schema = test::object_to_json(output);
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+
+    EXPECT_STR(schema, R"([[[[[4]],{"len":1}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
 }
 
 TEST(TestExtractSchema, EmptyMapSchema)
