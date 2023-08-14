@@ -1,11 +1,4 @@
 {
-	global:
-		ddwaf_*;
-		__nanosleep64;
-		__nanosleep_time64;
-		__pthread_cond_timedwait64;
-		__pthread_cond_timedwait_time64;
-		dlsym;
-		__dlsym_time64;
+	global: ddwaf_*;
 	local: *;
 };
