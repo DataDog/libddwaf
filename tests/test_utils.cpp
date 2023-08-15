@@ -7,7 +7,6 @@
 #include "test_utils.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
-#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <string_view>
@@ -586,15 +585,19 @@ std::list<ddwaf::test::event::match> from_matches(
     return match_list;
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameter)
 ddwaf_object read_file(std::string_view filename, std::string_view base)
 {
-    std::filesystem::path base_dir = base;
-    std::filesystem::path file_path = base_dir / "yaml" / filename;
+    std::string base_dir{base};
+    if (*base_dir.end() != '/') {
+        base_dir += '/';
+    }
+
+    auto file_path = base_dir + "yaml/" + std::string{filename};
 
     DDWAF_DEBUG("Opening %s", file_path.c_str());
 
-    std::ifstream file(file_path, std::ios::in);
+    std::ifstream file(file_path.c_str(), std::ios::in);
     if (!file) {
         throw std::system_error(errno, std::generic_category());
     }
@@ -602,7 +605,7 @@ ddwaf_object read_file(std::string_view filename, std::string_view base)
     // Create a buffer equal to the file size
     std::string buffer;
     file.seekg(0, std::ios::end);
-    buffer.resize(file.tellg());
+    buffer.resize(file.tellg(), '\0');
     file.seekg(0, std::ios::beg);
 
     file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
