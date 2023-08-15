@@ -17,15 +17,9 @@ using namespace ddwaf;
     rapidjson::Document expected_doc;                                                              \
     expected_doc.Parse(expected);                                                                  \
     EXPECT_FALSE(expected_doc.HasParseError());                                                    \
-    EXPECT_TRUE(obtained_doc == expected_doc) << test::object_to_json(obtained);                   \
+    EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);        \
   }
 // NOLINTEND(cppcoreguidelines-macro-usage)
-
-/*bool compare_documents(const rapidjson::Document &lhs, const rapidjson::Document &rhs)*/
-/*{*/
-/*if (lhs.GetType()*/
-
-/*}*/
 
 namespace {
 

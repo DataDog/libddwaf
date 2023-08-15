@@ -203,3 +203,99 @@ inline ddwaf_object yaml_to_object(const std::string &yaml)
 }
 
 ddwaf_object json_to_object(const std::string &json);
+
+template <typename T>
+// NOLINTNEXTLINE(misc-no-recursion)
+bool json_equals(const T &lhs, const T &rhs)
+    requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
+{
+    if (lhs.GetType() != rhs.GetType()) {
+        return false;
+    }
+
+    switch (lhs.GetType()) {
+    case rapidjson::kObjectType: {
+        if (lhs.MemberCount() != rhs.MemberCount()) {
+            return false;
+        }
+
+        std::vector<bool> seen(lhs.MemberCount(), false);
+        for (const auto &lkv : lhs.GetObject()) {
+            bool found = false;
+            std::string_view const lkey = lkv.name.GetString();
+            for (auto it = rhs.MemberBegin(); it != rhs.MemberEnd(); ++it) {
+                auto i = it - rhs.MemberBegin();
+                if (seen[i]) {
+                    continue;
+                }
+
+                const auto &rkv = *it;
+                std::string_view const rkey = rkv.name.GetString();
+                if (lkey != rkey) {
+                    continue;
+                }
+
+                if (json_equals(lkv.value, rkv.value)) {
+                    seen[i] = found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+    case rapidjson::kArrayType: {
+        if (lhs.Size() != rhs.Size()) {
+            return false;
+        }
+
+        std::vector<bool> seen(lhs.Size(), false);
+        for (const auto &v : lhs.GetArray()) {
+            bool found = false;
+            for (unsigned i = 0; i < rhs.Size(); ++i) {
+                if (!seen[i] && json_equals(v, rhs[i])) {
+                    seen[i] = found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+    case rapidjson::kStringType: {
+        std::string_view lstr = lhs.GetString();
+        std::string_view rstr = rhs.GetString();
+        return lstr == rstr;
+    }
+    case rapidjson::kNumberType: {
+        if (lhs.IsInt()) {
+            return rhs.IsInt() && lhs.GetInt() == rhs.GetInt();
+        }
+        if (lhs.IsUint()) {
+            return rhs.IsUint() && lhs.GetUint() == rhs.GetUint();
+        }
+
+        if (lhs.IsInt64()) {
+            return rhs.IsInt64() && lhs.GetInt64() == rhs.GetInt64();
+        }
+        if (lhs.IsUint64()) {
+            return rhs.IsUint64() && lhs.GetUint64() == rhs.GetUint64();
+        }
+
+        if (lhs.IsDouble()) {
+            return rhs.IsDouble() && std::abs(lhs.GetDouble() - rhs.GetDouble()) < 0.01;
+        }
+        break;
+    }
+    case rapidjson::kTrueType:
+    case rapidjson::kFalseType:
+    case rapidjson::kNullType:
+    default:
+        return true;
+    }
+    return false;
+}

@@ -624,11 +624,10 @@ ddwaf_object read_file(std::string_view filename, std::string_view base)
     return yaml_to_object(buffer);
 }
 
-template <typename T, typename = std::enable_if_t<std::disjunction_v<
-                          std::is_same<rapidjson::Document, std::remove_cv_t<std::decay_t<T>>>,
-                          std::is_same<rapidjson::Value, std::remove_cv_t<std::decay_t<T>>>>>>
+template <typename T>
 // NOLINTNEXTLINE(misc-no-recursion)
 void json_to_object_helper(ddwaf_object *object, T &doc)
+    requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
 {
     switch (doc.GetType()) {
     case rapidjson::kFalseType:
@@ -668,6 +667,8 @@ void json_to_object_helper(ddwaf_object *object, T &doc)
             ddwaf_object_signed(object, doc.GetInt64());
         } else if (doc.IsUint64()) {
             ddwaf_object_unsigned(object, doc.GetUint64());
+        } else if (doc.IsDouble()) {
+            ddwaf_object_float(object, doc.GetDouble());
         }
         break;
     }
