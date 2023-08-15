@@ -604,8 +604,10 @@ ddwaf_object read_file(std::string_view filename, std::string_view base)
 
     // Create a buffer equal to the file size
     std::string buffer;
-    file.seekg(0, std::ios::end);
-    buffer.resize(file.tellg(), '\0');
+    file.ignore(std::numeric_limits<std::streamsize>::max());
+    std::streamsize length = file.gcount();
+    file.clear();
+    buffer.resize(length, '\0');
     file.seekg(0, std::ios::beg);
 
     file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
