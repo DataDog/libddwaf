@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     }
 
     std::string body_str = read_file(argv[2]);
-    auto body = YAML::Load(body_str).as<ddwaf_object>();
+    auto body = json_to_object(body_str);
 
     ddwaf_object tmp;
     ddwaf_object settings;

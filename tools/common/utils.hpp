@@ -42,6 +42,7 @@ struct as_if<ddwaf_object, void>
 
 } // namespace YAML
 
+ddwaf_object json_to_object(const std::string &json);
 
 YAML::Node object_to_yaml(const ddwaf_object &obj);
 std::string object_to_json(const ddwaf_object &obj);

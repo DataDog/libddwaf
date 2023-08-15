@@ -9,6 +9,7 @@
 #include <iostream>
 #include <limits>
 #include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
 #include <rapidjson/writer.h>
 #include <string_view>
 #include <utility>
@@ -131,6 +132,77 @@ YAML::Node object_to_yaml(const ddwaf_object &obj)
     return root;
 }
 
+
+template <typename T>
+// NOLINTNEXTLINE(misc-no-recursion)
+void json_to_object_helper(ddwaf_object *object, T &doc)
+    requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
+{
+    switch (doc.GetType()) {
+    case rapidjson::kFalseType:
+        ddwaf_object_bool(object, false);
+        break;
+    case rapidjson::kTrueType:
+        ddwaf_object_bool(object, true);
+        break;
+    case rapidjson::kObjectType: {
+        ddwaf_object_map(object);
+        for (auto &kv : doc.GetObject()) {
+            ddwaf_object element;
+            json_to_object_helper(&element, kv.value);
+
+            std::string_view const key = kv.name.GetString();
+            ddwaf_object_map_addl(object, key.data(), key.length(), &element);
+        }
+        break;
+    }
+    case rapidjson::kArrayType: {
+        ddwaf_object_array(object);
+        for (auto &v : doc.GetArray()) {
+            ddwaf_object element;
+            json_to_object_helper(&element, v);
+
+            ddwaf_object_array_add(object, &element);
+        }
+        break;
+    }
+    case rapidjson::kStringType: {
+        std::string_view const str = doc.GetString();
+        ddwaf_object_stringl(object, str.data(), str.size());
+        break;
+    }
+    case rapidjson::kNumberType: {
+        if (doc.IsInt64()) {
+            ddwaf_object_signed(object, doc.GetInt64());
+        } else if (doc.IsUint64()) {
+            ddwaf_object_unsigned(object, doc.GetUint64());
+        } else if (doc.IsDouble()) {
+            ddwaf_object_float(object, doc.GetDouble());
+        }
+        break;
+    }
+    case rapidjson::kNullType:
+        ddwaf_object_null(object);
+        break;
+    default:
+        ddwaf_object_invalid(object);
+        break;
+    }
+}
+
+ddwaf_object json_to_object(const std::string &json)
+{
+    rapidjson::Document doc;
+    rapidjson::ParseResult const result = doc.Parse(json.data());
+    if (result.IsError()) {
+        throw std::runtime_error(
+            "invalid json object: "s + rapidjson::GetParseError_En(result.Code()));
+    }
+
+    ddwaf_object output;
+    json_to_object_helper(&output, doc);
+    return output;
+}
 namespace {
 class string_buffer {
 public:

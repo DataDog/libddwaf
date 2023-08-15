@@ -619,10 +619,10 @@ void json_to_object_helper(ddwaf_object *object, T &doc)
 {
     switch (doc.GetType()) {
     case rapidjson::kFalseType:
-        ddwaf_object_stringl(object, "false", sizeof("false") - 1);
+        ddwaf_object_bool(object, false);
         break;
     case rapidjson::kTrueType:
-        ddwaf_object_stringl(object, "true", sizeof("true") - 1);
+        ddwaf_object_bool(object, true);
         break;
     case rapidjson::kObjectType: {
         ddwaf_object_map(object);
