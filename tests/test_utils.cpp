@@ -7,6 +7,7 @@
 #include "test_utils.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
+#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <string_view>
@@ -585,29 +586,15 @@ std::list<ddwaf::test::event::match> from_matches(
     return match_list;
 }
 
-size_t getFileSize(const char *filename)
-{
-    struct stat st;
-    size_t output = 0;
-
-    if (stat(filename, &st) == 0 && st.st_size > 0)
-        output = (uint64_t)st.st_size;
-
-    return output;
-}
-
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 ddwaf_object read_file(std::string_view filename, std::string_view base)
 {
-    std::string base_dir{base};
-    if (*base_dir.end() != '/') {
-        base_dir += '/';
-    }
-
-    auto file_path = base_dir + "yaml/" + std::string{filename};
+    std::filesystem::path base_dir = base;
+    std::filesystem::path file_path = base_dir / "yaml" / filename;
 
     DDWAF_DEBUG("Opening %s", file_path.c_str());
 
-    std::ifstream file(file_path.data(), std::ios::in);
+    std::ifstream file(file_path, std::ios::in);
     if (!file) {
         throw std::system_error(errno, std::generic_category());
     }
