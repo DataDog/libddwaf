@@ -195,7 +195,11 @@ std::list<ddwaf::test::event::match> from_matches(
 #define EXPECT_MATCHES(matches, ...) EXPECT_THAT(from_matches(matches), WithMatches({__VA_ARGS__}));
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
-ddwaf_object readFile(std::string_view filename, std::string_view base = "./");
-ddwaf_object readRule(const char *rule);
+ddwaf_object read_file(std::string_view filename, std::string_view base = "./");
 
-inline ddwaf_object json_to_object(std::string_view data) { return readRule(data.data()); }
+inline ddwaf_object yaml_to_object(const std::string &yaml)
+{
+    return YAML::Load(yaml).as<ddwaf_object>();
+}
+
+ddwaf_object json_to_object(const std::string &json);

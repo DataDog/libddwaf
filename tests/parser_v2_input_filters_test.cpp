@@ -18,7 +18,7 @@ TEST(TestParserV2InputFilters, ParseEmpty)
     get_target_index("http.client_ip");
     get_target_index("usr.id");
 
-    auto object = readRule(R"([{id: 1, inputs: []}])");
+    auto object = yaml_to_object(R"([{id: 1, inputs: []}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -58,7 +58,7 @@ TEST(TestParserV2InputFilters, ParseFilterWithoutID)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(R"([{inputs: [{address: http.client_ip}]}])");
+    auto object = yaml_to_object(R"([{inputs: [{address: http.client_ip}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -100,7 +100,7 @@ TEST(TestParserV2InputFilters, ParseDuplicateFilters)
     get_target_index("http.client_ip");
     get_target_index("usr.id");
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}]}, {id: 1, inputs: [{address: usr.id}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -144,7 +144,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalNoTargets)
     get_target_index("http.client_ip");
     get_target_index("usr.id");
 
-    auto object = readRule(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
+    auto object = yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -188,7 +188,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetID)
     get_target_index("http.client_ip");
     get_target_index("usr.id");
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -238,7 +238,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetTags)
     get_target_index("http.client_ip");
     get_target_index("usr.id");
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -290,7 +290,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetPriority)
     get_target_index("http.client_ip");
     get_target_index("usr.id");
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -340,7 +340,7 @@ TEST(TestParserV2InputFilters, ParseUnconditionalMultipleTargets)
     get_target_index("http.client_ip");
     get_target_index("usr.id");
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}, {tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -401,7 +401,7 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
     get_target_index("http.client_ip");
     get_target_index("usr.id");
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}, {id: 2, inputs: [{address: usr.id}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -471,7 +471,7 @@ TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
     get_target_index("http.client_ip");
     get_target_index("usr.id");
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -518,7 +518,7 @@ TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
 TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
 {
     ddwaf::object_limits limits;
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;

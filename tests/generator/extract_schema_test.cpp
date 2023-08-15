@@ -21,6 +21,12 @@ using namespace ddwaf;
   }
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
+/*bool compare_documents(const rapidjson::Document &lhs, const rapidjson::Document &rhs)*/
+/*{*/
+/*if (lhs.GetType()*/
+
+/*}*/
+
 namespace {
 
 TEST(TestExtractSchema, UnknownScalarSchema)
@@ -294,11 +300,21 @@ TEST(TestExtractSchema, MapSchema)
     ddwaf_object_map_add(&input, "invalid", ddwaf_object_invalid(&tmp));
     ddwaf_object_map_add(&input, "null", ddwaf_object_null(&tmp));
 
+    ddwaf_object child;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 5));
+    ddwaf_object_map_add(&child, "string", ddwaf_object_string(&tmp, "str"));
+    ddwaf_object_map_add(&input, "map", &child);
+
+    ddwaf_object_array(&child);
+    ddwaf_object_array_add(&child, ddwaf_object_signed(&tmp, -5));
+    ddwaf_object_map_add(&input, "array", &child);
+
     generator::extract_schema gen;
 
     auto output = gen.generate(&input);
-    EXPECT_SCHEMA_EQ(output, R"([{"invalid":[0],"null":[1],"string":[8],"unsigned":[4]}])");
-
+    EXPECT_SCHEMA_EQ(output,
+        R"([{"array":[[[4]],{"len":1}],"invalid":[0],"map":[{"unsigned":[4],"string":[8]}],"null":[1],"string":[8],"unsigned":[4]}])");
     ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }

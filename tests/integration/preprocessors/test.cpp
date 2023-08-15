@@ -14,7 +14,7 @@ constexpr std::string_view base_dir = "integration/preprocessors/";
 
 TEST(TestPreprocessors, TestSimplePreprocessor)
 {
-    auto rule = readFile("preprocessor.yaml", base_dir);
+    auto rule = read_file("preprocessor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);

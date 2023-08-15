@@ -244,7 +244,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
 
 TEST(TestRuleFilter, ExcludeSingleRule)
 {
-    auto rule = readFile("exclude_one_rule.yaml");
+    auto rule = read_file("exclude_one_rule.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -275,7 +275,7 @@ TEST(TestRuleFilter, ExcludeSingleRule)
 
 TEST(TestRuleFilter, ExcludeByType)
 {
-    auto rule = readFile("exclude_by_type.yaml");
+    auto rule = read_file("exclude_by_type.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -306,7 +306,7 @@ TEST(TestRuleFilter, ExcludeByType)
 
 TEST(TestRuleFilter, ExcludeByCategory)
 {
-    auto rule = readFile("exclude_by_category.yaml");
+    auto rule = read_file("exclude_by_category.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -331,7 +331,7 @@ TEST(TestRuleFilter, ExcludeByCategory)
 
 TEST(TestRuleFilter, ExcludeByTags)
 {
-    auto rule = readFile("exclude_by_tags.yaml");
+    auto rule = read_file("exclude_by_tags.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -362,7 +362,7 @@ TEST(TestRuleFilter, ExcludeByTags)
 
 TEST(TestRuleFilter, ExcludeAllWithCondition)
 {
-    auto rule = readFile("exclude_all_with_condition.yaml");
+    auto rule = read_file("exclude_all_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -420,7 +420,7 @@ TEST(TestRuleFilter, ExcludeAllWithCondition)
 
 TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
 {
-    auto rule = readFile("exclude_one_rule_with_condition.yaml");
+    auto rule = read_file("exclude_one_rule_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -485,7 +485,7 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
 
 TEST(TestRuleFilter, ExcludeSingleRuleWithConditionAndTransformers)
 {
-    auto rule = readFile("exclude_one_rule_with_condition_and_transformers.yaml");
+    auto rule = read_file("exclude_one_rule_with_condition_and_transformers.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -549,7 +549,7 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithConditionAndTransformers)
 }
 TEST(TestRuleFilter, ExcludeByTypeWithCondition)
 {
-    auto rule = readFile("exclude_by_type_with_condition.yaml");
+    auto rule = read_file("exclude_by_type_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -614,7 +614,7 @@ TEST(TestRuleFilter, ExcludeByTypeWithCondition)
 
 TEST(TestRuleFilter, ExcludeByCategoryWithCondition)
 {
-    auto rule = readFile("exclude_by_category_with_condition.yaml");
+    auto rule = read_file("exclude_by_category_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -672,7 +672,7 @@ TEST(TestRuleFilter, ExcludeByCategoryWithCondition)
 
 TEST(TestRuleFilter, ExcludeByTagsWithCondition)
 {
-    auto rule = readFile("exclude_by_tags_with_condition.yaml");
+    auto rule = read_file("exclude_by_tags_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -737,7 +737,7 @@ TEST(TestRuleFilter, ExcludeByTagsWithCondition)
 
 TEST(TestRuleFilter, MonitorSingleRule)
 {
-    auto rule = readFile("monitor_one_rule.yaml");
+    auto rule = read_file("monitor_one_rule.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -770,7 +770,7 @@ TEST(TestRuleFilter, MonitorSingleRule)
 
 TEST(TestRuleFilter, AvoidHavingTwoMonitorOnActions)
 {
-    auto rule = readFile("multiple_monitor_on_match.yaml");
+    auto rule = read_file("multiple_monitor_on_match.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -803,7 +803,7 @@ TEST(TestRuleFilter, AvoidHavingTwoMonitorOnActions)
 
 TEST(TestRuleFilter, FilterModePrecedence)
 {
-    auto rule = readFile("monitor_bypass_precedence.yaml");
+    auto rule = read_file("monitor_bypass_precedence.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);

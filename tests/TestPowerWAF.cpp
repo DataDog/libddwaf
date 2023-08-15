@@ -11,7 +11,7 @@ namespace {
 
 TEST(TestPowerWAF, TestEmptyParameters)
 {
-    auto rule = readFile("powerwaf.yaml");
+    auto rule = read_file("powerwaf.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -163,7 +163,7 @@ TEST(TestPowerWAF, TestLogging)
 
 TEST(TestPowerWAF, TestConfig)
 {
-    auto rule = readFile("powerwaf.yaml");
+    auto rule = read_file("powerwaf.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);

@@ -14,7 +14,7 @@ class TestSchemaFixture : public ::testing::Test {
 public:
     TestSchemaFixture()
     {
-        auto rule = readFile("schema.yaml");
+        auto rule = read_file("schema.yaml");
         if (rule.type == DDWAF_OBJ_INVALID) {
             throw std::runtime_error("failed to load schema.yaml");
         }

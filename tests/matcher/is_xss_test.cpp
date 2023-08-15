@@ -50,7 +50,7 @@ TEST(TestIsXSS, TestInvalidInput)
 TEST(TestIsXSS, TestRuleset)
 {
     // Initialize a PowerWAF rule
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_xss, parameters: {inputs: [{address: arg1}]}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 

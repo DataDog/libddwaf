@@ -16,7 +16,7 @@ TEST(TestParserV2RuleFilters, ParseEmptyFilter)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(R"([{id: 1}])");
+    auto object = yaml_to_object(R"([{id: 1}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -56,7 +56,7 @@ TEST(TestParserV2RuleFilters, ParseFilterWithoutID)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(R"([{rules_target: [{rule_id: 2939}]}])");
+    auto object = yaml_to_object(R"([{rules_target: [{rule_id: 2939}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -96,7 +96,7 @@ TEST(TestParserV2RuleFilters, ParseDuplicateUnconditional)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, rules_target: [{rule_id: 2939}]},{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -138,7 +138,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetID)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(R"([{id: 1, rules_target: [{rule_id: 2939}]}])");
+    auto object = yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -184,7 +184,8 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetTags)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(R"([{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
+    auto object =
+        yaml_to_object(R"([{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -232,7 +233,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalTargetPriority)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -279,7 +280,7 @@ TEST(TestParserV2RuleFilters, ParseUnconditionalMultipleTargets)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, rules_target: [{rule_id: 2939},{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -337,7 +338,7 @@ TEST(TestParserV2RuleFilters, ParseMultipleUnconditional)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, rules_target: [{rule_id: 2939}]},{id: 2, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -403,7 +404,7 @@ TEST(TestParserV2RuleFilters, ParseDuplicateConditional)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]},{id: 1, rules_target: [{tags: {type: rule, category: unknown}}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -419,7 +420,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalSingleCondition)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -466,7 +467,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalGlobal)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -509,7 +510,7 @@ TEST(TestParserV2RuleFilters, ParseConditionalMultipleConditions)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -557,7 +558,8 @@ TEST(TestParserV2RuleFilters, ParseOnMatchMonitor)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: monitor}])");
+    auto object =
+        yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: monitor}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -597,7 +599,7 @@ TEST(TestParserV2RuleFilters, ParseOnMatchBypass)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: bypass}])");
+    auto object = yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: bypass}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -637,7 +639,8 @@ TEST(TestParserV2RuleFilters, ParseInvalidOnMatch)
 {
     ddwaf::object_limits limits;
 
-    auto object = readRule(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: obliterate}])");
+    auto object =
+        yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: obliterate}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
