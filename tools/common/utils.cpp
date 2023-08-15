@@ -81,13 +81,16 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
 {
     switch (obj.type) {
     case DDWAF_OBJ_BOOL:
-        output = obj.boolean ? "true" : "false";
+        output = obj.boolean;
         break;
     case DDWAF_OBJ_SIGNED:
         output = obj.intValue;
         break;
     case DDWAF_OBJ_UNSIGNED:
         output = obj.uintValue;
+        break;
+    case DDWAF_OBJ_FLOAT:
+        output = obj.f64;
         break;
     case DDWAF_OBJ_STRING:
         output = std::string{obj.stringValue, obj.nbEntries};
@@ -114,7 +117,8 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         }
         break;
     case DDWAF_OBJ_INVALID:
-        throw std::runtime_error("invalid parameter in structure");
+    case DDWAF_OBJ_NULL:
+        output = YAML::Null;
     };
 }
 
@@ -162,18 +166,17 @@ void object_to_json_helper(
     const ddwaf_object &obj, T &output, rapidjson::Document::AllocatorType &alloc)
 {
     switch (obj.type) {
-    case DDWAF_OBJ_BOOL: {
-        std::string_view value = "false"sv;
-        if (obj.boolean) {
-            value = "true"sv;
-        }
-        output.SetString(value.data(), value.size(), alloc);
-    } break;
+    case DDWAF_OBJ_BOOL:
+        output.SetBool(obj.boolean);
+        break;
     case DDWAF_OBJ_SIGNED:
         output.SetInt64(obj.intValue);
         break;
     case DDWAF_OBJ_UNSIGNED:
         output.SetUint64(obj.uintValue);
+        break;
+    case DDWAF_OBJ_FLOAT:
+        output.SetDouble(obj.f64);
         break;
     case DDWAF_OBJ_STRING: {
         auto sv = std::string_view(obj.stringValue, obj.nbEntries);
@@ -201,8 +204,10 @@ void object_to_json_helper(
             output.PushBack(value, alloc);
         }
         break;
+    case DDWAF_OBJ_NULL:
     case DDWAF_OBJ_INVALID:
-        throw std::runtime_error("invalid parameter in structure");
+        output.SetNull();
+        break;
     };
 }
 
