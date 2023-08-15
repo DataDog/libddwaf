@@ -14,10 +14,6 @@
 namespace ddwaf::generator {
 namespace {
 
-constexpr std::size_t max_container_depth = 20;
-constexpr std::size_t max_array_nodes = 10;
-constexpr std::size_t max_record_nodes = 256;
-
 enum class schema_node_type { unknown, scalar, array, record };
 
 struct schema_node {
@@ -204,9 +200,9 @@ schema_node::ptr schema_generator::generate(const ddwaf_object *object, std::siz
         return std::make_unique<schema_scalar>(schema_scalar_type::integer);
     case DDWAF_OBJ_MAP: {
         auto node = std::make_unique<schema_record>();
-        if (length > max_record_nodes) {
+        if (length > extract_schema::max_record_nodes) {
             node->truncated = true;
-            length = max_record_nodes;
+            length = extract_schema::max_record_nodes;
         }
         for (std::size_t i = 0; i < length; i++) {
             const auto *child = &object->array[i];
@@ -228,9 +224,9 @@ schema_node::ptr schema_generator::generate(const ddwaf_object *object, std::siz
     case DDWAF_OBJ_ARRAY: {
         auto node = std::make_unique<schema_array>();
         node->length = length;
-        if (length > max_array_nodes) {
+        if (length > extract_schema::max_array_nodes) {
             node->truncated = true;
-            length = max_array_nodes;
+            length = extract_schema::max_array_nodes;
         }
         for (std::size_t i = 0; i < length; i++) {
             const auto *child = &object->array[i];

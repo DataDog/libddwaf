@@ -313,4 +313,62 @@ TEST(TestExtractSchema, MapSchema)
     ddwaf_object_free(&input);
 }
 
+TEST(TestExtractSchema, DepthLimit)
+{
+    ddwaf_object input;
+    ddwaf_object_array(&input);
+
+    ddwaf_object *parent = &input;
+    for (unsigned i = 0; i < generator::extract_schema::max_container_depth + 10; ++i) {
+        ddwaf_object child;
+        ddwaf_object_array(&child);
+        ddwaf_object_array_add(parent, &child);
+        parent = &parent->array[0];
+    }
+
+    generator::extract_schema gen;
+    auto output = gen.generate(&input);
+    EXPECT_SCHEMA_EQ(output,
+        R"([[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
+TEST(TestExtractSchema, ArrayNodesLimit)
+{
+    ddwaf_object input;
+    ddwaf_object_array(&input);
+    for (unsigned i = 0; i < generator::extract_schema::max_array_nodes + 10; ++i) {
+        ddwaf_object child;
+        ddwaf_object_array(&child);
+        ddwaf_object_array_add(&input, &child);
+    }
+
+    generator::extract_schema gen;
+    auto output = gen.generate(&input);
+    EXPECT_SCHEMA_EQ(output, R"([[[[],{"len":0}]],{"len":20,"truncated":true}])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
+TEST(TestExtractSchema, RecordNodesLimit)
+{
+    ddwaf_object input;
+    ddwaf_object_map(&input);
+    for (unsigned i = 0; i < generator::extract_schema::max_record_nodes + 10; ++i) {
+        ddwaf_object child;
+        ddwaf_object_array(&child);
+        ddwaf_object_map_add(&input, "child", &child);
+    }
+
+    generator::extract_schema gen;
+    auto output = gen.generate(&input);
+    EXPECT_SCHEMA_EQ(output, R"([{"child":[[],{"len":0}]},{"truncated":true}])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
 } // namespace

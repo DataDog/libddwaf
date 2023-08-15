@@ -163,13 +163,9 @@ void object_to_json_helper(
     const ddwaf_object &obj, T &output, rapidjson::Document::AllocatorType &alloc)
 {
     switch (obj.type) {
-    case DDWAF_OBJ_BOOL: {
-        std::string_view value = "false"sv;
-        if (obj.boolean) {
-            value = "true"sv;
-        }
-        output.SetString(value.data(), value.size(), alloc);
-    } break;
+    case DDWAF_OBJ_BOOL:
+        output.SetBool(obj.boolean);
+        break;
     case DDWAF_OBJ_SIGNED:
         output.SetInt64(obj.intValue);
         break;

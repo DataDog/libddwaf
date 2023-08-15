@@ -18,6 +18,10 @@ namespace ddwaf::generator {
 
 class extract_schema : public base {
 public:
+    static constexpr std::size_t max_container_depth = 20;
+    static constexpr std::size_t max_array_nodes = 10;
+    static constexpr std::size_t max_record_nodes = 256;
+
     extract_schema() = default;
     ~extract_schema() override = default;
     extract_schema(const extract_schema &) = delete;
