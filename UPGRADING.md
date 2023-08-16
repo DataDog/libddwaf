@@ -1,5 +1,7 @@
 # Upgrading libddwaf
 
+## Upgrading from `1.12.0` to `1.13.0`
+
 ## Upgrading from `1.10.0` to `1.11.0`
 
 Version `1.11.0` introduces a number of breaking changes to the API, notably:
