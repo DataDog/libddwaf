@@ -2,6 +2,17 @@
 
 ## Upgrading from `1.12.0` to `1.13.0`
 
+### New object types and interface
+
+
+### New Linux builds 
+
+The new linux builds are currently released alongside the legacy linux builds for `aarch64` and `x86_64` and will not replace them for the time being. In addition to the two mentioned architectures, support for `i386` and `armv7` has also been included.
+
+The contents of each package is essentially equivalent to the legacy builds, however the new static builds do not provide or require a separate static `libc++` package as all static libraries have been packaged together within `libddwaf.a`.
+
+The new builds use version 16 of `libc++` and friends, compiled against musl `1.2.4` using `clang-16`.
+
 ## Upgrading from `1.10.0` to `1.11.0`
 
 Version `1.11.0` introduces a number of breaking changes to the API, notably:
