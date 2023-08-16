@@ -1,9 +1,19 @@
 # libddwaf release
 
 ### v1.13.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+This new version of the WAF includes the following new features:
+- Schema extraction preprocessor
+- New and improved universal linux buids, including support for i386 and armv7
+- Float and Null types
+- Equals operator for arbitrary type equality comparison within conditions
+- Many other quality of life, correctness and performance improvements
+
+The [upgrading guide](UGRADING.md) has also been updated to cover the new changes.
+
 #### API & Breaking Changes
 - Add object types `DDWAF_OBJ_FLOAT` and `DDWAF_OBJ_NULL` ([#197](https://github.com/DataDog/libddwaf/pull/197))
-- Add double field `f64` in `ddwaf_object` ([#197](https://github.com/DataDog/libddwaf/pull/197))
+- Add `double` field `f64` in `ddwaf_object` ([#197](https://github.com/DataDog/libddwaf/pull/197))
 - Add `ddwaf_object_null`, `ddwaf_object_float`and `ddwaf_object_get_float` ([#197](https://github.com/DataDog/libddwaf/pull/197))
 - Rename `ddwaf_object_signed` to `ddwaf_object_string_from_signed` ([#197](https://github.com/DataDog/libddwaf/pull/197))
 - Rename `ddwaf_object_unsigned` to `ddwaf_object_string_from_unsigned` ([#197](https://github.com/DataDog/libddwaf/pull/197))
@@ -15,7 +25,7 @@
 - Encapsulate conditions within expressions ([#192](https://github.com/DataDog/libddwaf/pull/192))
 - Equals operator and arbitrary operator type support ([#194](https://github.com/DataDog/libddwaf/pull/194))
 - Float and null type support ([#197](https://github.com/DataDog/libddwaf/pull/197))
-- Schema Extraction Preprocessor ([#182](https://github.com/DataDog/libddwaf/pull/182))
+- Schema Extraction Preprocessor ([#182](https://github.com/DataDog/libddwaf/pull/182))([#202](https://github.com/DataDog/libddwaf/pull/202))
 
 #### Miscellaneous
 - Minor improvements ([#193](https://github.com/DataDog/libddwaf/pull/193))
