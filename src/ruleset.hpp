@@ -17,6 +17,7 @@
 #include <exclusion/rule_filter.hpp>
 #include <mkmap.hpp>
 #include <obfuscator.hpp>
+#include <preprocessor.hpp>
 #include <rule.hpp>
 
 namespace ddwaf {
@@ -74,6 +75,8 @@ struct ruleset {
 
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
+
+    std::unordered_map<std::string_view, preprocessor::ptr> preprocessors;
 
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;

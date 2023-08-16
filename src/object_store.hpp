@@ -17,16 +17,20 @@ namespace ddwaf {
 
 class object_store {
 public:
-    explicit object_store(ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    object_store() = default;
     ~object_store();
     object_store(const object_store &) = default;
     object_store(object_store &&) = default;
     object_store &operator=(const object_store &) = delete;
     object_store &operator=(object_store &&) = delete;
 
-    bool insert(const ddwaf_object &input);
+    bool insert(ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    // This function doesn't clear the latest batch
+    bool insert(
+        target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    ddwaf_object *get_target(target_index target) const;
 
-    const ddwaf_object *get_target(target_index target) const;
+    bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }
 
     bool is_new_target(const target_index target) const
     {
@@ -38,13 +42,10 @@ public:
     explicit operator bool() const { return !objects_.empty(); }
 
 protected:
-    static constexpr unsigned default_num_objects = 8;
+    memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
 
     memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, const ddwaf_object *> objects_;
-
-    memory::vector<ddwaf_object> objects_to_free_;
-    ddwaf_object_free_fn obj_free_;
+    memory::unordered_map<target_index, ddwaf_object *> objects_;
 };
 
 } // namespace ddwaf

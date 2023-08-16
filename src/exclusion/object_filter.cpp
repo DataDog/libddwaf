@@ -104,7 +104,7 @@ memory::unordered_set<const ddwaf_object *> object_filter::match(
             continue;
         }
 
-        const auto *object = store.get_target(target);
+        auto *object = store.get_target(target);
         if (object == nullptr) {
             continue;
         }

@@ -262,10 +262,12 @@ TEST(TestObject, TestAddArray)
     EXPECT_EQ(container.nbEntries, 3);
     EXPECT_EQ(container.parameterName, nullptr);
 
+    EXPECT_EQ(container.array[0].type, DDWAF_OBJ_INVALID);
+
     EXPECT_EQ(container.array[1].type, DDWAF_OBJ_STRING);
     EXPECT_STREQ(container.array[1].stringValue, "42");
 
-    EXPECT_EQ(container.array[2].type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(container.array[1].type, DDWAF_OBJ_STRING);
     EXPECT_STREQ(container.array[2].stringValue, "43");
 
     // Getters
@@ -291,7 +293,9 @@ TEST(TestObject, TestAddArray)
 
 TEST(TestObject, TestAddMap)
 {
-    ddwaf_object map, array, tmp;
+    ddwaf_object map;
+    ddwaf_object array;
+    ddwaf_object tmp;
 
     ddwaf_object_map(&map);
     ddwaf_object_array(&array);
@@ -302,6 +306,7 @@ TEST(TestObject, TestAddMap)
     ddwaf_object_free(&tmp);
     EXPECT_FALSE(ddwaf_object_map_add(&map, nullptr, ddwaf_object_string_from_signed(&tmp, 42)));
     ddwaf_object_free(&tmp);
+
     EXPECT_FALSE(ddwaf_object_map_add(&map, "key", nullptr));
 
     EXPECT_TRUE(ddwaf_object_map_add(&map, "key", ddwaf_object_invalid(&tmp)));

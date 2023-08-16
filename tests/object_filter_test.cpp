@@ -604,7 +604,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         for (auto &[object, result] : tests) {
             object_store store;
             object_filter::cache_type cache;
-            ddwaf_object root = json_to_object(object);
+            ddwaf_object root = yaml_to_object(object);
             store.insert(root);
 
             ddwaf::timer deadline{2s};
@@ -630,7 +630,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         for (auto &object : tests) {
             object_store store;
             object_filter::cache_type cache;
-            ddwaf_object root = json_to_object(object);
+            ddwaf_object root = yaml_to_object(object);
             store.insert(root);
 
             ddwaf::timer deadline{2s};

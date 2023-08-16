@@ -14,7 +14,7 @@ namespace {
 
 TEST(TestParserV2RulesOverride, ParseRuleOverrideWithoutSideEffects)
 {
-    auto object = readRule(R"([{rules_target: [{tags: {confidence: 1}}]}])");
+    auto object = yaml_to_object(R"([{rules_target: [{tags: {confidence: 1}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
@@ -50,7 +50,7 @@ TEST(TestParserV2RulesOverride, ParseRuleOverrideWithoutSideEffects)
 
 TEST(TestParserV2RulesOverride, ParseRuleOverrideWithoutTargets)
 {
-    auto object = readRule(R"([{rules_target: [{}], enabled: false}])");
+    auto object = yaml_to_object(R"([{rules_target: [{}], enabled: false}])");
 
     ddwaf::ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
@@ -86,7 +86,8 @@ TEST(TestParserV2RulesOverride, ParseRuleOverrideWithoutTargets)
 
 TEST(TestParserV2RulesOverride, ParseRuleOverride)
 {
-    auto object = readRule(R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]}])");
+    auto object =
+        yaml_to_object(R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
@@ -131,7 +132,7 @@ TEST(TestParserV2RulesOverride, ParseRuleOverride)
 
 TEST(TestParserV2RulesOverride, ParseMultipleRuleOverrides)
 {
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]},{rules_target: [{rule_id: 1}], enabled: false}])");
 
     ddwaf::ruleset_info::section_info section;
@@ -193,7 +194,7 @@ TEST(TestParserV2RulesOverride, ParseMultipleRuleOverrides)
 
 TEST(TestParserV2RulesOverride, ParseInconsistentRuleOverride)
 {
-    auto object = readRule(
+    auto object = yaml_to_object(
         R"([{rules_target: [{tags: {confidence: 1}}, {rule_id: 1}], on_match: [block], enabled: false}])");
 
     ddwaf::ruleset_info::section_info section;

@@ -30,7 +30,7 @@ template <typename T> using optional_ref = std::optional<std::reference_wrapper<
 // clang-format off
 #define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING | DDWAF_OBJ_BOOL | DDWAF_OBJ_FLOAT)
 #define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
-#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, 0}
+#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, 0}
 // clang-format on
 
 namespace ddwaf {
@@ -43,9 +43,9 @@ struct object_limits {
 
 using target_index = std::size_t;
 
-inline target_index get_target_index(const std::string &address)
+inline target_index get_target_index(std::string_view address)
 {
-    return std::hash<std::string>{}(address);
+    return std::hash<std::string_view>{}(address);
 }
 
 inline size_t find_string_cutoff(const char *str, size_t length, object_limits limits = {})
@@ -97,6 +97,7 @@ inline bool is_invalid_or_null(const ddwaf_object *obj)
     return obj != nullptr && (obj->type == DDWAF_OBJ_INVALID || obj->type == DDWAF_OBJ_NULL);
 }
 
+ddwaf_object clone(ddwaf_object *input);
 } // namespace object
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

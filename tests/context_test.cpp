@@ -23,7 +23,7 @@ public:
     explicit context(std::shared_ptr<ddwaf::ruleset> ruleset) : ddwaf::context(std::move(ruleset))
     {}
 
-    bool insert(const ddwaf_object &object) { return store_.insert(object); }
+    bool insert(ddwaf_object &object) { return store_.insert(object); }
 };
 
 } // namespace ddwaf::test

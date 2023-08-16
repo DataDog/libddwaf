@@ -4,32 +4,25 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "ddwaf.h"
 #include <log.hpp>
 #include <object_store.hpp>
 #include <vector>
 
 namespace ddwaf {
 
-object_store::object_store(ddwaf_object_free_fn free_fn) : obj_free_(free_fn)
-{
-    if (obj_free_ != nullptr) {
-        objects_to_free_.reserve(default_num_objects);
-    }
-}
-
 object_store::~object_store()
 {
-    if (obj_free_ == nullptr) {
-        return;
+    for (auto [obj, free_fn] : input_objects_) {
+        if (free_fn != nullptr) {
+            free_fn(&obj);
+        }
     }
-    for (auto &obj : objects_to_free_) { obj_free_(&obj); }
 }
 
-bool object_store::insert(const ddwaf_object &input)
+bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn)
 {
-    if (obj_free_ != nullptr) {
-        objects_to_free_.emplace_back(input);
-    }
+    input_objects_.emplace_back(input, free_fn);
 
     latest_batch_.clear();
 
@@ -43,7 +36,7 @@ bool object_store::insert(const ddwaf_object &input)
         return true;
     }
 
-    const ddwaf_object *array = input.array;
+    ddwaf_object *array = input.array;
     if (array == nullptr) {
         // Since we have established that the size of the map is not 0, a null
         // array constitutes a malformed map.
@@ -69,7 +62,18 @@ bool object_store::insert(const ddwaf_object &input)
     return true;
 }
 
-const ddwaf_object *object_store::get_target(target_index target) const
+bool object_store::insert(target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn)
+{
+    input_objects_.emplace_back(input, free_fn);
+
+    auto *object = &input_objects_.back().first;
+    objects_[target] = object;
+    latest_batch_.emplace(target);
+
+    return true;
+}
+
+ddwaf_object *object_store::get_target(target_index target) const
 {
     auto it = objects_.find(target);
     return it != objects_.end() ? it->second : nullptr;

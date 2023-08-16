@@ -11,7 +11,7 @@ namespace {
 
 TEST(FunctionalTests, ddwaf_run)
 {
-    auto rule = readFile("interface.yaml");
+    auto rule = read_file("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -20,7 +20,7 @@ TEST(FunctionalTests, ddwaf_run)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    rule = readFile("interface2.yaml");
+    rule = read_file("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle2 = ddwaf_init(&rule, &config, nullptr);
@@ -170,7 +170,7 @@ TEST(FunctionalTests, HandleGood)
 {
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
 
-    auto rule = readFile("interface2.yaml");
+    auto rule = read_file("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     const ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
@@ -234,7 +234,7 @@ TEST(FunctionalTests, HandleBad)
     EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, 1), DDWAF_ERR_INVALID_ARGUMENT);
     ddwaf_object_free(&object);
 
-    auto rule = readFile("interface.yaml");
+    auto rule = read_file("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
@@ -261,14 +261,14 @@ TEST(FunctionalTests, HandleBad)
 /*{*/
 /*ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};*/
 
-/*auto rule = readFile("interface.yaml");*/
+/*auto rule = read_file("interface.yaml");*/
 /*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
 
 /*ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);*/
 /*ASSERT_NE(handle1, nullptr);*/
 /*ddwaf_object_free(&rule);*/
 
-/*rule = readFile("interface2.yaml");*/
+/*rule = read_file("interface2.yaml");*/
 /*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
 
 /*ddwaf_handle handle2 = ddwaf_init(&rule, &config, nullptr);*/
@@ -318,7 +318,7 @@ TEST(FunctionalTests, ddwaf_runNull)
 {
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
 
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
@@ -347,7 +347,7 @@ TEST(FunctionalTests, ddwaf_runNull)
     ddwaf_destroy(handle);
 
     ////Add a removeNull transformer
-    rule = readRule(
+    rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}], transformers: [removeNulls]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     handle = ddwaf_init(&rule, &config, nullptr);

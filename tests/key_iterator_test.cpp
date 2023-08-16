@@ -521,7 +521,7 @@ TEST(TestKeyIterator, TestNoRootKey)
 
 TEST(TestKeyIterator, TestContainerMix)
 {
-    ddwaf_object object = readRule(R"(
+    ddwaf_object object = yaml_to_object(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -712,7 +712,7 @@ TEST(TestKeyIterator, TestMultiPath)
 
 TEST(TestKeyIterator, TestContainerMixPath)
 {
-    ddwaf_object object = readRule(R"(
+    ddwaf_object object = yaml_to_object(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -773,7 +773,7 @@ TEST(TestKeyIterator, TestContainerMixPath)
 
 TEST(TestKeyIterator, TestContainerMixInvalidPath)
 {
-    ddwaf_object object = readRule(R"(
+    ddwaf_object object = yaml_to_object(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -813,7 +813,7 @@ TEST(TestKeyIterator, TestMapDepthLimitPath)
 {
     ddwaf::object_limits limits;
 
-    ddwaf_object object = readRule(R"(
+    ddwaf_object object = yaml_to_object(R"(
         {
             root: {
                 child: {

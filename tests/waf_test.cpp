@@ -13,7 +13,7 @@ namespace {
 
 TEST(TestWaf, RootAddresses)
 {
-    auto rule = readFile("interface.yaml");
+    auto rule = read_file("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::null_ruleset_info info;
@@ -29,7 +29,7 @@ TEST(TestWaf, RootAddresses)
 
 TEST(TestWaf, BasicContextRun)
 {
-    auto rule = readFile("interface.yaml");
+    auto rule = read_file("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::null_ruleset_info info;
@@ -49,7 +49,7 @@ TEST(TestWaf, BasicContextRun)
 
 TEST(TestWaf, RuleDisabledInRuleset)
 {
-    auto rule = readFile("rule_disabled.yaml");
+    auto rule = read_file("rule_disabled.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::null_ruleset_info info;
