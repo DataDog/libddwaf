@@ -176,6 +176,62 @@ TEST(TestPreprocessor, SingleMappingOutputNoEvalConditionalTrue)
     ddwaf_object_free(&output_map);
 }
 
+TEST(TestPreprocessor, SingleMappingOutputNoEvalConditionalCached)
+{
+    ddwaf_object output;
+    ddwaf_object_string(&output, "output_string");
+
+    auto gen = std::make_unique<mock::generator>();
+    EXPECT_CALL(*gen, generate(_)).WillOnce(Return(output));
+
+    ddwaf_object tmp;
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, true));
+
+    object_store store;
+    store.insert(input_map);
+
+    std::vector<preprocessor::target_mapping> mappings{
+        {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
+
+    expression_builder builder(1);
+    builder.start_condition<matcher::equals<bool>>(true);
+    builder.add_target("enabled?");
+
+    preprocessor preproc{"id", std::move(gen), builder.build(), std::move(mappings), false, true};
+    EXPECT_STREQ(preproc.get_id().c_str(), "id");
+
+    ddwaf_object output_map;
+    ddwaf_object_map(&output_map);
+
+    preprocessor::cache_type cache;
+    timer deadline{2s};
+    optional_ref<ddwaf_object> derived{output_map};
+
+    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    preproc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+
+    ddwaf_object input;
+    ddwaf_object_string(&input, "input_string");
+
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", &input);
+
+    store.insert(input_map);
+
+    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    preproc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
+
+    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+    EXPECT_STREQ(obtained->parameterName, "output_address");
+    EXPECT_STREQ(obtained->stringValue, "output_string");
+
+    ddwaf_object_free(&output_map);
+}
+
 TEST(TestPreprocessor, SingleMappingOutputNoEvalConditionalFalse)
 {
     ddwaf_object output;
@@ -462,6 +518,98 @@ TEST(TestPreprocessor, SingleMappingOutputEvalUnconditional)
         EXPECT_STREQ(obtained->stringValue, "output_string");
     }
     ddwaf_object_free(&output_map);
+}
+
+TEST(TestPreprocessor, OutputAlreadyAvailableInStore)
+{
+    auto gen = std::make_unique<mock::generator>();
+
+    ddwaf_object input;
+    ddwaf_object_string(&input, "input_string");
+
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", &input);
+    ddwaf_object_map_add(&input_map, "output_address", ddwaf_object_null(&input));
+
+    object_store store;
+    store.insert(input_map);
+
+    std::vector<preprocessor::target_mapping> mappings{
+        {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
+
+    preprocessor preproc{
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), false, true};
+    EXPECT_STREQ(preproc.get_id().c_str(), "id");
+
+    ddwaf_object output_map;
+    ddwaf_object_map(&output_map);
+
+    preprocessor::cache_type cache;
+    timer deadline{2s};
+    optional_ref<ddwaf_object> derived{output_map};
+
+    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    preproc.eval(store, derived, cache, deadline);
+
+    ddwaf_object_free(&output_map);
+}
+
+TEST(TestPreprocessor, EvalAlreadyAvailableInStore)
+{
+    auto gen = std::make_unique<mock::generator>();
+
+    ddwaf_object input;
+    ddwaf_object_string(&input, "input_string");
+
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", &input);
+    ddwaf_object_map_add(&input_map, "output_address", ddwaf_object_null(&input));
+
+    object_store store;
+    store.insert(input_map);
+
+    std::vector<preprocessor::target_mapping> mappings{
+        {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
+
+    preprocessor preproc{
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), true, false};
+    EXPECT_STREQ(preproc.get_id().c_str(), "id");
+
+    preprocessor::cache_type cache;
+    timer deadline{2s};
+    optional_ref<ddwaf_object> derived{};
+
+    preproc.eval(store, derived, cache, deadline);
+}
+
+TEST(TestPreprocessor, OutputWithoutDerivedMap)
+{
+    auto gen = std::make_unique<mock::generator>();
+
+    ddwaf_object input;
+    ddwaf_object_string(&input, "input_string");
+
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", &input);
+
+    object_store store;
+    store.insert(input_map);
+
+    std::vector<preprocessor::target_mapping> mappings{
+        {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
+
+    preprocessor preproc{
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), false, true};
+    EXPECT_STREQ(preproc.get_id().c_str(), "id");
+
+    preprocessor::cache_type cache;
+    timer deadline{2s};
+    optional_ref<ddwaf_object> derived{};
+
+    preproc.eval(store, derived, cache, deadline);
 }
 
 } // namespace

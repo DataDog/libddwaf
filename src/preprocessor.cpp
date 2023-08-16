@@ -19,7 +19,7 @@ void preprocessor::eval(object_store &store, optional_ref<ddwaf_object> &derived
         return;
     }
 
-    if (!expression::get_result(cache) && !expr_->eval(cache, store, {}, {}, deadline)) {
+    if (!expr_->eval(cache, store, {}, {}, deadline)) {
         return;
     }
 
