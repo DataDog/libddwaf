@@ -28,7 +28,7 @@ enum class scalar_type : uint8_t { null = 1, boolean = 2, integer = 4, string = 
 
 struct node_scalar {
     scalar_type type{scalar_type::null};
-    std::map<std::string_view, std::string_view> tags{};
+    std::unordered_map<std::string_view, std::string_view> tags{};
 };
 
 using base_node = std::variant<std::monostate, node_scalar, node_array_ptr, node_record_ptr>;
@@ -63,7 +63,7 @@ struct node_equal {
 
 struct node_record {
     bool truncated{false};
-    std::map<std::string_view, base_node> children{};
+    std::unordered_map<std::string_view, base_node> children{};
 };
 
 struct node_array {
@@ -130,21 +130,16 @@ bool node_equal::operator()(const node_record_ptr &lhs, const node_record_ptr &r
         return false;
     }
 
-    auto lhs_it = lhs->children.begin();
-    auto lhs_end = lhs->children.end();
-
-    auto rhs_it = rhs->children.begin();
-    auto rhs_end = rhs->children.end();
-
-    for (; lhs_it != lhs_end && rhs_it != rhs_end; ++lhs_it, ++rhs_it) {
-        if (rhs_it->first != lhs_it->first) {
+    for (const auto &[k, v] : lhs->children) {
+        auto it = rhs->children.find(k);
+        if (it == rhs->children.end()) {
             return false;
         }
-        if (!std::visit(node_equal{}, lhs_it->second, rhs_it->second)) {
+
+        if (!std::visit(node_equal{}, v, it->second)) {
             return false;
         }
     }
-
     return true;
 }
 
@@ -162,10 +157,12 @@ struct node_serialize {
 
 ddwaf_object node_serialize::operator()(const std::monostate & /*node*/) const noexcept
 {
+    static constexpr unsigned unknown_type = 0;
+
     ddwaf_object tmp;
     ddwaf_object array;
     ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, 0));
+    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, unknown_type));
     return array;
 }
 
@@ -270,6 +267,7 @@ base_node generate_helper(const ddwaf_object *object, std::size_t depth)
             record->truncated = true;
             length = extract_schema::max_record_nodes;
         }
+        record->children.reserve(length);
         for (std::size_t i = 0; i < length && depth > 1; i++) {
             const auto *child = &object->array[i];
             if (child->parameterName == nullptr) {
@@ -291,6 +289,7 @@ base_node generate_helper(const ddwaf_object *object, std::size_t depth)
             array->truncated = true;
             length = extract_schema::max_array_nodes;
         }
+        array->children.reserve(length);
         for (std::size_t i = 0; i < length && depth > 1; i++) {
             const auto *child = &object->array[i];
             auto schema = generate_helper(child, depth - 1);
