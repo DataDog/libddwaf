@@ -78,13 +78,16 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp
     ${libddwaf_SOURCE_DIR}/src/ip_utils.cpp
+    ${libddwaf_SOURCE_DIR}/src/preprocessor.cpp
     ${libddwaf_SOURCE_DIR}/src/iterator.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
+    ${libddwaf_SOURCE_DIR}/src/utils.cpp
     ${libddwaf_SOURCE_DIR}/src/waf.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
+    ${libddwaf_SOURCE_DIR}/src/generator/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/common.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp

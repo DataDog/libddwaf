@@ -13,7 +13,7 @@ constexpr std::string_view base_dir = "integration/transformers/";
 
 TEST(TestTransformers, Base64Decode)
 {
-    auto rule = readFile("base64_decode.yaml", base_dir);
+    auto rule = read_file("base64_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -45,7 +45,7 @@ TEST(TestTransformers, Base64Decode)
 
 TEST(TestTransformers, Base64DecodeAlias)
 {
-    auto rule = readFile("base64_decode.yaml", base_dir);
+    auto rule = read_file("base64_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -77,7 +77,7 @@ TEST(TestTransformers, Base64DecodeAlias)
 
 TEST(TestTransformers, Base64Encode)
 {
-    auto rule = readFile("base64_encode.yaml", base_dir);
+    auto rule = read_file("base64_encode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -110,7 +110,7 @@ TEST(TestTransformers, Base64Encode)
 
 TEST(TestTransformers, Base64EncodeAlias)
 {
-    auto rule = readFile("base64_encode.yaml", base_dir);
+    auto rule = read_file("base64_encode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -143,7 +143,7 @@ TEST(TestTransformers, Base64EncodeAlias)
 
 TEST(TestTransformers, CompressWhitespace)
 {
-    auto rule = readFile("compress_whitespace.yaml", base_dir);
+    auto rule = read_file("compress_whitespace.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -176,7 +176,7 @@ TEST(TestTransformers, CompressWhitespace)
 
 TEST(TestTransformers, CompressWhitespaceAlias)
 {
-    auto rule = readFile("compress_whitespace.yaml", base_dir);
+    auto rule = read_file("compress_whitespace.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -209,7 +209,7 @@ TEST(TestTransformers, CompressWhitespaceAlias)
 
 TEST(TestTransformers, CssDecode)
 {
-    auto rule = readFile("css_decode.yaml", base_dir);
+    auto rule = read_file("css_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -242,7 +242,7 @@ TEST(TestTransformers, CssDecode)
 
 TEST(TestTransformers, CssDecodeAlias)
 {
-    auto rule = readFile("css_decode.yaml", base_dir);
+    auto rule = read_file("css_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -275,7 +275,7 @@ TEST(TestTransformers, CssDecodeAlias)
 
 TEST(TestTransformers, HtmlEntityDecode)
 {
-    auto rule = readFile("html_entity_decode.yaml", base_dir);
+    auto rule = read_file("html_entity_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -308,7 +308,7 @@ TEST(TestTransformers, HtmlEntityDecode)
 
 TEST(TestTransformers, HtmlEntityDecodeAlias)
 {
-    auto rule = readFile("html_entity_decode.yaml", base_dir);
+    auto rule = read_file("html_entity_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -341,7 +341,7 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
 
 TEST(TestTransformers, JsDecode)
 {
-    auto rule = readFile("js_decode.yaml", base_dir);
+    auto rule = read_file("js_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -374,7 +374,7 @@ TEST(TestTransformers, JsDecode)
 
 TEST(TestTransformers, JsDecodeAlias)
 {
-    auto rule = readFile("js_decode.yaml", base_dir);
+    auto rule = read_file("js_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -407,7 +407,7 @@ TEST(TestTransformers, JsDecodeAlias)
 
 TEST(TestTransformers, Lowercase)
 {
-    auto rule = readFile("lowercase.yaml", base_dir);
+    auto rule = read_file("lowercase.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -440,7 +440,7 @@ TEST(TestTransformers, Lowercase)
 
 TEST(TestTransformers, NormalizePath)
 {
-    auto rule = readFile("normalize_path.yaml", base_dir);
+    auto rule = read_file("normalize_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -473,7 +473,7 @@ TEST(TestTransformers, NormalizePath)
 
 TEST(TestTransformers, NormalizePathAlias)
 {
-    auto rule = readFile("normalize_path.yaml", base_dir);
+    auto rule = read_file("normalize_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -506,7 +506,7 @@ TEST(TestTransformers, NormalizePathAlias)
 
 TEST(TestTransformers, NormalizePathWin)
 {
-    auto rule = readFile("normalize_path_win.yaml", base_dir);
+    auto rule = read_file("normalize_path_win.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -539,7 +539,7 @@ TEST(TestTransformers, NormalizePathWin)
 
 TEST(TestTransformers, NormalizePathAliasWin)
 {
-    auto rule = readFile("normalize_path_win.yaml", base_dir);
+    auto rule = read_file("normalize_path_win.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -572,7 +572,7 @@ TEST(TestTransformers, NormalizePathAliasWin)
 
 TEST(TestTransformers, RemoveComments)
 {
-    auto rule = readFile("remove_comments.yaml", base_dir);
+    auto rule = read_file("remove_comments.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -605,7 +605,7 @@ TEST(TestTransformers, RemoveComments)
 
 TEST(TestTransformers, RemoveCommentsAlias)
 {
-    auto rule = readFile("remove_comments.yaml", base_dir);
+    auto rule = read_file("remove_comments.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -638,7 +638,7 @@ TEST(TestTransformers, RemoveCommentsAlias)
 
 TEST(TestTransformers, RemoveNulls)
 {
-    auto rule = readFile("remove_nulls.yaml", base_dir);
+    auto rule = read_file("remove_nulls.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -671,7 +671,7 @@ TEST(TestTransformers, RemoveNulls)
 
 TEST(TestTransformers, RemoveNullsAlias)
 {
-    auto rule = readFile("remove_nulls.yaml", base_dir);
+    auto rule = read_file("remove_nulls.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -704,7 +704,7 @@ TEST(TestTransformers, RemoveNullsAlias)
 
 TEST(TestTransformers, ShellUnescape)
 {
-    auto rule = readFile("shell_unescape.yaml", base_dir);
+    auto rule = read_file("shell_unescape.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -737,7 +737,7 @@ TEST(TestTransformers, ShellUnescape)
 
 TEST(TestTransformers, ShellUnescapeAlias)
 {
-    auto rule = readFile("shell_unescape.yaml", base_dir);
+    auto rule = read_file("shell_unescape.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -770,7 +770,7 @@ TEST(TestTransformers, ShellUnescapeAlias)
 
 TEST(TestTransformers, UnicodeNormalize)
 {
-    auto rule = readFile("unicode_normalize.yaml", base_dir);
+    auto rule = read_file("unicode_normalize.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -803,7 +803,7 @@ TEST(TestTransformers, UnicodeNormalize)
 
 TEST(TestTransformers, UrlBasename)
 {
-    auto rule = readFile("url_basename.yaml", base_dir);
+    auto rule = read_file("url_basename.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -836,7 +836,7 @@ TEST(TestTransformers, UrlBasename)
 
 TEST(TestTransformers, UrlBasenameAlias)
 {
-    auto rule = readFile("url_basename.yaml", base_dir);
+    auto rule = read_file("url_basename.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -869,7 +869,7 @@ TEST(TestTransformers, UrlBasenameAlias)
 
 TEST(TestTransformers, UrlDecode)
 {
-    auto rule = readFile("url_decode.yaml", base_dir);
+    auto rule = read_file("url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -902,7 +902,7 @@ TEST(TestTransformers, UrlDecode)
 
 TEST(TestTransformers, UrlDecodeAlias)
 {
-    auto rule = readFile("url_decode.yaml", base_dir);
+    auto rule = read_file("url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -935,7 +935,7 @@ TEST(TestTransformers, UrlDecodeAlias)
 
 TEST(TestTransformers, UrlDecodeIis)
 {
-    auto rule = readFile("url_decode_iis.yaml", base_dir);
+    auto rule = read_file("url_decode_iis.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -968,7 +968,7 @@ TEST(TestTransformers, UrlDecodeIis)
 
 TEST(TestTransformers, UrlDecodeIisAlias)
 {
-    auto rule = readFile("url_decode_iis.yaml", base_dir);
+    auto rule = read_file("url_decode_iis.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1001,7 +1001,7 @@ TEST(TestTransformers, UrlDecodeIisAlias)
 
 TEST(TestTransformers, UrlPath)
 {
-    auto rule = readFile("url_path.yaml", base_dir);
+    auto rule = read_file("url_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1034,7 +1034,7 @@ TEST(TestTransformers, UrlPath)
 
 TEST(TestTransformers, UrlPathAlias)
 {
-    auto rule = readFile("url_path.yaml", base_dir);
+    auto rule = read_file("url_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1067,7 +1067,7 @@ TEST(TestTransformers, UrlPathAlias)
 
 TEST(TestTransformers, UrlQuerystring)
 {
-    auto rule = readFile("url_querystring.yaml", base_dir);
+    auto rule = read_file("url_querystring.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1100,7 +1100,7 @@ TEST(TestTransformers, UrlQuerystring)
 
 TEST(TestTransformers, UrlQuerystringAlias)
 {
-    auto rule = readFile("url_querystring.yaml", base_dir);
+    auto rule = read_file("url_querystring.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1133,7 +1133,7 @@ TEST(TestTransformers, UrlQuerystringAlias)
 
 TEST(TestTransformers, Mixed)
 {
-    auto rule = readFile("mixed.yaml", base_dir);
+    auto rule = read_file("mixed.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);

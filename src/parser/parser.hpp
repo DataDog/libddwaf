@@ -39,5 +39,7 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
 filter_spec_container parse_filters(
     parameter::vector &filter_array, base_section_info &info, const object_limits &limits);
 
+preprocessor_container parse_preprocessors(
+    parameter::vector &preprocessor_array, base_section_info &info, const object_limits &limits);
 } // namespace v2
 } // namespace ddwaf::parser

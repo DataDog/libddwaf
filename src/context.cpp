@@ -15,15 +15,14 @@
 
 namespace ddwaf {
 
-DDWAF_RET_CODE context::run(
-    const ddwaf_object &newParameters, optional_ref<ddwaf_result> res, uint64_t timeout)
+DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
     if (res.has_value()) {
         ddwaf_result &output = *res;
         output = DDWAF_RESULT_INITIALISER;
     }
 
-    if (!store_.insert(newParameters)) {
+    if (!store_.insert(input, ruleset_->free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }
@@ -48,8 +47,17 @@ DDWAF_RET_CODE context::run(
 
     const event_serializer serializer(*ruleset_->event_obfuscator);
 
+    optional_ref<ddwaf_object> derived;
+    if (res.has_value()) {
+        ddwaf_result &output = *res;
+        ddwaf_object_map(&output.derivatives);
+        derived.emplace(output.derivatives);
+    }
+
     memory::vector<ddwaf::event> events;
     try {
+        eval_preprocessors(derived, deadline);
+
         const auto &rules_to_exclude = filter_rules(deadline);
         const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
         events = match(rules_to_exclude, objects_to_exclude, deadline);
@@ -94,6 +102,25 @@ const memory::unordered_map<rule *, filter_mode> &context::filter_rules(ddwaf::t
         }
     }
     return rules_to_exclude_;
+}
+
+void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
+{
+    for (const auto &[id, preproc] : ruleset_->preprocessors) {
+        if (deadline.expired()) {
+            DDWAF_INFO("Ran out of time while evaluating preprocessors");
+            throw timeout_exception();
+        }
+
+        auto it = preprocessor_cache_.find(preproc.get());
+        if (it == preprocessor_cache_.end()) {
+            auto [new_it, res] =
+                preprocessor_cache_.emplace(preproc.get(), preprocessor::cache_type{});
+            it = new_it;
+        }
+
+        preproc->eval(store_, derived, it->second, deadline);
+    }
 }
 
 const memory::unordered_map<rule *, context::object_set> &context::filter_inputs(

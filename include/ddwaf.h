@@ -164,6 +164,8 @@ struct _ddwaf_result
     ddwaf_object events;
     /** Array of actions generated, this is guaranteed to be an array **/
     ddwaf_object actions;
+    /** Map containing all derived objects in the format (address, value) **/
+    ddwaf_object derivatives;
     /** Total WAF runtime in nanoseconds **/
     uint64_t total_runtime;
 };
@@ -331,7 +333,6 @@ ddwaf_object* ddwaf_object_invalid(ddwaf_object *object);
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
 ddwaf_object* ddwaf_object_null(ddwaf_object *object);
-
 
 /**
  * ddwaf_object_string

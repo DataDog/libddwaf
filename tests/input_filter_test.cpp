@@ -369,7 +369,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
         store.insert(root);
 
-        const auto *client_ip_ptr = store.get_target(get_target_index("http.client_ip"));
+        auto client_ip_ptr = store.get_target(get_target_index("http.client_ip"));
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;

@@ -13,7 +13,7 @@ constexpr std::string_view base_dir = "integration/regressions/";
 
 TEST(TestRegressionsIntegration, TruncatedUTF8)
 {
-    auto rule = readFile("regressions.yaml", base_dir);
+    auto rule = read_file("regressions.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -47,7 +47,7 @@ TEST(TestRegressionsIntegration, TruncatedUTF8)
 
 TEST(TestRegressionsIntegration, DuplicateFlowMatches)
 {
-    auto rule = readFile("regressions2.yaml", base_dir);
+    auto rule = read_file("regressions2.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);

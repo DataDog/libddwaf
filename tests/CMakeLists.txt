@@ -14,7 +14,7 @@ if(NOT STDLIB_MAP_RECURSIVE)
     target_compile_definitions(testPowerWAF PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
 endif()
 
-set(LIBDDWAF_TEST_LIBRARIES lib_gtest libddwaf_objects lib_yamlcpp lib_rapidjson)
+set(LIBDDWAF_TEST_LIBRARIES lib_gtest lib_gmock libddwaf_objects lib_yamlcpp lib_rapidjson)
 if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(testPowerWAF PRIVATE -ggdb --coverage)
     list(APPEND LIBDDWAF_TEST_LIBRARIES gcov)

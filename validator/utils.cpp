@@ -120,7 +120,7 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
 {
     switch (obj.type) {
     case DDWAF_OBJ_BOOL:
-        output = obj.boolean ? "true" : "false";
+        output = obj.boolean;
         break;
     case DDWAF_OBJ_SIGNED:
         output = obj.intValue;

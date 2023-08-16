@@ -137,7 +137,7 @@ std::optional<event::match> expression::evaluator::eval_condition(
             continue;
         }
 
-        const ddwaf_object *object = store.get_target(target.root);
+        auto *object = store.get_target(target.root);
         if (object == nullptr) {
             continue;
         }

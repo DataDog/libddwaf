@@ -240,8 +240,8 @@ void ddwaf_result_free(ddwaf_result *result)
 {
     // NOLINTNEXTLINE
     ddwaf_object_free(&result->events);
-
     ddwaf_object_free(&result->actions);
+    ddwaf_object_free(&result->derivatives);
 
     *result = DDWAF_RESULT_INITIALISER;
 }

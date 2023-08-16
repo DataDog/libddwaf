@@ -14,7 +14,7 @@ constexpr std::string_view base_dir = "integration/context/";
 TEST(TestContextIntegration, Basic)
 {
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor.yaml", base_dir);
+    auto rule = read_file("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -59,7 +59,7 @@ TEST(TestContextIntegration, Basic)
 TEST(TestContextIntegration, KeyPaths)
 {
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor5.yaml", base_dir);
+    auto rule = read_file("processor5.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -141,7 +141,7 @@ TEST(TestContextIntegration, KeyPaths)
 TEST(TestContextIntegration, MissingParameter)
 {
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor.yaml", base_dir);
+    auto rule = read_file("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -173,7 +173,7 @@ TEST(TestContextIntegration, MissingParameter)
 TEST(TestContextIntegration, InvalidUTF8Input)
 {
     // Initialize a PowerWAF rule
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -214,7 +214,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 {
     // NOTE: this test only works due to the order of the rules in the ruleset
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor3.yaml", base_dir);
+    auto rule = read_file("processor3.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -263,7 +263,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 TEST(TestContextIntegration, MultiCollectionMatches)
 {
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor4.yaml", base_dir);
+    auto rule = read_file("processor4.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -329,7 +329,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
 
 TEST(TestContextIntegration, Timeout)
 {
-    auto rule = readFile("slow.yaml", base_dir);
+    auto rule = read_file("slow.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
