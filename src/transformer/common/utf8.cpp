@@ -111,7 +111,7 @@ int8_t findNextGlyphLength(const char *utf8Buffer, uint64_t lengthLeft)
     int8_t expectedSequenceLength = -1;
 
     // Looking for 0xxxxxxx
-    // Of the highest bit is 0, we know it's a single bit sequence.
+    // If the highest bit is 0, we know it's a single byte sequence.
     if ((firstByte & 0x80) == 0) {
         return 1;
     }
@@ -170,7 +170,7 @@ uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64
     }
 
     // Alright, we need to read multiple byte. The first one as a variable length so we need to deal
-    // with it :( To illustrate, here is the operation with trying to perform based on
+    // with it :( To illustrate, here is the matcher with trying to perform based on
     // nextGlyphLength
     //
     //  NGL = 2, buf = 110xxxxx -> buf & 00011111

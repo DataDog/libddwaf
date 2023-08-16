@@ -4,10 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ddwaf.h"
-#include "test.h"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "test_utils.hpp"
 
-static void run_test(ddwaf_handle handle)
+using namespace ddwaf;
+
+namespace {
+
+void run_test(ddwaf_handle handle)
 {
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
@@ -56,7 +61,7 @@ static void run_test(ddwaf_handle handle)
 
 TEST(TestParserV2Interface, Basic)
 {
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -93,7 +98,7 @@ TEST(TestParserV2Interface, Basic)
 
 TEST(TestParserV2Interface, BasicWithUpdate)
 {
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -169,7 +174,7 @@ TEST(TestParserV2Interface, NullRuleset)
 
 TEST(TestParserV2Interface, TestInvalidRule)
 {
-    auto rule = readFile("invalid_single.yaml");
+    auto rule = read_file("invalid_single.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -205,7 +210,7 @@ TEST(TestParserV2Interface, TestInvalidRule)
 
 TEST(TestParserV2Interface, TestMultipleSameInvalidRules)
 {
-    auto rule = readFile("invalid_multiple_same.yaml");
+    auto rule = read_file("invalid_multiple_same.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -243,7 +248,7 @@ TEST(TestParserV2Interface, TestMultipleSameInvalidRules)
 
 TEST(TestParserV2Interface, TestMultipleDiffInvalidRules)
 {
-    auto rule = readFile("invalid_multiple_diff.yaml");
+    auto rule = read_file("invalid_multiple_diff.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -278,7 +283,7 @@ TEST(TestParserV2Interface, TestMultipleDiffInvalidRules)
     }
 
     {
-        auto it = errors.find("unknown processor: squash");
+        auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -291,7 +296,7 @@ TEST(TestParserV2Interface, TestMultipleDiffInvalidRules)
 
 TEST(TestParserV2Interface, TestMultipleMixInvalidRules)
 {
-    auto rule = readFile("invalid_multiple_mix.yaml");
+    auto rule = read_file("invalid_multiple_mix.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -330,7 +335,7 @@ TEST(TestParserV2Interface, TestMultipleMixInvalidRules)
     }
 
     {
-        auto it = errors.find("unknown processor: squash");
+        auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -354,7 +359,7 @@ TEST(TestParserV2Interface, TestMultipleMixInvalidRules)
 
 TEST(TestParserV2Interface, TestInvalidDuplicate)
 {
-    auto rule = readFile("invalid_duplicate.yaml");
+    auto rule = read_file("invalid_duplicate.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -393,7 +398,7 @@ TEST(TestParserV2Interface, TestInvalidDuplicate)
 
 TEST(TestParserV2Interface, TestInvalidRuleset)
 {
-    auto rule = readFile("invalid_ruleset.yaml");
+    auto rule = read_file("invalid_ruleset.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -423,3 +428,5 @@ TEST(TestParserV2Interface, TestInvalidRuleset)
 
     ddwaf_object_free(&diagnostics);
 }
+
+} // namespace

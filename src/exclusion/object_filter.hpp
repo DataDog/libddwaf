@@ -7,14 +7,10 @@
 #pragma once
 
 #include <algorithm>
-#include <clock.hpp>
-#include <config.hpp>
-#include <context_allocator.hpp>
 #include <functional>
 #include <list>
 #include <log.hpp>
 #include <map>
-#include <object_store.hpp>
 #include <ostream>
 #include <set>
 #include <stack>
@@ -22,6 +18,11 @@
 #include <type_traits>
 #include <unordered_set>
 #include <vector>
+
+#include <clock.hpp>
+#include <context_allocator.hpp>
+#include <log.hpp>
+#include <object_store.hpp>
 
 namespace ddwaf::exclusion {
 
@@ -191,9 +192,9 @@ public:
         std::vector<std::string_view> key_stack{};
     };
 
-    template <typename StringType,
-        typename = std::enable_if<std::is_constructible<std::string, StringType>::value>>
+    template <typename StringType>
     void insert(const std::vector<StringType> &path)
+        requires std::is_constructible_v<std::string_view, StringType>
     {
         if (!root) {
             root.emplace();

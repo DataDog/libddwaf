@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/base64_decode.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestBase64Decode, NameAndID)
 {
@@ -35,3 +39,5 @@ TEST(TestBase64Decode, InvalidTransform)
     EXPECT_NO_TRANSFORM(base64_decode, "normal sentence");
     EXPECT_NO_TRANSFORM(base64_decode, "normalsentence===");
 }
+
+} // namespace

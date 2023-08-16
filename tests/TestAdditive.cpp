@@ -4,12 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test_utils.hpp"
+
+namespace {
 
 TEST(TestAdditive, TestMultiCall)
 {
     // Initialize a PowerWAF rule
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -73,7 +75,7 @@ TEST(TestAdditive, TestBad)
     EXPECT_FALSE(ret.timeout);
     ddwaf_object_free(&object);
 
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -104,7 +106,7 @@ TEST(TestAdditive, TestBad)
 TEST(TestAdditive, TestParameterOverride)
 {
     // Initialize a PowerWAF rule
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: ^string.*}}, {operator: match_regex, parameters: {inputs: [{address: arg2}], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -157,3 +159,5 @@ TEST(TestAdditive, TestParameterOverride)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

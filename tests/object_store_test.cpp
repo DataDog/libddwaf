@@ -4,9 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "object_store.hpp"
+#include "test.hpp"
 
 using namespace ddwaf;
+
+namespace {
 
 TEST(TestObjectStore, InsertInvalidObject)
 {
@@ -167,7 +170,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     EXPECT_EQ(store.get_target(url), nullptr);
 
     {
-        const ddwaf_object *object = store.get_target(query);
+        auto *object = store.get_target(query);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "hello");
@@ -185,14 +188,14 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     EXPECT_TRUE(store.is_new_target(url));
 
     {
-        const ddwaf_object *object = store.get_target(url);
+        auto *object = store.get_target(url);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "hello");
     }
 
     {
-        const ddwaf_object *object = store.get_target(query);
+        auto *object = store.get_target(query);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "bye");
@@ -210,9 +213,11 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     EXPECT_NE(store.get_target(query), nullptr);
 
     {
-        const ddwaf_object *object = store.get_target(url);
+        auto *object = store.get_target(url);
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "bye");
     }
 }
+
+} // namespace

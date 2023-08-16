@@ -4,19 +4,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../../test.h"
+#include "../../test_utils.hpp"
 #include "ddwaf.h"
 
 using namespace ddwaf;
 
 namespace {
 constexpr std::string_view base_dir = "integration/custom_rules/";
-} // namespace
 
 // Custom rules can be used instead of base rules
 TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
 {
-    auto rule = readFile("custom_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -56,7 +55,7 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
 // Custom rules can work alongside base rules
 TEST(TestCustomRulesIntegration, InitWithBaseRules)
 {
-    auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -96,7 +95,7 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
 // Regular custom rules have precedence over regular base rules
 TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
 {
-    auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -137,7 +136,7 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
 // Priority custom rules have precedence over priority base rules
 TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
 {
-    auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -181,7 +180,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
 // Global rules precedence test Priority Custom > Priority Base > Custom > Base
 TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
 {
-    auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -225,7 +224,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
 // Custom rules can be updated when base rules exist
 TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 {
-    auto rule = readFile("custom_rules_base_rules_only.yaml", base_dir);
+    auto rule = read_file("custom_rules_base_rules_only.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -234,7 +233,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    auto update = readFile("custom_rules.yaml", base_dir);
+    auto update = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
@@ -303,7 +302,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 // Custom rules can be updated when custom rules already exist
 TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 {
-    auto rule = readFile("custom_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -312,7 +311,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    auto update = readRule(
+    auto update = yaml_to_object(
         R"({custom_rules: [{id: custom_rule5, name: custom_rule5, tags: {type: flow5, category: category5}, conditions: [{operator: match_regex, parameters: {inputs: [{address: value34}], regex: custom_rule}}]}]})");
 
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
@@ -381,7 +380,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 // Remove all custom rules when no other rules are available
 TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
 {
-    auto rule = readFile("custom_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -390,7 +389,7 @@ TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    auto update = readRule(R"({custom_rules: []})");
+    auto update = yaml_to_object(R"({custom_rules: []})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
@@ -404,7 +403,7 @@ TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
 // Remove all custom rules when base rules are available
 TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 {
-    auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -413,7 +412,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    auto update = readRule(R"({custom_rules: []})");
+    auto update = yaml_to_object(R"({custom_rules: []})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
@@ -482,7 +481,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 // Ensure that existing custom rules are unaffected by overrides
 TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 {
-    auto rule = readFile("custom_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -491,7 +490,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    auto update = readRule(
+    auto update = yaml_to_object(
         R"({rules_override: [{rules_target: [{tags: {category: category4}}], enabled: false}]})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
@@ -561,7 +560,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 // Ensure that custom rules are unaffected by overrides after an update
 TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 {
-    auto rule = readFile("custom_rules_base_rules_only.yaml", base_dir);
+    auto rule = read_file("custom_rules_base_rules_only.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -570,7 +569,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    auto update = readRule(
+    auto update = yaml_to_object(
         R"({rules_override: [{rules_target: [{tags: {category: category4}}], enabled: false}]})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
@@ -578,7 +577,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&update);
 
-    auto rules_update = readFile("custom_rules.yaml", base_dir);
+    auto rules_update = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rules_update.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle3 = ddwaf_update(handle2, &rules_update, nullptr);
@@ -661,7 +660,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 // Ensure that existing custom rules are unaffected by overrides
 TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 {
-    auto rule = readFile("custom_rules_and_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -670,7 +669,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    auto update = readRule(
+    auto update = yaml_to_object(
         R"({exclusions: [{id: custom_rule4_exclude, rules_target: [{rule_id: custom_rule4}]}]})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
@@ -740,7 +739,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 // Ensure that custom rules are affected by overrides after an update
 TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
 {
-    auto rule = readFile("custom_rules_base_rules_only.yaml", base_dir);
+    auto rule = read_file("custom_rules_base_rules_only.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -749,7 +748,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    auto update = readRule(
+    auto update = yaml_to_object(
         R"({exclusions: [{id: custom_rule4_exclude, rules_target: [{tags: {category: category4}}]}]})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
@@ -757,7 +756,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&update);
 
-    auto rules_update = readFile("custom_rules.yaml", base_dir);
+    auto rules_update = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rules_update.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle3 = ddwaf_update(handle2, &rules_update, nullptr);
@@ -845,3 +844,5 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
     ddwaf_context_destroy(context2);
     ddwaf_context_destroy(context3);
 }
+
+} // namespace

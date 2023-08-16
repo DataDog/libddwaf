@@ -60,6 +60,7 @@ ExternalProject_Add(proj_re2
     -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
     -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
     -DRE2_BUILD_TESTING=0
+    BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 # alas, we can't use find_package because by the package is not downloaded by config time
 # so manually creating the library
@@ -70,6 +71,15 @@ if(NOT MSVC)
     target_link_libraries(lib_re2 INTERFACE -lpthread)
 endif()
 add_dependencies(lib_re2 proj_re2)
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtestd${CMAKE_STATIC_LIBRARY_SUFFIX})
+    set(LIBGMOCK_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gmockd${CMAKE_STATIC_LIBRARY_SUFFIX})
+else()
+    set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX})
+    set(LIBGMOCK_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gmock${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
 
 set(GOOGLETEST_COMMIT 955c7f837efad184ec63e771c42542d37545eaef)
 ExternalProject_Add(proj_gtest
@@ -86,21 +96,24 @@ ExternalProject_Add(proj_gtest
                 -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
                 -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
                 -DBUILD_SHARED_LIBS=0
+                -DBUILD_GMOCK=ON
+                BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBGTEST_FILENAME} ${INSTALL_DIR}/lib/${LIBGMOCK_FILENAME}
 )
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-    set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtestd${CMAKE_STATIC_LIBRARY_SUFFIX})
-else()
-    set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
 
 add_library(lib_gtest STATIC IMPORTED GLOBAL)
+add_library(lib_gmock STATIC IMPORTED GLOBAL)
 set_property(TARGET lib_gtest PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBGTEST_FILENAME})
+set_property(TARGET lib_gmock PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBGMOCK_FILENAME})
 target_include_directories(lib_gtest INTERFACE ${INSTALL_DIR}/include)
+target_include_directories(lib_gmock INTERFACE ${INSTALL_DIR}/include)
 if(NOT MSVC)
     target_link_libraries(lib_gtest INTERFACE -lpthread)
+    target_link_libraries(lib_gmock INTERFACE -lpthread)
 endif()
+
 add_dependencies(lib_gtest proj_gtest)
-set_target_properties(lib_gtest proj_gtest PROPERTIES EXCLUDE_FROM_ALL TRUE)
+add_dependencies(lib_gmock proj_gtest)
+set_target_properties(lib_gtest lib_gmock proj_gtest PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 add_library(lib_injection STATIC
     libinjection/src/xss.c
@@ -122,6 +135,12 @@ add_library(lib_radix STATIC
 target_include_directories(lib_radix INTERFACE ${PROJECT_SOURCE_DIR}/radixlib)
 set_target_properties(lib_radix PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
+if (MSVC)
+    set(LIBUTF8PROC_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc_static${CMAKE_STATIC_LIBRARY_SUFFIX})
+else ()
+    set(LIBUTF8PROC_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
 set(UTF8PROC_VERSION v2.7.0)
 ExternalProject_Add(proj_utf8proc
     URL         https://github.com/JuliaStrings/utf8proc/archive/refs/tags/${UTF8PROC_VERSION}.tar.gz
@@ -136,18 +155,25 @@ ExternalProject_Add(proj_utf8proc
     -DCMAKE_C_FLAGS_RELWITHDEBINFO=${CMAKE_C_FLAGS_RELWITHDEBINFO}
     -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}
     -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+    BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBUTF8PROC_FILENAME}
 )
 
 add_library(lib_utf8proc STATIC IMPORTED GLOBAL)
-if (MSVC)
-    set_property(TARGET lib_utf8proc PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc_static${CMAKE_STATIC_LIBRARY_SUFFIX})
-else ()
-    set_property(TARGET lib_utf8proc PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
+set_property(TARGET lib_utf8proc PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBUTF8PROC_FILENAME})
 target_include_directories(lib_utf8proc INTERFACE ${INSTALL_DIR}/include)
 add_dependencies(lib_utf8proc proj_utf8proc)
 
 # yaml-cpp
+if (NOT MSVC)
+    if(CMAKE_BUILD_TYPE MATCHES Debug)
+        set(LIBYAML_FILENAME libyaml-cppd${CMAKE_STATIC_LIBRARY_SUFFIX})
+    else()
+        set(LIBYAML_FILENAME libyaml-cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
+    endif()
+else()
+    set(LIBYAML_FILENAME yaml-cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
 ExternalProject_Add(proj_yamlcpp
     URL https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.zip
     INSTALL_DIR       ${INSTALL_DIR}
@@ -167,18 +193,9 @@ ExternalProject_Add(proj_yamlcpp
                 -DYAML_MSVC_SHARED_RT=OFF
                 -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
                 -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+                BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBYAML_FILENAME}
 )
 add_library(lib_yamlcpp STATIC IMPORTED GLOBAL)
-if (NOT MSVC)
-    if(CMAKE_BUILD_TYPE MATCHES Debug)
-        set(LIBYAML_FILENAME libyaml-cppd${CMAKE_STATIC_LIBRARY_SUFFIX})
-    else()
-        set(LIBYAML_FILENAME libyaml-cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
-    endif()
-else()
-    set(LIBYAML_FILENAME yaml-cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
-
 set_target_properties(lib_yamlcpp PROPERTIES  IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBYAML_FILENAME})
 target_include_directories(lib_yamlcpp INTERFACE ${INSTALL_DIR}/include)
 add_dependencies(lib_yamlcpp proj_yamlcpp)

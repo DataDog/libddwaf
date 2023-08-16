@@ -4,7 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "mkmap.hpp"
+#include "ruleset.hpp"
+#include "test.hpp"
+
+using namespace ddwaf;
+using namespace std::literals;
+
+namespace {
 
 TEST(TestMultiKeyMap, Find)
 {
@@ -33,7 +40,7 @@ TEST(TestMultiKeyMap, Find)
         tags.emplace("category", spec.category);
 
         auto rule_ptr = std::make_shared<ddwaf::rule>(
-            std::string(spec.id), "name", decltype(tags)(tags), std::vector<condition::ptr>{});
+            std::string(spec.id), "name", decltype(tags)(tags), std::make_shared<expression>());
         rules.emplace_back(rule_ptr);
         ruledb.insert(rule_ptr->get_tags(), rule_ptr.get());
     }
@@ -98,7 +105,7 @@ TEST(TestMultiKeyMap, Multifind)
         tags.emplace("category", spec.category);
 
         auto rule_ptr = std::make_shared<ddwaf::rule>(
-            std::string(spec.id), "name", decltype(tags)(tags), std::vector<condition::ptr>{});
+            std::string(spec.id), "name", decltype(tags)(tags), std::make_shared<expression>());
         rules.emplace_back(rule_ptr);
         ruledb.insert(rule_ptr->get_tags(), rule_ptr.get());
     }
@@ -140,3 +147,5 @@ TEST(TestMultiKeyMap, Multifind)
         EXPECT_EQ(rules.size(), 1);
     }
 }
+
+} // namespace

@@ -4,23 +4,25 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "exclusion/rule_filter.hpp"
+#include "expression.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
+#include "test_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
+namespace {
 TEST(TestRuleFilter, Match)
 {
-    std::vector<ddwaf::condition::target_type> targets;
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
-
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -38,16 +40,11 @@ TEST(TestRuleFilter, Match)
 
 TEST(TestRuleFilter, NoMatch)
 {
-    std::vector<condition::target_type> targets;
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{});
+    builder.add_target("http.client_ip");
 
-    targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
-
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {}};
+    ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {}};
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -65,27 +62,17 @@ TEST(TestRuleFilter, NoMatch)
 
 TEST(TestRuleFilter, ValidateCachedMatch)
 {
-    std::vector<std::shared_ptr<condition>> conditions;
+    expression_builder builder(2);
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
 
@@ -121,27 +108,17 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
 TEST(TestRuleFilter, MatchWithoutCache)
 {
-    std::vector<std::shared_ptr<condition>> conditions;
+    expression_builder builder(2);
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -176,27 +153,17 @@ TEST(TestRuleFilter, MatchWithoutCache)
 
 TEST(TestRuleFilter, NoMatchWithoutCache)
 {
-    std::vector<std::shared_ptr<condition>> conditions;
+    expression_builder builder(2);
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {}};
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -231,27 +198,17 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
 
 TEST(TestRuleFilter, FullCachedMatchSecondRun)
 {
-    std::vector<std::shared_ptr<condition>> conditions;
+    expression_builder builder(2);
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-    {
-        std::vector<condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-        conditions.push_back(std::move(cond));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
-    auto rule = std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, {}));
-    ddwaf::exclusion::rule_filter filter{"filter", std::move(conditions), {rule.get()}};
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     ddwaf::object_store store;
     ddwaf::exclusion::rule_filter::cache_type cache;
@@ -287,7 +244,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
 
 TEST(TestRuleFilter, ExcludeSingleRule)
 {
-    auto rule = readFile("exclude_one_rule.yaml");
+    auto rule = read_file("exclude_one_rule.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -318,7 +275,7 @@ TEST(TestRuleFilter, ExcludeSingleRule)
 
 TEST(TestRuleFilter, ExcludeByType)
 {
-    auto rule = readFile("exclude_by_type.yaml");
+    auto rule = read_file("exclude_by_type.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -349,7 +306,7 @@ TEST(TestRuleFilter, ExcludeByType)
 
 TEST(TestRuleFilter, ExcludeByCategory)
 {
-    auto rule = readFile("exclude_by_category.yaml");
+    auto rule = read_file("exclude_by_category.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -374,7 +331,7 @@ TEST(TestRuleFilter, ExcludeByCategory)
 
 TEST(TestRuleFilter, ExcludeByTags)
 {
-    auto rule = readFile("exclude_by_tags.yaml");
+    auto rule = read_file("exclude_by_tags.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -405,7 +362,7 @@ TEST(TestRuleFilter, ExcludeByTags)
 
 TEST(TestRuleFilter, ExcludeAllWithCondition)
 {
-    auto rule = readFile("exclude_all_with_condition.yaml");
+    auto rule = read_file("exclude_all_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -463,7 +420,7 @@ TEST(TestRuleFilter, ExcludeAllWithCondition)
 
 TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
 {
-    auto rule = readFile("exclude_one_rule_with_condition.yaml");
+    auto rule = read_file("exclude_one_rule_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -528,7 +485,7 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
 
 TEST(TestRuleFilter, ExcludeSingleRuleWithConditionAndTransformers)
 {
-    auto rule = readFile("exclude_one_rule_with_condition_and_transformers.yaml");
+    auto rule = read_file("exclude_one_rule_with_condition_and_transformers.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -592,7 +549,7 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithConditionAndTransformers)
 }
 TEST(TestRuleFilter, ExcludeByTypeWithCondition)
 {
-    auto rule = readFile("exclude_by_type_with_condition.yaml");
+    auto rule = read_file("exclude_by_type_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -657,7 +614,7 @@ TEST(TestRuleFilter, ExcludeByTypeWithCondition)
 
 TEST(TestRuleFilter, ExcludeByCategoryWithCondition)
 {
-    auto rule = readFile("exclude_by_category_with_condition.yaml");
+    auto rule = read_file("exclude_by_category_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -715,7 +672,7 @@ TEST(TestRuleFilter, ExcludeByCategoryWithCondition)
 
 TEST(TestRuleFilter, ExcludeByTagsWithCondition)
 {
-    auto rule = readFile("exclude_by_tags_with_condition.yaml");
+    auto rule = read_file("exclude_by_tags_with_condition.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -780,7 +737,7 @@ TEST(TestRuleFilter, ExcludeByTagsWithCondition)
 
 TEST(TestRuleFilter, MonitorSingleRule)
 {
-    auto rule = readFile("monitor_one_rule.yaml");
+    auto rule = read_file("monitor_one_rule.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -813,7 +770,7 @@ TEST(TestRuleFilter, MonitorSingleRule)
 
 TEST(TestRuleFilter, AvoidHavingTwoMonitorOnActions)
 {
-    auto rule = readFile("multiple_monitor_on_match.yaml");
+    auto rule = read_file("multiple_monitor_on_match.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -846,7 +803,7 @@ TEST(TestRuleFilter, AvoidHavingTwoMonitorOnActions)
 
 TEST(TestRuleFilter, FilterModePrecedence)
 {
-    auto rule = readFile("monitor_bypass_precedence.yaml");
+    auto rule = read_file("monitor_bypass_precedence.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -865,3 +822,4 @@ TEST(TestRuleFilter, FilterModePrecedence)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+} // namespace

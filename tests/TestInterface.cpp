@@ -4,11 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test_utils.hpp"
+#include "version.hpp"
+
+namespace {
 
 TEST(FunctionalTests, ddwaf_run)
 {
-    auto rule = readFile("interface.yaml");
+    auto rule = read_file("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -17,7 +20,7 @@ TEST(FunctionalTests, ddwaf_run)
     ASSERT_NE(handle1, nullptr);
     ddwaf_object_free(&rule);
 
-    rule = readFile("interface2.yaml");
+    rule = read_file("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle2 = ddwaf_init(&rule, &config, nullptr);
@@ -35,7 +38,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));
@@ -62,7 +65,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "randomString"));
@@ -89,7 +92,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_array_add(&param_key, ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));
@@ -116,7 +119,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));
@@ -143,7 +146,7 @@ TEST(FunctionalTests, ddwaf_run)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "randomString"));
@@ -167,7 +170,7 @@ TEST(FunctionalTests, HandleGood)
 {
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
 
-    auto rule = readFile("interface2.yaml");
+    auto rule = read_file("interface2.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     const ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
@@ -183,7 +186,7 @@ TEST(FunctionalTests, HandleGood)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;
 
-        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));
+        ddwaf_object_map_add(&param_key, "derp", ddwaf_object_string_from_unsigned(&tmp, 4242));
         ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));
 
         ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));
@@ -231,7 +234,7 @@ TEST(FunctionalTests, HandleBad)
     EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, 1), DDWAF_ERR_INVALID_ARGUMENT);
     ddwaf_object_free(&object);
 
-    auto rule = readFile("interface.yaml");
+    auto rule = read_file("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
@@ -258,14 +261,14 @@ TEST(FunctionalTests, HandleBad)
 /*{*/
 /*ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};*/
 
-/*auto rule = readFile("interface.yaml");*/
+/*auto rule = read_file("interface.yaml");*/
 /*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
 
 /*ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);*/
 /*ASSERT_NE(handle1, nullptr);*/
 /*ddwaf_object_free(&rule);*/
 
-/*rule = readFile("interface2.yaml");*/
+/*rule = read_file("interface2.yaml");*/
 /*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
 
 /*ddwaf_handle handle2 = ddwaf_init(&rule, &config, nullptr);*/
@@ -281,7 +284,7 @@ TEST(FunctionalTests, HandleBad)
 /*ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;*/
 /*ddwaf_object param_key = DDWAF_OBJECT_MAP, param_val = DDWAF_OBJECT_ARRAY;*/
 
-/*ddwaf_object_map_add(&param_key, "derp", ddwaf_object_unsigned(&tmp, 4242));*/
+/*ddwaf_object_map_add(&param_key, "derp", ddwaf_object_string_from_unsigned(&tmp, 4242));*/
 /*ddwaf_object_map_add(&param_key, "bla", ddwaf_object_string(&tmp, "rule3"));*/
 
 /*ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule2"));*/
@@ -315,7 +318,7 @@ TEST(FunctionalTests, ddwaf_runNull)
 {
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
 
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
@@ -344,7 +347,7 @@ TEST(FunctionalTests, ddwaf_runNull)
     ddwaf_destroy(handle);
 
     ////Add a removeNull transformer
-    rule = readRule(
+    rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: arachni_detection, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: bla}], regex: Arachni}}], transformers: [removeNulls]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     handle = ddwaf_init(&rule, &config, nullptr);
@@ -371,3 +374,5 @@ TEST(FunctionalTests, ddwaf_runNull)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/url_path.hpp"
 #include "transformer_utils.hpp"
+
+using namespace ddwaf;
+
+namespace {
 
 TEST(TestUrlPath, NameAndID)
 {
@@ -41,3 +45,5 @@ TEST(TestUrlPath, InvalidTransform)
     EXPECT_NO_TRANSFORM(url_path, "/path/index.php");
     EXPECT_NO_TRANSFORM(url_path, "/path/to/index/");
 }
+
+} // namespace

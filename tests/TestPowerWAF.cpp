@@ -4,11 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "log.hpp"
+#include "test_utils.hpp"
+
+namespace {
 
 TEST(TestPowerWAF, TestEmptyParameters)
 {
-    auto rule = readFile("powerwaf.yaml");
+    auto rule = read_file("powerwaf.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -18,11 +21,12 @@ TEST(TestPowerWAF, TestEmptyParameters)
     ddwaf_context context = ddwaf_context_init(handle);
 
     // Setup the parameter structure
-    ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+    ddwaf_object parameter = DDWAF_OBJECT_MAP;
+    ddwaf_object tmp;
     ddwaf_object_map_add(&parameter, "value", ddwaf_object_array(&tmp));
 
     // Detect match in a substructure's key
-    EXPECT_EQ(ddwaf_run(context, &parameter, NULL, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, LONG_TIME), DDWAF_OK);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -31,9 +35,9 @@ TEST(TestPowerWAF, TestEmptyParameters)
 TEST(TestPowerWAF, TestLogging)
 {
     static DDWAF_LOG_LEVEL lastLevel;
-    static string lastFile;
-    static string lastFunction;
-    static string lastMessage;
+    static std::string lastFile;
+    static std::string lastFunction;
+    static std::string lastMessage;
 
     ddwaf_log_cb cb = [](DDWAF_LOG_LEVEL level, const char *function, const char *file,
                           unsigned line, const char *message, uint64_t message_len) {
@@ -41,7 +45,7 @@ TEST(TestPowerWAF, TestLogging)
         lastFunction = function;
         lastFile = file;
         EXPECT_GT(line, 0);
-        lastMessage = string{message, static_cast<size_t>(message_len)};
+        lastMessage = std::string{message, static_cast<size_t>(message_len)};
     };
 
     ddwaf_set_log_cb(cb, DDWAF_LOG_TRACE);
@@ -57,7 +61,7 @@ TEST(TestPowerWAF, TestLogging)
 #else
     EXPECT_EQ(lastFile, "TestPowerWAF.cpp");
 #endif
-    EXPECT_TRUE(lastFunction.find("TestBody") != string::npos);
+    EXPECT_TRUE(lastFunction.find("TestBody") != std::string::npos);
     EXPECT_EQ(lastMessage, "test message");
 
     ddwaf_set_log_cb(cb, DDWAF_LOG_TRACE);
@@ -159,7 +163,7 @@ TEST(TestPowerWAF, TestLogging)
 
 TEST(TestPowerWAF, TestConfig)
 {
-    auto rule = readFile("powerwaf.yaml");
+    auto rule = read_file("powerwaf.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -169,12 +173,15 @@ TEST(TestPowerWAF, TestConfig)
     ddwaf_context context = ddwaf_context_init(handle);
 
     // Setup the parameter structure
-    ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
+    ddwaf_object parameter = DDWAF_OBJECT_MAP;
+    ddwaf_object tmp;
     ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
     // Detect match in a substructure's key
-    EXPECT_EQ(ddwaf_run(context, &parameter, NULL, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

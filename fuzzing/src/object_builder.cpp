@@ -88,6 +88,15 @@ uint64_t popUnsignedInteger(Data *data)
     return result;
 }
 
+double popDouble(Data *data)
+{
+    double result = 0;
+
+    popBytes(data, &result, 8);
+
+    return result;
+}
+
 int64_t popInteger(Data *data)
 {
     int64_t result = 0;
@@ -159,9 +168,18 @@ void build_array(Data *data, ddwaf_object *object, size_t deep)
 ddwaf_object create_object(Data *data, size_t deep)
 {
     ddwaf_object result;
-    uint8_t selector = popSelector(data, 6);
+    uint8_t selector = popSelector(data, 9);
 
     switch (selector) {
+    case 8:
+        ddwaf_object_invalid(&result);
+        break;
+    case 7:
+        ddwaf_object_null(&result);
+        break;
+    case 6:
+        ddwaf_object_float(&result, popDouble(data));
+        break;
     case 5:
         ddwaf_object_bool(&result, popBoolean(data));
         break;

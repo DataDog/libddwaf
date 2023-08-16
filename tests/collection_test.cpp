@@ -4,9 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "collection.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
+#include "test.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
+
+namespace {
 
 template <typename T> struct TestCollection : public testing::Test {};
 
@@ -17,19 +23,13 @@ TYPED_TEST_SUITE(TestCollection, CollectionTypes);
 // Validate that a rule within the collection matches only once
 TYPED_TEST(TestCollection, SingleRuleMatch)
 {
-    std::vector<ddwaf::condition::target_type> targets;
-
-    targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-    auto cond = std::make_shared<condition>(std::move(targets),
-        std::make_unique<rule_processor::ip_match>(std::vector<std::string_view>{"192.168.0.1"}));
-
-    std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>(
-        "id", "name", std::move(tags), std::move(conditions), std::vector<std::string>{});
+    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
 
     TypeParam rule_collection;
     rule_collection.insert(rule);
@@ -72,39 +72,28 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
     std::vector<rule::ptr> rules;
     TypeParam rule_collection;
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         rule_collection.insert(rule);
     }
 
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", std::move(tags), std::move(conditions), std::vector<std::string>{});
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         rule_collection.insert(rule);
@@ -149,37 +138,28 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
     std::vector<rule::ptr> rules;
     TypeParam rule_collection;
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
+
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         rule_collection.insert(rule);
     }
 
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", std::move(tags), std::move(conditions), std::vector<std::string>{});
+
+        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         rule_collection.insert(rule);
@@ -221,28 +201,16 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 // Validate that the rule cache is acted on
 TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 {
-    std::vector<condition::ptr> conditions;
-    {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
+    expression_builder builder(2);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
 
-        conditions.emplace_back(std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"})));
-    }
-
-    {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-
-        conditions.emplace_back(std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"})));
-    }
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>(
-        "id", "name", std::move(tags), std::move(conditions), std::vector<std::string>{});
+    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
 
     TypeParam rule_collection;
     rule_collection.insert(rule);
@@ -288,38 +256,29 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
     collection regular;
     priority_collection priority;
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
+
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         regular.insert(rule);
     }
 
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
-            std::move(conditions), std::vector<std::string>{"redirect"});
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
 
         rules.emplace_back(rule);
         priority.insert(rule);
@@ -367,38 +326,29 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
     collection regular;
     priority_collection priority;
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", std::move(tags), std::move(conditions), std::vector<std::string>{});
+
+        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         regular.insert(rule);
     }
 
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
-            std::move(conditions), std::vector<std::string>{"redirect"});
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
 
         rules.emplace_back(rule);
         priority.insert(rule);
@@ -446,38 +396,30 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
     std::vector<rule::ptr> rules;
     priority_collection priority;
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("http.client_ip"), "http.client_ip", {}, {}});
-
-        auto cond = std::make_shared<condition>(
-            std::move(targets), std::make_unique<rule_processor::ip_match>(
-                                    std::vector<std::string_view>{"192.168.0.1"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags),
-            std::move(conditions), std::vector<std::string>{"block"});
+
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
 
         rules.emplace_back(rule);
         priority.insert(rule);
     }
 
     {
-        std::vector<ddwaf::condition::target_type> targets;
-        targets.push_back({get_target_index("usr.id"), "usr.id", {}, {}});
-
-        auto cond = std::make_shared<condition>(std::move(targets),
-            std::make_unique<rule_processor::exact_match>(std::vector<std::string>{"admin"}));
-
-        std::vector<std::shared_ptr<condition>> conditions{std::move(cond)};
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags),
-            std::move(conditions), std::vector<std::string>{"redirect"});
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
 
         rules.emplace_back(rule);
         priority.insert(rule);
@@ -517,3 +459,5 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         ASSERT_EQ(events.size(), 0);
     }
 }
+
+} // namespace

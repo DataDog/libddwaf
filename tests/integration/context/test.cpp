@@ -4,18 +4,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../../test.h"
+#include "../../test_utils.hpp"
 
 using namespace ddwaf;
 
 namespace {
 constexpr std::string_view base_dir = "integration/context/";
-} // namespace
 
 TEST(TestContextIntegration, Basic)
 {
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor.yaml", base_dir);
+    auto rule = read_file("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -60,7 +59,7 @@ TEST(TestContextIntegration, Basic)
 TEST(TestContextIntegration, KeyPaths)
 {
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor5.yaml", base_dir);
+    auto rule = read_file("processor5.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -142,7 +141,7 @@ TEST(TestContextIntegration, KeyPaths)
 TEST(TestContextIntegration, MissingParameter)
 {
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor.yaml", base_dir);
+    auto rule = read_file("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -174,7 +173,7 @@ TEST(TestContextIntegration, MissingParameter)
 TEST(TestContextIntegration, InvalidUTF8Input)
 {
     // Initialize a PowerWAF rule
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -204,7 +203,7 @@ TEST(TestContextIntegration, InvalidUTF8Input)
 
     auto data = ddwaf::test::object_to_json(ret.events);
     auto pos = data.find(mapItem.stringValue);
-    EXPECT_TRUE(pos != string::npos);
+    EXPECT_TRUE(pos != std::string::npos);
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -215,7 +214,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 {
     // NOTE: this test only works due to the order of the rules in the ruleset
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor3.yaml", base_dir);
+    auto rule = read_file("processor3.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -264,7 +263,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 TEST(TestContextIntegration, MultiCollectionMatches)
 {
     // Initialize a PowerWAF rule
-    auto rule = readFile("processor4.yaml", base_dir);
+    auto rule = read_file("processor4.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -330,7 +329,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
 
 TEST(TestContextIntegration, Timeout)
 {
-    auto rule = readFile("slow.yaml", base_dir);
+    auto rule = read_file("slow.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -352,3 +351,5 @@ TEST(TestContextIntegration, Timeout)
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
+
+} // namespace

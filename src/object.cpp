@@ -31,6 +31,17 @@ ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
     return object;
 }
 
+ddwaf_object *ddwaf_object_null(ddwaf_object *object)
+{
+    if (object == nullptr) {
+        return nullptr;
+    }
+
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_NULL};
+
+    return object;
+}
+
 static ddwaf_object *ddwaf_object_string_helper(
     ddwaf_object *object, const char *string, size_t length)
 {
@@ -95,7 +106,7 @@ ddwaf_object *ddwaf_object_stringl_nc(ddwaf_object *object, const char *string, 
     return object;
 }
 
-ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
+ddwaf_object *ddwaf_object_string_from_signed(ddwaf_object *object, int64_t value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -103,12 +114,12 @@ ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
 
     // INT64_MIN is 20 char long
     char container[UINT64_CHARS] = {0};
-    size_t length = (size_t)snprintf(container, sizeof(container), "%" PRId64, value);
+    const auto length = (size_t)snprintf(container, sizeof(container), "%" PRId64, value);
 
     return ddwaf_object_stringl(object, container, length);
 }
 
-ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
+ddwaf_object *ddwaf_object_string_from_unsigned(ddwaf_object *object, uint64_t value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -116,12 +127,12 @@ ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
 
     // UINT64_MAX is 20 char long
     char container[UINT64_CHARS] = {0};
-    size_t length = (size_t)snprintf(container, sizeof(container), "%" PRIu64, value);
+    const auto length = (size_t)snprintf(container, sizeof(container), "%" PRIu64, value);
 
     return ddwaf_object_stringl(object, container, length);
 }
 
-ddwaf_object *ddwaf_object_unsigned_force(ddwaf_object *object, uint64_t value)
+ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -133,7 +144,7 @@ ddwaf_object *ddwaf_object_unsigned_force(ddwaf_object *object, uint64_t value)
     return object;
 }
 
-ddwaf_object *ddwaf_object_signed_force(ddwaf_object *object, int64_t value)
+ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -153,6 +164,18 @@ ddwaf_object *ddwaf_object_bool(ddwaf_object *object, bool value)
 
     *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_BOOL};
     object->boolean = value;
+
+    return object;
+}
+
+ddwaf_object *ddwaf_object_float(ddwaf_object *object, double value)
+{
+    if (object == nullptr) {
+        return nullptr;
+    }
+
+    *object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_FLOAT};
+    object->f64 = value;
 
     return object;
 }
@@ -195,9 +218,8 @@ static bool ddwaf_object_insert(ddwaf_object *array, ddwaf_object object)
             return false;
         }
 
-        size_t size = (size_t)(array->nbEntries + 8);
-        ddwaf_object *newArray =
-            (ddwaf_object *)realloc((void *)array->array, size * sizeof(ddwaf_object));
+        const auto size = (size_t)(array->nbEntries + 8);
+        auto *newArray = (ddwaf_object *)realloc((void *)array->array, size * sizeof(ddwaf_object));
         if (newArray == nullptr) {
             DDWAF_DEBUG("Allocation failure when trying to lengthen a map or an array");
             return false;
@@ -215,8 +237,9 @@ bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object)
     if (array == nullptr || array->type != DDWAF_OBJ_ARRAY) {
         DDWAF_DEBUG("Invalid call, this API can only be called with an array as first parameter");
         return false;
-    } else if (object == nullptr || object->type == DDWAF_OBJ_INVALID) {
-        DDWAF_DEBUG("Tried to add an invalid entry to an array");
+    }
+    if (object == nullptr) {
+        DDWAF_DEBUG("Tried to add a null object to an array");
         return false;
     }
     return ddwaf_object_insert(array, *object);
@@ -242,7 +265,11 @@ bool ddwaf_object_map_add_helper(
     object.parameterName = name;
     object.parameterNameLength = length;
 
-    return ddwaf_object_insert(map, object);
+    if (!ddwaf_object_insert(map, object)) {
+        free((void *)object.parameterName);
+        return false;
+    }
+    return true;
 }
 
 static inline bool ddwaf_object_map_add_valid(
@@ -251,11 +278,13 @@ static inline bool ddwaf_object_map_add_valid(
     if (map == nullptr || map->type != DDWAF_OBJ_MAP || key == nullptr) {
         DDWAF_DEBUG("Invalid call, this API can only be called with a map as first parameter");
         return false;
-    } else if (key == nullptr) {
+    }
+    if (key == nullptr) {
         DDWAF_DEBUG("Invalid call, nullptr key");
         return false;
-    } else if (object == nullptr || object->type == DDWAF_OBJ_INVALID) {
-        DDWAF_DEBUG("Tried to add an invalid entry to a map");
+    }
+    if (object == nullptr) {
+        DDWAF_DEBUG("Tried to add a null object to a map");
         return false;
     }
     return true;
@@ -290,17 +319,19 @@ bool ddwaf_object_map_addl_nc(
     return ddwaf_object_insert(map, *object);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 void ddwaf_object_free(ddwaf_object *object)
 {
-    if (object == nullptr || object->type == DDWAF_OBJ_INVALID)
+    if (object == nullptr) {
         return;
+    }
 
     free((void *)object->parameterName);
 
     switch (object->type) {
     case DDWAF_OBJ_MAP:
     case DDWAF_OBJ_ARRAY: {
-        ddwaf_object *value = (ddwaf_object *)object->array;
+        auto *value = (ddwaf_object *)object->array;
         if (value != nullptr) {
             for (uint64_t i = 0; i < object->nbEntries; ++i) { ddwaf_object_free(&value[i]); }
 
@@ -384,6 +415,15 @@ int64_t ddwaf_object_get_signed(const ddwaf_object *object)
     }
 
     return object->intValue;
+}
+
+double ddwaf_object_get_float(const ddwaf_object *object)
+{
+    if (object == nullptr || object->type != DDWAF_OBJ_FLOAT) {
+        return 0;
+    }
+
+    return object->f64;
 }
 
 bool ddwaf_object_get_bool(const ddwaf_object *object)

@@ -4,16 +4,17 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "test.h"
 #include "test_utils.hpp"
 
 using namespace rapidjson;
+
+namespace {
 
 class TestSchemaFixture : public ::testing::Test {
 public:
     TestSchemaFixture()
     {
-        auto rule = readFile("schema.yaml");
+        auto rule = read_file("schema.yaml");
         if (rule.type == DDWAF_OBJ_INVALID) {
             throw std::runtime_error("failed to load schema.yaml");
         }
@@ -149,3 +150,5 @@ TEST_F(TestSchemaFixture, MultiResultWithMultiCondition)
     Validate(ret, code);
     ddwaf_result_free(&ret);
 }
+
+} // namespace

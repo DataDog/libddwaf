@@ -4,9 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "test_utils.hpp"
 
-static void run_test(ddwaf_handle handle)
+using namespace ddwaf;
+
+namespace {
+
+void run_test(ddwaf_handle handle)
 {
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
@@ -54,7 +60,7 @@ static void run_test(ddwaf_handle handle)
 
 TEST(TestParserV1, Basic)
 {
-    auto rule = readRule(
+    auto rule = yaml_to_object(
         R"({version: '1.1', events: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -89,7 +95,7 @@ TEST(TestParserV1, Basic)
 
 TEST(TestParserV1, TestInvalidRule)
 {
-    auto rule = readFile("invalid_single_v1.yaml");
+    auto rule = read_file("invalid_single_v1.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -127,7 +133,7 @@ TEST(TestParserV1, TestInvalidRule)
 
 TEST(TestParserV1, TestMultipleSameInvalidRules)
 {
-    auto rule = readFile("invalid_multiple_same_v1.yaml");
+    auto rule = read_file("invalid_multiple_same_v1.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -166,7 +172,7 @@ TEST(TestParserV1, TestMultipleSameInvalidRules)
 
 TEST(TestParserV1, TestMultipleDiffInvalidRules)
 {
-    auto rule = readFile("invalid_multiple_diff_v1.yaml");
+    auto rule = read_file("invalid_multiple_diff_v1.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -202,7 +208,7 @@ TEST(TestParserV1, TestMultipleDiffInvalidRules)
     }
 
     {
-        auto it = errors.find("unknown processor: squash");
+        auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -215,7 +221,7 @@ TEST(TestParserV1, TestMultipleDiffInvalidRules)
 
 TEST(TestParserV1, TestMultipleMixInvalidRules)
 {
-    auto rule = readFile("invalid_multiple_mix_v1.yaml");
+    auto rule = read_file("invalid_multiple_mix_v1.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -252,7 +258,7 @@ TEST(TestParserV1, TestMultipleMixInvalidRules)
     }
 
     {
-        auto it = errors.find("unknown processor: squash");
+        auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -275,7 +281,7 @@ TEST(TestParserV1, TestMultipleMixInvalidRules)
 
 TEST(TestParserV1, TestInvalidDuplicate)
 {
-    auto rule = readFile("invalid_duplicate_v1.yaml");
+    auto rule = read_file("invalid_duplicate_v1.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -311,3 +317,5 @@ TEST(TestParserV1, TestInvalidDuplicate)
     ddwaf_object_free(&diagnostics);
     ddwaf_destroy(handle);
 }
+
+} // namespace

@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "obfuscator.hpp"
+#include "test_utils.hpp"
 
-namespace ddwaf {
+using namespace ddwaf;
+using namespace std::literals;
+
+namespace {
 
 TEST(TestObfuscator, TestKeyValueObfuscator)
 {
@@ -53,7 +57,7 @@ TEST(TestObfuscator, TestEmptyObfuscator)
 
 TEST(TestObfuscator, TestConfigKeyValue)
 {
-    auto rule = readFile("obfuscator.yaml");
+    auto rule = read_file("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {"password", "rule1_obf"}, ddwaf_object_free};
@@ -155,7 +159,7 @@ TEST(TestObfuscator, TestConfigKeyValue)
 
 TEST(TestObfuscator, TestConfigKey)
 {
-    auto rule = readFile("obfuscator.yaml");
+    auto rule = read_file("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {"password", nullptr}, ddwaf_object_free};
@@ -234,7 +238,7 @@ TEST(TestObfuscator, TestConfigKey)
 
 TEST(TestObfuscator, TestConfigValue)
 {
-    auto rule = readFile("obfuscator.yaml");
+    auto rule = read_file("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, "rule1_obf"}, ddwaf_object_free};
@@ -313,7 +317,7 @@ TEST(TestObfuscator, TestConfigValue)
 
 TEST(TestObfuscator, TestConfigHighlight)
 {
-    auto rule = readFile("obfuscator.yaml");
+    auto rule = read_file("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, "^badvalue$"}, ddwaf_object_free};
@@ -367,7 +371,7 @@ TEST(TestObfuscator, TestConfigHighlight)
 
 TEST(TestObfuscator, TestConfigEmpty)
 {
-    auto rule = readFile("obfuscator.yaml");
+    auto rule = read_file("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, ""}, ddwaf_object_free};
@@ -446,7 +450,7 @@ TEST(TestObfuscator, TestConfigEmpty)
 
 TEST(TestObfuscator, TestInvalidConfigKey)
 {
-    auto rule = readFile("obfuscator.yaml");
+    auto rule = read_file("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {"[", nullptr}, ddwaf_object_free};
@@ -525,7 +529,7 @@ TEST(TestObfuscator, TestInvalidConfigKey)
 
 TEST(TestObfuscator, TestInvalidConfigValue)
 {
-    auto rule = readFile("obfuscator.yaml");
+    auto rule = read_file("obfuscator.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, "]"}, ddwaf_object_free};
@@ -602,4 +606,4 @@ TEST(TestObfuscator, TestInvalidConfigValue)
     ddwaf_destroy(handle);
 }
 
-} // namespace ddwaf
+} // namespace

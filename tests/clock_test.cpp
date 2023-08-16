@@ -4,7 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "clock.hpp"
+#include "test.hpp"
+
+#include <chrono>
+#include <thread>
+
+using namespace std::literals;
+
+namespace {
 
 TEST(TestTimer, Basic)
 {
@@ -36,3 +44,5 @@ TEST(TestTimer, ValidatePeriod)
     EXPECT_TRUE(deadline.expired());
     EXPECT_TRUE(deadline.expired());
 }
+
+} // namespace

@@ -5,11 +5,19 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <map>
 #include <utility>
+#include <vector>
 
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/schema.h"
-#include "test.h"
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/schema.h>
+
+#include <yaml-cpp/yaml.h>
+
+#include "context_allocator.hpp"
+#include "ddwaf.h"
+#include "event.hpp"
+#include "test.hpp"
 
 namespace ddwaf::test {
 struct event {
@@ -33,8 +41,10 @@ bool operator==(const event::match &lhs, const event::match &rhs);
 bool operator==(const event &lhs, const event &rhs);
 
 std::ostream &operator<<(std::ostream &os, const event &e);
+std::ostream &operator<<(std::ostream &os, const event::match &m);
 
 std::string object_to_json(const ddwaf_object &obj);
+rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
 
 } // namespace ddwaf::test
 
@@ -69,10 +79,11 @@ template <> struct as_if<ddwaf::test::event, void> {
 
 } // namespace YAML
 
-class event_schema_validator {
+class schema_validator {
 public:
-    event_schema_validator();
+    explicit schema_validator(const std::string &path);
     std::optional<std::string> validate(const char *events);
+    std::optional<std::string> validate(rapidjson::Document &doc);
 
 protected:
     rapidjson::Document schema_doc_;
@@ -84,10 +95,12 @@ protected:
 // classes involved in anything GTest related.
 
 ::testing::AssertionResult ValidateSchema(const std::string &result);
+::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc);
 
 // Required by gtest to pretty print relevant types
 void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
 void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
+void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os);
 
 class WafResultActionMatcher {
 public:
@@ -125,6 +138,29 @@ protected:
     std::vector<ddwaf::test::event> expected_events_;
 };
 
+class MatchMatcher {
+public:
+    explicit MatchMatcher(std::vector<ddwaf::test::event::match> expected_matches)
+        : expected_matches_(std::move(expected_matches))
+    {}
+
+    bool MatchAndExplain(
+        std::list<ddwaf::test::event::match>, ::testing::MatchResultListener *) const;
+
+    void DescribeTo(::std::ostream *os) const
+    {
+        for (const auto &expected : expected_matches_) { *os << expected; }
+    }
+
+    void DescribeNegationTo(::std::ostream *os) const
+    {
+        for (const auto &expected : expected_matches_) { *os << expected; }
+    }
+
+protected:
+    std::vector<ddwaf::test::event::match> expected_matches_;
+};
+
 inline ::testing::PolymorphicMatcher<WafResultActionMatcher> WithActions(
     std::vector<std::string_view> &&values)
 {
@@ -137,6 +173,15 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected)));
 }
 
+inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
+    std::vector<ddwaf::test::event::match> &&expected)
+{
+    return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected)));
+}
+
+std::list<ddwaf::test::event::match> from_matches(
+    const ddwaf::memory::vector<ddwaf::event::match> &matches);
+
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
   {                                                                                                \
@@ -146,9 +191,111 @@ inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     auto events = doc.as<std::list<ddwaf::test::event>>();                                         \
     EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                                \
   }
+
+#define EXPECT_MATCHES(matches, ...) EXPECT_THAT(from_matches(matches), WithMatches({__VA_ARGS__}));
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
-ddwaf_object readFile(std::string_view filename, std::string_view base = "./");
-ddwaf_object readRule(const char *rule);
+ddwaf_object read_file(std::string_view filename, std::string_view base = "./");
 
-inline ddwaf_object json_to_object(std::string_view data) { return readRule(data.data()); }
+inline ddwaf_object yaml_to_object(const std::string &yaml)
+{
+    return YAML::Load(yaml).as<ddwaf_object>();
+}
+
+ddwaf_object json_to_object(const std::string &json);
+
+template <typename T>
+// NOLINTNEXTLINE(misc-no-recursion)
+bool json_equals(const T &lhs, const T &rhs)
+    requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
+{
+    if (lhs.GetType() != rhs.GetType()) {
+        return false;
+    }
+
+    switch (lhs.GetType()) {
+    case rapidjson::kObjectType: {
+        if (lhs.MemberCount() != rhs.MemberCount()) {
+            return false;
+        }
+
+        std::vector<bool> seen(lhs.MemberCount(), false);
+        for (const auto &lkv : lhs.GetObject()) {
+            bool found = false;
+            std::string_view const lkey = lkv.name.GetString();
+            for (auto it = rhs.MemberBegin(); it != rhs.MemberEnd(); ++it) {
+                auto i = it - rhs.MemberBegin();
+                if (seen[i]) {
+                    continue;
+                }
+
+                const auto &rkv = *it;
+                std::string_view const rkey = rkv.name.GetString();
+                if (lkey != rkey) {
+                    continue;
+                }
+
+                if (json_equals(lkv.value, rkv.value)) {
+                    seen[i] = found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+    case rapidjson::kArrayType: {
+        if (lhs.Size() != rhs.Size()) {
+            return false;
+        }
+
+        std::vector<bool> seen(lhs.Size(), false);
+        for (const auto &v : lhs.GetArray()) {
+            bool found = false;
+            for (unsigned i = 0; i < rhs.Size(); ++i) {
+                if (!seen[i] && json_equals(v, rhs[i])) {
+                    seen[i] = found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+    case rapidjson::kStringType: {
+        std::string_view lstr = lhs.GetString();
+        std::string_view rstr = rhs.GetString();
+        return lstr == rstr;
+    }
+    case rapidjson::kNumberType: {
+        if (lhs.IsInt()) {
+            return rhs.IsInt() && lhs.GetInt() == rhs.GetInt();
+        }
+        if (lhs.IsUint()) {
+            return rhs.IsUint() && lhs.GetUint() == rhs.GetUint();
+        }
+
+        if (lhs.IsInt64()) {
+            return rhs.IsInt64() && lhs.GetInt64() == rhs.GetInt64();
+        }
+        if (lhs.IsUint64()) {
+            return rhs.IsUint64() && lhs.GetUint64() == rhs.GetUint64();
+        }
+
+        if (lhs.IsDouble()) {
+            return rhs.IsDouble() && std::abs(lhs.GetDouble() - rhs.GetDouble()) < 0.01;
+        }
+        break;
+    }
+    case rapidjson::kTrueType:
+    case rapidjson::kFalseType:
+    case rapidjson::kNullType:
+    default:
+        return true;
+    }
+    return false;
+}

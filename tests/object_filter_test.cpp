@@ -4,12 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "exclusion/object_filter.hpp"
 #include "test_utils.hpp"
 
 using namespace ddwaf;
 using namespace ddwaf::exclusion;
+using namespace std::literals;
 
+namespace {
 TEST(TestObjectFilter, RootTarget)
 {
     auto query = get_target_index("query");
@@ -602,7 +604,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         for (auto &[object, result] : tests) {
             object_store store;
             object_filter::cache_type cache;
-            ddwaf_object root = json_to_object(object);
+            ddwaf_object root = yaml_to_object(object);
             store.insert(root);
 
             ddwaf::timer deadline{2s};
@@ -628,7 +630,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         for (auto &object : tests) {
             object_store store;
             object_filter::cache_type cache;
-            ddwaf_object root = json_to_object(object);
+            ddwaf_object root = yaml_to_object(object);
             store.insert(root);
 
             ddwaf::timer deadline{2s};
@@ -673,3 +675,4 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
         ASSERT_EQ(objects_filtered.size(), 1);
     }
 }
+} // namespace

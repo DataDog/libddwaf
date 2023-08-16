@@ -4,17 +4,20 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../../test.h"
+#include "../../test_utils.hpp"
+
+#include "parameter.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
 
 using namespace ddwaf;
 
 namespace {
 constexpr std::string_view base_dir = "integration/diagnostics/";
-} // namespace
 
 TEST(TestDiagnosticsIntegration, Rules)
 {
-    auto rule = readFile("rules.yaml", base_dir);
+    auto rule = read_file("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -55,7 +58,7 @@ TEST(TestDiagnosticsIntegration, Rules)
 
 TEST(TestDiagnosticsIntegration, RulesWithErrors)
 {
-    auto rule = readFile("rules_with_errors.yaml", base_dir);
+    auto rule = read_file("rules_with_errors.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -135,7 +138,7 @@ TEST(TestDiagnosticsIntegration, RulesWithErrors)
 
 TEST(TestDiagnosticsIntegration, CustomRules)
 {
-    auto rule = readFile("custom_rules.yaml", base_dir);
+    auto rule = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -173,3 +176,5 @@ TEST(TestDiagnosticsIntegration, CustomRules)
 
     ddwaf_destroy(handle);
 }
+
+} // namespace

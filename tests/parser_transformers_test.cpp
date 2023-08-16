@@ -4,8 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test.hpp"
 
+#include "parser/common.hpp"
+
+using namespace ddwaf;
 using namespace ddwaf::parser;
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-unchecked-optional-access)
@@ -13,6 +16,8 @@ using namespace ddwaf::parser;
   ASSERT_TRUE((opt));                                                                              \
   EXPECT_EQ((opt), expected);
 // NOLINTEND(cppcoreguidelines-macro-usage,bugprone-unchecked-optional-access)
+
+namespace {
 
 TEST(TestParserTransformers, ValidTransformers)
 {
@@ -63,3 +68,5 @@ TEST(TestParserTransformers, InvalidTransformers)
     EXPECT_FALSE(transformer_from_string("LoWeRcAse"));
     EXPECT_FALSE(transformer_from_string("raAndom"));
 }
+
+} // namespace

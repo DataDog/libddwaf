@@ -4,13 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "test.h"
+#include "test_utils.hpp"
+#include "waf.hpp"
 
 using namespace ddwaf;
 
+namespace {
+
 TEST(TestWaf, RootAddresses)
 {
-    auto rule = readFile("interface.yaml");
+    auto rule = read_file("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::null_ruleset_info info;
@@ -26,7 +29,7 @@ TEST(TestWaf, RootAddresses)
 
 TEST(TestWaf, BasicContextRun)
 {
-    auto rule = readFile("interface.yaml");
+    auto rule = read_file("interface.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::null_ruleset_info info;
@@ -46,7 +49,7 @@ TEST(TestWaf, BasicContextRun)
 
 TEST(TestWaf, RuleDisabledInRuleset)
 {
-    auto rule = readFile("rule_disabled.yaml");
+    auto rule = read_file("rule_disabled.yaml");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::null_ruleset_info info;
@@ -121,3 +124,5 @@ TEST(TestWaf, AddressUniqueness)
         indices.insert(hash);
     }
 }
+
+} // namespace

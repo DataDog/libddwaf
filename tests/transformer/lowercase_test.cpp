@@ -4,10 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.h"
+#include "../test.hpp"
 #include "transformer/lowercase.hpp"
 #include "transformer_utils.hpp"
 
+using namespace ddwaf;
+
+namespace {
 TEST(TestLowercase, NameAndID)
 {
     EXPECT_STREQ(transformer::lowercase::name().data(), "lowercase");
@@ -34,3 +37,5 @@ TEST(TestLowercase, InvalidTransform)
     EXPECT_NO_TRANSFORM(lowercase, "lowercase");
     EXPECT_NO_TRANSFORM(lowercase, "lowercase but it doesn't matter");
 }
+
+} // namespace
