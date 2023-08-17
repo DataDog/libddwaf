@@ -28,6 +28,7 @@ enum class scalar_type : uint8_t { null = 1, boolean = 2, integer = 4, string = 
 
 struct node_scalar {
     scalar_type type{scalar_type::null};
+    mutable std::size_t hash{0};
     std::unordered_map<std::string_view, std::string_view> tags{};
 };
 
@@ -62,11 +63,13 @@ struct node_equal {
 };
 
 struct node_record {
+    std::size_t hash{0};
     bool truncated{false};
     std::unordered_map<std::string_view, base_node> children{};
 };
 
 struct node_array {
+    std::size_t hash{0};
     bool truncated{false};
     std::size_t length{0};
     std::unordered_set<base_node, node_hash, node_equal> children{};
@@ -79,28 +82,39 @@ std::size_t node_hash::operator()(const base_node &node) const noexcept
 
 std::size_t node_hash::operator()(const node_scalar &node) const noexcept
 {
-    using underlying_type = typename std::underlying_type<scalar_type>::type;
-    auto value = std::hash<underlying_type>{}(static_cast<underlying_type>(node.type));
-    for (const auto &[k, v] : node.tags) {
-        value ^= std::hash<std::string_view>{}(k) ^ std::hash<std::string_view>{}(v);
+    // Accept the risk of collision with the hash value 0
+    if (node.hash == 0) {
+        using underlying_type = typename std::underlying_type<scalar_type>::type;
+        auto value = std::hash<underlying_type>{}(static_cast<underlying_type>(node.type));
+        for (const auto &[k, v] : node.tags) {
+            value ^= std::hash<std::string_view>{}(k) ^ std::hash<std::string_view>{}(v);
+        }
+        node.hash = value;
     }
-    return value;
+    return node.hash;
 }
 
 std::size_t node_hash::operator()(const node_array_ptr &node) const noexcept
 {
-    std::size_t value = std::hash<bool>{}(node->truncated) ^ std::hash<std::size_t>{}(node->length);
-    for (const auto &child : node->children) { value ^= std::visit(node_hash{}, child); }
-    return value;
+    if (node->hash == 0) {
+        std::size_t value =
+            std::hash<bool>{}(node->truncated) ^ std::hash<std::size_t>{}(node->length);
+        for (const auto &child : node->children) { value ^= std::visit(node_hash{}, child); }
+        node->hash = value;
+    }
+    return node->hash;
 }
 
 std::size_t node_hash::operator()(const node_record_ptr &node) const noexcept
 {
-    std::size_t value = std::hash<bool>{}(node->truncated);
-    for (const auto &[key, child] : node->children) {
-        value ^= std::hash<std::string_view>{}(key) ^ std::visit(node_hash{}, child);
+    if (node->hash == 0) {
+        std::size_t value = std::hash<bool>{}(node->truncated);
+        for (const auto &[key, child] : node->children) {
+            value ^= std::hash<std::string_view>{}(key) ^ std::visit(node_hash{}, child);
+        }
+        node->hash = value;
     }
-    return value;
+    return node->hash;
 }
 
 bool node_equal::operator()(const node_scalar &lhs, const node_scalar &rhs) const
