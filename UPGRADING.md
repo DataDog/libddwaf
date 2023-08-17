@@ -20,7 +20,7 @@ To summarize:
 
 ### New object types
 
-Alongside the schema extraction preprocessor, two new types have been introduced to ensure a more accurate and complete schema can be produced. These are Float and Null, the former for completeness of the numerical types and the latter for its semantical value which, in the context of schema extraction, differs from invalid in that it signifies a null value rather than an unknown type.
+Alongside the schema extraction preprocessor, two new types have been introduced to ensure a more accurate and complete schema can be produced. These are `float` and `null`, the former for completeness of the numerical types and the latter for its semantical value which, in the context of schema extraction, differs from invalid in that it signifies a null value rather than an unknown type.
 
 Library bindings with a mirrored definition of `ddwaf_object` should now include the `f64` field of type `double` to the value union:
 

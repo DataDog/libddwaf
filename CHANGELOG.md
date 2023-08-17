@@ -5,7 +5,7 @@
 This new version of the WAF includes the following new features:
 - Schema extraction preprocessor
 - New and improved universal linux buids, including support for i386 and armv7
-- Float and Null types
+- `float` and `null` types
 - Equals operator for arbitrary type equality comparison within conditions
 - Many other quality of life, correctness and performance improvements
 
