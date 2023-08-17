@@ -26,7 +26,9 @@ RUN cd /build && \
 # Strip archive
 RUN cd /build && stripcmd=$(egrep -o "/usr/bin/[a-z0-9\_-]*-strip" /sysroot/${ARCH}-none-linux-musl/Toolchain.cmake) ; $stripcmd -x -S libddwaf.a -o libddwaf.a.stripped
 
-RUN cd /build && ninja package && mv libddwaf-*.tar.gz libddwaf-${ARCH}-linux-musl.tar.gz
+RUN cd /build && ninja package && \
+    new_name=$(ls libddwaf-*.tar.gz | head -n1 | sed "s/\(libddwaf-[\.0-9]*\)-linux-\([_a-zA-Z0-9]*\)\(-\?[a-zA-Z0-9]*.tar.gz\)/\1-\2-linux-musl\3/g") ; \
+    mv libddwaf-*.tar.gz "$new_name"
 
 FROM scratch
 COPY --from=libddwaf_build /build/*.tar.gz /

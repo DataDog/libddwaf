@@ -1,5 +1,39 @@
 # libddwaf release
 
+### v1.13.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+This new version of the WAF includes the following new features:
+- Schema extraction preprocessor
+- New and improved universal linux buids, including support for i386 and armv7
+- `float` and `null` types
+- Equals operator for arbitrary type equality comparison within conditions
+- Many other quality of life, correctness and performance improvements
+
+The [upgrading guide](UGRADING.md) has also been updated to cover the new changes.
+
+#### API & Breaking Changes
+- Add object types `DDWAF_OBJ_FLOAT` and `DDWAF_OBJ_NULL` ([#197](https://github.com/DataDog/libddwaf/pull/197))
+- Add `double` field `f64` in `ddwaf_object` ([#197](https://github.com/DataDog/libddwaf/pull/197))
+- Add `ddwaf_object_null`, `ddwaf_object_float`and `ddwaf_object_get_float` ([#197](https://github.com/DataDog/libddwaf/pull/197))
+- Rename `ddwaf_object_signed` to `ddwaf_object_string_from_signed` ([#197](https://github.com/DataDog/libddwaf/pull/197))
+- Rename `ddwaf_object_unsigned` to `ddwaf_object_string_from_unsigned` ([#197](https://github.com/DataDog/libddwaf/pull/197))
+- Rename `ddwaf_object_signed_force` to `ddwaf_object_signed`([#197](https://github.com/DataDog/libddwaf/pull/197))
+- Rename `ddwaf_object_unsigned_force` to `ddwaf_object_unsigned`([#197](https://github.com/DataDog/libddwaf/pull/197))
+- Add `derivatives` field to `ddwaf_result` for output objects generated through preprocessors ([#182](https://github.com/DataDog/libddwaf/pull/182))
+
+#### Changes
+- Encapsulate conditions within expressions ([#192](https://github.com/DataDog/libddwaf/pull/192))
+- Equals operator and arbitrary operator type support ([#194](https://github.com/DataDog/libddwaf/pull/194))
+- Float and null type support ([#197](https://github.com/DataDog/libddwaf/pull/197))
+- Schema Extraction Preprocessor ([#182](https://github.com/DataDog/libddwaf/pull/182))([#202](https://github.com/DataDog/libddwaf/pull/202))
+
+#### Miscellaneous
+- Minor improvements ([#193](https://github.com/DataDog/libddwaf/pull/193))
+- Rename operation to matcher ([#196](https://github.com/DataDog/libddwaf/pull/196))
+- Fix coverage ([#199](https://github.com/DataDog/libddwaf/pull/199))
+- Linux musl/libc++ builds using alpine-based sysroots and llvm16 ([#198](https://github.com/DataDog/libddwaf/pull/198))([#200](https://github.com/DataDog/libddwaf/pull/200))([#201](https://github.com/DataDog/libddwaf/pull/201))
+
+
 ### v1.12.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Per-input transformers support on exclusion filter conditions ([#177](https://github.com/DataDog/libddwaf/pull/177))
