@@ -7,7 +7,7 @@ COPY smoketest /smoketest
 
 RUN apk --no-cache add clang cmake make musl-dev lld
 
-RUN tar -xf packages/libddwaf-${ARCH}-linux-*.tar.gz --strip-components=1
+RUN tar -xf packages/libddwaf-*-${ARCH}-linux-*.tar.gz --strip-components=1
 
 RUN mkdir build && cd build && \
     cmake -DCMAKE_C_FLAGS="-I/include" \
