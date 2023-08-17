@@ -2,13 +2,99 @@
 
 ## Upgrading from `1.12.0` to `1.13.0`
 
-### New object types and interface
+### Interface changes
 
+For historical reasons, the integer object constructors (signed, unsigned) didn't generate an object of a numerical type, but rather a string. This has been a source of confusion and, with the changes required for schema extraction, these functions have now been adjusted to provide the same semantics as all other constructors, meaning that they now generate a numerical object type rather than a string.
+
+Similarly, the numerical object constructors suffixed with `_force` have now been renamed to more accurately express their meaning:
+```cpp
+ddwaf_object* ddwaf_object_string_from_unsigned(ddwaf_object *object, uint64_t value);
+ddwaf_object* ddwaf_object_string_from_signed(ddwaf_object *object, int64_t value);
+```
+
+To summarize:
+- `ddwaf_object_signed` has been renamed to `ddwaf_object_string_from_signed`
+- `ddwaf_object_unsigned` has been renamed to `ddwaf_object_string_from_unsigned`
+- `ddwaf_object_signed_force` has been renamed to `ddwaf_object_signed`
+- `ddwaf_object_unsigned_force` has been renamed to `ddwaf_object_unsigned`
+
+### New object types
+
+Alongside the schema extraction preprocessor, two new types have been introduced to ensure a more accurate and complete schema can be produced. These are Float and Null, the former for completeness of the numerical types and the latter for its semantical value which, in the context of schema extraction, differs from invalid in that it signifies a null value rather than an unknown type.
+
+Library bindings with a mirrored definition of `ddwaf_object` should now include the `f64` field of type `double` to the value union:
+
+```cpp
+...
+    union
+    {
+        const char* stringValue;
+        uint64_t uintValue;
+        int64_t intValue;
+        ddwaf_object* array;
+        bool boolean;
+        double f64;
+    };
+...
+```
+This new field breaks with the naming convention of the current `ddwaf_object` definition, however it matches the naming convention of the future `ddwaf_object` that will be included in version 2.0.
+
+Similarly, those bindings mirroring the enum types should also include the two new types:
+```cpp
+...
+    // 64-bit float (or double) type
+    DDWAF_OBJ_FLOAT    = 1 << 6,
+    // Null type, only used for its semantical value
+    DDWAF_OBJ_NULL    = 1 << 7,
+...
+```
+
+These new types can now be created with their corresponding `ddwaf_object` constructors:
+```cpp
+ddwaf_object* ddwaf_object_null(ddwaf_object *object);
+ddwaf_object* ddwaf_object_float(ddwaf_object *object, double value);
+```
+
+And finally, float values can also be accessed with the corresponding getter:
+```cpp
+double ddwaf_object_get_float(const ddwaf_object *object);
+```
+
+### Derivatives in `ddwaf_result`
+
+Preprocessors in general and, more specifically the schema extraction preprocessor, now generate objects which need to be provided to the caller of `ddwaf_run`. For this reason, a new field has been introduced to `ddwaf_result` called `derivatives`, containing generated objects:
+```cpp
+struct _ddwaf_result
+{
+...
+    /** Map containing all derived objects in the format (address, value) **/
+    ddwaf_object derivatives;
+    /** Total WAF runtime in nanoseconds **/
+    uint64_t total_runtime;
+};
+```
+This new field is an object which will always contain a map of generated addresses and their arbitrary-type value, for example:
+
+```json
+{
+    "server.request.body.schema": [[8],{"len":2}]
+}
+```
+
+This object is freed with `ddwaf_result_free`, so necessary conversions or copies should be performed before disposing of the result structure.
 
 ### New Linux builds 
 
-The new linux builds are currently released alongside the legacy linux builds for `aarch64` and `x86_64` and will not replace them for the time being. In addition to the two mentioned architectures, support for `i386` and `armv7` has also been included.
+The new linux builds are currently released alongside the legacy linux builds for `aarch64` and `x86_64` and will not replace them for the time being. In addition to the two mentioned architectures, support for `i386` and `armv7` has also been included. The new archives follow a different, more standarised, naming convention which consists of `libddwaf-<version>-<arch><sub>-<sys>-<env>[-<hash>].tar.gz` with `sys` being always `linux` and `env` always `musl`, which results in the following package names:
+- `libddwaf-1.13.0-x86_64-linux-musl.tar.gz`
+- `libddwaf-1.13.0-aarch64-linux-musl.tar.gz`
+- `libddwaf-1.13.0-i386-linux-musl.tar.gz`
+- `libddwaf-1.13.0-armv7-linux-musl.tar.gz`
 
+Which are not to be confused with the legacy builds, with the following package names:
+- `libddwaf-1.13.0-linux-x86_64.tar.gz`
+- `libddwaf-1.13.0-linux-aarch64.tar.gz`
+  
 The contents of each package is essentially equivalent to the legacy builds, however the new static builds do not provide or require a separate static `libc++` package as all static libraries have been packaged together within `libddwaf.a`.
 
 The new builds use version 16 of `libc++` and friends, compiled against musl `1.2.4` using `clang-16`.
