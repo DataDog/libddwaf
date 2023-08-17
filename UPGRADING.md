@@ -22,7 +22,7 @@ To summarize:
 
 Alongside the schema extraction preprocessor, two new types have been introduced to ensure a more accurate and complete schema can be produced. These are `float` and `null`, the former for completeness of the numerical types and the latter for its semantical value which, in the context of schema extraction, differs from invalid in that it signifies a null value rather than an unknown type.
 
-Library bindings with a mirrored definition of `ddwaf_object` should now include the `f64` field of type `double` to the value union:
+Library bindings with a mirrored definition of `ddwaf_object` should now include the `f64` field, of type `double`, in the value union:
 
 ```cpp
 ...
@@ -66,7 +66,7 @@ Preprocessors in general and, more specifically the schema extraction preprocess
 ```cpp
 struct _ddwaf_result
 {
-...
+    ...
     /** Map containing all derived objects in the format (address, value) **/
     ddwaf_object derivatives;
     /** Total WAF runtime in nanoseconds **/
@@ -85,7 +85,7 @@ This object is freed with `ddwaf_result_free`, so necessary conversions or copie
 
 ### New Linux builds 
 
-The new linux builds are currently released alongside the legacy linux builds for `aarch64` and `x86_64` and will not replace them for the time being. In addition to the two mentioned architectures, support for `i386` and `armv7` has also been included. The new archives follow a different, more standarised, naming convention which consists of `libddwaf-<version>-<arch><sub>-<sys>-<env>[-<hash>].tar.gz` with `sys` being always `linux` and `env` always `musl`, which results in the following package names:
+The new linux builds are currently released alongside the legacy linux builds for `aarch64` and `x86_64` and will not replace them for the time being. In addition to the two aforementioned architectures, support for `i386` and `armv7` has also been included. The new archives follow a different, more standarised, naming convention which consists of `libddwaf-<version>-<arch><sub>-<sys>-<env>[-<hash>].tar.gz` with `sys` being always `linux` and `env` always `musl`, which results in the following package names:
 - `libddwaf-1.13.0-x86_64-linux-musl.tar.gz`
 - `libddwaf-1.13.0-aarch64-linux-musl.tar.gz`
 - `libddwaf-1.13.0-i386-linux-musl.tar.gz`
