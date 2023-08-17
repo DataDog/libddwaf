@@ -37,7 +37,7 @@ Library bindings with a mirrored definition of `ddwaf_object` should now include
     };
 ...
 ```
-This new field breaks with the naming convention of the current `ddwaf_object` definition, however it matches the naming convention of the future `ddwaf_object` that will be included in version 2.0.
+This new field breaks with the naming convention of the current `ddwaf_object` definition, however it matches the naming convention of the future `ddwaf_object` definition which will be included in version 2.0.
 
 Similarly, those bindings mirroring the enum types should also include the two new types:
 ```cpp
@@ -95,7 +95,7 @@ Which are not to be confused with the legacy builds, with the following package 
 - `libddwaf-1.13.0-linux-x86_64.tar.gz`
 - `libddwaf-1.13.0-linux-aarch64.tar.gz`
   
-The contents of each package is essentially equivalent to the legacy builds, however the new static builds do not provide or require a separate static `libc++` package as all static libraries have been packaged together within `libddwaf.a`.
+The contents of each package is essentially equivalent to the legacy builds, however the new static builds do not provide or require a separate static `libc++` package as all static libraries have been packaged together within `libddwaf.a`. Note that the directory contained within each archive still follows the old naming convention, this will also be changed once the legacy builds have been deprecated.
 
 The new builds use version 16 of `libc++` and friends, compiled against musl `1.2.4` using `clang-16`.
 
