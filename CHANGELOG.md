@@ -1,5 +1,10 @@
 # libddwaf release
 
+### v1.13.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+#### Changes
+- Allow conversions between signed/unsigned types during parsing ([#205](https://github.com/DataDog/libddwaf/pull/205))
+
 ### v1.13.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 This new version of the WAF includes the following new features:
