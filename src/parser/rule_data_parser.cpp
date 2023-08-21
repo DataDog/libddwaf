@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "exception.hpp"
 #include "parser/rule_data_parser.hpp"
+#include "exception.hpp"
 
 namespace ddwaf::parser {
 
