@@ -89,6 +89,14 @@ TEST(TestParameter, ToUint64)
 
     {
         ddwaf_object root;
+        ddwaf_object_signed(&root, 2123);
+
+        uint64_t value = static_cast<uint64_t>(parameter(root));
+        EXPECT_EQ(value, 2123);
+    }
+
+    {
+        ddwaf_object root;
         ddwaf_object_string_from_unsigned(&root, 2123);
 
         uint64_t value = static_cast<uint64_t>(parameter(root));
@@ -113,6 +121,13 @@ TEST(TestParameter, ToUint64)
 
         EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_signed(&root, -2123);
+
+        EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+    }
 }
 
 TEST(TestParameter, ToInt64)
@@ -123,6 +138,14 @@ TEST(TestParameter, ToInt64)
 
         int64_t value = static_cast<int64_t>(parameter(root));
         EXPECT_EQ(value, -2123);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_unsigned(&root, 2123);
+
+        int64_t value = static_cast<int64_t>(parameter(root));
+        EXPECT_EQ(value, 2123);
     }
 
     {
@@ -149,7 +172,14 @@ TEST(TestParameter, ToInt64)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
-        EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW(static_cast<int64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_unsigned(&root, std::numeric_limits<uint64_t>::max());
+
+        EXPECT_THROW(static_cast<int64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 }
 
@@ -224,7 +254,8 @@ TEST(TestParameter, ToStringView)
 TEST(TestParameter, ToVector)
 {
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_array(&root);
 
         for (unsigned i = 0; i < 20; i++) {
@@ -254,7 +285,8 @@ TEST(TestParameter, ToVector)
 TEST(TestParameter, ToMap)
 {
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_map(&root);
 
         for (unsigned i = 0; i < 20; i++) {
@@ -285,7 +317,8 @@ TEST(TestParameter, ToMap)
 TEST(TestParameter, ToStringVector)
 {
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_array(&root);
 
         for (unsigned i = 0; i < 20; i++) {
@@ -302,7 +335,8 @@ TEST(TestParameter, ToStringVector)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_array(&root);
 
         ddwaf_object_array_add(&root, ddwaf_object_unsigned(&tmp, 50));
@@ -324,7 +358,8 @@ TEST(TestParameter, ToStringVector)
 TEST(TestParameter, ToStringViewVector)
 {
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_array(&root);
 
         for (unsigned i = 0; i < 20; i++) {
@@ -341,7 +376,8 @@ TEST(TestParameter, ToStringViewVector)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_array(&root);
 
         ddwaf_object_array_add(&root, ddwaf_object_unsigned(&tmp, 50));
@@ -363,7 +399,8 @@ TEST(TestParameter, ToStringViewVector)
 TEST(TestParameter, ToStringViewSet)
 {
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_array(&root);
 
         for (unsigned i = 0; i < 20; i++) {
@@ -381,7 +418,8 @@ TEST(TestParameter, ToStringViewSet)
     }
 
     {
-        ddwaf_object root, tmp;
+        ddwaf_object root;
+        ddwaf_object tmp;
         ddwaf_object_array(&root);
 
         ddwaf_object_array_add(&root, ddwaf_object_unsigned(&tmp, 50));

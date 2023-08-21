@@ -20,9 +20,8 @@ int main(int argc, char *argv[])
     }
 
     std::string rule_str = read_file(argv[1]);
-    YAML::Node doc = YAML::Load(rule_str);
+    auto rule = json_to_object(rule_str);
 
-    auto rule = doc.as<ddwaf_object>();
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ddwaf_object_free(&rule);
 
