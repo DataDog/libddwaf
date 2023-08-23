@@ -58,17 +58,9 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
     try {
         eval_preprocessors(derived, deadline);
 
-        bool new_targets = false;
-        for (const auto &[target, str] : ruleset_->rule_addresses) {
-            new_targets = store_.is_new_target(target);
-            if (new_targets) {
-                DDWAF_DEBUG("New rule targets available");
-                break;
-            }
-        }
-
         // If no rule targets are available, there is no point in evaluating them
-        if (new_targets) {
+        if (should_eval_rules()) {
+            DDWAF_DEBUG("New rule targets available, evaluating filters and rules");
             const auto &rules_to_exclude = filter_rules(deadline);
             const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
             events = match(rules_to_exclude, objects_to_exclude, deadline);
