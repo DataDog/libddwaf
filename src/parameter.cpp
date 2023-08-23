@@ -4,13 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ddwaf.h"
 #include <charconv>
 #include <cinttypes>
-#include <exception.hpp>
-#include <parameter.hpp>
+#include <limits>
 #include <sstream>
 
+#include "ddwaf.h"
+#include "exception.hpp"
+#include "parameter.hpp"
 #include "utils.hpp"
 
 namespace {
@@ -127,6 +128,10 @@ parameter::operator uint64_t() const
         return uintValue;
     }
 
+    if (type == DDWAF_OBJ_SIGNED && intValue >= 0) {
+        return intValue;
+    }
+
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
         auto [res, result] = from_string<uint64_t>({stringValue, static_cast<size_t>(nbEntries)});
         if (res) {
@@ -141,6 +146,10 @@ parameter::operator int64_t() const
 {
     if (type == DDWAF_OBJ_SIGNED) {
         return intValue;
+    }
+
+    if (type == DDWAF_OBJ_UNSIGNED && uintValue <= std::numeric_limits<int64_t>::max()) {
+        return static_cast<int64_t>(uintValue);
     }
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
