@@ -32,7 +32,7 @@ public:
     std::string_view get_id() const { return id_; }
     filter_mode get_mode() const { return mode_; }
 
-    void get_addresses(std::unordered_set<std::string> &addresses) const
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
     }

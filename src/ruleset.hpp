@@ -27,7 +27,7 @@ using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
 struct ruleset {
     using ptr = std::shared_ptr<ruleset>;
 
-    void insert_rule(rule::ptr rule)
+    void insert_rule(const rule::ptr &rule)
     {
         rules.emplace_back(rule);
         std::string_view type = rule->get_tag("type");
@@ -45,6 +45,7 @@ struct ruleset {
                 base_priority_collections[type].insert(rule);
             }
         }
+        rule->get_addresses(rule_addresses);
     }
 
     void insert_rules(const std::unordered_map<std::string_view, rule::ptr> &rules_)
@@ -52,24 +53,37 @@ struct ruleset {
         for (const auto &[id, rule] : rules_) { insert_rule(rule); }
     }
 
+    template <typename T>
+    void insert_filters(const std::unordered_map<std::string_view, std::shared_ptr<T>> &filters_)
+        requires std::is_same_v<T, exclusion::rule_filter> or
+                 std::is_same_v<T, exclusion::input_filter>
+    {
+        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
+            rule_filters = filters_;
+        } else if constexpr (std::is_same_v<T, exclusion::input_filter>) {
+            input_filters = filters_;
+        }
+
+        for (const auto &[key, filter] : filters_) { filter->get_addresses(filter_addresses); }
+    }
+
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
     {
         if (root_addresses.empty()) {
-            for (const auto &rule : rules) { rule->get_addresses(unique_root_addresses); }
-
-            for (const auto &[id, filter] : rule_filters) {
-                filter->get_addresses(unique_root_addresses);
+            std::unordered_set<target_index> known_targets;
+            for (const auto &[index, str] : rule_addresses) {
+                const auto &[it, res] = known_targets.emplace(index);
+                if (res) {
+                    root_addresses.emplace_back(str.c_str());
+                }
             }
-
-            for (const auto &[id, filter] : input_filters) {
-                filter->get_addresses(unique_root_addresses);
-            }
-
-            for (const auto &str : unique_root_addresses) {
-                root_addresses.emplace_back(str.c_str());
+            for (const auto &[index, str] : filter_addresses) {
+                const auto &[it, res] = known_targets.emplace(index);
+                if (res) {
+                    root_addresses.emplace_back(str.c_str());
+                }
             }
         }
-
         return root_addresses;
     }
 
@@ -91,9 +105,10 @@ struct ruleset {
     std::unordered_map<std::string_view, collection> user_collections;
     std::unordered_map<std::string_view, collection> base_collections;
 
+    std::unordered_map<target_index, std::string> rule_addresses;
+    std::unordered_map<target_index, std::string> filter_addresses;
+
     // Root addresses, lazily computed
-    std::unordered_set<std::string> unique_root_addresses;
-    // Root address memory to be returned to the API caller
     std::vector<const char *> root_addresses;
 };
 
