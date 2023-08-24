@@ -17,6 +17,12 @@ concurrency:
 jobs:
   sanitizers:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suffix:
+          - none
+          - sse2
     steps:
       - uses: actions/checkout@v3
         with:
@@ -34,7 +40,8 @@ jobs:
             -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
             -DCMAKE_C_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
-            -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address,leak,undefined"
+            -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
+            -DLIBDDWAF_VECTORIZED_TRANSFORMERS=$([ "${{ matrix.suffix }}" != "none" ] && echo "ON" || echo "OFF")
         working-directory: Debug
 
       - name: Build
@@ -51,6 +58,12 @@ jobs:
 
   valgrind:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suffix:
+          - none
+          - sse2
     steps:
       - uses: actions/checkout@v3
         with:
@@ -67,7 +80,9 @@ jobs:
           CC: gcc-12
           CXX: g++-12
         run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DLIBDDWAF_VECTORIZED_TRANSFORMERS=$([ "${{ matrix.suffix }}" != "none" ] && echo "ON" || echo "OFF")
         working-directory: Debug
 
       - name: Build
@@ -120,7 +135,7 @@ jobs:
         run: make test
         working-directory: Debug
 
-      - name: Test
+      - name: Validate
         run: make validate
         working-directory: Debug
 
