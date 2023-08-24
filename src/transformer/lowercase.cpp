@@ -6,13 +6,13 @@
 
 #include "transformer/lowercase.hpp"
 
-#ifdef __SSE2__
+#if defined(__SSE2__) && defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
 #  include <immintrin.h>
 #endif
 
 namespace ddwaf::transformer {
 
-#ifndef __SSE2__
+#if !defined(__SSE2__) || !defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
 bool lowercase::transform_impl(cow_string &str)
 {
     std::size_t pos = 0;
@@ -32,8 +32,7 @@ bool lowercase::transform_impl(cow_string &str)
     return true;
 }
 
-#else // defined(__SSE2__)
-
+#else // defined(__SSE2__) && defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
 bool lowercase::needs_transform(std::string_view str)
 {
     if (str.empty()) {

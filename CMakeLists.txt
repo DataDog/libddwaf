@@ -31,6 +31,7 @@ option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
 option(LIBDDWAF_KEEP_SYMBOL_FILE "Keep the debug symbol file" ON)
 option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
+option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -132,7 +133,11 @@ try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp
     CXX_STANDARD 20)
 if(NOT STDLIB_MAP_RECURSIVE)
-	target_compile_definitions(libddwaf_objects PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
+    target_compile_definitions(libddwaf_objects PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
+endif()
+
+if (LIBDDWAF_VECTORIZED_TRANSFORMERS)
+    target_compile_definitions(libddwaf_objects PRIVATE LIBDDWAF_VECTORIZED_TRANSFORMERS)
 endif()
 
 target_include_directories(libddwaf_objects PUBLIC ${libddwaf_SOURCE_DIR}/include)

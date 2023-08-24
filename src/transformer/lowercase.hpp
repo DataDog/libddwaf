@@ -16,7 +16,7 @@ public:
     static std::string_view name() { return "lowercase"; }
 
 protected:
-#ifndef __SSE2__
+#if !defined(__SSE2__) || !defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
     static bool needs_transform(std::string_view /*str*/) { return true; }
 #else
     static bool needs_transform(std::string_view str);
