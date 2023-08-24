@@ -87,11 +87,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cfg:
-          - suffix: sse2
-            flags: -DLIBDDWAF_VECTORIZED_TRANSFORMERS=ON
-          - suffix: none
-            flags: -DLIBDDWAF_VECTORIZED_TRANSFORMERS=OFF
+        suffix:
+          - none
+          - sse2
     steps:
       - uses: actions/checkout@v3
         with:
@@ -108,7 +106,10 @@ jobs:
           CC: gcc-12
           CXX: g++-12
         run: |
-          cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug ${{ matrix.cfg.flags }}
+          cmake .. \
+            -DLIBDDWAF_TEST_COVERAGE=ON \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DLIBDDWAF_VECTORIZED_TRANSFORMERS=$([ "${{ matrix.suffix }}" != "none" ] && echo "ON" || echo "OFF")
         working-directory: Debug
 
       - name: Build
@@ -134,12 +135,12 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: waf_test_${{ matrix.cfg.suffix }}
+          flags: waf_test_${{ matrix.suffix }}
           verbose: true
           files: coverage.xml
       - uses: actions/upload-artifact@v3
         with:
-          name: coverage_${{ matrix.cfg.suffix }}
+          name: coverage_${{ matrix.suffix }}
           path: ${{ github.workspace }}/Debug/coverage/
 
   lint:
