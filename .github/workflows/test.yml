@@ -38,11 +38,15 @@ jobs:
         working-directory: Debug
 
       - name: Build
-        run: VERBOSE=1 make -j $(nproc) testPowerWAF
+        run: VERBOSE=1 make -j $(nproc) testPowerWAF waf_validator
         working-directory: Debug
 
       - name: Test
         run: ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" make test
+        working-directory: Debug
+
+      - name: Validate
+        run: ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" make validate
         working-directory: Debug
 
   valgrind:
@@ -67,15 +71,27 @@ jobs:
         working-directory: Debug
 
       - name: Build
-        run: VERBOSE=1 make -j $(nproc) testPowerWAF
+        run: VERBOSE=1 make -j $(nproc) testPowerWAF waf_validator
         working-directory: Debug
 
       - name: Test
         run: make test_valgrind
         working-directory: Debug
 
+      - name: Validate
+        run: make validate_valgrind
+        working-directory: Debug
+
   coverage:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+          - suffix: sse2
+            flags: -DLIBDDWAF_VECTORIZED_TRANSFORMERS=ON
+          - suffix: none
+            flags: -DLIBDDWAF_VECTORIZED_TRANSFORMERS=OFF
     steps:
       - uses: actions/checkout@v3
         with:
@@ -92,117 +108,40 @@ jobs:
           CC: gcc-12
           CXX: g++-12
         run: |
-          cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug -DLIBDDWAF_VECTORIZED_TRANSFORMERS=OFF
+          cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug ${{ matrix.cfg.flags }}
         working-directory: Debug
 
       - name: Build
-        run: VERBOSE=1 make -j $(nproc) testPowerWAF
+        run: VERBOSE=1 make -j $(nproc) testPowerWAF waf_validator
         working-directory: Debug
 
       - name: Test
         run: make test
         working-directory: Debug
 
-      - name: Generate coverage
-        run: |
-          gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -x  -o coverage.xml
-          mkdir -p coverage
-          gcovr --gcov-executable gcov-12 --html-details coverage/coverage.html --exclude-throw-branches -f ".*src.*" -d
-        working-directory: Debug
-
-      - name: Submit coverage
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: waf_test
-          verbose: true
-          files: coverage.xml
-      - uses: actions/upload-artifact@v3
-        with:
-          name: coverage
-          path: ${{ github.workspace }}/Debug/coverage/
-
-  coverage-sse2:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Install dependencies
-        run: sudo apt update ; sudo apt install -y gcovr gcc-12
-
-      - name: Create directories
-        run: mkdir Debug
-
-      - name: CMake
-        env:
-          CC: gcc-12
-          CXX: g++-12
-        run: |
-          cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug -DLIBDDWAF_VECTORIZED_TRANSFORMERS=ON
-        working-directory: Debug
-
-      - name: Build
-        run: VERBOSE=1 make -j $(nproc) testPowerWAF
-        working-directory: Debug
-
       - name: Test
-        run: make test
-        working-directory: Debug
-
-      - name: Generate coverage
-        run: |
-          gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -x  -o coverage.xml
-          mkdir -p coverage
-          gcovr --gcov-executable gcov-12 --html-details coverage/coverage.html --exclude-throw-branches -f ".*src.*" -d
-        working-directory: Debug
-
-      - name: Submit coverage
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: waf_test
-          verbose: true
-          files: coverage.xml
-      - uses: actions/upload-artifact@v3
-        with:
-          name: coverage-sse2
-          path: ${{ github.workspace }}/Debug/coverage/
-
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Create directories
-        run: mkdir Debug
-
-      - name: CMake
-        env:
-          CC: gcc-12
-          CXX: g++-12
-        run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
-            -DCMAKE_C_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
-            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
-            -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address,leak,undefined"
-        working-directory: Debug
-
-      - name: Build
-        run: VERBOSE=1 make -j $(nproc) waf_validator
-        working-directory: Debug
-
-      - name: Test Validator
-        run: make test_validator
-        working-directory: Debug
-
-      - name: Test WAF
         run: make validate
         working-directory: Debug
+
+      - name: Generate coverage
+        run: |
+          gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -x  -o coverage.xml
+          mkdir -p coverage
+          gcovr --gcov-executable gcov-12 --html-details coverage/coverage.html --exclude-throw-branches -f ".*src.*" -d
+        working-directory: Debug
+
+      - name: Submit coverage
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: waf_test_${{ matrix.cfg.suffix }}
+          verbose: true
+          files: coverage.xml
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage_${{ matrix.cfg.suffix }}
+          path: ${{ github.workspace }}/Debug/coverage/
+
   lint:
     runs-on: ubuntu-latest
     steps:
