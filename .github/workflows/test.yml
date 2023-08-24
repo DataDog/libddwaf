@@ -74,7 +74,7 @@ jobs:
         run: make test_valgrind
         working-directory: Debug
 
-  coverage-sse2:
+  coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -92,7 +92,7 @@ jobs:
           CC: gcc-12
           CXX: g++-12
         run: |
-          cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
+          cmake .. -DLIBDDWAF_TEST_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug -DLIBDDWAF_VECTORIZED_TRANSFORMERS=OFF
         working-directory: Debug
 
       - name: Build
@@ -119,10 +119,10 @@ jobs:
           files: coverage.xml
       - uses: actions/upload-artifact@v3
         with:
-          name: coverage-sse2
+          name: coverage
           path: ${{ github.workspace }}/Debug/coverage/
 
-  coverage:
+  coverage-sse2:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -167,7 +167,7 @@ jobs:
           files: coverage.xml
       - uses: actions/upload-artifact@v3
         with:
-          name: coverage
+          name: coverage-sse2
           path: ${{ github.workspace }}/Debug/coverage/
 
   validate:
