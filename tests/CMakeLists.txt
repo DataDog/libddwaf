@@ -14,6 +14,10 @@ if(NOT STDLIB_MAP_RECURSIVE)
     target_compile_definitions(testPowerWAF PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
 endif()
 
+if (LIBDDWAF_VECTORIZED_TRANSFORMERS)
+    target_compile_definitions(testPowerWAF PRIVATE LIBDDWAF_VECTORIZED_TRANSFORMERS)
+endif()
+
 set(LIBDDWAF_TEST_LIBRARIES lib_gtest lib_gmock libddwaf_objects lib_yamlcpp lib_rapidjson)
 if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(testPowerWAF PRIVATE -ggdb --coverage)
