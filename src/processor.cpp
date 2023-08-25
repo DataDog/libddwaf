@@ -28,7 +28,8 @@ void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, c
             throw ddwaf::timeout_exception();
         }
 
-        if (store.has_target(mapping.output)) {
+        if (store.has_target(mapping.output) ||
+            cache.generated.find(mapping.output) != cache.generated.end()) {
             continue;
         }
 
@@ -37,7 +38,10 @@ void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, c
             continue;
         }
 
-        auto object = generator_->generate(input);
+        // Whatever the outcome, we don't want to try and generate it again
+        cache.generated.emplace(mapping.output);
+
+        auto object = generator_->generate(input, deadline);
         if (object.type == DDWAF_OBJ_INVALID) {
             continue;
         }

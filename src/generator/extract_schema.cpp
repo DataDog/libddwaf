@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <variant>
 
+#include "exception.hpp"
 #include "generator/extract_schema.hpp"
 
 namespace ddwaf::generator {
@@ -260,8 +261,12 @@ ddwaf_object node_serialize::operator()(const node_record_ptr &node) const noexc
 ddwaf_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-base_node generate_helper(const ddwaf_object *object, std::size_t depth)
+base_node generate_helper(const ddwaf_object *object, std::size_t depth, ddwaf::timer &deadline)
 {
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
     switch (object->type) {
     case DDWAF_OBJ_NULL:
         return node_scalar{scalar_type::null};
@@ -288,7 +293,7 @@ base_node generate_helper(const ddwaf_object *object, std::size_t depth)
                 continue;
             }
 
-            auto schema = generate_helper(child, depth - 1);
+            auto schema = generate_helper(child, depth - 1, deadline);
             std::string_view key{
                 child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
             record->children.emplace(key, std::move(schema));
@@ -306,7 +311,7 @@ base_node generate_helper(const ddwaf_object *object, std::size_t depth)
         array->children.reserve(length);
         for (std::size_t i = 0; i < length && depth > 1; i++) {
             const auto *child = &object->array[i];
-            auto schema = generate_helper(child, depth - 1);
+            auto schema = generate_helper(child, depth - 1, deadline);
             array->children.emplace(std::move(schema));
         }
         return array;
@@ -317,20 +322,20 @@ base_node generate_helper(const ddwaf_object *object, std::size_t depth)
     return {};
 }
 
-ddwaf_object generate(const ddwaf_object *object)
+ddwaf_object generate(const ddwaf_object *object, ddwaf::timer &deadline)
 {
-    return serialize(generate_helper(object, extract_schema::max_container_depth));
+    return serialize(generate_helper(object, extract_schema::max_container_depth, deadline));
 }
 
 } // namespace schema
 
-ddwaf_object extract_schema::generate(const ddwaf_object *input)
+ddwaf_object extract_schema::generate(const ddwaf_object *input, ddwaf::timer &deadline)
 {
     if (input == nullptr) {
         return {};
     }
 
-    return schema::generate(input);
+    return schema::generate(input, deadline);
 }
 
 } // namespace ddwaf::generator
