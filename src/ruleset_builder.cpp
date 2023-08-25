@@ -169,7 +169,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->dynamic_matchers = dynamic_matchers_;
     rs->rule_filters = rule_filters_;
     rs->input_filters = input_filters_;
-    rs->preprocessors = preprocessors_;
+    rs->preprocessors = processors_.pre;
+    rs->postprocessors = processors_.post;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
@@ -311,10 +312,10 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto processors = static_cast<parameter::vector>(it->second);
             if (!processors.empty()) {
-                preprocessors_ = parser::v2::parse_processors(processors, section, limits_);
+                processors_ = parser::v2::parse_processors(processors, section, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all processors");
-                preprocessors_.clear();
+                processors_.clear();
             }
             state = state | change_state::processors;
         } catch (const std::exception &e) {

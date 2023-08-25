@@ -627,6 +627,7 @@ processor_container parse_processors(
     parameter::vector &processor_array, base_section_info &info, const object_limits &limits)
 {
     processor_container processors;
+    std::unordered_set<std::string_view> known_processors;
 
     for (unsigned i = 0; i < processor_array.size(); i++) {
         const auto &node_param = processor_array[i];
@@ -634,7 +635,7 @@ processor_container parse_processors(
         std::string id;
         try {
             id = at<std::string>(node, "id");
-            if (processors.find(id) != processors.end()) {
+            if (known_processors.find(id) != known_processors.end()) {
                 DDWAF_WARN("Duplicate processor: %s", id.c_str());
                 info.add_failed(id, "duplicate processor");
                 continue;
@@ -657,14 +658,26 @@ processor_container parse_processors(
             auto mappings_vec = at<parameter::vector>(params, "mappings");
             auto mappings = parse_processor_mappings(mappings_vec);
 
+            auto eval = at<bool>(node, "evaluate", true);
+            auto output = at<bool>(node, "output", false);
+
+            if (!eval && !output) {
+                DDWAF_WARN("Processor %s not used for evaluation or output", id.c_str());
+                info.add_failed(id, "processor not used for evaluation or output");
+                continue;
+            }
+
             DDWAF_DEBUG("Parsed processor %s", id.c_str());
-            auto preproc = std::make_shared<processor>(
-                processor{std::move(id), std::move(generator), std::move(expr), std::move(mappings),
-                    at<bool>(node, "evaluate", true), at<bool>(node, "output", false)});
+            auto proc = std::make_shared<processor>(processor{std::move(id), std::move(generator),
+                std::move(expr), std::move(mappings), eval, output});
 
-            processors.emplace(preproc->get_id(), preproc);
+            if (eval) {
+                processors.pre.emplace(proc->get_id(), proc);
+            } else {
+                processors.post.emplace(proc->get_id(), proc);
+            }
 
-            info.add_loaded(preproc->get_id());
+            info.add_loaded(proc->get_id());
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);

@@ -56,7 +56,19 @@ struct input_filter_spec {
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
 using rule_data_container = std::unordered_map<std::string, matcher::base::shared_ptr>;
-using processor_container = std::unordered_map<std::string_view, processor::ptr>;
+
+struct processor_container {
+    [[nodiscard]] bool empty() const { return pre.empty() && post.empty(); }
+    [[nodiscard]] std::size_t size() const { return pre.size() + post.size(); }
+    void clear()
+    {
+        pre.clear();
+        post.clear();
+    }
+
+    std::unordered_map<std::string_view, processor::ptr> pre;
+    std::unordered_map<std::string_view, processor::ptr> post;
+};
 
 struct override_spec_container {
     [[nodiscard]] bool empty() const { return by_ids.empty() && by_tags.empty(); }
