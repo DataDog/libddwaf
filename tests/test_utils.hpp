@@ -196,6 +196,7 @@ std::list<ddwaf::test::event::match> from_matches(
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 ddwaf_object read_file(std::string_view filename, std::string_view base = "./");
+ddwaf_object read_json_file(std::string_view filename, std::string_view base = "./");
 
 inline ddwaf_object yaml_to_object(const std::string &yaml)
 {

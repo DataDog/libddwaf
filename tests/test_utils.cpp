@@ -612,6 +612,37 @@ ddwaf_object read_file(std::string_view filename, std::string_view base)
     return yaml_to_object(buffer);
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameter)
+ddwaf_object read_json_file(std::string_view filename, std::string_view base)
+{
+    std::string base_dir{base};
+    if (*base_dir.end() != '/') {
+        base_dir += '/';
+    }
+
+    auto file_path = base_dir + "ruleset/" + std::string{filename};
+
+    DDWAF_DEBUG("Opening %s", file_path.c_str());
+
+    std::ifstream file(file_path.c_str(), std::ios::in);
+    if (!file) {
+        throw std::system_error(errno, std::generic_category());
+    }
+
+    // Create a buffer equal to the file size
+    std::string buffer;
+    file.ignore(std::numeric_limits<std::streamsize>::max());
+    std::streamsize length = file.gcount();
+    file.clear();
+    buffer.resize(length, '\0');
+    file.seekg(0, std::ios::beg);
+
+    file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+    file.close();
+
+    return json_to_object(buffer);
+}
+
 template <typename T>
 // NOLINTNEXTLINE(misc-no-recursion)
 void json_to_object_helper(ddwaf_object *object, T &doc)
