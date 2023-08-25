@@ -87,6 +87,7 @@ TEST(TestContext, PreprocessorEval)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
     ruleset->preprocessors.emplace("id", proc);
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
 
     ddwaf::context ctx(ruleset);
 
@@ -117,6 +118,7 @@ TEST(TestContext, PostprocessorEval)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
     ruleset->postprocessors.emplace("id", proc);
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
 
     ddwaf::context ctx(ruleset);
 
