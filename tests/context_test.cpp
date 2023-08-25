@@ -13,6 +13,12 @@
 #include "matcher/ip_match.hpp"
 #include "test.hpp"
 
+#include <gmock/gmock.h>
+
+using ::testing::_;
+using ::testing::Return;
+using ::testing::Sequence;
+
 using namespace ddwaf;
 using namespace std::literals;
 using namespace ddwaf::exclusion;
@@ -29,6 +35,98 @@ public:
 } // namespace ddwaf::test
 
 namespace {
+
+namespace mock {
+
+class rule : public ddwaf::rule {
+public:
+    rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
+        expression::ptr expr, std::vector<std::string> actions = {}, bool enabled = true,
+        source_type source = source_type::base)
+        : ddwaf::rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
+              std::move(actions), enabled, source)
+    {}
+    ~rule() override = default;
+
+    MOCK_METHOD(std::optional<event>, match,
+        (const object_store &, rule::cache_type &,
+            (const std::unordered_set<const ddwaf_object *> &),
+            (const std::unordered_map<std::string, matcher::base::shared_ptr> &), ddwaf::timer &),
+        (const override));
+};
+
+class processor : public ddwaf::processor {
+public:
+    processor() : ddwaf::processor({}, {}, {}, {}, true, true) {}
+    ~processor() override = default;
+
+    MOCK_METHOD(void, eval,
+        (object_store & store, optional_ref<ddwaf_object> &, processor::cache_type &,
+            ddwaf::timer &deadline),
+        (const override));
+};
+
+} // namespace mock
+
+TEST(TestContext, PreprocessorEval)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
+
+    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+
+    auto rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+    auto proc = std::make_shared<mock::processor>();
+
+    Sequence seq;
+
+    EXPECT_CALL(*proc, eval(_, _, _, _)).InSequence(seq);
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).InSequence(seq).WillOnce(Return(std::nullopt));
+
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->insert_rule(rule);
+    ruleset->preprocessors.emplace("id", proc);
+
+    ddwaf::context ctx(ruleset);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ctx.run(root, std::nullopt, 20000);
+}
+
+TEST(TestContext, PostprocessorEval)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
+
+    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+
+    auto rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+    auto proc = std::make_shared<mock::processor>();
+
+    Sequence seq;
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).InSequence(seq).WillOnce(Return(std::nullopt));
+    EXPECT_CALL(*proc, eval(_, _, _, _)).InSequence(seq);
+
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->insert_rule(rule);
+    ruleset->postprocessors.emplace("id", proc);
+
+    ddwaf::context ctx(ruleset);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ctx.run(root, std::nullopt, 20000);
+}
 
 TEST(TestContext, MatchTimeout)
 {

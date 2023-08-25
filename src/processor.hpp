@@ -43,9 +43,9 @@ public:
 
     processor(processor &&rhs) noexcept = default;
     processor &operator=(processor &&rhs) noexcept = default;
-    ~processor() = default;
+    virtual ~processor() = default;
 
-    void eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
+    virtual void eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] const std::string &get_id() const { return id_; }
