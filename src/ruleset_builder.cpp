@@ -304,21 +304,21 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         }
     }
 
-    it = root.find("preprocessors");
+    it = root.find("processors");
     if (it != root.end()) {
-        DDWAF_DEBUG("Parsing preprocessors");
-        auto &section = info.add_section("");
+        DDWAF_DEBUG("Parsing processors");
+        auto &section = info.add_section("processors");
         try {
-            auto preprocessors = static_cast<parameter::vector>(it->second);
-            if (!preprocessors.empty()) {
-                preprocessors_ = parser::v2::parse_preprocessors(preprocessors, section, limits_);
+            auto processors = static_cast<parameter::vector>(it->second);
+            if (!processors.empty()) {
+                preprocessors_ = parser::v2::parse_processors(processors, section, limits_);
             } else {
-                DDWAF_DEBUG("Clearing all preprocessors");
+                DDWAF_DEBUG("Clearing all processors");
                 preprocessors_.clear();
             }
-            state = state | change_state::preprocessors;
+            state = state | change_state::processors;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse preprocessors: %s", e.what());
+            DDWAF_WARN("Failed to parse processors: %s", e.what());
             section.set_error(e.what());
         }
     }

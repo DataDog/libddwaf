@@ -63,7 +63,7 @@ protected:
     using input_filter = exclusion::input_filter;
     using rule_filter = exclusion::rule_filter;
 
-    memory::unordered_map<preprocessor *, preprocessor::cache_type> preprocessor_cache_;
+    memory::unordered_map<processor *, processor::cache_type> preprocessor_cache_;
 
     // Caches of filters and conditions
     memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;

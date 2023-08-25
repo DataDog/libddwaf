@@ -9,12 +9,12 @@
 using namespace ddwaf;
 
 namespace {
-constexpr std::string_view base_dir = "integration/preprocessors/";
+constexpr std::string_view base_dir = "integration/processors/";
 } // namespace
 
-TEST(TestPreprocessors, TestSimplePreprocessor)
+TEST(TestProcessors, TestSimpleProcessor)
 {
-    auto rule = read_file("preprocessor.yaml", base_dir);
+    auto rule = read_file("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);

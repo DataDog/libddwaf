@@ -17,9 +17,9 @@
 
 namespace ddwaf {
 
-class preprocessor {
+class processor {
 public:
-    using ptr = std::shared_ptr<preprocessor>;
+    using ptr = std::shared_ptr<processor>;
     struct target_mapping {
         // TODO implement n:1 support
         target_index input;
@@ -27,20 +27,23 @@ public:
         std::string output_address;
     };
 
-    using cache_type = expression::cache_type;
+    struct cache_type {
+        expression::cache_type expr_cache;
+        std::unordered_set<target_index> generated;
+    };
 
-    preprocessor(std::string id, std::unique_ptr<generator::base> generator, expression::ptr expr,
+    processor(std::string id, std::unique_ptr<generator::base> generator, expression::ptr expr,
         std::vector<target_mapping> mappings, bool evaluate, bool output)
         : id_(std::move(id)), generator_(std::move(generator)), expr_(std::move(expr)),
           mappings_(std::move(mappings)), evaluate_(evaluate), output_(output)
     {}
 
-    preprocessor(const preprocessor &) = delete;
-    preprocessor &operator=(const preprocessor &) = delete;
+    processor(const processor &) = delete;
+    processor &operator=(const processor &) = delete;
 
-    preprocessor(preprocessor &&rhs) noexcept = default;
-    preprocessor &operator=(preprocessor &&rhs) noexcept = default;
-    ~preprocessor() = default;
+    processor(processor &&rhs) noexcept = default;
+    processor &operator=(processor &&rhs) noexcept = default;
+    ~processor() = default;
 
     void eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
         ddwaf::timer &deadline) const;

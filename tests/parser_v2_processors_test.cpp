@@ -12,7 +12,7 @@ using namespace ddwaf;
 
 namespace {
 
-TEST(TestParserV2Preprocessors, ParseNoGenerator)
+TEST(TestParserV2Processors, ParseNoGenerator)
 {
     ddwaf::object_limits limits;
 
@@ -20,7 +20,7 @@ TEST(TestParserV2Preprocessors, ParseNoGenerator)
 
     ddwaf::ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    auto preprocessors = parser::v2::parse_preprocessors(array, section, limits);
+    auto processors = parser::v2::parse_processors(array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -48,10 +48,10 @@ TEST(TestParserV2Preprocessors, ParseNoGenerator)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(preprocessors.size(), 0);
+    EXPECT_EQ(processors.size(), 0);
 }
 
-TEST(TestParserV2Preprocessors, ParseNoID)
+TEST(TestParserV2Processors, ParseNoID)
 {
     ddwaf::object_limits limits;
 
@@ -59,7 +59,7 @@ TEST(TestParserV2Preprocessors, ParseNoID)
 
     ddwaf::ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    auto preprocessors = parser::v2::parse_preprocessors(array, section, limits);
+    auto processors = parser::v2::parse_processors(array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -87,10 +87,10 @@ TEST(TestParserV2Preprocessors, ParseNoID)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(preprocessors.size(), 0);
+    EXPECT_EQ(processors.size(), 0);
 }
 
-TEST(TestParserV2Preprocessors, ParseNoParameters)
+TEST(TestParserV2Processors, ParseNoParameters)
 {
     ddwaf::object_limits limits;
 
@@ -98,7 +98,7 @@ TEST(TestParserV2Preprocessors, ParseNoParameters)
 
     ddwaf::ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    auto preprocessors = parser::v2::parse_preprocessors(array, section, limits);
+    auto processors = parser::v2::parse_processors(array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -126,10 +126,10 @@ TEST(TestParserV2Preprocessors, ParseNoParameters)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(preprocessors.size(), 0);
+    EXPECT_EQ(processors.size(), 0);
 }
 
-TEST(TestParserV2Preprocessors, ParseNoMappings)
+TEST(TestParserV2Processors, ParseNoMappings)
 {
     ddwaf::object_limits limits;
 
@@ -137,7 +137,7 @@ TEST(TestParserV2Preprocessors, ParseNoMappings)
 
     ddwaf::ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    auto preprocessors = parser::v2::parse_preprocessors(array, section, limits);
+    auto processors = parser::v2::parse_processors(array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -165,10 +165,10 @@ TEST(TestParserV2Preprocessors, ParseNoMappings)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(preprocessors.size(), 0);
+    EXPECT_EQ(processors.size(), 0);
 }
 
-TEST(TestParserV2Preprocessors, ParseEmptyMappings)
+TEST(TestParserV2Processors, ParseEmptyMappings)
 {
     ddwaf::object_limits limits;
 
@@ -177,7 +177,7 @@ TEST(TestParserV2Preprocessors, ParseEmptyMappings)
 
     ddwaf::ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    auto preprocessors = parser::v2::parse_preprocessors(array, section, limits);
+    auto processors = parser::v2::parse_processors(array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -205,10 +205,10 @@ TEST(TestParserV2Preprocessors, ParseEmptyMappings)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(preprocessors.size(), 0);
+    EXPECT_EQ(processors.size(), 0);
 }
 
-TEST(TestParserV2Preprocessors, ParseNoInput)
+TEST(TestParserV2Processors, ParseNoInput)
 {
     ddwaf::object_limits limits;
 
@@ -217,7 +217,7 @@ TEST(TestParserV2Preprocessors, ParseNoInput)
 
     ddwaf::ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    auto preprocessors = parser::v2::parse_preprocessors(array, section, limits);
+    auto processors = parser::v2::parse_processors(array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -245,10 +245,10 @@ TEST(TestParserV2Preprocessors, ParseNoInput)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(preprocessors.size(), 0);
+    EXPECT_EQ(processors.size(), 0);
 }
 
-TEST(TestParserV2Preprocessors, ParseEmptyInput)
+TEST(TestParserV2Processors, ParseEmptyInput)
 {
     ddwaf::object_limits limits;
 
@@ -257,7 +257,7 @@ TEST(TestParserV2Preprocessors, ParseEmptyInput)
 
     ddwaf::ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    auto preprocessors = parser::v2::parse_preprocessors(array, section, limits);
+    auto processors = parser::v2::parse_processors(array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -275,7 +275,7 @@ TEST(TestParserV2Preprocessors, ParseEmptyInput)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("empty preprocessor input mapping");
+        auto it = errors.find("empty processor input mapping");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -285,10 +285,10 @@ TEST(TestParserV2Preprocessors, ParseEmptyInput)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(preprocessors.size(), 0);
+    EXPECT_EQ(processors.size(), 0);
 }
 
-TEST(TestParserV2Preprocessors, ParseNoOutput)
+TEST(TestParserV2Processors, ParseNoOutput)
 {
     ddwaf::object_limits limits;
 
@@ -297,7 +297,7 @@ TEST(TestParserV2Preprocessors, ParseNoOutput)
 
     ddwaf::ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    auto preprocessors = parser::v2::parse_preprocessors(array, section, limits);
+    auto processors = parser::v2::parse_processors(array, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -325,7 +325,7 @@ TEST(TestParserV2Preprocessors, ParseNoOutput)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(preprocessors.size(), 0);
+    EXPECT_EQ(processors.size(), 0);
 }
 
 } // namespace

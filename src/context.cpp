@@ -115,7 +115,7 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
         auto it = preprocessor_cache_.find(preproc.get());
         if (it == preprocessor_cache_.end()) {
             auto [new_it, res] =
-                preprocessor_cache_.emplace(preproc.get(), preprocessor::cache_type{});
+                preprocessor_cache_.emplace(preproc.get(), processor::cache_type{});
             it = new_it;
         }
 

@@ -4,22 +4,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "preprocessor.hpp"
+#include "processor.hpp"
 #include "ddwaf.h"
 #include "exception.hpp"
 
 namespace ddwaf {
 
-void preprocessor::eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
+void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
     ddwaf::timer &deadline) const
 {
-    // No result structure, but this preprocessor only produces derived objects
+    // No result structure, but this processor only produces derived objects
     // so it makes no sense to evaluate.
     if (!derived.has_value() && !evaluate_ && output_) {
         return;
     }
 
-    if (!expr_->eval(cache, store, {}, {}, deadline)) {
+    if (!expr_->eval(cache.expr_cache, store, {}, {}, deadline)) {
         return;
     }
 

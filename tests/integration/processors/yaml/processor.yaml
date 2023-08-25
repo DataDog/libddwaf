@@ -16,8 +16,8 @@ rules:
             case_sensitive: true
             min_length: 5
         operator: match_regex
-preprocessors:
-  - id: preprocessor-001
+processors:
+  - id: processor-001
     generator: extract_schema
     conditions:
       - operator: match_regex
