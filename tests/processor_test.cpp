@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "exception.hpp"
 #include "generator/base.hpp"
 #include "matcher/equals.hpp"
 #include "processor.hpp"
@@ -654,6 +655,71 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
     optional_ref<ddwaf_object> derived{};
 
     proc.eval(store, derived, cache, deadline);
+}
+
+TEST(TestProcessor, OutputEvalWithoutDerivedMap)
+{
+    ddwaf_object output;
+    ddwaf_object_string(&output, "output_string");
+
+    auto gen = std::make_unique<mock::generator>();
+    EXPECT_CALL(*gen, generate(_, _)).WillOnce(Return(output));
+
+    ddwaf_object input;
+    ddwaf_object_string(&input, "input_string");
+
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", &input);
+
+    object_store store;
+    store.insert(input_map);
+
+    std::vector<processor::target_mapping> mappings{
+        {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
+
+    processor proc{
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), true, true};
+    EXPECT_STREQ(proc.get_id().c_str(), "id");
+
+    processor::cache_type cache;
+    timer deadline{2s};
+
+    optional_ref<ddwaf_object> derived{};
+
+    {
+        auto *obtained = store.get_target(get_target_index("output_address"));
+        EXPECT_EQ(obtained, nullptr);
+    }
+
+    proc.eval(store, derived, cache, deadline);
+
+    {
+        auto *obtained = store.get_target(get_target_index("output_address"));
+        EXPECT_NE(obtained, nullptr);
+        EXPECT_STREQ(obtained->stringValue, "output_string");
+    }
+}
+
+TEST(TestProcessor, Timeout)
+{
+    auto gen = std::make_unique<mock::generator>();
+    EXPECT_CALL(*gen, generate(_, _)).Times(0);
+
+    object_store store;
+
+    std::vector<processor::target_mapping> mappings{
+        {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
+
+    processor proc{
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), true, false};
+    EXPECT_STREQ(proc.get_id().c_str(), "id");
+
+    processor::cache_type cache;
+    timer deadline{0s};
+    optional_ref<ddwaf_object> derived{};
+
+    EXPECT_THROW(proc.eval(store, derived, cache, deadline), ddwaf::timeout_exception);
 }
 
 } // namespace
