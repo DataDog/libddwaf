@@ -647,7 +647,7 @@ processor_container parse_processors(
                 generator = std::make_unique<generator::extract_schema>();
             } else {
                 DDWAF_WARN("Unknown generator: %s", generator_id.c_str());
-                info.add_failed(id, "unknown generator" + generator_id);
+                info.add_failed(id, "unknown generator '" + generator_id + "'");
                 continue;
             }
 
