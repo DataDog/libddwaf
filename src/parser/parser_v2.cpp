@@ -531,7 +531,7 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
                 matcher = std::make_shared<matcher::exact_match>(parsed_data);
             } else {
-                DDWAF_WARN("Processor %s doesn't support dynamic rule data", matcher_name.data());
+                DDWAF_WARN("Matcher %s doesn't support dynamic rule data", matcher_name.data());
                 info.add_failed(id,
                     "matcher " + std::string(matcher_name) + " doesn't support dynamic rule data");
                 continue;
