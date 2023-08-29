@@ -11,7 +11,8 @@
 #include <string_view>
 #include <vector>
 
-#include <utils.hpp>
+#include "clock.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::generator {
 
@@ -26,7 +27,7 @@ public:
     base &operator=(const base &) = default;
     base &operator=(base &&) = default;
 
-    virtual ddwaf_object generate(const ddwaf_object *input) = 0;
+    virtual ddwaf_object generate(const ddwaf_object *input, ddwaf::timer &deadline) = 0;
 };
 
 } // namespace ddwaf::generator

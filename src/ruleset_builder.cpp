@@ -169,7 +169,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->dynamic_matchers = dynamic_matchers_;
     rs->rule_filters = rule_filters_;
     rs->input_filters = input_filters_;
-    rs->preprocessors = preprocessors_;
+    rs->preprocessors = processors_.pre;
+    rs->postprocessors = processors_.post;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
@@ -304,21 +305,21 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         }
     }
 
-    it = root.find("preprocessors");
+    it = root.find("processors");
     if (it != root.end()) {
-        DDWAF_DEBUG("Parsing preprocessors");
-        auto &section = info.add_section("");
+        DDWAF_DEBUG("Parsing processors");
+        auto &section = info.add_section("processors");
         try {
-            auto preprocessors = static_cast<parameter::vector>(it->second);
-            if (!preprocessors.empty()) {
-                preprocessors_ = parser::v2::parse_preprocessors(preprocessors, section, limits_);
+            auto processors = static_cast<parameter::vector>(it->second);
+            if (!processors.empty()) {
+                processors_ = parser::v2::parse_processors(processors, section, limits_);
             } else {
-                DDWAF_DEBUG("Clearing all preprocessors");
-                preprocessors_.clear();
+                DDWAF_DEBUG("Clearing all processors");
+                processors_.clear();
             }
-            state = state | change_state::preprocessors;
+            state = state | change_state::processors;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse preprocessors: %s", e.what());
+            DDWAF_WARN("Failed to parse processors: %s", e.what());
             section.set_error(e.what());
         }
     }

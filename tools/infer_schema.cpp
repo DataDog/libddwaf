@@ -17,7 +17,7 @@
 int main(int argc, char *argv[])
 {
     ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
-    if (argc < 2) {
+    if (argc < 3) {
         std::cout << "Usage: " << argv[0] << " <json/yaml file> <json input>\n";
         return EXIT_FAILURE;
     }
@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
 
     ddwaf_object_map(&input);
     ddwaf_object_map(&settings);
-    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_string(&tmp, "true"));
-    ddwaf_object_map_add(&input, "waf.context.settings", &settings);
+    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&input, "waf.context.processor", &settings);
     ddwaf_object_map_add(&input, "server.request.body", &body);
 
     ddwaf_context context = ddwaf_context_init(handle);

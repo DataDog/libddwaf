@@ -177,4 +177,38 @@ TEST(TestDiagnosticsIntegration, CustomRules)
     ddwaf_destroy(handle);
 }
 
+TEST(TestDiagnosticsIntegration, Processor)
+{
+    auto rule = read_json_file("processor.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root = diagnostics;
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto processor = ddwaf::parser::at<parameter::map>(root_map, "processors");
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(processor, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("processor-001"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(processor, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(processor, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    ddwaf_destroy(handle);
+}
+
 } // namespace
