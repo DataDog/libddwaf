@@ -93,10 +93,12 @@ public:
         const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
-    void get_addresses(std::unordered_set<std::string> &addresses) const
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         for (const auto &cond : conditions_) {
-            for (const auto &target : cond->targets) { addresses.emplace(target.name); }
+            for (const auto &target : cond->targets) {
+                addresses.emplace(target.root, target.name);
+            }
         }
     }
 

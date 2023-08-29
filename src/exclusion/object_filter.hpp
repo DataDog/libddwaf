@@ -244,18 +244,21 @@ public:
         target_index target, std::string name, const std::vector<std::string_view> &key_path = {})
     {
         target_paths_[target].insert(key_path);
-        targets_.emplace(std::move(name), target);
+        targets_.emplace(target, std::move(name));
     }
 
     memory::unordered_set<const ddwaf_object *> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
-    const std::unordered_map<std::string, target_index> &get_targets() const { return targets_; }
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    {
+        for (const auto &[index, str] : targets_) { addresses.emplace(index, str); }
+    }
 
 protected:
     object_limits limits_;
     std::unordered_map<target_index, path_trie> target_paths_;
-    std::unordered_map<std::string, target_index> targets_;
+    std::unordered_map<target_index, std::string> targets_;
 };
 
 } // namespace ddwaf::exclusion

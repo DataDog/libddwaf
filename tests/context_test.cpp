@@ -40,6 +40,8 @@ namespace mock {
 
 class rule : public ddwaf::rule {
 public:
+    using ptr = std::shared_ptr<mock::rule>;
+
     rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
         expression::ptr expr, std::vector<std::string> actions = {}, bool enabled = true,
         source_type source = source_type::base)
@@ -53,6 +55,35 @@ public:
             (const std::unordered_set<const ddwaf_object *> &),
             (const std::unordered_map<std::string, matcher::base::shared_ptr> &), ddwaf::timer &),
         (const override));
+};
+
+class rule_filter : public ddwaf::exclusion::rule_filter {
+public:
+    using ptr = std::shared_ptr<mock::rule_filter>;
+
+    rule_filter(std::string id, expression::ptr expr, std::set<ddwaf::rule *> rule_targets,
+        filter_mode mode = filter_mode::bypass)
+        : exclusion::rule_filter(std::move(id), std::move(expr), std::move(rule_targets), mode)
+    {}
+    ~rule_filter() override = default;
+
+    MOCK_METHOD(optional_ref<const std::unordered_set<ddwaf::rule *>>, match,
+        (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
+};
+
+class input_filter : public ddwaf::exclusion::input_filter {
+public:
+    using ptr = std::shared_ptr<mock::input_filter>;
+
+    input_filter(std::string id, expression::ptr expr, std::set<ddwaf::rule *> rule_targets,
+        std::shared_ptr<object_filter> filter)
+        : exclusion::input_filter(
+              std::move(id), std::move(expr), std::move(rule_targets), std::move(filter))
+    {}
+    ~input_filter() override = default;
+
+    MOCK_METHOD(std::optional<excluded_set>, match,
+        (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
 };
 
 class processor : public ddwaf::processor {
@@ -126,6 +157,32 @@ TEST(TestContext, PostprocessorEval)
     ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ctx.run(root, std::nullopt, 20000);
+}
+
+TEST(TestContext, SkipRuleNoTargets)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
+
+    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+
+    auto rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->insert_rule(rule);
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+
+    ddwaf::context ctx(ruleset);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ctx.run(root, std::nullopt, 20000);
 }
@@ -869,6 +926,98 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
     }
 }
 
+TEST(TestContext, SkipRuleFilterNoTargets)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    mock::rule::ptr rule;
+    mock::rule_filter::ptr filter;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        filter = std::make_shared<mock::rule_filter>(
+            "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
+
+        ruleset->insert_filter<exclusion::rule_filter>(filter);
+    }
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _)).Times(0);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "user_name", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&root, "client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::context ctx(ruleset);
+    ctx.run(root, std::nullopt, 20000);
+}
+
+TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    mock::rule::ptr rule;
+    mock::rule_filter::ptr filter;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        filter = std::make_shared<mock::rule_filter>(
+            "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
+
+        ruleset->insert_filter<exclusion::rule_filter>(filter);
+    }
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "user_name", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::context ctx(ruleset);
+    ctx.run(root, std::nullopt, 20000);
+}
+
 TEST(TestContext, RuleFilterWithCondition)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
@@ -896,7 +1045,7 @@ TEST(TestContext, RuleFilterWithCondition)
 
         auto filter = std::make_shared<rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     ddwaf::timer deadline{2s};
@@ -944,7 +1093,7 @@ TEST(TestContext, RuleFilterTimeout)
 
         auto filter = std::make_shared<rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     ddwaf::timer deadline{0s};
@@ -987,7 +1136,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
 
         auto filter = std::make_shared<rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     ddwaf::timer deadline{2s};
@@ -1037,7 +1186,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     {
         auto filter = std::make_shared<rule_filter>("1", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
 
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 3);
@@ -1049,7 +1198,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     {
         auto filter = std::make_shared<rule_filter>("2", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(), rules[5].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
 
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 6);
@@ -1064,7 +1213,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     {
         auto filter = std::make_shared<rule_filter>("3", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[6].get(), rules[7].get(), rules[8].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
 
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
@@ -1112,7 +1261,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         auto filter = std::make_shared<rule_filter>("1", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{
                 rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
 
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 4);
@@ -1125,7 +1274,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     {
         auto filter = std::make_shared<rule_filter>("2", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[2].get(), rules[3].get(), rules[4].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
 
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 5);
@@ -1139,7 +1288,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     {
         auto filter = std::make_shared<rule_filter>("3", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[5].get(), rules[6].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
 
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 7);
@@ -1155,7 +1304,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     {
         auto filter = std::make_shared<rule_filter>("4", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[7].get(), rules[8].get(), rules[6].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
 
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
@@ -1174,7 +1323,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         auto filter = std::make_shared<rule_filter>("5", std::make_shared<expression>(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(),
                 rules[4].get(), rules[5].get(), rules[6].get(), rules[7].get(), rules[8].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
 
         auto rules_to_exclude = ctx.filter_rules(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
@@ -1221,7 +1370,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         auto filter = std::make_shared<rule_filter>("1", builder.build(),
             std::set<ddwaf::rule *>{
                 rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(), rules[4].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     {
@@ -1232,7 +1381,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         auto filter = std::make_shared<rule_filter>("2", builder.build(),
             std::set<ddwaf::rule *>{
                 rules[5].get(), rules[6].get(), rules[7].get(), rules[8].get(), rules[9].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     {
@@ -1304,7 +1453,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         auto filter = std::make_shared<rule_filter>("1", builder.build(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(),
                 rules[4].get(), rules[5].get(), rules[6].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     {
@@ -1315,7 +1464,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         auto filter = std::make_shared<rule_filter>("2", builder.build(),
             std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(), rules[5].get(), rules[6].get(),
                 rules[7].get(), rules[8].get(), rules[9].get()});
-        ruleset->rule_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     {
@@ -1358,6 +1507,96 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     }
 }
 
+TEST(TestContext, SkipInputFilterNoTargets)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    mock::rule::ptr rule;
+    mock::input_filter::ptr filter;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+
+        std::set<ddwaf::rule *> filter_rules{rule.get()};
+        filter = std::make_shared<mock::input_filter>(
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+        ruleset->insert_filter<exclusion::input_filter>(filter);
+    }
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _)).Times(0);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "user_name", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&root, "client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::context ctx(ruleset);
+    ctx.run(root, std::nullopt, 20000);
+}
+
+TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    mock::rule::ptr rule;
+    mock::input_filter::ptr filter;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+
+        std::set<ddwaf::rule *> filter_rules{rule.get()};
+        filter = std::make_shared<mock::input_filter>(
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+        ruleset->insert_filter<exclusion::input_filter>(filter);
+    }
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "user_name", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::context ctx(ruleset);
+    ctx.run(root, std::nullopt, 20000);
+}
+
 TEST(TestContext, InputFilterExclude)
 {
     expression_builder builder(1);
@@ -1377,7 +1616,7 @@ TEST(TestContext, InputFilterExclude)
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
-    ruleset->input_filters.emplace(filter->get_id(), filter);
+    ruleset->insert_filter(filter);
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
@@ -1413,7 +1652,7 @@ TEST(TestContext, InputFilterExcludeRule)
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
-    ruleset->input_filters.emplace(filter->get_id(), filter);
+    ruleset->insert_filter(filter);
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
@@ -1461,7 +1700,7 @@ TEST(TestContext, InputFilterWithCondition)
         auto filter = std::make_shared<input_filter>(
             "1", builder.build(), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset->input_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     // Without usr.id, nothing should be excluded
@@ -1558,7 +1797,7 @@ TEST(TestContext, InputFilterMultipleRules)
         auto filter = std::make_shared<input_filter>(
             "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset->input_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     // Without usr.id, nothing should be excluded
@@ -1660,7 +1899,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         auto filter = std::make_shared<input_filter>(
             "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset->input_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     {
@@ -1671,7 +1910,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         auto filter = std::make_shared<input_filter>(
             "2", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset->input_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     // Without usr.id, nothing should be excluded
@@ -1792,7 +2031,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         auto filter = std::make_shared<input_filter>(
             "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset->input_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     {
@@ -1804,7 +2043,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         auto filter = std::make_shared<input_filter>(
             "2", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset->input_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     {
@@ -1816,7 +2055,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         auto filter = std::make_shared<input_filter>(
             "3", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
 
-        ruleset->input_filters.emplace(filter->get_id(), filter);
+        ruleset->insert_filter(filter);
     }
 
     {

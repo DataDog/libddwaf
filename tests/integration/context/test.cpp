@@ -342,7 +342,7 @@ TEST(TestContextIntegration, Timeout)
 
     ddwaf_object param = DDWAF_OBJECT_MAP;
     ddwaf_object tmp;
-    ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "aaaabbbbbaaa"));
+    ddwaf_object_map_add(&param, "pm_param", ddwaf_object_string(&tmp, "aaaabbbbbaaa"));
 
     EXPECT_EQ(ddwaf_run(context, &param, &ret, SHORT_TIME), DDWAF_OK);
     EXPECT_TRUE(ret.timeout);

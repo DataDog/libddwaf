@@ -58,9 +58,21 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
     try {
         eval_preprocessors(derived, deadline);
 
-        const auto &rules_to_exclude = filter_rules(deadline);
-        const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
-        events = match(rules_to_exclude, objects_to_exclude, deadline);
+        // If no rule targets are available, there is no point in evaluating them
+        bool eval_rules = should_eval_rules();
+        bool eval_filters = eval_rules || should_eval_filters();
+
+        if (eval_filters) {
+            // Filters need to be evaluated even if rules don't, otherwise it'll
+            // break the current condition cache mechanism which requires knowing
+            // if an address is new to this run.
+            const auto &rules_to_exclude = filter_rules(deadline);
+            const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
+
+            if (eval_rules) {
+                events = match(rules_to_exclude, objects_to_exclude, deadline);
+            }
+        }
 
         eval_postprocessors(derived, deadline);
     } catch (const ddwaf::timeout_exception &) {}

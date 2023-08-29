@@ -166,6 +166,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     auto rs = std::make_shared<ddwaf::ruleset>();
     rs->insert_rules(final_base_rules_);
     rs->insert_rules(final_user_rules_);
+    rs->insert_filters(rule_filters_);
+    rs->insert_filters(input_filters_);
     rs->dynamic_matchers = dynamic_matchers_;
     rs->rule_filters = rule_filters_;
     rs->input_filters = input_filters_;

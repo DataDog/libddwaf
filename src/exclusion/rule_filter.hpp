@@ -25,14 +25,19 @@ public:
 
     rule_filter(std::string id, expression::ptr expr, std::set<rule *> rule_targets,
         filter_mode mode = filter_mode::bypass);
+    rule_filter(const rule_filter &) = delete;
+    rule_filter &operator=(const rule_filter &) = delete;
+    rule_filter(rule_filter &&) = default;
+    rule_filter &operator=(rule_filter &&) = default;
+    virtual ~rule_filter() = default;
 
-    optional_ref<const std::unordered_set<rule *>> match(
+    virtual optional_ref<const std::unordered_set<rule *>> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() const { return id_; }
     filter_mode get_mode() const { return mode_; }
 
-    void get_addresses(std::unordered_set<std::string> &addresses) const
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
     }

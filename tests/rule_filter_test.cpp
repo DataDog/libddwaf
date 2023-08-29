@@ -24,10 +24,10 @@ TEST(TestRuleFilter, Match)
         std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
-    std::unordered_set<std::string> addresses;
+    std::unordered_map<target_index, std::string> addresses;
     filter.get_addresses(addresses);
     EXPECT_EQ(addresses.size(), 1);
-    EXPECT_STREQ(addresses.begin()->c_str(), "http.client_ip");
+    EXPECT_STREQ(addresses.begin()->second.c_str(), "http.client_ip");
 
     ddwaf_object root;
     ddwaf_object tmp;

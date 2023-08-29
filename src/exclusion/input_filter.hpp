@@ -33,16 +33,21 @@ public:
 
     input_filter(std::string id, expression::ptr expr, std::set<rule *> rule_targets,
         std::shared_ptr<object_filter> filter);
+    input_filter(const input_filter &) = delete;
+    input_filter &operator=(const input_filter &) = delete;
+    input_filter(input_filter &&) = default;
+    input_filter &operator=(input_filter &&) = delete;
+    virtual ~input_filter() = default;
 
-    std::optional<excluded_set> match(
+    virtual std::optional<excluded_set> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
 
-    void get_addresses(std::unordered_set<std::string> &addresses) const
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
-        for (const auto &[name, target] : filter_->get_targets()) { addresses.emplace(name); }
+        filter_->get_addresses(addresses);
     }
 
 protected:
