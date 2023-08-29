@@ -132,12 +132,14 @@ parameter::operator uint64_t() const
         return intValue;
     }
 
-    static constexpr long double uint64_max = std::numeric_limits<uint64_t>::max();
+    // NOLINTBEGIN(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
+    // Closest 64-bit floating-point value to UINT64_MAX
+    static constexpr double uint64_max = 0xFFFFFFFFFFFFF800ULL;
     if (type == DDWAF_OBJ_FLOAT && (f64 >= 0.0) && (f64 <= uint64_max) &&
-        // NOLINTNEXTLINE(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
         static_cast<uint64_t>(f64) == f64) {
         return static_cast<uint64_t>(f64);
     }
+    // NOLINTEND(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
         auto [res, result] = from_string<uint64_t>({stringValue, static_cast<size_t>(nbEntries)});
@@ -159,14 +161,15 @@ parameter::operator int64_t() const
         return static_cast<int64_t>(uintValue);
     }
 
-    static constexpr long double int64_max = std::numeric_limits<int64_t>::max();
-    static constexpr long double int64_min = std::numeric_limits<int64_t>::min();
-
+    // NOLINTBEGIN(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
+    // Closest 64-bit floating-point value to INT64_MAX
+    static constexpr double int64_max = 0x7FFFFFFFFFFFFC00LL;
+    static constexpr double int64_min = std::numeric_limits<int64_t>::min();
     if (type == DDWAF_OBJ_FLOAT && f64 >= int64_min && f64 <= int64_max &&
-        // NOLINTNEXTLINE(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
         static_cast<int64_t>(f64) == f64) {
         return static_cast<int64_t>(f64);
     }
+    // NOLINTEND(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
         auto [res, result] = from_string<int64_t>({stringValue, static_cast<size_t>(nbEntries)});
