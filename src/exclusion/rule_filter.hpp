@@ -25,8 +25,13 @@ public:
 
     rule_filter(std::string id, expression::ptr expr, std::set<rule *> rule_targets,
         filter_mode mode = filter_mode::bypass);
+    rule_filter(const rule_filter &) = delete;
+    rule_filter &operator=(const rule_filter &) = delete;
+    rule_filter(rule_filter &&) = default;
+    rule_filter &operator=(rule_filter &&) = default;
+    virtual ~rule_filter() = default;
 
-    optional_ref<const std::unordered_set<rule *>> match(
+    virtual optional_ref<const std::unordered_set<rule *>> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() const { return id_; }

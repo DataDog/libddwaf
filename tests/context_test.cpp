@@ -40,6 +40,8 @@ namespace mock {
 
 class rule : public ddwaf::rule {
 public:
+    using ptr = std::shared_ptr<mock::rule>;
+
     rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
         expression::ptr expr, std::vector<std::string> actions = {}, bool enabled = true,
         source_type source = source_type::base)
@@ -53,6 +55,35 @@ public:
             (const std::unordered_set<const ddwaf_object *> &),
             (const std::unordered_map<std::string, matcher::base::shared_ptr> &), ddwaf::timer &),
         (const override));
+};
+
+class rule_filter : public ddwaf::exclusion::rule_filter {
+public:
+    using ptr = std::shared_ptr<mock::rule_filter>;
+
+    rule_filter(std::string id, expression::ptr expr, std::set<ddwaf::rule *> rule_targets,
+        filter_mode mode = filter_mode::bypass)
+        : exclusion::rule_filter(std::move(id), std::move(expr), std::move(rule_targets), mode)
+    {}
+    ~rule_filter() override = default;
+
+    MOCK_METHOD(optional_ref<const std::unordered_set<ddwaf::rule *>>, match,
+        (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
+};
+
+class input_filter : public ddwaf::exclusion::input_filter {
+public:
+    using ptr = std::shared_ptr<mock::input_filter>;
+
+    input_filter(std::string id, expression::ptr expr, std::set<ddwaf::rule *> rule_targets,
+        std::shared_ptr<object_filter> filter)
+        : exclusion::input_filter(
+              std::move(id), std::move(expr), std::move(rule_targets), std::move(filter))
+    {}
+    ~input_filter() override = default;
+
+    MOCK_METHOD(std::optional<excluded_set>, match,
+        (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
 };
 
 class processor : public ddwaf::processor {
@@ -126,6 +157,32 @@ TEST(TestContext, PostprocessorEval)
     ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ctx.run(root, std::nullopt, 20000);
+}
+
+TEST(TestContext, SkipRuleNoTargets)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
+
+    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+
+    auto rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->insert_rule(rule);
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+
+    ddwaf::context ctx(ruleset);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ctx.run(root, std::nullopt, 20000);
 }
@@ -869,6 +926,98 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
     }
 }
 
+TEST(TestContext, SkipRuleFilterNoTargets)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    mock::rule::ptr rule;
+    mock::rule_filter::ptr filter;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        filter = std::make_shared<mock::rule_filter>(
+            "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
+
+        ruleset->insert_filter<exclusion::rule_filter>(filter);
+    }
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _)).Times(0);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "user_name", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&root, "client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::context ctx(ruleset);
+    ctx.run(root, std::nullopt, 20000);
+}
+
+TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    mock::rule::ptr rule;
+    mock::rule_filter::ptr filter;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        filter = std::make_shared<mock::rule_filter>(
+            "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
+
+        ruleset->insert_filter<exclusion::rule_filter>(filter);
+    }
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "user_name", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::context ctx(ruleset);
+    ctx.run(root, std::nullopt, 20000);
+}
+
 TEST(TestContext, RuleFilterWithCondition)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
@@ -1356,6 +1505,96 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         EXPECT_NE(rules_to_exclude.find(rules[8].get()), rules_to_exclude.end());
         EXPECT_NE(rules_to_exclude.find(rules[9].get()), rules_to_exclude.end());
     }
+}
+
+TEST(TestContext, SkipInputFilterNoTargets)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    mock::rule::ptr rule;
+    mock::input_filter::ptr filter;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+
+        std::set<ddwaf::rule *> filter_rules{rule.get()};
+        filter = std::make_shared<mock::input_filter>(
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+        ruleset->insert_filter<exclusion::input_filter>(filter);
+    }
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _)).Times(0);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "user_name", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&root, "client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::context ctx(ruleset);
+    ctx.run(root, std::nullopt, 20000);
+}
+
+TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    mock::rule::ptr rule;
+    mock::input_filter::ptr filter;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+
+        std::set<ddwaf::rule *> filter_rules{rule.get()};
+        filter = std::make_shared<mock::input_filter>(
+            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+        ruleset->insert_filter<exclusion::input_filter>(filter);
+    }
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "user_name", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::context ctx(ruleset);
+    ctx.run(root, std::nullopt, 20000);
 }
 
 TEST(TestContext, InputFilterExclude)

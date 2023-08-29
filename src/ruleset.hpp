@@ -54,17 +54,30 @@ struct ruleset {
     }
 
     template <typename T>
-    void insert_filters(const std::unordered_map<std::string_view, std::shared_ptr<T>> &filters_)
+    void insert_filters(const std::unordered_map<std::string_view, std::shared_ptr<T>> &filters)
         requires std::is_same_v<T, exclusion::rule_filter> or
                  std::is_same_v<T, exclusion::input_filter>
     {
         if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
-            rule_filters = filters_;
+            rule_filters = filters;
         } else if constexpr (std::is_same_v<T, exclusion::input_filter>) {
-            input_filters = filters_;
+            input_filters = filters;
         }
 
-        for (const auto &[key, filter] : filters_) { filter->get_addresses(filter_addresses); }
+        for (const auto &[key, filter] : filters) { filter->get_addresses(filter_addresses); }
+    }
+
+    template <typename T>
+    void insert_filter(const std::shared_ptr<T> &filter)
+        requires std::is_same_v<T, exclusion::rule_filter> or
+                 std::is_same_v<T, exclusion::input_filter>
+    {
+        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
+            rule_filters.emplace(filter->get_id(), filter);
+        } else if constexpr (std::is_same_v<T, exclusion::input_filter>) {
+            input_filters.emplace(filter->get_id(), filter);
+        }
+        filter->get_addresses(filter_addresses);
     }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
