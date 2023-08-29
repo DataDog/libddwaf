@@ -133,8 +133,9 @@ parameter::operator uint64_t() const
     }
 
     static constexpr long double uint64_max = std::numeric_limits<uint64_t>::max();
-    auto f64_truncated = static_cast<double>(static_cast<uint64_t>(f64));
-    if (type == DDWAF_OBJ_FLOAT && f64 == f64_truncated && (f64 >= 0.0) && (f64 <= uint64_max)) {
+    if (type == DDWAF_OBJ_FLOAT && (f64 >= 0.0) && (f64 <= uint64_max) &&
+        // NOLINTNEXTLINE(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
+        static_cast<uint64_t>(f64) == f64) {
         return static_cast<uint64_t>(f64);
     }
 
@@ -161,8 +162,9 @@ parameter::operator int64_t() const
     static constexpr long double int64_max = std::numeric_limits<int64_t>::max();
     static constexpr long double int64_min = std::numeric_limits<int64_t>::min();
 
-    auto f64_truncated = static_cast<double>(static_cast<int64_t>(f64));
-    if (type == DDWAF_OBJ_FLOAT && f64 == f64_truncated && f64 >= int64_min && f64 <= int64_max) {
+    if (type == DDWAF_OBJ_FLOAT && f64 >= int64_min && f64 <= int64_max &&
+        // NOLINTNEXTLINE(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
+        static_cast<int64_t>(f64) == f64) {
         return static_cast<int64_t>(f64);
     }
 
