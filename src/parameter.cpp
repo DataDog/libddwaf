@@ -132,7 +132,8 @@ parameter::operator uint64_t() const
         return intValue;
     }
 
-    if (type == DDWAF_OBJ_FLOAT && (f64 >= 0.0)) {
+    static constexpr long double uint64_max = std::numeric_limits<uint64_t>::max();
+    if (type == DDWAF_OBJ_FLOAT && (f64 >= 0.0) && (f64 <= uint64_max)) {
         return static_cast<uint64_t>(f64);
     }
 
