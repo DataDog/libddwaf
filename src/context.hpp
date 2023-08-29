@@ -65,7 +65,15 @@ protected:
         }
         return false;
     }
-
+    bool should_eval_filters() const
+    {
+        for (const auto &[target, str] : ruleset_->filter_addresses) {
+            if (store_.is_new_target(target)) {
+                return true;
+            }
+        }
+        return false;
+    }
     ruleset::ptr ruleset_;
     ddwaf::object_store store_;
 
