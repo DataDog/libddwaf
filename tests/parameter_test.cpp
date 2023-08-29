@@ -97,7 +97,7 @@ TEST(TestParameter, ToUint64)
 
     {
         ddwaf_object root;
-        ddwaf_object_float(&root, 21.23);
+        ddwaf_object_float(&root, 21.0);
 
         uint64_t value = static_cast<uint64_t>(parameter(root));
         EXPECT_EQ(value, 21);
@@ -147,7 +147,7 @@ TEST(TestParameter, ToUint64)
 
     {
         ddwaf_object root;
-        ddwaf_object_float(&root, -21.23);
+        ddwaf_object_float(&root, -21.0);
 
         EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
@@ -180,7 +180,7 @@ TEST(TestParameter, ToInt64)
 
     {
         ddwaf_object root;
-        ddwaf_object_float(&root, -21.23);
+        ddwaf_object_float(&root, -21.0);
 
         int64_t value = static_cast<int64_t>(parameter(root));
         EXPECT_EQ(value, -21);
