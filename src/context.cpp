@@ -73,6 +73,8 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
                 events = match(rules_to_exclude, objects_to_exclude, deadline);
             }
         }
+
+        eval_postprocessors(derived, deadline);
     } catch (const ddwaf::timeout_exception &) {}
 
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
@@ -124,14 +126,31 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
             throw timeout_exception();
         }
 
-        auto it = preprocessor_cache_.find(preproc.get());
-        if (it == preprocessor_cache_.end()) {
-            auto [new_it, res] =
-                preprocessor_cache_.emplace(preproc.get(), preprocessor::cache_type{});
+        auto it = processor_cache_.find(preproc.get());
+        if (it == processor_cache_.end()) {
+            auto [new_it, res] = processor_cache_.emplace(preproc.get(), processor::cache_type{});
             it = new_it;
         }
 
         preproc->eval(store_, derived, it->second, deadline);
+    }
+}
+
+void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
+{
+    for (const auto &[id, postproc] : ruleset_->postprocessors) {
+        if (deadline.expired()) {
+            DDWAF_INFO("Ran out of time while evaluating postprocessors");
+            throw timeout_exception();
+        }
+
+        auto it = processor_cache_.find(postproc.get());
+        if (it == processor_cache_.end()) {
+            auto [new_it, res] = processor_cache_.emplace(postproc.get(), processor::cache_type{});
+            it = new_it;
+        }
+
+        postproc->eval(store_, derived, it->second, deadline);
     }
 }
 

@@ -425,27 +425,27 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
     return {std::move(expr), std::move(rules_target), on_match};
 }
 
-std::vector<preprocessor::target_mapping> parse_preprocessor_mappings(const parameter::vector &root)
+std::vector<processor::target_mapping> parse_processor_mappings(const parameter::vector &root)
 {
     if (root.empty()) {
         throw ddwaf::parsing_error("empty mappings");
     }
 
-    std::vector<preprocessor::target_mapping> mappings;
+    std::vector<processor::target_mapping> mappings;
     for (const auto &node : root) {
         auto mapping = static_cast<parameter::map>(node);
 
         // TODO support n:1 mappings and key paths
         auto inputs = at<parameter::vector>(mapping, "inputs");
         if (inputs.empty()) {
-            throw ddwaf::parsing_error("empty preprocessor input mapping");
+            throw ddwaf::parsing_error("empty processor input mapping");
         }
 
         auto input = static_cast<parameter::map>(inputs[0]);
         auto input_address = at<std::string_view>(input, "address");
         auto output = at<std::string>(mapping, "output");
 
-        mappings.emplace_back(preprocessor::target_mapping{
+        mappings.emplace_back(processor::target_mapping{
             get_target_index(input_address), get_target_index(output), std::move(output)});
     }
 
@@ -531,7 +531,7 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
                 matcher = std::make_shared<matcher::exact_match>(parsed_data);
             } else {
-                DDWAF_WARN("Processor %s doesn't support dynamic rule data", matcher_name.data());
+                DDWAF_WARN("Matcher %s doesn't support dynamic rule data", matcher_name.data());
                 info.add_failed(id,
                     "matcher " + std::string(matcher_name) + " doesn't support dynamic rule data");
                 continue;
@@ -623,20 +623,21 @@ filter_spec_container parse_filters(
     return filters;
 }
 
-preprocessor_container parse_preprocessors(
-    parameter::vector &preprocessor_array, base_section_info &info, const object_limits &limits)
+processor_container parse_processors(
+    parameter::vector &processor_array, base_section_info &info, const object_limits &limits)
 {
-    preprocessor_container preprocessors;
+    processor_container processors;
+    std::unordered_set<std::string_view> known_processors;
 
-    for (unsigned i = 0; i < preprocessor_array.size(); i++) {
-        const auto &node_param = preprocessor_array[i];
+    for (unsigned i = 0; i < processor_array.size(); i++) {
+        const auto &node_param = processor_array[i];
         auto node = static_cast<parameter::map>(node_param);
         std::string id;
         try {
             id = at<std::string>(node, "id");
-            if (preprocessors.find(id) != preprocessors.end()) {
-                DDWAF_WARN("Duplicate preprocessor: %s", id.c_str());
-                info.add_failed(id, "duplicate preprocessor");
+            if (known_processors.find(id) != known_processors.end()) {
+                DDWAF_WARN("Duplicate processor: %s", id.c_str());
+                info.add_failed(id, "duplicate processor");
                 continue;
             }
 
@@ -646,7 +647,7 @@ preprocessor_container parse_preprocessors(
                 generator = std::make_unique<generator::extract_schema>();
             } else {
                 DDWAF_WARN("Unknown generator: %s", generator_id.c_str());
-                info.add_failed(id, "unknown generator" + generator_id);
+                info.add_failed(id, "unknown generator '" + generator_id + "'");
                 continue;
             }
 
@@ -655,25 +656,37 @@ preprocessor_container parse_preprocessors(
 
             auto params = at<parameter::map>(node, "parameters");
             auto mappings_vec = at<parameter::vector>(params, "mappings");
-            auto mappings = parse_preprocessor_mappings(mappings_vec);
+            auto mappings = parse_processor_mappings(mappings_vec);
 
-            DDWAF_DEBUG("Parsed preprocessor %s", id.c_str());
-            auto preproc = std::make_shared<preprocessor>(preprocessor{std::move(id),
-                std::move(generator), std::move(expr), std::move(mappings),
-                at<bool>(node, "evaluate", true), at<bool>(node, "output", false)});
+            auto eval = at<bool>(node, "evaluate", true);
+            auto output = at<bool>(node, "output", false);
 
-            preprocessors.emplace(preproc->get_id(), preproc);
+            if (!eval && !output) {
+                DDWAF_WARN("Processor %s not used for evaluation or output", id.c_str());
+                info.add_failed(id, "processor not used for evaluation or output");
+                continue;
+            }
 
-            info.add_loaded(preproc->get_id());
+            DDWAF_DEBUG("Parsed processor %s", id.c_str());
+            auto proc = std::make_shared<processor>(processor{std::move(id), std::move(generator),
+                std::move(expr), std::move(mappings), eval, output});
+
+            if (eval) {
+                processors.pre.emplace(proc->get_id(), proc);
+            } else {
+                processors.post.emplace(proc->get_id(), proc);
+            }
+
+            info.add_loaded(proc->get_id());
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
             }
-            DDWAF_WARN("Failed to parse preprocessor '%s': %s", id.c_str(), e.what());
+            DDWAF_WARN("Failed to parse processor '%s': %s", id.c_str(), e.what());
             info.add_failed(id, e.what());
         }
     }
-    return preprocessors;
+    return processors;
 }
 
 } // namespace ddwaf::parser::v2
