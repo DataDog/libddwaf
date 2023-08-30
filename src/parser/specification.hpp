@@ -13,6 +13,7 @@
 #include <parameter.hpp>
 #include <processor.hpp>
 #include <rule.hpp>
+#include <scanner.hpp>
 
 #include <string>
 
@@ -29,7 +30,7 @@ struct rule_spec {
 
 enum class target_type { none, id, tags };
 
-struct rule_target_spec {
+struct reference_target_spec {
     target_type type;
     std::string rule_id;
     std::unordered_map<std::string, std::string> tags;
@@ -38,24 +39,25 @@ struct rule_target_spec {
 struct override_spec {
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
-    std::vector<rule_target_spec> targets;
+    std::vector<reference_target_spec> targets;
 };
 
 struct rule_filter_spec {
     expression::ptr expr;
-    std::vector<rule_target_spec> targets;
+    std::vector<reference_target_spec> targets;
     exclusion::filter_mode on_match;
 };
 
 struct input_filter_spec {
     expression::ptr expr;
     std::shared_ptr<exclusion::object_filter> filter;
-    std::vector<rule_target_spec> targets;
+    std::vector<reference_target_spec> targets;
 };
 
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
 using rule_data_container = std::unordered_map<std::string, matcher::base::shared_ptr>;
+using scanner_container = std::unordered_map<std::string_view, scanner::ptr>;
 
 struct processor_container {
     [[nodiscard]] bool empty() const { return pre.empty() && post.empty(); }

@@ -235,7 +235,7 @@ rule_spec parse_rule(parameter::map &rule,
         std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
-rule_target_spec parse_rules_target(const parameter::map &target)
+reference_target_spec parse_rules_target(const parameter::map &target)
 {
     auto rule_id = at<std::string>(target, "rule_id", {});
     if (!rule_id.empty()) {
@@ -288,7 +288,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
     } else {
         // Since the rules_target array is empty, the ID is mandatory
         current.targets.emplace_back(
-            rule_target_spec{target_type::id, at<std::string>(node, "id"), {}});
+            reference_target_spec{target_type::id, at<std::string>(node, "id"), {}});
         type = target_type::id;
     }
 
@@ -361,7 +361,7 @@ input_filter_spec parse_input_filter(const parameter::map &filter, const object_
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
     auto expr = parse_simplified_expression(conditions_array, limits);
 
-    std::vector<rule_target_spec> rules_target;
+    std::vector<reference_target_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
     if (!rules_target_array.empty()) {
         rules_target.reserve(rules_target_array.size());
@@ -398,7 +398,7 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
     auto expr = parse_simplified_expression(conditions_array, limits);
 
-    std::vector<rule_target_spec> rules_target;
+    std::vector<reference_target_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
     if (!rules_target_array.empty()) {
         rules_target.reserve(rules_target_array.size());
@@ -450,6 +450,19 @@ std::vector<processor::target_mapping> parse_processor_mappings(const parameter:
     }
 
     return mappings;
+}
+
+matcher::base::unique_ptr parse_scanner_matcher(const parameter::map &root)
+{
+    auto matcher_name = at<std::string_view>(root, "operator");
+    auto matcher_params = at<parameter::map>(root, "parameters");
+
+    auto [rule_data_id, matcher] = parse_matcher(matcher_name, matcher_params);
+    if (!rule_data_id.empty()) {
+        throw ddwaf::parsing_error("scanners don't support dynamic data");
+    }
+
+    return std::move(matcher);
 }
 
 std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
@@ -687,6 +700,69 @@ processor_container parse_processors(
         }
     }
     return processors;
+}
+
+scanner_container parse_scanner(parameter::vector &scanner_array, base_section_info &info)
+{
+    scanner_container scanners;
+    for (unsigned i = 0; i < scanner_array.size(); i++) {
+        const auto &node_param = scanner_array[i];
+        auto node = static_cast<parameter::map>(node_param);
+        std::string id;
+        try {
+            id = at<std::string>(node, "id");
+            if (scanners.find(id) != scanners.end()) {
+                DDWAF_WARN("Duplicate scanner: %s", id.c_str());
+                info.add_failed(id, "duplicate scanner");
+                continue;
+            }
+
+            auto name = at<std::string>(node, "name");
+
+            std::unordered_map<std::string, std::string> tags;
+            for (auto &[key, value] : at<parameter::map>(node, "tags")) {
+                try {
+                    tags.emplace(key, std::string(value));
+                } catch (const bad_cast &e) {
+                    throw invalid_type(std::string(key), e);
+                }
+            }
+
+            matcher::base::unique_ptr key_matcher{};
+            matcher::base::unique_ptr value_matcher{};
+
+            auto it = node.find("key");
+            if (it != node.end()) {
+                auto matcher_node = parameter::map(it->second);
+                key_matcher = parse_scanner_matcher(matcher_node);
+            }
+
+            it = node.find("value");
+            if (it != node.end()) {
+                auto matcher_node = parameter::map(it->second);
+                value_matcher = parse_scanner_matcher(matcher_node);
+            }
+
+            if (!key_matcher && !value_matcher) {
+                DDWAF_WARN("Scanner %s has no key or value matcher", id.c_str());
+                info.add_failed(id, "scanner has no key or value matcher");
+                continue;
+            }
+
+            DDWAF_DEBUG("Parsed scanner %s", id.c_str());
+            auto scnr = std::make_shared<scanner>(scanner{std::move(id), std::move(name),
+                std::move(tags), std::move(key_matcher), std::move(value_matcher)});
+            scanners.emplace(scnr->get_id(), scnr);
+            info.add_loaded(scnr->get_id());
+        } catch (const std::exception &e) {
+            if (id.empty()) {
+                id = index_to_id(i);
+            }
+            DDWAF_WARN("Failed to parse scanner '%s': %s", id.c_str(), e.what());
+            info.add_failed(id, e.what());
+        }
+    }
+    return scanners;
 }
 
 } // namespace ddwaf::parser::v2
