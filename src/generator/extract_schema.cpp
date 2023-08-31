@@ -15,6 +15,7 @@
 
 #include "exception.hpp"
 #include "generator/extract_schema.hpp"
+#include "log.hpp"
 
 namespace ddwaf::generator {
 namespace schema {

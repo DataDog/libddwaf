@@ -235,9 +235,14 @@ rule_spec parse_rule(parameter::map &rule,
         std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
-reference_spec parse_rules_target(const parameter::map &target)
+reference_spec parse_reference(const parameter::map &target)
 {
     auto ref_id = at<std::string>(target, "rule_id", {});
+    if (!ref_id.empty()) {
+        return {reference_type::id, std::move(ref_id), {}};
+    }
+
+    ref_id = at<std::string>(target, "id", {});
     if (!ref_id.empty()) {
         return {reference_type::id, std::move(ref_id), {}};
     }
@@ -276,7 +281,7 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
         current.targets.reserve(rules_target_array.size());
 
         for (const auto &target : rules_target_array) {
-            auto target_spec = parse_rules_target(static_cast<parameter::map>(target));
+            auto target_spec = parse_reference(static_cast<parameter::map>(target));
             if (type == reference_type::none) {
                 type = target_spec.type;
             } else if (type != target_spec.type) {
@@ -367,7 +372,7 @@ input_filter_spec parse_input_filter(const parameter::map &filter, const object_
         rules_target.reserve(rules_target_array.size());
 
         for (const auto &target : rules_target_array) {
-            rules_target.emplace_back(parse_rules_target(static_cast<parameter::map>(target)));
+            rules_target.emplace_back(parse_reference(static_cast<parameter::map>(target)));
         }
     }
 
@@ -404,7 +409,7 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
         rules_target.reserve(rules_target_array.size());
 
         for (const auto &target : rules_target_array) {
-            rules_target.emplace_back(parse_rules_target(static_cast<parameter::map>(target)));
+            rules_target.emplace_back(parse_reference(static_cast<parameter::map>(target)));
         }
     }
 
@@ -671,6 +676,15 @@ processor_container parse_processors(
             auto mappings_vec = at<parameter::vector>(params, "mappings");
             auto mappings = parse_processor_mappings(mappings_vec);
 
+            std::vector<reference_spec> scanners;
+            auto scanners_ref_array = at<parameter::vector>(params, "scanners", {});
+            if (!scanners_ref_array.empty()) {
+                scanners.reserve(scanners_ref_array.size());
+                for (const auto &ref : scanners_ref_array) {
+                    scanners.emplace_back(parse_reference(static_cast<parameter::map>(ref)));
+                }
+            }
+
             auto eval = at<bool>(node, "evaluate", true);
             auto output = at<bool>(node, "output", false);
 
@@ -685,11 +699,11 @@ processor_container parse_processors(
             if (eval) {
                 processors.pre.emplace(
                     std::move(id), processor_spec{std::move(generator), std::move(expr),
-                                       std::move(mappings), {}, eval, output});
+                                       std::move(mappings), std::move(scanners), eval, output});
             } else {
                 processors.post.emplace(
                     std::move(id), processor_spec{std::move(generator), std::move(expr),
-                                       std::move(mappings), {}, eval, output});
+                                       std::move(mappings), std::move(scanners), eval, output});
             }
 
         } catch (const std::exception &e) {
