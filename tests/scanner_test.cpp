@@ -82,5 +82,4 @@ TEST(TestScanner, NoMatchOnValue)
     ddwaf_object_free(&value);
 }
 
-
 } // namespace

@@ -235,11 +235,11 @@ rule_spec parse_rule(parameter::map &rule,
         std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
-reference_target_spec parse_rules_target(const parameter::map &target)
+reference_spec parse_rules_target(const parameter::map &target)
 {
-    auto rule_id = at<std::string>(target, "rule_id", {});
-    if (!rule_id.empty()) {
-        return {target_type::id, std::move(rule_id), {}};
+    auto ref_id = at<std::string>(target, "rule_id", {});
+    if (!ref_id.empty()) {
+        return {reference_type::id, std::move(ref_id), {}};
     }
 
     auto tag_map = at<parameter::map>(target, "tags", {});
@@ -247,13 +247,13 @@ reference_target_spec parse_rules_target(const parameter::map &target)
         std::unordered_map<std::string, std::string> tags;
         for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
 
-        return {target_type::tags, {}, std::move(tags)};
+        return {reference_type::tags, {}, std::move(tags)};
     }
 
-    return {target_type::none, {}, {}};
+    return {reference_type::none, {}, {}};
 }
 
-std::pair<override_spec, target_type> parse_override(const parameter::map &node)
+std::pair<override_spec, reference_type> parse_override(const parameter::map &node)
 {
     // Note that ID is a duplicate field and will be deprecated at some point
     override_spec current;
@@ -269,7 +269,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
         current.actions = std::move(actions);
     }
 
-    target_type type = target_type::none;
+    reference_type type = reference_type::none;
 
     auto rules_target_array = at<parameter::vector>(node, "rules_target", {});
     if (!rules_target_array.empty()) {
@@ -277,7 +277,7 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
 
         for (const auto &target : rules_target_array) {
             auto target_spec = parse_rules_target(static_cast<parameter::map>(target));
-            if (type == target_type::none) {
+            if (type == reference_type::none) {
                 type = target_spec.type;
             } else if (type != target_spec.type) {
                 throw ddwaf::parsing_error("rule override targets rules and tags");
@@ -288,8 +288,8 @@ std::pair<override_spec, target_type> parse_override(const parameter::map &node)
     } else {
         // Since the rules_target array is empty, the ID is mandatory
         current.targets.emplace_back(
-            reference_target_spec{target_type::id, at<std::string>(node, "id"), {}});
-        type = target_type::id;
+            reference_spec{reference_type::id, at<std::string>(node, "id"), {}});
+        type = reference_type::id;
     }
 
     if (!current.actions.has_value() && !current.enabled.has_value()) {
@@ -361,7 +361,7 @@ input_filter_spec parse_input_filter(const parameter::map &filter, const object_
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
     auto expr = parse_simplified_expression(conditions_array, limits);
 
-    std::vector<reference_target_spec> rules_target;
+    std::vector<reference_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
     if (!rules_target_array.empty()) {
         rules_target.reserve(rules_target_array.size());
@@ -398,7 +398,7 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_li
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
     auto expr = parse_simplified_expression(conditions_array, limits);
 
-    std::vector<reference_target_spec> rules_target;
+    std::vector<reference_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
     if (!rules_target_array.empty()) {
         rules_target.reserve(rules_target_array.size());
@@ -576,9 +576,9 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
         auto node = static_cast<parameter::map>(node_param);
         try {
             auto [spec, type] = parse_override(node);
-            if (type == target_type::id) {
+            if (type == reference_type::id) {
                 overrides.by_ids.emplace_back(std::move(spec));
-            } else if (type == target_type::tags) {
+            } else if (type == reference_type::tags) {
                 overrides.by_tags.emplace_back(std::move(spec));
             } else {
                 // This code is likely unreachable
@@ -654,10 +654,10 @@ processor_container parse_processors(
                 continue;
             }
 
-            std::unique_ptr<generator::base> generator;
+            std::shared_ptr<generator::base> generator;
             auto generator_id = at<std::string>(node, "generator");
             if (generator_id == "extract_schema") {
-                generator = std::make_unique<generator::extract_schema>();
+                generator = std::make_shared<generator::extract_schema>();
             } else {
                 DDWAF_WARN("Unknown generator: %s", generator_id.c_str());
                 info.add_failed(id, "unknown generator '" + generator_id + "'");
@@ -681,16 +681,17 @@ processor_container parse_processors(
             }
 
             DDWAF_DEBUG("Parsed processor %s", id.c_str());
-            auto proc = std::make_shared<processor>(processor{std::move(id), std::move(generator),
-                std::move(expr), std::move(mappings), eval, output});
-
+            info.add_loaded(id);
             if (eval) {
-                processors.pre.emplace(proc->get_id(), proc);
+                processors.pre.emplace(
+                    std::move(id), processor_spec{std::move(generator), std::move(expr),
+                                       std::move(mappings), {}, eval, output});
             } else {
-                processors.post.emplace(proc->get_id(), proc);
+                processors.post.emplace(
+                    std::move(id), processor_spec{std::move(generator), std::move(expr),
+                                       std::move(mappings), {}, eval, output});
             }
 
-            info.add_loaded(proc->get_id());
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
@@ -748,8 +749,8 @@ scanner_container parse_scanners(parameter::vector &scanner_array, base_section_
             }
 
             DDWAF_DEBUG("Parsed scanner %s", id.c_str());
-            auto scnr = std::make_shared<scanner>(scanner{std::move(id), std::move(tags),
-                std::move(key_matcher), std::move(value_matcher)});
+            auto scnr = std::make_shared<scanner>(scanner{
+                std::move(id), std::move(tags), std::move(key_matcher), std::move(value_matcher)});
             scanners.emplace(scnr->get_id(), scnr);
             info.add_loaded(scnr->get_id());
         } catch (const std::exception &e) {

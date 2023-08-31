@@ -50,7 +50,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
         {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), false, true};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
@@ -103,7 +103,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
             "output_address.second"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), false, true};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
@@ -159,7 +159,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     builder.start_condition<matcher::equals<bool>>(true);
     builder.add_target("enabled?");
 
-    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), false, true};
+    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
@@ -203,7 +203,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     builder.start_condition<matcher::equals<bool>>(true);
     builder.add_target("enabled?");
 
-    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), false, true};
+    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
@@ -262,7 +262,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     builder.start_condition<matcher::equals<bool>>(true);
     builder.add_target("enabled?");
 
-    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), false, true};
+    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
@@ -303,7 +303,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
         {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), true, false};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     processor::cache_type cache;
@@ -352,7 +352,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     builder.start_condition<matcher::equals<bool>>(true);
     builder.add_target("enabled?");
 
-    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), true, false};
+    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     processor::cache_type cache;
@@ -397,7 +397,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     builder.start_condition<matcher::equals<bool>>(true);
     builder.add_target("enabled?");
 
-    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), true, false};
+    processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     processor::cache_type cache;
@@ -445,7 +445,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
             "output_address.second"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), true, false};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     processor::cache_type cache;
@@ -492,7 +492,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
         {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), true, true};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
@@ -546,7 +546,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
         {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), false, true};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
@@ -581,7 +581,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
         {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), false, true};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
@@ -618,7 +618,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
         {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), true, false};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     processor::cache_type cache;
@@ -647,7 +647,7 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
         {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), false, true};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     processor::cache_type cache;
@@ -679,7 +679,7 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
         {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), true, true};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     processor::cache_type cache;
@@ -712,7 +712,7 @@ TEST(TestProcessor, Timeout)
         {get_target_index("input_address"), get_target_index("output_address"), "output_address"}};
 
     processor proc{
-        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), true, false};
+        "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     processor::cache_type cache;

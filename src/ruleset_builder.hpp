@@ -18,6 +18,9 @@
 
 namespace ddwaf {
 
+using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
+using scanner_tag_map = ddwaf::multi_key_map<std::string_view, scanner *>;
+
 class ruleset_builder {
 public:
     using ptr = std::shared_ptr<ruleset_builder>;
@@ -103,6 +106,13 @@ protected:
     // Filters
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters_;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters_;
+
+    // An mkmap organising scanners by their tags, used for processors
+    scanner_tag_map scanners_by_tags_;
+
+    // Processors
+    std::unordered_map<std::string_view, processor::ptr> preprocessors_;
+    std::unordered_map<std::string_view, processor::ptr> postprocessors_;
 };
 
 } // namespace ddwaf
