@@ -29,7 +29,10 @@ public:
     extract_schema &operator=(const extract_schema &) = delete;
     extract_schema &operator=(extract_schema &&) = default;
 
-    ddwaf_object generate(const ddwaf_object *input, ddwaf::timer &deadline) override;
+    ddwaf_object generate(const ddwaf_object *input, ddwaf::timer &deadline) override {
+        return generate(input, {}, deadline);
+    }
+    ddwaf_object generate(const ddwaf_object *input, const std::unordered_map<std::string_view, scanner::ptr> &scanners, ddwaf::timer &deadline) override;
 };
 
 } // namespace ddwaf::generator

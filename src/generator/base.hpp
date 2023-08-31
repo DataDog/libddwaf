@@ -9,9 +9,11 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 #include "clock.hpp"
+#include "scanner.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::generator {
@@ -28,6 +30,9 @@ public:
     base &operator=(base &&) = default;
 
     virtual ddwaf_object generate(const ddwaf_object *input, ddwaf::timer &deadline) = 0;
+    virtual ddwaf_object generate(const ddwaf_object *input, const std::unordered_map<std::string_view, scanner::ptr> & /*scanners*/, ddwaf::timer &deadline) {
+        return generate(input, deadline);
+    };
 };
 
 } // namespace ddwaf::generator

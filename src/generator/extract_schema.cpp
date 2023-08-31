@@ -329,7 +329,7 @@ ddwaf_object generate(const ddwaf_object *object, ddwaf::timer &deadline)
 
 } // namespace schema
 
-ddwaf_object extract_schema::generate(const ddwaf_object *input, ddwaf::timer &deadline)
+ddwaf_object extract_schema::generate(const ddwaf_object *input, const std::unordered_map<std::string_view, scanner::ptr> & /*scanners*/, ddwaf::timer &deadline)
 {
     if (input == nullptr) {
         return {};

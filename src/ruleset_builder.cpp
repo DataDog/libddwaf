@@ -326,6 +326,25 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         }
     }
 
+    it = root.find("scanners");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing scanners");
+        auto &section = info.add_section("scanners");
+        try {
+            auto scanners = static_cast<parameter::vector>(it->second);
+            if (!scanners.empty()) {
+                scanners_ = parser::v2::parse_scanners(scanners, section);
+            } else {
+                DDWAF_DEBUG("Clearing all scanners");
+                scanners_.clear();
+            }
+            state = state | change_state::scanners;
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse scanners: %s", e.what());
+            section.set_error(e.what());
+        }
+    }
+
     return state;
 }
 

@@ -702,7 +702,7 @@ processor_container parse_processors(
     return processors;
 }
 
-scanner_container parse_scanner(parameter::vector &scanner_array, base_section_info &info)
+scanner_container parse_scanners(parameter::vector &scanner_array, base_section_info &info)
 {
     scanner_container scanners;
     for (unsigned i = 0; i < scanner_array.size(); i++) {
@@ -716,8 +716,6 @@ scanner_container parse_scanner(parameter::vector &scanner_array, base_section_i
                 info.add_failed(id, "duplicate scanner");
                 continue;
             }
-
-            auto name = at<std::string>(node, "name");
 
             std::unordered_map<std::string, std::string> tags;
             for (auto &[key, value] : at<parameter::map>(node, "tags")) {
@@ -750,8 +748,8 @@ scanner_container parse_scanner(parameter::vector &scanner_array, base_section_i
             }
 
             DDWAF_DEBUG("Parsed scanner %s", id.c_str());
-            auto scnr = std::make_shared<scanner>(scanner{std::move(id), std::move(name),
-                std::move(tags), std::move(key_matcher), std::move(value_matcher)});
+            auto scnr = std::make_shared<scanner>(scanner{std::move(id), std::move(tags),
+                std::move(key_matcher), std::move(value_matcher)});
             scanners.emplace(scnr->get_id(), scnr);
             info.add_loaded(scnr->get_id());
         } catch (const std::exception &e) {

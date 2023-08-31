@@ -7,6 +7,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 #include <matcher/base.hpp>
@@ -16,9 +17,9 @@ class scanner {
 public:
     using ptr = std::shared_ptr<scanner>;
 
-    scanner(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
+    scanner(std::string id, std::unordered_map<std::string, std::string> tags,
         matcher::base::unique_ptr key_matcher, matcher::base::unique_ptr value_matcher)
-        : id_(std::move(id)), name_(std::move(name)), tags_(std::move(tags)),
+        : id_(std::move(id)), tags_(std::move(tags)),
           key_matcher_(std::move(key_matcher)), value_matcher_(std::move(value_matcher))
     {}
 
@@ -35,9 +36,8 @@ public:
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
-    constexpr const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
-    constexpr std::string_view get_id() const { return id_; }
-    constexpr std::string_view get_name() const { return name_; }
+    const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
+    std::string_view get_id() const { return id_; }
 
 protected:
     static bool eval_matcher(const matcher::base::unique_ptr &matcher, const ddwaf_object &obj)
@@ -46,7 +46,6 @@ protected:
     }
 
     std::string id_;
-    std::string name_;
     std::unordered_map<std::string, std::string> tags_;
     matcher::base::unique_ptr key_matcher_;
     matcher::base::unique_ptr value_matcher_;
