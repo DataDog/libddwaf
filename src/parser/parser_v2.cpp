@@ -319,7 +319,7 @@ expression::ptr parse_simplified_expression(
 
         auto [rule_data_id, matcher] = parse_matcher(matcher_name, params);
         if (!rule_data_id.empty()) {
-            throw ddwaf::parsing_error("filter conditions don't support dynamic data");
+            throw ddwaf::parsing_error("dynamic data on filter condition");
         }
 
         builder.set_matcher(std::move(matcher));
@@ -464,7 +464,7 @@ matcher::base::unique_ptr parse_scanner_matcher(const parameter::map &root)
 
     auto [rule_data_id, matcher] = parse_matcher(matcher_name, matcher_params);
     if (!rule_data_id.empty()) {
-        throw ddwaf::parsing_error("scanners don't support dynamic data");
+        throw ddwaf::parsing_error("dynamic data on scanner condition");
     }
 
     return std::move(matcher);

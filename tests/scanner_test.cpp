@@ -21,8 +21,10 @@ TEST(TestScanner, SimpleMatch)
     matcher::base::unique_ptr value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}}, std::move(key_matcher),
-        std::move(value_matcher)};
+    std::unordered_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
+    scanner scnr{"something", tags, std::move(key_matcher), std::move(value_matcher)};
+    EXPECT_STREQ(scnr.get_id().data(), "something");
+    EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;
     ddwaf_object value;
@@ -31,6 +33,9 @@ TEST(TestScanner, SimpleMatch)
     ddwaf_object_string(&value, "192.168.0.1");
 
     EXPECT_TRUE(scnr.eval(key, value));
+
+    std::string_view key_sv{key.stringValue, key.nbEntries};
+    EXPECT_TRUE(scnr.eval(key_sv, value));
 
     ddwaf_object_free(&key);
     ddwaf_object_free(&value);
@@ -44,8 +49,11 @@ TEST(TestScanner, NoMatchOnKey)
     matcher::base::unique_ptr value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}}, std::move(key_matcher),
-        std::move(value_matcher)};
+    std::unordered_map<std::string, std::string> tags{
+        {"type", "PII"}, {"category", "IP"}, {"danger", "0"}};
+    scanner scnr{"0", tags, std::move(key_matcher), std::move(value_matcher)};
+    EXPECT_STREQ(scnr.get_id().data(), "0");
+    EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;
     ddwaf_object value;
@@ -54,6 +62,9 @@ TEST(TestScanner, NoMatchOnKey)
     ddwaf_object_string(&value, "192.168.0.1");
 
     EXPECT_FALSE(scnr.eval(key, value));
+
+    std::string_view key_sv{key.stringValue, key.nbEntries};
+    EXPECT_FALSE(scnr.eval(key_sv, value));
 
     ddwaf_object_free(&key);
     ddwaf_object_free(&value);
@@ -67,8 +78,10 @@ TEST(TestScanner, NoMatchOnValue)
     matcher::base::unique_ptr value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}}, std::move(key_matcher),
-        std::move(value_matcher)};
+    std::unordered_map<std::string, std::string> tags{};
+    scanner scnr{"null", tags, std::move(key_matcher), std::move(value_matcher)};
+    EXPECT_STREQ(scnr.get_id().data(), "null");
+    EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;
     ddwaf_object value;
@@ -77,6 +90,9 @@ TEST(TestScanner, NoMatchOnValue)
     ddwaf_object_string(&value, "192.168.0.2");
 
     EXPECT_FALSE(scnr.eval(key, value));
+
+    std::string_view key_sv{key.stringValue, key.nbEntries};
+    EXPECT_FALSE(scnr.eval(key_sv, value));
 
     ddwaf_object_free(&key);
     ddwaf_object_free(&value);
