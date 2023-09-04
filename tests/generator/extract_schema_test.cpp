@@ -6,6 +6,7 @@
 
 #include "../test_utils.hpp"
 #include "generator/extract_schema.hpp"
+#include "matcher/regex_match.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -385,6 +386,68 @@ TEST(TestExtractSchema, RecordNodesLimit)
     ddwaf::timer deadline{2s};
     auto output = gen.generate(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([{"child":[[],{"len":0}]},{"truncated":true}])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
+TEST(TestExtractSchema, SchemaWithSingleScanner)
+{
+    ddwaf_object input;
+    ddwaf_object_string(&input, "string");
+
+    generator::extract_schema gen;
+
+    scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}}, nullptr,
+        std::make_unique<matcher::regex_match>("string", 6, true)};
+
+    ddwaf::timer deadline{2s};
+    auto output = gen.generate(&input, {&scnr}, deadline);
+    EXPECT_SCHEMA_EQ(output, R"([8,{"type":"PII","category":"IP"}])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
+TEST(TestExtractSchema, SchemaWithMultipleScanners)
+{
+    ddwaf_object input;
+    ddwaf_object_string(&input, "string");
+
+    generator::extract_schema gen;
+
+    scanner scnr0{"0", {{"type", "PII"}, {"category", "first"}}, nullptr,
+        std::make_unique<matcher::regex_match>("strong", 6, true)};
+    scanner scnr1{"1", {{"type", "PII"}, {"category", "second"}}, nullptr,
+        std::make_unique<matcher::regex_match>("string", 6, true)};
+    scanner scnr2{"2", {{"type", "PII"}, {"category", "third"}}, nullptr,
+        std::make_unique<matcher::regex_match>("string", 6, true)};
+
+    ddwaf::timer deadline{2s};
+    auto output = gen.generate(&input, {&scnr0, &scnr1, &scnr2}, deadline);
+    EXPECT_SCHEMA_EQ(output, R"([8,{"type":"PII","category":"second"}])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
+TEST(TestExtractSchema, SchemaWithScannerNoMatch)
+{
+    ddwaf_object input;
+    ddwaf_object_string(&input, "string");
+
+    generator::extract_schema gen;
+
+    scanner scnr0{"0", {{"type", "PII"}, {"category", "first"}}, nullptr,
+        std::make_unique<matcher::regex_match>("strong", 6, true)};
+    scanner scnr1{"1", {{"type", "PII"}, {"category", "second"}}, nullptr,
+        std::make_unique<matcher::regex_match>("strange", 7, true)};
+    scanner scnr2{"2", {{"type", "PII"}, {"category", "third"}}, nullptr,
+        std::make_unique<matcher::regex_match>("what", 4, true)};
+
+    ddwaf::timer deadline{2s};
+    auto output = gen.generate(&input, {&scnr0, &scnr1, &scnr2}, deadline);
+    EXPECT_SCHEMA_EQ(output, R"([8])");
 
     ddwaf_object_free(&output);
     ddwaf_object_free(&input);

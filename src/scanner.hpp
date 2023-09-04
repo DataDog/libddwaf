@@ -39,7 +39,9 @@ public:
     bool eval(std::string_view key, const ddwaf_object &value) const
     {
         ddwaf_object key_obj;
-        ddwaf_object_stringl_nc(&key_obj, key.data(), key.size());
+        if (key.data() != nullptr && !key.empty()) {
+            ddwaf_object_stringl_nc(&key_obj, key.data(), key.size());
+        }
         return eval(key_obj, value);
     }
 

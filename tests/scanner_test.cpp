@@ -34,7 +34,7 @@ TEST(TestScanner, SimpleMatch)
 
     EXPECT_TRUE(scnr.eval(key, value));
 
-    std::string_view key_sv{key.stringValue, key.nbEntries};
+    std::string_view key_sv{key.stringValue, static_cast<std::size_t>(key.nbEntries)};
     EXPECT_TRUE(scnr.eval(key_sv, value));
 
     ddwaf_object_free(&key);
@@ -63,7 +63,7 @@ TEST(TestScanner, NoMatchOnKey)
 
     EXPECT_FALSE(scnr.eval(key, value));
 
-    std::string_view key_sv{key.stringValue, key.nbEntries};
+    std::string_view key_sv{key.stringValue, static_cast<std::size_t>(key.nbEntries)};
     EXPECT_FALSE(scnr.eval(key_sv, value));
 
     ddwaf_object_free(&key);
@@ -91,7 +91,7 @@ TEST(TestScanner, NoMatchOnValue)
 
     EXPECT_FALSE(scnr.eval(key, value));
 
-    std::string_view key_sv{key.stringValue, key.nbEntries};
+    std::string_view key_sv{key.stringValue, static_cast<std::size_t>(key.nbEntries)};
     EXPECT_FALSE(scnr.eval(key_sv, value));
 
     ddwaf_object_free(&key);
