@@ -448,4 +448,156 @@ TEST(TestProcessors, ProcessorAndScannerUpdate)
     ddwaf_destroy(handle);
 }
 
+TEST(TestProcessors, EmptyScannerUpdate)
+{
+    auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_object value;
+
+    {
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+        ddwaf_object values = DDWAF_OBJECT_MAP;
+        ddwaf_object settings = DDWAF_OBJECT_MAP;
+
+        ddwaf_object_string(&value, "data@datadoghq.com");
+        ddwaf_object_map_add(&values, "email", &value);
+        ddwaf_object_map_add(&map, "server.request.body", &values);
+
+        ddwaf_object_bool(&value, true);
+        ddwaf_object_map_add(&settings, "extract-schema", &value);
+        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_result out;
+        ddwaf_run(context, &map, &out, 2000);
+        EXPECT_FALSE(out.timeout);
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        EXPECT_SCHEMA_EQ(
+            out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        auto new_ruleset = json_to_object(R"({"scanners":[]})");
+        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
+        ddwaf_object_free(&new_ruleset);
+        ddwaf_destroy(handle);
+
+        handle = new_handle;
+    }
+
+    {
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+        ddwaf_object values = DDWAF_OBJECT_MAP;
+        ddwaf_object settings = DDWAF_OBJECT_MAP;
+
+        ddwaf_object_string(&value, "data@datadoghq.com");
+        ddwaf_object_map_add(&values, "email", &value);
+        ddwaf_object_map_add(&map, "server.request.body", &values);
+
+        ddwaf_object_bool(&value, true);
+        ddwaf_object_map_add(&settings, "extract-schema", &value);
+        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_result out;
+        ddwaf_run(context, &map, &out, 2000);
+        EXPECT_FALSE(out.timeout);
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        EXPECT_SCHEMA_EQ(out.derivatives.array[0], R"([{"email":[8]}])");
+
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestProcessors, EmptyProcessorUpdate)
+{
+    auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_object value;
+
+    {
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+        ddwaf_object values = DDWAF_OBJECT_MAP;
+        ddwaf_object settings = DDWAF_OBJECT_MAP;
+
+        ddwaf_object_string(&value, "data@datadoghq.com");
+        ddwaf_object_map_add(&values, "email", &value);
+        ddwaf_object_map_add(&map, "server.request.body", &values);
+
+        ddwaf_object_bool(&value, true);
+        ddwaf_object_map_add(&settings, "extract-schema", &value);
+        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_result out;
+        ddwaf_run(context, &map, &out, 2000);
+        EXPECT_FALSE(out.timeout);
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        EXPECT_SCHEMA_EQ(
+            out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        auto new_ruleset = json_to_object(R"({"processors":[]})");
+        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
+        ddwaf_object_free(&new_ruleset);
+        ddwaf_destroy(handle);
+
+        handle = new_handle;
+    }
+
+    {
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+        ddwaf_object values = DDWAF_OBJECT_MAP;
+        ddwaf_object settings = DDWAF_OBJECT_MAP;
+
+        ddwaf_object_string(&value, "data@datadoghq.com");
+        ddwaf_object_map_add(&values, "email", &value);
+        ddwaf_object_map_add(&map, "server.request.body", &values);
+
+        ddwaf_object_bool(&value, true);
+        ddwaf_object_map_add(&settings, "extract-schema", &value);
+        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_result out;
+        ddwaf_run(context, &map, &out, 2000);
+        EXPECT_FALSE(out.timeout);
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_destroy(handle);
+}
+
 } // namespace
