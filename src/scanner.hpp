@@ -41,9 +41,10 @@ public:
         ddwaf_object key_obj;
         if (key.data() != nullptr && !key.empty()) {
             ddwaf_object_stringl_nc(&key_obj, key.data(), key.size());
-            return eval(key_obj, value);
+        } else {
+            ddwaf_object_invalid(&key_obj);
         }
-        return false;
+        return eval(key_obj, value);
     }
 
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
@@ -52,7 +53,10 @@ public:
 protected:
     static bool eval_matcher(const matcher::base::unique_ptr &matcher, const ddwaf_object &obj)
     {
-        return matcher ? matcher->match(obj).first : true;
+        if (!matcher || obj.type == DDWAF_OBJ_INVALID) {
+            return true;
+        }
+        return matcher->match(obj).first;
     }
 
     std::string id_;
