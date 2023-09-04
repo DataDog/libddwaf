@@ -20,6 +20,7 @@ TEST(TestParserV2Scanner, ParseKeyOnlyScanner)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -67,6 +68,7 @@ TEST(TestParserV2Scanner, ParseValueOnlyScanner)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -114,6 +116,7 @@ TEST(TestParserV2Scanner, ParseKeyValueScanner)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -161,6 +164,7 @@ TEST(TestParserV2Scanner, ParseNoID)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -198,6 +202,7 @@ TEST(TestParserV2Scanner, ParseNoTags)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -235,6 +240,7 @@ TEST(TestParserV2Scanner, ParseNoKeyValue)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -272,6 +278,7 @@ TEST(TestParserV2Scanner, ParseDuplicate)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -310,6 +317,7 @@ TEST(TestParserV2Scanner, ParseKeyNoOperator)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -347,6 +355,7 @@ TEST(TestParserV2Scanner, ParseKeyNoParameters)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -384,6 +393,7 @@ TEST(TestParserV2Scanner, ParseValueNoOperator)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -421,6 +431,7 @@ TEST(TestParserV2Scanner, ParseValueNoParameters)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -458,6 +469,7 @@ TEST(TestParserV2Scanner, ParseUnknownMatcher)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
@@ -495,6 +507,7 @@ TEST(TestParserV2Scanner, ParseRuleDataID)
 
     ddwaf::ruleset_info::section_info section;
     auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
 
     {
         ddwaf::parameter root;
