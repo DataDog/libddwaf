@@ -11,18 +11,6 @@
 using namespace ddwaf;
 using namespace std::literals;
 
-// NOLINTBEGIN(cppcoreguidelines-macro-usage)
-#define EXPECT_SCHEMA_EQ(obtained, expected)                                                       \
-  {                                                                                                \
-    auto obtained_doc = test::object_to_rapidjson(obtained);                                       \
-    EXPECT_TRUE(ValidateSchemaSchema(obtained_doc));                                               \
-    rapidjson::Document expected_doc;                                                              \
-    expected_doc.Parse(expected);                                                                  \
-    EXPECT_FALSE(expected_doc.HasParseError());                                                    \
-    EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);        \
-  }
-// NOLINTEND(cppcoreguidelines-macro-usage)
-
 namespace {
 
 TEST(TestExtractSchema, UnknownScalarSchema)
@@ -421,7 +409,7 @@ TEST(TestExtractSchema, SchemaWithMultipleScanners)
     scanner scnr1{"1", {{"type", "PII"}, {"category", "second"}}, nullptr,
         std::make_unique<matcher::regex_match>("string", 6, true)};
     scanner scnr2{"2", {{"type", "PII"}, {"category", "third"}}, nullptr,
-        std::make_unique<matcher::regex_match>("string", 6, true)};
+        std::make_unique<matcher::regex_match>("stng", 4, true)};
 
     ddwaf::timer deadline{2s};
     auto output = gen.generate(&input, {&scnr0, &scnr1, &scnr2}, deadline);

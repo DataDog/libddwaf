@@ -193,6 +193,16 @@ std::list<ddwaf::test::event::match> from_matches(
   }
 
 #define EXPECT_MATCHES(matches, ...) EXPECT_THAT(from_matches(matches), WithMatches({__VA_ARGS__}));
+
+#define EXPECT_SCHEMA_EQ(obtained, expected)                                                       \
+  {                                                                                                \
+    auto obtained_doc = test::object_to_rapidjson(obtained);                                       \
+    EXPECT_TRUE(ValidateSchemaSchema(obtained_doc));                                               \
+    rapidjson::Document expected_doc;                                                              \
+    expected_doc.Parse(expected);                                                                  \
+    EXPECT_FALSE(expected_doc.HasParseError());                                                    \
+    EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);        \
+  }
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 ddwaf_object read_file(std::string_view filename, std::string_view base = "./");

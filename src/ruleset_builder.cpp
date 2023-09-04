@@ -185,6 +185,9 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
     // Generate new processors
     if ((state & processors_update) != change_state::none) {
+        preprocessors_.clear();
+        postprocessors_.clear();
+
         if ((state & change_state::scanners) != change_state::none) {
             scanners_by_tags_.clear();
 
@@ -218,6 +221,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->input_filters = input_filters_;
     rs->preprocessors = preprocessors_;
     rs->postprocessors = postprocessors_;
+    rs->scanners = scanners_;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 

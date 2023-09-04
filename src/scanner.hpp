@@ -41,8 +41,9 @@ public:
         ddwaf_object key_obj;
         if (key.data() != nullptr && !key.empty()) {
             ddwaf_object_stringl_nc(&key_obj, key.data(), key.size());
+            return eval(key_obj, value);
         }
-        return eval(key_obj, value);
+        return false;
     }
 
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
