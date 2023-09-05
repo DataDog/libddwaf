@@ -22,8 +22,8 @@ namespace {
 namespace mock {
 class generator : public ddwaf::generator::base {
 public:
-    MOCK_METHOD(
-        ddwaf_object, generate, (const ddwaf_object *input, ddwaf::timer &deadline), (override));
+    MOCK_METHOD(ddwaf_object, generate,
+        (const ddwaf_object *, const std::set<scanner *> &, ddwaf::timer &), (override));
 };
 
 } // namespace mock
@@ -34,7 +34,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     ddwaf_object_string(&output, "output_string");
 
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(*gen, generate(_, _, _)).WillOnce(Return(output));
 
     ddwaf_object input;
     ddwaf_object_string(&input, "input_string");
@@ -79,7 +79,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     ddwaf_object_string(&second_output, "second_output_string");
 
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _))
+    EXPECT_CALL(*gen, generate(_, _, _))
         .WillOnce(Return(first_output))
         .WillOnce(Return(second_output));
 
@@ -138,7 +138,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     ddwaf_object_string(&output, "output_string");
 
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(*gen, generate(_, _, _)).WillOnce(Return(output));
 
     ddwaf_object tmp;
     ddwaf_object input;
@@ -186,7 +186,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     ddwaf_object_string(&output, "output_string");
 
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(*gen, generate(_, _, _)).WillOnce(Return(output));
 
     ddwaf_object tmp;
     ddwaf_object input_map;
@@ -287,7 +287,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     ddwaf_object_string(&output, "output_string");
 
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(*gen, generate(_, _, _)).WillOnce(Return(output));
 
     ddwaf_object input;
     ddwaf_object_string(&input, "input_string");
@@ -331,7 +331,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     ddwaf_object_string(&output, "output_string");
 
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(*gen, generate(_, _, _)).WillOnce(Return(output));
 
     ddwaf_object tmp;
     ddwaf_object input;
@@ -421,7 +421,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     ddwaf_object_string(&second_output, "second_output_string");
 
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _))
+    EXPECT_CALL(*gen, generate(_, _, _))
         .WillOnce(Return(first_output))
         .WillOnce(Return(second_output));
 
@@ -476,7 +476,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     ddwaf_object_string(&output, "output_string");
 
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(*gen, generate(_, _, _)).WillOnce(Return(output));
 
     ddwaf_object input;
     ddwaf_object_string(&input, "input_string");
@@ -529,7 +529,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 TEST(TestProcessor, OutputAlreadyAvailableInStore)
 {
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).Times(0);
+    EXPECT_CALL(*gen, generate(_, _, _)).Times(0);
 
     ddwaf_object input;
     ddwaf_object_string(&input, "input_string");
@@ -565,7 +565,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
 TEST(TestProcessor, OutputAlreadyGenerated)
 {
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).Times(1);
+    EXPECT_CALL(*gen, generate(_, _, _)).Times(1);
 
     ddwaf_object input;
     ddwaf_object_string(&input, "input_string");
@@ -601,7 +601,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
 TEST(TestProcessor, EvalAlreadyAvailableInStore)
 {
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).Times(0);
+    EXPECT_CALL(*gen, generate(_, _, _)).Times(0);
 
     ddwaf_object input;
     ddwaf_object_string(&input, "input_string");
@@ -631,7 +631,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
 TEST(TestProcessor, OutputWithoutDerivedMap)
 {
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).Times(0);
+    EXPECT_CALL(*gen, generate(_, _, _)).Times(0);
 
     ddwaf_object input;
     ddwaf_object_string(&input, "input_string");
@@ -663,7 +663,7 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
     ddwaf_object_string(&output, "output_string");
 
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(*gen, generate(_, _, _)).WillOnce(Return(output));
 
     ddwaf_object input;
     ddwaf_object_string(&input, "input_string");
@@ -704,7 +704,7 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
 TEST(TestProcessor, Timeout)
 {
     auto gen = std::make_unique<mock::generator>();
-    EXPECT_CALL(*gen, generate(_, _)).Times(0);
+    EXPECT_CALL(*gen, generate(_, _, _)).Times(0);
 
     object_store store;
 

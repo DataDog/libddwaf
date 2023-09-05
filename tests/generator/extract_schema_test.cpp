@@ -21,7 +21,7 @@ TEST(TestExtractSchema, UnknownScalarSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([0])");
 
     ddwaf_object_free(&output);
@@ -35,7 +35,7 @@ TEST(TestExtractSchema, NullScalarSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([1])");
 
     ddwaf_object_free(&output);
@@ -49,7 +49,7 @@ TEST(TestExtractSchema, BoolScalarSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([2])");
 
     ddwaf_object_free(&output);
@@ -64,7 +64,7 @@ TEST(TestExtractSchema, IntScalarSchema)
         generator::extract_schema gen;
 
         ddwaf::timer deadline{2s};
-        auto output = gen.generate(&input, deadline);
+        auto output = gen.generate(&input, {}, deadline);
         EXPECT_SCHEMA_EQ(output, R"([4])");
 
         ddwaf_object_free(&output);
@@ -75,7 +75,7 @@ TEST(TestExtractSchema, IntScalarSchema)
         generator::extract_schema gen;
 
         ddwaf::timer deadline{2s};
-        auto output = gen.generate(&input, deadline);
+        auto output = gen.generate(&input, {}, deadline);
         EXPECT_SCHEMA_EQ(output, R"([4])");
 
         ddwaf_object_free(&output);
@@ -90,7 +90,7 @@ TEST(TestExtractSchema, StringScalarSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([8])");
 
     ddwaf_object_free(&output);
@@ -105,7 +105,7 @@ TEST(TestExtractSchema, FloatScalarSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([16])");
 
     ddwaf_object_free(&output);
@@ -119,7 +119,7 @@ TEST(TestExtractSchema, EmptyArraySchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[],{"len":0}])");
 
     ddwaf_object_free(&output);
@@ -138,7 +138,7 @@ TEST(TestExtractSchema, ArraySchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[1],[0],[8],[4]],{"len":4}])");
 
     ddwaf_object_free(&output);
@@ -158,7 +158,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[8]],{"len":4}])");
 
     ddwaf_object_free(&output);
@@ -194,7 +194,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output,
         R"([[[{"unsigned":[4]}],[{"signed":[4]}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
 
@@ -231,7 +231,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[[[4]],{"len":1}],[[[8],[4]],{"len":2}]],{"len":4}])");
 
     ddwaf_object_free(&output);
@@ -267,7 +267,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[[[4]],{"len":1}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
 
     ddwaf_object_free(&output);
@@ -282,7 +282,7 @@ TEST(TestExtractSchema, EmptyMapSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([{}])");
 
     ddwaf_object_free(&output);
@@ -311,7 +311,7 @@ TEST(TestExtractSchema, MapSchema)
     generator::extract_schema gen;
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output,
         R"([{"array":[[[4]],{"len":1}],"invalid":[0],"map":[{"unsigned":[4],"string":[8]}],"null":[1],"string":[8],"unsigned":[4]}])");
     ddwaf_object_free(&output);
@@ -333,7 +333,7 @@ TEST(TestExtractSchema, DepthLimit)
 
     generator::extract_schema gen;
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output,
         R"([[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}])");
 
@@ -353,7 +353,7 @@ TEST(TestExtractSchema, ArrayNodesLimit)
 
     generator::extract_schema gen;
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[[],{"len":0}]],{"len":20,"truncated":true}])");
 
     ddwaf_object_free(&output);
@@ -372,7 +372,7 @@ TEST(TestExtractSchema, RecordNodesLimit)
 
     generator::extract_schema gen;
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.generate(&input, {}, deadline);
     EXPECT_SCHEMA_EQ(output, R"([{"child":[[],{"len":0}]},{"truncated":true}])");
 
     ddwaf_object_free(&output);
