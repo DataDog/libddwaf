@@ -174,7 +174,7 @@ bool expression::evaluator::eval()
     // run, then they having new data will make them match again. The condition
     // that failed (and stopped the processing), we can run it again, but only
     // on the new data. The subsequent conditions, we need to run with all data.
-    std::vector<condition::ptr>::const_iterator cond_iter;
+    std::vector<std::unique_ptr<expression::condition>>::const_iterator cond_iter;
     bool run_on_new;
     if (cache.last_cond.has_value()) {
         cond_iter = *cache.last_cond;

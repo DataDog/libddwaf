@@ -28,12 +28,9 @@ namespace ddwaf {
 
 class expression {
 public:
-    using ptr = std::shared_ptr<expression>;
-
     enum class data_source : uint8_t { values, keys };
 
     struct condition {
-        using ptr = std::unique_ptr<condition>;
 
         struct cache_type {
             bool result{false};
@@ -57,7 +54,8 @@ public:
     struct cache_type {
         bool result{false};
         memory::vector<event::match> matches{};
-        std::optional<std::vector<condition::ptr>::const_iterator> last_cond{};
+        std::optional<std::vector<std::unique_ptr<expression::condition>>::const_iterator>
+            last_cond{};
     };
 
     struct evaluator {
@@ -75,7 +73,7 @@ public:
 
         ddwaf::timer &deadline;
         const ddwaf::object_limits &limits;
-        const std::vector<condition::ptr> &conditions;
+        const std::vector<std::unique_ptr<expression::condition>> &conditions;
         const object_store &store;
         const std::unordered_set<const ddwaf_object *> &objects_excluded;
         const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers;
@@ -84,7 +82,8 @@ public:
 
     expression() = default;
 
-    explicit expression(std::vector<condition::ptr> &&conditions, ddwaf::object_limits limits = {})
+    explicit expression(std::vector<std::unique_ptr<expression::condition>> &&conditions,
+        ddwaf::object_limits limits = {})
         : limits_(limits), conditions_(std::move(conditions))
     {}
 
@@ -114,7 +113,7 @@ public:
 
 protected:
     ddwaf::object_limits limits_;
-    std::vector<condition::ptr> conditions_;
+    std::vector<std::unique_ptr<expression::condition>> conditions_;
 };
 
 class expression_builder {
@@ -162,14 +161,14 @@ public:
         std::vector<transformer_id> transformers = {},
         expression::data_source source = expression::data_source::values);
 
-    expression::ptr build()
+    std::shared_ptr<expression> build()
     {
         return std::make_shared<expression>(std::move(conditions_), limits_);
     }
 
 protected:
     ddwaf::object_limits limits_{};
-    std::vector<expression::condition::ptr> conditions_{};
+    std::vector<std::unique_ptr<expression::condition>> conditions_{};
 };
 
 } // namespace ddwaf

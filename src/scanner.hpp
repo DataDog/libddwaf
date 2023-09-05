@@ -15,8 +15,6 @@
 namespace ddwaf {
 class scanner {
 public:
-    using ptr = std::shared_ptr<scanner>;
-
     scanner(std::string id, std::unordered_map<std::string, std::string> tags,
         matcher::base::unique_ptr key_matcher, matcher::base::unique_ptr value_matcher)
         : id_(std::move(id)), tags_(std::move(tags)), key_matcher_(std::move(key_matcher)),

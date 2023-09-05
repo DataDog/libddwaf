@@ -43,8 +43,6 @@ public:
 
 template <typename T> class base_impl : public base {
 public:
-    using ptr = std::shared_ptr<base>;
-
     base_impl() = default;
     ~base_impl() override = default;
     base_impl(const base_impl &) = default;

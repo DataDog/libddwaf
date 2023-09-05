@@ -35,7 +35,7 @@ TEST(TestMultiKeyMap, Find)
         {"id6", "type1", "category1", {{"key", "value0"}}},
         {"id7", "type1", "category1", {{"key", "value1"}}}};
 
-    std::vector<ddwaf::rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     for (const auto &spec : specs) {
         std::unordered_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
@@ -100,7 +100,7 @@ TEST(TestMultiKeyMap, Multifind)
         {"id6", "type1", "category1", {{"key", "value0"}}},
         {"id7", "type1", "category1", {{"key", "value1"}}}};
 
-    std::vector<ddwaf::rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     for (const auto &spec : specs) {
         std::unordered_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);

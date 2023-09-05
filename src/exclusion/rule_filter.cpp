@@ -9,8 +9,8 @@
 
 namespace ddwaf::exclusion {
 
-rule_filter::rule_filter(
-    std::string id, expression::ptr expr, std::set<rule *> rule_targets, filter_mode mode)
+rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
+    std::set<rule *> rule_targets, filter_mode mode)
     : id_(std::move(id)), expr_(std::move(expr)), mode_(mode)
 {
     if (!expr_) {

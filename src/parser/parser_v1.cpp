@@ -25,7 +25,7 @@ namespace ddwaf::parser::v1 {
 
 namespace {
 
-expression::ptr parse_expression(parameter::vector &conditions_array,
+std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array,
     const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
 {
     expression_builder builder(conditions_array.size(), limits);

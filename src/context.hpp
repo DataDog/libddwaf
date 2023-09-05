@@ -28,7 +28,7 @@ class context {
 public:
     using object_set = std::unordered_set<const ddwaf_object *>;
 
-    explicit context(ruleset::ptr ruleset) : ruleset_(std::move(ruleset))
+    explicit context(std::shared_ptr<ruleset> ruleset) : ruleset_(std::move(ruleset))
     {
         rule_filter_cache_.reserve(ruleset_->rule_filters.size());
         input_filter_cache_.reserve(ruleset_->input_filters.size());
@@ -75,7 +75,7 @@ protected:
         }
         return false;
     }
-    ruleset::ptr ruleset_;
+    std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
 
     using input_filter = exclusion::input_filter;
@@ -96,7 +96,7 @@ protected:
 
 class context_wrapper {
 public:
-    explicit context_wrapper(ruleset::ptr ruleset)
+    explicit context_wrapper(std::shared_ptr<ruleset> ruleset)
     {
         memory::memory_resource_guard guard(&mr_);
         ctx_ = static_cast<context *>(mr_.allocate(sizeof(context), alignof(context)));

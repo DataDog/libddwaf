@@ -44,7 +44,7 @@ TEST(TestParserV2Scanner, ParseKeyOnlyScanner)
     EXPECT_EQ(scanners.size(), 1);
     EXPECT_NE(scanners.find("ecd"), scanners.end());
 
-    scanner::ptr &scnr = scanners["ecd"];
+    std::shared_ptr<scanner> &scnr = scanners["ecd"];
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr->get_tags(), tags);
@@ -92,7 +92,7 @@ TEST(TestParserV2Scanner, ParseValueOnlyScanner)
     EXPECT_EQ(scanners.size(), 1);
     EXPECT_NE(scanners.find("ecd"), scanners.end());
 
-    scanner::ptr &scnr = scanners["ecd"];
+    std::shared_ptr<scanner> &scnr = scanners["ecd"];
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr->get_tags(), tags);
@@ -140,7 +140,7 @@ TEST(TestParserV2Scanner, ParseKeyValueScanner)
     EXPECT_EQ(scanners.size(), 1);
     EXPECT_NE(scanners.find("ecd"), scanners.end());
 
-    scanner::ptr &scnr = scanners["ecd"];
+    std::shared_ptr<scanner> &scnr = scanners["ecd"];
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr->get_tags(), tags);

@@ -43,8 +43,8 @@ public:
     using ptr = std::shared_ptr<mock::rule>;
 
     rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
-        expression::ptr expr, std::vector<std::string> actions = {}, bool enabled = true,
-        source_type source = source_type::base)
+        std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
+        bool enabled = true, source_type source = source_type::base)
         : ddwaf::rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
               std::move(actions), enabled, source)
     {}
@@ -61,8 +61,8 @@ class rule_filter : public ddwaf::exclusion::rule_filter {
 public:
     using ptr = std::shared_ptr<mock::rule_filter>;
 
-    rule_filter(std::string id, expression::ptr expr, std::set<ddwaf::rule *> rule_targets,
-        filter_mode mode = filter_mode::bypass)
+    rule_filter(std::string id, std::shared_ptr<expression> expr,
+        std::set<ddwaf::rule *> rule_targets, filter_mode mode = filter_mode::bypass)
         : exclusion::rule_filter(std::move(id), std::move(expr), std::move(rule_targets), mode)
     {}
     ~rule_filter() override = default;
@@ -75,8 +75,8 @@ class input_filter : public ddwaf::exclusion::input_filter {
 public:
     using ptr = std::shared_ptr<mock::input_filter>;
 
-    input_filter(std::string id, expression::ptr expr, std::set<ddwaf::rule *> rule_targets,
-        std::shared_ptr<object_filter> filter)
+    input_filter(std::string id, std::shared_ptr<expression> expr,
+        std::set<ddwaf::rule *> rule_targets, std::shared_ptr<object_filter> filter)
         : exclusion::input_filter(
               std::move(id), std::move(expr), std::move(rule_targets), std::move(filter))
     {}
@@ -931,8 +931,8 @@ TEST(TestContext, SkipRuleFilterNoTargets)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
 
     // Generate rule
-    mock::rule::ptr rule;
-    mock::rule_filter::ptr filter;
+    std::shared_ptr<mock::rule> rule;
+    std::shared_ptr<mock::rule_filter> filter;
     {
         expression_builder builder(1);
         builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
@@ -977,8 +977,8 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
 
     // Generate rule
-    mock::rule::ptr rule;
-    mock::rule_filter::ptr filter;
+    std::shared_ptr<mock::rule> rule;
+    std::shared_ptr<mock::rule_filter> filter;
     {
         expression_builder builder(1);
         builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
@@ -1023,7 +1023,7 @@ TEST(TestContext, RuleFilterWithCondition)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
 
     // Generate rule
-    ddwaf::rule::ptr rule;
+    std::shared_ptr<rule> rule;
     {
         expression_builder builder(1);
         builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
@@ -1071,7 +1071,7 @@ TEST(TestContext, RuleFilterTimeout)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
 
     // Generate rule
-    ddwaf::rule::ptr rule;
+    std::shared_ptr<rule> rule;
     {
         expression_builder builder(1);
         builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
@@ -1114,7 +1114,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
 
     // Generate rule
-    ddwaf::rule::ptr rule;
+    std::shared_ptr<rule> rule;
     {
         expression_builder builder(1);
         builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
@@ -1162,7 +1162,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
 
     // Generate rule
     constexpr unsigned num_rules = 9;
-    std::vector<ddwaf::rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     rules.reserve(num_rules);
     for (unsigned i = 0; i < num_rules; i++) {
 
@@ -1235,7 +1235,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
     // Generate rule
     constexpr unsigned num_rules = 9;
-    std::vector<ddwaf::rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     rules.reserve(num_rules);
     for (unsigned i = 0; i < num_rules; i++) {
         std::string id = "id" + std::to_string(i);
@@ -1345,7 +1345,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 
     // Generate rule
     constexpr unsigned num_rules = 10;
-    std::vector<ddwaf::rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     rules.reserve(num_rules);
     for (unsigned i = 0; i < num_rules; i++) {
         std::string id = "id" + std::to_string(i);
@@ -1428,7 +1428,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 
     // Generate rule
     constexpr unsigned num_rules = 10;
-    std::vector<ddwaf::rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     rules.reserve(num_rules);
     for (unsigned i = 0; i < num_rules; i++) {
         std::string id = "id" + std::to_string(i);
@@ -1512,8 +1512,8 @@ TEST(TestContext, SkipInputFilterNoTargets)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
 
     // Generate rule
-    mock::rule::ptr rule;
-    mock::input_filter::ptr filter;
+    std::shared_ptr<mock::rule> rule;
+    std::shared_ptr<mock::input_filter> filter;
     {
         expression_builder builder(1);
         builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
@@ -1557,8 +1557,8 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
 
     // Generate rule
-    mock::rule::ptr rule;
-    mock::input_filter::ptr filter;
+    std::shared_ptr<mock::rule> rule;
+    std::shared_ptr<mock::input_filter> filter;
     {
         expression_builder builder(1);
         builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});

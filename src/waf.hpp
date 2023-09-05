@@ -31,12 +31,12 @@ public:
     }
 
 protected:
-    waf(ddwaf::ruleset_builder::ptr builder, ddwaf::ruleset::ptr ruleset)
+    waf(std::shared_ptr<ruleset_builder> builder, std::shared_ptr<ruleset> ruleset)
         : builder_(std::move(builder)), ruleset_(std::move(ruleset))
     {}
 
-    ddwaf::ruleset_builder::ptr builder_;
-    ddwaf::ruleset::ptr ruleset_;
+    std::shared_ptr<ruleset_builder> builder_;
+    std::shared_ptr<ruleset> ruleset_;
 };
 
 } // namespace ddwaf
