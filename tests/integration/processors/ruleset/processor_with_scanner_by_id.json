@@ -1,0 +1,98 @@
+{
+  "version": "2.2",
+  "metadata": {
+    "rules_version": "1.8.0"
+  },
+  "rules": [
+    {
+      "id": "rule1",
+      "name": "rule1",
+      "tags": {
+        "type": "flow1",
+        "category": "category1"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.body.schema"
+              }
+            ],
+            "value": 8,
+            "type": "unsigned"
+          },
+          "operator": "equals"
+        }
+      ]
+    }
+  ],
+  "processors": [
+    {
+      "id": "processor-001",
+      "generator": "extract_schema",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "extract-schema"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "inputs": [
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "output": "server.request.body.schema"
+          }
+        ],
+        "scanners": [
+            {
+                "id": "scanner-001"
+            }
+        ]
+      },
+      "evaluate": false,
+      "output": true
+    }
+  ],
+  "scanners": [
+    {
+      "id": "scanner-001",
+      "key": {
+          "operator": "match_regex",
+          "parameters": {
+            "regex": "(?:email|mail)",
+            "options": {
+              "case_sensitive": false,
+              "min_length": 5
+            }
+          }
+      },
+      "value": {
+          "operator": "match_regex",
+          "parameters": {
+            "regex": "\\b[\\w!#$%&'*+\\/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+\\/=?`{|}~^-]+)*(%40|@)(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}\\b",
+            "options": {
+              "case_sensitive": false,
+              "min_length": 5
+            }
+          }
+      },
+      "tags": { "type": "email", "category": "pii" }
+    }
+  ]
+}

@@ -88,7 +88,7 @@ public:
 
 class processor : public ddwaf::processor {
 public:
-    processor() : ddwaf::processor({}, {}, {}, {}, true, true) {}
+    processor() : ddwaf::processor({}, {}, {}, {}, {}, true, true) {}
     ~processor() override = default;
 
     MOCK_METHOD(void, eval,

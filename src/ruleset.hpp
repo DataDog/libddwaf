@@ -19,10 +19,9 @@
 #include <obfuscator.hpp>
 #include <processor.hpp>
 #include <rule.hpp>
+#include <scanner.hpp>
 
 namespace ddwaf {
-
-using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
 
 struct ruleset {
     using ptr = std::shared_ptr<ruleset>;
@@ -111,6 +110,8 @@ struct ruleset {
 
     std::vector<rule::ptr> rules;
     std::unordered_map<std::string, matcher::base::shared_ptr> dynamic_matchers;
+
+    std::unordered_map<std::string_view, scanner::ptr> scanners;
 
     // The key used to organise collections is rule.type
     std::unordered_set<std::string_view> collection_types;

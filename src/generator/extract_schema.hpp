@@ -7,6 +7,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -29,7 +30,8 @@ public:
     extract_schema &operator=(const extract_schema &) = delete;
     extract_schema &operator=(extract_schema &&) = default;
 
-    ddwaf_object generate(const ddwaf_object *input, ddwaf::timer &deadline) override;
+    ddwaf_object generate(const ddwaf_object *input, const std::set<scanner *> &scanners,
+        ddwaf::timer &deadline) override;
 };
 
 } // namespace ddwaf::generator

@@ -11,6 +11,8 @@
 using namespace ddwaf;
 using namespace std::literals;
 
+using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
+
 namespace {
 
 TEST(TestMultiKeyMap, Find)

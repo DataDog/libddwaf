@@ -18,6 +18,9 @@
 
 namespace ddwaf {
 
+using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
+using scanner_tag_map = ddwaf::multi_key_map<std::string_view, scanner *>;
+
 class ruleset_builder {
 public:
     using ptr = std::shared_ptr<ruleset_builder>;
@@ -50,6 +53,7 @@ protected:
         filters = 8,
         data = 16,
         processors = 32,
+        scanners = 64,
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
@@ -86,6 +90,8 @@ protected:
     parser::filter_spec_container exclusions_;
     // Obtained from 'processors'
     parser::processor_container processors_;
+    // Obtained from 'scanners'
+    parser::scanner_container scanners_;
 
     // These are the contents of the latest generated ruleset
 
@@ -100,7 +106,13 @@ protected:
     // Filters
     std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters_;
     std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters_;
-    // The list of targets used by rule_filters_, input_filters_ and their internal
+
+    // An mkmap organising scanners by their tags, used for processors
+    scanner_tag_map scanners_by_tags_;
+
+    // Processors
+    std::unordered_map<std::string_view, processor::ptr> preprocessors_;
+    std::unordered_map<std::string_view, processor::ptr> postprocessors_;
 };
 
 } // namespace ddwaf

@@ -32,10 +32,12 @@ public:
         std::unordered_set<target_index> generated;
     };
 
-    processor(std::string id, std::unique_ptr<generator::base> generator, expression::ptr expr,
-        std::vector<target_mapping> mappings, bool evaluate, bool output)
+    processor(std::string id, std::shared_ptr<generator::base> generator, expression::ptr expr,
+        std::vector<target_mapping> mappings, std::set<scanner *> scanners, bool evaluate,
+        bool output)
         : id_(std::move(id)), generator_(std::move(generator)), expr_(std::move(expr)),
-          mappings_(std::move(mappings)), evaluate_(evaluate), output_(output)
+          mappings_(std::move(mappings)), scanners_(std::move(scanners)), evaluate_(evaluate),
+          output_(output)
     {}
 
     processor(const processor &) = delete;
@@ -52,9 +54,10 @@ public:
 
 protected:
     std::string id_;
-    std::unique_ptr<generator::base> generator_;
+    std::shared_ptr<generator::base> generator_;
     expression::ptr expr_;
     std::vector<target_mapping> mappings_;
+    std::set<scanner *> scanners_;
     bool evaluate_{false};
     bool output_{true};
 };

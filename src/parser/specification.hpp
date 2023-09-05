@@ -13,6 +13,7 @@
 #include <parameter.hpp>
 #include <processor.hpp>
 #include <rule.hpp>
+#include <scanner.hpp>
 
 #include <string>
 
@@ -27,35 +28,45 @@ struct rule_spec {
     std::vector<std::string> actions;
 };
 
-enum class target_type { none, id, tags };
+enum class reference_type { none, id, tags };
 
-struct rule_target_spec {
-    target_type type;
-    std::string rule_id;
+struct reference_spec {
+    reference_type type;
+    std::string ref_id;
     std::unordered_map<std::string, std::string> tags;
 };
 
 struct override_spec {
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
-    std::vector<rule_target_spec> targets;
+    std::vector<reference_spec> targets;
 };
 
 struct rule_filter_spec {
     expression::ptr expr;
-    std::vector<rule_target_spec> targets;
+    std::vector<reference_spec> targets;
     exclusion::filter_mode on_match;
 };
 
 struct input_filter_spec {
     expression::ptr expr;
     std::shared_ptr<exclusion::object_filter> filter;
-    std::vector<rule_target_spec> targets;
+    std::vector<reference_spec> targets;
+};
+
+struct processor_spec {
+    std::shared_ptr<generator::base> generator;
+    expression::ptr expr;
+    std::vector<processor::target_mapping> mappings;
+    std::vector<reference_spec> scanners;
+    bool evaluate{false};
+    bool output{true};
 };
 
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
 using rule_data_container = std::unordered_map<std::string, matcher::base::shared_ptr>;
+using scanner_container = std::unordered_map<std::string_view, scanner::ptr>;
 
 struct processor_container {
     [[nodiscard]] bool empty() const { return pre.empty() && post.empty(); }
@@ -66,8 +77,8 @@ struct processor_container {
         post.clear();
     }
 
-    std::unordered_map<std::string_view, processor::ptr> pre;
-    std::unordered_map<std::string_view, processor::ptr> post;
+    std::unordered_map<std::string, processor_spec> pre;
+    std::unordered_map<std::string, processor_spec> post;
 };
 
 struct override_spec_container {

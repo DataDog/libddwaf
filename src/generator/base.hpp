@@ -7,11 +7,13 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
 
 #include "clock.hpp"
+#include "scanner.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::generator {
@@ -27,7 +29,8 @@ public:
     base &operator=(const base &) = default;
     base &operator=(base &&) = default;
 
-    virtual ddwaf_object generate(const ddwaf_object *input, ddwaf::timer &deadline) = 0;
+    virtual ddwaf_object generate(
+        const ddwaf_object *input, const std::set<scanner *> &scanners, ddwaf::timer &deadline) = 0;
 };
 
 } // namespace ddwaf::generator
