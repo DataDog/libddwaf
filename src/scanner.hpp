@@ -16,7 +16,7 @@ namespace ddwaf {
 class scanner {
 public:
     scanner(std::string id, std::unordered_map<std::string, std::string> tags,
-        matcher::base::unique_ptr key_matcher, matcher::base::unique_ptr value_matcher)
+        std::unique_ptr<matcher::base> key_matcher, std::unique_ptr<matcher::base> value_matcher)
         : id_(std::move(id)), tags_(std::move(tags)), key_matcher_(std::move(key_matcher)),
           value_matcher_(std::move(value_matcher))
     {}
@@ -49,7 +49,7 @@ public:
     std::string_view get_id() const { return id_; }
 
 protected:
-    static bool eval_matcher(const matcher::base::unique_ptr &matcher, const ddwaf_object &obj)
+    static bool eval_matcher(const std::unique_ptr<matcher::base> &matcher, const ddwaf_object &obj)
     {
         if (!matcher || obj.type == DDWAF_OBJ_INVALID) {
             return true;
@@ -59,8 +59,8 @@ protected:
 
     std::string id_;
     std::unordered_map<std::string, std::string> tags_;
-    matcher::base::unique_ptr key_matcher_;
-    matcher::base::unique_ptr value_matcher_;
+    std::unique_ptr<matcher::base> key_matcher_;
+    std::unique_ptr<matcher::base> value_matcher_;
 };
 
 } // namespace ddwaf

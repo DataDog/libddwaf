@@ -19,9 +19,6 @@ namespace ddwaf::matcher {
 
 class base {
 public:
-    using shared_ptr = std::shared_ptr<base>;
-    using unique_ptr = std::unique_ptr<base>;
-
     base() = default;
     virtual ~base() = default;
     base(const base &) = default;

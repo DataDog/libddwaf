@@ -47,7 +47,7 @@ public:
         };
 
         std::vector<target_type> targets;
-        matcher::base::unique_ptr matcher;
+        std::unique_ptr<matcher::base> matcher;
         std::string data_id;
     };
 
@@ -76,7 +76,7 @@ public:
         const std::vector<std::unique_ptr<expression::condition>> &conditions;
         const object_store &store;
         const std::unordered_set<const ddwaf_object *> &objects_excluded;
-        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers;
+        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers;
         cache_type &cache;
     };
 
@@ -89,7 +89,7 @@ public:
 
     bool eval(cache_type &cache, const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
+        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
@@ -151,7 +151,7 @@ public:
         cond->matcher = std::make_unique<T>(args...);
     }
 
-    void set_matcher(matcher::base::unique_ptr &&matcher)
+    void set_matcher(std::unique_ptr<matcher::base> &&matcher)
     {
         auto &cond = conditions_.back();
         cond->matcher = std::move(matcher);

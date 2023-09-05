@@ -53,7 +53,8 @@ public:
     MOCK_METHOD(std::optional<event>, match,
         (const object_store &, rule::cache_type &,
             (const std::unordered_set<const ddwaf_object *> &),
-            (const std::unordered_map<std::string, matcher::base::shared_ptr> &), ddwaf::timer &),
+            (const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &),
+            ddwaf::timer &),
         (const override));
 };
 

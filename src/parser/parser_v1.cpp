@@ -38,7 +38,7 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
         auto params = at<parameter::map>(cond, "parameters");
 
         parameter::map options;
-        matcher::base::unique_ptr matcher;
+        std::unique_ptr<matcher::base> matcher;
         if (matcher_name == "phrase_match") {
             auto list = at<parameter::vector>(params, "list");
 

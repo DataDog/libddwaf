@@ -203,7 +203,7 @@ bool expression::evaluator::eval()
 
 bool expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
-    const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
+    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     if (cache.result || conditions_.empty()) {

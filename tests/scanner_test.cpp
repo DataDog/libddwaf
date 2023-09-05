@@ -15,10 +15,10 @@ using namespace std::literals;
 namespace {
 TEST(TestScanner, SimpleMatch)
 {
-    matcher::base::unique_ptr key_matcher =
+    std::unique_ptr<matcher::base> key_matcher =
         std::make_unique<matcher::exact_match>(std::vector<std::string>{"hello", "goodbye"});
 
-    matcher::base::unique_ptr value_matcher =
+    std::unique_ptr<matcher::base> value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
@@ -43,10 +43,10 @@ TEST(TestScanner, SimpleMatch)
 
 TEST(TestScanner, NoMatchOnKey)
 {
-    matcher::base::unique_ptr key_matcher =
+    std::unique_ptr<matcher::base> key_matcher =
         std::make_unique<matcher::exact_match>(std::vector<std::string>{"hello", "goodbye"});
 
-    matcher::base::unique_ptr value_matcher =
+    std::unique_ptr<matcher::base> value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{
@@ -72,10 +72,10 @@ TEST(TestScanner, NoMatchOnKey)
 
 TEST(TestScanner, NoMatchOnValue)
 {
-    matcher::base::unique_ptr key_matcher =
+    std::unique_ptr<matcher::base> key_matcher =
         std::make_unique<matcher::exact_match>(std::vector<std::string>{"hello", "goodbye"});
 
-    matcher::base::unique_ptr value_matcher =
+    std::unique_ptr<matcher::base> value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{};
