@@ -33,27 +33,26 @@ constexpr ruleset_builder::change_state operator&(
 
 namespace {
 
-std::set<rule *> references_to_rules(const std::vector<parser::reference_spec> &references,
-    const std::unordered_map<std::string_view, std::shared_ptr<rule>> &rules,
-    const rule_tag_map &rules_by_tags)
+std::set<rule *> references_to_rules(
+    const std::vector<parser::reference_spec> &references, const indexer<rule> &rules)
 {
     std::set<rule *> rule_refs;
     if (!references.empty()) {
         for (const auto &ref : references) {
             if (ref.type == parser::reference_type::id) {
-                auto rule_it = rules.find(ref.ref_id);
-                if (rule_it == rules.end()) {
+                auto *rule = rules.find_by_id(ref.ref_id);
+                if (rule == nullptr) {
                     continue;
                 }
-                rule_refs.emplace(rule_it->second.get());
+                rule_refs.emplace(rule);
             } else if (ref.type == parser::reference_type::tags) {
-                auto current_refs = rules_by_tags.multifind(ref.tags);
+                auto current_refs = rules.find_by_tags(ref.tags);
                 rule_refs.merge(current_refs);
             }
         }
     } else {
         // An empty rules reference applies to all rules
-        for (const auto &[id, rule] : rules) { rule_refs.emplace(rule.get()); }
+        for (const auto &rule : rules) { rule_refs.emplace(rule.get()); }
     }
     return rule_refs;
 }
@@ -98,7 +97,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     // that there are no side-effects on running contexts.
     if ((state & base_rule_update) != change_state::none) {
         final_base_rules_.clear();
-        base_rules_by_tags_.clear();
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : base_rules_) {
@@ -106,13 +104,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
-            final_base_rules_.emplace(rule_ptr->get_id(), rule_ptr);
-            base_rules_by_tags_.insert(rule_ptr->get_tags(), rule_ptr.get());
+            final_base_rules_.emplace(rule_ptr);
         }
 
+        // Overrides only impact base rules since user rules can already be modified by the user
         for (const auto &ovrd : overrides_.by_tags) {
-            auto rule_targets =
-                references_to_rules(ovrd.targets, final_base_rules_, base_rules_by_tags_);
+            auto rule_targets = references_to_rules(ovrd.targets, final_base_rules_);
             for (const auto &rule_ptr : rule_targets) {
                 if (ovrd.enabled.has_value()) {
                     rule_ptr->toggle(*ovrd.enabled);
@@ -125,8 +122,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         }
 
         for (const auto &ovrd : overrides_.by_ids) {
-            auto rule_targets =
-                references_to_rules(ovrd.targets, final_base_rules_, base_rules_by_tags_);
+            auto rule_targets = references_to_rules(ovrd.targets, final_base_rules_);
             for (const auto &rule_ptr : rule_targets) {
                 if (ovrd.enabled.has_value()) {
                     rule_ptr->toggle(*ovrd.enabled);
@@ -141,7 +137,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
     if ((state & change_state::custom_rules) != change_state::none) {
         final_user_rules_.clear();
-        user_rules_by_tags_.clear();
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : user_rules_) {
@@ -149,8 +144,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
 
             // The string_view should be owned by the rule_ptr
-            final_user_rules_.emplace(rule_ptr->get_id(), rule_ptr);
-            user_rules_by_tags_.insert(rule_ptr->get_tags(), rule_ptr.get());
+            final_user_rules_.emplace(rule_ptr);
         }
     }
 
@@ -161,10 +155,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
         // First generate rule filters
         for (const auto &[id, filter] : exclusions_.rule_filters) {
-            auto rule_targets =
-                references_to_rules(filter.targets, final_base_rules_, base_rules_by_tags_);
-            rule_targets.merge(
-                references_to_rules(filter.targets, final_user_rules_, user_rules_by_tags_));
+            auto rule_targets = references_to_rules(filter.targets, final_base_rules_);
+            rule_targets.merge(references_to_rules(filter.targets, final_user_rules_));
 
             auto filter_ptr = std::make_shared<exclusion::rule_filter>(
                 id, filter.expr, std::move(rule_targets), filter.on_match);
@@ -173,10 +165,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
         // Finally input filters
         for (auto &[id, filter] : exclusions_.input_filters) {
-            auto rule_targets =
-                references_to_rules(filter.targets, final_base_rules_, base_rules_by_tags_);
-            rule_targets.merge(
-                references_to_rules(filter.targets, final_user_rules_, user_rules_by_tags_));
+            auto rule_targets = references_to_rules(filter.targets, final_base_rules_);
+            rule_targets.merge(references_to_rules(filter.targets, final_user_rules_));
 
             auto filter_ptr = std::make_shared<exclusion::input_filter>(
                 id, filter.expr, std::move(rule_targets), filter.filter);
@@ -205,8 +195,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     }
 
     auto rs = std::make_shared<ddwaf::ruleset>();
-    rs->insert_rules(final_base_rules_);
-    rs->insert_rules(final_user_rules_);
+    rs->insert_rules(final_base_rules_.items());
+    rs->insert_rules(final_user_rules_.items());
     rs->insert_filters(rule_filters_);
     rs->insert_filters(input_filters_);
     rs->dynamic_matchers = dynamic_matchers_;

@@ -19,6 +19,7 @@ template <typename T>
 class indexer {
 public:
     using iterator = typename std::vector<std::shared_ptr<T>>::iterator;
+    using const_iterator = typename std::vector<std::shared_ptr<T>>::const_iterator;
 
     void emplace(const std::shared_ptr<T> &item) {
         items_.emplace_back(item);
@@ -46,6 +47,9 @@ public:
 
     iterator begin() { return items_.begin(); }
     iterator end() { return items_.end(); }
+
+    const_iterator begin() const { return items_.begin(); }
+    const_iterator end() const { return items_.end(); }
 
     const std::vector<std::shared_ptr<T>> &items() const { return items_; }
 

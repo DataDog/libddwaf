@@ -46,9 +46,9 @@ struct ruleset {
         rule->get_addresses(rule_addresses);
     }
 
-    void insert_rules(const std::unordered_map<std::string_view, std::shared_ptr<rule>> &rules_)
+    void insert_rules(const std::vector<std::shared_ptr<rule>> &rules_)
     {
-        for (const auto &[id, rule] : rules_) { insert_rule(rule); }
+        for (const auto &rule : rules_) { insert_rule(rule); }
     }
 
     template <typename T>

@@ -42,9 +42,7 @@ TEST(TestRuleset, InsertSingleRegularBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, std::shared_ptr<rule>> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 3);
@@ -78,9 +76,7 @@ TEST(TestRuleset, InsertSinglePriorityBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, std::shared_ptr<rule>> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -114,9 +110,7 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, std::shared_ptr<rule>> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 3);
@@ -157,9 +151,7 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
     {
         ddwaf::ruleset ruleset;
 
-        std::unordered_map<std::string_view, std::shared_ptr<rule>> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -198,9 +190,7 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, std::shared_ptr<rule>> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -240,9 +230,7 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, std::shared_ptr<rule>> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -282,9 +270,7 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, std::shared_ptr<rule>> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 3);
@@ -323,9 +309,7 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, std::shared_ptr<rule>> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -371,9 +355,7 @@ TEST(TestRuleset, InsertSingleMixedMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, std::shared_ptr<rule>> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 12);
         EXPECT_EQ(ruleset.base_collections.size(), 3);
