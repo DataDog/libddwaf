@@ -1,5 +1,30 @@
 # libddwaf release
 
+### v1.14.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+This release of the WAF includes the following new features:
+- Schema data classification through the use of scanners.
+- A vectorized version of the `lowercase` transformer using SSE2.
+- Generalized processors which are evaluated before or after filters and rules based on their outcome.
+- Optimizations to avoid unnecessary rule and filter evaluation.
+- Many other quality of life, correctness and performance improvements
+
+#### API & Breaking Changes
+- Rename `preprocessor` top-level key to `processor` (#209)
+
+#### Fixes
+- Fix missing top-level key for processor diagnostics (#209)
+
+#### Changes
+- SSE2 lowercase transformer (#195)
+- Reduce schema extraction limits (#208)
+- Skip rule and filter evaluation when no new rule targets exist (#207)
+- Refactor preprocessors into preprocessors and postprocessors (#209)
+- Convert float to (un)signed within the parsing stage (#210)
+- Scanners for schema scalar classification (#211)
+- Remove ptr typedefs (#212)
+- Indexer abstraction to encapsulate rule and scanner search and storage (#213)
+
 ### v1.13.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 #### Changes
