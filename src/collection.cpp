@@ -21,12 +21,12 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     const auto &id = rule->get_id();
 
     if (deadline.expired()) {
-        DDWAF_INFO("Ran out of time while running rule %s", id.c_str());
+        DDWAF_INFO("Ran out of time while evaluating rule '%s'", id.c_str());
         throw timeout_exception();
     }
 
     if (!rule->is_enabled()) {
-        DDWAF_DEBUG("Rule %s is disabled", id.c_str());
+        DDWAF_DEBUG("Rule '%s' is disabled", id.c_str());
         return std::nullopt;
     }
 
@@ -34,15 +34,15 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     auto exclude_it = rules_to_exclude.find(rule);
     if (exclude_it != rules_to_exclude.end()) {
         if (exclude_it->second == exclusion::filter_mode::bypass) {
-            DDWAF_DEBUG("Bypassing Rule %s", id.c_str());
+            DDWAF_DEBUG("Bypassing rule '%s'", id.c_str());
             return std::nullopt;
         }
 
-        DDWAF_DEBUG("Monitoring Rule %s", id.c_str());
+        DDWAF_DEBUG("Monitoring rule '%s'", id.c_str());
         skip_actions = true;
     }
 
-    DDWAF_DEBUG("Running the WAF on rule %s", id.c_str());
+    DDWAF_DEBUG("Evaluating rule '%s'", id.c_str());
 
     try {
         auto it = cache.find(rule);
@@ -67,7 +67,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
 
         return event;
     } catch (const ddwaf::timeout_exception &) {
-        DDWAF_INFO("Ran out of time while processing %s", id.c_str());
+        DDWAF_INFO("Ran out of time while evaluating rule '%s'", id.c_str());
         throw;
     }
 

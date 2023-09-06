@@ -90,6 +90,8 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
 
 const memory::unordered_map<rule *, filter_mode> &context::filter_rules(ddwaf::timer &deadline)
 {
+    DDWAF_DEBUG("Evaluating rule filters");
+
     for (const auto &[id, filter] : ruleset_->rule_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating rule filters");
@@ -120,6 +122,8 @@ const memory::unordered_map<rule *, filter_mode> &context::filter_rules(ddwaf::t
 
 void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
 {
+    DDWAF_DEBUG("Evaluating preprocessors");
+
     for (const auto &[id, preproc] : ruleset_->preprocessors) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating preprocessors");
@@ -138,6 +142,8 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
 
 void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
 {
+    DDWAF_DEBUG("Evaluating postprocessors");
+
     for (const auto &[id, postproc] : ruleset_->postprocessors) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating postprocessors");
@@ -157,6 +163,8 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
 const memory::unordered_map<rule *, context::object_set> &context::filter_inputs(
     const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline)
 {
+    DDWAF_DEBUG("Evaluating input filters");
+
     for (const auto &[id, filter] : ruleset_->input_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating input filters");
@@ -207,7 +215,7 @@ memory::vector<event> context::match(
 
     // Evaluate user priority collections first
     for (auto &[type, collection] : ruleset_->user_priority_collections) {
-        DDWAF_DEBUG("Evaluating user priority collection %.*s", static_cast<int>(type.length()),
+        DDWAF_DEBUG("Evaluating user priority collection '%.*s'", static_cast<int>(type.length()),
             type.data());
         eval_collection(type, collection);
     }
@@ -215,21 +223,21 @@ memory::vector<event> context::match(
     // Evaluate priority collections first
     for (auto &[type, collection] : ruleset_->base_priority_collections) {
         DDWAF_DEBUG(
-            "Evaluating priority collection %.*s", static_cast<int>(type.length()), type.data());
+            "Evaluating priority collection '%.*s'", static_cast<int>(type.length()), type.data());
         eval_collection(type, collection);
     }
 
     // Evaluate regular collection after
     for (auto &[type, collection] : ruleset_->user_collections) {
         DDWAF_DEBUG(
-            "Evaluating user collection %.*s", static_cast<int>(type.length()), type.data());
+            "Evaluating user collection '%.*s'", static_cast<int>(type.length()), type.data());
         eval_collection(type, collection);
     }
 
     // Evaluate regular collection after
     for (auto &[type, collection] : ruleset_->base_collections) {
         DDWAF_DEBUG(
-            "Evaluating base collection %.*s", static_cast<int>(type.length()), type.data());
+            "Evaluating base collection '%.*s'", static_cast<int>(type.length()), type.data());
         eval_collection(type, collection);
     }
 

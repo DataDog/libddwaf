@@ -10,7 +10,8 @@
 #include <string_view>
 #include <unordered_map>
 
-#include <matcher/base.hpp>
+#include "log.hpp"
+#include "matcher/base.hpp"
 
 namespace ddwaf {
 class scanner {
@@ -31,6 +32,7 @@ public:
 
     bool eval(const ddwaf_object &key, const ddwaf_object &value) const
     {
+        DDWAF_DEBUG("Evaluating scanner '%s'", id_.c_str());
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
