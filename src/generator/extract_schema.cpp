@@ -263,7 +263,7 @@ ddwaf_object serialize(const base_node &node) { return std::visit(node_serialize
 
 // NOLINTNEXTLINE(misc-no-recursion)
 base_node generate_helper(const ddwaf_object *object, std::string_view key,
-    const std::set<scanner *> &scanners, std::size_t depth, ddwaf::timer &deadline)
+    const std::set<const scanner *> &scanners, std::size_t depth, ddwaf::timer &deadline)
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -331,7 +331,7 @@ base_node generate_helper(const ddwaf_object *object, std::string_view key,
 }
 
 ddwaf_object generate(
-    const ddwaf_object *object, const std::set<scanner *> &scanners, ddwaf::timer &deadline)
+    const ddwaf_object *object, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
 {
     return serialize(
         generate_helper(object, {}, scanners, extract_schema::max_container_depth, deadline));
@@ -340,7 +340,7 @@ ddwaf_object generate(
 } // namespace schema
 
 ddwaf_object extract_schema::generate(
-    const ddwaf_object *input, const std::set<scanner *> &scanners, ddwaf::timer &deadline)
+    const ddwaf_object *input, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
 {
     if (input == nullptr) {
         return {};

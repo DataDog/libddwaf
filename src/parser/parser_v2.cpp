@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "generator/extract_schema.hpp"
+#include "indexer.hpp"
 #include "utils.hpp"
 #include <algorithm>
 #include <exception.hpp>
@@ -717,16 +718,16 @@ processor_container parse_processors(
     return processors;
 }
 
-scanner_container parse_scanners(parameter::vector &scanner_array, base_section_info &info)
+indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_section_info &info)
 {
-    scanner_container scanners;
+    indexer<const scanner> scanners;
     for (unsigned i = 0; i < scanner_array.size(); i++) {
         const auto &node_param = scanner_array[i];
         auto node = static_cast<parameter::map>(node_param);
         std::string id;
         try {
             id = at<std::string>(node, "id");
-            if (scanners.find(id) != scanners.end()) {
+            if (scanners.find_by_id(id) != nullptr) {
                 DDWAF_WARN("Duplicate scanner: %s", id.c_str());
                 info.add_failed(id, "duplicate scanner");
                 continue;
@@ -765,7 +766,7 @@ scanner_container parse_scanners(parameter::vector &scanner_array, base_section_
             DDWAF_DEBUG("Parsed scanner %s", id.c_str());
             auto scnr = std::make_shared<scanner>(scanner{
                 std::move(id), std::move(tags), std::move(key_matcher), std::move(value_matcher)});
-            scanners.emplace(scnr->get_id(), scnr);
+            scanners.emplace(scnr);
             info.add_loaded(scnr->get_id());
         } catch (const std::exception &e) {
             if (id.empty()) {

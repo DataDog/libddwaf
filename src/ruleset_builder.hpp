@@ -16,10 +16,9 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ddwaf {
+#include "indexer.hpp"
 
-using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
-using scanner_tag_map = ddwaf::multi_key_map<std::string_view, scanner *>;
+namespace ddwaf {
 
 class ruleset_builder {
 public:
@@ -88,29 +87,23 @@ protected:
     parser::filter_spec_container exclusions_;
     // Obtained from 'processors'
     parser::processor_container processors_;
-    // Obtained from 'scanners'
-    parser::scanner_container scanners_;
 
     // These are the contents of the latest generated ruleset
 
     // Rules
-    std::unordered_map<std::string_view, std::shared_ptr<rule>> final_base_rules_;
-    std::unordered_map<std::string_view, std::shared_ptr<rule>> final_user_rules_;
-
-    // An mkmap organising rules by their tags, used for overrides and exclusion filters
-    rule_tag_map base_rules_by_tags_;
-    rule_tag_map user_rules_by_tags_;
+    indexer<rule> final_base_rules_;
+    indexer<rule> final_user_rules_;
 
     // Filters
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters_;
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters_;
 
-    // An mkmap organising scanners by their tags, used for processors
-    scanner_tag_map scanners_by_tags_;
-
     // Processors
     std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors_;
     std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors_;
+
+    // Scanners
+    indexer<const scanner> scanners_;
 };
 
 } // namespace ddwaf
