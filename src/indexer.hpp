@@ -15,31 +15,33 @@
 
 namespace ddwaf {
 
-template <typename T>
-class indexer {
+template <typename T> class indexer {
 public:
     using iterator = typename std::vector<std::shared_ptr<T>>::iterator;
     using const_iterator = typename std::vector<std::shared_ptr<T>>::const_iterator;
 
-    void emplace(const std::shared_ptr<T> &item) {
+    void emplace(const std::shared_ptr<T> &item)
+    {
         items_.emplace_back(item);
         by_id_.emplace(item->get_id(), item.get());
         by_tags_.insert(item->get_tags(), item.get());
     }
 
-    T* find_by_id(std::string_view id) const {
+    T *find_by_id(std::string_view id) const
+    {
         auto it = by_id_.find(id);
         return it != by_id_.end() ? it->second : nullptr;
     }
 
-    template <typename U>
-    std::set<T*> find_by_tags(const U &tags) const {
+    template <typename U> std::set<T *> find_by_tags(const U &tags) const
+    {
         return by_tags_.multifind(tags);
     }
 
     [[nodiscard]] std::size_t size() const { return items_.size(); }
 
-    void clear() {
+    void clear()
+    {
         items_.clear();
         by_id_.clear();
         by_tags_.clear();
@@ -55,8 +57,8 @@ public:
 
 protected:
     std::vector<std::shared_ptr<T>> items_;
-    std::unordered_map<std::string_view, T*> by_id_;
-    multi_key_map<std::string_view, T*> by_tags_;
+    std::unordered_map<std::string_view, T *> by_id_;
+    multi_key_map<std::string_view, T *> by_tags_;
 };
 
 } // namespace ddwaf
