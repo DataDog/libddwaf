@@ -54,8 +54,7 @@ public:
     struct cache_type {
         bool result{false};
         memory::vector<event::match> matches{};
-        std::optional<std::vector<std::unique_ptr<expression::condition>>::const_iterator>
-            last_cond{};
+        std::optional<std::vector<std::unique_ptr<condition>>::const_iterator> last_cond{};
     };
 
     struct evaluator {
@@ -73,7 +72,7 @@ public:
 
         ddwaf::timer &deadline;
         const ddwaf::object_limits &limits;
-        const std::vector<std::unique_ptr<expression::condition>> &conditions;
+        const std::vector<std::unique_ptr<condition>> &conditions;
         const object_store &store;
         const std::unordered_set<const ddwaf_object *> &objects_excluded;
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers;
@@ -82,8 +81,8 @@ public:
 
     expression() = default;
 
-    explicit expression(std::vector<std::unique_ptr<expression::condition>> &&conditions,
-        ddwaf::object_limits limits = {})
+    explicit expression(
+        std::vector<std::unique_ptr<condition>> &&conditions, ddwaf::object_limits limits = {})
         : limits_(limits), conditions_(std::move(conditions))
     {}
 
@@ -113,7 +112,7 @@ public:
 
 protected:
     ddwaf::object_limits limits_;
-    std::vector<std::unique_ptr<expression::condition>> conditions_;
+    std::vector<std::unique_ptr<condition>> conditions_;
 };
 
 class expression_builder {
