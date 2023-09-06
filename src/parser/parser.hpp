@@ -15,6 +15,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "indexer.hpp"
+
 using base_section_info = ddwaf::base_ruleset_info::base_section_info;
 
 namespace ddwaf::parser {
@@ -42,7 +44,7 @@ filter_spec_container parse_filters(
 processor_container parse_processors(
     parameter::vector &processor_array, base_section_info &info, const object_limits &limits);
 
-scanner_container parse_scanners(parameter::vector &scanner_array, base_section_info &info);
+indexer<scanner> parse_scanners(parameter::vector &scanner_array, base_section_info &info);
 
 } // namespace v2
 } // namespace ddwaf::parser

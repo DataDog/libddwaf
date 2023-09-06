@@ -58,19 +58,19 @@ std::set<rule *> references_to_rules(const std::vector<parser::reference_spec> &
     return rule_refs;
 }
 
-std::set<scanner *> references_to_scanners(const std::vector<parser::reference_spec> &references,
-    const parser::scanner_container &scanners, const scanner_tag_map &scanners_by_tags)
+std::set<scanner *> references_to_scanners(
+    const std::vector<parser::reference_spec> &references, const indexer<scanner> &scanners)
 {
     std::set<scanner *> scanner_refs;
     for (const auto &ref : references) {
         if (ref.type == parser::reference_type::id) {
-            auto it = scanners.find(ref.ref_id);
-            if (it == scanners.end()) {
+            auto *scanner = scanners.find_by_id(ref.ref_id);
+            if (scanner == nullptr) {
                 continue;
             }
-            scanner_refs.emplace(it->second.get());
+            scanner_refs.emplace(scanner);
         } else if (ref.type == parser::reference_type::tags) {
-            auto current_refs = scanners_by_tags.multifind(ref.tags);
+            auto current_refs = scanners.find_by_tags(ref.tags);
             scanner_refs.merge(current_refs);
         }
     }
@@ -189,23 +189,15 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         preprocessors_.clear();
         postprocessors_.clear();
 
-        if ((state & change_state::scanners) != change_state::none) {
-            scanners_by_tags_.clear();
-
-            for (auto &[id, scanner] : scanners_) {
-                scanners_by_tags_.insert(scanner->get_tags(), scanner.get());
-            }
-        }
-
         for (auto &[id, spec] : processors_.pre) {
-            auto scanners = references_to_scanners(spec.scanners, scanners_, scanners_by_tags_);
+            auto scanners = references_to_scanners(spec.scanners, scanners_);
             auto proc = std::make_shared<processor>(id, spec.generator, spec.expr, spec.mappings,
                 std::move(scanners), spec.evaluate, spec.output);
             preprocessors_.emplace(proc->get_id(), std::move(proc));
         }
 
         for (auto &[id, spec] : processors_.post) {
-            auto scanners = references_to_scanners(spec.scanners, scanners_, scanners_by_tags_);
+            auto scanners = references_to_scanners(spec.scanners, scanners_);
             auto proc = std::make_shared<processor>(id, spec.generator, spec.expr, spec.mappings,
                 std::move(scanners), spec.evaluate, spec.output);
             postprocessors_.emplace(proc->get_id(), std::move(proc));
@@ -222,7 +214,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->input_filters = input_filters_;
     rs->preprocessors = preprocessors_;
     rs->postprocessors = postprocessors_;
-    rs->scanners = scanners_;
+    rs->scanners = scanners_.items();
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 

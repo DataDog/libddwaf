@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "indexer.hpp"
+
 namespace ddwaf {
 
 using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
@@ -88,8 +90,6 @@ protected:
     parser::filter_spec_container exclusions_;
     // Obtained from 'processors'
     parser::processor_container processors_;
-    // Obtained from 'scanners'
-    parser::scanner_container scanners_;
 
     // These are the contents of the latest generated ruleset
 
@@ -111,6 +111,9 @@ protected:
     // Processors
     std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors_;
     std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors_;
+
+    // Scanners
+    indexer<scanner> scanners_;
 };
 
 } // namespace ddwaf
