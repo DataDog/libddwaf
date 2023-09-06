@@ -10,20 +10,20 @@ This release of the WAF includes the following new features:
 - Many other quality of life, correctness and performance improvements
 
 #### API & Breaking Changes
-- Rename `preprocessor` top-level key to `processor` (#209)
+- Rename `preprocessor` top-level key to `processor` ([#209](https://github.com/DataDog/libddwaf/pull/209))
 
 #### Fixes
-- Fix missing top-level key for processor diagnostics (#209)
+- Fix missing top-level key for processor diagnostics ([#209](https://github.com/DataDog/libddwaf/pull/209))
 
 #### Changes
-- SSE2 lowercase transformer (#195)
-- Reduce schema extraction limits (#208)
-- Skip rule and filter evaluation when no new rule targets exist (#207)
-- Refactor preprocessors into preprocessors and postprocessors (#209)
-- Convert float to (un)signed within the parsing stage (#210)
-- Scanners for schema scalar classification (#211)
-- Remove ptr typedefs (#212)
-- Indexer abstraction to encapsulate rule and scanner search and storage (#213)
+- SSE2 lowercase transformer ([#195](https://github.com/DataDog/libddwaf/pull/195))
+- Reduce schema extraction limits ([#208](https://github.com/DataDog/libddwaf/pull/208))
+- Skip rule and filter evaluation when no new rule targets exist ([#207](https://github.com/DataDog/libddwaf/pull/207))
+- Refactor preprocessors into preprocessors and postprocessors ([#209](https://github.com/DataDog/libddwaf/pull/209))
+- Convert float to (un)signed within the parsing stage ([#210](https://github.com/DataDog/libddwaf/pull/210))
+- Scanners for schema scalar classification ([#211](https://github.com/DataDog/libddwaf/pull/211))
+- Remove ptr typedefs ([#212](https://github.com/DataDog/libddwaf/pull/212))
+- Indexer abstraction to encapsulate rule and scanner search and storage ([#213](https://github.com/DataDog/libddwaf/pull/213))
 
 ### v1.13.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
