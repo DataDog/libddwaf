@@ -103,7 +103,7 @@ protected:
     std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors_;
 
     // Scanners
-    indexer<scanner> scanners_;
+    indexer<const scanner> scanners_;
 };
 
 } // namespace ddwaf

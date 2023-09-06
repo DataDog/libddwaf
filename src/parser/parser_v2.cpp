@@ -718,9 +718,9 @@ processor_container parse_processors(
     return processors;
 }
 
-indexer<scanner> parse_scanners(parameter::vector &scanner_array, base_section_info &info)
+indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_section_info &info)
 {
-    indexer<scanner> scanners;
+    indexer<const scanner> scanners;
     for (unsigned i = 0; i < scanner_array.size(); i++) {
         const auto &node_param = scanner_array[i];
         auto node = static_cast<parameter::map>(node_param);

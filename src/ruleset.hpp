@@ -110,7 +110,7 @@ struct ruleset {
     std::vector<std::shared_ptr<rule>> rules;
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> dynamic_matchers;
 
-    std::vector<std::shared_ptr<scanner>> scanners;
+    std::vector<std::shared_ptr<const scanner>> scanners;
 
     // The key used to organise collections is rule.type
     std::unordered_set<std::string_view> collection_types;

@@ -23,7 +23,7 @@ namespace mock {
 class generator : public ddwaf::generator::base {
 public:
     MOCK_METHOD(ddwaf_object, generate,
-        (const ddwaf_object *, const std::set<scanner *> &, ddwaf::timer &), (override));
+        (const ddwaf_object *, const std::set<const scanner *> &, ddwaf::timer &), (override));
 };
 
 } // namespace mock

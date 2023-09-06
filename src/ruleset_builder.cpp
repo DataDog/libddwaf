@@ -57,13 +57,13 @@ std::set<rule *> references_to_rules(
     return rule_refs;
 }
 
-std::set<scanner *> references_to_scanners(
-    const std::vector<parser::reference_spec> &references, const indexer<scanner> &scanners)
+std::set<const scanner *> references_to_scanners(
+    const std::vector<parser::reference_spec> &references, const indexer<const scanner> &scanners)
 {
-    std::set<scanner *> scanner_refs;
+    std::set<const scanner *> scanner_refs;
     for (const auto &ref : references) {
         if (ref.type == parser::reference_type::id) {
-            auto *scanner = scanners.find_by_id(ref.ref_id);
+            const auto *scanner = scanners.find_by_id(ref.ref_id);
             if (scanner == nullptr) {
                 continue;
             }
@@ -102,8 +102,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         for (const auto &[id, spec] : base_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
-
-            // The string_view should be owned by the rule_ptr
             final_base_rules_.emplace(rule_ptr);
         }
 
@@ -142,8 +140,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         for (const auto &[id, spec] : user_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
-
-            // The string_view should be owned by the rule_ptr
             final_user_rules_.emplace(rule_ptr);
         }
     }

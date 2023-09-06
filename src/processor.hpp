@@ -33,7 +33,7 @@ public:
 
     processor(std::string id, std::shared_ptr<generator::base> generator,
         std::shared_ptr<expression> expr, std::vector<target_mapping> mappings,
-        std::set<scanner *> scanners, bool evaluate, bool output)
+        std::set<const scanner *> scanners, bool evaluate, bool output)
         : id_(std::move(id)), generator_(std::move(generator)), expr_(std::move(expr)),
           mappings_(std::move(mappings)), scanners_(std::move(scanners)), evaluate_(evaluate),
           output_(output)
@@ -56,7 +56,7 @@ protected:
     std::shared_ptr<generator::base> generator_;
     std::shared_ptr<expression> expr_;
     std::vector<target_mapping> mappings_;
-    std::set<scanner *> scanners_;
+    std::set<const scanner *> scanners_;
     bool evaluate_{false};
     bool output_{true};
 };
