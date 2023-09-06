@@ -22,7 +22,8 @@ int main(int argc, char *argv[])
     std::string rule_str = read_file(argv[1]);
     auto rule = json_to_object(rule_str);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ddwaf_object_free(&rule);
 
     if (handle == nullptr) {
@@ -31,6 +32,9 @@ int main(int argc, char *argv[])
     }
 
     DDWAF_INFO("Ruleset loaded successfully");
+
+    DDWAF_INFO("Diagnostics:\n%s", object_to_json(diagnostics).c_str());
+    ddwaf_object_free(&diagnostics);
 
     uint32_t required_size;
     const char *const *required = ddwaf_required_addresses(handle, &required_size);

@@ -20,10 +20,9 @@ enum class filter_mode { bypass, monitor };
 
 class rule_filter {
 public:
-    using ptr = std::shared_ptr<rule_filter>;
     using cache_type = expression::cache_type;
 
-    rule_filter(std::string id, expression::ptr expr, std::set<rule *> rule_targets,
+    rule_filter(std::string id, std::shared_ptr<expression> expr, std::set<rule *> rule_targets,
         filter_mode mode = filter_mode::bypass);
     rule_filter(const rule_filter &) = delete;
     rule_filter &operator=(const rule_filter &) = delete;
@@ -44,7 +43,7 @@ public:
 
 protected:
     std::string id_;
-    expression::ptr expr_;
+    std::shared_ptr<expression> expr_;
     std::unordered_set<rule *> rule_targets_;
     filter_mode mode_;
 };

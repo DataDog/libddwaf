@@ -11,8 +11,8 @@ namespace ddwaf::exclusion {
 
 using excluded_set = input_filter::excluded_set;
 
-input_filter::input_filter(std::string id, expression::ptr expr, std::set<rule *> rule_targets,
-    std::shared_ptr<object_filter> filter)
+input_filter::input_filter(std::string id, std::shared_ptr<expression> expr,
+    std::set<rule *> rule_targets, std::shared_ptr<object_filter> filter)
     : id_(std::move(id)), expr_(std::move(expr)), rule_targets_(std::move(rule_targets)),
       filter_(std::move(filter))
 {

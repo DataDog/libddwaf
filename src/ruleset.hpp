@@ -24,9 +24,8 @@
 namespace ddwaf {
 
 struct ruleset {
-    using ptr = std::shared_ptr<ruleset>;
 
-    void insert_rule(const rule::ptr &rule)
+    void insert_rule(const std::shared_ptr<rule> &rule)
     {
         rules.emplace_back(rule);
         std::string_view type = rule->get_tag("type");
@@ -47,7 +46,7 @@ struct ruleset {
         rule->get_addresses(rule_addresses);
     }
 
-    void insert_rules(const std::unordered_map<std::string_view, rule::ptr> &rules_)
+    void insert_rules(const std::unordered_map<std::string_view, std::shared_ptr<rule>> &rules_)
     {
         for (const auto &[id, rule] : rules_) { insert_rule(rule); }
     }
@@ -102,16 +101,16 @@ struct ruleset {
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
-    std::unordered_map<std::string_view, processor::ptr> preprocessors;
-    std::unordered_map<std::string_view, processor::ptr> postprocessors;
+    std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors;
+    std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors;
 
-    std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
-    std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
+    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters;
+    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
 
-    std::vector<rule::ptr> rules;
-    std::unordered_map<std::string, matcher::base::shared_ptr> dynamic_matchers;
+    std::vector<std::shared_ptr<rule>> rules;
+    std::unordered_map<std::string, std::shared_ptr<matcher::base>> dynamic_matchers;
 
-    std::unordered_map<std::string_view, scanner::ptr> scanners;
+    std::unordered_map<std::string_view, std::shared_ptr<scanner>> scanners;
 
     // The key used to organise collections is rule.type
     std::unordered_set<std::string_view> collection_types;

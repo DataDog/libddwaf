@@ -24,7 +24,7 @@ struct rule_spec {
     rule::source_type source;
     std::string name;
     std::unordered_map<std::string, std::string> tags;
-    expression::ptr expr;
+    std::shared_ptr<expression> expr;
     std::vector<std::string> actions;
 };
 
@@ -43,20 +43,20 @@ struct override_spec {
 };
 
 struct rule_filter_spec {
-    expression::ptr expr;
+    std::shared_ptr<expression> expr;
     std::vector<reference_spec> targets;
     exclusion::filter_mode on_match;
 };
 
 struct input_filter_spec {
-    expression::ptr expr;
+    std::shared_ptr<expression> expr;
     std::shared_ptr<exclusion::object_filter> filter;
     std::vector<reference_spec> targets;
 };
 
 struct processor_spec {
     std::shared_ptr<generator::base> generator;
-    expression::ptr expr;
+    std::shared_ptr<expression> expr;
     std::vector<processor::target_mapping> mappings;
     std::vector<reference_spec> scanners;
     bool evaluate{false};
@@ -65,8 +65,8 @@ struct processor_spec {
 
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
-using rule_data_container = std::unordered_map<std::string, matcher::base::shared_ptr>;
-using scanner_container = std::unordered_map<std::string_view, scanner::ptr>;
+using rule_data_container = std::unordered_map<std::string, std::shared_ptr<matcher::base>>;
+using scanner_container = std::unordered_map<std::string_view, std::shared_ptr<scanner>>;
 
 struct processor_container {
     [[nodiscard]] bool empty() const { return pre.empty() && post.empty(); }

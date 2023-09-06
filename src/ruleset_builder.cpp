@@ -34,7 +34,8 @@ constexpr ruleset_builder::change_state operator&(
 namespace {
 
 std::set<rule *> references_to_rules(const std::vector<parser::reference_spec> &references,
-    const std::unordered_map<std::string_view, rule::ptr> &rules, const rule_tag_map &rules_by_tags)
+    const std::unordered_map<std::string_view, std::shared_ptr<rule>> &rules,
+    const rule_tag_map &rules_by_tags)
 {
     std::set<rule *> rule_refs;
     if (!references.empty()) {

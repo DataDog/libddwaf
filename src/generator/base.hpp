@@ -20,8 +20,6 @@ namespace ddwaf::generator {
 
 class base {
 public:
-    using ptr = std::unique_ptr<base>;
-
     base() = default;
     virtual ~base() = default;
     base(const base &) = default;

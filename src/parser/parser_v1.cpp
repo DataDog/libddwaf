@@ -25,7 +25,7 @@ namespace ddwaf::parser::v1 {
 
 namespace {
 
-expression::ptr parse_expression(parameter::vector &conditions_array,
+std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array,
     const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
 {
     expression_builder builder(conditions_array.size(), limits);
@@ -38,7 +38,7 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
         auto params = at<parameter::map>(cond, "parameters");
 
         parameter::map options;
-        matcher::base::unique_ptr matcher;
+        std::unique_ptr<matcher::base> matcher;
         if (matcher_name == "phrase_match") {
             auto list = at<parameter::vector>(params, "list");
 

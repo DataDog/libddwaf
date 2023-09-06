@@ -69,7 +69,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 // Validate that once there's a match for a collection, a second match isn't possible
 TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 {
-    std::vector<rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     TypeParam rule_collection;
     {
         expression_builder builder(1);
@@ -135,7 +135,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 // Validate that after a failed match, the collection can still produce a match
 TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 {
-    std::vector<rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     TypeParam rule_collection;
     {
         expression_builder builder(1);
@@ -252,7 +252,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 // Validate that a match in a priority collection prevents further regular matches
 TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 {
-    std::vector<rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     collection regular;
     priority_collection priority;
     {
@@ -322,7 +322,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 // priority collection
 TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 {
-    std::vector<rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     collection regular;
     priority_collection priority;
     {
@@ -393,7 +393,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 // Validate that a match in a priority collection prevents another match
 TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 {
-    std::vector<rule::ptr> rules;
+    std::vector<std::shared_ptr<rule>> rules;
     priority_collection priority;
     {
         expression_builder builder(1);

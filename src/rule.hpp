@@ -23,15 +23,13 @@ namespace ddwaf {
 
 class rule {
 public:
-    using ptr = std::shared_ptr<rule>;
-
     enum class source_type : uint8_t { base = 1, user = 2 };
 
     using cache_type = expression::cache_type;
 
     rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
-        expression::ptr expr, std::vector<std::string> actions = {}, bool enabled = true,
-        source_type source = source_type::base)
+        std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
+        bool enabled = true, source_type source = source_type::base)
         : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
           tags_(std::move(tags)), expr_(std::move(expr)), actions_(std::move(actions))
     {
@@ -65,7 +63,7 @@ public:
 
     virtual std::optional<event> match(const object_store &store, cache_type &cache,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
+        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
@@ -98,7 +96,7 @@ protected:
     std::string id_;
     std::string name_;
     std::unordered_map<std::string, std::string> tags_;
-    expression::ptr expr_;
+    std::shared_ptr<expression> expr_;
     std::vector<std::string> actions_;
 };
 

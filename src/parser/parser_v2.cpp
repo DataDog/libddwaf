@@ -34,7 +34,7 @@ namespace ddwaf::parser::v2 {
 
 namespace {
 
-std::pair<std::string, matcher::base::unique_ptr> parse_matcher(
+std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
     std::string_view name, const parameter::map &params)
 {
     parameter::map options;
@@ -145,7 +145,7 @@ std::vector<transformer_id> parse_transformers(
     return transformers;
 }
 
-expression::ptr parse_expression(const parameter::vector &conditions_array,
+std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
     std::unordered_map<std::string, std::string> &rule_data_ids, expression::data_source source,
     const std::vector<transformer_id> &transformers, const object_limits &limits)
 {
@@ -304,7 +304,7 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
     return {current, type};
 }
 
-expression::ptr parse_simplified_expression(
+std::shared_ptr<expression> parse_simplified_expression(
     const parameter::vector &conditions_array, const object_limits &limits)
 {
     expression_builder builder(conditions_array.size(), limits);
@@ -457,7 +457,7 @@ std::vector<processor::target_mapping> parse_processor_mappings(const parameter:
     return mappings;
 }
 
-matcher::base::unique_ptr parse_scanner_matcher(const parameter::map &root)
+std::unique_ptr<matcher::base> parse_scanner_matcher(const parameter::map &root)
 {
     auto matcher_name = at<std::string_view>(root, "operator");
     auto matcher_params = at<parameter::map>(root, "parameters");
@@ -539,7 +539,7 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 matcher_name = it->second;
             }
 
-            matcher::base::shared_ptr matcher;
+            std::shared_ptr<matcher::base> matcher;
             if (matcher_name == "ip_match") {
                 using rule_data_type = matcher::ip_match::rule_data_type;
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
@@ -741,8 +741,8 @@ scanner_container parse_scanners(parameter::vector &scanner_array, base_section_
                 }
             }
 
-            matcher::base::unique_ptr key_matcher{};
-            matcher::base::unique_ptr value_matcher{};
+            std::unique_ptr<matcher::base> key_matcher{};
+            std::unique_ptr<matcher::base> value_matcher{};
 
             auto it = node.find("key");
             if (it != node.end()) {

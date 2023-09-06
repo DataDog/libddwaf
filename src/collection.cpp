@@ -15,7 +15,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     memory::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
     const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
     const memory::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
-    const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
+    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline)
 {
     const auto &id = rule->get_id();
@@ -79,7 +79,7 @@ void base_collection<Derived>::match(memory::vector<event> &events, const object
     collection_cache &cache,
     const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
     const memory::unordered_map<rule *, object_set> &objects_to_exclude,
-    const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
+    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     if (cache.result >= Derived::type()) {

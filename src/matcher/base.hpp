@@ -19,9 +19,6 @@ namespace ddwaf::matcher {
 
 class base {
 public:
-    using shared_ptr = std::shared_ptr<base>;
-    using unique_ptr = std::unique_ptr<base>;
-
     base() = default;
     virtual ~base() = default;
     base(const base &) = default;
@@ -43,8 +40,6 @@ public:
 
 template <typename T> class base_impl : public base {
 public:
-    using ptr = std::shared_ptr<base>;
-
     base_impl() = default;
     ~base_impl() override = default;
     base_impl(const base_impl &) = default;

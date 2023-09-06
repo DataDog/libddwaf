@@ -19,8 +19,6 @@ namespace ddwaf::exclusion {
 
 class input_filter {
 public:
-    using ptr = std::shared_ptr<input_filter>;
-
     struct excluded_set {
         const std::set<rule *> &rules;
         memory::unordered_set<const ddwaf_object *> objects;
@@ -31,7 +29,7 @@ public:
         object_filter::cache_type object_filter_cache;
     };
 
-    input_filter(std::string id, expression::ptr expr, std::set<rule *> rule_targets,
+    input_filter(std::string id, std::shared_ptr<expression> expr, std::set<rule *> rule_targets,
         std::shared_ptr<object_filter> filter);
     input_filter(const input_filter &) = delete;
     input_filter &operator=(const input_filter &) = delete;
@@ -52,7 +50,7 @@ public:
 
 protected:
     std::string id_;
-    expression::ptr expr_;
+    std::shared_ptr<expression> expr_;
     const std::set<rule *> rule_targets_;
     std::shared_ptr<object_filter> filter_;
 };

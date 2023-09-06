@@ -23,8 +23,6 @@ using scanner_tag_map = ddwaf::multi_key_map<std::string_view, scanner *>;
 
 class ruleset_builder {
 public:
-    using ptr = std::shared_ptr<ruleset_builder>;
-
     ruleset_builder(object_limits limits, ddwaf_object_free_fn free_fn,
         std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
         : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
@@ -96,23 +94,23 @@ protected:
     // These are the contents of the latest generated ruleset
 
     // Rules
-    std::unordered_map<std::string_view, rule::ptr> final_base_rules_;
-    std::unordered_map<std::string_view, rule::ptr> final_user_rules_;
+    std::unordered_map<std::string_view, std::shared_ptr<rule>> final_base_rules_;
+    std::unordered_map<std::string_view, std::shared_ptr<rule>> final_user_rules_;
 
     // An mkmap organising rules by their tags, used for overrides and exclusion filters
     rule_tag_map base_rules_by_tags_;
     rule_tag_map user_rules_by_tags_;
 
     // Filters
-    std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters_;
-    std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters_;
+    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters_;
+    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters_;
 
     // An mkmap organising scanners by their tags, used for processors
     scanner_tag_map scanners_by_tags_;
 
     // Processors
-    std::unordered_map<std::string_view, processor::ptr> preprocessors_;
-    std::unordered_map<std::string_view, processor::ptr> postprocessors_;
+    std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors_;
+    std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors_;
 };
 
 } // namespace ddwaf
