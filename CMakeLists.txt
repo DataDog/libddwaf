@@ -212,12 +212,16 @@ if (LIBDDWAF_BUILD_STATIC)
 
     # Post-processing on the static library
     if(MSVC)
+        set(STATIC_TARGET_OBJECTS "")
+        foreach (target ${LIBDDWAF_STATIC_DEPS})
+          list(APPEND STATIC_TARGET_OBJECTS $<TARGET_FILE:${target}>)
+        endforeach()
+
         add_custom_command(TARGET libddwaf_static POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory lib_comb
             COMMAND ${CMAKE_COMMAND} -E chdir lib_comb lib.exe
                 /OUT:combined${CMAKE_STATIC_LIBRARY_SUFFIX}
-                $<TARGET_FILE:libddwaf_static> $<TARGET_FILE:re2> $<TARGET_FILE:lib_ac>
-                $<TARGET_FILE:lib_injection> $<TARGET_FILE:lib_utf8proc> $<TARGET_FILE:lib_radix>
+                ${STATIC_TARGET_OBJECTS}
             COMMAND ${CMAKE_COMMAND} -E copy lib_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     else()
@@ -227,12 +231,22 @@ if (LIBDDWAF_BUILD_STATIC)
             COMMAND ${CMAKE_COMMAND} -E chdir ar_comb/${target} ${CMAKE_AR} -x $<TARGET_FILE:${target}>
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
       endforeach()
-      add_custom_command(TARGET libddwaf_static POST_BUILD
-          COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:glibc_compat> ar_comb
-          COMMAND ${CMAKE_AR} -qcs ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} ar_comb/**/*.o*
-          COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
-          COMMAND rm -rf ar_comb
-          WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+      if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+          add_custom_command(TARGET libddwaf_static POST_BUILD
+              COMMAND libtool -static -o ar_comb/combined.a -arch_only ${CMAKE_OSX_ARCHITECTURES} ar_comb/*.o*
+              COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
+              COMMAND rm -rf ar_comb
+              WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+      else()
+          add_custom_command(TARGET libddwaf_static POST_BUILD
+              COMMAND ${CMAKE_COMMAND} -E make_directory ar_comb/glibc_compat
+              COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:glibc_compat> ar_comb/glibc_compat
+              COMMAND ${CMAKE_AR} -qcs ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} ar_comb/**/*.o*
+              COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
+              COMMAND rm -rf ar_comb
+              WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+      endif()
       if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
           if (CMAKE_SYSTEM_NAME STREQUAL Darwin OR CMAKE_SYSTEM_NAME STREQUAL Linux)
               if (NOT CMAKE_STRIP)
