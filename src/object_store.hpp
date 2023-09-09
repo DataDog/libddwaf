@@ -44,8 +44,8 @@ public:
 protected:
     memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
 
-    memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, ddwaf_object *> objects_;
+    memory::absl::unordered_set<target_index> latest_batch_;
+    memory::absl::unordered_map<target_index, ddwaf_object *> objects_;
 };
 
 } // namespace ddwaf
