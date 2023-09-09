@@ -42,46 +42,15 @@ if(NOT MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fPIC")
 endif()
 
-
 set(ABSL_PROPAGATE_CXX_STD ON)
 add_subdirectory(abseil-cpp)
 
 execute_process(COMMAND git apply ../re2.patch
-                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/re2
-                COMMAND_ECHO STDOUT)
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/re2,
+                ERROR_QUIET OUTPUT_QUIET)
 
 set(RE2_BUILD_TESTING OFF)
 add_subdirectory(re2 EXCLUDE_FROM_ALL)
-
-# To avoid building everything for re2, including test binvaries:
-#     BUILD_COMMAND cmake --build <BINARY_DIR> --target re2
-# But this is not enough, because the install target run afterwards insists on building everything
-#set(RE2_COMMIT 885eb38accf49e2ccdd2fa6786f3590cf40a3e23)
-#ExternalProject_Add(proj_re2
-    #URL         https://github.com/google/re2/archive/${RE2_COMMIT}.tar.gz
-    #INSTALL_DIR ${INSTALL_DIR}
-    #CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-    #-DCMAKE_INSTALL_LIBDIR=lib
-    #-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-    #-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    #-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    #-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-    #-DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
-    #-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}
-    #-DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
-    #-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
-    #-DRE2_BUILD_TESTING=0
-    #BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX}
-#)
-## alas, we can't use find_package because by the package is not downloaded by config time
-## so manually creating the library
-#add_library(lib_re2 STATIC IMPORTED GLOBAL)
-#set_property(TARGET lib_re2 PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX})
-#target_include_directories(lib_re2 INTERFACE ${INSTALL_DIR}/include)
-#if(NOT MSVC)
-    #target_link_libraries(lib_re2 INTERFACE -lpthread)
-#endif()
-#add_dependencies(lib_re2 proj_re2)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtestd${CMAKE_STATIC_LIBRARY_SUFFIX})
