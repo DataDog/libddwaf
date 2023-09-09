@@ -42,6 +42,9 @@ if(NOT MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fPIC")
 endif()
 
+if (MINGW)
+    add_definitions(-DABSL_FORCE_WAITER_MODE=4)
+endif()
 set(ABSL_PROPAGATE_CXX_STD ON)
 add_subdirectory(abseil-cpp)
 
