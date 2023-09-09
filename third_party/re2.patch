@@ -1,0 +1,33 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index bdac5af..aa39029 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -25,6 +25,15 @@ option(RE2_BUILD_FRAMEWORK "build RE2 as a framework" OFF)
+ # so we provide an option similar to BUILD_TESTING, but just for RE2.
+ option(RE2_BUILD_TESTING "enable testing for RE2" OFF)
+ 
++# when re2 is included as subproject (i.e. using add_subdirectory(re2))
++# in the source tree of a project that uses it, install rules are disabled.
++if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
++  option(RE2_ENABLE_INSTALL "Enable install rule" OFF)
++else()
++  option(RE2_ENABLE_INSTALL "Enable install rule" ON)
++endif()
++
++
+ # The pkg-config Requires: field.
+ set(REQUIRES)
+ 
+@@ -232,6 +241,7 @@ if(RE2_BUILD_TESTING)
+   endforeach()
+ endif()
+ 
++if (RE2_ENABLE_INSTALL)
+ install(TARGETS re2
+         EXPORT re2Targets
+         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+@@ -261,3 +271,4 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/re2.pc.in
+ 
+ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/re2.pc
+         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
++endif()
