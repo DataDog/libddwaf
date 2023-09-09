@@ -7,6 +7,8 @@
 #pragma once
 
 #include "memory_resource.hpp"
+#include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
 #include <list>
 #include <string>
 #include <unordered_map>
@@ -98,13 +100,13 @@ using string = std::basic_string<char, std::char_traits<char>, context_allocator
 
 template <typename T> using vector = std::vector<T, context_allocator<T>>;
 
+template <class T> using list = std::list<T, context_allocator<T>>;
+
 template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>>
 using unordered_map =
-    std::unordered_map<Key, T, Hash, Pred, context_allocator<std::pair<const Key, T>>>;
+    ::absl::flat_hash_map<Key, T, Hash, Pred, context_allocator<std::pair<const Key, T>>>;
 
 template <class T, class Hash = std::hash<T>, class Pred = std::equal_to<T>>
-using unordered_set = std::unordered_set<T, Hash, Pred, context_allocator<T>>;
-
-template <class T> using list = std::list<T, context_allocator<T>>;
+using unordered_set = ::absl::flat_hash_set<T, Hash, Pred, context_allocator<T>>;
 
 } // namespace ddwaf::memory
