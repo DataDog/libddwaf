@@ -234,7 +234,7 @@ if (LIBDDWAF_BUILD_STATIC)
 
       if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
           add_custom_command(TARGET libddwaf_static POST_BUILD
-              COMMAND libtool -static -o ar_comb/combined.a -arch_only ${CMAKE_OSX_ARCHITECTURES} ar_comb/*.o*
+              COMMAND libtool -static -o ar_comb/combined.a -arch_only ${CMAKE_OSX_ARCHITECTURES} ar_comb/**/*.o*
               COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
               COMMAND rm -rf ar_comb
               WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
