@@ -28,24 +28,24 @@ public:
     // This function doesn't clear the latest batch
     bool insert(
         target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free);
-    ddwaf_object *get_target(target_index target) const;
+    [[nodiscard]] ddwaf_object *get_target(target_index target) const;
 
-    bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }
+    [[nodiscard]] bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }
 
-    bool is_new_target(const target_index target) const
+    [[nodiscard]] bool is_new_target(const target_index target) const
     {
         return latest_batch_.find(target) != latest_batch_.cend();
     }
 
-    bool has_new_targets() const { return !latest_batch_.empty(); }
+    [[nodiscard]] bool has_new_targets() const { return !latest_batch_.empty(); }
 
     explicit operator bool() const { return !objects_.empty(); }
 
 protected:
     memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
 
-    memory::absl::unordered_set<target_index> latest_batch_;
-    memory::absl::unordered_map<target_index, ddwaf_object *> objects_;
+    memory::unordered_set<target_index> latest_batch_;
+    memory::unordered_map<target_index, ddwaf_object *> objects_;
 };
 
 } // namespace ddwaf
