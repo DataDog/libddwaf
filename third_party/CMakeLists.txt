@@ -47,7 +47,8 @@ set(ABSL_PROPAGATE_CXX_STD ON)
 add_subdirectory(abseil-cpp)
 
 execute_process(COMMAND git apply ../re2.patch
-    WORKING_DIRECTORY re2)
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/re2
+                COMMAND_ECHO STDOUT)
 
 set(RE2_BUILD_TESTING OFF)
 add_subdirectory(re2 EXCLUDE_FROM_ALL)
