@@ -30,7 +30,10 @@ public:
         target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free);
     [[nodiscard]] ddwaf_object *get_target(target_index target) const;
 
-    [[nodiscard]] bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }
+    [[nodiscard]] bool has_target(target_index target) const
+    {
+        return objects_.find(target) != objects_.end();
+    }
 
     [[nodiscard]] bool is_new_target(const target_index target) const
     {
@@ -44,8 +47,8 @@ public:
 protected:
     memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
 
-    memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, ddwaf_object *> objects_;
+    absl::flat_hash_set<target_index> latest_batch_{};
+    absl::flat_hash_map<target_index, ddwaf_object *> objects_{};
 };
 
 } // namespace ddwaf
