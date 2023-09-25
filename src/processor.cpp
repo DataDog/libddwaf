@@ -35,7 +35,7 @@ void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, c
             continue;
         }
 
-        auto *input = store.get_target(mapping.input);
+        auto [input, attr] = store.get_target(mapping.input);
         if (input == nullptr) {
             continue;
         }

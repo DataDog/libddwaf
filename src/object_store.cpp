@@ -11,15 +11,6 @@
 
 namespace ddwaf {
 
-object_store::~object_store()
-{
-    for (auto [obj, free_fn] : input_objects_) {
-        if (free_fn != nullptr) {
-            free_fn(&obj);
-        }
-    }
-}
-
 bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn)
 {
     input_objects_.emplace_back(input, free_fn);
@@ -55,7 +46,7 @@ bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn)
 
         const std::string key(array[i].parameterName, length);
         auto target = get_target_index(key);
-        objects_[target] = &array[i];
+        objects_[target] = {&array[i], attribute::none};
         latest_batch_.emplace(target);
     }
 
@@ -67,16 +58,10 @@ bool object_store::insert(target_index target, ddwaf_object &input, ddwaf_object
     input_objects_.emplace_back(input, free_fn);
 
     auto *object = &input_objects_.back().first;
-    objects_[target] = object;
+    objects_[target] = {object, attribute::none};
     latest_batch_.emplace(target);
 
     return true;
-}
-
-ddwaf_object *object_store::get_target(target_index target) const
-{
-    auto it = objects_.find(target);
-    return it != objects_.end() ? it->second : nullptr;
 }
 
 } // namespace ddwaf

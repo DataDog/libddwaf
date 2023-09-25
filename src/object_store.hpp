@@ -17,8 +17,17 @@ namespace ddwaf {
 
 class object_store {
 public:
+    enum class attribute : uint8_t { none = 0, ephemeral = 1 };
+
     object_store() = default;
-    ~object_store();
+    ~object_store()
+    {
+        for (auto [obj, free_fn] : input_objects_) {
+            if (free_fn != nullptr) {
+                free_fn(&obj);
+            }
+        }
+    }
     object_store(const object_store &) = default;
     object_store(object_store &&) = default;
     object_store &operator=(const object_store &) = delete;
@@ -28,7 +37,14 @@ public:
     // This function doesn't clear the latest batch
     bool insert(
         target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free);
-    ddwaf_object *get_target(target_index target) const;
+    std::pair<ddwaf_object *, attribute> get_target(target_index target) const
+    {
+        auto it = objects_.find(target);
+        if (it != objects_.end()) {
+            return {it->second.first, it->second.second};
+        }
+        return {nullptr, attribute::none};
+    }
 
     bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }
 
@@ -45,7 +61,7 @@ protected:
     memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
 
     memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, ddwaf_object *> objects_;
+    memory::unordered_map<target_index, std::pair<ddwaf_object *, attribute>> objects_;
 };
 
 } // namespace ddwaf

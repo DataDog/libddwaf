@@ -312,14 +312,14 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     optional_ref<ddwaf_object> derived{std::nullopt};
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address"));
+        auto *obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_EQ(obtained, nullptr);
     }
 
     proc.eval(store, derived, cache, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address"));
+        auto *obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_NE(obtained, nullptr);
         EXPECT_STREQ(obtained->stringValue, "output_string");
     }
@@ -360,12 +360,12 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     optional_ref<ddwaf_object> derived{std::nullopt};
 
-    EXPECT_EQ(store.get_target(get_target_index("output_address")), nullptr);
+    EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
 
     proc.eval(store, derived, cache, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address"));
+        auto *obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_NE(obtained, nullptr);
         EXPECT_STREQ(obtained->stringValue, "output_string");
     }
@@ -405,10 +405,10 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 
     optional_ref<ddwaf_object> derived{std::nullopt};
 
-    EXPECT_EQ(store.get_target(get_target_index("output_address")), nullptr);
+    EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
     proc.eval(store, derived, cache, deadline);
 
-    EXPECT_EQ(store.get_target(get_target_index("output_address")), nullptr);
+    EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
 
     ddwaf_object_free(&output);
 }
@@ -452,19 +452,19 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{std::nullopt};
 
-    EXPECT_EQ(store.get_target(get_target_index("output_address.first")), nullptr);
-    EXPECT_EQ(store.get_target(get_target_index("output_address.second")), nullptr);
+    EXPECT_EQ(store.get_target(get_target_index("output_address.first")).first, nullptr);
+    EXPECT_EQ(store.get_target(get_target_index("output_address.second")).first, nullptr);
 
     proc.eval(store, derived, cache, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address.first"));
+        auto *obtained = store.get_target(get_target_index("output_address.first")).first;
         EXPECT_NE(obtained, nullptr);
         EXPECT_STREQ(obtained->stringValue, "first_output_string");
     }
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address.second"));
+        auto *obtained = store.get_target(get_target_index("output_address.second")).first;
         EXPECT_NE(obtained, nullptr);
         EXPECT_STREQ(obtained->stringValue, "second_output_string");
     }
@@ -504,7 +504,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     optional_ref<ddwaf_object> derived{output_map};
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address"));
+        auto *obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_EQ(obtained, nullptr);
         EXPECT_EQ(ddwaf_object_size(&output_map), 0);
     }
@@ -512,7 +512,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     proc.eval(store, derived, cache, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address"));
+        auto *obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_NE(obtained, nullptr);
         EXPECT_STREQ(obtained->stringValue, "output_string");
     }
@@ -688,14 +688,14 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
     optional_ref<ddwaf_object> derived{};
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address"));
+        auto *obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_EQ(obtained, nullptr);
     }
 
     proc.eval(store, derived, cache, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address"));
+        auto *obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_NE(obtained, nullptr);
         EXPECT_STREQ(obtained->stringValue, "output_string");
     }
