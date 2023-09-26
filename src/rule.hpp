@@ -28,11 +28,13 @@ public:
     using type_index = std::size_t;
     using cache_type = expression::cache_type;
 
-    rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
-        std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
-        bool enabled = true, source_type source = source_type::base)
-        : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
-          tags_(std::move(tags)), expr_(std::move(expr)), actions_(std::move(actions))
+    rule(std::size_t index, std::string id, std::string name,
+        std::unordered_map<std::string, std::string> tags, std::shared_ptr<expression> expr,
+        std::vector<std::string> actions = {}, bool enabled = true,
+        source_type source = source_type::base)
+        : index_(index), enabled_(enabled), source_(source), id_(std::move(id)),
+          name_(std::move(name)), tags_(std::move(tags)), expr_(std::move(expr)),
+          actions_(std::move(actions))
     {
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
@@ -45,13 +47,14 @@ public:
     rule &operator=(const rule &) = delete;
 
     rule(rule &&rhs) noexcept
-        : enabled_(rhs.enabled_), source_(rhs.source_), id_(std::move(rhs.id_)),
+        : index_(rhs.index_), enabled_(rhs.enabled_), source_(rhs.source_), id_(std::move(rhs.id_)),
           name_(std::move(rhs.name_)), type_(rhs.type_), tags_(std::move(rhs.tags_)),
           expr_(std::move(rhs.expr_)), actions_(std::move(rhs.actions_))
     {}
 
     rule &operator=(rule &&rhs) noexcept
     {
+        index_ = rhs.index_;
         enabled_ = rhs.enabled_;
         source_ = rhs.source_;
         id_ = std::move(rhs.id_);
@@ -96,6 +99,10 @@ public:
         return expr_->get_addresses(addresses);
     }
 
+    std::unordered_set<target_index> get_targets() const { return expr_->get_targets(); }
+
+    std::size_t get_index() const { return index_; }
+
     void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
 
 protected:
@@ -107,6 +114,7 @@ protected:
         /*(source_ == source_type::user ? 0x8000000000000000 : 0);*/
     }
 
+    std::size_t index_{0};
     bool enabled_{true};
     source_type source_;
     std::string id_;

@@ -21,7 +21,7 @@ TEST(TestRuleFilter, Match)
     builder.add_target("http.client_ip");
 
     auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+        std::make_shared<ddwaf::rule>(ddwaf::rule(0, "", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     std::unordered_map<target_index, std::string> addresses;
@@ -76,7 +76,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
     builder.add_target("usr.id");
 
     auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+        std::make_shared<ddwaf::rule>(ddwaf::rule(0, "", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
@@ -122,7 +122,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
     builder.add_target("usr.id");
 
     auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+        std::make_shared<ddwaf::rule>(ddwaf::rule(0, "", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     // In this instance we pass a complete store with both addresses but an
@@ -167,7 +167,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
     builder.add_target("usr.id");
 
     auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+        std::make_shared<ddwaf::rule>(ddwaf::rule(0, "", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     // In this test we validate that when the cache is empty and only one
@@ -212,7 +212,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     builder.add_target("usr.id");
 
     auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+        std::make_shared<ddwaf::rule>(ddwaf::rule(0, "", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     ddwaf::object_store store;

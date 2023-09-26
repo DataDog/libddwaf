@@ -22,7 +22,7 @@ TEST(TestRule, Match)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
     ddwaf::rule rule(
-        "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
+        0, "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -62,7 +62,7 @@ TEST(TestRule, NoMatch)
     builder.add_target("http.client_ip");
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
+    ddwaf::rule rule(0, "id", "name", std::move(tags), builder.build());
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -90,7 +90,7 @@ TEST(TestRule, ValidateCachedMatch)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
+    ddwaf::rule rule(0, "id", "name", std::move(tags), builder.build());
     ddwaf::rule::cache_type cache;
 
     // To validate that the cache works, we pass an object store containing
@@ -161,7 +161,7 @@ TEST(TestRule, MatchWithoutCache)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
+    ddwaf::rule rule(0, "id", "name", std::move(tags), builder.build());
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -224,7 +224,7 @@ TEST(TestRule, NoMatchWithoutCache)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
+    ddwaf::rule rule(0, "id", "name", std::move(tags), builder.build());
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -268,7 +268,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
+    ddwaf::rule rule(0, "id", "name", std::move(tags), builder.build());
 
     // In this test we validate that when a match has already occurred, the
     // second run for the same rule returns no events regardless of input.
@@ -312,7 +312,7 @@ TEST(TestRule, ExcludeObject)
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule(
-        "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
+        0, "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);

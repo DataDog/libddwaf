@@ -42,7 +42,7 @@ TEST(TestMultiKeyMap, Find)
         tags.emplace("category", spec.category);
 
         auto rule_ptr = std::make_shared<ddwaf::rule>(
-            std::string(spec.id), "name", decltype(tags)(tags), std::make_shared<expression>());
+            0, std::string(spec.id), "name", decltype(tags)(tags), std::make_shared<expression>());
         rules.emplace_back(rule_ptr);
         ruledb.insert(rule_ptr->get_tags(), rule_ptr.get());
     }
@@ -107,7 +107,7 @@ TEST(TestMultiKeyMap, Multifind)
         tags.emplace("category", spec.category);
 
         auto rule_ptr = std::make_shared<ddwaf::rule>(
-            std::string(spec.id), "name", decltype(tags)(tags), std::make_shared<expression>());
+            0, std::string(spec.id), "name", decltype(tags)(tags), std::make_shared<expression>());
         rules.emplace_back(rule_ptr);
         ruledb.insert(rule_ptr->get_tags(), rule_ptr.get());
     }

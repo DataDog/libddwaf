@@ -23,27 +23,18 @@
 
 namespace ddwaf {
 
-struct rule_greater_than {
-    bool operator()(const std::shared_ptr<rule> &lhs, const std::shared_ptr<rule> &rhs) const
-    {
-        auto lhs_actions = static_cast<int>(lhs->has_actions());
-        auto rhs_actions = static_cast<int>(rhs->has_actions());
-
-        return lhs_actions > rhs_actions ||
-               (lhs_actions == rhs_actions && (lhs->get_source() > rhs->get_source() ||
-                                                  (lhs->get_source() == rhs->get_source() &&
-                                                      lhs->get_type() > rhs->get_type())));
-    }
-};
-
 struct ruleset {
 
     void insert_rule(const std::shared_ptr<rule> &rule)
     {
         // Skip disabled rules
         if (rule->is_enabled()) {
-            rules.emplace(rule);
+            rules.emplace_back(rule);
             rule->get_addresses(rule_addresses);
+
+            for (auto target : rule->get_targets()) {
+                rules_by_targets[target].emplace(rule.get());
+            }
         }
     }
 
@@ -101,16 +92,7 @@ struct ruleset {
         return root_addresses;
     }
 
-    std::shared_ptr<rule> get_rule(std::size_t index) const
-    {
-        if (index >= rules.size()) {
-            return {};
-        }
-
-        auto it = rules.begin();
-        std::advance(it, index);
-        return *it;
-    }
+    std::shared_ptr<rule> get_rule(std::size_t index) const { return rules[index]; }
 
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
@@ -121,7 +103,9 @@ struct ruleset {
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters;
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
 
-    std::multiset<std::shared_ptr<rule>, rule_greater_than> rules;
+    std::unordered_map<target_index, std::unordered_set<rule *>> rules_by_targets;
+    std::vector<std::shared_ptr<rule>> rules;
+    // std::multiset<std::shared_ptr<rule>, rule_greater_than> rules;
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> dynamic_matchers;
 
     std::unordered_set<std::shared_ptr<const scanner>> scanners;

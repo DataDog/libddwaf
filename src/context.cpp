@@ -15,6 +15,43 @@
 
 namespace ddwaf {
 
+namespace {
+struct rule_greater_than {
+    bool operator()(const rule *lhs, const rule *rhs) const
+    {
+        auto lhs_actions = static_cast<int>(lhs->has_actions());
+        auto rhs_actions = static_cast<int>(rhs->has_actions());
+
+        // TODO index all rules so order can be partially preserved
+        return lhs_actions > rhs_actions ||
+               (lhs_actions == rhs_actions &&
+                   (lhs->get_source() > rhs->get_source() ||
+                       (lhs->get_source() == rhs->get_source() &&
+                           (lhs->get_type() > rhs->get_type() ||
+                               (lhs->get_type() == rhs->get_type() &&
+                                   lhs->get_index() < rhs->get_index())))));
+    }
+};
+
+std::set<rule *, rule_greater_than> get_rules_by_target(
+    const memory::unordered_set<target_index> &targets,
+    const std::unordered_map<target_index, std::unordered_set<rule *>> &rules)
+{
+    std::set<rule *, rule_greater_than> final_rules;
+    for (auto target : targets) {
+        auto it = rules.find(target);
+        if (it == rules.end()) {
+            continue;
+        }
+
+        const auto &target_rules = it->second;
+        for (auto *rule : target_rules) { final_rules.emplace(rule); }
+    }
+    return final_rules;
+}
+
+} // namespace
+
 DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
     if (res.has_value()) {
@@ -203,7 +240,10 @@ memory::vector<event> context::match(
 {
     memory::vector<ddwaf::event> events;
 
-    for (auto it = ruleset_->rules.begin(); it != ruleset_->rules.end();) {
+    auto latest_targets = store_.get_latest_targets();
+    auto rules = get_rules_by_target(latest_targets, ruleset_->rules_by_targets);
+
+    for (auto it = rules.begin(); it != rules.end();) {
         auto type = (*it)->get_type();
         auto cache_it = collection_cache_.find(type);
         if (cache_it == collection_cache_.end()) {
@@ -224,7 +264,7 @@ memory::vector<event> context::match(
             }
 
             bool skip_actions = false;
-            auto exclude_it = rules_to_exclude.find(rule.get());
+            auto exclude_it = rules_to_exclude.find(rule);
             if (exclude_it != rules_to_exclude.end()) {
                 if (exclude_it->second == exclusion::filter_mode::bypass) {
                     DDWAF_DEBUG("Bypassing rule '%s'", rule->get_id().c_str());
@@ -238,9 +278,9 @@ memory::vector<event> context::match(
             }
 
             try {
-                auto it = rule_cache_.find(rule.get());
+                auto it = rule_cache_.find(rule);
                 if (it == rule_cache_.end()) {
-                    auto [new_it, res] = rule_cache_.emplace(rule.get(), rule::cache_type{});
+                    auto [new_it, res] = rule_cache_.emplace(rule, rule::cache_type{});
                     it = new_it;
                 }
 
@@ -248,7 +288,7 @@ memory::vector<event> context::match(
 
                 rule::cache_type &rule_cache = it->second;
                 std::optional<event> event;
-                auto exclude_it = objects_to_exclude.find(rule.get());
+                auto exclude_it = objects_to_exclude.find(rule);
                 if (exclude_it != objects_to_exclude.end()) {
                     const auto &objects_excluded = exclude_it->second;
                     event = rule->match(
@@ -267,7 +307,7 @@ memory::vector<event> context::match(
                 DDWAF_INFO("Ran out of time while evaluating rule '%s'", rule->get_id().c_str());
                 throw;
             }
-        } while (++it != ruleset_->rules.end() && (*it)->get_type() == type);
+        } while (++it != rules.end() && (*it)->get_type() == type);
     }
 
     return events;
