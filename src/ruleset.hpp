@@ -7,6 +7,7 @@
 #pragma once
 
 #include <algorithm>
+#include <iterator>
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -98,6 +99,17 @@ struct ruleset {
             }
         }
         return root_addresses;
+    }
+
+    std::shared_ptr<rule> get_rule(std::size_t index) const
+    {
+        if (index >= rules.size()) {
+            return {};
+        }
+
+        auto it = rules.begin();
+        std::advance(it, index);
+        return *it;
     }
 
     ddwaf_object_free_fn free_fn{ddwaf_object_free};

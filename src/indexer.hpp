@@ -27,16 +27,12 @@ public:
         by_tags_.insert(item->get_tags(), item.get());
     }
 
-    void erase(T *item)
+    iterator erase(const iterator &it)
     {
-        for (auto it = items_.begin(); it != items_.end(); ++it) {
-            if ((*it).get() == item) {
-                items_.erase(it);
-                break;
-            }
-        }
+        const std::shared_ptr<T> &item = *it;
         by_id_.erase(item->get_id());
-        by_tags_.erase(item->get_tags(), item);
+        by_tags_.erase(item->get_tags(), item.get());
+        return items_.erase(it);
     }
 
     T *find_by_id(std::string_view id) const
