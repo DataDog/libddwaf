@@ -158,7 +158,6 @@ void parse(
     parameter::map &ruleset, base_ruleset_info &info, ddwaf::ruleset &rs, object_limits limits)
 {
     auto rules_array = at<parameter::vector>(ruleset, "events");
-    rs.rules.reserve(rules_array.size());
 
     auto &section = info.add_section("rules");
 

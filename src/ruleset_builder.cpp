@@ -110,7 +110,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
             auto rule_targets = references_to_rules(ovrd.targets, final_base_rules_);
             for (const auto &rule_ptr : rule_targets) {
                 if (ovrd.enabled.has_value()) {
-                    rule_ptr->toggle(*ovrd.enabled);
+                    if (ovrd.enabled.value()) {
+                        rule_ptr->toggle(true);
+                    } else {
+                        final_base_rules_.erase(rule_ptr);
+                        continue;
+                    }
                 }
 
                 if (ovrd.actions.has_value()) {
@@ -123,7 +128,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
             auto rule_targets = references_to_rules(ovrd.targets, final_base_rules_);
             for (const auto &rule_ptr : rule_targets) {
                 if (ovrd.enabled.has_value()) {
-                    rule_ptr->toggle(*ovrd.enabled);
+                    if (ovrd.enabled.value()) {
+                        rule_ptr->toggle(true);
+                    } else {
+                        final_base_rules_.erase(rule_ptr);
+                        continue;
+                    }
                 }
 
                 if (ovrd.actions.has_value()) {

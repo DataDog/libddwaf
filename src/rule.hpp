@@ -25,6 +25,7 @@ class rule {
 public:
     enum class source_type : uint8_t { base = 1, user = 2 };
 
+    using type_index = std::size_t;
     using cache_type = expression::cache_type;
 
     rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
@@ -36,6 +37,8 @@ public:
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
         }
+
+        type_ = get_type_index(get_tag("type"));
     }
 
     rule(const rule &) = delete;
@@ -43,8 +46,8 @@ public:
 
     rule(rule &&rhs) noexcept
         : enabled_(rhs.enabled_), source_(rhs.source_), id_(std::move(rhs.id_)),
-          name_(std::move(rhs.name_)), tags_(std::move(rhs.tags_)), expr_(std::move(rhs.expr_)),
-          actions_(std::move(rhs.actions_))
+          name_(std::move(rhs.name_)), type_(rhs.type_), tags_(std::move(rhs.tags_)),
+          expr_(std::move(rhs.expr_)), actions_(std::move(rhs.actions_))
     {}
 
     rule &operator=(rule &&rhs) noexcept
@@ -53,6 +56,7 @@ public:
         source_ = rhs.source_;
         id_ = std::move(rhs.id_);
         name_ = std::move(rhs.name_);
+        type_ = rhs.type_;
         tags_ = std::move(rhs.tags_);
         expr_ = std::move(rhs.expr_);
         actions_ = std::move(rhs.actions_);
@@ -79,6 +83,10 @@ public:
         return it == tags_.end() ? std::string_view() : it->second;
     }
 
+    type_index get_type() const { return type_; }
+
+    bool has_actions() const { return !actions_.empty(); }
+
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
 
     const std::vector<std::string> &get_actions() const { return actions_; }
@@ -91,10 +99,19 @@ public:
     void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
 
 protected:
+    static type_index get_type_index(std::string_view type)
+    {
+        return std::hash<std::string_view>{}(type);
+        /*        return (std::hash<std::string_view>{}(type) & 0x3FFFFFFFFFFFFFFF) |*/
+        /*(actions_.empty() ? 0 : 0x4000000000000000) |*/
+        /*(source_ == source_type::user ? 0x8000000000000000 : 0);*/
+    }
+
     bool enabled_{true};
     source_type source_;
     std::string id_;
     std::string name_;
+    type_index type_;
     std::unordered_map<std::string, std::string> tags_;
     std::shared_ptr<expression> expr_;
     std::vector<std::string> actions_;

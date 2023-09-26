@@ -74,7 +74,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/event.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
-    ${libddwaf_SOURCE_DIR}/src/collection.cpp
     ${libddwaf_SOURCE_DIR}/src/expression.cpp
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp

@@ -12,7 +12,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <collection.hpp>
 #include <exclusion/input_filter.hpp>
 #include <exclusion/rule_filter.hpp>
 #include <mkmap.hpp>
@@ -23,30 +22,33 @@
 
 namespace ddwaf {
 
+struct rule_greater_than {
+    bool operator()(const std::shared_ptr<rule> &lhs, const std::shared_ptr<rule> &rhs) const
+    {
+        auto lhs_actions = static_cast<int>(lhs->has_actions());
+        auto rhs_actions = static_cast<int>(rhs->has_actions());
+
+        return lhs_actions > rhs_actions ||
+               (lhs_actions == rhs_actions && (lhs->get_source() > rhs->get_source() ||
+                                                  (lhs->get_source() == rhs->get_source() &&
+                                                      lhs->get_type() > rhs->get_type())));
+    }
+};
+
 struct ruleset {
 
     void insert_rule(const std::shared_ptr<rule> &rule)
     {
-        rules.emplace_back(rule);
-        std::string_view type = rule->get_tag("type");
-        collection_types.emplace(type);
-        if (rule->get_actions().empty()) {
-            if (rule->get_source() == rule::source_type::user) {
-                user_collections[type].insert(rule);
-            } else {
-                base_collections[type].insert(rule);
-            }
-        } else {
-            if (rule->get_source() == rule::source_type::user) {
-                user_priority_collections[type].insert(rule);
-            } else {
-                base_priority_collections[type].insert(rule);
-            }
+        // Skip disabled rules
+        if (rule->is_enabled()) {
+            rules.emplace(rule);
+            rule->get_addresses(rule_addresses);
         }
-        rule->get_addresses(rule_addresses);
     }
 
-    void insert_rules(const std::vector<std::shared_ptr<rule>> &rules_)
+    template <typename T>
+    void insert_rules(const T &rules_)
+        requires std::is_same_v<typename T::value_type, std::shared_ptr<rule>>
     {
         for (const auto &rule : rules_) { insert_rule(rule); }
     }
@@ -107,17 +109,10 @@ struct ruleset {
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters;
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
 
-    std::vector<std::shared_ptr<rule>> rules;
+    std::multiset<std::shared_ptr<rule>, rule_greater_than> rules;
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> dynamic_matchers;
 
-    std::vector<std::shared_ptr<const scanner>> scanners;
-
-    // The key used to organise collections is rule.type
-    std::unordered_set<std::string_view> collection_types;
-    std::unordered_map<std::string_view, priority_collection> user_priority_collections;
-    std::unordered_map<std::string_view, priority_collection> base_priority_collections;
-    std::unordered_map<std::string_view, collection> user_collections;
-    std::unordered_map<std::string_view, collection> base_collections;
+    std::unordered_set<std::shared_ptr<const scanner>> scanners;
 
     std::unordered_map<target_index, std::string> rule_addresses;
     std::unordered_map<target_index, std::string> filter_addresses;
