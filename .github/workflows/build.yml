@@ -278,7 +278,7 @@ jobs:
             packages/*.sha256
 
   package-nuget:
-    needs: [ windows-builds, macos-build, macos-cross-build, macos-universal-package, docker-builds, linux-musl-build]
+    needs: [ windows-builds, macos-universal-package, linux-musl-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
