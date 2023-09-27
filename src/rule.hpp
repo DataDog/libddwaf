@@ -23,6 +23,13 @@ namespace ddwaf {
 
 class rule {
 public:
+    struct greater_than {
+        bool operator()(const rule *lhs, const rule *rhs) const
+        {
+            return lhs->get_index() > rhs->get_index();
+        }
+    };
+
     enum class source_type : uint8_t { base = 1, user = 2 };
 
     using type_index = std::uint32_t;

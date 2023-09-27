@@ -15,33 +15,6 @@
 
 namespace ddwaf {
 
-namespace {
-struct rule_greater_than {
-    bool operator()(const rule *lhs, const rule *rhs) const
-    {
-        return lhs->get_index() > rhs->get_index();
-    }
-};
-
-memory::set<rule *, rule_greater_than> get_rules_by_target(
-    const memory::unordered_set<target_index> &targets,
-    const std::unordered_map<target_index, std::unordered_set<rule *>> &rules)
-{
-    memory::set<rule *, rule_greater_than> final_rules;
-    for (auto target : targets) {
-        auto it = rules.find(target);
-        if (it == rules.end()) {
-            continue;
-        }
-
-        const auto &target_rules = it->second;
-        for (auto *rule : target_rules) { final_rules.emplace(rule); }
-    }
-    return final_rules;
-}
-
-} // namespace
-
 DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
     if (res.has_value()) {
@@ -86,18 +59,16 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
         eval_preprocessors(derived, deadline);
 
         // If no rule targets are available, there is no point in evaluating them
-        bool eval_rules = should_eval_rules();
-        bool eval_filters = eval_rules || should_eval_filters();
-
-        if (eval_filters) {
+        const auto &rules = rules_to_eval();
+        if (!rules.empty() || should_eval_filters()) {
             // Filters need to be evaluated even if rules don't, otherwise it'll
             // break the current condition cache mechanism which requires knowing
             // if an address is new to this run.
             const auto &rules_to_exclude = filter_rules(deadline);
             const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
 
-            if (eval_rules) {
-                events = match(rules_to_exclude, objects_to_exclude, deadline);
+            if (!rules.empty()) {
+                events = match(rules, rules_to_exclude, objects_to_exclude, deadline);
             }
         }
 
@@ -224,14 +195,29 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
     return objects_to_exclude_;
 }
 
-memory::vector<event> context::match(
+const memory::set<rule *, rule::greater_than> &context::rules_to_eval()
+{
+    rules_.clear();
+
+    const auto &targets = store_.get_latest_targets();
+    for (auto target : targets) {
+        auto it = ruleset_->rules_by_targets.find(target);
+        if (it == ruleset_->rules_by_targets.end()) {
+            continue;
+        }
+
+        const auto &target_rules = it->second;
+        for (auto *rule : target_rules) { rules_.emplace(rule); }
+    }
+
+    return rules_;
+}
+
+memory::vector<event> context::match(const memory::set<rule *, rule::greater_than> &rules,
     const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
     const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
     memory::vector<ddwaf::event> events;
-
-    auto latest_targets = store_.get_latest_targets();
-    auto rules = get_rules_by_target(latest_targets, ruleset_->rules_by_targets);
 
     for (auto rule_it = rules.begin(); rule_it != rules.end();) {
         auto type = (*rule_it)->get_type();
