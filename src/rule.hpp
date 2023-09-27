@@ -28,7 +28,7 @@ public:
     using type_index = std::uint32_t;
     using cache_type = expression::cache_type;
 
-    rule(std::size_t index, std::string id, std::string name,
+    rule(uint32_t index, std::string id, std::string name,
         std::unordered_map<std::string, std::string> tags, std::shared_ptr<expression> expr,
         std::vector<std::string> actions = {}, bool enabled = true,
         source_type source = source_type::base)
@@ -106,7 +106,7 @@ public:
 
     std::unordered_set<target_index> get_targets() const { return expr_->get_targets(); }
 
-    std::size_t get_index() const { return index_; }
+    uint64_t get_index() const { return index_; }
 
     void set_actions(std::vector<std::string> new_actions)
     {
