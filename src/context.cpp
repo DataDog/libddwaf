@@ -19,25 +19,15 @@ namespace {
 struct rule_greater_than {
     bool operator()(const rule *lhs, const rule *rhs) const
     {
-        auto lhs_actions = static_cast<int>(lhs->has_actions());
-        auto rhs_actions = static_cast<int>(rhs->has_actions());
-
-        // TODO index all rules so order can be partially preserved
-        return lhs_actions > rhs_actions ||
-               (lhs_actions == rhs_actions &&
-                   (lhs->get_source() > rhs->get_source() ||
-                       (lhs->get_source() == rhs->get_source() &&
-                           (lhs->get_type() > rhs->get_type() ||
-                               (lhs->get_type() == rhs->get_type() &&
-                                   lhs->get_index() < rhs->get_index())))));
+        return lhs->get_index() > rhs->get_index();
     }
 };
 
-std::set<rule *, rule_greater_than> get_rules_by_target(
+memory::set<rule *, rule_greater_than> get_rules_by_target(
     const memory::unordered_set<target_index> &targets,
     const std::unordered_map<target_index, std::unordered_set<rule *>> &rules)
 {
-    std::set<rule *, rule_greater_than> final_rules;
+    memory::set<rule *, rule_greater_than> final_rules;
     for (auto target : targets) {
         auto it = rules.find(target);
         if (it == rules.end()) {
@@ -243,8 +233,8 @@ memory::vector<event> context::match(
     auto latest_targets = store_.get_latest_targets();
     auto rules = get_rules_by_target(latest_targets, ruleset_->rules_by_targets);
 
-    for (auto it = rules.begin(); it != rules.end();) {
-        auto type = (*it)->get_type();
+    for (auto rule_it = rules.begin(); rule_it != rules.end();) {
+        auto type = (*rule_it)->get_type();
         auto cache_it = collection_cache_.find(type);
         if (cache_it == collection_cache_.end()) {
             auto [new_it, res] = collection_cache_.emplace(type, collection_type::none);
@@ -252,15 +242,18 @@ memory::vector<event> context::match(
         }
 
         do {
-            const auto &rule = *it;
-            if (deadline.expired()) {
-                DDWAF_INFO("Ran out of time while evaluating rule '%s'", rule->get_id().c_str());
-                throw timeout_exception();
-            }
+            const auto &rule = *rule_it;
 
             auto level = rule->has_actions() ? collection_type::priority : collection_type::regular;
             if (cache_it->second >= level) {
-                continue;
+                // Skip to next type
+                while (++rule_it != rules.end() && (*rule_it)->get_type() == type) {}
+                break;
+            }
+
+            if (deadline.expired()) {
+                DDWAF_INFO("Ran out of time while evaluating rule '%s'", rule->get_id().c_str());
+                throw timeout_exception();
             }
 
             bool skip_actions = false;
@@ -302,12 +295,16 @@ memory::vector<event> context::match(
                     event->skip_actions = skip_actions;
                     events.emplace_back(std::move(*event));
                     DDWAF_DEBUG("Found event on rule %s", rule->get_id().c_str());
+
+                    // Skip to next type
+                    while (++rule_it != rules.end() && (*rule_it)->get_type() == type) {}
+                    break;
                 }
             } catch (const ddwaf::timeout_exception &) {
                 DDWAF_INFO("Ran out of time while evaluating rule '%s'", rule->get_id().c_str());
                 throw;
             }
-        } while (++it != rules.end() && (*it)->get_type() == type);
+        } while (++rule_it != rules.end() && (*rule_it)->get_type() == type);
     }
 
     return events;

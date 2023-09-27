@@ -25,22 +25,27 @@ class rule {
 public:
     enum class source_type : uint8_t { base = 1, user = 2 };
 
-    using type_index = std::size_t;
+    using type_index = std::uint32_t;
     using cache_type = expression::cache_type;
 
     rule(std::size_t index, std::string id, std::string name,
         std::unordered_map<std::string, std::string> tags, std::shared_ptr<expression> expr,
         std::vector<std::string> actions = {}, bool enabled = true,
         source_type source = source_type::base)
-        : index_(index), enabled_(enabled), source_(source), id_(std::move(id)),
-          name_(std::move(name)), tags_(std::move(tags)), expr_(std::move(expr)),
-          actions_(std::move(actions))
+        : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
+          tags_(std::move(tags)), expr_(std::move(expr)), actions_(std::move(actions))
     {
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
         }
 
         type_ = get_type_index(get_tag("type"));
+
+        // TODO use uint32_t for index on interface
+        index_ |= (actions_.empty() ? 0 : 0x8000000000000000) |
+                  (source_ == source_type::user ? 0x4000000000000000 : 0) |
+                  (static_cast<uint64_t>(type_ & 0x3FFFFFFF) << 32) |
+                  (std::numeric_limits<uint32_t>::max() - index);
     }
 
     rule(const rule &) = delete;
@@ -103,18 +108,25 @@ public:
 
     std::size_t get_index() const { return index_; }
 
-    void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
+    void set_actions(std::vector<std::string> new_actions)
+    {
+        actions_ = std::move(new_actions);
+
+        // Update the index
+        if (actions_.empty()) {
+            index_ &= 0x7FFFFFFFFFFFFFFF;
+        } else {
+            index_ |= 0x8000000000000000;
+        }
+    }
 
 protected:
     static type_index get_type_index(std::string_view type)
     {
-        return std::hash<std::string_view>{}(type);
-        /*        return (std::hash<std::string_view>{}(type) & 0x3FFFFFFFFFFFFFFF) |*/
-        /*(actions_.empty() ? 0 : 0x4000000000000000) |*/
-        /*(source_ == source_type::user ? 0x8000000000000000 : 0);*/
+        return std::hash<std::string_view>{}(type) % std::numeric_limits<uint32_t>::max();
     }
 
-    std::size_t index_{0};
+    uint64_t index_{0};
     bool enabled_{true};
     source_type source_;
     std::string id_;
