@@ -278,7 +278,7 @@ jobs:
             packages/*.sha256
 
   package-nuget:
-    needs: [ windows-builds, macos-build, macos-cross-build, macos-universal-package, docker-builds]
+    needs: [ windows-builds, macos-universal-package, linux-musl-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -305,9 +305,9 @@ jobs:
 
           mkdir -p ./packages/nuget/runtimes/{linux-x64,linux-arm64,osx,win-x86,win-x64}/native
 
-          extract_file ./artifacts/libddwaf-linux-x86_64/libddwaf-*-linux-x86_64*.tar.gz \
+          extract_file ./artifacts/libddwaf-x86_64-linux-musl/libddwaf-*-x86_64-linux-musl*.tar.gz \
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-x64/native
-          extract_file ./artifacts/libddwaf-linux-aarch64/libddwaf-*-linux-aarch64*.tar.gz \
+          extract_file ./artifacts/libddwaf-aarch64-linux-musl/libddwaf-*-aarch64-linux-musl*.tar.gz \
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-arm64/native
           extract_file ./artifacts/libddwaf-windows-Win32/libddwaf-*-windows-win32*.tar.gz \
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x86/native
