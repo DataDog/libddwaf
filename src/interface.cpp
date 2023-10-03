@@ -183,14 +183,15 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
     return nullptr;
 }
 
-DDWAF_RET_CODE ddwaf_run(
-    ddwaf_context context, ddwaf_object *data, ddwaf_result *result, uint64_t timeout)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
+    ddwaf_object *ephemeral_data, ddwaf_result *result, uint64_t timeout)
 {
     if (result != nullptr) {
         *result = DDWAF_RESULT_INITIALISER;
     }
 
-    if (context == nullptr || data == nullptr) {
+    if (context == nullptr || (persistent_data == nullptr && ephemeral_data == nullptr)) {
         DDWAF_WARN("Illegal WAF call: context or data was null");
         return DDWAF_ERR_INVALID_ARGUMENT;
     }
@@ -200,7 +201,17 @@ DDWAF_RET_CODE ddwaf_run(
             res = *result;
         }
 
-        return context->run(*data, res, timeout);
+        optional_ref<ddwaf_object> persistent{std::nullopt};
+        if (persistent_data != nullptr) {
+            persistent = *persistent_data;
+        }
+
+        optional_ref<ddwaf_object> ephemeral{std::nullopt};
+        if (ephemeral_data != nullptr) {
+            ephemeral = *ephemeral_data;
+        }
+
+        return context->run(persistent, ephemeral, res, timeout);
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("%s", e.what());

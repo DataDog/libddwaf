@@ -11,11 +11,13 @@
 
 namespace ddwaf {
 
-bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn)
+bool object_store::insert(ddwaf_object &input, attribute attr, ddwaf_object_free_fn free_fn)
 {
-    input_objects_.emplace_back(input, free_fn);
-
-    latest_batch_.clear();
+    if (attr == attribute::ephemeral) {
+        ephemeral_objects_.emplace_back(input, free_fn);
+    } else {
+        input_objects_.emplace_back(input, free_fn);
+    }
 
     if (input.type != DDWAF_OBJ_MAP) {
         return false;
@@ -36,7 +38,11 @@ bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn)
 
     objects_.reserve(objects_.size() + entries);
 
-    latest_batch_.reserve(entries);
+    latest_batch_.reserve(latest_batch_.size() + entries);
+
+    if (attr == attribute::ephemeral) {
+        ephemeral_targets_.reserve(entries);
+    }
 
     for (std::size_t i = 0; i < entries; ++i) {
         auto length = static_cast<std::size_t>(array[i].parameterNameLength);
@@ -46,22 +52,55 @@ bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn)
 
         const std::string key(array[i].parameterName, length);
         auto target = get_target_index(key);
-        objects_[target] = {&array[i], attribute::none};
+        objects_[target] = {&array[i], attr};
         latest_batch_.emplace(target);
+
+        if (attr == attribute::ephemeral) {
+            ephemeral_targets_.emplace_back(target);
+        }
     }
 
     return true;
 }
 
-bool object_store::insert(target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn)
+bool object_store::insert(
+    target_index target, ddwaf_object &input, attribute attr, ddwaf_object_free_fn free_fn)
 {
-    input_objects_.emplace_back(input, free_fn);
+    if (attr == attribute::ephemeral) {
+        ephemeral_objects_.emplace_back(input, free_fn);
+        ephemeral_targets_.emplace_back(target);
+    } else {
+        input_objects_.emplace_back(input, free_fn);
+    }
 
     auto *object = &input_objects_.back().first;
-    objects_[target] = {object, attribute::none};
+    objects_[target] = {object, attr};
     latest_batch_.emplace(target);
 
     return true;
+}
+
+void object_store::clear_cache()
+{
+    // Clear latest batch
+    latest_batch_.clear();
+
+    // Clear any ephemeral targets
+    for (auto target : ephemeral_targets_) {
+        auto it = objects_.find(target);
+        if (it != objects_.end()) {
+            objects_.erase(it);
+        }
+    }
+    ephemeral_targets_.clear();
+
+    // Free ephemeral objects and targets
+    for (auto &[obj, free_fn] : ephemeral_objects_) {
+        if (free_fn != nullptr) {
+            free_fn(&obj);
+        }
+    }
+    ephemeral_objects_.clear();
 }
 
 } // namespace ddwaf

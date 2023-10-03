@@ -19,6 +19,19 @@ class object_store {
 public:
     enum class attribute : uint8_t { none = 0, ephemeral = 1 };
 
+    class eval_scope {
+    public:
+        explicit eval_scope(object_store &store) : store_(store){};
+        eval_scope(const eval_scope &) = delete;
+        eval_scope(eval_scope &&) = delete;
+        eval_scope &operator=(const eval_scope &) = delete;
+        eval_scope &operator=(eval_scope &&) = delete;
+        ~eval_scope() { store_.clear_cache(); }
+
+    protected:
+        object_store &store_;
+    };
+
     object_store() = default;
     ~object_store()
     {
@@ -33,10 +46,13 @@ public:
     object_store &operator=(const object_store &) = delete;
     object_store &operator=(object_store &&) = delete;
 
-    bool insert(ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    bool insert(ddwaf_object &input, attribute attr = attribute::none,
+        ddwaf_object_free_fn free_fn = ddwaf_object_free);
+
     // This function doesn't clear the latest batch
-    bool insert(
-        target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    bool insert(target_index target, ddwaf_object &input, attribute attr = attribute::none,
+        ddwaf_object_free_fn free_fn = ddwaf_object_free);
+
     std::pair<ddwaf_object *, attribute> get_target(target_index target) const
     {
         auto it = objects_.find(target);
@@ -57,11 +73,20 @@ public:
 
     explicit operator bool() const { return !objects_.empty(); }
 
+    eval_scope get_eval_scope() { return eval_scope{*this}; }
+
+    void clear_cache();
+
 protected:
     memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
+    memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> ephemeral_objects_;
+
+    memory::vector<target_index> ephemeral_targets_;
 
     memory::unordered_set<target_index> latest_batch_;
     memory::unordered_map<target_index, std::pair<ddwaf_object *, attribute>> objects_;
+
+    friend class scoped_object_store;
 };
 
 } // namespace ddwaf

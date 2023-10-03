@@ -15,14 +15,28 @@
 
 namespace ddwaf {
 
-DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res, uint64_t timeout)
+using attribute = object_store::attribute;
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
+    optional_ref<ddwaf_object> ephemeral, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
+    // This scope ensures that all ephemeral and cached objects are removed
+    // from the store at the end of the evaluation
+    auto store_cleanup_scope = store_.get_eval_scope();
+
     if (res.has_value()) {
         ddwaf_result &output = *res;
         output = DDWAF_RESULT_INITIALISER;
     }
 
-    if (!store_.insert(input, ruleset_->free_fn)) {
+    auto *free_fn = ruleset_->free_fn;
+    if (persistent.has_value() && !store_.insert(*persistent, attribute::none, free_fn)) {
+        DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+        return DDWAF_ERR_INVALID_OBJECT;
+    }
+
+    if (ephemeral.has_value() && !store_.insert(*ephemeral, attribute::ephemeral, free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }

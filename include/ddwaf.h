@@ -266,12 +266,15 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  * @param context WAF context to be used in this run, this will determine the
  *                ruleset which will be used and it will also ensure that
  *                parameters are taken into account across runs (nonnull)
- * @param data Data on which to perform the pattern matching. This data will be
- *             stored by the context and used across multiple calls to this
- *             function. Once the context is destroyed, the used-defined free
- *             function will be used to free the data provided. Note that the
- *             data passed must be valid until the destruction of the context.
- *             (nonull)
+ * @param persistent_data Data on which to perform the pattern matching. This
+ *    data will be stored by the context and used across multiple calls to this
+ *    function. Once the context is destroyed, the used-defined free function
+ *    will be used to free the data provided. Note that the data passed must be
+ *    valid until the destruction of the context. (nonull)
+ * @param ephemeral_data Data on which to perform the pattern matching. This
+ *    data will not be cached by the WAF. Matches arising from this data will
+ *    also not be cached at any level. The data will be freed at the end of the
+ *    call to ddwaf_run. (nullable)
  * @param result Structure containing the result of the operation. (nullable)
  * @param timeout Maximum time budget in microseconds.
  *
@@ -281,16 +284,14 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  * @error DDWAF_ERR_INVALID_OBJECT The data provided didn't match the desired
  *                                 structure or contained invalid objects, the
  *                                 data will be freed by this function.
- * @error DDWAF_ERR_TIMEOUT The operation timed out, the data will be owned by
- *                          the context and freed during destruction.
  * @error DDWAF_ERR_INTERNAL There was an unexpected error and the operation did
  *                           not succeed. The state of the WAF is undefined if
  *                           this error is produced and the ownership of the
  *                           data is unknown. The result structure will not be
  *                           filled if this error occurs.
  **/
-DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *data,
-                         ddwaf_result *result,  uint64_t timeout);
+DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
+    ddwaf_object *ephemeral_data, ddwaf_result *result,  uint64_t timeout);
 
 /**
  * ddwaf_context_destroy
