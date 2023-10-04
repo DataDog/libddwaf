@@ -168,12 +168,16 @@ TEST(TestObjectFilter, SingleTargetCache)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
     {
+        auto scope = store.get_eval_scope();
+
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
     }
 
     {
+        auto scope = store.get_eval_scope();
+
         auto objects_filtered = filter.match(store, cache, deadline);
         EXPECT_TRUE(objects_filtered.empty());
     }
@@ -193,6 +197,8 @@ TEST(TestObjectFilter, MultipleTargetsCache)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root, child, tmp;
         // Query
         ddwaf_object_map(&child);
@@ -211,6 +217,8 @@ TEST(TestObjectFilter, MultipleTargetsCache)
     }
 
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root, child, object, tmp;
 
         // Path Params
@@ -234,6 +242,8 @@ TEST(TestObjectFilter, MultipleTargetsCache)
     }
 
     {
+        auto scope = store.get_eval_scope();
+
         auto objects_filtered = filter.match(store, cache, deadline);
         EXPECT_TRUE(objects_filtered.empty());
     }

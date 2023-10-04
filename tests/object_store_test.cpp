@@ -125,6 +125,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_NE(store.get_target(query).first, nullptr);
     EXPECT_EQ(store.get_target(url).first, nullptr);
 
+    store.clear_cache();
+
     ddwaf_object_map(&second);
     ddwaf_object_map_add(&second, "url", ddwaf_object_string(&tmp, "hello"));
 
@@ -136,6 +138,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_TRUE(store.is_new_target(url));
     EXPECT_NE(store.get_target(query).first, nullptr);
     EXPECT_NE(store.get_target(url).first, nullptr);
+
+    store.clear_cache();
 
     third = DDWAF_OBJECT_INVALID;
     store.insert(third);
@@ -200,6 +204,8 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "bye");
     }
+
+    store.clear_cache();
 
     // Reinsert url
     ddwaf_object_map(&third);

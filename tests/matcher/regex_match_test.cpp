@@ -97,7 +97,7 @@ TEST(TestRegexMatch, TestRulesetCaseSensitive)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
@@ -127,7 +127,7 @@ TEST(TestRegexMatch, TestRulesetCaseSensitive)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
         EXPECT_FALSE(ret.timeout);
         ddwaf_result_free(&ret);
@@ -160,7 +160,7 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
@@ -190,7 +190,7 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -233,7 +233,7 @@ TEST(TestRegexMatch, TestRulesetMinLength)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
         ddwaf_result_free(&ret);
 
@@ -252,7 +252,7 @@ TEST(TestRegexMatch, TestRulesetMinLength)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",

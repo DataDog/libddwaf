@@ -28,7 +28,7 @@ TEST(TestIntegrationOperation, StringEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(
         out, {.id = "1",
@@ -59,7 +59,7 @@ TEST(TestIntegrationOperation, BoolEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out,
         {.id = "2",
@@ -89,7 +89,7 @@ TEST(TestIntegrationOperation, SignedEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out,
         {.id = "3",
@@ -119,7 +119,7 @@ TEST(TestIntegrationOperation, UnsignedEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out,
         {.id = "4",
@@ -149,7 +149,7 @@ TEST(TestIntegrationOperation, FloatEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out,
         {.id = "5",

@@ -137,11 +137,11 @@ eval_result expression::evaluator::eval_condition(
             throw ddwaf::timeout_exception();
         }
 
-        if (cache.targets[i]) {
+        const auto &target = cond.targets[i];
+        if (cache.targets[i] && !store.is_new_target(target.root)) {
             continue;
         }
 
-        const auto &target = cond.targets[i];
         auto [object, attr] = store.get_target(target.root);
         if (object == nullptr) {
             continue;

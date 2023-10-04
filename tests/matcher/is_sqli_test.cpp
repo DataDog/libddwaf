@@ -69,7 +69,7 @@ TEST(TestIsSQLi, TestRuleset)
 
     ddwaf_result ret;
 
-    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret,

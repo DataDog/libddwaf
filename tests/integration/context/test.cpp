@@ -33,7 +33,7 @@ TEST(TestContextIntegration, Basic)
     ddwaf_object_map_add(&parameter, "value2", &subMap); // ddwaf_object_string(&,"rule3"));
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",
@@ -76,7 +76,7 @@ TEST(TestContextIntegration, KeyPaths)
     ddwaf_object_map_add(&root, "param", &param);
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",
@@ -96,7 +96,7 @@ TEST(TestContextIntegration, KeyPaths)
     ddwaf_object_map_add(&param, "z", ddwaf_object_string(&tmp, "Sqreen"));
     ddwaf_object_map_add(&root, "param", &param);
 
-    EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "2",
@@ -120,7 +120,7 @@ TEST(TestContextIntegration, KeyPaths)
     ddwaf_object_map_add(&param, "y", ddwaf_object_string(&tmp, "Sqreen"));
     ddwaf_object_map_add(&root, "param", &param);
 
-    EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",
@@ -159,7 +159,7 @@ TEST(TestContextIntegration, MissingParameter)
     ddwaf_object_map_add(&param, "param", ddwaf_object_signed(&tmp, 42));
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_OK);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
@@ -197,7 +197,7 @@ TEST(TestContextIntegration, InvalidUTF8Input)
     ddwaf_object_map_addl(&param, ba2.c_str(), ba2.length(), ddwaf_object_map(&tmp));
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
 
@@ -230,7 +230,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
 
-        EXPECT_EQ(ddwaf_run(context, &param1, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -248,7 +248,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
 
-        EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
         EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
@@ -279,7 +279,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param, "param1", ddwaf_object_string(&tmp, "Sqreen"));
 
-        EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -297,7 +297,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "Pony"));
 
-        EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
         EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
@@ -310,7 +310,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
 
-        EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
@@ -344,7 +344,7 @@ TEST(TestContextIntegration, Timeout)
     ddwaf_object tmp;
     ddwaf_object_map_add(&param, "pm_param", ddwaf_object_string(&tmp, "aaaabbbbbaaa"));
 
-    EXPECT_EQ(ddwaf_run(context, &param, &ret, SHORT_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, SHORT_TIME), DDWAF_OK);
     EXPECT_TRUE(ret.timeout);
 
     ddwaf_result_free(&ret);

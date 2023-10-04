@@ -32,13 +32,13 @@ TEST(TestAdditive, TestMultiCall)
     ddwaf_result ret;
 
     // Run with just arg1
-    auto code = ddwaf_run(context, &param1, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_OK);
     EXPECT_FALSE(ret.timeout);
     ddwaf_result_free(&ret);
 
     // Run with both arg1 and arg2
-    code = ddwaf_run(context, &param2, &ret, LONG_TIME);
+    code = ddwaf_run(context, &param2, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",
@@ -71,7 +71,7 @@ TEST(TestAdditive, TestBad)
 
     // Since the call was performed with a null context, the parameters will not
     // be freed.
-    EXPECT_EQ(ddwaf_run(nullptr, &object, &ret, LONG_TIME), DDWAF_ERR_INVALID_ARGUMENT);
+    EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, &ret, LONG_TIME), DDWAF_ERR_INVALID_ARGUMENT);
     EXPECT_FALSE(ret.timeout);
     ddwaf_object_free(&object);
 
@@ -88,14 +88,14 @@ TEST(TestAdditive, TestBad)
 
     // In case of an invalid object, the parameters will be freed on the spot
     ddwaf_object_string(&object, "stringvalue");
-    EXPECT_EQ(ddwaf_run(context, &object, &ret, LONG_TIME), DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_EQ(ddwaf_run(context, &object, nullptr, &ret, LONG_TIME), DDWAF_ERR_INVALID_OBJECT);
     EXPECT_FALSE(ret.timeout);
 
     // In case of timeout, the parameters will be owned by the context and freed
     // during destruction
     object = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&object, "arg1", ddwaf_object_string(&tmp, "value"));
-    EXPECT_EQ(ddwaf_run(context, &object, &ret, 0), DDWAF_OK);
+    EXPECT_EQ(ddwaf_run(context, &object, nullptr, &ret, 0), DDWAF_OK);
     EXPECT_TRUE(ret.timeout);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -126,13 +126,13 @@ TEST(TestAdditive, TestParameterOverride)
     // Run with both arg1 and arg2, but arg1 is wrong
     //	// Run with just arg1
     ddwaf_result ret;
-    auto code = ddwaf_run(context, &param1, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_OK);
     EXPECT_FALSE(ret.timeout);
     ddwaf_result_free(&ret);
 
     // Override `arg1`
-    code = ddwaf_run(context, &param2, &ret, LONG_TIME);
+    code = ddwaf_run(context, &param2, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
@@ -151,7 +151,7 @@ TEST(TestAdditive, TestParameterOverride)
     ddwaf_result_free(&ret);
 
     // Run again without change
-    code = ddwaf_run(context, ddwaf_object_map(&tmp), &ret, LONG_TIME);
+    code = ddwaf_run(context, ddwaf_object_map(&tmp), nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_OK);
     EXPECT_FALSE(ret.timeout);
     ddwaf_result_free(&ret);

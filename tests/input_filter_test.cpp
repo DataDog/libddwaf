@@ -404,6 +404,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     input_filter::cache_type cache;
 
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);
@@ -421,6 +423,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     }
 
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);
@@ -629,6 +633,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     input_filter::cache_type cache;
 
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root;
         ddwaf_object object;
         ddwaf_object tmp;
@@ -650,6 +656,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     }
 
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);
