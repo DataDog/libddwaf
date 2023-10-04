@@ -33,8 +33,8 @@ public:
     struct condition {
 
         struct cache_type {
-            bool result{false};
-            memory::unordered_set<target_index> targets{};
+            std::vector<bool> targets{};
+            // std::unordered_set<target_index> targets{};
             std::optional<event::match> match;
         };
 
@@ -53,13 +53,12 @@ public:
 
     struct cache_type {
         bool result{false};
-        memory::vector<event::match> matches{};
-        std::optional<std::vector<std::unique_ptr<condition>>::const_iterator> last_cond{};
+        memory::vector<condition::cache_type> conditions;
     };
 
     struct evaluator {
         bool eval();
-        std::optional<event::match> eval_condition(const condition &cond, bool run_on_new);
+        bool eval_condition(const condition &cond, condition::cache_type &cache);
 
         template <typename T>
         std::optional<event::match> eval_target(
@@ -100,9 +99,17 @@ public:
         }
     }
 
-    static memory::vector<event::match> &&get_matches(cache_type &cache)
+    static memory::vector<event::match> get_matches(cache_type &cache)
     {
-        return std::move(cache.matches);
+        memory::vector<event::match> matches;
+        matches.reserve(cache.conditions.size());
+        for (const auto &cond_cache : cache.conditions) {
+            const auto &match = cond_cache.match;
+            if (match.has_value()) {
+                matches.emplace_back(match.value());
+            }
+        }
+        return matches;
     }
 
     static bool get_result(cache_type &cache) { return cache.result; }

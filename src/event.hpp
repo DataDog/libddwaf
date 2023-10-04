@@ -27,6 +27,7 @@ struct event {
         std::string_view operator_value;
         std::string_view address;
         memory::vector<memory::string> key_path;
+        bool ephemeral{false};
     };
 
     const ddwaf::rule *rule{nullptr};

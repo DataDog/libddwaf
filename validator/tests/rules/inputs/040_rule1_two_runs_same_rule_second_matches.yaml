@@ -11,18 +11,7 @@
       input: {
         rule1-input: rule1
       },
-      rules: [
-        {
-          1: [
-            {
-              address: rule1-input,
-              key_path: [],
-              value: rule1
-            }
-          ]
-        }
-      ],
-      code: match
+      code: ok
     }
   ],
 }

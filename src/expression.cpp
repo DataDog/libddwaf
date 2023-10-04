@@ -119,28 +119,34 @@ const matcher::base *expression::evaluator::get_matcher(const condition &cond) c
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-std::optional<event::match> expression::evaluator::eval_condition(
-    const condition &cond, bool run_on_new)
+bool expression::evaluator::eval_condition(const condition &cond, condition::cache_type &cache)
 {
     const auto *matcher = get_matcher(cond);
     if (matcher == nullptr) {
         DDWAF_DEBUG("Condition doesn't have a valid matcher");
-        return std::nullopt;
+        return false;
     }
 
-    for (const auto &target : cond.targets) {
+    if (cache.targets.size() != cond.targets.size()) {
+        cache.targets.assign(cond.targets.size(), false);
+    }
+
+    for (unsigned i = 0; i < cond.targets.size(); ++i) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (run_on_new && !store.is_new_target(target.root)) {
+        if (cache.targets[i]) {
             continue;
         }
 
+        const auto &target = cond.targets[i];
         auto [object, attr] = store.get_target(target.root);
         if (object == nullptr) {
             continue;
         }
+
+        cache.targets[i] = true;
 
         std::optional<event::match> optional_match;
         // TODO: iterators could be cached to avoid reinitialisation
@@ -157,47 +163,28 @@ std::optional<event::match> expression::evaluator::eval_condition(
             DDWAF_TRACE("Target %s matched parameter value %s", target.name.c_str(),
                 optional_match->resolved.c_str());
 
-            return optional_match;
+            cache.match = std::move(optional_match);
+            return true;
         }
     }
 
-    return std::nullopt;
+    return false;
 }
 
 bool expression::evaluator::eval()
 {
-    // On the first run, go through the conditions. Stop either at the first
-    // condition that didn't match and return no event or go through all
-    // and return an event.
-    // On subsequent runs, we can start at the first condition that did not
-    // match, because if the conditions matched with the data of the first
-    // run, then they having new data will make them match again. The condition
-    // that failed (and stopped the processing), we can run it again, but only
-    // on the new data. The subsequent conditions, we need to run with all data.
-    std::vector<std::unique_ptr<condition>>::const_iterator cond_iter;
-    bool run_on_new;
-    if (cache.last_cond.has_value()) {
-        cond_iter = *cache.last_cond;
-        run_on_new = true;
-    } else {
-        cond_iter = conditions.cbegin();
-        run_on_new = false;
-    }
+    for (unsigned i = 0; i < conditions.size(); ++i) {
+        const auto &cond = conditions[i];
+        auto &cond_cache = cache.conditions[i];
 
-    while (cond_iter != conditions.cend()) {
-        auto &&cond = *cond_iter;
-        auto optional_match = eval_condition(*cond, run_on_new);
-        if (!optional_match.has_value()) {
-            cache.last_cond = cond_iter;
-            return false;
+        if (cond_cache.match.has_value() && !cond_cache.match->ephemeral) {
+            continue;
         }
 
-        cache.matches.emplace_back(std::move(*optional_match));
-
-        run_on_new = false;
-        cond_iter++;
+        if (!eval_condition(*cond, cond_cache)) {
+            return false;
+        }
     }
-
     return true;
 }
 
@@ -208,6 +195,10 @@ bool expression::eval(cache_type &cache, const object_store &store,
 {
     if (cache.result || conditions_.empty()) {
         return true;
+    }
+
+    if (cache.conditions.size() < conditions_.size()) {
+        cache.conditions.assign(conditions_.size(), condition::cache_type{});
     }
 
     evaluator runner{
