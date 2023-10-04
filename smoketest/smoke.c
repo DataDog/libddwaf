@@ -237,7 +237,7 @@ int main() {
     ddwaf_object_map_add(&data, "key", DDSTR("Arachni"));
 
     ddwaf_result result = {0};
-    ddwaf_run(ctx, &data, &result, (uint32_t)-1);
+    ddwaf_run(ctx, &data, NULL, &result, (uint32_t)-1);
 
     if (ddwaf_object_size(&result.events) == 0) {
         puts("result is empty");

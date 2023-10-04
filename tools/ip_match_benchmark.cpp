@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 
 
                 auto start = std::chrono::system_clock::now();
-                ddwaf_run(context, &input, nullptr, std::numeric_limits<uint32_t>::max());
+                ddwaf_run(context, &input, nullptr, nullptr, std::numeric_limits<uint32_t>::max());
                 auto count = (std::chrono::system_clock::now() - start).count();
 
                 ddwaf_object_free(&input);

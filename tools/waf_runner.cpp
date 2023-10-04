@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
         }
 
         ddwaf_result ret;
-        auto code = ddwaf_run(context, &input, &ret, std::numeric_limits<uint32_t>::max());
+        auto code = ddwaf_run(context, &input, nullptr, &ret, std::numeric_limits<uint32_t>::max());
         if (code == DDWAF_MATCH && ddwaf_object_size(&ret.events) > 0) {
             std::stringstream ss;
             YAML::Emitter out(ss);
