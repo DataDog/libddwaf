@@ -32,6 +32,7 @@ struct event {
 
     const ddwaf::rule *rule{nullptr};
     memory::vector<match> matches;
+    bool ephemeral{false};
     bool skip_actions{false};
 };
 

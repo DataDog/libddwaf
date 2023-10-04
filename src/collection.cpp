@@ -90,7 +90,10 @@ void base_collection<Derived>::match(memory::vector<event> &events, const object
         auto event = match_rule(rule, store, cache.rule_cache, rules_to_exclude, objects_to_exclude,
             dynamic_matchers, deadline);
         if (event.has_value()) {
-            cache.result = Derived::type();
+            if (!event->ephemeral) {
+                cache.result = Derived::type();
+            }
+
             events.emplace_back(std::move(*event));
             DDWAF_DEBUG("Found event on rule %s", rule->get_id().c_str());
             break;

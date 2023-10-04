@@ -119,12 +119,13 @@ const matcher::base *expression::evaluator::get_matcher(const condition &cond) c
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-bool expression::evaluator::eval_condition(const condition &cond, condition::cache_type &cache)
+eval_result expression::evaluator::eval_condition(
+    const condition &cond, condition::cache_type &cache)
 {
     const auto *matcher = get_matcher(cond);
     if (matcher == nullptr) {
         DDWAF_DEBUG("Condition doesn't have a valid matcher");
-        return false;
+        return {false, false};
     }
 
     if (cache.targets.size() != cond.targets.size()) {
@@ -146,7 +147,10 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::cac
             continue;
         }
 
-        cache.targets[i] = true;
+        bool ephemeral = (attr == object_store::attribute::ephemeral);
+        if (!ephemeral) {
+            cache.targets[i] = true;
+        }
 
         std::optional<event::match> optional_match;
         // TODO: iterators could be cached to avoid reinitialisation
@@ -160,19 +164,21 @@ bool expression::evaluator::eval_condition(const condition &cond, condition::cac
 
         if (optional_match.has_value()) {
             optional_match->address = target.name;
+            optional_match->ephemeral = ephemeral;
             DDWAF_TRACE("Target %s matched parameter value %s", target.name.c_str(),
                 optional_match->resolved.c_str());
 
             cache.match = std::move(optional_match);
-            return true;
+            return {true, ephemeral};
         }
     }
 
-    return false;
+    return {false, false};
 }
 
-bool expression::evaluator::eval()
+eval_result expression::evaluator::eval()
 {
+    bool ephemeral_match = false;
     for (unsigned i = 0; i < conditions.size(); ++i) {
         const auto &cond = conditions[i];
         auto &cond_cache = cache.conditions[i];
@@ -181,20 +187,22 @@ bool expression::evaluator::eval()
             continue;
         }
 
-        if (!eval_condition(*cond, cond_cache)) {
-            return false;
+        auto [res, ephemeral] = eval_condition(*cond, cond_cache);
+        if (!res) {
+            return {false, false};
         }
+        ephemeral_match = ephemeral_match || ephemeral;
     }
-    return true;
+    return {true, ephemeral_match};
 }
 
-bool expression::eval(cache_type &cache, const object_store &store,
+eval_result expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     if (cache.result || conditions_.empty()) {
-        return true;
+        return {true, false};
     }
 
     if (cache.conditions.size() < conditions_.size()) {
@@ -203,7 +211,10 @@ bool expression::eval(cache_type &cache, const object_store &store,
 
     evaluator runner{
         deadline, limits_, conditions_, store, objects_excluded, dynamic_matchers, cache};
-    return (cache.result = runner.eval());
+
+    auto res = runner.eval();
+    cache.result = res.outcome && !res.ephemeral;
+    return res;
 }
 
 void expression_builder::add_target(std::string name, std::vector<std::string> key_path,

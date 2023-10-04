@@ -57,8 +57,9 @@ public:
     };
 
     struct evaluator {
-        bool eval();
-        bool eval_condition(const condition &cond, condition::cache_type &cache);
+        eval_result eval();
+
+        eval_result eval_condition(const condition &cond, condition::cache_type &cache);
 
         template <typename T>
         std::optional<event::match> eval_target(
@@ -85,7 +86,7 @@ public:
         : limits_(limits), conditions_(std::move(conditions))
     {}
 
-    bool eval(cache_type &cache, const object_store &store,
+    eval_result eval(cache_type &cache, const object_store &store,
         const std::unordered_set<const ddwaf_object *> &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;

@@ -34,7 +34,7 @@ optional_ref<const std::unordered_set<rule *>> rule_filter::match(
             return std::nullopt;
         }
 
-        if (!expr_->eval(cache, store, {}, {}, deadline)) {
+        if (!expr_->eval(cache, store, {}, {}, deadline).outcome) {
             return std::nullopt;
         }
     }

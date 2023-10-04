@@ -25,11 +25,12 @@ std::optional<event> rule::match(const object_store &store, cache_type &cache,
         return std::nullopt;
     }
 
-    if (!expr_->eval(cache, store, objects_excluded, dynamic_matchers, deadline)) {
+    auto res = expr_->eval(cache, store, objects_excluded, dynamic_matchers, deadline);
+    if (!res.outcome) {
         return std::nullopt;
     }
 
-    return {ddwaf::event{this, expression::get_matches(cache)}};
+    return {ddwaf::event{this, expression::get_matches(cache), res.ephemeral}};
 }
 
 } // namespace ddwaf
