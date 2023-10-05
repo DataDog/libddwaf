@@ -319,7 +319,7 @@ base_node generate_helper(const ddwaf_object *object, std::string_view key,
         array->children.reserve(length);
         for (std::size_t i = 0; i < length && depth > 1; i++) {
             const auto *child = &object->array[i];
-            auto schema = generate_helper(child, {}, scanners, depth - 1, deadline);
+            auto schema = generate_helper(child, key, scanners, depth - 1, deadline);
             array->children.emplace(std::move(schema));
         }
         return array;
