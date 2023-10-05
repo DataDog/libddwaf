@@ -17,30 +17,33 @@ TEST(TestObjectStore, InsertInvalidObject)
     auto url = get_target_index("url");
 
     object_store store;
+    {
+        auto scope = store.get_eval_scope();
+        ddwaf_object root = DDWAF_OBJECT_INVALID;
 
-    ddwaf_object root = DDWAF_OBJECT_INVALID;
+        store.insert(root);
 
-    store.insert(root);
-
-    EXPECT_FALSE((bool)store);
-    EXPECT_FALSE(store.has_new_targets());
-    EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_EQ(store.get_target(query).first, nullptr);
-    EXPECT_EQ(store.get_target(url).first, nullptr);
+        EXPECT_FALSE((bool)store);
+        EXPECT_FALSE(store.has_new_targets());
+        EXPECT_FALSE(store.is_new_target(query));
+        EXPECT_FALSE(store.is_new_target(url));
+        EXPECT_EQ(store.get_target(query).first, nullptr);
+        EXPECT_EQ(store.get_target(url).first, nullptr);
+    }
 }
 
 TEST(TestObjectStore, InsertMalformedMap)
 {
-
     object_store store;
+    {
+        auto scope = store.get_eval_scope();
+        ddwaf_object root = DDWAF_OBJECT_MAP;
+        root.nbEntries = 30;
 
-    ddwaf_object root = DDWAF_OBJECT_MAP;
-    root.nbEntries = 30;
+        EXPECT_FALSE(store.insert(root));
 
-    EXPECT_FALSE(store.insert(root));
-
-    EXPECT_FALSE((bool)store);
+        EXPECT_FALSE((bool)store);
+    }
 }
 
 TEST(TestObjectStore, InsertMalformedMapKey)
@@ -48,16 +51,20 @@ TEST(TestObjectStore, InsertMalformedMapKey)
     get_target_index("key");
 
     object_store store;
+    {
+        auto scope = store.get_eval_scope();
 
-    ddwaf_object tmp;
-    ddwaf_object root = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
+        ddwaf_object tmp;
+        ddwaf_object root = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
 
-    free((void *)root.array[0].parameterName);
-    root.array[0].parameterName = nullptr;
+        // NOLINTNEXTLINE
+        free((void *)root.array[0].parameterName);
+        root.array[0].parameterName = nullptr;
 
-    EXPECT_TRUE(store.insert(root));
-    EXPECT_FALSE((bool)store);
+        EXPECT_TRUE(store.insert(root));
+        EXPECT_FALSE((bool)store);
+    }
 }
 
 TEST(TestObjectStore, InsertStringObject)
@@ -66,11 +73,72 @@ TEST(TestObjectStore, InsertStringObject)
     auto url = get_target_index("url");
 
     object_store store;
+    {
+        auto scope = store.get_eval_scope();
 
-    ddwaf_object root;
-    ddwaf_object_string(&root, "hello");
+        ddwaf_object root;
+        ddwaf_object_string(&root, "hello");
 
-    store.insert(root);
+        store.insert(root);
+
+        EXPECT_FALSE((bool)store);
+        EXPECT_FALSE(store.has_new_targets());
+        EXPECT_FALSE(store.is_new_target(query));
+        EXPECT_FALSE(store.is_new_target(url));
+        EXPECT_EQ(store.get_target(query).first, nullptr);
+        EXPECT_EQ(store.get_target(url).first, nullptr);
+    }
+}
+
+TEST(TestObjectStore, InsertAndGetObject)
+{
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
+
+    object_store store;
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "hello"));
+
+        store.insert(root);
+
+        EXPECT_TRUE((bool)store);
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_TRUE(store.is_new_target(query));
+        EXPECT_FALSE(store.is_new_target(url));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+        EXPECT_EQ(store.get_target(url).first, nullptr);
+    }
+}
+
+TEST(TestObjectStore, InsertAndGetEphemeralObject)
+{
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
+
+    object_store store;
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "hello"));
+
+        store.insert(root, object_store::attribute::ephemeral);
+
+        EXPECT_TRUE((bool)store);
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_TRUE(store.is_new_target(query));
+        EXPECT_FALSE(store.is_new_target(url));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+        EXPECT_EQ(store.get_target(query).second, object_store::attribute::ephemeral);
+        EXPECT_EQ(store.get_target(url).first, nullptr);
+    }
 
     EXPECT_FALSE((bool)store);
     EXPECT_FALSE(store.has_new_targets());
@@ -80,75 +148,60 @@ TEST(TestObjectStore, InsertStringObject)
     EXPECT_EQ(store.get_target(url).first, nullptr);
 }
 
-TEST(TestObjectStore, InsertAndGetObject)
-{
-    auto query = get_target_index("query");
-    auto url = get_target_index("url");
-
-    object_store store;
-
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "hello"));
-
-    store.insert(root);
-
-    EXPECT_TRUE((bool)store);
-    EXPECT_TRUE(store.has_new_targets());
-    EXPECT_TRUE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query).first, nullptr);
-    EXPECT_EQ(store.get_target(url).first, nullptr);
-}
-
 TEST(TestObjectStore, InsertMultipleUniqueObjects)
 {
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    object_store store;
-
-    ddwaf_object first;
-    ddwaf_object second;
-    ddwaf_object third;
     ddwaf_object tmp;
-    ddwaf_object_map(&first);
-    ddwaf_object_map_add(&first, "query", ddwaf_object_string(&tmp, "hello"));
 
-    store.insert(first);
+    object_store store;
+    {
+        auto scope = store.get_eval_scope();
 
-    EXPECT_TRUE((bool)store);
-    EXPECT_TRUE(store.has_new_targets());
-    EXPECT_TRUE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query).first, nullptr);
-    EXPECT_EQ(store.get_target(url).first, nullptr);
+        ddwaf_object first;
+        ddwaf_object_map(&first);
+        ddwaf_object_map_add(&first, "query", ddwaf_object_string(&tmp, "hello"));
 
-    store.clear_cache();
+        store.insert(first);
 
-    ddwaf_object_map(&second);
-    ddwaf_object_map_add(&second, "url", ddwaf_object_string(&tmp, "hello"));
+        EXPECT_TRUE((bool)store);
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_TRUE(store.is_new_target(query));
+        EXPECT_FALSE(store.is_new_target(url));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+        EXPECT_EQ(store.get_target(url).first, nullptr);
+    }
 
-    store.insert(second);
+    {
+        auto scope = store.get_eval_scope();
 
-    EXPECT_TRUE((bool)store);
-    EXPECT_TRUE(store.has_new_targets());
-    EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_TRUE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query).first, nullptr);
-    EXPECT_NE(store.get_target(url).first, nullptr);
+        ddwaf_object second;
+        ddwaf_object_map(&second);
+        ddwaf_object_map_add(&second, "url", ddwaf_object_string(&tmp, "hello"));
 
-    store.clear_cache();
+        store.insert(second);
 
-    third = DDWAF_OBJECT_INVALID;
-    store.insert(third);
-    EXPECT_TRUE((bool)store);
-    EXPECT_FALSE(store.has_new_targets());
-    EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query).first, nullptr);
-    EXPECT_NE(store.get_target(url).first, nullptr);
+        EXPECT_TRUE((bool)store);
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_FALSE(store.is_new_target(query));
+        EXPECT_TRUE(store.is_new_target(url));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+        EXPECT_NE(store.get_target(url).first, nullptr);
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object third = DDWAF_OBJECT_INVALID;
+        store.insert(third);
+        EXPECT_TRUE((bool)store);
+        EXPECT_FALSE(store.has_new_targets());
+        EXPECT_FALSE(store.is_new_target(query));
+        EXPECT_FALSE(store.is_new_target(url));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+        EXPECT_NE(store.get_target(url).first, nullptr);
+    }
 }
 
 TEST(TestObjectStore, InsertMultipleOverlappingObjects)
@@ -156,69 +209,74 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    object_store store;
-
-    ddwaf_object first;
-    ddwaf_object second;
-    ddwaf_object third;
     ddwaf_object tmp;
-    ddwaf_object_map(&first);
-    ddwaf_object_map_add(&first, "query", ddwaf_object_string(&tmp, "hello"));
-    store.insert(first);
 
-    EXPECT_TRUE((bool)store);
-    EXPECT_TRUE(store.has_new_targets());
-    EXPECT_TRUE(store.is_new_target(query));
-    EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query).first, nullptr);
-    EXPECT_EQ(store.get_target(url).first, nullptr);
-
+    object_store store;
     {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object first;
+        ddwaf_object_map(&first);
+        ddwaf_object_map_add(&first, "query", ddwaf_object_string(&tmp, "hello"));
+        store.insert(first);
+
+        EXPECT_TRUE((bool)store);
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_TRUE(store.is_new_target(query));
+        EXPECT_FALSE(store.is_new_target(url));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+        EXPECT_EQ(store.get_target(url).first, nullptr);
+
         auto *object = store.get_target(query).first;
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "hello");
     }
 
-    // Reinsert query
-    ddwaf_object_map(&second);
-    ddwaf_object_map_add(&second, "url", ddwaf_object_string(&tmp, "hello"));
-    ddwaf_object_map_add(&second, "query", ddwaf_object_string(&tmp, "bye"));
-    store.insert(second);
-
-    EXPECT_TRUE((bool)store);
-    EXPECT_TRUE(store.has_new_targets());
-    EXPECT_TRUE(store.is_new_target(query));
-    EXPECT_TRUE(store.is_new_target(url));
-
     {
-        auto *object = store.get_target(url).first;
-        EXPECT_NE(object, nullptr);
-        EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-        EXPECT_STREQ(object->stringValue, "hello");
+        auto scope = store.get_eval_scope();
+
+        // Reinsert query
+        ddwaf_object second;
+        ddwaf_object_map(&second);
+        ddwaf_object_map_add(&second, "url", ddwaf_object_string(&tmp, "hello"));
+        ddwaf_object_map_add(&second, "query", ddwaf_object_string(&tmp, "bye"));
+        store.insert(second);
+
+        EXPECT_TRUE((bool)store);
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_TRUE(store.is_new_target(query));
+        EXPECT_TRUE(store.is_new_target(url));
+
+        {
+            auto *object = store.get_target(url).first;
+            EXPECT_NE(object, nullptr);
+            EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
+            EXPECT_STREQ(object->stringValue, "hello");
+        }
+
+        {
+            auto *object = store.get_target(query).first;
+            EXPECT_NE(object, nullptr);
+            EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
+            EXPECT_STREQ(object->stringValue, "bye");
+        }
     }
 
     {
-        auto *object = store.get_target(query).first;
-        EXPECT_NE(object, nullptr);
-        EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-        EXPECT_STREQ(object->stringValue, "bye");
-    }
+        auto scope = store.get_eval_scope();
+        // Reinsert url
+        ddwaf_object third;
+        ddwaf_object_map(&third);
+        ddwaf_object_map_add(&third, "url", ddwaf_object_string(&tmp, "bye"));
+        store.insert(third);
 
-    store.clear_cache();
+        EXPECT_TRUE((bool)store);
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_FALSE(store.is_new_target(query));
+        EXPECT_TRUE(store.is_new_target(url));
+        EXPECT_NE(store.get_target(query).first, nullptr);
 
-    // Reinsert url
-    ddwaf_object_map(&third);
-    ddwaf_object_map_add(&third, "url", ddwaf_object_string(&tmp, "bye"));
-    store.insert(third);
-
-    EXPECT_TRUE((bool)store);
-    EXPECT_TRUE(store.has_new_targets());
-    EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_TRUE(store.is_new_target(url));
-    EXPECT_NE(store.get_target(query).first, nullptr);
-
-    {
         auto *object = store.get_target(url).first;
         EXPECT_NE(object, nullptr);
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
