@@ -100,7 +100,7 @@ memory::unordered_set<const ddwaf_object *> object_filter::match(
             throw ddwaf::timeout_exception();
         }
 
-        if (cache.find(target) != cache.end()) {
+        if (cache.find(target) != cache.end() && !store.is_new_target(target)) {
             continue;
         }
 
