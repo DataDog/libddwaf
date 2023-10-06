@@ -40,6 +40,14 @@ public:
                 free_fn(&obj);
             }
         }
+
+        // Free ephemeral objects and targets, in practice all ephemeral
+        // objects should be freed, through the scope but just in case...
+        for (auto &[obj, free_fn] : ephemeral_objects_) {
+            if (free_fn != nullptr) {
+                free_fn(&obj);
+            }
+        }
     }
     object_store(const object_store &) = default;
     object_store(object_store &&) = default;
@@ -71,7 +79,7 @@ public:
 
     bool has_new_targets() const { return !latest_batch_.empty(); }
 
-    explicit operator bool() const { return !objects_.empty(); }
+    bool empty() const { return objects_.empty(); }
 
     eval_scope get_eval_scope() { return eval_scope{*this}; }
 

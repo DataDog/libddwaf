@@ -110,7 +110,9 @@ memory::unordered_set<const ddwaf_object *> object_filter::match(
         }
         iterate_object(filter.get_traverser(), object, objects_to_exclude, limits_);
 
-        cache.emplace(target);
+        if (attr != object_store::attribute::ephemeral) {
+            cache.emplace(target);
+        }
     }
 
     return objects_to_exclude;

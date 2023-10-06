@@ -23,7 +23,7 @@ TEST(TestObjectStore, InsertInvalidObject)
 
         store.insert(root);
 
-        EXPECT_FALSE((bool)store);
+        EXPECT_TRUE(store.empty());
         EXPECT_FALSE(store.has_new_targets());
         EXPECT_FALSE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
@@ -42,7 +42,7 @@ TEST(TestObjectStore, InsertMalformedMap)
 
         EXPECT_FALSE(store.insert(root));
 
-        EXPECT_FALSE((bool)store);
+        EXPECT_TRUE(store.empty());
     }
 }
 
@@ -63,7 +63,7 @@ TEST(TestObjectStore, InsertMalformedMapKey)
         root.array[0].parameterName = nullptr;
 
         EXPECT_TRUE(store.insert(root));
-        EXPECT_FALSE((bool)store);
+        EXPECT_TRUE(store.empty());
     }
 }
 
@@ -81,7 +81,7 @@ TEST(TestObjectStore, InsertStringObject)
 
         store.insert(root);
 
-        EXPECT_FALSE((bool)store);
+        EXPECT_TRUE(store.empty());
         EXPECT_FALSE(store.has_new_targets());
         EXPECT_FALSE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
@@ -106,7 +106,7 @@ TEST(TestObjectStore, InsertAndGetObject)
 
         store.insert(root);
 
-        EXPECT_TRUE((bool)store);
+        EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
@@ -131,7 +131,7 @@ TEST(TestObjectStore, InsertAndGetEphemeralObject)
 
         store.insert(root, object_store::attribute::ephemeral);
 
-        EXPECT_TRUE((bool)store);
+        EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
@@ -140,7 +140,7 @@ TEST(TestObjectStore, InsertAndGetEphemeralObject)
         EXPECT_EQ(store.get_target(url).first, nullptr);
     }
 
-    EXPECT_FALSE((bool)store);
+    EXPECT_TRUE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
@@ -157,6 +157,65 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
 
     object_store store;
     {
+        ddwaf_object first;
+        ddwaf_object_map(&first);
+        ddwaf_object_map_add(&first, "query", ddwaf_object_string(&tmp, "hello"));
+
+        store.insert(first);
+    }
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_TRUE(store.has_new_targets());
+    EXPECT_TRUE(store.is_new_target(query));
+    EXPECT_FALSE(store.is_new_target(url));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
+
+    {
+        ddwaf_object second;
+        ddwaf_object_map(&second);
+        ddwaf_object_map_add(&second, "url", ddwaf_object_string(&tmp, "hello"));
+        store.insert(second, object_store::attribute::ephemeral);
+    }
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_TRUE(store.has_new_targets());
+    EXPECT_TRUE(store.is_new_target(query));
+    EXPECT_TRUE(store.is_new_target(url));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_NE(store.get_target(url).first, nullptr);
+
+    {
+        ddwaf_object third = DDWAF_OBJECT_INVALID;
+        store.insert(third);
+    }
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_TRUE(store.has_new_targets());
+    EXPECT_TRUE(store.is_new_target(query));
+    EXPECT_TRUE(store.is_new_target(url));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_NE(store.get_target(url).first, nullptr);
+
+    store.clear_cache();
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.is_new_target(query));
+    EXPECT_FALSE(store.is_new_target(url));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
+}
+
+TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
+{
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
+
+    ddwaf_object tmp;
+
+    object_store store;
+    {
         auto scope = store.get_eval_scope();
 
         ddwaf_object first;
@@ -165,7 +224,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
 
         store.insert(first);
 
-        EXPECT_TRUE((bool)store);
+        EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
@@ -182,7 +241,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
 
         store.insert(second);
 
-        EXPECT_TRUE((bool)store);
+        EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_FALSE(store.is_new_target(query));
         EXPECT_TRUE(store.is_new_target(url));
@@ -195,7 +254,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
 
         ddwaf_object third = DDWAF_OBJECT_INVALID;
         store.insert(third);
-        EXPECT_TRUE((bool)store);
+        EXPECT_FALSE(store.empty());
         EXPECT_FALSE(store.has_new_targets());
         EXPECT_FALSE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
@@ -220,7 +279,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         ddwaf_object_map_add(&first, "query", ddwaf_object_string(&tmp, "hello"));
         store.insert(first);
 
-        EXPECT_TRUE((bool)store);
+        EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
@@ -243,7 +302,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         ddwaf_object_map_add(&second, "query", ddwaf_object_string(&tmp, "bye"));
         store.insert(second);
 
-        EXPECT_TRUE((bool)store);
+        EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
         EXPECT_TRUE(store.is_new_target(url));
@@ -271,7 +330,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         ddwaf_object_map_add(&third, "url", ddwaf_object_string(&tmp, "bye"));
         store.insert(third);
 
-        EXPECT_TRUE((bool)store);
+        EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_FALSE(store.is_new_target(query));
         EXPECT_TRUE(store.is_new_target(url));
@@ -282,6 +341,93 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
         EXPECT_STREQ(object->stringValue, "bye");
     }
+}
+
+TEST(TestObjectStore, InsertSingleTargets)
+{
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
+
+    object_store store;
+
+    ddwaf_object first;
+    ddwaf_object_string(&first, "hello");
+
+    store.insert(query, first);
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_TRUE(store.has_new_targets());
+    EXPECT_TRUE(store.is_new_target(query));
+    EXPECT_FALSE(store.is_new_target(url));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
+
+    ddwaf_object second;
+    ddwaf_object_string(&second, "hello");
+
+    store.insert(url, second, object_store::attribute::ephemeral);
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_TRUE(store.has_new_targets());
+    EXPECT_TRUE(store.is_new_target(query));
+    EXPECT_TRUE(store.is_new_target(url));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_NE(store.get_target(url).first, nullptr);
+
+    store.clear_cache();
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.is_new_target(query));
+    EXPECT_FALSE(store.is_new_target(url));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
+}
+
+TEST(TestObjectStore, InsertSingleTargetBatches)
+{
+    auto query = get_target_index("query");
+    auto url = get_target_index("url");
+
+    object_store store;
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object first;
+        ddwaf_object_string(&first, "hello");
+
+        store.insert(query, first);
+
+        EXPECT_FALSE(store.empty());
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_TRUE(store.is_new_target(query));
+        EXPECT_FALSE(store.is_new_target(url));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+        EXPECT_EQ(store.get_target(url).first, nullptr);
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object second;
+        ddwaf_object_string(&second, "hello");
+
+        store.insert(url, second, object_store::attribute::ephemeral);
+
+        EXPECT_FALSE(store.empty());
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_FALSE(store.is_new_target(query));
+        EXPECT_TRUE(store.is_new_target(url));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+        EXPECT_NE(store.get_target(url).first, nullptr);
+    }
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.is_new_target(query));
+    EXPECT_FALSE(store.is_new_target(url));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+    EXPECT_EQ(store.get_target(url).first, nullptr);
 }
 
 } // namespace

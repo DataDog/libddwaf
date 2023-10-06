@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "exclusion/object_filter.hpp"
+#include "object_store.hpp"
 #include "test_utils.hpp"
 
 using namespace ddwaf;
@@ -181,6 +182,63 @@ TEST(TestObjectFilter, SingleTargetCache)
         auto objects_filtered = filter.match(store, cache, deadline);
         EXPECT_TRUE(objects_filtered.empty());
     }
+}
+
+TEST(TestObjectFilter, SingleNotNewTargetCache)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    ddwaf_object root, child, tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+
+    store.insert(root);
+
+    object_filter filter;
+    filter.insert(query, "query", {"params"});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    // Clear cache to verify that the target is filtered
+    store.clear_cache();
+
+    auto objects_filtered = filter.match(store, cache, deadline);
+    ASSERT_EQ(objects_filtered.size(), 1);
+    EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+}
+
+TEST(TestObjectFilter, SingleEphemeralTargetCache)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    ddwaf_object root, child, tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+
+    store.insert(root, object_store::attribute::ephemeral);
+
+    object_filter filter;
+    filter.insert(query, "query", {"params"});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    auto objects_filtered = filter.match(store, cache, deadline);
+    ASSERT_EQ(objects_filtered.size(), 1);
+    EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+
+    EXPECT_EQ(cache.find(query), cache.end());
 }
 
 TEST(TestObjectFilter, MultipleTargetsCache)
