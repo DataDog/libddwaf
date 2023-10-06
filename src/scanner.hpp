@@ -53,8 +53,11 @@ public:
 protected:
     static bool eval_matcher(const std::unique_ptr<matcher::base> &matcher, const ddwaf_object &obj)
     {
-        if (!matcher || obj.type == DDWAF_OBJ_INVALID) {
+        if (!matcher) {
             return true;
+        }
+        if (obj.type == DDWAF_OBJ_INVALID) {
+            return false;
         }
         return matcher->match(obj).first;
     }

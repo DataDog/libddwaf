@@ -441,4 +441,101 @@ TEST(TestExtractSchema, SchemaWithScannerNoMatch)
     ddwaf_object_free(&input);
 }
 
+TEST(TestExtractSchema, SchemaWithScannerSingleValueNoKey)
+{
+    ddwaf_object input;
+    ddwaf_object_string(&input, "string");
+
+    generator::extract_schema gen;
+
+    scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
+        std::make_unique<matcher::regex_match>("string", 6, true),
+        std::make_unique<matcher::regex_match>("string", 6, true)};
+
+    ddwaf::timer deadline{2s};
+    auto output = gen.generate(&input, {&scnr}, deadline);
+    EXPECT_SCHEMA_EQ(output, R"([8])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
+TEST(TestExtractSchema, SchemaWithScannerArrayNoKey)
+{
+    ddwaf_object input;
+    ddwaf_object tmp;
+    ddwaf_object_array(&input);
+    ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
+
+    generator::extract_schema gen;
+
+    scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
+        std::make_unique<matcher::regex_match>("string", 6, true),
+        std::make_unique<matcher::regex_match>("string", 6, true)};
+
+    ddwaf::timer deadline{2s};
+    auto output = gen.generate(&input, {&scnr}, deadline);
+    EXPECT_SCHEMA_EQ(output, R"([[[8]],{"len":1}])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
+TEST(TestExtractSchema, SchemaWithScannerArrayWithKey)
+{
+    ddwaf_object input;
+    ddwaf_object array;
+    ddwaf_object tmp;
+    ddwaf_object_map(&input);
+
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "string"));
+
+    ddwaf_object_map_add(&input, "string", &array);
+
+    generator::extract_schema gen;
+
+    scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
+        std::make_unique<matcher::regex_match>("string", 6, true),
+        std::make_unique<matcher::regex_match>("string", 6, true)};
+
+    ddwaf::timer deadline{2s};
+    auto output = gen.generate(&input, {&scnr}, deadline);
+    EXPECT_SCHEMA_EQ(output, R"([{"string":[[[8,{"category":"IP","type":"PII"}]],{"len":1}]}])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
+TEST(TestExtractSchema, SchemaWithScannerNestedArrayWithKey)
+{
+    ddwaf_object input;
+    ddwaf_object array0;
+    ddwaf_object array1;
+    ddwaf_object tmp;
+
+    ddwaf_object_map(&input);
+    ddwaf_object_array(&array0);
+    ddwaf_object_array(&array1);
+
+    ddwaf_object_array_add(&array1, ddwaf_object_string(&tmp, "string"));
+    ddwaf_object_array_add(&array0, &array1);
+
+    ddwaf_object_map_add(&input, "string", &array0);
+
+    generator::extract_schema gen;
+
+    scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
+        std::make_unique<matcher::regex_match>("string", 6, true),
+        std::make_unique<matcher::regex_match>("string", 6, true)};
+
+    ddwaf::timer deadline{2s};
+    auto output = gen.generate(&input, {&scnr}, deadline);
+    EXPECT_SCHEMA_EQ(
+        output, R"([{"string":[[[[[8,{"category":"IP","type":"PII"}]],{"len":1}]],{"len":1}]}])");
+
+    ddwaf_object_free(&output);
+    ddwaf_object_free(&input);
+}
+
 } // namespace
