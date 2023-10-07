@@ -99,9 +99,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         final_base_rules_.clear();
 
         // Initially, new rules are generated from their spec
+        uint32_t index = 0;
         for (const auto &[id, spec] : base_rules_) {
-            auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
+            auto rule_ptr = std::make_shared<ddwaf::rule>(index++, id, spec.name, spec.tags,
+                spec.expr, spec.actions, spec.enabled, spec.source);
             final_base_rules_.emplace(rule_ptr);
         }
 
@@ -131,15 +132,24 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 }
             }
         }
+
+        for (auto it = final_base_rules_.begin(); it != final_base_rules_.end();) {
+            if (!(*it)->is_enabled()) {
+                it = final_base_rules_.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
 
     if ((state & change_state::custom_rules) != change_state::none) {
         final_user_rules_.clear();
 
         // Initially, new rules are generated from their spec
+        std::size_t index = 0;
         for (const auto &[id, spec] : user_rules_) {
-            auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
+            auto rule_ptr = std::make_shared<ddwaf::rule>(index++, id, spec.name, spec.tags,
+                spec.expr, spec.actions, spec.enabled, spec.source);
             final_user_rules_.emplace(rule_ptr);
         }
     }

@@ -8,6 +8,7 @@
 
 #include "memory_resource.hpp"
 #include <list>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -104,6 +105,9 @@ using unordered_map =
 
 template <class T, class Hash = std::hash<T>, class Pred = std::equal_to<T>>
 using unordered_set = std::unordered_set<T, Hash, Pred, context_allocator<T>>;
+
+template <class T, class Compare = std::less<T>>
+using set = std::set<T, Compare, context_allocator<T>>;
 
 template <class T> using list = std::list<T, context_allocator<T>>;
 

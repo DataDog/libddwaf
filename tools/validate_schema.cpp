@@ -46,5 +46,6 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    std::cout << "All good" << std::endl;
     return EXIT_SUCCESS;
 }

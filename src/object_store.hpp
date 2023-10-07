@@ -37,6 +37,8 @@ public:
         return latest_batch_.find(target) != latest_batch_.cend();
     }
 
+    const memory::unordered_set<target_index> &get_latest_targets() const { return latest_batch_; }
+
     bool has_new_targets() const { return !latest_batch_.empty(); }
 
     explicit operator bool() const { return !objects_.empty(); }

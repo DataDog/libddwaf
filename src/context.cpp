@@ -59,18 +59,16 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
         eval_preprocessors(derived, deadline);
 
         // If no rule targets are available, there is no point in evaluating them
-        bool eval_rules = should_eval_rules();
-        bool eval_filters = eval_rules || should_eval_filters();
-
-        if (eval_filters) {
+        const auto &rules = rules_to_eval();
+        if (!rules.empty() || should_eval_filters()) {
             // Filters need to be evaluated even if rules don't, otherwise it'll
             // break the current condition cache mechanism which requires knowing
             // if an address is new to this run.
             const auto &rules_to_exclude = filter_rules(deadline);
             const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
 
-            if (eval_rules) {
-                events = match(rules_to_exclude, objects_to_exclude, deadline);
+            if (!rules.empty()) {
+                events = match(rules, rules_to_exclude, objects_to_exclude, deadline);
             }
         }
 
@@ -197,48 +195,102 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
     return objects_to_exclude_;
 }
 
-memory::vector<event> context::match(
+const memory::set<rule *, rule::greater_than> &context::rules_to_eval()
+{
+    rules_.clear();
+
+    const auto &targets = store_.get_latest_targets();
+    for (auto target : targets) {
+        auto it = ruleset_->rules_by_targets.find(target);
+        if (it == ruleset_->rules_by_targets.end()) {
+            continue;
+        }
+
+        const auto &target_rules = it->second;
+        for (auto *rule : target_rules) { rules_.emplace(rule); }
+    }
+
+    return rules_;
+}
+
+memory::vector<event> context::match(const memory::set<rule *, rule::greater_than> &rules,
     const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
     const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
     memory::vector<ddwaf::event> events;
 
-    auto eval_collection = [&](const auto &type, const auto &collection) {
-        auto it = collection_cache_.find(type);
-        if (it == collection_cache_.end()) {
-            auto [new_it, res] = collection_cache_.emplace(type, collection_cache{});
-            it = new_it;
+    for (auto rule_it = rules.begin(); rule_it != rules.end();) {
+        auto type = (*rule_it)->get_type();
+        auto cache_it = collection_cache_.find(type);
+        if (cache_it == collection_cache_.end()) {
+            auto [new_it, res] = collection_cache_.emplace(type, collection_type::none);
+            cache_it = new_it;
         }
-        collection.match(events, store_, it->second, rules_to_exclude, objects_to_exclude,
-            ruleset_->dynamic_matchers, deadline);
-    };
 
-    // Evaluate user priority collections first
-    for (auto &[type, collection] : ruleset_->user_priority_collections) {
-        DDWAF_DEBUG("Evaluating user priority collection '%.*s'", static_cast<int>(type.length()),
-            type.data());
-        eval_collection(type, collection);
-    }
+        do {
+            const auto &rule = *rule_it;
 
-    // Evaluate priority collections first
-    for (auto &[type, collection] : ruleset_->base_priority_collections) {
-        DDWAF_DEBUG(
-            "Evaluating priority collection '%.*s'", static_cast<int>(type.length()), type.data());
-        eval_collection(type, collection);
-    }
+            auto level = rule->has_actions() ? collection_type::priority : collection_type::regular;
+            if (cache_it->second >= level) {
+                // Skip to next type
+                while (++rule_it != rules.end() && (*rule_it)->get_type() == type) {}
+                break;
+            }
 
-    // Evaluate regular collection after
-    for (auto &[type, collection] : ruleset_->user_collections) {
-        DDWAF_DEBUG(
-            "Evaluating user collection '%.*s'", static_cast<int>(type.length()), type.data());
-        eval_collection(type, collection);
-    }
+            if (deadline.expired()) {
+                DDWAF_INFO("Ran out of time while evaluating rule '%s'", rule->get_id().c_str());
+                throw timeout_exception();
+            }
 
-    // Evaluate regular collection after
-    for (auto &[type, collection] : ruleset_->base_collections) {
-        DDWAF_DEBUG(
-            "Evaluating base collection '%.*s'", static_cast<int>(type.length()), type.data());
-        eval_collection(type, collection);
+            bool skip_actions = false;
+            auto exclude_it = rules_to_exclude.find(rule);
+            if (exclude_it != rules_to_exclude.end()) {
+                if (exclude_it->second == exclusion::filter_mode::bypass) {
+                    DDWAF_DEBUG("Bypassing rule '%s'", rule->get_id().c_str());
+                    continue;
+                }
+
+                DDWAF_DEBUG("Monitoring rule '%s'", rule->get_id().c_str());
+                skip_actions = true;
+            } else {
+                DDWAF_DEBUG("Evaluating rule '%s'", rule->get_id().c_str());
+            }
+
+            try {
+                auto it = rule_cache_.find(rule);
+                if (it == rule_cache_.end()) {
+                    auto [new_it, res] = rule_cache_.emplace(rule, rule::cache_type{});
+                    it = new_it;
+                }
+
+                const auto &dynamic_matchers = ruleset_->dynamic_matchers;
+
+                rule::cache_type &rule_cache = it->second;
+                std::optional<event> event;
+                auto exclude_it = objects_to_exclude.find(rule);
+                if (exclude_it != objects_to_exclude.end()) {
+                    const auto &objects_excluded = exclude_it->second;
+                    event = rule->match(
+                        store_, rule_cache, objects_excluded, dynamic_matchers, deadline);
+                } else {
+                    event = rule->match(store_, rule_cache, {}, dynamic_matchers, deadline);
+                }
+
+                if (event.has_value()) {
+                    cache_it->second = level;
+                    event->skip_actions = skip_actions;
+                    events.emplace_back(std::move(*event));
+                    DDWAF_DEBUG("Found event on rule %s", rule->get_id().c_str());
+
+                    // Skip to next type
+                    while (++rule_it != rules.end() && (*rule_it)->get_type() == type) {}
+                    break;
+                }
+            } catch (const ddwaf::timeout_exception &) {
+                DDWAF_INFO("Ran out of time while evaluating rule '%s'", rule->get_id().c_str());
+                throw;
+            }
+        } while (++rule_it != rules.end() && (*rule_it)->get_type() == type);
     }
 
     return events;

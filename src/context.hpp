@@ -32,7 +32,6 @@ public:
     {
         rule_filter_cache_.reserve(ruleset_->rule_filters.size());
         input_filter_cache_.reserve(ruleset_->input_filters.size());
-        collection_cache_.reserve(ruleset_->collection_types.size());
     }
 
     context(const context &) = delete;
@@ -50,22 +49,15 @@ public:
     const memory::unordered_map<rule *, filter_mode> &filter_rules(ddwaf::timer &deadline);
     const memory::unordered_map<rule *, object_set> &filter_inputs(
         const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline);
+    const memory::set<rule *, rule::greater_than> &rules_to_eval();
 
-    memory::vector<event> match(const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
+    memory::vector<event> match(const memory::set<rule *, rule::greater_than> &rules,
+        const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
         const memory::unordered_map<rule *, object_set> &objects_to_exclude,
         ddwaf::timer &deadline);
 
 protected:
     bool is_first_run() const { return collection_cache_.empty(); }
-    bool should_eval_rules() const
-    {
-        for (const auto &[target, str] : ruleset_->rule_addresses) {
-            if (store_.is_new_target(target)) {
-                return true;
-            }
-        }
-        return false;
-    }
     bool should_eval_filters() const
     {
         for (const auto &[target, str] : ruleset_->filter_addresses) {
@@ -90,8 +82,11 @@ protected:
     memory::unordered_map<rule *, filter_mode> rules_to_exclude_;
     memory::unordered_map<rule *, object_set> objects_to_exclude_;
 
-    // Cache of collections to avoid processing once a result has been obtained
-    memory::unordered_map<std::string_view, collection::cache_type> collection_cache_;
+    memory::set<rule *, rule::greater_than> rules_;
+
+    enum class collection_type : uint8_t { none = 0, regular = 1, priority = 2 };
+    memory::unordered_map<rule::type_index, collection_type> collection_cache_;
+    memory::unordered_map<rule *, rule::cache_type> rule_cache_;
 };
 
 class context_wrapper {

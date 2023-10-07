@@ -9,7 +9,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
-#include <vector>
+#include <unordered_set>
 
 #include "mkmap.hpp"
 
@@ -17,14 +17,22 @@ namespace ddwaf {
 
 template <typename T> class indexer {
 public:
-    using iterator = typename std::vector<std::shared_ptr<T>>::iterator;
-    using const_iterator = typename std::vector<std::shared_ptr<T>>::const_iterator;
+    using iterator = typename std::unordered_set<std::shared_ptr<T>>::iterator;
+    using const_iterator = typename std::unordered_set<std::shared_ptr<T>>::const_iterator;
 
     void emplace(const std::shared_ptr<T> &item)
     {
-        items_.emplace_back(item);
+        items_.emplace(item);
         by_id_.emplace(item->get_id(), item.get());
         by_tags_.insert(item->get_tags(), item.get());
+    }
+
+    iterator erase(const iterator &it)
+    {
+        const std::shared_ptr<T> &item = *it;
+        by_id_.erase(item->get_id());
+        by_tags_.erase(item->get_tags(), item.get());
+        return items_.erase(it);
     }
 
     T *find_by_id(std::string_view id) const
@@ -53,10 +61,10 @@ public:
     const_iterator begin() const { return items_.begin(); }
     const_iterator end() const { return items_.end(); }
 
-    const std::vector<std::shared_ptr<T>> &items() const { return items_; }
+    const std::unordered_set<std::shared_ptr<T>> &items() const { return items_; }
 
 protected:
-    std::vector<std::shared_ptr<T>> items_;
+    std::unordered_set<std::shared_ptr<T>> items_;
     std::unordered_map<std::string_view, T *> by_id_;
     multi_key_map<std::string_view, T *> by_tags_;
 };

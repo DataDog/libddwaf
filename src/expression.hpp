@@ -100,6 +100,15 @@ public:
         }
     }
 
+    [[nodiscard]] std::unordered_set<target_index> get_targets() const
+    {
+        std::unordered_set<target_index> targets;
+        for (const auto &cond : conditions_) {
+            for (const auto &target : cond->targets) { targets.emplace(target.root); }
+        }
+        return targets;
+    }
+
     static memory::vector<event::match> &&get_matches(cache_type &cache)
     {
         return std::move(cache.matches);

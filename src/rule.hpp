@@ -23,36 +23,55 @@ namespace ddwaf {
 
 class rule {
 public:
+    struct greater_than {
+        bool operator()(const rule *lhs, const rule *rhs) const
+        {
+            return lhs->get_index() > rhs->get_index();
+        }
+    };
+
     enum class source_type : uint8_t { base = 1, user = 2 };
 
+    using type_index = std::uint32_t;
     using cache_type = expression::cache_type;
 
-    rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
-        std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
-        bool enabled = true, source_type source = source_type::base)
+    rule(uint32_t index, std::string id, std::string name,
+        std::unordered_map<std::string, std::string> tags, std::shared_ptr<expression> expr,
+        std::vector<std::string> actions = {}, bool enabled = true,
+        source_type source = source_type::base)
         : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
           tags_(std::move(tags)), expr_(std::move(expr)), actions_(std::move(actions))
     {
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
         }
+
+        type_ = get_type_index(get_tag("type"));
+
+        // TODO use uint32_t for index on interface
+        index_ |= (actions_.empty() ? 0 : 0x8000000000000000) |
+                  (source_ == source_type::user ? 0x4000000000000000 : 0) |
+                  (static_cast<uint64_t>(type_ & 0x3FFFFFFF) << 32) |
+                  (std::numeric_limits<uint32_t>::max() - index);
     }
 
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;
 
     rule(rule &&rhs) noexcept
-        : enabled_(rhs.enabled_), source_(rhs.source_), id_(std::move(rhs.id_)),
-          name_(std::move(rhs.name_)), tags_(std::move(rhs.tags_)), expr_(std::move(rhs.expr_)),
-          actions_(std::move(rhs.actions_))
+        : index_(rhs.index_), enabled_(rhs.enabled_), source_(rhs.source_), id_(std::move(rhs.id_)),
+          name_(std::move(rhs.name_)), type_(rhs.type_), tags_(std::move(rhs.tags_)),
+          expr_(std::move(rhs.expr_)), actions_(std::move(rhs.actions_))
     {}
 
     rule &operator=(rule &&rhs) noexcept
     {
+        index_ = rhs.index_;
         enabled_ = rhs.enabled_;
         source_ = rhs.source_;
         id_ = std::move(rhs.id_);
         name_ = std::move(rhs.name_);
+        type_ = rhs.type_;
         tags_ = std::move(rhs.tags_);
         expr_ = std::move(rhs.expr_);
         actions_ = std::move(rhs.actions_);
@@ -79,6 +98,10 @@ public:
         return it == tags_.end() ? std::string_view() : it->second;
     }
 
+    type_index get_type() const { return type_; }
+
+    bool has_actions() const { return !actions_.empty(); }
+
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
 
     const std::vector<std::string> &get_actions() const { return actions_; }
@@ -88,13 +111,34 @@ public:
         return expr_->get_addresses(addresses);
     }
 
-    void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
+    std::unordered_set<target_index> get_targets() const { return expr_->get_targets(); }
+
+    uint64_t get_index() const { return index_; }
+
+    void set_actions(std::vector<std::string> new_actions)
+    {
+        actions_ = std::move(new_actions);
+
+        // Update the index
+        if (actions_.empty()) {
+            index_ &= 0x7FFFFFFFFFFFFFFF;
+        } else {
+            index_ |= 0x8000000000000000;
+        }
+    }
 
 protected:
+    static type_index get_type_index(std::string_view type)
+    {
+        return std::hash<std::string_view>{}(type) % std::numeric_limits<uint32_t>::max();
+    }
+
+    uint64_t index_{0};
     bool enabled_{true};
     source_type source_;
     std::string id_;
     std::string name_;
+    type_index type_;
     std::unordered_map<std::string, std::string> tags_;
     std::shared_ptr<expression> expr_;
     std::vector<std::string> actions_;

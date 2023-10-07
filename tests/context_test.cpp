@@ -42,10 +42,11 @@ class rule : public ddwaf::rule {
 public:
     using ptr = std::shared_ptr<mock::rule>;
 
-    rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
-        std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
-        bool enabled = true, source_type source = source_type::base)
-        : ddwaf::rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
+    rule(std::size_t index, std::string id, std::string name,
+        std::unordered_map<std::string, std::string> tags, std::shared_ptr<expression> expr,
+        std::vector<std::string> actions = {}, bool enabled = true,
+        source_type source = source_type::base)
+        : ddwaf::rule(index, std::move(id), std::move(name), std::move(tags), std::move(expr),
               std::move(actions), enabled, source)
     {}
     ~rule() override = default;
@@ -108,7 +109,7 @@ TEST(TestContext, PreprocessorEval)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<mock::rule>(0, "id", "name", std::move(tags), builder.build());
     auto proc = std::make_shared<mock::processor>();
 
     Sequence seq;
@@ -139,7 +140,7 @@ TEST(TestContext, PostprocessorEval)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<mock::rule>(0, "id", "name", std::move(tags), builder.build());
     auto proc = std::make_shared<mock::processor>();
 
     Sequence seq;
@@ -170,7 +171,7 @@ TEST(TestContext, SkipRuleNoTargets)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<mock::rule>(0, "id", "name", std::move(tags), builder.build());
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
@@ -196,7 +197,7 @@ TEST(TestContext, MatchTimeout)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<ddwaf::rule>(0, "id", "name", std::move(tags), builder.build());
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
@@ -210,7 +211,7 @@ TEST(TestContext, MatchTimeout)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
 
-    EXPECT_THROW(ctx.match({}, {}, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(ctx.match(ctx.rules_to_eval(), {}, {}, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestContext, NoMatch)
@@ -221,7 +222,7 @@ TEST(TestContext, NoMatch)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<ddwaf::rule>(0, "id", "name", std::move(tags), builder.build());
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
@@ -235,7 +236,7 @@ TEST(TestContext, NoMatch)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
     EXPECT_EQ(events.size(), 0);
 }
 
@@ -247,7 +248,7 @@ TEST(TestContext, Match)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<ddwaf::rule>(0, "id", "name", std::move(tags), builder.build());
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
@@ -261,7 +262,7 @@ TEST(TestContext, Match)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -276,7 +277,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(0, "id1", "name1", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -289,7 +291,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(1, "id2", "name2", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -304,7 +307,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
     EXPECT_EQ(events.size(), 1);
 
     auto &event = events[0];
@@ -336,7 +339,8 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(0, "id1", "name1", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -350,7 +354,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"block"});
+            1, "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"block"});
 
         ruleset->insert_rule(rule);
     }
@@ -366,7 +370,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         ctx.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto event = events[0];
@@ -386,7 +390,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         ctx.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto event = events[0];
@@ -407,7 +411,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(0, "id1", "name1", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -420,7 +425,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(1, "id2", "name2", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -435,7 +441,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -463,7 +469,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -479,7 +485,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(0, "id1", "name1", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -493,7 +500,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"block"});
+            1, "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"block"});
 
         ruleset->insert_rule(rule);
     }
@@ -508,7 +515,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -538,7 +545,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -573,7 +580,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
             {"type", "type"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
+            0, "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
 
         ruleset->insert_rule(rule);
     }
@@ -586,7 +593,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(1, "id2", "name2", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -601,7 +609,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -631,7 +639,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -647,7 +655,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(0, "id1", "name1", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -660,8 +669,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
+        auto rule = std::make_shared<ddwaf::rule>(1, "id2", "name2", std::move(tags),
+            builder.build(), std::vector<std::string>{"redirect"});
 
         ruleset->insert_rule(rule);
     }
@@ -676,7 +685,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -704,7 +713,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -738,7 +747,8 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(0, "id1", "name1", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -751,7 +761,8 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(1, "id2", "name2", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -766,7 +777,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
     EXPECT_EQ(events.size(), 2);
 }
 
@@ -782,7 +793,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
             {"type", "type1"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
+            0, "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
 
         ruleset->insert_rule(rule);
     }
@@ -795,8 +806,8 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
+        auto rule = std::make_shared<ddwaf::rule>(1, "id2", "name2", std::move(tags),
+            builder.build(), std::vector<std::string>{"redirect"});
 
         ruleset->insert_rule(rule);
     }
@@ -811,7 +822,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
     EXPECT_EQ(events.size(), 2);
 }
 
@@ -826,7 +837,8 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(0, "id1", "name1", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -839,7 +851,8 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(1, "id2", "name2", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -854,7 +867,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -865,7 +878,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 }
@@ -882,7 +895,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
             {"type", "type1"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
-            "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
+            0, "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
 
         ruleset->insert_rule(rule);
     }
@@ -895,8 +908,8 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
-            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
+        auto rule = std::make_shared<ddwaf::rule>(1, "id2", "name2", std::move(tags),
+            builder.build(), std::vector<std::string>{"redirect"});
 
         ruleset->insert_rule(rule);
     }
@@ -911,7 +924,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -922,7 +935,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, {}, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 }
@@ -942,7 +955,7 @@ TEST(TestContext, SkipRuleFilterNoTargets)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+        rule = std::make_shared<mock::rule>(0, "id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -988,7 +1001,7 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+        rule = std::make_shared<mock::rule>(0, "id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1033,7 +1046,7 @@ TEST(TestContext, RuleFilterWithCondition)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+        rule = std::make_shared<ddwaf::rule>(0, "id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1063,7 +1076,7 @@ TEST(TestContext, RuleFilterWithCondition)
     EXPECT_EQ(rules_to_exclude.size(), 1);
     EXPECT_NE(rules_to_exclude.find(rule.get()), rules_to_exclude.end());
 
-    auto events = ctx.match(rules_to_exclude, {}, deadline);
+    auto events = ctx.match(ctx.rules_to_eval(), rules_to_exclude, {}, deadline);
     EXPECT_EQ(events.size(), 0);
 }
 
@@ -1081,7 +1094,7 @@ TEST(TestContext, RuleFilterTimeout)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+        rule = std::make_shared<ddwaf::rule>(0, "id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1124,7 +1137,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+        rule = std::make_shared<ddwaf::rule>(0, "id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1153,7 +1166,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
     auto rules_to_exclude = ctx.filter_rules(deadline);
     EXPECT_TRUE(rules_to_exclude.empty());
 
-    auto events = ctx.match(rules_to_exclude, {}, deadline);
+    auto events = ctx.match(ctx.rules_to_eval(), rules_to_exclude, {}, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -1170,7 +1183,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rules.emplace_back(std::make_shared<ddwaf::rule>("id" + std::to_string(i), "name",
+        rules.emplace_back(std::make_shared<ddwaf::rule>(i, "id" + std::to_string(i), "name",
             std::move(tags), std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
@@ -1244,8 +1257,8 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", std::move(tags),
-            std::make_shared<expression>(), std::vector<std::string>{}));
+        rules.emplace_back(std::make_shared<ddwaf::rule>(i, std::string(id), "name",
+            std::move(tags), std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -1354,8 +1367,8 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", std::move(tags),
-            std::make_shared<expression>(), std::vector<std::string>{}));
+        rules.emplace_back(std::make_shared<ddwaf::rule>(i, std::string(id), "name",
+            std::move(tags), std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -1437,8 +1450,8 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rules.emplace_back(std::make_shared<ddwaf::rule>(std::string(id), "name", std::move(tags),
-            std::make_shared<expression>(), std::vector<std::string>{}));
+        rules.emplace_back(std::make_shared<ddwaf::rule>(i, std::string(id), "name",
+            std::move(tags), std::make_shared<expression>(), std::vector<std::string>{}));
 
         ruleset->insert_rule(rules.back());
     }
@@ -1523,7 +1536,7 @@ TEST(TestContext, SkipInputFilterNoTargets)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+        rule = std::make_shared<mock::rule>(0, "id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1568,7 +1581,7 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
+        rule = std::make_shared<mock::rule>(0, "id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1606,7 +1619,7 @@ TEST(TestContext, InputFilterExclude)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<ddwaf::rule>(0, "id", "name", std::move(tags), builder.build());
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
@@ -1630,7 +1643,7 @@ TEST(TestContext, InputFilterExclude)
 
     auto objects_to_exclude = ctx.filter_inputs({}, deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
-    auto events = ctx.match({}, objects_to_exclude, deadline);
+    auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
     EXPECT_EQ(events.size(), 0);
 }
 
@@ -1642,7 +1655,7 @@ TEST(TestContext, InputFilterExcludeRule)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<ddwaf::rule>(0, "id", "name", std::move(tags), builder.build());
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
@@ -1669,7 +1682,7 @@ TEST(TestContext, InputFilterExcludeRule)
     // stage we still get an event.
     auto objects_to_exclude = ctx.filter_inputs({{rule.get(), filter_mode::bypass}}, deadline);
     EXPECT_EQ(objects_to_exclude.size(), 0);
-    auto events = ctx.match({}, objects_to_exclude, deadline);
+    auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -1684,7 +1697,8 @@ TEST(TestContext, InputFilterWithCondition)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+        auto rule =
+            std::make_shared<ddwaf::rule>(0, "id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1717,7 +1731,7 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto objects_to_exclude = ctx.filter_inputs({}, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -1735,7 +1749,7 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto objects_to_exclude = ctx.filter_inputs({}, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -1753,7 +1767,7 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto objects_to_exclude = ctx.filter_inputs({}, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -1770,7 +1784,7 @@ TEST(TestContext, InputFilterMultipleRules)
             {"type", "ip_type"}, {"category", "category"}};
 
         auto rule =
-            std::make_shared<ddwaf::rule>("ip_id", "name", std::move(tags), builder.build());
+            std::make_shared<ddwaf::rule>(0, "ip_id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1784,7 +1798,7 @@ TEST(TestContext, InputFilterMultipleRules)
             {"type", "usr_type"}, {"category", "category"}};
 
         auto rule =
-            std::make_shared<ddwaf::rule>("usr_id", "name", std::move(tags), builder.build());
+            std::make_shared<ddwaf::rule>(1, "usr_id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1816,7 +1830,7 @@ TEST(TestContext, InputFilterMultipleRules)
         EXPECT_EQ(objects_to_exclude.size(), 2);
         for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1836,7 +1850,7 @@ TEST(TestContext, InputFilterMultipleRules)
         EXPECT_EQ(objects_to_exclude.size(), 2);
         for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 2); }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1856,7 +1870,7 @@ TEST(TestContext, InputFilterMultipleRules)
         EXPECT_EQ(objects_to_exclude.size(), 2);
         for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 2); }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -1873,7 +1887,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
             {"type", "ip_type"}, {"category", "category"}};
 
         auto rule =
-            std::make_shared<ddwaf::rule>("ip_id", "name", std::move(tags), builder.build());
+            std::make_shared<ddwaf::rule>(0, "ip_id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1887,7 +1901,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
             {"type", "usr_type"}, {"category", "category"}};
 
         auto rule =
-            std::make_shared<ddwaf::rule>("usr_id", "name", std::move(tags), builder.build());
+            std::make_shared<ddwaf::rule>(1, "usr_id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -1929,7 +1943,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         EXPECT_EQ(objects_to_exclude.size(), 1);
         for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1949,7 +1963,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         EXPECT_EQ(objects_to_exclude.size(), 2);
         for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1969,7 +1983,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         EXPECT_EQ(objects_to_exclude.size(), 2);
         for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -1986,7 +2000,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             {"type", "ip_type"}, {"category", "category"}};
 
         auto rule =
-            std::make_shared<ddwaf::rule>("ip_id", "name", std::move(tags), builder.build());
+            std::make_shared<ddwaf::rule>(0, "ip_id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -2000,7 +2014,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             {"type", "usr_type"}, {"category", "category"}};
 
         auto rule =
-            std::make_shared<ddwaf::rule>("usr_id", "name", std::move(tags), builder.build());
+            std::make_shared<ddwaf::rule>(1, "usr_id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -2014,7 +2028,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             {"type", "cookie_type"}, {"category", "category"}};
 
         auto rule =
-            std::make_shared<ddwaf::rule>("cookie_id", "name", std::move(tags), builder.build());
+            std::make_shared<ddwaf::rule>(2, "cookie_id", "name", std::move(tags), builder.build());
 
         ruleset->insert_rule(rule);
     }
@@ -2076,7 +2090,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_NE(objects.find(&root.array[0]), objects.end());
         }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2097,7 +2111,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_NE(objects.find(&root.array[0]), objects.end());
         }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2123,7 +2137,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_NE(objects.find(&root.array[0]), objects.end());
         }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2145,7 +2159,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_NE(objects.find(&root.array[0]), objects.end());
             EXPECT_NE(objects.find(&root.array[1]), objects.end());
         }
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2172,7 +2186,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_NE(objects.find(&root.array[0]), objects.end());
             EXPECT_NE(objects.find(&root.array[1]), objects.end());
         }
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2201,7 +2215,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_NE(objects.find(&root.array[1]), objects.end());
             EXPECT_NE(objects.find(&root.array[2]), objects.end());
         }
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.match(ctx.rules_to_eval(), {}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }

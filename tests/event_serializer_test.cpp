@@ -39,7 +39,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
 
 TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 {
-    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+    ddwaf::rule rule{0, "xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"block", "monitor"}};
 
     ddwaf::event event;
@@ -71,7 +71,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 {
-    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+    ddwaf::rule rule{0, "xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"block", "monitor"}};
 
     ddwaf::event event;
@@ -124,9 +124,9 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
 
-    ddwaf::rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+    ddwaf::rule rule1{0, "xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"block", "monitor"}};
-    ddwaf::rule rule2{"xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}},
+    ddwaf::rule rule2{1, "xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"unblock"}};
     memory::vector<ddwaf::event> events;
     {
@@ -190,7 +190,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
 TEST(TestEventSerializer, SerializeEventNoActions)
 {
-    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+    ddwaf::rule rule{0, "xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>()};
 
     ddwaf::event event;
@@ -224,7 +224,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
 TEST(TestEventSerializer, SerializeAllTags)
 {
-    ddwaf::rule rule{"xasd1022", "random rule",
+    ddwaf::rule rule{0, "xasd1022", "random rule",
         {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
             {"confidence", "none"}},
         std::make_shared<expression>(), {"unblock"}};

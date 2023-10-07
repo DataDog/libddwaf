@@ -27,6 +27,14 @@ public:
         for (const auto &key : keys) { data_[key.first][key.second].emplace(value); }
     }
 
+    template <typename U,
+        typename = typename std::enable_if_t<is_pair<typename U::iterator::value_type>::value,
+            typename U::iterator>>
+    void erase(const U &keys, const T &value)
+    {
+        for (const auto &key : keys) { data_[key.first][key.second].erase(value); }
+    }
+
     template <typename CompatKey> std::set<T> find(const std::pair<CompatKey, CompatKey> &key) const
     {
         auto first_it = data_.find(key.first);
