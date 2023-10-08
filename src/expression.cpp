@@ -129,7 +129,7 @@ eval_result expression::evaluator::eval_condition(
     }
 
     if (cache.targets.size() != cond.targets.size()) {
-        cache.targets.assign(cond.targets.size(), false);
+        cache.targets.assign(cond.targets.size(), nullptr);
     }
 
     for (unsigned i = 0; i < cond.targets.size(); ++i) {
@@ -138,18 +138,14 @@ eval_result expression::evaluator::eval_condition(
         }
 
         const auto &target = cond.targets[i];
-        if (cache.targets[i] && !store.is_new_target(target.root)) {
-            continue;
-        }
-
         auto [object, attr] = store.get_target(target.root);
-        if (object == nullptr) {
+        if (object == nullptr || object == cache.targets[i]) {
             continue;
         }
 
         bool ephemeral = (attr == object_store::attribute::ephemeral);
         if (!ephemeral) {
-            cache.targets[i] = true;
+            cache.targets[i] = object;
         }
 
         std::optional<event::match> optional_match;

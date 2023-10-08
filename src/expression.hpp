@@ -33,8 +33,7 @@ public:
     struct condition {
 
         struct cache_type {
-            std::vector<bool> targets{};
-            // std::unordered_set<target_index> targets{};
+            memory::vector<ddwaf_object *> targets;
             std::optional<event::match> match;
         };
 
