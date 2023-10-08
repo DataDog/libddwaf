@@ -288,25 +288,20 @@ TEST(TestInterface, UpdateRules)
     ddwaf_destroy(new_handle);
 
     ddwaf_object tmp;
-    {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+    ddwaf_object parameter1 = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&parameter1, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        ddwaf_object_free(&parameter);
-    }
+    EXPECT_EQ(ddwaf_run(context1, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
 
-    {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+    EXPECT_EQ(ddwaf_run(context1, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_OK);
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
-    }
+    ddwaf_object_free(&parameter1);
+    ddwaf_object_free(&parameter2);
 
     ddwaf_context_destroy(context2);
     ddwaf_context_destroy(context1);
@@ -356,27 +351,21 @@ TEST(TestInterface, UpdateDisableEnableRuleByID)
     ddwaf_context context2 = ddwaf_context_init(handle2);
     ASSERT_NE(context2, nullptr);
 
-    {
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+    ddwaf_object tmp;
+    ddwaf_object parameter1 = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&parameter1, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+    ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        ddwaf_object_free(&parameter);
-    }
+    EXPECT_EQ(ddwaf_run(context1, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_OK);
 
-    {
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+    EXPECT_EQ(ddwaf_run(context1, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
-    }
+    ddwaf_object_free(&parameter1);
+    ddwaf_object_free(&parameter2);
 
     ddwaf_context_destroy(context1);
     ddwaf_destroy(handle1);
@@ -435,24 +424,20 @@ TEST(TestInterface, UpdateDisableEnableRuleByTags)
 
     {
         ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter1 = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter1, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        ddwaf_object_free(&parameter);
-    }
+        EXPECT_EQ(ddwaf_run(context1, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
 
-    {
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+        EXPECT_EQ(ddwaf_run(context1, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_OK);
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        ddwaf_object_free(&parameter1);
+        ddwaf_object_free(&parameter2);
     }
 
     ddwaf_context_destroy(context1);
@@ -474,24 +459,20 @@ TEST(TestInterface, UpdateDisableEnableRuleByTags)
 
     {
         ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter1 = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter1, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        ddwaf_object_free(&parameter);
-    }
+        EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context3, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
 
-    {
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+        EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context3, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        ddwaf_object_free(&parameter1);
+        ddwaf_object_free(&parameter2);
     }
 
     ddwaf_context_destroy(context2);

@@ -97,6 +97,7 @@ TEST(TestExpression, DuplicateInput)
     auto expr = builder.build();
 
     expression::cache_type cache;
+    ddwaf::object_store store;
 
     {
         ddwaf_object root;
@@ -104,7 +105,6 @@ TEST(TestExpression, DuplicateInput)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "bad"));
 
-        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -118,7 +118,6 @@ TEST(TestExpression, DuplicateInput)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -187,6 +186,7 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     auto expr = builder.build();
 
     expression::cache_type cache;
+    ddwaf::object_store store;
 
     {
         ddwaf_object root;
@@ -194,7 +194,6 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "bad_value"));
 
-        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -208,7 +207,6 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-        ddwaf::object_store store;
         store.insert(root);
 
         ddwaf::timer deadline{2s};
