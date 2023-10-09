@@ -119,7 +119,7 @@ const matcher::base *expression::evaluator::get_matcher(const condition &cond) c
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-eval_result expression::evaluator::eval_condition(
+expression::eval_result expression::evaluator::eval_condition(
     const condition &cond, condition::cache_type &cache)
 {
     const auto *matcher = get_matcher(cond);
@@ -172,7 +172,7 @@ eval_result expression::evaluator::eval_condition(
     return {false, false};
 }
 
-eval_result expression::evaluator::eval()
+expression::eval_result expression::evaluator::eval()
 {
     bool ephemeral_match = false;
     for (unsigned i = 0; i < conditions.size(); ++i) {
@@ -192,7 +192,7 @@ eval_result expression::evaluator::eval()
     return {true, ephemeral_match};
 }
 
-eval_result expression::eval(cache_type &cache, const object_store &store,
+expression::eval_result expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const

@@ -30,6 +30,11 @@ class expression {
 public:
     enum class data_source : uint8_t { values, keys };
 
+    struct eval_result {
+        bool outcome;
+        bool ephemeral;
+    };
+
     struct condition {
 
         struct cache_type {

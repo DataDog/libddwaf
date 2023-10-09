@@ -6,6 +6,7 @@
 
 #include "expression.hpp"
 #include "matcher/regex_match.hpp"
+#include "object_store.hpp"
 #include "test_utils.hpp"
 
 using namespace ddwaf;
@@ -119,6 +120,48 @@ TEST(TestExpression, DuplicateInput)
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
         store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
+    }
+}
+
+TEST(TestExpression, DuplicateEphemeralInput)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    builder.add_target("server.request.query");
+
+    auto expr = builder.build();
+
+    expression::cache_type cache;
+    ddwaf::object_store store;
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
+
+        store.insert(root, object_store::attribute::ephemeral);
+
+        ddwaf::timer deadline{2s};
+
+        EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
+
+        store.insert(root, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
 
