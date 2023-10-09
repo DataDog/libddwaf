@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 
+#include "exclusion/common.hpp"
 #include <context_allocator.hpp>
 #include <ddwaf.h>
 #include <event.hpp>
@@ -26,8 +27,6 @@ using filter_mode = exclusion::filter_mode;
 
 class context {
 public:
-    using object_set = std::unordered_set<const ddwaf_object *>;
-
     explicit context(std::shared_ptr<ruleset> ruleset) : ruleset_(std::move(ruleset))
     {
         rule_filter_cache_.reserve(ruleset_->rule_filters.size());
@@ -49,11 +48,11 @@ public:
     // These two functions below return references to internal objects,
     // however using them this way helps with testing
     const memory::unordered_map<rule *, filter_mode> &filter_rules(ddwaf::timer &deadline);
-    const memory::unordered_map<rule *, object_set> &filter_inputs(
+    const memory::unordered_map<rule *, exclusion::object_set> &filter_inputs(
         const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline);
 
     memory::vector<event> match(const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
-        const memory::unordered_map<rule *, object_set> &objects_to_exclude,
+        const memory::unordered_map<rule *, exclusion::object_set> &objects_to_exclude,
         ddwaf::timer &deadline);
 
 protected:
@@ -89,7 +88,7 @@ protected:
     memory::unordered_map<input_filter *, input_filter::cache_type> input_filter_cache_;
 
     memory::unordered_map<rule *, filter_mode> rules_to_exclude_;
-    memory::unordered_map<rule *, object_set> objects_to_exclude_;
+    memory::unordered_map<rule *, exclusion::object_set> objects_to_exclude_;
 
     // Cache of collections to avoid processing once a result has been obtained
     memory::unordered_map<std::string_view, collection::cache_type> collection_cache_;

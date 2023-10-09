@@ -174,7 +174,7 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
     }
 }
 
-const memory::unordered_map<rule *, context::object_set> &context::filter_inputs(
+const memory::unordered_map<rule *, exclusion::object_set> &context::filter_inputs(
     const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating input filters");
@@ -203,7 +203,7 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
                 }
 
                 auto &common_exclusion = objects_to_exclude_[rule];
-                common_exclusion.insert(exclusion->objects.begin(), exclusion->objects.end());
+                common_exclusion.copy_from(exclusion->objects);
             }
         }
     }
@@ -213,7 +213,8 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
 
 memory::vector<event> context::match(
     const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
-    const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
+    const memory::unordered_map<rule *, exclusion::object_set> &objects_to_exclude,
+    ddwaf::timer &deadline)
 {
     memory::vector<ddwaf::event> events;
 

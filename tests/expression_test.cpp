@@ -798,7 +798,7 @@ TEST(TestExpression, ExcludeInput)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_FALSE(expr->eval(cache, store, {&root.array[0]}, {}, deadline).outcome);
+    EXPECT_FALSE(expr->eval(cache, store, {{&root.array[0]}, {}}, {}, deadline).outcome);
 }
 
 TEST(TestExpression, ExcludeKeyPath)
@@ -823,5 +823,5 @@ TEST(TestExpression, ExcludeKeyPath)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_FALSE(expr->eval(cache, store, {&map.array[0]}, {}, deadline).outcome);
+    EXPECT_FALSE(expr->eval(cache, store, {{&map.array[0]}, {}}, {}, deadline).outcome);
 }

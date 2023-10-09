@@ -14,7 +14,7 @@ namespace ddwaf {
 std::optional<event> match_rule(rule *rule, const object_store &store,
     memory::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
     const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
-    const memory::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
+    const memory::unordered_map<ddwaf::rule *, exclusion::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline)
 {
@@ -78,7 +78,7 @@ template <typename Derived>
 void base_collection<Derived>::match(memory::vector<event> &events, const object_store &store,
     collection_cache &cache,
     const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
-    const memory::unordered_map<rule *, object_set> &objects_to_exclude,
+    const memory::unordered_map<rule *, exclusion::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {

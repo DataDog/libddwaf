@@ -380,7 +380,7 @@ TEST(TestRule, ExcludeObject)
     ddwaf::timer deadline{2s};
 
     rule::cache_type cache;
-    auto event = rule.match(store, cache, {&root.array[0]}, {}, deadline);
+    auto event = rule.match(store, cache, {{&root.array[0]}, {}}, {}, deadline);
     EXPECT_FALSE(event.has_value());
 }
 } // namespace

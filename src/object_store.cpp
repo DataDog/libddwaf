@@ -13,7 +13,11 @@ namespace ddwaf {
 
 bool object_store::insert(ddwaf_object &input, attribute attr, ddwaf_object_free_fn free_fn)
 {
-    input_objects_.emplace_back(input, free_fn);
+    if (attr == attribute::ephemeral) {
+        ephemeral_objects_.emplace_back(input, free_fn);
+    } else {
+        input_objects_.emplace_back(input, free_fn);
+    }
 
     if (input.type != DDWAF_OBJ_MAP) {
         return false;
@@ -63,9 +67,11 @@ bool object_store::insert(
     target_index target, ddwaf_object &input, attribute attr, ddwaf_object_free_fn free_fn)
 {
     if (attr == attribute::ephemeral) {
+        ephemeral_objects_.emplace_back(input, free_fn);
         ephemeral_targets_.emplace_back(target);
+    } else {
+        input_objects_.emplace_back(input, free_fn);
     }
-    input_objects_.emplace_back(input, free_fn);
 
     auto *object = &input_objects_.back().first;
     objects_[target] = {object, attr};
@@ -87,6 +93,14 @@ void object_store::clear_cache()
         }
     }
     ephemeral_targets_.clear();
+
+    // Free ephemeral objects and targets
+    for (auto &[obj, free_fn] : ephemeral_objects_) {
+        if (free_fn != nullptr) {
+            free_fn(&obj);
+        }
+    }
+    ephemeral_objects_.clear();
 }
 
 } // namespace ddwaf

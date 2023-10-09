@@ -51,8 +51,7 @@ public:
     ~rule() override = default;
 
     MOCK_METHOD(std::optional<event>, match,
-        (const object_store &, rule::cache_type &,
-            (const std::unordered_set<const ddwaf_object *> &),
+        (const object_store &, rule::cache_type &, (const exclusion::object_set &),
             (const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &),
             ddwaf::timer &),
         (const override));
@@ -2073,7 +2072,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         EXPECT_EQ(objects_to_exclude.size(), 3);
         for (const auto &[rule, objects] : objects_to_exclude) {
             EXPECT_EQ(objects.size(), 1);
-            EXPECT_NE(objects.find(&root.array[0]), objects.end());
+            EXPECT_TRUE(objects.contains(&root.array[0]));
         }
 
         auto events = ctx.match({}, objects_to_exclude, deadline);
@@ -2094,7 +2093,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         EXPECT_EQ(objects_to_exclude.size(), 3);
         for (const auto &[rule, objects] : objects_to_exclude) {
             EXPECT_EQ(objects.size(), 1);
-            EXPECT_NE(objects.find(&root.array[0]), objects.end());
+            EXPECT_TRUE(objects.contains(&root.array[0]));
         }
 
         auto events = ctx.match({}, objects_to_exclude, deadline);
@@ -2120,7 +2119,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         EXPECT_EQ(objects_to_exclude.size(), 3);
         for (const auto &[rule, objects] : objects_to_exclude) {
             EXPECT_EQ(objects.size(), 1);
-            EXPECT_NE(objects.find(&root.array[0]), objects.end());
+            EXPECT_TRUE(objects.contains(&root.array[0]));
         }
 
         auto events = ctx.match({}, objects_to_exclude, deadline);
@@ -2142,8 +2141,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         EXPECT_EQ(objects_to_exclude.size(), 3);
         for (const auto &[rule, objects] : objects_to_exclude) {
             EXPECT_EQ(objects.size(), 2);
-            EXPECT_NE(objects.find(&root.array[0]), objects.end());
-            EXPECT_NE(objects.find(&root.array[1]), objects.end());
+            EXPECT_TRUE(objects.contains(&root.array[0]));
+            EXPECT_TRUE(objects.contains(&root.array[1]));
         }
         auto events = ctx.match({}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
@@ -2169,8 +2168,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         EXPECT_EQ(objects_to_exclude.size(), 3);
         for (const auto &[rule, objects] : objects_to_exclude) {
             EXPECT_EQ(objects.size(), 2);
-            EXPECT_NE(objects.find(&root.array[0]), objects.end());
-            EXPECT_NE(objects.find(&root.array[1]), objects.end());
+            EXPECT_TRUE(objects.contains(&root.array[0]));
+            EXPECT_TRUE(objects.contains(&root.array[1]));
         }
         auto events = ctx.match({}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
@@ -2197,9 +2196,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         EXPECT_EQ(objects_to_exclude.size(), 3);
         for (const auto &[rule, objects] : objects_to_exclude) {
             EXPECT_EQ(objects.size(), 3);
-            EXPECT_NE(objects.find(&root.array[0]), objects.end());
-            EXPECT_NE(objects.find(&root.array[1]), objects.end());
-            EXPECT_NE(objects.find(&root.array[2]), objects.end());
+            EXPECT_TRUE(objects.contains(&root.array[0]));
+            EXPECT_TRUE(objects.contains(&root.array[1]));
+            EXPECT_TRUE(objects.contains(&root.array[2]));
         }
         auto events = ctx.match({}, objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);

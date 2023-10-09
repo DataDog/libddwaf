@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "exclusion/common.hpp"
 #include "exclusion/rule_filter.hpp"
 #include <context_allocator.hpp>
 #include <event.hpp>
@@ -51,7 +52,7 @@ public:
     void match(memory::vector<event> &events /* output */, const object_store &store,
         collection_cache &cache,
         const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
-        const memory::unordered_map<ddwaf::rule *, object_set> &objects_to_exclude,
+        const memory::unordered_map<ddwaf::rule *, exclusion::object_set> &objects_to_exclude,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 

@@ -10,10 +10,11 @@
 #include <stack>
 #include <vector>
 
-#include <clock.hpp>
-#include <exclusion/object_filter.hpp>
-#include <object_store.hpp>
-#include <rule.hpp>
+#include "clock.hpp"
+#include "exclusion/common.hpp"
+#include "exclusion/object_filter.hpp"
+#include "object_store.hpp"
+#include "rule.hpp"
 
 namespace ddwaf::exclusion {
 
@@ -21,7 +22,7 @@ class input_filter {
 public:
     struct excluded_set {
         const std::set<rule *> &rules;
-        memory::unordered_set<const ddwaf_object *> objects;
+        object_set objects;
     };
 
     struct cache_type {

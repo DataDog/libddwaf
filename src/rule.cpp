@@ -3,20 +3,15 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include <rule.hpp>
-
-#include <waf.hpp>
-
-#include "clock.hpp"
-#include <exception.hpp>
-#include <log.hpp>
 #include <memory>
+
+#include "log.hpp"
+#include "rule.hpp"
 
 namespace ddwaf {
 
 std::optional<event> rule::match(const object_store &store, cache_type &cache,
-    const std::unordered_set<const ddwaf_object *> &objects_excluded,
+    const exclusion::object_set &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
