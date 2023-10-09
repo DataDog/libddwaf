@@ -95,7 +95,9 @@ void _print_object(ddwaf_object entry, uint8_t depth)
         }
 
         break;
-
+    case DDWAF_OBJ_FLOAT:
+        std::cerr << entry.f64;
+        break;
     case DDWAF_OBJ_SIGNED:
         std::cerr << entry.intValue;
         break;
@@ -107,6 +109,9 @@ void _print_object(ddwaf_object entry, uint8_t depth)
         break;
     case DDWAF_OBJ_BOOL:
         std::cerr << std::boolalpha << entry.boolean;
+        break;
+    case DDWAF_OBJ_NULL:
+        std::cerr << "(null)";
         break;
     case DDWAF_OBJ_INVALID:
         std::cerr << "--PW ERROR--";

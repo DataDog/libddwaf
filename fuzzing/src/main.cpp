@@ -38,20 +38,22 @@ public:
                 while (running_) {
                     ddwaf_object input;
                     size_t timeout;
+                    bool ephemeral;
                     {
                         std::unique_lock<std::mutex> lock{mtx_};
                         if (objects_.empty()) {
                             cv_.wait_for(lock, 100ms);
                             continue;
                         }
-                        auto [new_input, new_timeout] = objects_.top();
+                        auto [new_input, new_ephemeral, new_timeout] = objects_.top();
                         objects_.pop();
 
                         input = new_input;
                         timeout = new_timeout;
+                        ephemeral = new_ephemeral;
                     }
 
-                    run_waf(handle_, input, timeout);
+                    run_waf(handle_, input, ephemeral, timeout);
                 }
             });
         }
@@ -70,7 +72,7 @@ public:
         for (auto &t : threads_) { t.join(); }
 
         while (!objects_.empty()) {
-            auto [object, timeout] = objects_.top();
+            auto [object, ephemeral, timeout] = objects_.top();
             objects_.pop();
 
             ddwaf_object_free(&object);
@@ -78,11 +80,11 @@ public:
         ddwaf_destroy(handle_);
     }
 
-    void push(ddwaf_object object, size_t timeout)
+    void push(ddwaf_object object, bool ephemeral, size_t timeout)
     {
         {
             std::unique_lock<std::mutex> lock{mtx_};
-            objects_.push({object, timeout});
+            objects_.push({object, ephemeral, timeout});
         }
         cv_.notify_one();
     }
@@ -94,7 +96,7 @@ protected:
     std::mutex mtx_;
     std::condition_variable cv_;
     std::atomic<bool> running_{true};
-    std::stack<std::pair<ddwaf_object, size_t>> objects_;
+    std::stack<std::tuple<ddwaf_object, bool, size_t>> objects_;
 };
 
 std::unique_ptr<waf_runner> runner{nullptr};
@@ -120,6 +122,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
     size_t timeLeftInUs;
     ddwaf_object args = build_object(bytes, size, verbose, fuzzTimeout, &timeLeftInUs);
-    runner->push(args, timeLeftInUs);
+
+    bool ephemeral = size > 0 && (bytes[0] & 0x01) == 0;
+    runner->push(args, ephemeral, timeLeftInUs);
     return 0;
 }
