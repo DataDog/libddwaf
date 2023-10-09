@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test_utils.hpp"
+#include "version.hpp"
 
 using namespace ddwaf;
 
