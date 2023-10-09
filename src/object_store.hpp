@@ -40,14 +40,6 @@ public:
                 free_fn(&obj);
             }
         }
-
-        // Free ephemeral objects and targets, in practice all ephemeral
-        // objects should be freed, through the scope but just in case...
-        for (auto &[obj, free_fn] : ephemeral_objects_) {
-            if (free_fn != nullptr) {
-                free_fn(&obj);
-            }
-        }
     }
     object_store(const object_store &) = default;
     object_store(object_store &&) = default;
@@ -87,7 +79,6 @@ public:
 
 protected:
     memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
-    memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> ephemeral_objects_;
 
     memory::vector<target_index> ephemeral_targets_;
 
