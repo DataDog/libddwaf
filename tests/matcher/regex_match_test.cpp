@@ -76,7 +76,7 @@ TEST(TestRegexMatch, TestInvalidInput)
 
 TEST(TestRegexMatch, TestRulesetCaseSensitive)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {case_sensitive: true}}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -139,7 +139,7 @@ TEST(TestRegexMatch, TestRulesetCaseSensitive)
 
 TEST(TestRegexMatch, TestRulesetCaseInsensitive)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {case_sensitive: false}}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -213,7 +213,7 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
 
 TEST(TestRegexMatch, TestRulesetMinLength)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {min_length: 10}}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
