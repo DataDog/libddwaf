@@ -118,7 +118,6 @@ const matcher::base *expression::evaluator::get_matcher(const condition &cond) c
     return it->second.get();
 }
 
-// NOLINTNEXTLINE(misc-no-recursion)
 expression::eval_result expression::evaluator::eval_condition(
     const condition &cond, condition::cache_type &cache)
 {
@@ -183,7 +182,7 @@ expression::eval_result expression::evaluator::eval()
             continue;
         }
 
-        auto [res, ephemeral] = eval_condition(*cond, cond_cache);
+        auto [res, ephemeral] = eval_condition(cond, cond_cache);
         if (!res) {
             return {false, false};
         }
@@ -224,7 +223,7 @@ void expression_builder::add_target(std::string name, std::vector<std::string> k
     target.source = source;
 
     auto &cond = conditions_.back();
-    cond->targets.emplace_back(std::move(target));
+    cond.targets.emplace_back(std::move(target));
 }
 
 } // namespace ddwaf

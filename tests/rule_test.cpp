@@ -15,6 +15,7 @@ using namespace ddwaf;
 using namespace std::literals;
 
 namespace {
+
 TEST(TestRule, Match)
 {
     expression_builder builder(1);
@@ -49,6 +50,7 @@ TEST(TestRule, Match)
         std::vector<std::string> expected_actions{"update", "block", "passlist"};
         EXPECT_EQ(event->rule->get_actions(), expected_actions);
         EXPECT_EQ(event->matches.size(), 1);
+        EXPECT_FALSE(event->ephemeral);
 
         auto &match = event->matches[0];
         EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
@@ -57,6 +59,7 @@ TEST(TestRule, Match)
         EXPECT_STREQ(match.operator_value.data(), "");
         EXPECT_STREQ(match.address.data(), "http.client_ip");
         EXPECT_TRUE(match.key_path.empty());
+        EXPECT_FALSE(match.ephemeral);
     }
 
     {
@@ -66,6 +69,8 @@ TEST(TestRule, Match)
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
+
+    EXPECT_TRUE(cache.result);
 
     ddwaf_object_free(&root);
 }
@@ -107,6 +112,8 @@ TEST(TestRule, EphemeralMatch)
         ASSERT_TRUE(event.has_value());
         EXPECT_TRUE(event->ephemeral);
     }
+
+    EXPECT_FALSE(cache.result);
 
     ddwaf_object_free(&root);
 }

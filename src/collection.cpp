@@ -83,16 +83,23 @@ void base_collection<Derived>::match(memory::vector<event> &events, const object
     ddwaf::timer &deadline) const
 {
     if (cache.result >= Derived::type()) {
-        return;
+        // If the result was cached but ephemeral, clear it. Note that this is
+        // just a workaround taking advantage of the order of evaluation of
+        // collections. Collections might be removed in the future altogether.
+        if (cache.result == Derived::type() && cache.ephemeral) {
+            cache.result = collection_type::none;
+            cache.ephemeral = false;
+        } else {
+            return;
+        }
     }
 
     for (auto *rule : rules_) {
         auto event = match_rule(rule, store, cache.rule_cache, rules_to_exclude, objects_to_exclude,
             dynamic_matchers, deadline);
         if (event.has_value()) {
-            if (!event->ephemeral) {
-                cache.result = Derived::type();
-            }
+            cache.result = Derived::type();
+            cache.ephemeral = event->ephemeral;
 
             events.emplace_back(std::move(*event));
             DDWAF_DEBUG("Found event on rule %s", rule->get_id().c_str());

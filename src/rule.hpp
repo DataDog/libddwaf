@@ -65,7 +65,20 @@ public:
     virtual std::optional<event> match(const object_store &store, cache_type &cache,
         const exclusion::object_set &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-        ddwaf::timer &deadline) const;
+        ddwaf::timer &deadline) const
+    {
+        if (expression::get_result(cache)) {
+            // An event was already produced, so we skip the rule
+            return std::nullopt;
+        }
+
+        auto res = expr_->eval(cache, store, objects_excluded, dynamic_matchers, deadline);
+        if (!res.outcome) {
+            return std::nullopt;
+        }
+
+        return {ddwaf::event{this, expression::get_matches(cache), res.ephemeral}};
+    }
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
     void toggle(bool value) { enabled_ = value; }

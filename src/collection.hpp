@@ -26,11 +26,11 @@ enum class collection_type : uint8_t { none = 0, regular = 1, priority = 2 };
 // how they interact with the cache, e.g. a priority collection will try to match even if there has
 // already been a match in a regular collection.
 
-// The collection cache is shared by both priority and regular collections,
-// this ensures that regular collections for which there is an equivalent
-// priority collection of the same type, aren't processed when the respective
-// priority collection has already had a match.
+// The collection cache is shared by both priority and regular collections, this ensures that
+// regular collections for which there is an equivalent priority collection of the same type,
+// aren't processed when the respective priority collection has already had a match.
 struct collection_cache {
+    bool ephemeral{false};
     collection_type result{collection_type::none};
     memory::unordered_map<rule *, rule::cache_type> rule_cache;
 };
@@ -49,8 +49,7 @@ public:
 
     void insert(const std::shared_ptr<rule> &rule) { rules_.emplace_back(rule.get()); }
 
-    void match(memory::vector<event> &events /* output */, const object_store &store,
-        collection_cache &cache,
+    void match(memory::vector<event> &events, const object_store &store, collection_cache &cache,
         const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
         const memory::unordered_map<ddwaf::rule *, exclusion::object_set> &objects_to_exclude,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
