@@ -20,6 +20,48 @@ TEST(TestInterface, Empty)
     ddwaf_object_free(&rule);
 }
 
+TEST(TestInterface, ddwaf_get_version) { EXPECT_STREQ(ddwaf_get_version(), LIBDDWAF_VERSION); }
+
+TEST(TestInterface, HandleBad)
+{
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
+
+    ddwaf_object tmp;
+    ddwaf_object object = DDWAF_OBJECT_INVALID;
+    EXPECT_EQ(ddwaf_init(&object, &config, nullptr), nullptr);
+
+    EXPECT_NO_FATAL_FAILURE(ddwaf_destroy(nullptr));
+
+    ddwaf_object_string(&object, "value");
+    EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, nullptr, 1), DDWAF_ERR_INVALID_ARGUMENT);
+    ddwaf_object_free(&object);
+
+    auto rule = read_file("interface.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object_string(&object, "value");
+    EXPECT_EQ(ddwaf_run(context, &object, nullptr, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
+
+    ddwaf_object_string(&object, "value");
+    EXPECT_EQ(ddwaf_run(context, nullptr, &object, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
+
+    object = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&object, "value1", ddwaf_object_string(&tmp, "value"));
+    ddwaf_result res;
+    EXPECT_EQ(ddwaf_run(context, &object, nullptr, &res, 0), DDWAF_OK);
+    EXPECT_TRUE(res.timeout);
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 TEST(TestInterface, RootAddresses)
 {
     auto rule = read_file("interface.yaml");
