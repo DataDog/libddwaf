@@ -25,6 +25,10 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     // from the store at the end of the evaluation
     auto store_cleanup_scope = store_.get_eval_scope();
 
+    auto at_exit = scope_exit([this]() {
+        for (auto &[rule, objects] : this->objects_to_exclude_) { objects.ephemeral.clear(); }
+    });
+
     if (res.has_value()) {
         ddwaf_result &output = *res;
         output = DDWAF_RESULT_INITIALISER;
