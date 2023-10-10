@@ -67,7 +67,7 @@ public:
     {}
     ~rule_filter() override = default;
 
-    MOCK_METHOD(optional_ref<const std::unordered_set<ddwaf::rule *>>, match,
+    MOCK_METHOD(std::optional<excluded_set>, match,
         (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
 };
 
