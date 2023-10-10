@@ -29,13 +29,13 @@ template <typename T> bool iterator_base<T>::operator++()
 }
 
 // TODO: return string_view as this will be immediately copied after
-template <typename T> memory::vector<memory::string> iterator_base<T>::get_current_path() const
+template <typename T> std::vector<std::string> iterator_base<T>::get_current_path() const
 {
     if (current_ == nullptr) {
         return {};
     }
 
-    memory::vector<memory::string> keys;
+    std::vector<std::string> keys;
     keys.reserve(path_.size() + stack_.size());
     for (const auto &key : path_) { keys.emplace_back(key); }
 

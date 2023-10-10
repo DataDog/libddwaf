@@ -555,7 +555,7 @@ TEST(TestKeyIterator, TestContainerMix)
         exclusion::object_set exclude;
         ddwaf::object::key_iterator it(&object, {}, exclude);
 
-        std::vector<std::pair<std::string, memory::vector<memory::string>>> values = {
+        std::vector<std::pair<std::string, std::vector<std::string>>> values = {
             {"root", {"root"}},
             {"key0", {"root", "key0"}},
             {"key0_0", {"root", "key0", "2", "key0_0"}},
@@ -681,7 +681,7 @@ TEST(TestKeyIterator, TestMultiPath)
 
     exclusion::object_set exclude;
     {
-        std::vector<std::pair<std::string, memory::vector<memory::string>>> values = {
+        std::vector<std::pair<std::string, std::vector<std::string>>> values = {
             {"second", {"first", "second"}},
             {"third", {"first", "second", "third"}},
             {"value", {"first", "second", "value"}},
@@ -702,7 +702,7 @@ TEST(TestKeyIterator, TestMultiPath)
     }
 
     {
-        std::vector<std::pair<std::string, memory::vector<memory::string>>> values = {
+        std::vector<std::pair<std::string, std::vector<std::string>>> values = {
             {"third", {"first", "second", "third"}},
             {"value", {"first", "second", "value"}},
         };
@@ -753,7 +753,7 @@ TEST(TestKeyIterator, TestContainerMixPath)
         EXPECT_STREQ((*it)->stringValue, "key0_0");
 
         auto it_path = it.get_current_path();
-        memory::vector<memory::string> path = {"root", "key0", "2", "key0_0"};
+        std::vector<std::string> path = {"root", "key0", "2", "key0_0"};
         EXPECT_EQ(it_path, path);
 
         EXPECT_FALSE(++it);
@@ -767,7 +767,7 @@ TEST(TestKeyIterator, TestContainerMixPath)
     }
 
     {
-        std::vector<std::pair<std::string, memory::vector<memory::string>>> values = {
+        std::vector<std::pair<std::string, std::vector<std::string>>> values = {
             {"key2_0", {"root", "key2", "key2_0"}},
             {"key2_1", {"root", "key2", "key2_1"}},
             {"key2_2", {"root", "key2", "key2_2"}},
@@ -861,14 +861,14 @@ TEST(TestKeyIterator, TestMapDepthLimitPath)
         EXPECT_TRUE(it);
         {
             auto it_path = it.get_current_path();
-            memory::vector<memory::string> path = {"root", "child", "grandchild", "unknown"};
+            std::vector<std::string> path = {"root", "child", "grandchild", "unknown"};
             EXPECT_EQ(it_path, path);
         }
 
         EXPECT_TRUE(++it);
         {
             auto it_path = it.get_current_path();
-            memory::vector<memory::string> path = {"root", "child", "grandchild", "another"};
+            std::vector<std::string> path = {"root", "child", "grandchild", "another"};
             EXPECT_EQ(it_path, path);
         }
 

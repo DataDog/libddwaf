@@ -75,7 +75,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
 }
 
 template <typename Derived>
-void base_collection<Derived>::match(memory::vector<event> &events, const object_store &store,
+void base_collection<Derived>::match(std::vector<event> &events, const object_store &store,
     collection_cache &cache,
     const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
     const memory::unordered_map<rule *, exclusion::object_set> &objects_to_exclude,

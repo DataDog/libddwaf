@@ -27,7 +27,7 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
     }
 }
 
-std::pair<bool, memory::string> regex_match::match_impl(std::string_view pattern) const
+std::pair<bool, std::string> regex_match::match_impl(std::string_view pattern) const
 {
     if (pattern.data() == nullptr || !regex->ok() || pattern.size() < min_length) {
         return {false, {}};

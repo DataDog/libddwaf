@@ -27,7 +27,7 @@ protected:
     static constexpr std::string_view name_impl() { return "match_regex"; }
     static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
 
-    [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view pattern) const;
+    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view pattern) const;
 
     static constexpr int max_match_count = 16;
     std::unique_ptr<re2::RE2> regex{nullptr};

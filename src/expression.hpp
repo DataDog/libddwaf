@@ -102,14 +102,18 @@ public:
         }
     }
 
-    static memory::vector<event::match> get_matches(cache_type &cache)
+    static std::vector<event::match> get_matches(cache_type &cache)
     {
-        memory::vector<event::match> matches;
+        std::vector<event::match> matches;
         matches.reserve(cache.conditions.size());
-        for (const auto &cond_cache : cache.conditions) {
-            const auto &match = cond_cache.match;
+        for (auto &cond_cache : cache.conditions) {
+            auto &match = cond_cache.match;
             if (match.has_value()) {
-                matches.emplace_back(match.value());
+                if (match->ephemeral) {
+                    matches.emplace_back(std::move(match.value()));
+                } else {
+                    matches.emplace_back(match.value());
+                }
             }
         }
         return matches;

@@ -128,7 +128,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         std::make_shared<expression>(), {"block", "monitor"}};
     ddwaf::rule rule2{"xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"unblock"}};
-    memory::vector<ddwaf::event> events;
+    std::vector<ddwaf::event> events;
     {
         ddwaf::event event;
         event.rule = &rule1;
