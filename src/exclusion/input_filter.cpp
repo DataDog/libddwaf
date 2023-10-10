@@ -26,11 +26,15 @@ std::optional<excluded_set> input_filter::match(
 {
     DDWAF_DEBUG("Evaluating input filter '%s'", id_.c_str());
 
+    bool ephemeral = false;
     // An event was already produced, so we skip the rule
     // Note that conditions in a filter are optional
-    if (!expr_->empty() && !expression::get_result(cache.expr_cache) &&
-        !expr_->eval(cache.expr_cache, store, {}, {}, deadline).outcome) {
-        return std::nullopt;
+    if (!expr_->empty() && !expression::get_result(cache.expr_cache)) {
+        auto res = expr_->eval(cache.expr_cache, store, {}, {}, deadline);
+        if (!res.outcome) {
+            return std::nullopt;
+        }
+        ephemeral = res.ephemeral;
     }
 
     auto objects = filter_->match(store, cache.object_filter_cache, deadline);
@@ -38,7 +42,7 @@ std::optional<excluded_set> input_filter::match(
         return std::nullopt;
     }
 
-    return {{rule_targets_, std::move(objects)}};
+    return {{rule_targets_, std::move(objects), ephemeral}};
 }
 
 } // namespace ddwaf::exclusion

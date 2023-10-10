@@ -126,7 +126,7 @@ const memory::unordered_map<rule *, filter_mode> &context::filter_rules(ddwaf::t
         rule_filter::cache_type &cache = it->second;
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
-            for (auto &&rule : exclusion->get()) {
+            for (auto &&rule : exclusion->rules) {
                 auto [it, res] = rules_to_exclude_.emplace(rule, filter->get_mode());
                 // Bypass has precedence over monitor
                 if (!res && it != rules_to_exclude_.end() && it->second != filter_mode::bypass) {

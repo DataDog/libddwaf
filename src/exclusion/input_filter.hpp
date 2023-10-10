@@ -23,6 +23,7 @@ public:
     struct excluded_set {
         const std::set<rule *> &rules;
         object_set objects;
+        bool ephemeral{false};
     };
 
     struct cache_type {
