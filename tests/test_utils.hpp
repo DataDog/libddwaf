@@ -179,8 +179,7 @@ inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
     return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected)));
 }
 
-std::list<ddwaf::test::event::match> from_matches(
-    const ddwaf::memory::vector<ddwaf::event::match> &matches);
+std::list<ddwaf::test::event::match> from_matches(const std::vector<ddwaf::event::match> &matches);
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \

@@ -10,7 +10,7 @@
 
 namespace ddwaf::matcher {
 
-std::pair<bool, memory::string> is_xss::match_impl(std::string_view pattern)
+std::pair<bool, std::string> is_xss::match_impl(std::string_view pattern)
 {
     if (pattern.empty() || pattern.data() == nullptr ||
         libinjection_xss(pattern.data(), pattern.size()) == 0) {

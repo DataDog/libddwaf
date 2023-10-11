@@ -18,26 +18,26 @@ namespace ddwaf {
 namespace {
 
 // TODO store as std::variant<memory::string, bool, int64_t, uint64_t>?
-memory::string object_to_string(const ddwaf_object &object)
+std::string object_to_string(const ddwaf_object &object)
 {
     if (object.type == DDWAF_OBJ_STRING) {
-        return memory::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
+        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
     }
 
     if (object.type == DDWAF_OBJ_BOOL) {
-        return to_string<memory::string>(object.boolean);
+        return to_string<std::string>(object.boolean);
     }
 
     if (object.type == DDWAF_OBJ_SIGNED) {
-        return to_string<memory::string>(object.intValue);
+        return to_string<std::string>(object.intValue);
     }
 
     if (object.type == DDWAF_OBJ_UNSIGNED) {
-        return to_string<memory::string>(object.uintValue);
+        return to_string<std::string>(object.uintValue);
     }
 
     if (object.type == DDWAF_OBJ_FLOAT) {
-        return to_string<memory::string>(object.f64);
+        return to_string<std::string>(object.f64);
     }
 
     return {};

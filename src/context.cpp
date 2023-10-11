@@ -68,7 +68,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         derived.emplace(output.derivatives);
     }
 
-    memory::vector<ddwaf::event> events;
+    std::vector<ddwaf::event> events;
     try {
         eval_preprocessors(derived, deadline);
 
@@ -211,11 +211,11 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
     return objects_to_exclude_;
 }
 
-memory::vector<event> context::match(
+std::vector<event> context::match(
     const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
     const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
-    memory::vector<ddwaf::event> events;
+    std::vector<ddwaf::event> events;
 
     auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);

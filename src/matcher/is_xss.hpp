@@ -25,7 +25,7 @@ protected:
     static constexpr std::string_view name_impl() { return "is_xss"; }
     static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
 
-    static std::pair<bool, memory::string> match_impl(std::string_view pattern);
+    static std::pair<bool, std::string> match_impl(std::string_view pattern);
 
     friend class base_impl<is_xss>;
 };

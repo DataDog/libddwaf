@@ -36,7 +36,6 @@ public:
     };
 
     struct condition {
-
         struct cache_type {
             memory::vector<ddwaf_object *> targets;
             std::optional<event::match> match;
@@ -101,9 +100,9 @@ public:
         }
     }
 
-    static memory::vector<event::match> get_matches(cache_type &cache)
+    static std::vector<event::match> get_matches(cache_type &cache)
     {
-        memory::vector<event::match> matches;
+        std::vector<event::match> matches;
         matches.reserve(cache.conditions.size());
         for (auto &cond_cache : cache.conditions) {
             auto &match = cond_cache.match;

@@ -52,7 +52,7 @@ public:
     const memory::unordered_map<rule *, object_set> &filter_inputs(
         const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline);
 
-    memory::vector<event> match(const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
+    std::vector<event> match(const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
         const memory::unordered_map<rule *, object_set> &objects_to_exclude,
         ddwaf::timer &deadline);
 

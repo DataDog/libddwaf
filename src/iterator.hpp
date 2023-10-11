@@ -35,7 +35,7 @@ public:
 
     [[nodiscard]] explicit operator bool() const { return current_ != nullptr; }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
-    [[nodiscard]] memory::vector<memory::string> get_current_path() const;
+    [[nodiscard]] std::vector<std::string> get_current_path() const;
     [[nodiscard]] const ddwaf_object *get_underlying_object() { return current_; }
 
 protected:
