@@ -25,10 +25,6 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     // from the store at the end of the evaluation
     auto store_cleanup_scope = store_.get_eval_scope();
 
-    auto at_exit = scope_exit([this]() {
-        for (auto &[rule, objects] : this->objects_to_exclude_) { objects.ephemeral.clear(); }
-    });
-
     if (res.has_value()) {
         ddwaf_result &output = *res;
         output = DDWAF_RESULT_INITIALISER;
@@ -72,7 +68,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         derived.emplace(output.derivatives);
     }
 
-    std::vector<ddwaf::event> events;
+    memory::vector<ddwaf::event> events;
     try {
         eval_preprocessors(derived, deadline);
 
@@ -126,7 +122,7 @@ const memory::unordered_map<rule *, filter_mode> &context::filter_rules(ddwaf::t
         rule_filter::cache_type &cache = it->second;
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
-            for (auto &&rule : exclusion->rules) {
+            for (auto &&rule : exclusion->get()) {
                 auto [it, res] = rules_to_exclude_.emplace(rule, filter->get_mode());
                 // Bypass has precedence over monitor
                 if (!res && it != rules_to_exclude_.end() && it->second != filter_mode::bypass) {
@@ -178,7 +174,7 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
     }
 }
 
-const memory::unordered_map<rule *, exclusion::object_set> &context::filter_inputs(
+const memory::unordered_map<rule *, context::object_set> &context::filter_inputs(
     const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating input filters");
@@ -207,7 +203,7 @@ const memory::unordered_map<rule *, exclusion::object_set> &context::filter_inpu
                 }
 
                 auto &common_exclusion = objects_to_exclude_[rule];
-                common_exclusion.copy_from(exclusion->objects);
+                common_exclusion.insert(exclusion->objects.begin(), exclusion->objects.end());
             }
         }
     }
@@ -215,12 +211,11 @@ const memory::unordered_map<rule *, exclusion::object_set> &context::filter_inpu
     return objects_to_exclude_;
 }
 
-std::vector<event> context::match(
+memory::vector<event> context::match(
     const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
-    const memory::unordered_map<rule *, exclusion::object_set> &objects_to_exclude,
-    ddwaf::timer &deadline)
+    const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
 {
-    std::vector<ddwaf::event> events;
+    memory::vector<ddwaf::event> events;
 
     auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);

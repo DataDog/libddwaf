@@ -66,7 +66,7 @@ void serialize_match(ddwaf_object &match_map, const event::match &match, bool re
 }
 } // namespace
 
-void event_serializer::serialize(const std::vector<event> &events, ddwaf_result &output) const
+void event_serializer::serialize(const memory::vector<event> &events, ddwaf_result &output) const
 {
     ddwaf_object tmp;
 

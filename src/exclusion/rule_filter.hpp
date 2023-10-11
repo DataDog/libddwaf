@@ -20,11 +20,6 @@ enum class filter_mode { bypass, monitor };
 
 class rule_filter {
 public:
-    struct excluded_set {
-        const std::unordered_set<rule *> &rules;
-        bool ephemeral{false};
-    };
-
     using cache_type = expression::cache_type;
 
     rule_filter(std::string id, std::shared_ptr<expression> expr, std::set<rule *> rule_targets,
@@ -35,7 +30,7 @@ public:
     rule_filter &operator=(rule_filter &&) = default;
     virtual ~rule_filter() = default;
 
-    virtual std::optional<excluded_set> match(
+    virtual optional_ref<const std::unordered_set<rule *>> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() const { return id_; }

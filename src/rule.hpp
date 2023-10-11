@@ -63,7 +63,7 @@ public:
     virtual ~rule() = default;
 
     virtual std::optional<event> match(const object_store &store, cache_type &cache,
-        const exclusion::object_set &objects_excluded,
+        const std::unordered_set<const ddwaf_object *> &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const
     {

@@ -50,7 +50,7 @@ ip_match::ip_match(const std::vector<std::pair<std::string_view, uint64_t>> &ip_
     }
 }
 
-std::pair<bool, std::string> ip_match::match_impl(std::string_view str) const
+std::pair<bool, memory::string> ip_match::match_impl(std::string_view str) const
 {
     if (!rtree_ || str.empty() || str.data() == nullptr) {
         return {false, {}};
@@ -84,7 +84,7 @@ std::pair<bool, std::string> ip_match::match_impl(std::string_view str) const
         }
     }
 
-    return {true, std::string{str}};
+    return {true, memory::string{str}};
 }
 
 } // namespace ddwaf::matcher

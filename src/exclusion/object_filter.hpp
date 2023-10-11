@@ -17,7 +17,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "exclusion/common.hpp"
 #include <clock.hpp>
 #include <context_allocator.hpp>
 #include <log.hpp>
@@ -237,7 +236,7 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = memory::unordered_set<ddwaf_object *>;
+    using cache_type = std::unordered_set<target_index>;
 
     explicit object_filter(const ddwaf::object_limits &limits = {}) : limits_(limits) {}
 
@@ -248,7 +247,8 @@ public:
         targets_.emplace(target, std::move(name));
     }
 
-    object_set match(const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
+    memory::unordered_set<const ddwaf_object *> match(
+        const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {

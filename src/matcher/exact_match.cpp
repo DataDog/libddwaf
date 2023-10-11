@@ -31,7 +31,7 @@ exact_match::exact_match(const std::vector<std::pair<std::string_view, uint64_t>
     }
 }
 
-std::pair<bool, std::string> exact_match::match_impl(std::string_view str) const
+std::pair<bool, memory::string> exact_match::match_impl(std::string_view str) const
 {
     if (values_.empty() || str.empty() || str.data() == nullptr) {
         return {false, {}};
@@ -50,7 +50,7 @@ std::pair<bool, std::string> exact_match::match_impl(std::string_view str) const
             return {false, {}};
         }
     }
-    return {true, std::string{str}};
+    return {true, memory::string{str}};
 }
 
 } // namespace ddwaf::matcher

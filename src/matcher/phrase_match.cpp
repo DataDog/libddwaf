@@ -25,7 +25,7 @@ phrase_match::phrase_match(std::vector<const char *> pattern, std::vector<uint32
     ac = std::unique_ptr<ac_t, void (*)(void *)>(ac_, ac_free);
 }
 
-std::pair<bool, std::string> phrase_match::match_impl(std::string_view pattern) const
+std::pair<bool, memory::string> phrase_match::match_impl(std::string_view pattern) const
 {
     ac_t *acStructure = ac.get();
     if (pattern.empty() || pattern.data() == nullptr || acStructure == nullptr) {
@@ -41,7 +41,7 @@ std::pair<bool, std::string> phrase_match::match_impl(std::string_view pattern) 
         return {false, {}};
     }
 
-    std::string matched_value;
+    memory::string matched_value;
     if (pattern.size() > static_cast<std::size_t>(result.match_end)) {
         matched_value =
             pattern.substr(result.match_begin, (result.match_end - result.match_begin + 1));

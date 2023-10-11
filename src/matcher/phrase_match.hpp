@@ -26,7 +26,7 @@ protected:
     static constexpr std::string_view name_impl() { return "phrase_match"; }
     static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view pattern) const;
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view pattern) const;
 
     std::unique_ptr<ac_t, void (*)(void *)> ac{nullptr, nullptr};
 

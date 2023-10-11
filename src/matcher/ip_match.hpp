@@ -31,7 +31,7 @@ protected:
     static constexpr std::string_view name_impl() { return "ip_match"; }
     static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view str) const;
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view str) const;
 
     static constexpr unsigned radix_tree_bits = 128; // IPv6
     std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_{nullptr, nullptr};

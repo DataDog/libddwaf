@@ -13,7 +13,8 @@
 namespace ddwaf::object {
 
 template <typename T>
-iterator_base<T>::iterator_base(const exclusion::object_set &exclude, const object_limits &limits)
+iterator_base<T>::iterator_base(
+    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
     : limits_(limits), excluded_(exclude)
 {
     stack_.reserve(initial_stack_size);
@@ -29,13 +30,13 @@ template <typename T> bool iterator_base<T>::operator++()
 }
 
 // TODO: return string_view as this will be immediately copied after
-template <typename T> std::vector<std::string> iterator_base<T>::get_current_path() const
+template <typename T> memory::vector<memory::string> iterator_base<T>::get_current_path() const
 {
     if (current_ == nullptr) {
         return {};
     }
 
-    std::vector<std::string> keys;
+    memory::vector<memory::string> keys;
     keys.reserve(path_.size() + stack_.size());
     for (const auto &key : path_) { keys.emplace_back(key); }
 
@@ -69,7 +70,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
 }
 
 value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
-    const exclusion::object_set &exclude, const object_limits &limits)
+    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
@@ -217,7 +218,7 @@ void value_iterator::set_cursor_to_next_object()
 }
 
 key_iterator::key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
-    const exclusion::object_set &exclude, const object_limits &limits)
+    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);

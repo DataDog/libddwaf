@@ -35,7 +35,7 @@ public:
     // with a literal.
     [[nodiscard]] virtual std::string_view name() const = 0;
 
-    [[nodiscard]] virtual std::pair<bool, std::string> match(const ddwaf_object &obj) const = 0;
+    [[nodiscard]] virtual std::pair<bool, memory::string> match(const ddwaf_object &obj) const = 0;
 };
 
 template <typename T> class base_impl : public base {
@@ -60,12 +60,12 @@ public:
     }
 
     // Helper used for testing purposes
-    template <typename U> [[nodiscard]] std::pair<bool, std::string> match(const U &data) const
+    template <typename U> [[nodiscard]] std::pair<bool, memory::string> match(const U &data) const
     {
         return static_cast<const T *>(this)->match_impl(data);
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match(const ddwaf_object &obj) const override
+    [[nodiscard]] std::pair<bool, memory::string> match(const ddwaf_object &obj) const override
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::supported_type_impl() == DDWAF_OBJ_STRING) {

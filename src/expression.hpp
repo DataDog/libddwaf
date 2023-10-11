@@ -79,7 +79,7 @@ public:
         const ddwaf::object_limits &limits;
         const std::vector<condition> &conditions;
         const object_store &store;
-        const exclusion::object_set &objects_excluded;
+        const std::unordered_set<const ddwaf_object *> &objects_excluded;
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers;
         cache_type &cache;
     };
@@ -91,7 +91,7 @@ public:
     {}
 
     eval_result eval(cache_type &cache, const object_store &store,
-        const exclusion::object_set &objects_excluded,
+        const std::unordered_set<const ddwaf_object *> &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
@@ -102,9 +102,9 @@ public:
         }
     }
 
-    static std::vector<event::match> get_matches(cache_type &cache)
+    static memory::vector<event::match> get_matches(cache_type &cache)
     {
-        std::vector<event::match> matches;
+        memory::vector<event::match> matches;
         matches.reserve(cache.conditions.size());
         for (auto &cond_cache : cache.conditions) {
             auto &match = cond_cache.match;

@@ -49,13 +49,13 @@ protected:
         }
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(const T &obtained) const
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(const T &obtained) const
         requires(!std::is_same_v<T, std::string>)
     {
         return {expected_ == obtained, {}};
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view obtained) const
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view obtained) const
         requires std::is_same_v<T, std::string>
     {
         return {expected_ == obtained, {}};
@@ -81,7 +81,7 @@ protected:
     static constexpr std::string_view name_impl() { return "equals"; }
     static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_FLOAT; }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(double obtained) const
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(double obtained) const
     {
         return {std::abs(expected_ - obtained) < delta_, {}};
     }

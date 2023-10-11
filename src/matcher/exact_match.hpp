@@ -32,7 +32,7 @@ protected:
     static constexpr std::string_view name_impl() { return "exact_match"; }
     static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view str) const;
+    [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view str) const;
 
     std::vector<std::string> data_;
     std::unordered_map<std::string_view, uint64_t> values_;

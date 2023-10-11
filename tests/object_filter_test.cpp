@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "exclusion/object_filter.hpp"
-#include "object_store.hpp"
 #include "test_utils.hpp"
 
 using namespace ddwaf;
@@ -36,39 +35,7 @@ TEST(TestObjectFilter, RootTarget)
     auto objects_filtered = filter.match(store, cache, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
-
-    EXPECT_TRUE(objects_filtered.ephemeral.empty());
-    EXPECT_TRUE(objects_filtered.persistent.contains(&root.array[0]));
-}
-
-TEST(TestObjectFilter, EphemeralRootTarget)
-{
-    auto query = get_target_index("query");
-
-    object_store store;
-
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-
-    store.insert(root, object_store::attribute::ephemeral);
-
-    object_filter filter;
-    filter.insert(query, "query", {});
-
-    ddwaf::timer deadline{2s};
-    object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, deadline);
-
-    ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
-
-    EXPECT_TRUE(objects_filtered.persistent.empty());
-    EXPECT_TRUE(objects_filtered.ephemeral.contains(&root.array[0]));
+    EXPECT_NE(objects_filtered.find(&root.array[0]), objects_filtered.end());
 }
 
 TEST(TestObjectFilter, SingleTarget)
@@ -94,39 +61,7 @@ TEST(TestObjectFilter, SingleTarget)
     auto objects_filtered = filter.match(store, cache, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-
-    EXPECT_TRUE(objects_filtered.ephemeral.empty());
-    EXPECT_TRUE(objects_filtered.persistent.contains(&child.array[0]));
-}
-
-TEST(TestObjectFilter, SingleEphemeralTarget)
-{
-    auto query = get_target_index("query");
-
-    object_store store;
-
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-
-    store.insert(root, object_store::attribute::ephemeral);
-
-    object_filter filter;
-    filter.insert(query, "query", {"params"});
-
-    ddwaf::timer deadline{2s};
-    object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, deadline);
-
-    ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-
-    EXPECT_TRUE(objects_filtered.persistent.empty());
-    EXPECT_TRUE(objects_filtered.ephemeral.contains(&child.array[0]));
+    EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
 }
 
 TEST(TestObjectFilter, MultipleTargets)
@@ -168,108 +103,10 @@ TEST(TestObjectFilter, MultipleTargets)
     auto objects_filtered = filter.match(store, cache, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 2);
-    EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
-    EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
-
-    EXPECT_TRUE(objects_filtered.ephemeral.empty());
-    EXPECT_TRUE(objects_filtered.persistent.contains(&child.array[1]));
-    EXPECT_TRUE(objects_filtered.persistent.contains(&object.array[0]));
+    EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+    EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
 }
 
-TEST(TestObjectFilter, MultipleEphemeralTargets)
-{
-    auto query = get_target_index("query");
-    auto path_params = get_target_index("path_params");
-
-    object_store store;
-
-    ddwaf_object root, child, sibling, object, tmp;
-
-    // Query
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-
-    // Path Params
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
-    ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
-
-    ddwaf_object_map(&sibling);
-    ddwaf_object_map_add(&sibling, "token", &object);
-    ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
-
-    // Root object
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-    ddwaf_object_map_add(&root, "path_params", &sibling);
-
-    store.insert(root, object_store::attribute::ephemeral);
-
-    object_filter filter;
-    filter.insert(query, "query", {"uri"});
-    filter.insert(path_params, "path_params", {"token", "value"});
-
-    ddwaf::timer deadline{2s};
-    object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, deadline);
-
-    ASSERT_EQ(objects_filtered.size(), 2);
-    EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
-    EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
-
-    EXPECT_TRUE(objects_filtered.persistent.empty());
-    EXPECT_TRUE(objects_filtered.ephemeral.contains(&child.array[1]));
-    EXPECT_TRUE(objects_filtered.ephemeral.contains(&object.array[0]));
-}
-
-TEST(TestObjectFilter, MixedTargets)
-{
-    auto query = get_target_index("query");
-    auto path_params = get_target_index("path_params");
-
-    object_store store;
-
-    ddwaf_object root_query, root_params, child, sibling, object, tmp;
-
-    // Query
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-
-    // Path Params
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
-    ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
-
-    ddwaf_object_map(&sibling);
-    ddwaf_object_map_add(&sibling, "token", &object);
-    ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
-
-    // Root object
-    ddwaf_object_map(&root_query);
-    ddwaf_object_map(&root_params);
-    ddwaf_object_map_add(&root_query, "query", &child);
-    ddwaf_object_map_add(&root_params, "path_params", &sibling);
-
-    store.insert(root_query);
-    store.insert(root_params, object_store::attribute::ephemeral);
-
-    object_filter filter;
-    filter.insert(query, "query", {"uri"});
-    filter.insert(path_params, "path_params", {"token", "value"});
-
-    ddwaf::timer deadline{2s};
-    object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, deadline);
-
-    ASSERT_EQ(objects_filtered.size(), 2);
-    EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
-    EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
-
-    EXPECT_TRUE(objects_filtered.persistent.contains(&child.array[1]));
-    EXPECT_TRUE(objects_filtered.ephemeral.contains(&object.array[0]));
-}
 TEST(TestObjectFilter, MissingTarget)
 {
     get_target_index("query");
@@ -331,76 +168,15 @@ TEST(TestObjectFilter, SingleTargetCache)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
     {
-        auto scope = store.get_eval_scope();
-
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
     }
 
     {
-        auto scope = store.get_eval_scope();
-
         auto objects_filtered = filter.match(store, cache, deadline);
         EXPECT_TRUE(objects_filtered.empty());
     }
-}
-
-TEST(TestObjectFilter, SingleNotNewTargetCache)
-{
-    auto query = get_target_index("query");
-
-    object_store store;
-
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-
-    store.insert(root);
-
-    object_filter filter;
-    filter.insert(query, "query", {"params"});
-
-    ddwaf::timer deadline{2s};
-    object_filter::cache_type cache;
-
-    // Clear cache to verify that the target is filtered
-    store.clear_cache();
-
-    auto objects_filtered = filter.match(store, cache, deadline);
-    ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-}
-
-TEST(TestObjectFilter, SingleEphemeralTargetCache)
-{
-    auto query = get_target_index("query");
-
-    object_store store;
-
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-
-    store.insert(root, object_store::attribute::ephemeral);
-
-    object_filter filter;
-    filter.insert(query, "query", {"params"});
-
-    ddwaf::timer deadline{2s};
-    object_filter::cache_type cache;
-
-    auto objects_filtered = filter.match(store, cache, deadline);
-    ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-
-    EXPECT_EQ(cache.find(&root.array[0]), cache.end());
 }
 
 TEST(TestObjectFilter, MultipleTargetsCache)
@@ -417,8 +193,6 @@ TEST(TestObjectFilter, MultipleTargetsCache)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
     {
-        auto scope = store.get_eval_scope();
-
         ddwaf_object root, child, tmp;
         // Query
         ddwaf_object_map(&child);
@@ -433,12 +207,10 @@ TEST(TestObjectFilter, MultipleTargetsCache)
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
     }
 
     {
-        auto scope = store.get_eval_scope();
-
         ddwaf_object root, child, object, tmp;
 
         // Path Params
@@ -458,12 +230,10 @@ TEST(TestObjectFilter, MultipleTargetsCache)
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
+        EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
     }
 
     {
-        auto scope = store.get_eval_scope();
-
         auto objects_filtered = filter.match(store, cache, deadline);
         EXPECT_TRUE(objects_filtered.empty());
     }
@@ -494,8 +264,8 @@ TEST(TestObjectFilter, SingleGlobTarget)
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
     }
 
     {
@@ -518,8 +288,8 @@ TEST(TestObjectFilter, SingleGlobTarget)
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
     }
 
     {
@@ -563,8 +333,8 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
     }
 
     {
@@ -587,8 +357,8 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
     }
 
     {
@@ -639,7 +409,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&grandnephew.array[0]));
+        EXPECT_NE(objects_filtered.find(&grandnephew.array[0]), objects_filtered.end());
     }
 
     {
@@ -665,8 +435,8 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&grandnephew.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&grandchild.array[0]));
+        EXPECT_NE(objects_filtered.find(&grandnephew.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&grandchild.array[0]), objects_filtered.end());
     }
 
     {
@@ -755,10 +525,10 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 4);
-        EXPECT_TRUE(objects_filtered.contains(&greatgrandchild.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&greatgrandchild.array[1]));
-        EXPECT_TRUE(objects_filtered.contains(&greatgrandnephew.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&greatgrandnephew.array[1]));
+        EXPECT_NE(objects_filtered.find(&greatgrandchild.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&greatgrandchild.array[1]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&greatgrandnephew.array[0]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&greatgrandnephew.array[1]), objects_filtered.end());
     }
 
     {
@@ -840,7 +610,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
             ddwaf::timer deadline{2s};
             auto objects_filtered = filter.match(store, cache, deadline);
             ASSERT_EQ(objects_filtered.size(), 1);
-            EXPECT_STREQ((*objects_filtered.persistent.begin())->parameterName, result.c_str());
+            EXPECT_STREQ((*objects_filtered.begin())->parameterName, result.c_str());
         }
     }
 
