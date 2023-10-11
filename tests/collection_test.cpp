@@ -99,7 +99,6 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         rule_collection.insert(rule);
     }
 
-    ddwaf::timer deadline{2s};
     ddwaf::object_store store;
     collection_cache cache;
 
@@ -165,7 +164,6 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         rule_collection.insert(rule);
     }
 
-    ddwaf::timer deadline{2s};
     ddwaf::object_store store;
     collection_cache cache;
 
@@ -284,7 +282,6 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         priority.insert(rule);
     }
 
-    ddwaf::timer deadline{2s};
     ddwaf::object_store store;
 
     collection_cache cache;
@@ -354,7 +351,6 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         priority.insert(rule);
     }
 
-    ddwaf::timer deadline{2s};
     ddwaf::object_store store;
 
     collection_cache cache;
@@ -425,7 +421,6 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         priority.insert(rule);
     }
 
-    ddwaf::timer deadline{2s};
     ddwaf::object_store store;
 
     collection_cache cache;
@@ -458,6 +453,143 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 
         ASSERT_EQ(events.size(), 0);
     }
+}
+
+// Validate that an ephemeral match in a priority collection doesn't another match
+TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
+{
+    std::vector<std::shared_ptr<rule>> rules;
+    priority_collection priority;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category1"}};
+
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
+
+        rules.emplace_back(rule);
+        priority.insert(rule);
+    }
+
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category2"}};
+
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
+
+        rules.emplace_back(rule);
+        priority.insert(rule);
+    }
+
+    ddwaf::object_store store;
+
+    collection_cache cache;
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        store.insert(root, object_store::attribute::ephemeral);
+
+        std::vector<event> events;
+        ddwaf::timer deadline{2s};
+        priority.match(events, store, cache, {}, {}, {}, deadline);
+
+        ASSERT_EQ(events.size(), 1);
+        ASSERT_EQ(events[0].rule->get_actions().size(), 1);
+        EXPECT_STREQ(events[0].rule->get_actions()[0].data(), "block");
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline{2s};
+        priority.match(events, store, cache, {}, {}, {}, deadline);
+
+        ASSERT_EQ(events.size(), 1);
+    }
+}
+
+// Validate that an ephemeral match in a priority collection prevents another match
+// within the same evaluation
+TEST(TestPriorityCollection, EphemeralPriorityMatchNoOtherMatches)
+{
+    std::vector<std::shared_ptr<rule>> rules;
+    priority_collection priority;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category1"}};
+
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
+
+        rules.emplace_back(rule);
+        priority.insert(rule);
+    }
+
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category2"}};
+
+        auto rule = std::make_shared<ddwaf::rule>(
+            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
+
+        rules.emplace_back(rule);
+        priority.insert(rule);
+    }
+
+    ddwaf::timer deadline{2s};
+    ddwaf::object_store store;
+
+    collection_cache cache;
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        store.insert(root, object_store::attribute::ephemeral);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        store.insert(root);
+    }
+
+    std::vector<event> events;
+    priority.match(events, store, cache, {}, {}, {}, deadline);
+
+    ASSERT_EQ(events.size(), 1);
+    ASSERT_EQ(events[0].rule->get_actions().size(), 1);
+    EXPECT_STREQ(events[0].rule->get_actions()[0].data(), "block");
 }
 
 } // namespace

@@ -37,6 +37,9 @@ public:
 
     struct condition {
         struct cache_type {
+            // The targets cache mirrors the array of targets for the given condition.
+            // Each element in this array caches the pointer of the last non-ephemeral
+            // object evaluated by the target in the same index within the condition.
             memory::vector<ddwaf_object *> targets;
             std::optional<event::match> match;
         };
