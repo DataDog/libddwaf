@@ -219,7 +219,7 @@ benchmark::settings generate_settings(int argc, char *argv[])
 void initialise_runner(benchmark::runner &runner, ddwaf_handle handle, benchmark::settings &s)
 {
     uint32_t addrs_len;
-    const auto *const addrs = ddwaf_required_addresses(handle, &addrs_len);
+    const auto *const addrs = ddwaf_known_addresses(handle, &addrs_len);
 
     std::vector<std::string_view> addresses{addrs, addrs + static_cast<size_t>(addrs_len)};
 
