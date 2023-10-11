@@ -197,7 +197,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_NE(store.get_target(query).first, nullptr);
     EXPECT_NE(store.get_target(url).first, nullptr);
 
-    store.clear_cache();
+    store.clear_last_batch();
 
     EXPECT_FALSE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
@@ -353,7 +353,7 @@ TEST(TestObjectStore, InsertSingleTargets)
     ddwaf_object first;
     ddwaf_object_string(&first, "hello");
 
-    store.insert(query, first);
+    store.insert(query, "query", first);
 
     EXPECT_FALSE(store.empty());
     EXPECT_TRUE(store.has_new_targets());
@@ -365,7 +365,7 @@ TEST(TestObjectStore, InsertSingleTargets)
     ddwaf_object second;
     ddwaf_object_string(&second, "hello");
 
-    store.insert(url, second, object_store::attribute::ephemeral);
+    store.insert(url, "url", second, object_store::attribute::ephemeral);
 
     EXPECT_FALSE(store.empty());
     EXPECT_TRUE(store.has_new_targets());
@@ -374,7 +374,7 @@ TEST(TestObjectStore, InsertSingleTargets)
     EXPECT_NE(store.get_target(query).first, nullptr);
     EXPECT_NE(store.get_target(url).first, nullptr);
 
-    store.clear_cache();
+    store.clear_last_batch();
 
     EXPECT_FALSE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
@@ -396,7 +396,7 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
         ddwaf_object first;
         ddwaf_object_string(&first, "hello");
 
-        store.insert(query, first);
+        store.insert(query, "query", first);
 
         EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
@@ -412,7 +412,7 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
         ddwaf_object second;
         ddwaf_object_string(&second, "hello");
 
-        store.insert(url, second, object_store::attribute::ephemeral);
+        store.insert(url, "url", second, object_store::attribute::ephemeral);
 
         EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
@@ -428,6 +428,250 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
     EXPECT_FALSE(store.is_new_target(url));
     EXPECT_NE(store.get_target(query).first, nullptr);
     EXPECT_EQ(store.get_target(url).first, nullptr);
+}
+
+TEST(TestObjectStore, DuplicatePersistentTarget)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object_string(&root, "hello");
+
+        EXPECT_TRUE(store.insert(query, "query", root));
+
+        EXPECT_FALSE(store.empty());
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_TRUE(store.is_new_target(query));
+
+        auto [object, attr] = store.get_target(query);
+        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_NE(object, nullptr);
+        EXPECT_STREQ(object->stringValue, "hello");
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object_string(&root, "bye");
+
+        EXPECT_TRUE(store.insert(query, "query", root));
+
+        EXPECT_FALSE(store.empty());
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_TRUE(store.is_new_target(query));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+
+        auto [object, attr] = store.get_target(query);
+        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_NE(object, nullptr);
+        EXPECT_STREQ(object->stringValue, "bye");
+    }
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.is_new_target(query));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+}
+
+TEST(TestObjectStore, DuplicateEphemeralTarget)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    {
+        auto scope = store.get_eval_scope();
+        {
+
+            ddwaf_object root;
+            ddwaf_object_string(&root, "hello");
+
+            EXPECT_TRUE(store.insert(query, "query", root, object_store::attribute::ephemeral));
+
+            EXPECT_FALSE(store.empty());
+            EXPECT_TRUE(store.has_new_targets());
+            EXPECT_TRUE(store.is_new_target(query));
+
+            auto [object, attr] = store.get_target(query);
+            EXPECT_EQ(attr, object_store::attribute::ephemeral);
+            EXPECT_NE(object, nullptr);
+            EXPECT_STREQ(object->stringValue, "hello");
+        }
+
+        {
+            ddwaf_object root;
+            ddwaf_object_string(&root, "bye");
+
+            EXPECT_TRUE(store.insert(query, "query", root, object_store::attribute::ephemeral));
+
+            EXPECT_FALSE(store.empty());
+            EXPECT_TRUE(store.has_new_targets());
+            EXPECT_TRUE(store.is_new_target(query));
+            EXPECT_NE(store.get_target(query).first, nullptr);
+
+            auto [object, attr] = store.get_target(query);
+            EXPECT_EQ(attr, object_store::attribute::ephemeral);
+            EXPECT_NE(object, nullptr);
+            EXPECT_STREQ(object->stringValue, "bye");
+        }
+    }
+
+    EXPECT_TRUE(store.empty());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.is_new_target(query));
+    EXPECT_EQ(store.get_target(query).first, nullptr);
+}
+
+TEST(TestObjectStore, FailtoReplaceEphemeralWithPersistent)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    {
+        auto scope = store.get_eval_scope();
+        {
+
+            ddwaf_object root;
+            ddwaf_object_string(&root, "hello");
+
+            EXPECT_TRUE(store.insert(query, "query", root, object_store::attribute::ephemeral));
+
+            EXPECT_FALSE(store.empty());
+            EXPECT_TRUE(store.has_new_targets());
+            EXPECT_TRUE(store.is_new_target(query));
+
+            auto [object, attr] = store.get_target(query);
+            EXPECT_EQ(attr, object_store::attribute::ephemeral);
+            EXPECT_NE(object, nullptr);
+            EXPECT_STREQ(object->stringValue, "hello");
+        }
+
+        {
+            ddwaf_object root;
+            ddwaf_object_string(&root, "bye");
+
+            EXPECT_FALSE(store.insert(query, "query", root));
+
+            EXPECT_FALSE(store.empty());
+            EXPECT_TRUE(store.has_new_targets());
+            EXPECT_TRUE(store.is_new_target(query));
+            EXPECT_NE(store.get_target(query).first, nullptr);
+
+            auto [object, attr] = store.get_target(query);
+            EXPECT_EQ(attr, object_store::attribute::ephemeral);
+            EXPECT_NE(object, nullptr);
+            EXPECT_STREQ(object->stringValue, "hello");
+        }
+    }
+
+    EXPECT_TRUE(store.empty());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.is_new_target(query));
+    EXPECT_EQ(store.get_target(query).first, nullptr);
+}
+
+TEST(TestObjectStore, FailToReplacePersistentWithEphemeralSameBatch)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    {
+        auto scope = store.get_eval_scope();
+        {
+
+            ddwaf_object root;
+            ddwaf_object_string(&root, "hello");
+
+            EXPECT_TRUE(store.insert(query, "query", root));
+
+            EXPECT_FALSE(store.empty());
+            EXPECT_TRUE(store.has_new_targets());
+            EXPECT_TRUE(store.is_new_target(query));
+
+            auto [object, attr] = store.get_target(query);
+            EXPECT_EQ(attr, object_store::attribute::none);
+            EXPECT_NE(object, nullptr);
+            EXPECT_STREQ(object->stringValue, "hello");
+        }
+
+        {
+            ddwaf_object root;
+            ddwaf_object_string(&root, "bye");
+
+            EXPECT_FALSE(store.insert(query, "query", root, object_store::attribute::ephemeral));
+
+            EXPECT_FALSE(store.empty());
+            EXPECT_TRUE(store.has_new_targets());
+            EXPECT_TRUE(store.is_new_target(query));
+            EXPECT_NE(store.get_target(query).first, nullptr);
+
+            auto [object, attr] = store.get_target(query);
+            EXPECT_EQ(attr, object_store::attribute::none);
+            EXPECT_NE(object, nullptr);
+            EXPECT_STREQ(object->stringValue, "hello");
+        }
+    }
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.is_new_target(query));
+    EXPECT_NE(store.get_target(query).first, nullptr);
+}
+
+TEST(TestObjectStore, FailToReplacePersistentWithEphemeralDifferentBatch)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object_string(&root, "hello");
+
+        EXPECT_TRUE(store.insert(query, "query", root));
+
+        EXPECT_FALSE(store.empty());
+        EXPECT_TRUE(store.has_new_targets());
+        EXPECT_TRUE(store.is_new_target(query));
+
+        auto [object, attr] = store.get_target(query);
+        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_NE(object, nullptr);
+        EXPECT_STREQ(object->stringValue, "hello");
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object_string(&root, "bye");
+
+        EXPECT_FALSE(store.insert(query, "query", root, object_store::attribute::ephemeral));
+
+        EXPECT_FALSE(store.empty());
+        EXPECT_FALSE(store.has_new_targets());
+        EXPECT_FALSE(store.is_new_target(query));
+        EXPECT_NE(store.get_target(query).first, nullptr);
+
+        auto [object, attr] = store.get_target(query);
+        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_NE(object, nullptr);
+        EXPECT_STREQ(object->stringValue, "hello");
+    }
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.is_new_target(query));
+    EXPECT_NE(store.get_target(query).first, nullptr);
 }
 
 } // namespace

@@ -49,7 +49,7 @@ void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, c
         }
 
         if (evaluate_) {
-            store.insert(mapping.output, object);
+            store.insert(mapping.output, mapping.output_address, object);
         }
 
         if (output_ && derived.has_value()) {

@@ -52,35 +52,64 @@ bool object_store::insert(ddwaf_object &input, attribute attr, ddwaf_object_free
 
         const std::string key(array[i].parameterName, length);
         auto target = get_target_index(key);
-        objects_[target] = {&array[i], attr};
-        latest_batch_.emplace(target);
 
-        if (attr == attribute::ephemeral) {
-            ephemeral_targets_.emplace_back(target);
-        }
+        insert_target_helper(target, key, &array[i], attr);
     }
 
     return true;
 }
 
-bool object_store::insert(
-    target_index target, ddwaf_object &input, attribute attr, ddwaf_object_free_fn free_fn)
+bool object_store::insert(target_index target, std::string_view key, ddwaf_object &input,
+    attribute attr, ddwaf_object_free_fn free_fn)
 {
+    ddwaf_object *object = nullptr;
     if (attr == attribute::ephemeral) {
         ephemeral_objects_.emplace_back(input, free_fn);
-        ephemeral_targets_.emplace_back(target);
+        object = &ephemeral_objects_.back().first;
     } else {
         input_objects_.emplace_back(input, free_fn);
+        object = &input_objects_.back().first;
     }
 
-    auto *object = &input_objects_.back().first;
+    return insert_target_helper(target, key, object, attr);
+}
+
+bool object_store::insert_target_helper(
+    target_index target, std::string_view key, ddwaf_object *object, attribute attr)
+{
+    if (objects_.contains(target)) {
+        if (attr == attribute::ephemeral && !ephemeral_targets_.contains(target)) {
+            DDWAF_WARN("Failed to replace non-ephemeral target '%.*s' with an ephemeral one",
+                static_cast<int>(key.size()), key.data());
+            return false;
+        }
+
+        if (attr == attribute::none && ephemeral_targets_.contains(target)) {
+            DDWAF_WARN("Failed to replace ephemeral target '%.*s' with a non-ephemeral one",
+                static_cast<int>(key.size()), key.data());
+            return false;
+        }
+
+        DDWAF_DEBUG("Replacing %s target '%.*s' in object store",
+            attr == attribute::ephemeral ? "ephemeral" : "persistent", static_cast<int>(key.size()),
+            key.data());
+    } else {
+        DDWAF_DEBUG("Inserting %s target '%.*s' into object store",
+            attr == attribute::ephemeral ? "ephemeral" : "persistent", static_cast<int>(key.size()),
+            key.data());
+    }
+
+    if (attr == attribute::ephemeral) {
+        ephemeral_targets_.emplace(target);
+    }
+
     objects_[target] = {object, attr};
     latest_batch_.emplace(target);
 
     return true;
 }
 
-void object_store::clear_cache()
+void object_store::clear_last_batch()
 {
     // Clear latest batch
     latest_batch_.clear();
