@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 namespace ddwaf {
 
@@ -28,6 +29,8 @@ public:
         virtual void set_error(std::string_view error) = 0;
         virtual void add_loaded(std::string_view id) = 0;
         virtual void add_failed(std::string_view id, std::string_view error) = 0;
+        virtual void add_required_address(std::string_view address) = 0;
+        virtual void add_optional_address(std::string_view address) = 0;
     };
 
     base_ruleset_info() = default;
@@ -57,6 +60,8 @@ public:
         void set_error(std::string_view /*error*/) override {}
         void add_loaded(std::string_view /*id*/) override {}
         void add_failed(std::string_view /*id*/, std::string_view /*error*/) override {}
+        void add_required_address(std::string_view /*address*/) override {}
+        void add_optional_address(std::string_view /*address*/) override {}
     };
 
     null_ruleset_info() = default;
@@ -86,6 +91,8 @@ public:
             ddwaf_object_array(&loaded_);
             ddwaf_object_array(&failed_);
             ddwaf_object_map(&errors_);
+            ddwaf_object_array(&required_addresses_);
+            ddwaf_object_array(&optional_addresses_);
         }
 
         ~section_info() override
@@ -93,6 +100,8 @@ public:
             ddwaf_object_free(&loaded_);
             ddwaf_object_free(&failed_);
             ddwaf_object_free(&errors_);
+            ddwaf_object_free(&required_addresses_);
+            ddwaf_object_free(&optional_addresses_);
         }
 
         section_info(const section_info &) = delete;
@@ -103,6 +112,8 @@ public:
         void set_error(std::string_view error) override { error_ = error; }
         void add_loaded(std::string_view id) override;
         void add_failed(std::string_view id, std::string_view error) override;
+        void add_required_address(std::string_view address) override;
+        void add_optional_address(std::string_view address) override;
 
         // This matcher effectively moves the contents
         void to_object(ddwaf_object &output)
@@ -118,10 +129,25 @@ public:
                 ddwaf_object_map_add(&output, "failed", &failed_);
                 ddwaf_object_map_add(&output, "errors", &errors_);
 
+                if (!required_addresses_set_.empty() || !optional_addresses_set_.empty()) {
+                    ddwaf_object addresses;
+                    ddwaf_object_map(&addresses);
+                    ddwaf_object_map_add(&addresses, "required", &required_addresses_);
+                    ddwaf_object_map_add(&addresses, "optional", &optional_addresses_);
+                    ddwaf_object_map_add(&output, "addresses", &addresses);
+                }
+
                 ddwaf_object_invalid(&loaded_);
                 ddwaf_object_invalid(&failed_);
+
                 ddwaf_object_invalid(&errors_);
                 error_obj_cache_.clear();
+
+                ddwaf_object_invalid(&required_addresses_);
+                required_addresses_set_.clear();
+
+                ddwaf_object_invalid(&optional_addresses_);
+                optional_addresses_set_.clear();
             }
         }
 
@@ -135,6 +161,14 @@ public:
          *  that error was raised. {error: [ids]} **/
         ddwaf_object errors_{};
         std::map<std::string_view, uint64_t> error_obj_cache_;
+
+        /** Array of required addresses **/
+        ddwaf_object required_addresses_{};
+        std::unordered_set<std::string_view> required_addresses_set_{};
+
+        /** Array of optional addresses **/
+        ddwaf_object optional_addresses_{};
+        std::unordered_set<std::string_view> optional_addresses_set_{};
     };
 
     ruleset_info() = default;
