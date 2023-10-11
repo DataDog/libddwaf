@@ -17,7 +17,6 @@
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "event.hpp"
-#include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"

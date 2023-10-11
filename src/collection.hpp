@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "exclusion/common.hpp"
 #include "exclusion/rule_filter.hpp"
 #include <context_allocator.hpp>
 #include <event.hpp>

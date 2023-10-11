@@ -9,7 +9,6 @@
 #include <memory>
 #include <optional>
 
-#include "exclusion/common.hpp"
 #include <context_allocator.hpp>
 #include <ddwaf.h>
 #include <event.hpp>

@@ -14,7 +14,6 @@
 
 #include "clock.hpp"
 #include "event.hpp"
-#include "exclusion/common.hpp"
 #include "expression.hpp"
 #include "iterator.hpp"
 #include "matcher/base.hpp"
