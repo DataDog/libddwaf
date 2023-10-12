@@ -215,6 +215,89 @@ TEST(TestDiagnosticsIntegration, CustomRules)
     ddwaf_destroy(handle);
 }
 
+TEST(TestDiagnosticsIntegration, InputFilter)
+{
+    auto rule = read_file("input_filter.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root = diagnostics;
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto exclusions = ddwaf::parser::at<parameter::map>(root_map, "exclusions");
+        EXPECT_EQ(exclusions.size(), 4);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(exclusions, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_TRUE(loaded.contains("1"));
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(exclusions, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(exclusions, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        auto addresses = ddwaf::parser::at<parameter::map>(exclusions, "addresses");
+        EXPECT_EQ(addresses.size(), 2);
+
+        auto required = ddwaf::parser::at<parameter::string_set>(addresses, "required");
+        EXPECT_EQ(required.size(), 1);
+        EXPECT_TRUE(required.contains("exclusion-filter-1-input"));
+
+        auto optional = ddwaf::parser::at<parameter::string_set>(addresses, "optional");
+        EXPECT_EQ(optional.size(), 2);
+        EXPECT_TRUE(optional.contains("rule1-input1"));
+        EXPECT_TRUE(optional.contains("rule1-input2"));
+
+        ddwaf_object_free(&root);
+    }
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestDiagnosticsIntegration, RuleData)
+{
+    auto rule = read_file("rule_data.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root = diagnostics;
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto rule_data = ddwaf::parser::at<parameter::map>(root_map, "rules_data");
+        EXPECT_EQ(rule_data.size(), 3);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(rule_data, "loaded");
+        EXPECT_EQ(loaded.size(), 2);
+        EXPECT_TRUE(loaded.contains("ip_data"));
+        EXPECT_TRUE(loaded.contains("usr_data"));
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(rule_data, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(rule_data, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    ddwaf_destroy(handle);
+}
+
 TEST(TestDiagnosticsIntegration, Processor)
 {
     auto rule = read_json_file("processor.json", base_dir);

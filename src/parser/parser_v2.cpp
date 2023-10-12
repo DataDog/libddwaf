@@ -685,7 +685,7 @@ processor_container parse_processors(
             address_container addresses;
 
             id = at<std::string>(node, "id");
-            if (known_processors.find(id) != known_processors.end()) {
+            if (known_processors.contains(id)) {
                 DDWAF_WARN("Duplicate processor: %s", id.c_str());
                 info.add_failed(id, "duplicate processor");
                 continue;
@@ -727,6 +727,7 @@ processor_container parse_processors(
             }
 
             DDWAF_DEBUG("Parsed processor %s", id.c_str());
+            known_processors.emplace(id);
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
 
