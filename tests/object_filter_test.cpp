@@ -93,7 +93,9 @@ TEST(TestObjectFilter, DuplicateCachedTarget)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
 
-    ddwaf_object root, child, tmp;
+    ddwaf_object root;
+    ddwaf_object child;
+    ddwaf_object tmp;
     ddwaf_object_map(&child);
     ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
     ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
