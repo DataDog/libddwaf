@@ -7,11 +7,11 @@
 #include <charconv>
 #include <string_view>
 
-#include "parser/specification.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
+#include "parser/specification.hpp"
 #include "ruleset_builder.hpp"
 
 namespace ddwaf {

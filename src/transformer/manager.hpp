@@ -8,8 +8,8 @@
 
 #include <vector>
 
-#include "transformer/base.hpp"
 #include "ddwaf.h"
+#include "transformer/base.hpp"
 
 namespace ddwaf::transformer {
 

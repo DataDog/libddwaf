@@ -14,7 +14,6 @@
 #include "log.hpp"
 #include "utils.hpp"
 
-
 extern "C" {
 namespace {
 // Maximum number of characters required to represent a 64 bit integer as a string

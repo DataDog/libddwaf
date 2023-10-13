@@ -9,9 +9,9 @@
 #include <optional>
 #include <string>
 
-#include "transformer/base.hpp"
 #include "exception.hpp"
 #include "parameter.hpp"
+#include "transformer/base.hpp"
 
 namespace ddwaf::parser {
 

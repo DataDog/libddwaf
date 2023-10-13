@@ -7,9 +7,9 @@
 
 #include <memory>
 
+#include "context.hpp"
 #include "ddwaf.h"
 #include "parser/parser.hpp"
-#include "context.hpp"
 #include "ruleset.hpp"
 #include "ruleset_builder.hpp"
 #include "ruleset_info.hpp"

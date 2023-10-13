@@ -10,9 +10,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "generator/extract_schema.hpp"
 #include "exception.hpp"
 #include "exclusion/object_filter.hpp"
+#include "generator/extract_schema.hpp"
 #include "indexer.hpp"
 #include "log.hpp"
 #include "matcher/equals.hpp"

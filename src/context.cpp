@@ -6,9 +6,9 @@
 
 #include <unordered_set>
 
-#include "log.hpp"
 #include "context.hpp"
 #include "exception.hpp"
+#include "log.hpp"
 #include "utils.hpp"
 #include "waf.hpp"
 
