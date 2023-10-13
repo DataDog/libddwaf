@@ -75,7 +75,7 @@ TEST(TestInterface, RootAddresses)
     ddwaf_object_free(&rule);
 
     uint32_t size;
-    const char *const *addresses = ddwaf_required_addresses(handle, &size);
+    const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 2);
 
     std::set<std::string_view> available_addresses{"value1", "value2"};
@@ -1831,7 +1831,7 @@ TEST(TestInterface, UpdateEverything)
 
     for (auto *handle : {handle1, handle2, handle3, handle4, handle6, handle7, handle8, handle9}) {
         uint32_t size;
-        const char *const *addresses = ddwaf_required_addresses(handle, &size);
+        const char *const *addresses = ddwaf_known_addresses(handle, &size);
         EXPECT_EQ(size, 4);
 
         std::set<std::string_view> available_addresses{"http.client_ip", "server.request.query",
@@ -1843,7 +1843,7 @@ TEST(TestInterface, UpdateEverything)
 
     for (auto *handle : {handle5}) {
         uint32_t size;
-        const char *const *addresses = ddwaf_required_addresses(handle, &size);
+        const char *const *addresses = ddwaf_known_addresses(handle, &size);
         EXPECT_EQ(size, 3);
 
         // While the ruleset contains 2 addresses, an existing object filter

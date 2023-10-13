@@ -152,7 +152,7 @@ void ddwaf_destroy(ddwaf::waf *handle)
     }
 }
 
-const char *const *ddwaf_required_addresses(ddwaf::waf *handle, uint32_t *size)
+const char *const *ddwaf_known_addresses(ddwaf::waf *handle, uint32_t *size)
 {
     if (handle == nullptr) {
         *size = 0;

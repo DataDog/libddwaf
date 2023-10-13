@@ -22,6 +22,7 @@ public:
     struct target_mapping {
         // TODO implement n:1 support
         target_index input;
+        std::string input_address;
         target_index output;
         std::string output_address;
     };
@@ -50,6 +51,12 @@ public:
         ddwaf::timer &deadline) const;
 
     [[nodiscard]] const std::string &get_id() const { return id_; }
+
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    {
+        expr_->get_addresses(addresses);
+        for (auto mapping : mappings_) { addresses.emplace(mapping.input, mapping.input_address); }
+    }
 
 protected:
     std::string id_;

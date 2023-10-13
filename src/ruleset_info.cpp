@@ -53,4 +53,28 @@ void ruleset_info::section_info::add_failed(std::string_view id, std::string_vie
     ddwaf_object_array_add(&failed_, &id_str);
 }
 
+void ruleset_info::section_info::add_required_address(std::string_view address)
+{
+    if (!required_addresses_set_.contains(address)) {
+        ddwaf_object address_str;
+        ddwaf_object_stringl(&address_str, address.data(), address.size());
+        ddwaf_object_array_add(&required_addresses_, &address_str);
+
+        required_addresses_set_.emplace(
+            address_str.stringValue, static_cast<std::size_t>(address_str.nbEntries));
+    }
+}
+
+void ruleset_info::section_info::add_optional_address(std::string_view address)
+{
+    if (!optional_addresses_set_.contains(address)) {
+        ddwaf_object address_str;
+        ddwaf_object_stringl(&address_str, address.data(), address.size());
+        ddwaf_object_array_add(&optional_addresses_, &address_str);
+
+        optional_addresses_set_.emplace(
+            address_str.stringValue, static_cast<std::size_t>(address_str.nbEntries));
+    }
+}
+
 } // namespace ddwaf

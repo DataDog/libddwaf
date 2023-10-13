@@ -19,6 +19,13 @@ TEST(TestProcessors, Postprocessor)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    uint32_t size;
+    const char *const *addresses = ddwaf_known_addresses(handle, &size);
+    EXPECT_EQ(size, 2);
+    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    EXPECT_TRUE(address_set.contains("server.request.body"));
+    EXPECT_TRUE(address_set.contains("waf.context.processor"));
+
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
@@ -56,6 +63,13 @@ TEST(TestProcessors, Preprocessor)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    uint32_t size;
+    const char *const *addresses = ddwaf_known_addresses(handle, &size);
+    EXPECT_EQ(size, 3);
+    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    EXPECT_TRUE(address_set.contains("server.request.body"));
+    EXPECT_TRUE(address_set.contains("server.request.body.schema"));
+    EXPECT_TRUE(address_set.contains("waf.context.processor"));
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
@@ -99,6 +113,14 @@ TEST(TestProcessors, Processor)
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    uint32_t size;
+    const char *const *addresses = ddwaf_known_addresses(handle, &size);
+    EXPECT_EQ(size, 3);
+    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    EXPECT_TRUE(address_set.contains("server.request.body"));
+    EXPECT_TRUE(address_set.contains("server.request.body.schema"));
+    EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);

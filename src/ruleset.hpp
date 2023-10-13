@@ -24,7 +24,6 @@
 namespace ddwaf {
 
 struct ruleset {
-
     void insert_rule(const std::shared_ptr<rule> &rule)
     {
         rules.emplace_back(rule);
@@ -78,6 +77,22 @@ struct ruleset {
         filter->get_addresses(filter_addresses);
     }
 
+    void insert_preprocessors(const auto &processors)
+    {
+        preprocessors = processors;
+        for (const auto &[key, proc] : preprocessors) {
+            proc->get_addresses(preprocessor_addresses);
+        }
+    }
+
+    void insert_postprocessors(const auto &processors)
+    {
+        postprocessors = processors;
+        for (const auto &[key, proc] : postprocessors) {
+            proc->get_addresses(postprocessor_addresses);
+        }
+    }
+
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
     {
         if (root_addresses.empty()) {
@@ -89,6 +104,18 @@ struct ruleset {
                 }
             }
             for (const auto &[index, str] : filter_addresses) {
+                const auto &[it, res] = known_targets.emplace(index);
+                if (res) {
+                    root_addresses.emplace_back(str.c_str());
+                }
+            }
+            for (const auto &[index, str] : preprocessor_addresses) {
+                const auto &[it, res] = known_targets.emplace(index);
+                if (res) {
+                    root_addresses.emplace_back(str.c_str());
+                }
+            }
+            for (const auto &[index, str] : postprocessor_addresses) {
                 const auto &[it, res] = known_targets.emplace(index);
                 if (res) {
                     root_addresses.emplace_back(str.c_str());
@@ -121,6 +148,8 @@ struct ruleset {
 
     std::unordered_map<target_index, std::string> rule_addresses;
     std::unordered_map<target_index, std::string> filter_addresses;
+    std::unordered_map<target_index, std::string> preprocessor_addresses;
+    std::unordered_map<target_index, std::string> postprocessor_addresses;
 
     // Root addresses, lazily computed
     std::vector<const char *> root_addresses;
