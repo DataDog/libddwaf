@@ -87,7 +87,6 @@ protected:
     parser::filter_spec_container exclusions_;
     // Obtained from 'processors'
     parser::processor_container processors_;
-
     // These are the contents of the latest generated ruleset
 
     // Rules

@@ -195,11 +195,9 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->insert_rules(final_user_rules_.items());
     rs->insert_filters(rule_filters_);
     rs->insert_filters(input_filters_);
+    rs->insert_preprocessors(preprocessors_);
+    rs->insert_postprocessors(postprocessors_);
     rs->dynamic_matchers = dynamic_matchers_;
-    rs->rule_filters = rule_filters_;
-    rs->input_filters = input_filters_;
-    rs->preprocessors = preprocessors_;
-    rs->postprocessors = postprocessors_;
     rs->scanners = scanners_.items();
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;

@@ -231,19 +231,24 @@ ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
 void ddwaf_destroy(ddwaf_handle handle);
 
 /**
- * ddwaf_required_addresses
+ * ddwaf_known_addresses
  *
- * Get an array of required (root) addresses. The memory is owned by the WAF and
- * should not be freed.
+ * Get an array of known (root) addresses used by rules, exclusion filters and
+ * processors. This array contains both required and optional addresses. A more
+ * accurate distinction between required and optional addresses is provided
+ * within the diagnostics.
+ *
+ * The memory is owned by the WAF and should not be freed.
  *
  * @param Handle to the WAF instance.
  * @param size Output parameter in which the size will be returned. The value of
  *             size will be 0 if the return value is NULL.
  * @return NULL if empty, otherwise a pointer to an array with size elements.
  *
- * @Note The returned array should be considered invalid after calling ddwaf_destroy on the handle used to obtain it.
+ * @Note The returned array should be considered invalid after calling ddwaf_destroy
+ *       on the handle used to obtain it.
  **/
-const char* const* ddwaf_required_addresses(const ddwaf_handle handle, uint32_t *size);
+const char* const* ddwaf_known_addresses(const ddwaf_handle handle, uint32_t *size);
 
 /**
  * ddwaf_context_init
