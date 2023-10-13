@@ -45,7 +45,7 @@ jobs:
         working-directory: Debug
 
       - name: Build
-        run: VERBOSE=1 make -j $(nproc) testPowerWAF waf_validator
+        run: VERBOSE=1 make -j $(nproc) waf_test waf_validator
         working-directory: Debug
 
       - name: Test
@@ -86,7 +86,7 @@ jobs:
         working-directory: Debug
 
       - name: Build
-        run: VERBOSE=1 make -j $(nproc) testPowerWAF waf_validator
+        run: VERBOSE=1 make -j $(nproc) waf_test waf_validator
         working-directory: Debug
 
       - name: Test
@@ -128,7 +128,7 @@ jobs:
         working-directory: Debug
 
       - name: Build
-        run: VERBOSE=1 make -j $(nproc) testPowerWAF waf_validator
+        run: VERBOSE=1 make -j $(nproc) waf_test waf_validator
         working-directory: Debug
 
       - name: Test

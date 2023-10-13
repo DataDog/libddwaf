@@ -10,16 +10,16 @@ FROM toolchain AS package_build
 ADD . /build/src/libddwaf
 ADD docker/libddwaf/aarch64/Toolchain.cmake /build/
 RUN make -C /build libddwaf && \
-	make -C /build/build/libddwaf testPowerWAF && \
+	make -C /build/build/libddwaf waf_test && \
 	mkdir -p /opt && \
 	cp /build/build/libddwaf/*.tar.gz /opt && \
-	cp /build/build/libddwaf/tests/testPowerWAF /build && \
+	cp /build/build/libddwaf/tests/waf_test /build && \
 	rm -rf /build/build
 RUN tar -C /muslsysroot/lib -czf /opt/libc++-static-${TARGET_ARCH}-linux.tar.gz libc++.a libc++experimental.a libc++abi.a libunwind.a
 
 # PowerWAF tetsts
 RUN apt-get update && apt-get install -y qemu-user-static
-RUN cd /build/src/libddwaf/tests && qemu-aarch64-static /build/testPowerWAF
+RUN cd /build/src/libddwaf/tests && qemu-aarch64-static /build/waf_test
 
 # Smoke tests building
 RUN tar -xvzf /opt/libddwaf-*.tar.gz -C /muslsysroot --strip-components=1

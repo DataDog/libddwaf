@@ -47,9 +47,9 @@ And a more involved example, with specific targets, building, then running the t
 cmake -E make_directory build packages
 cd build
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=.. -DCPACK_PACKAGE_DIRECTORY=../packages ..
-cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static  --target testPowerWAF -j
+cmake --build . --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static  --target waf_test -j
 cd ../tests
-../build/tests/testPowerWAF
+../build/tests/waf_test
 ```
 
 ## Usage
