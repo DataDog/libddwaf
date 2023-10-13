@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "exception.hpp"
 #include "exclusion/object_filter.hpp"
 #include "test_utils.hpp"
 
@@ -870,4 +871,30 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
         ASSERT_EQ(objects_filtered.size(), 1);
     }
 }
+
+TEST(TestObjectFilter, Timeout)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    ddwaf_object root;
+    ddwaf_object child;
+    ddwaf_object tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+
+    store.insert(root);
+
+    object_filter filter;
+    filter.insert(query, "query", {});
+
+    ddwaf::timer deadline{0s};
+    object_filter::cache_type cache;
+    EXPECT_THROW(filter.match(store, cache, deadline), ddwaf::timeout_exception);
+}
+
 } // namespace
