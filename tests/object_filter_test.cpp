@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "exception.hpp"
 #include "exclusion/object_filter.hpp"
 #include "test_utils.hpp"
 
@@ -38,6 +39,83 @@ TEST(TestObjectFilter, RootTarget)
     EXPECT_NE(objects_filtered.find(&root.array[0]), objects_filtered.end());
 }
 
+TEST(TestObjectFilter, DuplicateTarget)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    object_filter filter;
+    filter.insert(query, "query", {});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    {
+        ddwaf_object root, child, tmp;
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_NE(objects_filtered.find(&root.array[0]), objects_filtered.end());
+    }
+
+    {
+        ddwaf_object root, child, tmp;
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_NE(objects_filtered.find(&root.array[0]), objects_filtered.end());
+    }
+}
+
+TEST(TestObjectFilter, DuplicateCachedTarget)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    object_filter filter;
+    filter.insert(query, "query", {});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    ddwaf_object root;
+    ddwaf_object child;
+    ddwaf_object tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+    store.insert(root);
+
+    {
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_NE(objects_filtered.find(&root.array[0]), objects_filtered.end());
+    }
+
+    {
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 0);
+    }
+}
+
 TEST(TestObjectFilter, SingleTarget)
 {
     auto query = get_target_index("query");
@@ -62,6 +140,49 @@ TEST(TestObjectFilter, SingleTarget)
 
     ASSERT_EQ(objects_filtered.size(), 1);
     EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+}
+
+TEST(TestObjectFilter, DuplicateSingleTarget)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    object_filter filter;
+    filter.insert(query, "query", {"params"});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    {
+        ddwaf_object root, child, tmp;
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+    }
+
+    {
+        ddwaf_object root, child, tmp;
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+    }
 }
 
 TEST(TestObjectFilter, MultipleTargets)
@@ -105,6 +226,81 @@ TEST(TestObjectFilter, MultipleTargets)
     ASSERT_EQ(objects_filtered.size(), 2);
     EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
     EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
+}
+
+TEST(TestObjectFilter, DuplicateMultipleTargets)
+{
+    auto query = get_target_index("query");
+    auto path_params = get_target_index("path_params");
+
+    object_store store;
+
+    ddwaf_object root, child, sibling, object, tmp;
+
+    object_filter filter;
+    filter.insert(query, "query", {"uri"});
+    filter.insert(path_params, "path_params", {"token", "value"});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    {
+        // Query
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+
+        // Path Params
+        ddwaf_object_map(&object);
+        ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
+        ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
+
+        ddwaf_object_map(&sibling);
+        ddwaf_object_map_add(&sibling, "token", &object);
+        ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+        ddwaf_object_map_add(&root, "path_params", &sibling);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 2);
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
+    }
+
+    {
+        // Query
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+
+        // Path Params
+        ddwaf_object_map(&object);
+        ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
+        ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
+
+        ddwaf_object_map(&sibling);
+        ddwaf_object_map_add(&sibling, "token", &object);
+        ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+        ddwaf_object_map_add(&root, "path_params", &sibling);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 2);
+        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+        EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
+    }
 }
 
 TEST(TestObjectFilter, MissingTarget)
@@ -675,4 +871,30 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
         ASSERT_EQ(objects_filtered.size(), 1);
     }
 }
+
+TEST(TestObjectFilter, Timeout)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    ddwaf_object root;
+    ddwaf_object child;
+    ddwaf_object tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+
+    store.insert(root);
+
+    object_filter filter;
+    filter.insert(query, "query", {});
+
+    ddwaf::timer deadline{0s};
+    object_filter::cache_type cache;
+    EXPECT_THROW(filter.match(store, cache, deadline), ddwaf::timeout_exception);
+}
+
 } // namespace
