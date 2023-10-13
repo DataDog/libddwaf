@@ -142,7 +142,7 @@ expression::eval_result expression::evaluator::eval_condition(
             continue;
         }
 
-        bool ephemeral = (attr == object_store::attribute::ephemeral);
+        const bool ephemeral = (attr == object_store::attribute::ephemeral);
         if (!ephemeral) {
             cache.targets[i] = object;
         }

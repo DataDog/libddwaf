@@ -78,7 +78,7 @@ parameter::operator parameter::vector() const
     if (array == nullptr || nbEntries == 0) {
         return {};
     }
-    return std::vector<parameter>(array, array + nbEntries);
+    return {array, array + nbEntries};
 }
 
 parameter::operator parameter::string_set() const
@@ -204,7 +204,7 @@ parameter::operator bool() const
     }
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        std::string_view str_bool{stringValue, static_cast<size_t>(nbEntries)};
+        const std::string_view str_bool{stringValue, static_cast<size_t>(nbEntries)};
         if (str_bool.size() == (sizeof("true") - 1) && (str_bool[0] == 'T' || str_bool[0] == 't') &&
             (str_bool[1] == 'R' || str_bool[1] == 'r') &&
             (str_bool[2] == 'U' || str_bool[2] == 'u') &&

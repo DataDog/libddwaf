@@ -34,7 +34,7 @@ class path_trie {
         trie_node &operator=(const trie_node &) = delete;
         trie_node &operator=(trie_node &&) = default;
 
-        [[nodiscard]] trie_node const *get_child(std::string_view key) const
+        [[nodiscard]] const trie_node *get_child(std::string_view key) const
         {
             auto it = children_.find(key);
             if (it == children_.end()) {
@@ -84,7 +84,7 @@ public:
     public:
         enum class state { not_found, found, intermediate_node };
 
-        explicit traverser(trie_node const *root)
+        explicit traverser(const trie_node *root)
         {
             if (root != nullptr) {
                 cur_nodes_.emplace_back(root);

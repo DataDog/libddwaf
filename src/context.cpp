@@ -73,8 +73,8 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         eval_preprocessors(derived, deadline);
 
         // If no rule targets are available, there is no point in evaluating them
-        bool eval_rules = should_eval_rules();
-        bool eval_filters = eval_rules || should_eval_filters();
+        const bool eval_rules = should_eval_rules();
+        const bool eval_filters = eval_rules || should_eval_filters();
 
         if (eval_filters) {
             // Filters need to be evaluated even if rules don't, otherwise it'll
