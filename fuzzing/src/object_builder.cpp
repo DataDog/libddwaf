@@ -42,6 +42,13 @@ void popBytes(Data *data, void *dest, uint8_t n)
     data->position += n;
 }
 
+bool popBoolean(Data *data)
+{
+    uint8_t result = 0;
+    popBytes(data, &result, 1);
+    return (result % 2) == 0;
+}
+
 void pop_string(Data *data, ddwaf_object *object)
 {
     if (data->position >= data->size) {
@@ -65,18 +72,11 @@ void pop_string(Data *data, ddwaf_object *object)
     }
 
     // sometimes, send NULL
-    if (size == 3 && result[0] == 6 && result[1] == 6 && result[2] == 6) {
-        ddwaf_object_stringl(object, nullptr, size);
+    if (popBoolean(data)) {
+        *object = {nullptr, 0, {nullptr}, size, DDWAF_OBJ_STRING};
     }
 
     ddwaf_object_stringl(object, result, size);
-}
-
-bool popBoolean(Data *data)
-{
-    uint8_t result = 0;
-    popBytes(data, &result, 1);
-    return result > 0;
 }
 
 uint64_t popUnsignedInteger(Data *data)
@@ -137,12 +137,28 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
     }
 
     for (uint8_t i = 0; i < size && data->position < data->size; i++) {
-        pop_string(data, &key);
+        auto null_key = popBoolean(data);
+
         item = create_object(data, deep - 1);
-        if (!ddwaf_object_map_addl(object, key.stringValue, key.nbEntries, &item)) {
-            ddwaf_object_free(&item);
-        };
-        ddwaf_object_free(&key);
+
+        if (!null_key) {
+            pop_string(data, &key);
+
+            if (!ddwaf_object_map_addl(object, key.stringValue, key.nbEntries, &item)) {
+                ddwaf_object_free(&item);
+            }
+
+            ddwaf_object_free(&key);
+        } else {
+            if (!ddwaf_object_map_addl(object, "", 0, &item)) {
+                ddwaf_object_free(&item);
+            } else {
+                auto index = static_cast<std::size_t>(object->nbEntries - 1);
+                free((void *)object->array[index].parameterName);
+                object->array[index].parameterName = nullptr;
+                object->array[index].parameterNameLength = popInteger(data);
+            }
+        }
     }
 }
 
