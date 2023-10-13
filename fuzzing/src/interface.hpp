@@ -9,4 +9,4 @@
 #include <ddwaf.h>
 
 ddwaf_handle init_waf();
-void run_waf(ddwaf_handle handle, ddwaf_object args, size_t timeLeftInUs);
+void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t timeLeftInUs);

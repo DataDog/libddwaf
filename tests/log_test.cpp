@@ -9,30 +9,7 @@
 
 namespace {
 
-TEST(TestPowerWAF, TestEmptyParameters)
-{
-    auto rule = read_file("powerwaf.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ddwaf_object_free(&rule);
-    ASSERT_NE(handle, nullptr);
-
-    ddwaf_context context = ddwaf_context_init(handle);
-
-    // Setup the parameter structure
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object_map_add(&parameter, "value", ddwaf_object_array(&tmp));
-
-    // Detect match in a substructure's key
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, LONG_TIME), DDWAF_OK);
-
-    ddwaf_context_destroy(context);
-    ddwaf_destroy(handle);
-}
-
-TEST(TestPowerWAF, TestLogging)
+TEST(TestLogging, Basic)
 {
     static DDWAF_LOG_LEVEL lastLevel;
     static std::string lastFile;
@@ -57,9 +34,9 @@ TEST(TestPowerWAF, TestLogging)
     // But tests are in tests/, a sibling of src. Because tests is two chars
     /*longer than src, we get the "s/" in the beginning */
 #ifdef _WIN32
-    EXPECT_EQ(lastFile, "TestPowerWAF.cpp");
+    EXPECT_EQ(lastFile, "log_test.cpp");
 #else
-    EXPECT_EQ(lastFile, "TestPowerWAF.cpp");
+    EXPECT_EQ(lastFile, "log_test.cpp");
 #endif
     EXPECT_TRUE(lastFunction.find("TestBody") != std::string::npos);
     EXPECT_EQ(lastMessage, "test message");
@@ -159,29 +136,6 @@ TEST(TestPowerWAF, TestLogging)
     EXPECT_EQ(lastMessage, "String thisisastring");
     DDWAF_INFO("Combination %d %u %s %s %u %s", -1, 2, "abc", "def", 22, "ghi");
     EXPECT_EQ(lastMessage, "Combination -1 2 abc def 22 ghi");
-}
-
-TEST(TestPowerWAF, TestConfig)
-{
-    auto rule = read_file("powerwaf.yaml");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ddwaf_object_free(&rule);
-    ASSERT_NE(handle, nullptr);
-
-    ddwaf_context context = ddwaf_context_init(handle);
-
-    // Setup the parameter structure
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
-
-    // Detect match in a substructure's key
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
-
-    ddwaf_context_destroy(context);
-    ddwaf_destroy(handle);
 }
 
 } // namespace

@@ -1,0 +1,18 @@
+version: "2.1"
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg1
+          regex: ^string.*
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: arg2
+          regex: .*

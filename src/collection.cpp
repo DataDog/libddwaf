@@ -75,15 +75,23 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
 }
 
 template <typename Derived>
-void base_collection<Derived>::match(memory::vector<event> &events, const object_store &store,
+void base_collection<Derived>::match(std::vector<event> &events, const object_store &store,
     collection_cache &cache,
     const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
-    const memory::unordered_map<rule *, object_set> &objects_to_exclude,
+    const memory::unordered_map<rule *, collection::object_set> &objects_to_exclude,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     if (cache.result >= Derived::type()) {
-        return;
+        // If the result was cached but ephemeral, clear it. Note that this is
+        // just a workaround taking advantage of the order of evaluation of
+        // collections. Collections might be removed in the future altogether.
+        if (cache.result == Derived::type() && cache.ephemeral) {
+            cache.result = collection_type::none;
+            cache.ephemeral = false;
+        } else {
+            return;
+        }
     }
 
     for (auto *rule : rules_) {
@@ -91,6 +99,8 @@ void base_collection<Derived>::match(memory::vector<event> &events, const object
             dynamic_matchers, deadline);
         if (event.has_value()) {
             cache.result = Derived::type();
+            cache.ephemeral = event->ephemeral;
+
             events.emplace_back(std::move(*event));
             DDWAF_DEBUG("Found event on rule %s", rule->get_id().c_str());
             break;

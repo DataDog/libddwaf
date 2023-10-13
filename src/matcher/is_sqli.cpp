@@ -11,7 +11,7 @@
 
 namespace ddwaf::matcher {
 
-std::pair<bool, memory::string> is_sqli::match_impl(std::string_view pattern)
+std::pair<bool, std::string> is_sqli::match_impl(std::string_view pattern)
 {
     if (pattern.empty() || pattern.data() == nullptr) {
         return {false, {}};

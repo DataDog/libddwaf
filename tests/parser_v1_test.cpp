@@ -29,7 +29,7 @@ void run_test(ddwaf_handle handle)
     ddwaf_result ret;
 
     // Run with just arg1
-    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",

@@ -92,7 +92,7 @@ ddwaf_handle init_waf()
     return handle;
 }
 
-void run_waf(ddwaf_handle handle, ddwaf_object args, size_t timeLeftInUs)
+void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t timeLeftInUs)
 {
     ddwaf_context context = ddwaf_context_init(handle);
     if (context == nullptr) {
@@ -100,7 +100,12 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, size_t timeLeftInUs)
     }
 
     ddwaf_result res;
-    auto code = ddwaf_run(context, &args, &res, timeLeftInUs);
+    auto code = DDWAF_OK;
+    if (ephemeral) {
+        ddwaf_run(context, nullptr, &args, &res, timeLeftInUs);
+    } else {
+        ddwaf_run(context, &args, nullptr, &res, timeLeftInUs);
+    }
 
     // TODO split input in several ddwaf_object, and call ddwaf_run on the same context
 

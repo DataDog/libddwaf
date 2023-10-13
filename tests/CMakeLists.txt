@@ -39,7 +39,7 @@ add_custom_target(test
 add_dependencies(test testPowerWAF)
 
 add_custom_target(test_valgrind
-    COMMAND valgrind --leak-check=full --show-reachable=yes --suppressions=re2.supp  ${CMAKE_BINARY_DIR}/tests/testPowerWAF
+    COMMAND valgrind --leak-check=full --show-reachable=yes --suppressions=re2.supp  ${CMAKE_BINARY_DIR}/tests/testPowerWAF --gtest_filter=-TestTimer.*
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
 add_dependencies(test_valgrind testPowerWAF)
 

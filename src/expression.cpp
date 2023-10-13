@@ -18,26 +18,26 @@ namespace ddwaf {
 namespace {
 
 // TODO store as std::variant<memory::string, bool, int64_t, uint64_t>?
-memory::string object_to_string(const ddwaf_object &object)
+std::string object_to_string(const ddwaf_object &object)
 {
     if (object.type == DDWAF_OBJ_STRING) {
-        return memory::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
+        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
     }
 
     if (object.type == DDWAF_OBJ_BOOL) {
-        return to_string<memory::string>(object.boolean);
+        return to_string<std::string>(object.boolean);
     }
 
     if (object.type == DDWAF_OBJ_SIGNED) {
-        return to_string<memory::string>(object.intValue);
+        return to_string<std::string>(object.intValue);
     }
 
     if (object.type == DDWAF_OBJ_UNSIGNED) {
-        return to_string<memory::string>(object.uintValue);
+        return to_string<std::string>(object.uintValue);
     }
 
     if (object.type == DDWAF_OBJ_FLOAT) {
-        return to_string<memory::string>(object.f64);
+        return to_string<std::string>(object.f64);
     }
 
     return {};
@@ -118,28 +118,33 @@ const matcher::base *expression::evaluator::get_matcher(const condition &cond) c
     return it->second.get();
 }
 
-// NOLINTNEXTLINE(misc-no-recursion)
-std::optional<event::match> expression::evaluator::eval_condition(
-    const condition &cond, bool run_on_new)
+expression::eval_result expression::evaluator::eval_condition(
+    const condition &cond, condition::cache_type &cache)
 {
     const auto *matcher = get_matcher(cond);
     if (matcher == nullptr) {
         DDWAF_DEBUG("Condition doesn't have a valid matcher");
-        return std::nullopt;
+        return {false, false};
     }
 
-    for (const auto &target : cond.targets) {
+    if (cache.targets.size() != cond.targets.size()) {
+        cache.targets.assign(cond.targets.size(), nullptr);
+    }
+
+    for (unsigned i = 0; i < cond.targets.size(); ++i) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (run_on_new && !store.is_new_target(target.root)) {
+        const auto &target = cond.targets[i];
+        auto [object, attr] = store.get_target(target.root);
+        if (object == nullptr || object == cache.targets[i]) {
             continue;
         }
 
-        auto *object = store.get_target(target.root);
-        if (object == nullptr) {
-            continue;
+        bool ephemeral = (attr == object_store::attribute::ephemeral);
+        if (!ephemeral) {
+            cache.targets[i] = object;
         }
 
         std::optional<event::match> optional_match;
@@ -154,65 +159,57 @@ std::optional<event::match> expression::evaluator::eval_condition(
 
         if (optional_match.has_value()) {
             optional_match->address = target.name;
+            optional_match->ephemeral = ephemeral;
             DDWAF_TRACE("Target %s matched parameter value %s", target.name.c_str(),
                 optional_match->resolved.c_str());
 
-            return optional_match;
+            cache.match = std::move(optional_match);
+            return {true, ephemeral};
         }
     }
 
-    return std::nullopt;
+    return {false, false};
 }
 
-bool expression::evaluator::eval()
+expression::eval_result expression::evaluator::eval()
 {
-    // On the first run, go through the conditions. Stop either at the first
-    // condition that didn't match and return no event or go through all
-    // and return an event.
-    // On subsequent runs, we can start at the first condition that did not
-    // match, because if the conditions matched with the data of the first
-    // run, then they having new data will make them match again. The condition
-    // that failed (and stopped the processing), we can run it again, but only
-    // on the new data. The subsequent conditions, we need to run with all data.
-    std::vector<std::unique_ptr<condition>>::const_iterator cond_iter;
-    bool run_on_new;
-    if (cache.last_cond.has_value()) {
-        cond_iter = *cache.last_cond;
-        run_on_new = true;
-    } else {
-        cond_iter = conditions.cbegin();
-        run_on_new = false;
-    }
+    bool ephemeral_match = false;
+    for (unsigned i = 0; i < conditions.size(); ++i) {
+        const auto &cond = conditions[i];
+        auto &cond_cache = cache.conditions[i];
 
-    while (cond_iter != conditions.cend()) {
-        auto &&cond = *cond_iter;
-        auto optional_match = eval_condition(*cond, run_on_new);
-        if (!optional_match.has_value()) {
-            cache.last_cond = cond_iter;
-            return false;
+        if (cond_cache.match.has_value() && !cond_cache.match->ephemeral) {
+            continue;
         }
 
-        cache.matches.emplace_back(std::move(*optional_match));
-
-        run_on_new = false;
-        cond_iter++;
+        auto [res, ephemeral] = eval_condition(cond, cond_cache);
+        if (!res) {
+            return {false, false};
+        }
+        ephemeral_match = ephemeral_match || ephemeral;
     }
-
-    return true;
+    return {true, ephemeral_match};
 }
 
-bool expression::eval(cache_type &cache, const object_store &store,
+expression::eval_result expression::eval(cache_type &cache, const object_store &store,
     const std::unordered_set<const ddwaf_object *> &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     if (cache.result || conditions_.empty()) {
-        return true;
+        return {true, false};
+    }
+
+    if (cache.conditions.size() < conditions_.size()) {
+        cache.conditions.assign(conditions_.size(), condition::cache_type{});
     }
 
     evaluator runner{
         deadline, limits_, conditions_, store, objects_excluded, dynamic_matchers, cache};
-    return (cache.result = runner.eval());
+
+    auto res = runner.eval();
+    cache.result = res.outcome && !res.ephemeral;
+    return res;
 }
 
 void expression_builder::add_target(std::string name, std::vector<std::string> key_path,
@@ -226,7 +223,7 @@ void expression_builder::add_target(std::string name, std::vector<std::string> k
     target.source = source;
 
     auto &cond = conditions_.back();
-    cond->targets.emplace_back(std::move(target));
+    cond.targets.emplace_back(std::move(target));
 }
 
 } // namespace ddwaf

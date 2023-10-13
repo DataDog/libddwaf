@@ -100,13 +100,12 @@ memory::unordered_set<const ddwaf_object *> object_filter::match(
             throw ddwaf::timeout_exception();
         }
 
-        auto *object = store.get_target(target);
+        auto [object, attr] = store.get_target(target);
         if (object == nullptr || cache.contains(object)) {
             continue;
         }
-        iterate_object(filter.get_traverser(), object, objects_to_exclude, limits_);
-
         cache.emplace(object);
+        iterate_object(filter.get_traverser(), object, objects_to_exclude, limits_);
     }
 
     return objects_to_exclude;

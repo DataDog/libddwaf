@@ -50,7 +50,7 @@ TEST(TestIsSQLi, TestInvalidInput)
 
 TEST(TestIsSQLi, TestRuleset)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_sqli, parameters: {inputs: [{address: arg1}]}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -69,7 +69,7 @@ TEST(TestIsSQLi, TestRuleset)
 
     ddwaf_result ret;
 
-    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret,

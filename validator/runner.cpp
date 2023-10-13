@@ -70,7 +70,7 @@ bool test_runner::run_test(const YAML::Node &runs)
             }
 
             auto object = run["input"].as<ddwaf_object>();
-            auto retval = ddwaf_run(ctx.get(), &object, res.get(), timeout);
+            auto retval = ddwaf_run(ctx.get(), &object, nullptr, res.get(), timeout);
 
             expect(retval, code);
             if (code == DDWAF_MATCH) {

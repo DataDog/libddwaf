@@ -11,20 +11,13 @@
 
 namespace ddwaf {
 
-object_store::~object_store()
+bool object_store::insert(ddwaf_object &input, attribute attr, ddwaf_object_free_fn free_fn)
 {
-    for (auto [obj, free_fn] : input_objects_) {
-        if (free_fn != nullptr) {
-            free_fn(&obj);
-        }
+    if (attr == attribute::ephemeral) {
+        ephemeral_objects_.emplace_back(input, free_fn);
+    } else {
+        input_objects_.emplace_back(input, free_fn);
     }
-}
-
-bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn)
-{
-    input_objects_.emplace_back(input, free_fn);
-
-    latest_batch_.clear();
 
     if (input.type != DDWAF_OBJ_MAP) {
         return false;
@@ -45,7 +38,11 @@ bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn)
 
     objects_.reserve(objects_.size() + entries);
 
-    latest_batch_.reserve(entries);
+    latest_batch_.reserve(latest_batch_.size() + entries);
+
+    if (attr == attribute::ephemeral) {
+        ephemeral_targets_.reserve(entries);
+    }
 
     for (std::size_t i = 0; i < entries; ++i) {
         auto length = static_cast<std::size_t>(array[i].parameterNameLength);
@@ -55,28 +52,84 @@ bool object_store::insert(ddwaf_object &input, ddwaf_object_free_fn free_fn)
 
         const std::string key(array[i].parameterName, length);
         auto target = get_target_index(key);
-        objects_[target] = &array[i];
-        latest_batch_.emplace(target);
+
+        insert_target_helper(target, key, &array[i], attr);
     }
 
     return true;
 }
 
-bool object_store::insert(target_index target, ddwaf_object &input, ddwaf_object_free_fn free_fn)
+bool object_store::insert(target_index target, std::string_view key, ddwaf_object &input,
+    attribute attr, ddwaf_object_free_fn free_fn)
 {
-    input_objects_.emplace_back(input, free_fn);
+    ddwaf_object *object = nullptr;
+    if (attr == attribute::ephemeral) {
+        ephemeral_objects_.emplace_back(input, free_fn);
+        object = &ephemeral_objects_.back().first;
+    } else {
+        input_objects_.emplace_back(input, free_fn);
+        object = &input_objects_.back().first;
+    }
 
-    auto *object = &input_objects_.back().first;
-    objects_[target] = object;
+    return insert_target_helper(target, key, object, attr);
+}
+
+bool object_store::insert_target_helper(
+    target_index target, std::string_view key, ddwaf_object *object, attribute attr)
+{
+    if (objects_.contains(target)) {
+        if (attr == attribute::ephemeral && !ephemeral_targets_.contains(target)) {
+            DDWAF_WARN("Failed to replace non-ephemeral target '%.*s' with an ephemeral one",
+                static_cast<int>(key.size()), key.data());
+            return false;
+        }
+
+        if (attr == attribute::none && ephemeral_targets_.contains(target)) {
+            DDWAF_WARN("Failed to replace ephemeral target '%.*s' with a non-ephemeral one",
+                static_cast<int>(key.size()), key.data());
+            return false;
+        }
+
+        DDWAF_DEBUG("Replacing %s target '%.*s' in object store",
+            attr == attribute::ephemeral ? "ephemeral" : "persistent", static_cast<int>(key.size()),
+            key.data());
+    } else {
+        DDWAF_DEBUG("Inserting %s target '%.*s' into object store",
+            attr == attribute::ephemeral ? "ephemeral" : "persistent", static_cast<int>(key.size()),
+            key.data());
+    }
+
+    if (attr == attribute::ephemeral) {
+        ephemeral_targets_.emplace(target);
+    }
+
+    objects_[target] = {object, attr};
     latest_batch_.emplace(target);
 
     return true;
 }
 
-ddwaf_object *object_store::get_target(target_index target) const
+void object_store::clear_last_batch()
 {
-    auto it = objects_.find(target);
-    return it != objects_.end() ? it->second : nullptr;
+    // Clear latest batch
+    latest_batch_.clear();
+
+    // Clear any ephemeral targets
+    for (auto target : ephemeral_targets_) {
+        auto it = objects_.find(target);
+        if (it != objects_.end()) {
+            objects_.erase(it);
+        }
+    }
+    ephemeral_targets_.clear();
+
+    // Free ephemeral objects and targets
+    for (auto &[obj, free_fn] : ephemeral_objects_) {
+        if (free_fn != nullptr) {
+            free_fn(&obj);
+        }
+    }
+    ephemeral_objects_.clear();
 }
 
 } // namespace ddwaf

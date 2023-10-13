@@ -38,7 +38,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_NE(opt_spec->objects.find(&root.array[0]), opt_spec->objects.end());
+    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
 }
 
 TEST(TestInputFilter, ObjectExclusionNoConditions)
@@ -70,7 +70,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_NE(opt_spec->objects.find(&child.array[0]), opt_spec->objects.end());
+    EXPECT_TRUE(opt_spec->objects.contains(&child.array[0]));
 }
 
 TEST(TestInputFilter, InputExclusionWithCondition)
@@ -100,7 +100,7 @@ TEST(TestInputFilter, InputExclusionWithCondition)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_NE(opt_spec->objects.find(&root.array[0]), opt_spec->objects.end());
+    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
 }
 
 TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
@@ -130,7 +130,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_NE(opt_spec->objects.find(&root.array[0]), opt_spec->objects.end());
+    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
 }
 
 TEST(TestInputFilter, InputExclusionFailedCondition)
@@ -193,7 +193,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_NE(opt_spec->objects.find(&child.array[0]), opt_spec->objects.end());
+    EXPECT_TRUE(opt_spec->objects.contains(&child.array[0]));
 }
 
 TEST(TestInputFilter, ObjectExclusionFailedCondition)
@@ -276,7 +276,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_NE(opt_spec->objects.find(&root.array[0]), opt_spec->objects.end());
+        EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
     }
 }
 
@@ -369,7 +369,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
         store.insert(root);
 
-        auto client_ip_ptr = store.get_target(get_target_index("http.client_ip"));
+        auto *client_ip_ptr = store.get_target(get_target_index("http.client_ip")).first;
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -377,7 +377,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_NE(opt_spec->objects.find(client_ip_ptr), opt_spec->objects.end());
+        EXPECT_TRUE(opt_spec->objects.contains(client_ip_ptr));
     }
 }
 
@@ -404,6 +404,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     input_filter::cache_type cache;
 
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);
@@ -417,10 +419,12 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_NE(opt_spec->objects.find(&root.array[0]), opt_spec->objects.end());
+        EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
     }
 
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);
@@ -629,6 +633,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     input_filter::cache_type cache;
 
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root;
         ddwaf_object object;
         ddwaf_object tmp;
@@ -650,6 +656,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     }
 
     {
+        auto scope = store.get_eval_scope();
+
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);

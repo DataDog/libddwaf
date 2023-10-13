@@ -13,7 +13,7 @@ constexpr std::string_view base_dir = "integration/context/";
 
 TEST(TestContextIntegration, Basic)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = read_file("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -33,7 +33,7 @@ TEST(TestContextIntegration, Basic)
     ddwaf_object_map_add(&parameter, "value2", &subMap); // ddwaf_object_string(&,"rule3"));
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",
@@ -58,7 +58,7 @@ TEST(TestContextIntegration, Basic)
 
 TEST(TestContextIntegration, KeyPaths)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = read_file("processor5.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -76,7 +76,7 @@ TEST(TestContextIntegration, KeyPaths)
     ddwaf_object_map_add(&root, "param", &param);
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",
@@ -96,7 +96,7 @@ TEST(TestContextIntegration, KeyPaths)
     ddwaf_object_map_add(&param, "z", ddwaf_object_string(&tmp, "Sqreen"));
     ddwaf_object_map_add(&root, "param", &param);
 
-    EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "2",
@@ -120,7 +120,7 @@ TEST(TestContextIntegration, KeyPaths)
     ddwaf_object_map_add(&param, "y", ddwaf_object_string(&tmp, "Sqreen"));
     ddwaf_object_map_add(&root, "param", &param);
 
-    EXPECT_EQ(ddwaf_run(context, &root, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",
@@ -140,7 +140,7 @@ TEST(TestContextIntegration, KeyPaths)
 
 TEST(TestContextIntegration, MissingParameter)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = read_file("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -159,7 +159,7 @@ TEST(TestContextIntegration, MissingParameter)
     ddwaf_object_map_add(&param, "param", ddwaf_object_signed(&tmp, 42));
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_OK);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
@@ -172,7 +172,7 @@ TEST(TestContextIntegration, MissingParameter)
 
 TEST(TestContextIntegration, InvalidUTF8Input)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -197,7 +197,7 @@ TEST(TestContextIntegration, InvalidUTF8Input)
     ddwaf_object_map_addl(&param, ba2.c_str(), ba2.length(), ddwaf_object_map(&tmp));
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
 
@@ -213,7 +213,7 @@ TEST(TestContextIntegration, InvalidUTF8Input)
 TEST(TestContextIntegration, SingleCollectionMatch)
 {
     // NOTE: this test only works due to the order of the rules in the ruleset
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = read_file("processor3.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -230,7 +230,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
 
-        EXPECT_EQ(ddwaf_run(context, &param1, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -248,7 +248,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
 
-        EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
         EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
@@ -262,7 +262,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 
 TEST(TestContextIntegration, MultiCollectionMatches)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = read_file("processor4.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -279,7 +279,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param, "param1", ddwaf_object_string(&tmp, "Sqreen"));
 
-        EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -297,7 +297,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "Pony"));
 
-        EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
         EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
@@ -310,7 +310,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object tmp;
         ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
 
-        EXPECT_EQ(ddwaf_run(context, &param, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
@@ -344,10 +344,466 @@ TEST(TestContextIntegration, Timeout)
     ddwaf_object tmp;
     ddwaf_object_map_add(&param, "pm_param", ddwaf_object_string(&tmp, "aaaabbbbbaaa"));
 
-    EXPECT_EQ(ddwaf_run(context, &param, &ret, SHORT_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, SHORT_TIME), DDWAF_OK);
     EXPECT_TRUE(ret.timeout);
 
     ddwaf_result_free(&ret);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextIntegration, ParameterOverride)
+{
+    auto rule = read_file("processor6.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object param1 = DDWAF_OBJECT_MAP;
+    ddwaf_object param2 = DDWAF_OBJECT_MAP;
+    ddwaf_object tmp;
+
+    ddwaf_object_map_add(&param1, "arg1", ddwaf_object_string(&tmp, "not string 1"));
+    ddwaf_object_map_add(&param1, "arg2", ddwaf_object_string(&tmp, "string 2"));
+    ddwaf_object_map_add(&param2, "arg1", ddwaf_object_string(&tmp, "string 1"));
+
+    // Run with both arg1 and arg2, but arg1 is wrong
+    //	// Run with just arg1
+    ddwaf_result ret;
+    auto code = ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME);
+    EXPECT_EQ(code, DDWAF_OK);
+    EXPECT_FALSE(ret.timeout);
+    ddwaf_result_free(&ret);
+
+    // Override `arg1`
+    code = ddwaf_run(context, &param2, nullptr, &ret, LONG_TIME);
+    EXPECT_EQ(code, DDWAF_MATCH);
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                                           .op_value = "^string.*",
+                                           .address = "arg1",
+                                           .value = "string 1",
+                                           .highlight = "string 1"},
+                               {.op = "match_regex",
+                                   .op_value = ".*",
+                                   .address = "arg2",
+                                   .value = "string 2",
+                                   .highlight = "string 2"}}});
+
+    ddwaf_result_free(&ret);
+
+    // Run again without change
+    code = ddwaf_run(context, ddwaf_object_map(&tmp), nullptr, &ret, LONG_TIME);
+    EXPECT_EQ(code, DDWAF_OK);
+    EXPECT_FALSE(ret.timeout);
+    ddwaf_result_free(&ret);
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextIntegration, DuplicateEphemeralMatch)
+{
+    auto rule = read_file("processor3.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object param1 = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &param1, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "Sqreen",
+                                   .address = "param1",
+                                   .value = "Sqreen",
+                                   .highlight = "Sqreen"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object param1 = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &param1, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "Sqreen",
+                                   .address = "param1",
+                                   .value = "Sqreen",
+                                   .highlight = "Sqreen"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextIntegration, EphemeralAndPersistentMatches)
+{
+    auto rule = read_file("processor6.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object persistent = DDWAF_OBJECT_MAP;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&persistent, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 2"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, &persistent, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                               .op_value = "^string.*",
+                                               .address = "arg1",
+                                               .value = "string 1",
+                                               .highlight = "string 1"},
+                                   {.op = "match_regex",
+                                       .op_value = ".*",
+                                       .address = "arg2",
+                                       .value = "string 2",
+                                       .highlight = "string 2"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                               .op_value = "^string.*",
+                                               .address = "arg1",
+                                               .value = "string 1",
+                                               .highlight = "string 1"},
+                                   {.op = "match_regex",
+                                       .op_value = ".*",
+                                       .address = "arg2",
+                                       .value = "string 8",
+                                       .highlight = "string 8"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 3"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                               .op_value = "^string.*",
+                                               .address = "arg1",
+                                               .value = "string 1",
+                                               .highlight = "string 1"},
+                                   {.op = "match_regex",
+                                       .op_value = ".*",
+                                       .address = "arg2",
+                                       .value = "string 3",
+                                       .highlight = "string 3"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
+{
+    auto rule = read_file("processor7.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "^string.*",
+                                   .address = "arg1",
+                                   .value = "string 1",
+                                   .highlight = "string 1"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "2",
+                               .name = "rule2",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .actions = {"block"},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = ".*",
+                                   .address = "arg2",
+                                   .value = "string 8",
+                                   .highlight = "string 8"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
+{
+    auto rule = read_file("processor7.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "2",
+                               .name = "rule2",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .actions = {"block"},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = ".*",
+                                   .address = "arg2",
+                                   .value = "string 8",
+                                   .highlight = "string 8"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "^string.*",
+                                   .address = "arg1",
+                                   .value = "string 1",
+                                   .highlight = "string 1"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
+{
+    auto rule = read_file("processor7.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "^string.*",
+                                   .address = "arg1",
+                                   .value = "string 1",
+                                   .highlight = "string 1"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object persistent = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&persistent, "arg2", ddwaf_object_string(&tmp, "string 8"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, &persistent, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "2",
+                               .name = "rule2",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .actions = {"block"},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = ".*",
+                                   .address = "arg2",
+                                   .value = "string 8",
+                                   .highlight = "string 8"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
+{
+    auto rule = read_file("processor7.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "2",
+                               .name = "rule2",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .actions = {"block"},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = ".*",
+                                   .address = "arg2",
+                                   .value = "string 8",
+                                   .highlight = "string 8"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object persistent = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&persistent, "arg1", ddwaf_object_string(&tmp, "string 1"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, &persistent, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "^string.*",
+                                   .address = "arg1",
+                                   .value = "string 1",
+                                   .highlight = "string 1"}}});
+
+        ddwaf_result_free(&ret);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
+{
+    auto rule = read_file("processor7.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object persistent = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&persistent, "arg2", ddwaf_object_string(&tmp, "string 8"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, &persistent, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "2",
+                               .name = "rule2",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .actions = {"block"},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = ".*",
+                                   .address = "arg2",
+                                   .value = "string 8",
+                                   .highlight = "string 8"}}});
+        ddwaf_result_free(&ret);
+    }
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_OK);
+        ddwaf_result_free(&ret);
+    }
+
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

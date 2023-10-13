@@ -29,7 +29,7 @@ bool context_destroy_fixture::set_up()
     ctx_ = ddwaf_context_init(handle_);
 
     ddwaf_object &data = objects_[random::get() % objects_.size()];
-    ddwaf_run(ctx_, &data, nullptr, std::numeric_limits<uint32_t>::max());
+    ddwaf_run(ctx_, &data, nullptr, nullptr, std::numeric_limits<uint32_t>::max());
 
     return ctx_ != nullptr;
 }
