@@ -4,14 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <log.hpp>
-
-#include <context.hpp>
-#include <exception.hpp>
-#include <tuple>
 #include <unordered_set>
-#include <utils.hpp>
-#include <waf.hpp>
+
+#include "log.hpp"
+#include "context.hpp"
+#include "exception.hpp"
+#include "utils.hpp"
+#include "waf.hpp"
 
 namespace ddwaf {
 

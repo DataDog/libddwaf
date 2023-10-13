@@ -6,15 +6,13 @@
 
 #pragma once
 
-#include "context_allocator.hpp"
-#include <cstdint>
 #include <functional>
-#include <set>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
-#include <utils.hpp>
 #include <vector>
+
+#include "context_allocator.hpp"
+#include "utils.hpp"
 
 // Eventually object will be a class rather than a namespace
 namespace ddwaf::object {

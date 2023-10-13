@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "log.hpp"
-#include <ruleset_info.hpp>
+#include "ruleset_info.hpp"
 
 namespace ddwaf {
 

@@ -5,8 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <array>
-#include <exception.hpp>
-#include <matcher/regex_match.hpp>
+
+#include "exception.hpp"
+#include "matcher/regex_match.hpp"
 
 namespace ddwaf::matcher {
 

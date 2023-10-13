@@ -4,10 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <ddwaf.h>
-#include <event.hpp>
-#include <rule.hpp>
 #include <unordered_set>
+
+#include "ddwaf.h"
+#include "event.hpp"
+#include "rule.hpp"
 
 namespace ddwaf {
 

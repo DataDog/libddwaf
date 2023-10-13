@@ -4,11 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "transformer/lowercase.hpp"
-
 #if defined(__SSE2__) && defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
 #  include <immintrin.h>
 #endif
+
+#include "transformer/lowercase.hpp"
 
 namespace ddwaf::transformer {
 

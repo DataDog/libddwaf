@@ -8,9 +8,9 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <ddwaf.h>
 #include <string_view>
 
+#include "ddwaf.h"
 #include "transformer/common/cow_string.hpp"
 
 namespace ddwaf {

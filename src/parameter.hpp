@@ -6,13 +6,14 @@
 
 #pragma once
 
-#include <ddwaf.h>
-#include <exception.hpp>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#include "ddwaf.h"
+#include "exception.hpp"
 
 namespace ddwaf {
 

@@ -5,20 +5,19 @@
 // Copyright 2022 Datadog, Inc.
 
 #include <algorithm>
-#include <cstdint>
 #include <cstring>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "transformer/common/utf8.hpp"
-#include "utils.hpp"
 
 extern "C" {
 #include <stdint.h>
 #define UTF8PROC_STATIC
 #include <utf8proc.h>
 }
+
+#include "transformer/common/utf8.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::utf8 {
 

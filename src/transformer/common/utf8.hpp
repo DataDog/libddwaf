@@ -7,7 +7,6 @@
 #pragma once
 
 #include "transformer/common/cow_string.hpp"
-#include <cstdint>
 
 namespace ddwaf::utf8 {
 

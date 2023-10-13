@@ -4,10 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstddef>
-#include <log.hpp>
-#include <obfuscator.hpp>
-#include <utils.hpp>
+#include "log.hpp"
+#include "obfuscator.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 

@@ -8,17 +8,17 @@
 
 #include <memory>
 #include <optional>
-
-#include <context_allocator.hpp>
-#include <ddwaf.h>
-#include <event.hpp>
-#include <exclusion/input_filter.hpp>
-#include <exclusion/rule_filter.hpp>
-#include <obfuscator.hpp>
-#include <rule.hpp>
-#include <ruleset.hpp>
 #include <utility>
-#include <utils.hpp>
+
+#include "context_allocator.hpp"
+#include "ddwaf.h"
+#include "event.hpp"
+#include "exclusion/input_filter.hpp"
+#include "exclusion/rule_filter.hpp"
+#include "obfuscator.hpp"
+#include "rule.hpp"
+#include "ruleset.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 

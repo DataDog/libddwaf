@@ -4,14 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ddwaf.h"
 #include <cinttypes>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <log.hpp>
-#include <utils.hpp>
+
+#include "ddwaf.h"
+#include "log.hpp"
+#include "utils.hpp"
+
 
 extern "C" {
 namespace {

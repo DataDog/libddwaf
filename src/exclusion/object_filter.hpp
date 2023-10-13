@@ -17,10 +17,10 @@
 #include <unordered_set>
 #include <vector>
 
-#include <clock.hpp>
-#include <context_allocator.hpp>
-#include <log.hpp>
-#include <object_store.hpp>
+#include "clock.hpp"
+#include "context_allocator.hpp"
+#include "log.hpp"
+#include "object_store.hpp"
 
 namespace ddwaf::exclusion {
 
