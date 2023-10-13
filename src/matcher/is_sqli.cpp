@@ -6,8 +6,9 @@
 
 #include <array>
 #include <libinjection.h>
-#include <matcher/is_sqli.hpp>
-#include <utils.hpp>
+
+#include "matcher/is_sqli.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::matcher {
 

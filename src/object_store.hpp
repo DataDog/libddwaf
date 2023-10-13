@@ -6,12 +6,14 @@
 
 #pragma once
 
-#include <context_allocator.hpp>
-#include <ddwaf.h>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <utils.hpp>
+#include <vector>
+
+#include "context_allocator.hpp"
+#include "ddwaf.h"
+#include "utils.hpp"
 
 namespace ddwaf {
 

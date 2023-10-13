@@ -6,16 +6,16 @@
 
 #pragma once
 
-#include "exclusion/rule_filter.hpp"
-#include <exception.hpp>
-#include <exclusion/object_filter.hpp>
-#include <expression.hpp>
-#include <parameter.hpp>
-#include <processor.hpp>
-#include <rule.hpp>
-#include <scanner.hpp>
-
 #include <string>
+
+#include "exception.hpp"
+#include "exclusion/object_filter.hpp"
+#include "exclusion/rule_filter.hpp"
+#include "expression.hpp"
+#include "parameter.hpp"
+#include "processor.hpp"
+#include "rule.hpp"
+#include "scanner.hpp"
 
 namespace ddwaf::parser {
 

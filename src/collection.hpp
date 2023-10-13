@@ -6,14 +6,10 @@
 
 #pragma once
 
+#include "context_allocator.hpp"
+#include "event.hpp"
 #include "exclusion/rule_filter.hpp"
-#include <context_allocator.hpp>
-#include <event.hpp>
-#include <rule.hpp>
-
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
+#include "rule.hpp"
 
 namespace ddwaf {
 

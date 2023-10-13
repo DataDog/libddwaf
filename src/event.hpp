@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <context_allocator.hpp>
-#include <ddwaf.h>
-#include <obfuscator.hpp>
-
 #include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_set>
+
+#include "context_allocator.hpp"
+#include "ddwaf.h"
+#include "obfuscator.hpp"
 
 namespace ddwaf {
 

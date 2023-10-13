@@ -4,20 +4,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <context.hpp>
-#include <context_allocator.hpp>
-#include <exception.hpp>
 #include <memory>
 #include <mutex>
-#include <obfuscator.hpp>
-#include <ruleset_info.hpp>
-#include <shared_mutex>
 #include <string>
-#include <unordered_map>
-#include <utils.hpp>
-#include <waf.hpp>
 
-#include <log.hpp>
+#include "context.hpp"
+#include "context_allocator.hpp"
+#include "exception.hpp"
+#include "log.hpp"
+#include "obfuscator.hpp"
+#include "ruleset_info.hpp"
+#include "unordered_map"
+#include "utils.hpp"
+#include "waf.hpp"
 
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_INFO
 namespace {

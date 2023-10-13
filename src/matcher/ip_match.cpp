@@ -5,10 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cstring>
-#include <ip_utils.hpp>
-#include <matcher/ip_match.hpp>
 #include <stdexcept>
 #include <string_view>
+
+#include "matcher/ip_match.hpp"
 
 namespace ddwaf::matcher {
 

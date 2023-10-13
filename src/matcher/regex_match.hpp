@@ -6,10 +6,11 @@
 
 #pragma once
 
-#include <matcher/base.hpp>
 #include <memory>
 #include <re2/re2.h>
-#include <utils.hpp>
+
+#include "matcher/base.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::matcher {
 

@@ -6,9 +6,10 @@
 
 #pragma once
 
-#include <parameter.hpp>
-#include <parser/common.hpp>
 #include <string_view>
+
+#include "parameter.hpp"
+#include "parser/common.hpp"
 
 namespace ddwaf::parser {
 

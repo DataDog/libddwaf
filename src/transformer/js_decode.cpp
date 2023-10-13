@@ -84,7 +84,7 @@ bool js_decode::transform_impl(cow_string &str)
                         // Good, now let's rebuild the codepoint
                         // Implementing the algorithm from
                         // https://en.wikipedia.org/wiki/UTF-16#Examples
-                        uint32_t const codepoint =
+                        const uint32_t codepoint =
                             0x10000U + ((word - 0xd800U) << 10U) + (lowSurrogate - 0xdc00U);
                         write += ddwaf::utf8::codepoint_to_bytes(codepoint, &str[write]);
                         read += 6;

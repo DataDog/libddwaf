@@ -4,10 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <exception.hpp>
-#include <matcher/phrase_match.hpp>
 #include <stdexcept>
 #include <vector>
+
+#include "exception.hpp"
+#include "matcher/phrase_match.hpp"
 
 namespace ddwaf::matcher {
 

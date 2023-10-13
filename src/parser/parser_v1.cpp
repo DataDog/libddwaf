@@ -4,22 +4,23 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <exception.hpp>
-#include <log.hpp>
-#include <matcher/is_sqli.hpp>
-#include <matcher/is_xss.hpp>
-#include <matcher/phrase_match.hpp>
-#include <matcher/regex_match.hpp>
-#include <parameter.hpp>
-#include <parser/common.hpp>
-#include <parser/parser.hpp>
-#include <rule.hpp>
-#include <ruleset.hpp>
-#include <ruleset_info.hpp>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "exception.hpp"
+#include "log.hpp"
+#include "matcher/is_sqli.hpp"
+#include "matcher/is_xss.hpp"
+#include "matcher/phrase_match.hpp"
+#include "matcher/regex_match.hpp"
+#include "parameter.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "rule.hpp"
+#include "ruleset.hpp"
+#include "ruleset_info.hpp"
 
 namespace ddwaf::parser::v1 {
 

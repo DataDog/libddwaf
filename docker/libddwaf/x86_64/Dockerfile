@@ -10,15 +10,15 @@ FROM toolchain AS package_build
 ADD . /build/src/libddwaf
 ADD docker/libddwaf/x86_64/Toolchain.cmake /build/
 RUN make -C /build libddwaf && \
-	make -C /build/build/libddwaf testPowerWAF && \
+	make -C /build/build/libddwaf waf_test && \
 	mkdir -p /opt && \
 	cp /build/build/libddwaf/*.tar.gz /opt && \
-	cp /build/build/libddwaf/tests/testPowerWAF /build && \
+	cp /build/build/libddwaf/tests/waf_test /build && \
 	rm -rf /build/build
 RUN tar -C /muslsysroot/lib -czf /opt/libc++-static-${TARGET_ARCH}-linux.tar.gz libc++.a libc++experimental.a libc++abi.a libunwind.a
 
 # PowerWAF tetsts
-RUN cd /build/src/libddwaf/tests && /build/testPowerWAF
+RUN cd /build/src/libddwaf/tests && /build/waf_test
 
 # Smoke tests building
 RUN tar -xvzf /opt/libddwaf-*.tar.gz -C /muslsysroot --strip-components=1

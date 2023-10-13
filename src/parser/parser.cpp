@@ -5,11 +5,12 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <charconv>
-#include <exception.hpp>
-#include <log.hpp>
-#include <parser/common.hpp>
-#include <parser/parser.hpp>
 #include <string_view>
+
+#include "exception.hpp"
+#include "log.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
 
 namespace ddwaf::parser {
 

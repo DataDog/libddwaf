@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <cinttypes>
-#include <ddwaf.h>
 #include <string>
 #include <type_traits>
+
+#include "ddwaf.h"
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define DDWAF_COMPILE_LOG_TRACE 0

@@ -5,8 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <libinjection.h>
-#include <matcher/is_xss.hpp>
-#include <utils.hpp>
+
+#include "matcher/is_xss.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::matcher {
 

@@ -3,15 +3,16 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "parser/specification.hpp"
+//
 #include <charconv>
-#include <exception.hpp>
-#include <log.hpp>
-#include <parser/common.hpp>
-#include <parser/parser.hpp>
-#include <ruleset_builder.hpp>
 #include <string_view>
+
+#include "exception.hpp"
+#include "log.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "parser/specification.hpp"
+#include "ruleset_builder.hpp"
 
 namespace ddwaf {
 

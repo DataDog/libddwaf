@@ -5,15 +5,16 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <memory>
+
+#include "context.hpp"
 #include "ddwaf.h"
 #include "parser/parser.hpp"
-#include <context.hpp>
-#include <memory>
-#include <ruleset.hpp>
-#include <ruleset_builder.hpp>
-#include <ruleset_info.hpp>
-#include <utils.hpp>
-#include <version.hpp>
+#include "ruleset.hpp"
+#include "ruleset_builder.hpp"
+#include "ruleset_info.hpp"
+#include "utils.hpp"
+#include "version.hpp"
 
 namespace ddwaf {
 

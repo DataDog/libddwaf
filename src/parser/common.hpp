@@ -6,12 +6,12 @@
 
 #pragma once
 
-#include "transformer/base.hpp"
-#include <exception.hpp>
 #include <optional>
-#include <parameter.hpp>
-
 #include <string>
+
+#include "exception.hpp"
+#include "parameter.hpp"
+#include "transformer/base.hpp"
 
 namespace ddwaf::parser {
 

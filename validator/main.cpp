@@ -95,7 +95,7 @@ void extract_all_files(
     auto it = add_dir(dir, files);
     if (it == files.end()) {
         // If there's not ruleset, we just iterate through further directories
-        for (auto const &dir_entry : fs::directory_iterator{dir}) {
+        for (const auto &dir_entry : fs::directory_iterator{dir}) {
             const fs::path &new_dir = dir_entry;
             if (is_directory(new_dir)) {
                 extract_all_files(new_dir, files, level + 1);
@@ -106,7 +106,7 @@ void extract_all_files(
 
     std::vector<fs::path> &tests = it->second;
 
-    for (auto const &dir_entry : fs::directory_iterator{dir}) {
+    for (const auto &dir_entry : fs::directory_iterator{dir}) {
         const fs::path &sample_path = dir_entry;
 
         if (sample_path.filename() == "ruleset.yaml") {

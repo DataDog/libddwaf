@@ -11,9 +11,9 @@
 #include <string_view>
 #include <vector>
 
-#include <ddwaf.h>
-#include <event.hpp>
-#include <utils.hpp>
+#include "ddwaf.h"
+#include "event.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::matcher {
 

@@ -6,17 +6,17 @@
 
 #pragma once
 
-#include "parser/specification.hpp"
 #include <memory>
-#include <parameter.hpp>
-#include <rule.hpp>
-#include <ruleset.hpp>
-#include <ruleset_info.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "indexer.hpp"
+#include "parameter.hpp"
+#include "parser/specification.hpp"
+#include "rule.hpp"
+#include "ruleset.hpp"
+#include "ruleset_info.hpp"
 
 namespace ddwaf {
 

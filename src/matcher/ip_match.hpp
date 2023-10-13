@@ -6,10 +6,11 @@
 
 #pragma once
 
-#include <ip_utils.hpp>
-#include <matcher/base.hpp>
 #include <memory>
 #include <radixlib.h>
+
+#include "ip_utils.hpp"
+#include "matcher/base.hpp"
 
 namespace ddwaf::matcher {
 

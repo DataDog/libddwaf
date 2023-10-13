@@ -5,20 +5,19 @@
 // Copyright 2022 Datadog, Inc.
 
 #include <algorithm>
-#include <cstdint>
 #include <cstring>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "transformer/common/utf8.hpp"
-#include "utils.hpp"
 
 extern "C" {
 #include <stdint.h>
 #define UTF8PROC_STATIC
 #include <utf8proc.h>
 }
+
+#include "transformer/common/utf8.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::utf8 {
 
@@ -77,9 +76,9 @@ uint8_t write_codepoint(uint32_t codepoint, char *utf8Buffer, uint64_t lengthLef
         //  A fully correct implementation would make room for the error bytes if there isn't enough
         //  room but we won't bother with that
         if (lengthLeft > 2) {
-            *((uint8_t *)utf8Buffer++) = 0xEFu;
-            *((uint8_t *)utf8Buffer++) = 0xBFu;
-            *((uint8_t *)utf8Buffer++) = 0xBDu;
+            *((uint8_t *)utf8Buffer++) = 0xEFU;
+            *((uint8_t *)utf8Buffer++) = 0xBFU;
+            *((uint8_t *)utf8Buffer++) = 0xBDU;
             return 3;
         }
 
@@ -107,7 +106,7 @@ int8_t findNextGlyphLength(const char *utf8Buffer, uint64_t lengthLeft)
     //  '11110xxx' followed
     //      by '10xxxxxx' one less times as there are bytes.
 
-    uint8_t firstByte = (uint8_t)utf8Buffer[0];
+    const auto firstByte = (uint8_t)utf8Buffer[0];
     int8_t expectedSequenceLength = -1;
 
     // Looking for 0xxxxxxx
@@ -156,11 +155,12 @@ uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64
         return UTF8_INVALID;
     }
 
-    int8_t nextGlyphLength = findNextGlyphLength(&utf8Buffer[position], length - position);
+    const int8_t nextGlyphLength = findNextGlyphLength(&utf8Buffer[position], length - position);
     if (nextGlyphLength <= 0) {
         if (nextGlyphLength == 0) {
             return UTF8_EOF;
-        } else if (nextGlyphLength < 0) {
+        }
+        if (nextGlyphLength < 0) {
             position += 1;
             return UTF8_INVALID;
         }
@@ -196,16 +196,16 @@ uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64
 
 struct ScratchpadChunck {
     char *scratchpad;
-    uint64_t length, used;
+    uint64_t length, used{0};
 
-    ScratchpadChunck(uint64_t chunckLength) : length(chunckLength), used(0)
+    explicit ScratchpadChunck(uint64_t chunckLength) : length(chunckLength)
     {
         // Allow for potential \0
         scratchpad = (char *)malloc(length + 1);
     }
 
     ScratchpadChunck(ScratchpadChunck &) = delete;
-    ScratchpadChunck(ScratchpadChunck &&chunck)
+    ScratchpadChunck(ScratchpadChunck &&chunck) noexcept
         : scratchpad(chunck.scratchpad), length(chunck.length), used(chunck.used)
     {
         chunck.scratchpad = nullptr;
@@ -222,14 +222,14 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
     }
 
     // ASCII or Zero-width joiner (0x200D) are used in emojis, let's keep them around
-    else if (codepoint <= 0x7F || codepoint == 0x200D) {
+    if (codepoint <= 0x7F || codepoint == 0x200D) {
         if (wbBufferLength > 0) {
             wbBuffer[0] = (int32_t)codepoint;
         }
         return 1;
     }
 
-    size_t decomposedLength = (size_t)utf8proc_decompose_char((int32_t)codepoint, wbBuffer,
+    const auto decomposedLength = (size_t)utf8proc_decompose_char((int32_t)codepoint, wbBuffer,
         (utf8proc_ssize_t)wbBufferLength,
         (utf8proc_option_t)(UTF8PROC_DECOMPOSE | UTF8PROC_IGNORE | UTF8PROC_COMPAT | UTF8PROC_LUMP |
                             UTF8PROC_STRIPMARK | UTF8PROC_STRIPNA | UTF8PROC_CASEFOLD),
@@ -244,9 +244,9 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
         const utf8proc_property_t *originalCodepointProperty =
             utf8proc_get_property((int32_t)codepoint);
         if (originalCodepointProperty->casefold_seqindex != UINT16_MAX) {
-            if (originalCodepointProperty->category &
-                (UTF8PROC_CATEGORY_LU | UTF8PROC_CATEGORY_LL)) {
-                bool originalCPWasUpper =
+            if ((originalCodepointProperty->category &
+                    (UTF8PROC_CATEGORY_LU | UTF8PROC_CATEGORY_LL)) != 0) {
+                const bool originalCPWasUpper =
                     originalCodepointProperty->category == UTF8PROC_CATEGORY_LU;
                 for (size_t wbIndex = 0; wbIndex < decomposedLength; ++wbIndex) {
                     if (originalCPWasUpper) {
@@ -303,7 +303,7 @@ bool normalize_string(cow_string &str)
             continue;
         }
 
-        size_t decomposedLength =
+        const size_t decomposedLength =
             normalize_codepoint(codepoint, inFlightBuffer, INFLIGHT_BUFFER_SIZE);
 
         // No codepoint can generate more than 18 codepoints, that's extremely odd
@@ -316,7 +316,7 @@ bool normalize_string(cow_string &str)
         for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength;
              ++inflightBufferIndex) {
             char utf8Write[4];
-            uint8_t lengthWritten =
+            const uint8_t lengthWritten =
                 write_codepoint((uint32_t)inFlightBuffer[inflightBufferIndex], utf8Write, 4);
 
             if (scratchPad.back().used + lengthWritten >= scratchPad.back().length) {
@@ -339,7 +339,7 @@ bool normalize_string(cow_string &str)
         scratchPad.front().scratchpad = nullptr;
     } else {
         // Compile the scratch pads into the final normalized string
-        for (ScratchpadChunck &chunck : scratchPad) { new_length += chunck.used; }
+        for (const ScratchpadChunck &chunck : scratchPad) { new_length += chunck.used; }
 
         new_buffer = (char *)malloc(new_length + 1);
         if (new_buffer == nullptr) {
@@ -347,7 +347,7 @@ bool normalize_string(cow_string &str)
         }
 
         uint64_t writeIndex = 0;
-        for (ScratchpadChunck &chunck : scratchPad) {
+        for (const ScratchpadChunck &chunck : scratchPad) {
             memcpy(&new_buffer[writeIndex], chunck.scratchpad, chunck.used);
             writeIndex += chunck.used;
         }

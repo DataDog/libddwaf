@@ -12,8 +12,8 @@ RUN cd build && cmake \
     ../libddwaf && ninja
 RUN patchelf --remove-needed $(basename /sysroot/${ARCH}-none-linux-musl/lib/libc.musl-*.so.1) /build/libddwaf.so
 
-RUN ninja -C build testPowerWAF waf_validator
-RUN cd libddwaf/tests && qemu-$ARCH-static /build/tests/testPowerWAF
+RUN ninja -C build waf_test waf_validator
+RUN cd libddwaf/tests && qemu-$ARCH-static /build/tests/waf_test
 RUN cd libddwaf/validator && qemu-$ARCH-static /build/validator/waf_validator
 
 RUN cd /sysroot/${ARCH}-none-linux-musl/usr/lib/ && cp libc++.a libc++abi.a libunwind.a /build

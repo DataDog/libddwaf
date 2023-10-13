@@ -4,9 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "transformer/base64_encode.hpp"
 #include <array>
 #include <limits>
+
+#include "transformer/base64_encode.hpp"
 
 namespace ddwaf::transformer {
 

@@ -7,7 +7,8 @@
 #pragma once
 
 #include <string_view>
-#include <utils.hpp>
+
+#include "utils.hpp"
 
 namespace ddwaf {
 

@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <charconv>
+#include <iostream>
 #include <memory>
 
 #include "exception.hpp"
@@ -50,7 +51,11 @@ std::optional<event::match> expression::evaluator::eval_object(const ddwaf_objec
 {
     ddwaf_object src = *object;
 
-    if (object->type == DDWAF_OBJ_STRING) {
+    if (src.type == DDWAF_OBJ_STRING) {
+        if (src.stringValue == nullptr) {
+            return std::nullopt;
+        }
+
         src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
         if (!transformers.empty()) {
             ddwaf_object dst;
@@ -142,7 +147,7 @@ expression::eval_result expression::evaluator::eval_condition(
             continue;
         }
 
-        bool ephemeral = (attr == object_store::attribute::ephemeral);
+        const bool ephemeral = (attr == object_store::attribute::ephemeral);
         if (!ephemeral) {
             cache.targets[i] = object;
         }

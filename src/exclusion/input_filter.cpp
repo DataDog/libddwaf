@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <exclusion/input_filter.hpp>
-#include <log.hpp>
+#include "exclusion/input_filter.hpp"
+#include "log.hpp"
 
 namespace ddwaf::exclusion {
 

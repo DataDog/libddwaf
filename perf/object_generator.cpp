@@ -181,7 +181,7 @@ object_generator::object_generator(
 
     for (auto addr : addresses) { addresses_[addr] = {}; }
 
-    for (auto const &entry : fs::directory_iterator{rules_dir}) {
+    for (const auto &entry : fs::directory_iterator{rules_dir}) {
         if (!entry.is_regular_file()) {
             continue;
         }

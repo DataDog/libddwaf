@@ -9,7 +9,6 @@
 #include <array>
 #include <charconv>
 #include <cstdint>
-#include <ddwaf.h>
 #include <functional>
 #include <iomanip>
 #include <iterator>
@@ -19,6 +18,8 @@
 #include <system_error>
 #include <type_traits>
 #include <unordered_map>
+
+#include "ddwaf.h"
 
 // Convert numbers to strings
 #define STR_HELPER(x) #x

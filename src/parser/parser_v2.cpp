@@ -4,32 +4,33 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "generator/extract_schema.hpp"
-#include "indexer.hpp"
-#include "utils.hpp"
 #include <algorithm>
-#include <exception.hpp>
-#include <exclusion/object_filter.hpp>
-#include <log.hpp>
-#include <matcher/equals.hpp>
-#include <matcher/exact_match.hpp>
-#include <matcher/ip_match.hpp>
-#include <matcher/is_sqli.hpp>
-#include <matcher/is_xss.hpp>
-#include <matcher/phrase_match.hpp>
-#include <matcher/regex_match.hpp>
-#include <parameter.hpp>
-#include <parser/common.hpp>
-#include <parser/parser.hpp>
-#include <parser/rule_data_parser.hpp>
-#include <parser/specification.hpp>
-#include <rule.hpp>
-#include <ruleset.hpp>
-#include <ruleset_info.hpp>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "exception.hpp"
+#include "exclusion/object_filter.hpp"
+#include "generator/extract_schema.hpp"
+#include "indexer.hpp"
+#include "log.hpp"
+#include "matcher/equals.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
+#include "matcher/is_sqli.hpp"
+#include "matcher/is_xss.hpp"
+#include "matcher/phrase_match.hpp"
+#include "matcher/regex_match.hpp"
+#include "parameter.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "parser/rule_data_parser.hpp"
+#include "parser/specification.hpp"
+#include "rule.hpp"
+#include "ruleset.hpp"
+#include "ruleset_info.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::parser::v2 {
 

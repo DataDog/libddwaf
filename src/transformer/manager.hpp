@@ -6,9 +6,10 @@
 
 #pragma once
 
-#include "transformer/base.hpp"
-#include <ddwaf.h>
 #include <vector>
+
+#include "ddwaf.h"
+#include "transformer/base.hpp"
 
 namespace ddwaf::transformer {
 
