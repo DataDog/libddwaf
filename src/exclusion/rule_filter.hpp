@@ -11,12 +11,11 @@
 #include <vector>
 
 #include "clock.hpp"
+#include "exclusion/common.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
 
 namespace ddwaf::exclusion {
-
-enum class filter_mode { bypass, monitor };
 
 class rule_filter {
 public:

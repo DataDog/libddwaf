@@ -28,15 +28,8 @@ optional_ref<const std::unordered_set<rule *>> rule_filter::match(
 {
     DDWAF_DEBUG("Evaluating rule filter '%s'", id_.c_str());
 
-    // Note that conditions in a filter are optional
-    if (!expr_->empty()) {
-        if (expression::get_result(cache)) {
-            return std::nullopt;
-        }
-
-        if (!expr_->eval(cache, store, {}, {}, deadline).outcome) {
-            return std::nullopt;
-        }
+    if (!expr_->eval(cache, store, {}, {}, deadline).outcome) {
+        return std::nullopt;
     }
 
     return {rule_targets_};

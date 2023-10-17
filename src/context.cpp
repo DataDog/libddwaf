@@ -72,18 +72,17 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         eval_preprocessors(derived, deadline);
 
         // If no rule targets are available, there is no point in evaluating them
-        const bool eval_rules = should_eval_rules();
-        const bool eval_filters = eval_rules || should_eval_filters();
+        const bool should_eval_rules = check_new_rule_targets();
+        const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
 
-        if (eval_filters) {
+        if (should_eval_filters) {
             // Filters need to be evaluated even if rules don't, otherwise it'll
             // break the current condition cache mechanism which requires knowing
             // if an address is new to this run.
-            const auto &rules_to_exclude = filter_rules(deadline);
-            const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
+            const auto &policy = eval_filters(deadline);
 
-            if (eval_rules) {
-                events = match(rules_to_exclude, objects_to_exclude, deadline);
+            if (should_eval_rules) {
+                events = eval_rules(policy, deadline);
             }
         }
 
@@ -99,38 +98,6 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     }
 
     return code;
-}
-
-const memory::unordered_map<rule *, filter_mode> &context::filter_rules(ddwaf::timer &deadline)
-{
-    DDWAF_DEBUG("Evaluating rule filters");
-
-    for (const auto &[id, filter] : ruleset_->rule_filters) {
-        if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while evaluating rule filters");
-            throw timeout_exception();
-        }
-
-        auto it = rule_filter_cache_.find(filter.get());
-        if (it == rule_filter_cache_.end()) {
-            auto [new_it, res] =
-                rule_filter_cache_.emplace(filter.get(), rule_filter::cache_type{});
-            it = new_it;
-        }
-
-        rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, deadline);
-        if (exclusion.has_value()) {
-            for (auto &&rule : exclusion->get()) {
-                auto [it, res] = rules_to_exclude_.emplace(rule, filter->get_mode());
-                // Bypass has precedence over monitor
-                if (!res && it != rules_to_exclude_.end() && it->second != filter_mode::bypass) {
-                    it->second = filter->get_mode();
-                }
-            }
-        }
-    }
-    return rules_to_exclude_;
 }
 
 void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
@@ -173,46 +140,72 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
     }
 }
 
-const memory::unordered_map<rule *, context::object_set> &context::filter_inputs(
-    const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline)
+const exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
 {
-    DDWAF_DEBUG("Evaluating input filters");
+    DDWAF_DEBUG("Evaluating rule filters");
 
-    for (const auto &[id, filter] : ruleset_->input_filters) {
+    for (const auto &[id, filter] : ruleset_->rule_filters) {
         if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while evaluating input filters");
+            DDWAF_INFO("Ran out of time while evaluating rule filters");
             throw timeout_exception();
         }
 
-        auto it = input_filter_cache_.find(filter.get());
-        if (it == input_filter_cache_.end()) {
+        auto it = rule_filter_cache_.find(filter.get());
+        if (it == rule_filter_cache_.end()) {
             auto [new_it, res] =
-                input_filter_cache_.emplace(filter.get(), input_filter::cache_type{});
+                rule_filter_cache_.emplace(filter.get(), rule_filter::cache_type{});
             it = new_it;
         }
 
-        input_filter::cache_type &cache = it->second;
+        rule_filter::cache_type &cache = it->second;
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
-            for (const auto &rule : exclusion->rules) {
-                auto exclude_it = rules_to_exclude.find(rule);
-                if (exclude_it != rules_to_exclude.end() &&
-                    exclude_it->second == filter_mode::bypass) {
-                    continue;
+            for (auto &&rule : exclusion->get()) {
+                auto [it, res] = rules_to_exclude_.emplace(rule, filter->get_mode());
+                // Bypass has precedence over monitor
+                if (!res && it != rules_to_exclude_.end() && it->second != filter_mode::bypass) {
+                    it->second = filter->get_mode();
                 }
-
-                auto &common_exclusion = objects_to_exclude_[rule];
-                common_exclusion.insert(exclusion->objects.begin(), exclusion->objects.end());
             }
         }
     }
-
-    return objects_to_exclude_;
+    return rules_to_exclude_;
 }
 
-std::vector<event> context::match(
-    const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
-    const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
+DDWAF_DEBUG("Evaluating input filters");
+
+for (const auto &[id, filter] : ruleset_->input_filters) {
+    if (deadline.expired()) {
+        DDWAF_INFO("Ran out of time while evaluating input filters");
+        throw timeout_exception();
+    }
+
+    auto it = input_filter_cache_.find(filter.get());
+    if (it == input_filter_cache_.end()) {
+        auto [new_it, res] = input_filter_cache_.emplace(filter.get(), input_filter::cache_type{});
+        it = new_it;
+    }
+
+    input_filter::cache_type &cache = it->second;
+    auto exclusion = filter->match(store_, cache, deadline);
+    if (exclusion.has_value()) {
+        for (const auto &rule : exclusion->rules) {
+            auto exclude_it = rules_to_exclude.find(rule);
+            if (exclude_it != rules_to_exclude.end() && exclude_it->second == filter_mode::bypass) {
+                continue;
+            }
+
+            auto &common_exclusion = objects_to_exclude_[rule];
+            common_exclusion.insert(exclusion->objects.begin(), exclusion->objects.end());
+        }
+    }
+}
+
+return objects_to_exclude_;
+}
+
+std::vector<event> context::eval_rules(
+    const exclusion::context_policy &policy, ddwaf::timer &deadline)
 {
     std::vector<ddwaf::event> events;
 
@@ -222,8 +215,7 @@ std::vector<event> context::match(
             auto [new_it, res] = collection_cache_.emplace(type, collection_cache{});
             it = new_it;
         }
-        collection.match(events, store_, it->second, rules_to_exclude, objects_to_exclude,
-            ruleset_->dynamic_matchers, deadline);
+        collection.match(events, store_, it->second, policy, ruleset_->dynamic_matchers, deadline);
     };
 
     // Evaluate user priority collections first
