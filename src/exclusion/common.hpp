@@ -24,18 +24,12 @@ enum class filter_mode : uint8_t { none = 0, monitor = 1, bypass = 2 };
 struct object_set {
     std::unordered_set<const ddwaf_object *> persistent;
     std::unordered_set<const ddwaf_object *> ephemeral;
-
     bool empty() const { return persistent.empty() && ephemeral.empty(); }
-    std::size_t size() const { return persistent.size() + ephemeral.size(); }
-    void add_from(const object_set &objects)
-    {
-        persistent.insert(objects.persistent.begin(), objects.persistent.end());
-        ephemeral.insert(objects.ephemeral.begin(), objects.ephemeral.end());
-    }
-    bool contains(const ddwaf_object *obj) const
-    {
-        return persistent.contains(obj) || ephemeral.contains(obj);
-    }
+};
+
+struct rule_policy {
+    filter_mode mode{filter_mode::none};
+    std::unordered_set<const ddwaf_object *> objects{};
 };
 
 struct object_set_ref {
@@ -59,11 +53,6 @@ struct object_set_ref {
         return (persistent.has_value() && persistent->get().contains(obj)) ||
                (ephemeral.has_value() && ephemeral->get().contains(obj));
     }
-};
-
-struct rule_policy {
-    filter_mode mode{filter_mode::none};
-    std::unordered_set<const ddwaf_object *> objects{};
 };
 
 struct rule_policy_ref {
