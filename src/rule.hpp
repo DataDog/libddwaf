@@ -14,6 +14,7 @@
 
 #include "clock.hpp"
 #include "event.hpp"
+#include "exclusion/common.hpp"
 #include "expression.hpp"
 #include "iterator.hpp"
 #include "matcher/base.hpp"
@@ -62,7 +63,7 @@ public:
     virtual ~rule() = default;
 
     virtual std::optional<event> match(const object_store &store, cache_type &cache,
-        const std::unordered_set<const ddwaf_object *> &objects_excluded,
+        const exclusion::object_set_ref &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const
     {

@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "exception.hpp"
+#include "exclusion/common.hpp"
 #include "expression.hpp"
 #include "log.hpp"
 #include "transformer/manager.hpp"
@@ -197,7 +198,7 @@ expression::eval_result expression::evaluator::eval()
 }
 
 expression::eval_result expression::eval(cache_type &cache, const object_store &store,
-    const std::unordered_set<const ddwaf_object *> &objects_excluded,
+    const exclusion::object_set_ref &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {

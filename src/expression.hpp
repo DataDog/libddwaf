@@ -17,6 +17,7 @@
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "event.hpp"
+#include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
@@ -80,7 +81,7 @@ public:
         const ddwaf::object_limits &limits;
         const std::vector<condition> &conditions;
         const object_store &store;
-        const std::unordered_set<const ddwaf_object *> &objects_excluded;
+        const exclusion::object_set_ref &objects_excluded;
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers;
         cache_type &cache;
     };
@@ -92,7 +93,7 @@ public:
     {}
 
     eval_result eval(cache_type &cache, const object_store &store,
-        const std::unordered_set<const ddwaf_object *> &objects_excluded,
+        const exclusion::object_set_ref &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 

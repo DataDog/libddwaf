@@ -23,6 +23,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
     auto store_cleanup_scope = store_.get_eval_scope();
+    auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
     if (res.has_value()) {
         ddwaf_result &output = *res;
@@ -160,48 +161,63 @@ const exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         rule_filter::cache_type &cache = it->second;
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
-            for (auto &&rule : exclusion->get()) {
-                auto [it, res] = rules_to_exclude_.emplace(rule, filter->get_mode());
+            for (const auto &rule : exclusion->rules) {
+                auto &rule_policy = exclusion->ephemeral ? exclusion_policy_.ephemeral
+                                                         : exclusion_policy_.persistent;
+                auto it = rule_policy.find(rule);
                 // Bypass has precedence over monitor
-                if (!res && it != rules_to_exclude_.end() && it->second != filter_mode::bypass) {
-                    it->second = filter->get_mode();
+                if (it != rule_policy.end()) {
+                    if (it->second.mode < exclusion->mode) {
+                        it->second.mode = exclusion->mode;
+                    }
+                } else {
+                    rule_policy[rule].mode = exclusion->mode;
                 }
             }
         }
     }
-    return rules_to_exclude_;
-}
 
-DDWAF_DEBUG("Evaluating input filters");
+    DDWAF_DEBUG("Evaluating input filters");
 
-for (const auto &[id, filter] : ruleset_->input_filters) {
-    if (deadline.expired()) {
-        DDWAF_INFO("Ran out of time while evaluating input filters");
-        throw timeout_exception();
-    }
+    for (const auto &[id, filter] : ruleset_->input_filters) {
+        if (deadline.expired()) {
+            DDWAF_INFO("Ran out of time while evaluating input filters");
+            throw timeout_exception();
+        }
 
-    auto it = input_filter_cache_.find(filter.get());
-    if (it == input_filter_cache_.end()) {
-        auto [new_it, res] = input_filter_cache_.emplace(filter.get(), input_filter::cache_type{});
-        it = new_it;
-    }
+        auto it = input_filter_cache_.find(filter.get());
+        if (it == input_filter_cache_.end()) {
+            auto [new_it, res] =
+                input_filter_cache_.emplace(filter.get(), input_filter::cache_type{});
+            it = new_it;
+        }
 
-    input_filter::cache_type &cache = it->second;
-    auto exclusion = filter->match(store_, cache, deadline);
-    if (exclusion.has_value()) {
-        for (const auto &rule : exclusion->rules) {
-            auto exclude_it = rules_to_exclude.find(rule);
-            if (exclude_it != rules_to_exclude.end() && exclude_it->second == filter_mode::bypass) {
-                continue;
+        input_filter::cache_type &cache = it->second;
+        auto exclusion = filter->match(store_, cache, deadline);
+        if (exclusion.has_value()) {
+            for (const auto &rule : exclusion->rules) {
+                if (!exclusion->objects.ephemeral.empty()) {
+                    auto &rule_policy = exclusion_policy_.ephemeral[rule];
+                    // Bypass has precedence over monitor
+                    if (rule_policy.mode != filter_mode::bypass) {
+                        rule_policy.objects.insert(exclusion->objects.ephemeral.begin(),
+                            exclusion->objects.ephemeral.end());
+                    }
+                }
+
+                if (!exclusion->objects.persistent.empty()) {
+                    auto &rule_policy = exclusion_policy_.persistent[rule];
+                    // Bypass has precedence over monitor
+                    if (rule_policy.mode != filter_mode::bypass) {
+                        rule_policy.objects.insert(exclusion->objects.persistent.begin(),
+                            exclusion->objects.persistent.end());
+                    }
+                }
             }
-
-            auto &common_exclusion = objects_to_exclude_[rule];
-            common_exclusion.insert(exclusion->objects.begin(), exclusion->objects.end());
         }
     }
-}
 
-return objects_to_exclude_;
+    return exclusion_policy_;
 }
 
 std::vector<event> context::eval_rules(
