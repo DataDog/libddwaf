@@ -49,7 +49,7 @@ public:
     void eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
-    const exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
+    exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
     std::vector<event> eval_rules(const exclusion::context_policy &policy, ddwaf::timer &deadline);
 
 protected:

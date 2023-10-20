@@ -25,6 +25,12 @@ struct object_set {
     std::unordered_set<const ddwaf_object *> persistent;
     std::unordered_set<const ddwaf_object *> ephemeral;
     bool empty() const { return persistent.empty() && ephemeral.empty(); }
+    [[nodiscard]] std::size_t size() const { return persistent.size() + ephemeral.size(); }
+
+    bool contains(const ddwaf_object *obj) const
+    {
+        return persistent.contains(obj) || ephemeral.contains(obj);
+    }
 };
 
 struct rule_policy {
@@ -61,10 +67,19 @@ struct rule_policy_ref {
 };
 
 struct context_policy {
-    std::unordered_map<rule *, rule_policy> persistent;
-    std::unordered_map<rule *, rule_policy> ephemeral;
+    std::unordered_map<const rule *, rule_policy> persistent;
+    std::unordered_map<const rule *, rule_policy> ephemeral;
 
-    rule_policy_ref find(rule *key) const
+    [[nodiscard]] bool empty() const { return persistent.empty() && ephemeral.empty(); }
+
+    [[nodiscard]] std::size_t size() const { return persistent.size() + ephemeral.size(); }
+
+    bool contains(const rule *key) const
+    {
+        return persistent.contains(key) || ephemeral.contains(key);
+    }
+
+    rule_policy_ref find(const rule *key) const
     {
         auto p_it = persistent.find(key);
         auto e_it = ephemeral.find(key);

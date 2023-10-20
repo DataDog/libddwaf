@@ -51,8 +51,7 @@ public:
     ~rule() override = default;
 
     MOCK_METHOD(std::optional<event>, match,
-        (const object_store &, rule::cache_type &,
-            (const std::unordered_set<const ddwaf_object *> &),
+        (const object_store &, rule::cache_type &, (const exclusion::object_set_ref &objects),
             (const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &),
             ddwaf::timer &),
         (const override));
@@ -68,7 +67,7 @@ public:
     {}
     ~rule_filter() override = default;
 
-    MOCK_METHOD(optional_ref<const std::unordered_set<ddwaf::rule *>>, match,
+    MOCK_METHOD(std::optional<ddwaf::exclusion::rule_filter::excluded_set>, match,
         (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
 };
 
@@ -210,7 +209,7 @@ TEST(TestContext, MatchTimeout)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
 
-    EXPECT_THROW(ctx.match({}, {}, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(ctx.eval_rules({}, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestContext, NoMatch)
@@ -235,7 +234,7 @@ TEST(TestContext, NoMatch)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 0);
 }
 
@@ -261,7 +260,7 @@ TEST(TestContext, Match)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -304,7 +303,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 1);
 
     auto &event = events[0];
@@ -366,7 +365,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         ctx.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto event = events[0];
@@ -386,7 +385,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         ctx.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto event = events[0];
@@ -435,7 +434,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -463,7 +462,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -508,7 +507,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -538,7 +537,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -601,7 +600,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -631,7 +630,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -676,7 +675,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -704,7 +703,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -766,7 +765,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 2);
 }
 
@@ -811,7 +810,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ctx.insert(root);
 
-    auto events = ctx.match({}, {}, deadline);
+    auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 2);
 }
 
@@ -854,7 +853,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -865,7 +864,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 }
@@ -911,7 +910,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -922,7 +921,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto events = ctx.match({}, {}, deadline);
+        auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 }
@@ -1059,11 +1058,11 @@ TEST(TestContext, RuleFilterWithCondition)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
 
-    auto rules_to_exclude = ctx.filter_rules(deadline);
+    auto rules_to_exclude = ctx.eval_filters(deadline);
     EXPECT_EQ(rules_to_exclude.size(), 1);
-    EXPECT_NE(rules_to_exclude.find(rule.get()), rules_to_exclude.end());
+    EXPECT_TRUE(rules_to_exclude.contains(rule.get()));
 
-    auto events = ctx.match(rules_to_exclude, {}, deadline);
+    auto events = ctx.eval_rules(rules_to_exclude, deadline);
     EXPECT_EQ(events.size(), 0);
 }
 
@@ -1107,7 +1106,7 @@ TEST(TestContext, RuleFilterTimeout)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
 
-    EXPECT_THROW(ctx.filter_rules(deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(ctx.eval_filters(deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestContext, NoRuleFilterWithCondition)
@@ -1150,10 +1149,10 @@ TEST(TestContext, NoRuleFilterWithCondition)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
     ctx.insert(root);
 
-    auto rules_to_exclude = ctx.filter_rules(deadline);
+    auto rules_to_exclude = ctx.eval_filters(deadline);
     EXPECT_TRUE(rules_to_exclude.empty());
 
-    auto events = ctx.match(rules_to_exclude, {}, deadline);
+    auto events = ctx.eval_rules(rules_to_exclude, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -1180,7 +1179,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     ddwaf::test::context ctx(ruleset);
 
     {
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 0);
     }
 
@@ -1189,11 +1188,11 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get()});
         ruleset->insert_filter(filter);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 3);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
     }
 
     {
@@ -1201,14 +1200,14 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
             std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(), rules[5].get()});
         ruleset->insert_filter(filter);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 6);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[4].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[5].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[4].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[5].get()));
     }
 
     {
@@ -1216,17 +1215,17 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
             std::set<ddwaf::rule *>{rules[6].get(), rules[7].get(), rules[8].get()});
         ruleset->insert_filter(filter);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[4].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[5].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[6].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[7].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[8].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[4].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[5].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[6].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[7].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[8].get()));
     }
 }
 
@@ -1254,7 +1253,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     ddwaf::test::context ctx(ruleset);
 
     {
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 0);
     }
 
@@ -1264,12 +1263,12 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
                 rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get()});
         ruleset->insert_filter(filter);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 4);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
     }
 
     {
@@ -1277,13 +1276,13 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
             std::set<ddwaf::rule *>{rules[2].get(), rules[3].get(), rules[4].get()});
         ruleset->insert_filter(filter);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 5);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[4].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[4].get()));
     }
 
     {
@@ -1291,15 +1290,15 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
             std::set<ddwaf::rule *>{rules[0].get(), rules[5].get(), rules[6].get()});
         ruleset->insert_filter(filter);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 7);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[4].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[5].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[6].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[4].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[5].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[6].get()));
     }
 
     {
@@ -1307,17 +1306,17 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
             std::set<ddwaf::rule *>{rules[7].get(), rules[8].get(), rules[6].get()});
         ruleset->insert_filter(filter);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[4].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[5].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[6].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[7].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[8].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[4].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[5].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[6].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[7].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[8].get()));
     }
 
     {
@@ -1326,17 +1325,17 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
                 rules[4].get(), rules[5].get(), rules[6].get(), rules[7].get(), rules[8].get()});
         ruleset->insert_filter(filter);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[4].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[5].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[6].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[7].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[8].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[4].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[5].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[6].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[7].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[8].get()));
     }
 }
 
@@ -1392,13 +1391,13 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 5);
-        EXPECT_NE(rules_to_exclude.find(rules[5].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[6].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[7].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[8].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[9].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[5].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[6].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[7].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[8].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[9].get()));
     }
 
     {
@@ -1408,18 +1407,18 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 10);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[4].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[5].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[6].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[7].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[8].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[9].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[4].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[5].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[6].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[7].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[8].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[9].get()));
     }
 }
 
@@ -1475,15 +1474,15 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 7);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[4].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[5].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[6].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[4].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[5].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[6].get()));
     }
 
     {
@@ -1493,18 +1492,18 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto rules_to_exclude = ctx.filter_rules(deadline);
+        auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 10);
-        EXPECT_NE(rules_to_exclude.find(rules[0].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[1].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[2].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[3].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[4].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[5].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[6].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[7].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[8].get()), rules_to_exclude.end());
-        EXPECT_NE(rules_to_exclude.find(rules[9].get()), rules_to_exclude.end());
+        EXPECT_TRUE(rules_to_exclude.contains(rules[0].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[1].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[2].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[3].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[4].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[5].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[6].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[7].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[8].get()));
+        EXPECT_TRUE(rules_to_exclude.contains(rules[9].get()));
     }
 }
 
@@ -1533,9 +1532,9 @@ TEST(TestContext, SkipInputFilterNoTargets)
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-        std::set<ddwaf::rule *> filter_rules{rule.get()};
+        std::set<ddwaf::rule *> eval_filters{rule.get()};
         filter = std::make_shared<mock::input_filter>(
-            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
         ruleset->insert_filter<exclusion::input_filter>(filter);
     }
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
@@ -1578,9 +1577,9 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-        std::set<ddwaf::rule *> filter_rules{rule.get()};
+        std::set<ddwaf::rule *> eval_filters{rule.get()};
         filter = std::make_shared<mock::input_filter>(
-            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
         ruleset->insert_filter<exclusion::input_filter>(filter);
     }
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
@@ -1611,9 +1610,9 @@ TEST(TestContext, InputFilterExclude)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-    std::set<ddwaf::rule *> filter_rules{rule.get()};
+    std::set<ddwaf::rule *> eval_filters{rule.get()};
     auto filter = std::make_shared<input_filter>(
-        "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+        "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
@@ -1628,9 +1627,10 @@ TEST(TestContext, InputFilterExclude)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
     ctx.insert(root);
 
-    auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+    auto objects_to_exclude = ctx.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
-    auto events = ctx.match({}, objects_to_exclude, deadline);
+
+    auto events = ctx.eval_rules(objects_to_exclude, deadline);
     EXPECT_EQ(events.size(), 0);
 }
 
@@ -1642,18 +1642,27 @@ TEST(TestContext, InputFilterExcludeRule)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
-
-    auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
-
-    std::set<ddwaf::rule *> filter_rules{rule.get()};
-    auto filter = std::make_shared<input_filter>(
-        "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
-
     auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
     ruleset->insert_rule(rule);
-    ruleset->insert_filter(filter);
+
+    {
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+
+        std::set<ddwaf::rule *> eval_filters{rule.get()};
+        auto filter = std::make_shared<input_filter>(
+            "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
+
+        ruleset->insert_filter(filter);
+    }
+
+    {
+        auto filter = std::make_shared<rule_filter>(
+            "1", std::make_shared<expression>(), std::set<ddwaf::rule *>{rule.get()});
+        ruleset->insert_filter(filter);
+    }
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(ruleset);
@@ -1667,9 +1676,14 @@ TEST(TestContext, InputFilterExcludeRule)
     // The rule is added to the filter stage so that it's excluded from the
     // final result, since we're not actually excluding the rule from the match
     // stage we still get an event.
-    auto objects_to_exclude = ctx.filter_inputs({{rule.get(), filter_mode::bypass}}, deadline);
-    EXPECT_EQ(objects_to_exclude.size(), 0);
-    auto events = ctx.match({}, objects_to_exclude, deadline);
+    auto objects_to_exclude = ctx.eval_filters(deadline);
+    EXPECT_EQ(objects_to_exclude.size(), 1);
+
+    auto it = objects_to_exclude.persistent.find(rule.get());
+    it->second.mode = filter_mode::none;
+    EXPECT_TRUE(it->second.objects.empty());
+
+    auto events = ctx.eval_rules(objects_to_exclude, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -1697,9 +1711,9 @@ TEST(TestContext, InputFilterWithCondition)
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
+        std::set<ddwaf::rule *> eval_filters{ruleset->rules[0].get()};
         auto filter = std::make_shared<input_filter>(
-            "1", builder.build(), std::move(filter_rules), std::move(obj_filter));
+            "1", builder.build(), std::move(eval_filters), std::move(obj_filter));
 
         ruleset->insert_filter(filter);
     }
@@ -1715,9 +1729,9 @@ TEST(TestContext, InputFilterWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -1733,9 +1747,9 @@ TEST(TestContext, InputFilterWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -1751,9 +1765,9 @@ TEST(TestContext, InputFilterWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -1794,9 +1808,9 @@ TEST(TestContext, InputFilterMultipleRules)
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
         obj_filter->insert(get_target_index("usr.id"), "usr.id");
 
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get(), ruleset->rules[1].get()};
+        std::set<ddwaf::rule *> eval_filters{ruleset->rules[0].get(), ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
-            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
         ruleset->insert_filter(filter);
     }
@@ -1812,11 +1826,13 @@ TEST(TestContext, InputFilterMultipleRules)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            EXPECT_EQ(policy.objects.size(), 1);
+        }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1832,11 +1848,13 @@ TEST(TestContext, InputFilterMultipleRules)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 2); }
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            EXPECT_EQ(policy.objects.size(), 2);
+        }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1852,11 +1870,13 @@ TEST(TestContext, InputFilterMultipleRules)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 2); }
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            EXPECT_EQ(policy.objects.size(), 2);
+        }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -1896,9 +1916,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules[0].get()};
+        std::set<ddwaf::rule *> eval_filters{ruleset->rules[0].get()};
         auto filter = std::make_shared<input_filter>(
-            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
         ruleset->insert_filter(filter);
     }
@@ -1907,9 +1927,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("usr.id"), "usr.id");
 
-        std::set<ddwaf::rule *> filter_rules{ruleset->rules[1].get()};
+        std::set<ddwaf::rule *> eval_filters{ruleset->rules[1].get()};
         auto filter = std::make_shared<input_filter>(
-            "2", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+            "2", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
         ruleset->insert_filter(filter);
     }
@@ -1925,11 +1945,14 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
-        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            const auto &objects = policy.objects;
+            EXPECT_EQ(objects.size(), 1);
+        }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1945,11 +1968,14 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            const auto &objects = policy.objects;
+            EXPECT_EQ(objects.size(), 1);
+        }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1965,11 +1991,14 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, objects] : objects_to_exclude) { EXPECT_EQ(objects.size(), 1); }
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            const auto &objects = policy.objects;
+            EXPECT_EQ(objects.size(), 1);
+        }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -2028,9 +2057,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
         obj_filter->insert(get_target_index("server.request.headers"), "server.request.headers");
 
-        std::set<ddwaf::rule *> filter_rules{ip_rule.get(), cookie_rule.get()};
+        std::set<ddwaf::rule *> eval_filters{ip_rule.get(), cookie_rule.get()};
         auto filter = std::make_shared<input_filter>(
-            "1", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+            "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
         ruleset->insert_filter(filter);
     }
@@ -2040,9 +2069,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         obj_filter->insert(get_target_index("usr.id"), "usr.id");
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-        std::set<ddwaf::rule *> filter_rules{usr_rule.get(), ip_rule.get()};
+        std::set<ddwaf::rule *> eval_filters{usr_rule.get(), ip_rule.get()};
         auto filter = std::make_shared<input_filter>(
-            "2", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+            "2", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
         ruleset->insert_filter(filter);
     }
@@ -2052,9 +2081,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         obj_filter->insert(get_target_index("usr.id"), "usr.id");
         obj_filter->insert(get_target_index("server.request.headers"), "server.request.headers");
 
-        std::set<ddwaf::rule *> filter_rules{usr_rule.get(), cookie_rule.get()};
+        std::set<ddwaf::rule *> eval_filters{usr_rule.get(), cookie_rule.get()};
         auto filter = std::make_shared<input_filter>(
-            "3", std::make_shared<expression>(), std::move(filter_rules), std::move(obj_filter));
+            "3", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
         ruleset->insert_filter(filter);
     }
@@ -2069,14 +2098,15 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, objects] : objects_to_exclude) {
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
             EXPECT_TRUE(objects.contains(&root.array[0]));
         }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2090,14 +2120,15 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, objects] : objects_to_exclude) {
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
             EXPECT_TRUE(objects.contains(&root.array[0]));
         }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2116,14 +2147,15 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, objects] : objects_to_exclude) {
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
             EXPECT_TRUE(objects.contains(&root.array[0]));
         }
 
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2138,14 +2170,15 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, objects] : objects_to_exclude) {
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 2);
             EXPECT_TRUE(objects.contains(&root.array[0]));
             EXPECT_TRUE(objects.contains(&root.array[1]));
         }
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2165,14 +2198,15 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, objects] : objects_to_exclude) {
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 2);
             EXPECT_TRUE(objects.contains(&root.array[0]));
             EXPECT_TRUE(objects.contains(&root.array[1]));
         }
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2193,15 +2227,16 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         ctx.insert(root);
 
-        auto objects_to_exclude = ctx.filter_inputs({}, deadline);
+        auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, objects] : objects_to_exclude) {
+        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+            const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 3);
             EXPECT_TRUE(objects.contains(&root.array[0]));
             EXPECT_TRUE(objects.contains(&root.array[1]));
             EXPECT_TRUE(objects.contains(&root.array[2]));
         }
-        auto events = ctx.match({}, objects_to_exclude, deadline);
+        auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }

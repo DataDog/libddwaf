@@ -386,8 +386,9 @@ TEST(TestRule, ExcludeObject)
 
     ddwaf::timer deadline{2s};
 
+    std::unordered_set<const ddwaf_object *> excluded_set{&root.array[0]};
     rule::cache_type cache;
-    auto event = rule.match(store, cache, {{&root.array[0]}, {}}, {}, deadline);
+    auto event = rule.match(store, cache, {excluded_set, {}}, {}, deadline);
     EXPECT_FALSE(event.has_value());
 }
 } // namespace

@@ -30,6 +30,11 @@ std::optional<excluded_set> rule_filter::match(
 {
     DDWAF_DEBUG("Evaluating rule filter '%s'", id_.c_str());
 
+    // Don't return a match again if we already did
+    if (expression::get_result(cache)) {
+        return std::nullopt;
+    }
+
     auto res = expr_->eval(cache, store, {}, {}, deadline);
     if (!res.outcome) {
         return std::nullopt;

@@ -141,7 +141,7 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
     }
 }
 
-const exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
+exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating rule filters");
 
