@@ -356,7 +356,7 @@ TEST(TestObject, TestAddMap)
     ddwaf_object_free(&array);
 }
 
-TEST(TestObject, TestFree) { ddwaf_object_free(nullptr); }
+TEST(TestObject, NullFree) { ddwaf_object_free(nullptr); }
 
 TEST(TestUTF8, TestLongUTF8)
 {
