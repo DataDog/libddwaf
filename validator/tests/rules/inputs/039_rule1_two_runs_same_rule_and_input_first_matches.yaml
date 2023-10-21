@@ -2,7 +2,7 @@
   name: "Two runs of same rule and input, first matches",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule1-input: rule1
       },
       rules: [
@@ -19,7 +19,7 @@
       code: match
     },
     {
-      input: {
+      persistent-input: {
         rule1-input: rule1
       },
       code: ok

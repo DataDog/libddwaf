@@ -2,7 +2,7 @@
   name: "Match on both inputs, flipped input order",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input2: rule2,
         rule2-input1: rule2
       },

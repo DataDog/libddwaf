@@ -2,7 +2,7 @@
   name: "Valid key-path inside map, no match",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule3-input: {
           other: {
             keypath: rule3

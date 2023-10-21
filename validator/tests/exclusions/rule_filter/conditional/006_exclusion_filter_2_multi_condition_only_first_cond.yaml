@@ -2,7 +2,7 @@
   name: "Fail to match exclusion filter with multiple conditions, matching only first",
   runs: [
     {
-      input: {
+      persistent-input: {
         exclusion-filter-2-input1: "exclusion-filter-2",
         rule1-input: "rule1",
       },

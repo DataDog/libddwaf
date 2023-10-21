@@ -2,7 +2,7 @@
   name: "Exclude match on partial key path",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule3-input: {
           parent: {
             child: rule3

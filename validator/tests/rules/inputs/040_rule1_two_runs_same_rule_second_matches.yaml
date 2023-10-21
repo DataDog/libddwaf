@@ -2,13 +2,13 @@
   name: "Two runs of same rule, second matches",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule1-input: garbage
       },
       code: ok
     },
     {
-      input: {
+      persistent-input: {
         rule1-input: rule1
       },
       rules: [

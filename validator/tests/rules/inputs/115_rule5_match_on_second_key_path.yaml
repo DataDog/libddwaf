@@ -2,7 +2,7 @@
   name: "Match on second key-path",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule5-input: {
           keypath2: rule5
         }

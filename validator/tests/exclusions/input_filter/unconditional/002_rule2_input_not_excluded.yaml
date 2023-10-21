@@ -2,7 +2,7 @@
   name: "One input is excluded, but the other one isn't",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input2: "rule2",
         rule2-input1: "rule2",
       },

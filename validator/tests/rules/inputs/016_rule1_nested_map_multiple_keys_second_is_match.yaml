@@ -2,7 +2,7 @@
   name: "Nested map, multiple keys, second is match",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule1-input: {
           first: {
             other: value,
