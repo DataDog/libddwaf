@@ -2,7 +2,7 @@
   name: "Match with transformer",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input: "%61n+%61ttack%20valu%65"
       },
       rules: [

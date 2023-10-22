@@ -2,7 +2,7 @@
   name: "Exclusion points at wrong addresses",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule8-input: {
           parent: rule8
         }

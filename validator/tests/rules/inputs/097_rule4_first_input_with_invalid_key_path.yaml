@@ -2,7 +2,7 @@
   name: "First input with invalid key-path",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule4-input1: {
           random: rule4
         }

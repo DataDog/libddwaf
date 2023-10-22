@@ -2,7 +2,7 @@
   name: "Match on both inputs, both are maps",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input1: {
           first: rule2
         },

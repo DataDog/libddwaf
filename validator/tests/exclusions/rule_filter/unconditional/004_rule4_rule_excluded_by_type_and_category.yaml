@@ -2,7 +2,7 @@
   name: "Rule excluded by type and category through exclusion filter",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule4-input: "rule4"
       },
       code: ok

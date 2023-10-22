@@ -2,7 +2,7 @@
   name: "Exclude match on total key path",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule3-input: {
           parent: rule3
         }

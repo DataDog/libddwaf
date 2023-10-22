@@ -1,6 +1,6 @@
 version: '2.1'
 rules:
-  - id: 1
+  - id: "1"
     name: rule1-ip-match
     tags:
       type: flow1
@@ -27,7 +27,7 @@ rules:
             - "::2"
             - "0:1234::5678"
             - "abcd:0:1233::"
-  - id: 2
+  - id: "2"
     name: rule2-ip-match-with-cidr
     tags:
       type: flow2

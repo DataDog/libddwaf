@@ -2,7 +2,7 @@
   name: "Match with transformer",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule1-input: J09SIDE9MS8q
       },
       rules: [

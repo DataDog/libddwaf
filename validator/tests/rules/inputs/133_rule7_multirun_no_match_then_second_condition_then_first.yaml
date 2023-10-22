@@ -2,19 +2,19 @@
   name: "No match on first run, match on second condition on second run and first condition on third run",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule7-input2: garbage
       },
       code: ok
     },
     {
-      input: {
+      persistent-input: {
         rule7-input2: rule7_2
       },
       code: ok
     },
     {
-      input: {
+      persistent-input: {
         rule7-input1: rule7_1
       },
       rules: [

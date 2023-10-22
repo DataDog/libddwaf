@@ -2,7 +2,7 @@
   name: "Match key with container value",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input: {
             rule2: {
                 other: value
