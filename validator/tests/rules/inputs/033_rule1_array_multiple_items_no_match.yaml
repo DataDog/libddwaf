@@ -2,7 +2,7 @@
   name: "Array with multiple items, no match",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule1-input: [
           value,
           value,

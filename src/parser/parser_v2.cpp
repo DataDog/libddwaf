@@ -117,7 +117,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
             auto delta = at<double>(params, "delta", 0.01);
             matcher = std::make_unique<matcher::equals<double>>(value, delta);
         } else {
-            throw ddwaf::parsing_error("invalid type for matcher equals" + value_type);
+            throw ddwaf::parsing_error("invalid type for matcher equals " + value_type);
         }
     } else {
         throw ddwaf::parsing_error("unknown matcher: " + std::string(name));

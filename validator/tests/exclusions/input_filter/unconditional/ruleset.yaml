@@ -1,53 +1,53 @@
 version: '2.1'
 exclusions:
-  - id: 1
+  - id: "1"
     rules_target:
-      - rule_id: 2
+      - rule_id: "2"
     inputs:
       - address: rule2-input2
-  - id: 2
+  - id: "2"
     rules_target:
-      - rule_id: 3
+      - rule_id: "3"
     inputs:
       - address: rule3-input
         key_path: [parent]
-  - id: 3
+  - id: "3"
     rules_target:
-      - rule_id: 4
+      - rule_id: "4"
     inputs:
       - address: rule4-input
         key_path: [parent, child, grandchild]
       - address: rule4-input
         key_path: [parent, sibling]
-  - id: 4
+  - id: "4"
     rules_target:
-      - rule_id: 5
+      - rule_id: "5"
     inputs:
       - address: rule5-input1
         key_path: [parent, child, grandchild]
       - address: rule5-input2
         key_path: [parent, sibling]
-  - id: 5
+  - id: "5"
     rules_target:
-      - rule_id: 6
+      - rule_id: "6"
     inputs:
       - address: rule6-input
         key_path: [parent, child, grandchild]
-  - id: 6
+  - id: "6"
     rules_target:
-      - rule_id: 7
+      - rule_id: "7"
     inputs:
       - address: rule7-input1
         key_path: [parent]
       - address: rule7-input2
-  - id: 7
+  - id: "7"
     rules_target:
-      - rule_id: 8
+      - rule_id: "8"
     inputs:
       - address: nonexistent-input
         key_path: [parent]
       - address: nonexistent-input
-  - id: 8
+  - id: "8"
     rules_target:
       - tags:
           type: flow9-9
@@ -55,7 +55,7 @@ exclusions:
       - address: rule9-11-input1
         key_path: [parent]
       - address: rule9-11-input2
-  - id: 9
+  - id: "9"
     inputs:
       - address: rule12-input1
         key_path: [a, b, c, d]
@@ -63,7 +63,7 @@ exclusions:
         key_path: [a,"*", c, e]
 
 rules:
-  - id: 1
+  - id: "1"
     name: rule1-basic-single-input
     tags:
       type: flow1
@@ -74,7 +74,7 @@ rules:
           inputs:
             - address: rule1-input
           regex: rule1
-  - id: 2
+  - id: "2"
     name: rule2-input-excluded
     tags:
       type: flow2
@@ -86,7 +86,7 @@ rules:
             - address: rule2-input1
             - address: rule2-input2
           regex: rule2
-  - id: 3
+  - id: "3"
     name: rule3-key-path-excluded
     tags:
       type: flow3
@@ -97,7 +97,7 @@ rules:
           inputs:
             - address: rule3-input
           regex: rule3
-  - id: 4
+  - id: "4"
     name: rule4-multiple-key-path-excluded
     tags:
       type: flow4
@@ -108,7 +108,7 @@ rules:
           inputs:
             - address: rule4-input
           regex: rule4
-  - id: 5
+  - id: "5"
     name: rule5-multiple-key-path-excluded-multiple-input
     tags:
       type: flow5
@@ -120,7 +120,7 @@ rules:
             - address: rule5-input1
             - address: rule5-input2
           regex: rule5
-  - id: 6
+  - id: "6"
     name: rule6-excluded-key-path-matches-required-input-key-path
     tags:
       type: flow6
@@ -134,7 +134,7 @@ rules:
             - address: rule6-input
               key_path: [parent, child, friend]
           regex: rule6
-  - id: 7
+  - id: "7"
     name: rule7-input-and-key-path-exclusion
     tags:
       type: flow7
@@ -148,7 +148,7 @@ rules:
             - address: rule7-input2
             - address: rule7-input3
           regex: rule7
-  - id: 8
+  - id: "8"
     name: rule8-input-excluded-as-input-and-key-path
     tags:
       type: flow8
@@ -159,7 +159,7 @@ rules:
           inputs:
             - address: rule8-input
           regex: rule8
-  - id: 9
+  - id: "9"
     name: rule9
     tags:
       type: flow9-9
@@ -171,7 +171,7 @@ rules:
             - address: rule9-11-input
             - address: rule9-input
           regex: rule9-11
-  - id: 10
+  - id: "10"
     name: rule9
     tags:
       type: flow9-9
@@ -183,7 +183,7 @@ rules:
             - address: rule9-11-input
             - address: rule10-input
           regex: rule9-11
-  - id: 11
+  - id: "11"
     name: rule9
     tags:
       type: flow9-9
@@ -195,7 +195,7 @@ rules:
             - address: rule9-11-input
             - address: rule11-input
           regex: rule9-11
-  - id: 12
+  - id: "12"
     name: rule12
     tags:
       type: flow12

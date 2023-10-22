@@ -2,7 +2,7 @@
   name: "Match key below key path",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule4-input: {
             first: {
                 second: {

@@ -2,7 +2,7 @@
   name: "No match on either input",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input1: garbage,
         rule2-input2: garbage
       },

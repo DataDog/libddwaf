@@ -2,7 +2,7 @@
   name: "Array with map, no match",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule1-input: [
           {
             second: garbage

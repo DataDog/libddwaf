@@ -2,7 +2,7 @@
   name: "Match on both rules in flow",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input: rule8,
         rule1-input: rule1
       },

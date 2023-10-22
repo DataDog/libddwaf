@@ -2,7 +2,7 @@
   name: "Both inputs with valid key-path, no match",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule4-input1: {
           keypath: garbage
         },

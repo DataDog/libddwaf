@@ -1,48 +1,48 @@
 version: '2.1'
 exclusions:
-  - id: 1
+  - id: "1"
     rules_target:
-      - rule_id: 1
+      - rule_id: "1"
     on_match: bypass
-  - id: 2
+  - id: "2"
     rules_target:
       - tags:
           type: flow2
     on_match: bypass
-  - id: 3
+  - id: "3"
     rules_target:
       - tags:
           category: category3
-  - id: 4
+  - id: "4"
     rules_target:
       - tags:
           type: flow4-5
           category: category4-5
-  - id: 5
+  - id: "5"
     rules_target:
       - tags:
           type: flow7
           category: category7
-      - rule_id: 8
+      - rule_id: "8"
     on_match: bypass
-  - id: 6
+  - id: "6"
     rules_target:
-      - rule_id: 9
+      - rule_id: "9"
     on_match: monitor
-  - id: 7
+  - id: "7"
     rules_target:
       - tags:
           type: flow10
           category: category10
     on_match: monitor
   # Test precedence of bypass over monitor
-  - id: 8
+  - id: "8"
     rules_target:
-      - rule_id: 1
+      - rule_id: "1"
     on_match: monitor
 
 rules:
-  - id: 1
+  - id: "1"
     name: rule1-exclude-by-id
     tags:
       type: flow20
@@ -53,7 +53,7 @@ rules:
           inputs:
             - address: rule1-input
           regex: rule1
-  - id: 2
+  - id: "2"
     name: rule2-exclude-by-type
     tags:
       type: flow2
@@ -64,7 +64,7 @@ rules:
           inputs:
             - address: rule2-input
           regex: rule2
-  - id: 3
+  - id: "3"
     name: rule3-exclude-by-category
     tags:
       type: flow3
@@ -75,7 +75,7 @@ rules:
           inputs:
             - address: rule3-input
           regex: rule3
-  - id: 4
+  - id: "4"
     name: rule4-exclude-by-type-and-category
     tags:
       type: flow4-5
@@ -86,7 +86,7 @@ rules:
           inputs:
             - address: rule4-input
           regex: rule4
-  - id: 5
+  - id: "5"
     name: rule5-not-excluded-due-to-category
     tags:
       type: flow4-5
@@ -97,7 +97,7 @@ rules:
           inputs:
             - address: rule5-input
           regex: rule5
-  - id: 6
+  - id: "6"
     name: rule6-not-exclude-due-to-type
     tags:
       type: flow6
@@ -108,7 +108,7 @@ rules:
           inputs:
             - address: rule6-input
           regex: rule6
-  - id: 7
+  - id: "7"
     name: rule7-target-excluded-by-tags-multitarget
     tags:
       type: flow7
@@ -119,7 +119,7 @@ rules:
           inputs:
             - address: rule7-input
           regex: rule7
-  - id: 8
+  - id: "8"
     name: rule8-target-excluded-by-id-multitarget
     tags:
       type: flow8
@@ -130,7 +130,7 @@ rules:
           inputs:
             - address: rule8-input
           regex: rule8
-  - id: 9
+  - id: "9"
     name: rule9-monitor-by-id
     tags:
       type: flow9
@@ -142,7 +142,7 @@ rules:
             - address: rule9-input
           regex: rule9
     on_match: [ block ]
-  - id: 10
+  - id: "10"
     name: rule10-monitor-by-tags
     tags:
       type: flow10

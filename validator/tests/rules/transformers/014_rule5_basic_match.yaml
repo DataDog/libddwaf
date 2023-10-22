@@ -2,7 +2,7 @@
   name: "Basic run with match and nulls removed",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule5-input: "rule5\u0000"
       },
       rules: [

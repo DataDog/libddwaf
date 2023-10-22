@@ -2,13 +2,13 @@
   name: "Match on second condition on first run and first condition on second run",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule7-input2: rule7_2
       },
       code: ok
     },
     {
-      input: {
+      persistent-input: {
         rule7-input1: rule7_1
       },
       rules: [

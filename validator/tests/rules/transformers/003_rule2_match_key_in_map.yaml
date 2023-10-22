@@ -2,7 +2,7 @@
   name: "Match on key within map",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input: {
           something: {
             rule2: value

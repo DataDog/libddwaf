@@ -2,7 +2,7 @@
   name: "Don't exclude",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule7-input3: rule7
       },
       rules: [

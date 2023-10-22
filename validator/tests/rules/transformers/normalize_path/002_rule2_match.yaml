@@ -2,7 +2,7 @@
   name: "Match with transformer",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input: "/etc/dir1/dir2/../../passwd"
       },
       rules: [
