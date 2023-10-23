@@ -47,7 +47,7 @@ static ddwaf_object *ddwaf_object_string_helper(
     ddwaf_object *object, const char *string, size_t length)
 {
     if (length == SIZE_MAX) {
-        DDWAF_DEBUG("invalid string length: %zu", length);
+        DDWAF_DEBUG("invalid string length: {}", length);
         return nullptr;
     }
 
@@ -250,7 +250,7 @@ bool ddwaf_object_map_add_helper(
     ddwaf_object *map, const char *key, size_t length, ddwaf_object object)
 {
     if (length == SIZE_MAX) {
-        DDWAF_DEBUG("invalid key length: %zu", length);
+        DDWAF_DEBUG("invalid key length: {}", length);
         return false;
     }
 

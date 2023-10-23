@@ -108,7 +108,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
 {
     auto id = at<std::string>(rule, "id");
     if (rule_ids.find(id) != rule_ids.end()) {
-        DDWAF_WARN("duplicate rule %s", id.c_str());
+        DDWAF_WARN("duplicate rule {}", id);
         info.add_failed(id, "duplicate rule");
         return;
     }
@@ -148,7 +148,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
         rs.insert_rule(rule_ptr);
         info.add_loaded(rule_ptr->get_id());
     } catch (const std::exception &e) {
-        DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
+        DDWAF_WARN("failed to parse rule '{}': {}", id, e.what());
         info.add_failed(id, e.what());
     }
 }
@@ -170,7 +170,7 @@ void parse(
             auto rule = static_cast<parameter::map>(rule_param);
             parseRule(rule, section, rule_ids, rs, limits);
         } catch (const std::exception &e) {
-            DDWAF_WARN("%s", e.what());
+            DDWAF_WARN("{}", e.what());
             section.add_failed("index:" + to_string<std::string>(i), e.what());
         }
     }

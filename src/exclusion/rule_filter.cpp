@@ -26,7 +26,7 @@ rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
 optional_ref<const std::unordered_set<rule *>> rule_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
-    DDWAF_DEBUG("Evaluating rule filter '%s'", id_.c_str());
+    DDWAF_DEBUG("Evaluating rule filter '{}'", id_);
 
     // Note that conditions in a filter are optional
     if (!expr_->empty()) {

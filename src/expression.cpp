@@ -165,8 +165,8 @@ expression::eval_result expression::evaluator::eval_condition(
         if (optional_match.has_value()) {
             optional_match->address = target.name;
             optional_match->ephemeral = ephemeral;
-            DDWAF_TRACE("Target %s matched parameter value %s", target.name.c_str(),
-                optional_match->resolved.c_str());
+            DDWAF_TRACE(
+                "Target {} matched parameter value {}", target.name, optional_match->resolved);
 
             cache.match = std::move(optional_match);
             return {true, ephemeral};

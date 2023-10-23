@@ -128,13 +128,13 @@ TEST(TestLogging, Basic)
 
     ddwaf_set_log_cb(cb, DDWAF_LOG_INFO);
     EXPECT_EQ(lastMessage, "Sending log messages to binding, min level info");
-    DDWAF_INFO("Signed %d", -25);
+    DDWAF_INFO("Signed {}", -25);
     EXPECT_EQ(lastMessage, "Signed -25");
-    DDWAF_INFO("Unsigned %u", 25);
+    DDWAF_INFO("Unsigned {}", 25);
     EXPECT_EQ(lastMessage, "Unsigned 25");
-    DDWAF_INFO("String %s", "thisisastring");
+    DDWAF_INFO("String {}", "thisisastring");
     EXPECT_EQ(lastMessage, "String thisisastring");
-    DDWAF_INFO("Combination %d %u %s %s %u %s", -1, 2, "abc", "def", 22, "ghi");
+    DDWAF_INFO("Combination {} {} {} {} {} {}", -1, 2, "abc", "def", 22, "ghi");
     EXPECT_EQ(lastMessage, "Combination -1 2 abc def 22 ghi");
 }
 

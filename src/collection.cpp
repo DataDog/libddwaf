@@ -21,12 +21,12 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     const auto &id = rule->get_id();
 
     if (deadline.expired()) {
-        DDWAF_INFO("Ran out of time while evaluating rule '%s'", id.c_str());
+        DDWAF_INFO("Ran out of time while evaluating rule '{}'", id);
         throw timeout_exception();
     }
 
     if (!rule->is_enabled()) {
-        DDWAF_DEBUG("Rule '%s' is disabled", id.c_str());
+        DDWAF_DEBUG("Rule '{}' is disabled", id);
         return std::nullopt;
     }
 
@@ -34,15 +34,15 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     auto exclude_it = rules_to_exclude.find(rule);
     if (exclude_it != rules_to_exclude.end()) {
         if (exclude_it->second == exclusion::filter_mode::bypass) {
-            DDWAF_DEBUG("Bypassing rule '%s'", id.c_str());
+            DDWAF_DEBUG("Bypassing rule '{}'", id);
             return std::nullopt;
         }
 
-        DDWAF_DEBUG("Monitoring rule '%s'", id.c_str());
+        DDWAF_DEBUG("Monitoring rule '{}'", id);
         skip_actions = true;
     }
 
-    DDWAF_DEBUG("Evaluating rule '%s'", id.c_str());
+    DDWAF_DEBUG("Evaluating rule '{}'", id);
 
     try {
         auto it = cache.find(rule);
@@ -67,7 +67,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
 
         return event;
     } catch (const ddwaf::timeout_exception &) {
-        DDWAF_INFO("Ran out of time while evaluating rule '%s'", id.c_str());
+        DDWAF_INFO("Ran out of time while evaluating rule '{}'", id);
         throw;
     }
 
@@ -102,7 +102,7 @@ void base_collection<Derived>::match(std::vector<event> &events, const object_st
             cache.ephemeral = event->ephemeral;
 
             events.emplace_back(std::move(*event));
-            DDWAF_DEBUG("Found event on rule %s", rule->get_id().c_str());
+            DDWAF_DEBUG("Found event on rule {}", rule->get_id());
             break;
         }
     }
