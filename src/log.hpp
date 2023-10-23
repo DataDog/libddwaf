@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <format>
+#include <fmt/core.h>
 #include <string>
 #include <type_traits>
 
@@ -50,11 +50,11 @@ constexpr const char *base_name(const char *path)
     return base;
 }
 
-#  define DDWAF_LOG_HELPER(level, function, file, line, fmt, ...)                                  \
+#  define DDWAF_LOG_HELPER(level, function, file, line, fmt_str, ...)                              \
     {                                                                                              \
       if (ddwaf::logger::valid(level)) {                                                           \
         constexpr const char *filename = base_name(file);                                          \
-        auto message = std::format(fmt, ##__VA_ARGS__);                                            \
+        auto message = fmt::format(fmt_str, ##__VA_ARGS__);                                        \
         if (!message.empty()) {                                                                    \
           ddwaf::logger::log(level, function, filename, line, message.c_str(), message.size());    \
         }                                                                                          \
