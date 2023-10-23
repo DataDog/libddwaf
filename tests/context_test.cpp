@@ -1888,6 +1888,48 @@ TEST(TestContext, InputFilterExcludeEphemeral)
     }
 }
 
+TEST(TestContext, InputFilterExcludeEphemeralReuseObject)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
+    builder.add_target("http.peer_ip");
+
+    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+
+    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+
+    std::set<ddwaf::rule *> eval_filters{rule.get()};
+    auto filter = std::make_shared<input_filter>(
+        "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
+
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->insert_rule(rule);
+    ruleset->insert_filter(filter);
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->free_fn = nullptr;
+
+    ddwaf::test::context ctx(ruleset);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_OK);
+
+    std::string peer_ip = "http.peer_ip";
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    memcpy(const_cast<char *>(root.array[0].parameterName), peer_ip.c_str(), peer_ip.size());
+    root.array[0].parameterNameLength = peer_ip.size();
+
+    EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_MATCH);
+
+    ddwaf_object_free(&root);
+}
+
 TEST(TestContext, InputFilterExcludeRule)
 {
     expression_builder builder(1);
