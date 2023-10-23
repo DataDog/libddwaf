@@ -2100,10 +2100,8 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
         ruleset->insert_filter(filter);
     }
 
+    ddwaf::test::context ctx(ruleset);
     {
-        ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(ruleset);
-
         ddwaf_object persistent;
         ddwaf_object tmp;
         ddwaf_object_map(&persistent);
@@ -2117,11 +2115,7 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
         EXPECT_EQ(ctx.run(persistent, ephemeral, {}, LONG_TIME), DDWAF_OK);
     }
 
-    // With usr.id != admin, nothing should be excluded
     {
-        ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(ruleset);
-
         ddwaf_object root;
         ddwaf_object tmp;
         ddwaf_object_map(&root);
