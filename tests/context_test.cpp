@@ -22,6 +22,7 @@ using ::testing::Sequence;
 using namespace ddwaf;
 using namespace std::literals;
 using namespace ddwaf::exclusion;
+using attribute = object_store::attribute;
 
 namespace ddwaf::test {
 class context : public ddwaf::context {
@@ -29,7 +30,10 @@ public:
     explicit context(std::shared_ptr<ddwaf::ruleset> ruleset) : ddwaf::context(std::move(ruleset))
     {}
 
-    bool insert(ddwaf_object &object) { return store_.insert(object); }
+    bool insert(ddwaf_object &object, attribute attr = attribute::none)
+    {
+        return store_.insert(object, attr);
+    }
 };
 
 } // namespace ddwaf::test
@@ -1066,6 +1070,206 @@ TEST(TestContext, RuleFilterWithCondition)
     EXPECT_EQ(events.size(), 0);
 }
 
+TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    std::shared_ptr<rule> rule;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        auto filter = std::make_shared<rule_filter>(
+            "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
+        ruleset->insert_filter(filter);
+    }
+
+    ddwaf::test::context ctx(ruleset);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral;
+        ddwaf_object persistent;
+
+        ddwaf_object_map(&ephemeral);
+        ddwaf_object_map_add(
+            &ephemeral, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf_object_map(&persistent);
+        ddwaf_object_map_add(&persistent, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        EXPECT_EQ(ctx.run(persistent, ephemeral, {}, LONG_TIME), DDWAF_OK);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        EXPECT_EQ(ctx.run(root, {}, {}, LONG_TIME), DDWAF_MATCH);
+    }
+}
+
+TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    std::shared_ptr<rule> rule;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+        rule->set_actions({"block"});
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        auto filter = std::make_shared<rule_filter>(
+            "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
+        ruleset->insert_filter(filter);
+    }
+
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
+        builder.add_target("http.route");
+
+        auto filter = std::make_shared<rule_filter>("2", builder.build(),
+            std::set<ddwaf::rule *>{rule.get()}, exclusion::filter_mode::monitor);
+        ruleset->insert_filter(filter);
+    }
+
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    ddwaf::test::context ctx(ruleset);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral;
+        ddwaf_object persistent;
+
+        ddwaf_object_map(&ephemeral);
+        ddwaf_object_map_add(
+            &ephemeral, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf_object_map(&persistent);
+        ddwaf_object_map_add(&persistent, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_map_add(&persistent, "http.route", ddwaf_object_string(&tmp, "unrouted"));
+
+        EXPECT_EQ(ctx.run(persistent, ephemeral, {}, LONG_TIME), DDWAF_OK);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        ddwaf_result result = DDWAF_RESULT_INITIALISER;
+        EXPECT_EQ(ctx.run(root, {}, result, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_object_size(&result.actions), 0);
+        ddwaf_result_free(&result);
+    }
+}
+
+TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    // Generate rule
+    std::shared_ptr<rule> rule;
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+        rule->set_actions({"block"});
+        ruleset->insert_rule(rule);
+    }
+
+    // Generate filter
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        auto filter = std::make_shared<rule_filter>("1", builder.build(),
+            std::set<ddwaf::rule *>{rule.get()}, exclusion::filter_mode::monitor);
+        ruleset->insert_filter(filter);
+    }
+
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
+        builder.add_target("http.route");
+
+        auto filter = std::make_shared<rule_filter>(
+            "2", builder.build(), std::set<ddwaf::rule *>{rule.get()});
+        ruleset->insert_filter(filter);
+    }
+
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    ddwaf::test::context ctx(ruleset);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral;
+        ddwaf_object persistent;
+
+        ddwaf_object_map(&ephemeral);
+        ddwaf_object_map_add(
+            &ephemeral, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf_object_map(&persistent);
+        ddwaf_object_map_add(&persistent, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_map_add(&persistent, "http.route", ddwaf_object_string(&tmp, "unrouted"));
+
+        EXPECT_EQ(ctx.run(persistent, ephemeral, {}, LONG_TIME), DDWAF_OK);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        EXPECT_EQ(ctx.run(root, {}, {}, LONG_TIME), DDWAF_OK);
+    }
+}
+
 TEST(TestContext, RuleFilterTimeout)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
@@ -1634,6 +1838,56 @@ TEST(TestContext, InputFilterExclude)
     EXPECT_EQ(events.size(), 0);
 }
 
+TEST(TestContext, InputFilterExcludeEphemeral)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
+    builder.add_target("http.peer_ip");
+
+    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+
+    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+
+    std::set<ddwaf::rule *> eval_filters{rule.get()};
+    auto filter = std::make_shared<input_filter>(
+        "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
+
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->insert_rule(rule);
+    ruleset->insert_filter(filter);
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+
+    ddwaf::test::context ctx(ruleset);
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_OK);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_OK);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.peer_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_MATCH);
+    }
+}
+
 TEST(TestContext, InputFilterExcludeRule)
 {
     expression_builder builder(1);
@@ -1769,6 +2023,69 @@ TEST(TestContext, InputFilterWithCondition)
         EXPECT_EQ(objects_to_exclude.size(), 1);
         auto events = ctx.eval_rules(objects_to_exclude, deadline);
         EXPECT_EQ(events.size(), 0);
+    }
+}
+
+TEST(TestContext, InputFilterWithEphemeralCondition)
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        builder.add_target("http.client_ip");
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+
+        ruleset->insert_rule(rule);
+    }
+
+    {
+        expression_builder builder(1);
+        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        builder.add_target("usr.id");
+
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+
+        std::set<ddwaf::rule *> eval_filters{ruleset->rules[0].get()};
+        auto filter = std::make_shared<input_filter>(
+            "1", builder.build(), std::move(eval_filters), std::move(obj_filter));
+
+        ruleset->insert_filter(filter);
+    }
+
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset);
+
+        ddwaf_object persistent;
+        ddwaf_object tmp;
+        ddwaf_object_map(&persistent);
+        ddwaf_object_map_add(
+            &persistent, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf_object ephemeral;
+        ddwaf_object_map(&ephemeral);
+        ddwaf_object_map_add(&ephemeral, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        EXPECT_EQ(ctx.run(persistent, ephemeral, {}, LONG_TIME), DDWAF_OK);
+    }
+
+    // With usr.id != admin, nothing should be excluded
+    {
+        ddwaf::timer deadline{2s};
+        ddwaf::test::context ctx(ruleset);
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        EXPECT_EQ(ctx.run(root, {}, {}, LONG_TIME), DDWAF_MATCH);
     }
 }
 
