@@ -195,22 +195,32 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         input_filter::cache_type &cache = it->second;
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
+            DDWAF_DEBUG("Has value");
             for (const auto &rule : exclusion->rules) {
+                if (!exclusion->objects.persistent.empty()) {
+                    auto &rule_policy = exclusion_policy_.persistent[rule];
+                    if (rule_policy.mode == filter_mode::bypass) {
+                        // If the rule has been bypassed, there is no need to
+                        // add persistent or ephemeral objects to it.
+                        DDWAF_DEBUG("Skipping rule");
+                        continue;
+                    }
+                    rule_policy.objects.insert(
+                        exclusion->objects.persistent.begin(), exclusion->objects.persistent.end());
+                } else {
+                    auto it = exclusion_policy_.persistent.find(rule);
+                    if (it != exclusion_policy_.persistent.end() &&
+                        it->second.mode == filter_mode::bypass) {
+                        continue;
+                    }
+                }
+
                 if (!exclusion->objects.ephemeral.empty()) {
                     auto &rule_policy = exclusion_policy_.ephemeral[rule];
                     // Bypass has precedence over monitor
                     if (rule_policy.mode != filter_mode::bypass) {
                         rule_policy.objects.insert(exclusion->objects.ephemeral.begin(),
                             exclusion->objects.ephemeral.end());
-                    }
-                }
-
-                if (!exclusion->objects.persistent.empty()) {
-                    auto &rule_policy = exclusion_policy_.persistent[rule];
-                    // Bypass has precedence over monitor
-                    if (rule_policy.mode != filter_mode::bypass) {
-                        rule_policy.objects.insert(exclusion->objects.persistent.begin(),
-                            exclusion->objects.persistent.end());
                     }
                 }
             }

@@ -1983,6 +1983,54 @@ TEST(TestContext, InputFilterExcludeRule)
     EXPECT_EQ(events.size(), 1);
 }
 
+TEST(TestContext, InputFilterExcludeRuleEphemeral)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
+
+    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+
+    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+    ruleset->insert_rule(rule);
+
+    {
+        auto obj_filter = std::make_shared<object_filter>();
+        obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+
+        std::set<ddwaf::rule *> eval_filters{rule.get()};
+        auto filter = std::make_shared<input_filter>(
+            "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
+
+        ruleset->insert_filter(filter);
+    }
+
+    {
+        auto filter = std::make_shared<rule_filter>(
+            "1", std::make_shared<expression>(), std::set<ddwaf::rule *>{rule.get()});
+        ruleset->insert_filter(filter);
+    }
+
+    ddwaf::timer deadline{2s};
+    ddwaf::test::context ctx(ruleset);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ctx.insert(root, attribute::ephemeral);
+
+    auto objects_to_exclude = ctx.eval_filters(deadline);
+    EXPECT_EQ(objects_to_exclude.size(), 1);
+
+    auto it = objects_to_exclude.persistent.find(rule.get());
+    EXPECT_TRUE(it->second.objects.empty());
+
+    EXPECT_FALSE(objects_to_exclude.ephemeral.contains(rule.get()));
+}
+
 TEST(TestContext, InputFilterWithCondition)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
