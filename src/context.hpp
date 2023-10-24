@@ -13,6 +13,7 @@
 #include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
+#include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "obfuscator.hpp"
@@ -46,20 +47,16 @@ public:
 
     void eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
     void eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
-    // These two functions below return references to internal objects,
+    // This function below returns a reference to an internal object,
     // however using them this way helps with testing
-    const memory::unordered_map<rule *, filter_mode> &filter_rules(ddwaf::timer &deadline);
-    const memory::unordered_map<rule *, object_set> &filter_inputs(
-        const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline);
-
-    std::vector<event> match(const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
-        const memory::unordered_map<rule *, object_set> &objects_to_exclude,
-        ddwaf::timer &deadline);
+    exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
+    std::vector<event> eval_rules(const exclusion::context_policy &policy, ddwaf::timer &deadline);
 
 protected:
     bool is_first_run() const { return collection_cache_.empty(); }
-    bool should_eval_rules() const
+    bool check_new_rule_targets() const
     {
+        // NOLINTNEXTLINE(readability-use-anyofallof)
         for (const auto &[target, str] : ruleset_->rule_addresses) {
             if (store_.is_new_target(target)) {
                 return true;
@@ -67,8 +64,9 @@ protected:
         }
         return false;
     }
-    bool should_eval_filters() const
+    bool check_new_filter_targets() const
     {
+        // NOLINTNEXTLINE(readability-use-anyofallof)
         for (const auto &[target, str] : ruleset_->filter_addresses) {
             if (store_.is_new_target(target)) {
                 return true;
@@ -85,14 +83,12 @@ protected:
     memory::unordered_map<processor *, processor::cache_type> processor_cache_;
 
     // Caches of filters and conditions
-    memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;
+    memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_{};
     memory::unordered_map<input_filter *, input_filter::cache_type> input_filter_cache_;
-
-    memory::unordered_map<rule *, filter_mode> rules_to_exclude_;
-    memory::unordered_map<rule *, object_set> objects_to_exclude_;
+    exclusion::context_policy exclusion_policy_;
 
     // Cache of collections to avoid processing once a result has been obtained
-    memory::unordered_map<std::string_view, collection::cache_type> collection_cache_;
+    memory::unordered_map<std::string_view, collection::cache_type> collection_cache_{};
 };
 
 class context_wrapper {

@@ -12,8 +12,9 @@
 namespace ddwaf::exclusion {
 
 namespace {
+// Add requires
 void iterate_object(const path_trie::traverser &filter, const ddwaf_object *object,
-    memory::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
+    std::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
 {
     using state = path_trie::traverser::state;
     if (object == nullptr) {
@@ -91,10 +92,10 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
 
 } // namespace
 
-memory::unordered_set<const ddwaf_object *> object_filter::match(
-    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
+object_set object_filter::match(
+    const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const
 {
-    memory::unordered_set<const ddwaf_object *> objects_to_exclude;
+    object_set objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -104,8 +105,13 @@ memory::unordered_set<const ddwaf_object *> object_filter::match(
         if (object == nullptr || cache.contains(object)) {
             continue;
         }
-        cache.emplace(object);
-        iterate_object(filter.get_traverser(), object, objects_to_exclude, limits_);
+
+        if (!ephemeral && attr != object_store::attribute::ephemeral) {
+            cache.emplace(object);
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.persistent, limits_);
+        } else {
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.ephemeral, limits_);
+        }
     }
 
     return objects_to_exclude;

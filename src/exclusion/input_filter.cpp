@@ -1,7 +1,13 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
+
+// Unless explicitly stated otherwise all files in this repository are
+// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
+//
+// This product includes software developed at Datadog (https://www.datadoghq.com/)
 // Copyright 2021 Datadog, Inc.
 
 #include "exclusion/input_filter.hpp"
@@ -28,12 +34,12 @@ std::optional<excluded_set> input_filter::match(
 
     // An event was already produced, so we skip the rule
     // Note that conditions in a filter are optional
-    if (!expr_->empty() && !expression::get_result(cache.expr_cache) &&
-        !expr_->eval(cache.expr_cache, store, {}, {}, deadline).outcome) {
+    auto res = expr_->eval(cache.expr_cache, store, {}, {}, deadline);
+    if (!res.outcome) {
         return std::nullopt;
     }
 
-    auto objects = filter_->match(store, cache.object_filter_cache, deadline);
+    auto objects = filter_->match(store, cache.object_filter_cache, res.ephemeral, deadline);
     if (objects.empty()) {
         return std::nullopt;
     }
