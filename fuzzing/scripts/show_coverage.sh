@@ -9,7 +9,7 @@ llvm-cov-15 report -instr-profile default.profdata fuzzer -ignore-filename-regex
 
 if [ ! -z ${1:-} ]; then 
     THRESHOLD=$1
-    TOTAL=$(llvm-cov-15 report -instr-profile default.profdata fuzzer -ignore-filename-regex="(fuzzing|third_party)" -show-region-summary=false | grep TOTAL)
+    TOTAL=$(llvm-cov-15 report -instr-profile default.profdata fuzzer -ignore-filename-regex="(vendor|fuzzing|third_party)" -show-region-summary=false | grep TOTAL)
     ARRAY=($TOTAL)
     COVERAGE=$(echo ${ARRAY[3]} | sed -e "s/\.[[:digit:]]*%//g")
 
