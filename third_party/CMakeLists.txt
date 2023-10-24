@@ -92,8 +92,10 @@ ExternalProject_Add(proj_fmt
                 -DCMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}
                 -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
                 -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+                -DFMT_MASTER_PROJECT=OFF
                 -DFMT_DOC=OFF
                 -DFMT_TEST=OFF
+                -DFMT_OS=OFF
                 BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBFMT_FILENAME}
 )
 add_library(lib_fmt STATIC IMPORTED GLOBAL)
