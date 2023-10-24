@@ -105,6 +105,47 @@ struct context_policy {
 
         return {mode, {p_policy.objects, e_policy.objects}};
     }
+
+    void add_rule_exclusion(const ddwaf::rule *rule, filter_mode mode, bool ephemeral_exclusion)
+    {
+        auto &rule_policy = ephemeral_exclusion ? ephemeral : persistent;
+
+        auto it = rule_policy.find(rule);
+        // Bypass has precedence over monitor
+        if (it != rule_policy.end()) {
+            if (it->second.mode < mode) {
+                it->second.mode = mode;
+            }
+        } else {
+            rule_policy[rule].mode = mode;
+        }
+    }
+
+    void add_input_exclusion(const ddwaf::rule *rule, const object_set &objects)
+    {
+        if (!objects.persistent.empty()) {
+            auto &rule_policy = persistent[rule];
+            if (rule_policy.mode == filter_mode::bypass) {
+                // If the rule has been bypassed, there is no need to
+                // add persistent or ephemeral objects to it.
+                return;
+            }
+            rule_policy.objects.insert(objects.persistent.begin(), objects.persistent.end());
+        } else {
+            auto it = persistent.find(rule);
+            if (it != persistent.end() && it->second.mode == filter_mode::bypass) {
+                return;
+            }
+        }
+
+        if (!objects.ephemeral.empty()) {
+            auto &rule_policy = ephemeral[rule];
+            // Bypass has precedence over monitor
+            if (rule_policy.mode != filter_mode::bypass) {
+                rule_policy.objects.insert(objects.ephemeral.begin(), objects.ephemeral.end());
+            }
+        }
+    }
 };
 
 } // namespace exclusion

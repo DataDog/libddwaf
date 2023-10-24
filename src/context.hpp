@@ -56,21 +56,15 @@ protected:
     bool is_first_run() const { return collection_cache_.empty(); }
     bool check_new_rule_targets() const
     {
-        for (const auto &[target, str] : ruleset_->rule_addresses) {
-            if (store_.is_new_target(target)) {
-                return true;
-            }
-        }
-        return false;
+        return std::ranges::any_of(ruleset_->rule_addresses, [this](auto &&target) {
+            return store_.is_new_target(std::get<const target_index>(target));
+        });
     }
     bool check_new_filter_targets() const
     {
-        for (const auto &[target, str] : ruleset_->filter_addresses) {
-            if (store_.is_new_target(target)) {
-                return true;
-            }
-        }
-        return false;
+        return std::ranges::any_of(ruleset_->filter_addresses, [this](auto &&target) {
+            return store_.is_new_target(std::get<const target_index>(target));
+        });
     }
     std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
@@ -81,12 +75,12 @@ protected:
     memory::unordered_map<processor *, processor::cache_type> processor_cache_;
 
     // Caches of filters and conditions
-    memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;
+    memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_{};
     memory::unordered_map<input_filter *, input_filter::cache_type> input_filter_cache_;
     exclusion::context_policy exclusion_policy_;
 
     // Cache of collections to avoid processing once a result has been obtained
-    memory::unordered_map<std::string_view, collection::cache_type> collection_cache_;
+    memory::unordered_map<std::string_view, collection::cache_type> collection_cache_{};
 };
 
 class context_wrapper {
