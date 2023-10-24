@@ -15,7 +15,7 @@ namespace ddwaf::object {
 
 template <typename T>
 iterator_base<T>::iterator_base(
-    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
+    const exclusion::object_set_ref &exclude, const object_limits &limits)
     : limits_(limits), excluded_(exclude)
 {
     stack_.reserve(initial_stack_size);
@@ -71,7 +71,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
 }
 
 value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
-    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
+    const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
@@ -80,7 +80,7 @@ value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::s
 void value_iterator::initialise_cursor(
     const ddwaf_object *obj, const std::vector<std::string> &path)
 {
-    if (should_exclude(obj)) {
+    if (excluded_.contains(obj)) {
         return;
     }
 
@@ -134,7 +134,7 @@ void value_iterator::initialise_cursor_with_path(
                     continue;
                 }
 
-                if (should_exclude(possible_child)) {
+                if (excluded_.contains(possible_child)) {
                     continue;
                 }
 
@@ -197,7 +197,7 @@ void value_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        if (should_exclude(&parent->array[index])) {
+        if (excluded_.contains(&parent->array[index])) {
             ++index;
             continue;
         }
@@ -219,7 +219,7 @@ void value_iterator::set_cursor_to_next_object()
 }
 
 key_iterator::key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
-    const std::unordered_set<const ddwaf_object *> &exclude, const object_limits &limits)
+    const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
@@ -227,7 +227,7 @@ key_iterator::key_iterator(const ddwaf_object *obj, const std::vector<std::strin
 
 void key_iterator::initialise_cursor(const ddwaf_object *obj, const std::vector<std::string> &path)
 {
-    if (should_exclude(obj)) {
+    if (excluded_.contains(obj)) {
         return;
     }
 
@@ -270,7 +270,7 @@ void key_iterator::initialise_cursor_with_path(
                     continue;
                 }
 
-                if (should_exclude(possible_child)) {
+                if (excluded_.contains(possible_child)) {
                     continue;
                 }
 
@@ -321,7 +321,7 @@ void key_iterator::set_cursor_to_next_object()
 
         ddwaf_object *child = &parent->array[index];
 
-        if (should_exclude(child)) {
+        if (excluded_.contains(child)) {
             ++index;
             continue;
         }

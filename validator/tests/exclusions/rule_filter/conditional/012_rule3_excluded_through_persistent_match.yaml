@@ -1,0 +1,17 @@
+{
+  name: "Exclude a rule using a persistent condition match",
+  runs: [
+    {
+      persistent-input: {
+        exclusion-filter-3-input: "exclusion-filter-3",
+      },
+      code: ok
+    },
+    {
+      persistent-input: {
+        rule3-input: "rule3",
+      },
+      code: ok
+    }
+  ]
+}

@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "exclusion/rule_filter.hpp"
-#include "log.hpp"
+#include <exclusion/rule_filter.hpp>
+#include <log.hpp>
 
 namespace ddwaf::exclusion {
+
+using excluded_set = rule_filter::excluded_set;
 
 rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
     std::set<rule *> rule_targets, filter_mode mode)
@@ -23,23 +25,22 @@ rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
     }
 }
 
-optional_ref<const std::unordered_set<rule *>> rule_filter::match(
+std::optional<excluded_set> rule_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     DDWAF_DEBUG("Evaluating rule filter '%s'", id_.c_str());
 
-    // Note that conditions in a filter are optional
-    if (!expr_->empty()) {
-        if (expression::get_result(cache)) {
-            return std::nullopt;
-        }
-
-        if (!expr_->eval(cache, store, {}, {}, deadline).outcome) {
-            return std::nullopt;
-        }
+    // Don't return a match again if we already did
+    if (expression::get_result(cache)) {
+        return std::nullopt;
     }
 
-    return {rule_targets_};
+    auto res = expr_->eval(cache, store, {}, {}, deadline);
+    if (!res.outcome) {
+        return std::nullopt;
+    }
+
+    return {{rule_targets_, res.ephemeral, mode_}};
 }
 
 } // namespace ddwaf::exclusion

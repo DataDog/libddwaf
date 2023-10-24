@@ -38,6 +38,37 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 0);
+    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+}
+
+TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
+{
+    object_store store;
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "value"));
+    store.insert(root, object_store::attribute::ephemeral);
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("query"), "query", {});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter(
+        "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
+
+    ddwaf::timer deadline{2s};
+    input_filter::cache_type cache;
+
+    auto opt_spec = filter.match(store, cache, deadline);
+    ASSERT_TRUE(opt_spec.has_value());
+    EXPECT_EQ(opt_spec->rules.size(), 1);
+    EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
     EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
 }
 
@@ -70,10 +101,46 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 0);
     EXPECT_TRUE(opt_spec->objects.contains(&child.array[0]));
 }
 
-TEST(TestInputFilter, InputExclusionWithCondition)
+TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
+{
+    object_store store;
+
+    ddwaf_object root;
+    ddwaf_object child;
+    ddwaf_object tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "param"));
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+
+    store.insert(root, object_store::attribute::ephemeral);
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("query"), "query", {"params"});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter(
+        "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
+
+    ddwaf::timer deadline{2s};
+    input_filter::cache_type cache;
+
+    auto opt_spec = filter.match(store, cache, deadline);
+    ASSERT_TRUE(opt_spec.has_value());
+    EXPECT_EQ(opt_spec->rules.size(), 1);
+    EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
+    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+    EXPECT_TRUE(opt_spec->objects.contains(&child.array[0]));
+}
+
+TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
 {
     expression_builder builder(1);
     builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
@@ -100,6 +167,112 @@ TEST(TestInputFilter, InputExclusionWithCondition)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 0);
+    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+}
+
+TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf::object_store store;
+    store.insert(root, object_store::attribute::ephemeral);
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
+
+    ddwaf::timer deadline{2s};
+    input_filter::cache_type cache;
+
+    auto opt_spec = filter.match(store, cache, deadline);
+    ASSERT_TRUE(opt_spec.has_value());
+    EXPECT_EQ(opt_spec->rules.size(), 1);
+    EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
+    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+}
+
+TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
+
+    ddwaf::object_store store;
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+    store.insert(root, object_store::attribute::ephemeral);
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    store.insert(root);
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
+
+    ddwaf::timer deadline{2s};
+    input_filter::cache_type cache;
+
+    auto opt_spec = filter.match(store, cache, deadline);
+    ASSERT_TRUE(opt_spec.has_value());
+    EXPECT_EQ(opt_spec->rules.size(), 1);
+    EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
+    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+}
+
+TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
+{
+    expression_builder builder(1);
+    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.add_target("usr.id");
+
+    ddwaf::object_store store;
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+    store.insert(root);
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    store.insert(root, object_store::attribute::ephemeral);
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
+
+    ddwaf::timer deadline{2s};
+    input_filter::cache_type cache;
+
+    auto opt_spec = filter.match(store, cache, deadline);
+    ASSERT_TRUE(opt_spec.has_value());
+    EXPECT_EQ(opt_spec->rules.size(), 1);
+    EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
+    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
     EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
 }
 
@@ -130,6 +303,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
     EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
 }
 
@@ -193,6 +367,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
+    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
     EXPECT_TRUE(opt_spec->objects.contains(&child.array[0]));
 }
 
@@ -276,7 +451,83 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
         EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+    }
+}
+
+TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
+{
+    expression_builder builder(2);
+
+    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.add_target("http.client_ip");
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("usr.id"), "usr.id");
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
+
+    // To validate that the cache works, we pass an object store containing
+    // only the latest address. This ensures that the IP condition can't be
+    // matched on the second run.
+    input_filter::cache_type cache;
+    ddwaf::object_store store;
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        store.insert(root, object_store::attribute::ephemeral);
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        auto opt_spec = filter.match(store, cache, deadline);
+        ASSERT_TRUE(opt_spec.has_value());
+        EXPECT_EQ(opt_spec->rules.size(), 1);
+        EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+        EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
+        EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+
+        ddwaf::object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        ASSERT_FALSE(filter.match(store, cache, deadline));
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        store.insert(root, object_store::attribute::ephemeral);
+
+        ddwaf::timer deadline{2s};
+        auto opt_spec = filter.match(store, cache, deadline);
+        ASSERT_TRUE(opt_spec.has_value());
+        EXPECT_EQ(opt_spec->rules.size(), 1);
+        EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+        EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
     }
 }
 
@@ -377,6 +628,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
         EXPECT_TRUE(opt_spec->objects.contains(client_ip_ptr));
     }
 }
@@ -419,6 +671,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
         EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
     }
 
@@ -494,6 +747,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
     }
 }
 
@@ -607,6 +861,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
     }
 }
 
@@ -653,6 +908,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
     }
 
     {

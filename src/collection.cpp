@@ -13,8 +13,7 @@ namespace ddwaf {
 
 std::optional<event> match_rule(rule *rule, const object_store &store,
     memory::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
-    const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
-    const memory::unordered_map<ddwaf::rule *, collection::object_set> &objects_to_exclude,
+    const exclusion::context_policy &policy,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline)
 {
@@ -31,13 +30,13 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     }
 
     bool skip_actions = false;
-    auto exclude_it = rules_to_exclude.find(rule);
-    if (exclude_it != rules_to_exclude.end()) {
-        if (exclude_it->second == exclusion::filter_mode::bypass) {
-            DDWAF_DEBUG("Bypassing rule '%s'", id.c_str());
-            return std::nullopt;
-        }
+    auto exclusion = policy.find(rule);
+    if (exclusion.mode == exclusion::filter_mode::bypass) {
+        DDWAF_DEBUG("Bypassing rule '%s'", id.c_str());
+        return std::nullopt;
+    }
 
+    if (exclusion.mode == exclusion::filter_mode::monitor) {
         DDWAF_DEBUG("Monitoring rule '%s'", id.c_str());
         skip_actions = true;
     }
@@ -53,13 +52,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
 
         rule::cache_type &rule_cache = it->second;
         std::optional<event> event;
-        auto exclude_it = objects_to_exclude.find(rule);
-        if (exclude_it != objects_to_exclude.end()) {
-            const auto &objects_excluded = exclude_it->second;
-            event = rule->match(store, rule_cache, objects_excluded, dynamic_matchers, deadline);
-        } else {
-            event = rule->match(store, rule_cache, {}, dynamic_matchers, deadline);
-        }
+        event = rule->match(store, rule_cache, exclusion.objects, dynamic_matchers, deadline);
 
         if (event.has_value() && skip_actions) {
             event->skip_actions = true;
@@ -76,9 +69,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
 
 template <typename Derived>
 void base_collection<Derived>::match(std::vector<event> &events, const object_store &store,
-    collection_cache &cache,
-    const memory::unordered_map<ddwaf::rule *, exclusion::filter_mode> &rules_to_exclude,
-    const memory::unordered_map<rule *, collection::object_set> &objects_to_exclude,
+    collection_cache &cache, const exclusion::context_policy &exclusion,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
@@ -95,8 +86,8 @@ void base_collection<Derived>::match(std::vector<event> &events, const object_st
     }
 
     for (auto *rule : rules_) {
-        auto event = match_rule(rule, store, cache.rule_cache, rules_to_exclude, objects_to_exclude,
-            dynamic_matchers, deadline);
+        auto event =
+            match_rule(rule, store, cache.rule_cache, exclusion, dynamic_matchers, deadline);
         if (event.has_value()) {
             cache.result = Derived::type();
             cache.ephemeral = event->ephemeral;
