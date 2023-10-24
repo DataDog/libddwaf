@@ -141,9 +141,9 @@ jobs:
 
       - name: Generate coverage
         run: |
-          gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -x  -o coverage.xml
+          gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -e ".*src/vendor/.*" -x  -o coverage.xml
           mkdir -p coverage
-          gcovr --gcov-executable gcov-12 --html-details coverage/coverage.html --exclude-throw-branches -f ".*src.*" -d
+          gcovr --gcov-executable gcov-12 --html-details coverage/coverage.html --exclude-throw-branches -f ".*src.*" -e ".*src/vendor/.*" -d
         working-directory: Debug
 
       - name: Submit coverage
