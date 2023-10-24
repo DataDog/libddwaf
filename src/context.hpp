@@ -56,15 +56,23 @@ protected:
     bool is_first_run() const { return collection_cache_.empty(); }
     bool check_new_rule_targets() const
     {
-        return std::ranges::any_of(ruleset_->rule_addresses, [this](auto &&target) {
-            return store_.is_new_target(std::get<const target_index>(target));
-        });
+        // NOLINTNEXTLINE(readability-use-anyofallof)
+        for (const auto &[target, str] : ruleset_->rule_addresses) {
+            if (store_.is_new_target(target)) {
+                return true;
+            }
+        }
+        return false;
     }
     bool check_new_filter_targets() const
     {
-        return std::ranges::any_of(ruleset_->filter_addresses, [this](auto &&target) {
-            return store_.is_new_target(std::get<const target_index>(target));
-        });
+        // NOLINTNEXTLINE(readability-use-anyofallof)
+        for (const auto &[target, str] : ruleset_->filter_addresses) {
+            if (store_.is_new_target(target)) {
+                return true;
+            }
+        }
+        return false;
     }
     std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
