@@ -5,6 +5,7 @@ if(CLANG_TIDY STREQUAL CLANG_TIDY-NOTFOUND)
 endif()
 
 file(GLOB_RECURSE FILE_LIST src/*.hpp src/*.cpp)
+list(FILTER FILE_LIST EXCLUDE REGEX ".*/src/vendor/.*")
 
 execute_process (
     COMMAND bash -c "${CLANG_TIDY} --help | grep -qs 'use-color'"

@@ -73,37 +73,6 @@ endif()
 add_dependencies(lib_re2 proj_re2)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-    set(LIBFMT_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}fmtd${CMAKE_STATIC_LIBRARY_SUFFIX})
-else()
-    set(LIBFMT_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}fmt${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
-
-set(FMT_COMMIT f5e54359df4c26b6230fc61d38aa294581393084)
-ExternalProject_Add(proj_fmt
-    URL         https://github.com/fmtlib/fmt/archive/${FMT_COMMIT}.tar.gz
-    INSTALL_DIR ${INSTALL_DIR}
-    CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-                -DCMAKE_INSTALL_LIBDIR=lib
-                -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-                -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
-                -DCMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}
-                -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
-                -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
-                -DFMT_MASTER_PROJECT=OFF
-                -DFMT_DOC=OFF
-                -DFMT_TEST=OFF
-                -DFMT_OS=OFF
-                BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBFMT_FILENAME}
-)
-add_library(lib_fmt STATIC IMPORTED GLOBAL)
-set_property(TARGET lib_fmt PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBFMT_FILENAME})
-target_include_directories(lib_fmt INTERFACE ${INSTALL_DIR}/include)
-add_dependencies(lib_fmt proj_fmt)
-
-if(CMAKE_BUILD_TYPE MATCHES Debug)
     set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtestd${CMAKE_STATIC_LIBRARY_SUFFIX})
     set(LIBGMOCK_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gmockd${CMAKE_STATIC_LIBRARY_SUFFIX})
 else()
@@ -145,26 +114,6 @@ endif()
 add_dependencies(lib_gtest proj_gtest)
 add_dependencies(lib_gmock proj_gtest)
 set_target_properties(lib_gtest lib_gmock proj_gtest PROPERTIES EXCLUDE_FROM_ALL TRUE)
-
-add_library(lib_injection STATIC
-    libinjection/src/xss.c
-    libinjection/src/libinjection_html5.c
-    libinjection/src/libinjection_xss.c
-    libinjection/src/libinjection_sqli.c)
-target_include_directories(lib_injection INTERFACE ${PROJECT_SOURCE_DIR}/libinjection/src)
-set_target_properties(lib_injection PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
-add_library(lib_ac STATIC
-    lua-aho-corasick/ac_fast.cxx
-    lua-aho-corasick/ac_slow.cxx
-    lua-aho-corasick/ac.cxx)
-target_include_directories(lib_ac INTERFACE ${PROJECT_SOURCE_DIR}/lua-aho-corasick)
-set_target_properties(lib_ac PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
-add_library(lib_radix STATIC
-    radixlib/radixlib.c)
-target_include_directories(lib_radix INTERFACE ${PROJECT_SOURCE_DIR}/radixlib)
-set_target_properties(lib_radix PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 if (MSVC)
     set(LIBUTF8PROC_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc_static${CMAKE_STATIC_LIBRARY_SUFFIX})
