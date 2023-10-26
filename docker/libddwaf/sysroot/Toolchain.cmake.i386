@@ -10,13 +10,13 @@ set(CMAKE_ASM_COMPILER_TARGET ${triple})
 set(CMAKE_C_COMPILER /usr/bin/clang-16)
 set(CMAKE_C_COMPILER_TARGET ${triple})
 
-set(c_cxx_flags "-Qunused-arguments -rtlib=compiler-rt -unwindlib=libunwind -static-libgcc -fno-omit-frame-pointer")
+set(c_cxx_flags "-Qunused-arguments -rtlib=compiler-rt -unwindlib=libunwind -static-libgcc -fno-omit-frame-pointer -ffunction-sections -fdata-sections")
 set(CMAKE_C_FLAGS ${c_cxx_flags})
 set(CMAKE_CXX_COMPILER /usr/bin/clang++-16)
 set(CMAKE_CXX_COMPILER_TARGET ${triple})
 set(CMAKE_CXX_FLAGS "-stdlib=libc++ ${c_cxx_flags}")
 
-set(linker_flags "-v -fuse-ld=lld-16 -nodefaultlibs -Wl,-Bstatic -lc++ -lc++abi ${sysroot}/usr/lib/libclang_rt.builtins.a -lunwind -Wl,-Bdynamic -lc ${sysroot}/usr/lib/libclang_rt.builtins.a -Wl,--dynamic-linker,${sysroot}/lib/${interpreter} -Wl,-rpath=${sysroot} -resource-dir ${sysroot}/usr/lib/resource_dir")
+set(linker_flags "-v -fuse-ld=lld-16 -nodefaultlibs -Wl,-Bstatic -lc++ -lc++abi ${sysroot}/usr/lib/libclang_rt.builtins.a -lunwind -Wl,-Bdynamic -lc ${sysroot}/usr/lib/libclang_rt.builtins.a -Wl,--dynamic-linker,${sysroot}/lib/${interpreter} -Wl,-rpath=${sysroot} -resource-dir ${sysroot}/usr/lib/resource_dir -Wl,--gc-sections -Wl,--discard-all -Wl,--icf=safe -Wl,--print-icf-sections")
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${linker_flags} -Wl,--dynamic-linker,${sysroot}/lib/${interpreter}")
 set(CMAKE_SHARED_LINKER_FLAGS_INIT ${linker_flags})
 

@@ -33,7 +33,7 @@ TEST(TestRegressionsIntegration, TruncatedUTF8)
     ddwaf_object_map_add(&map, "value", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
 
     // The emoji should be trimmed out of the result

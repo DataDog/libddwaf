@@ -42,7 +42,7 @@ TEST(TestProcessors, Postprocessor)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_OK);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
     EXPECT_FALSE(out.timeout);
 
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
@@ -86,7 +86,7 @@ TEST(TestProcessors, Preprocessor)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
 
     EXPECT_EVENTS(out, {.id = "rule1",
@@ -138,7 +138,7 @@ TEST(TestProcessors, Processor)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
 
     EXPECT_EVENTS(out, {.id = "rule1",
@@ -186,7 +186,7 @@ TEST(TestProcessors, ProcessorWithScannerByTags)
     ASSERT_NE(context, nullptr);
 
     ddwaf_result out;
-    ddwaf_run(context, &map, nullptr, &out, 2000);
+    ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
     EXPECT_FALSE(out.timeout);
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -223,7 +223,7 @@ TEST(TestProcessors, ProcessorWithScannerByID)
     ASSERT_NE(context, nullptr);
 
     ddwaf_result out;
-    ddwaf_run(context, &map, nullptr, &out, 2000);
+    ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
     EXPECT_FALSE(out.timeout);
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -263,7 +263,7 @@ TEST(TestProcessors, ProcessorUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -300,7 +300,7 @@ TEST(TestProcessors, ProcessorUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -340,7 +340,7 @@ TEST(TestProcessors, ScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -378,7 +378,7 @@ TEST(TestProcessors, ScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -419,7 +419,7 @@ TEST(TestProcessors, ProcessorAndScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -456,7 +456,7 @@ TEST(TestProcessors, ProcessorAndScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -497,7 +497,7 @@ TEST(TestProcessors, EmptyScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -534,7 +534,7 @@ TEST(TestProcessors, EmptyScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -574,7 +574,7 @@ TEST(TestProcessors, EmptyProcessorUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -611,7 +611,7 @@ TEST(TestProcessors, EmptyProcessorUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_result out;
-        ddwaf_run(context, &map, nullptr, &out, 2000);
+        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
 
