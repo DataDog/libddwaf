@@ -330,7 +330,7 @@ Match_Tmpl(AC_Buffer* buf, const char* str, uint32 len) {
         state = Get_State_Addr(buf_base, states_ofst_vect, *str);
     }
 
-    ac_result_t r = {-1, -1};
+    ac_result_t r = {-1, -1, 0};
     if (likely(state != 0)) {
         if (unlikely(state->is_term)) {
             /* Dictionary may have string of length 1 */

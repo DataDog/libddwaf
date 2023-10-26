@@ -138,7 +138,7 @@ private:
         (void)subject; (void)r;
     }
     void Save_Patterns(const char** strv, unsigned int* strlenv, int vect_len) {
-        (void)strv; (void)strlenv;
+        (void)strv; (void)strlenv; (void)vect_len;
     }
 #endif
 

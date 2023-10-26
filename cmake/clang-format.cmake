@@ -9,6 +9,7 @@ foreach(DIR IN ITEMS src tests validator perf fuzzing)
     file(GLOB_RECURSE SOURCE_FILES ${DIR}/*.hpp ${DIR}/*.cpp)
     list(APPEND FILE_LIST ${SOURCE_FILES})
 endforeach()
+list(FILTER FILE_LIST EXCLUDE REGEX ".*/src/vendor/.*")
 
 add_custom_target(format
     COMMAND ${CLANG_FORMAT} -n -Werror ${FILE_LIST}

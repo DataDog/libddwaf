@@ -19,7 +19,7 @@ void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, c
         return;
     }
 
-    DDWAF_DEBUG("Evaluating processor '%s'", id_.c_str());
+    DDWAF_DEBUG("Evaluating processor '{}'", id_);
 
     if (!expr_->eval(cache.expr_cache, store, {}, {}, deadline).outcome) {
         return;

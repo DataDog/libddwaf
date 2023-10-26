@@ -78,24 +78,20 @@ bool object_store::insert_target_helper(
 {
     if (objects_.contains(target)) {
         if (attr == attribute::ephemeral && !ephemeral_targets_.contains(target)) {
-            DDWAF_WARN("Failed to replace non-ephemeral target '%.*s' with an ephemeral one",
-                static_cast<int>(key.size()), key.data());
+            DDWAF_WARN("Failed to replace non-ephemeral target '{}' with an ephemeral one", key);
             return false;
         }
 
         if (attr == attribute::none && ephemeral_targets_.contains(target)) {
-            DDWAF_WARN("Failed to replace ephemeral target '%.*s' with a non-ephemeral one",
-                static_cast<int>(key.size()), key.data());
+            DDWAF_WARN("Failed to replace ephemeral target '{}' with a non-ephemeral one", key);
             return false;
         }
 
-        DDWAF_DEBUG("Replacing %s target '%.*s' in object store",
-            attr == attribute::ephemeral ? "ephemeral" : "persistent", static_cast<int>(key.size()),
-            key.data());
+        DDWAF_DEBUG("Replacing {} target '{}' in object store",
+            attr == attribute::ephemeral ? "ephemeral" : "persistent", key);
     } else {
-        DDWAF_DEBUG("Inserting %s target '%.*s' into object store",
-            attr == attribute::ephemeral ? "ephemeral" : "persistent", static_cast<int>(key.size()),
-            key.data());
+        DDWAF_DEBUG("Inserting {} target '{}' into object store",
+            attr == attribute::ephemeral ? "ephemeral" : "persistent", key);
     }
 
     if (attr == attribute::ephemeral) {

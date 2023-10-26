@@ -512,13 +512,13 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
 
             id = at<std::string>(rule_map, "id");
             if (rules.find(id) != rules.end()) {
-                DDWAF_WARN("Duplicate rule %s", id.c_str());
+                DDWAF_WARN("Duplicate rule {}", id);
                 info.add_failed(id, "duplicate rule");
                 continue;
             }
 
             auto rule = parse_rule(rule_map, rule_data_ids, limits, source, addresses);
-            DDWAF_DEBUG("Parsed rule %s", id.c_str());
+            DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
 
@@ -527,7 +527,7 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
             if (id.empty()) {
                 id = index_to_id(i);
             }
-            DDWAF_WARN("Failed to parse rule '%s': %s", id.c_str(), e.what());
+            DDWAF_WARN("Failed to parse rule '{}': {}", id, e.what());
             info.add_failed(id, e.what());
         }
     }
@@ -559,7 +559,7 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 } else if (type == "data_with_expiration") {
                     matcher_name = "exact_match";
                 } else {
-                    DDWAF_DEBUG("Failed to process rule data id '%s", id.c_str());
+                    DDWAF_DEBUG("Failed to process rule data id '{}", id);
                     info.add_failed(id, "failed to infer matcher");
                     continue;
                 }
@@ -577,13 +577,13 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 auto parsed_data = parser::parse_rule_data<rule_data_type>(type, data);
                 matcher = std::make_shared<matcher::exact_match>(parsed_data);
             } else {
-                DDWAF_WARN("Matcher %s doesn't support dynamic rule data", matcher_name.data());
+                DDWAF_WARN("Matcher {} doesn't support dynamic rule data", matcher_name.data());
                 info.add_failed(id,
                     "matcher " + std::string(matcher_name) + " doesn't support dynamic rule data");
                 continue;
             }
 
-            DDWAF_DEBUG("Parsed rule data %s", id.c_str());
+            DDWAF_DEBUG("Parsed rule data {}", id);
             info.add_loaded(id);
             matchers.emplace(std::move(id), std::move(matcher));
         } catch (const ddwaf::exception &e) {
@@ -591,7 +591,7 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
                 id = index_to_id(i);
             }
 
-            DDWAF_ERROR("Failed to parse data id '%s': %s", id.c_str(), e.what());
+            DDWAF_ERROR("Failed to parse data id '{}': {}", id, e.what());
             info.add_failed(id, e.what());
         }
     }
@@ -619,10 +619,10 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
                 info.add_failed(id, "rule override with no targets");
                 continue;
             }
-            DDWAF_DEBUG("Parsed override %s", id.c_str());
+            DDWAF_DEBUG("Parsed override {}", id);
             info.add_loaded(id);
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse rule override: %s", e.what());
+            DDWAF_WARN("Failed to parse rule override: {}", e.what());
             info.add_failed(id, e.what());
         }
     }
@@ -642,7 +642,7 @@ filter_spec_container parse_filters(
             address_container addresses;
             id = at<std::string>(node, "id");
             if (filters.ids.find(id) != filters.ids.end()) {
-                DDWAF_WARN("Duplicate filter: %s", id.c_str());
+                DDWAF_WARN("Duplicate filter: {}", id);
                 info.add_failed(id, "duplicate filter");
                 continue;
             }
@@ -656,7 +656,7 @@ filter_spec_container parse_filters(
                 filters.ids.emplace(id);
                 filters.rule_filters.emplace(id, std::move(filter));
             }
-            DDWAF_DEBUG("Parsed exclusion filter %s", id.c_str());
+            DDWAF_DEBUG("Parsed exclusion filter {}", id);
 
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
@@ -664,7 +664,7 @@ filter_spec_container parse_filters(
             if (id.empty()) {
                 id = index_to_id(i);
             }
-            DDWAF_WARN("Failed to parse filter '%s': %s", id.c_str(), e.what());
+            DDWAF_WARN("Failed to parse filter '{}': {}", id, e.what());
             info.add_failed(id, e.what());
         }
     }
@@ -687,7 +687,7 @@ processor_container parse_processors(
 
             id = at<std::string>(node, "id");
             if (known_processors.contains(id)) {
-                DDWAF_WARN("Duplicate processor: %s", id.c_str());
+                DDWAF_WARN("Duplicate processor: {}", id);
                 info.add_failed(id, "duplicate processor");
                 continue;
             }
@@ -697,7 +697,7 @@ processor_container parse_processors(
             if (generator_id == "extract_schema") {
                 generator = std::make_shared<generator::extract_schema>();
             } else {
-                DDWAF_WARN("Unknown generator: %s", generator_id.c_str());
+                DDWAF_WARN("Unknown generator: {}", generator_id);
                 info.add_failed(id, "unknown generator '" + generator_id + "'");
                 continue;
             }
@@ -722,12 +722,12 @@ processor_container parse_processors(
             auto output = at<bool>(node, "output", false);
 
             if (!eval && !output) {
-                DDWAF_WARN("Processor %s not used for evaluation or output", id.c_str());
+                DDWAF_WARN("Processor {} not used for evaluation or output", id);
                 info.add_failed(id, "processor not used for evaluation or output");
                 continue;
             }
 
-            DDWAF_DEBUG("Parsed processor %s", id.c_str());
+            DDWAF_DEBUG("Parsed processor {}", id);
             known_processors.emplace(id);
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
@@ -746,7 +746,7 @@ processor_container parse_processors(
             if (id.empty()) {
                 id = index_to_id(i);
             }
-            DDWAF_WARN("Failed to parse processor '%s': %s", id.c_str(), e.what());
+            DDWAF_WARN("Failed to parse processor '{}': {}", id, e.what());
             info.add_failed(id, e.what());
         }
     }
@@ -763,7 +763,7 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
         try {
             id = at<std::string>(node, "id");
             if (scanners.find_by_id(id) != nullptr) {
-                DDWAF_WARN("Duplicate scanner: %s", id.c_str());
+                DDWAF_WARN("Duplicate scanner: {}", id);
                 info.add_failed(id, "duplicate scanner");
                 continue;
             }
@@ -793,12 +793,12 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
             }
 
             if (!key_matcher && !value_matcher) {
-                DDWAF_WARN("Scanner %s has no key or value matcher", id.c_str());
+                DDWAF_WARN("Scanner {} has no key or value matcher", id);
                 info.add_failed(id, "scanner has no key or value matcher");
                 continue;
             }
 
-            DDWAF_DEBUG("Parsed scanner %s", id.c_str());
+            DDWAF_DEBUG("Parsed scanner {}", id);
             auto scnr = std::make_shared<scanner>(scanner{
                 std::move(id), std::move(tags), std::move(key_matcher), std::move(value_matcher)});
             scanners.emplace(scnr);
@@ -807,7 +807,7 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
             if (id.empty()) {
                 id = index_to_id(i);
             }
-            DDWAF_WARN("Failed to parse scanner '%s': %s", id.c_str(), e.what());
+            DDWAF_WARN("Failed to parse scanner '{}': {}", id, e.what());
             info.add_failed(id, e.what());
         }
     }

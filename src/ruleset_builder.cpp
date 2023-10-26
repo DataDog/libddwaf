@@ -232,7 +232,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::rules;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse rules: %s", e.what());
+            DDWAF_WARN("Failed to parse rules: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -257,7 +257,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::custom_rules;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse custom rules: %s", e.what());
+            DDWAF_WARN("Failed to parse custom rules: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -291,7 +291,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::data;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse rule data: %s", e.what());
+            DDWAF_WARN("Failed to parse rule data: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -310,7 +310,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::overrides;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse overrides: %s", e.what());
+            DDWAF_WARN("Failed to parse overrides: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -329,7 +329,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::filters;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse exclusions: %s", e.what());
+            DDWAF_WARN("Failed to parse exclusions: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -348,7 +348,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::processors;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse processors: %s", e.what());
+            DDWAF_WARN("Failed to parse processors: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -367,7 +367,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::scanners;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse scanners: %s", e.what());
+            DDWAF_WARN("Failed to parse scanners: {}", e.what());
             section.set_error(e.what());
         }
     }

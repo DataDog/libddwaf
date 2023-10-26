@@ -28,7 +28,7 @@ rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
 std::optional<excluded_set> rule_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
-    DDWAF_DEBUG("Evaluating rule filter '%s'", id_.c_str());
+    DDWAF_DEBUG("Evaluating rule filter '{}'", id_);
 
     // Don't return a match again if we already did
     if (expression::get_result(cache)) {

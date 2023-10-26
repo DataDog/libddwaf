@@ -115,26 +115,6 @@ add_dependencies(lib_gtest proj_gtest)
 add_dependencies(lib_gmock proj_gtest)
 set_target_properties(lib_gtest lib_gmock proj_gtest PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
-add_library(lib_injection STATIC
-    libinjection/src/xss.c
-    libinjection/src/libinjection_html5.c
-    libinjection/src/libinjection_xss.c
-    libinjection/src/libinjection_sqli.c)
-target_include_directories(lib_injection INTERFACE ${PROJECT_SOURCE_DIR}/libinjection/src)
-set_target_properties(lib_injection PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
-add_library(lib_ac STATIC
-    lua-aho-corasick/ac_fast.cxx
-    lua-aho-corasick/ac_slow.cxx
-    lua-aho-corasick/ac.cxx)
-target_include_directories(lib_ac INTERFACE ${PROJECT_SOURCE_DIR}/lua-aho-corasick)
-set_target_properties(lib_ac PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
-add_library(lib_radix STATIC
-    radixlib/radixlib.c)
-target_include_directories(lib_radix INTERFACE ${PROJECT_SOURCE_DIR}/radixlib)
-set_target_properties(lib_radix PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
 if (MSVC)
     set(LIBUTF8PROC_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc_static${CMAKE_STATIC_LIBRARY_SUFFIX})
 else ()

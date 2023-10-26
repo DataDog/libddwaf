@@ -32,7 +32,7 @@ public:
 
     bool eval(const ddwaf_object &key, const ddwaf_object &value) const
     {
-        DDWAF_DEBUG("Evaluating scanner '%s'", id_.c_str());
+        DDWAF_DEBUG("Evaluating scanner '{}'", id_);
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
