@@ -1,5 +1,117 @@
 # Upgrading libddwaf
 
+## Upgrading from `1.14.0` to `1.15.0`
+
+### Interface changes
+
+With the introduction of ephemeral addresses, `ddwaf_run` now allows the caller to provide data as both persistent or ephemeral. The new signature can be seen below:
+```
+DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data, ddwaf_object *ephemeral_data, ddwaf_result *result, uint64_t timeout);
+```
+
+Both `persistent_data` and `ephemeral_data` are nullable, however at least one of them has to be non-null for the call to be valid. Otherwise the call to `ddwaf_run` will return the error `DDWAF_ERR_INVALID_ARGUMENT`.
+
+The other interface change is the renaming of ``ddwaf_required_address` to `ddwaf_known_addresses`, aside from the name change, the signature hasn't changed, as seen below:
+
+```
+const char* const* ddwaf_known_addresses(const ddwaf_handle handle, uint32_t *size);
+```
+
+The reason for the name change is to better reflect the nature of the addresses provided by this function, which will now provide a list of all addresses seen by the WAF, regardless of whether they are required for rule, filter or processor evaluation, or whether they are optionally used when available, such as part of an exclusion filter for inputs or a processor mapping. A more accurate distinction, as well as a breakdown of the addresses required by each of the supported high-level features, is now provided as part of the diagnostics returned by `ddwaf_init` and `ddwaf_update`.
+
+Finally, `testPowerWAF` has been renamed to `waf_test`, while this isn't an interface change it might affect those building and testing the WAF directly.
+
+### Ephemeral addresses
+
+Ephemeral addresses is a new feature aimed at providing better support for protocols composed of a single request with multiple subrequests, such as gRPC client / server streaming or GraphQL. As the name implies, ephemeral addresses are short-lived:
+- These addresses are only used for evaluation of rules and exclusion filters during the `ddwaf_run` call in which they are provided; subsequent calls will have no access to these addresses.
+- At the end of `ddwaf_run` the memory associated with the ephemeral data provided is freed.
+
+As an example, these addresses can be used to evaluate independent gRPC messages within the context of the whole http request. A call with the whole http context and the first gRPC message could look as follows:
+```json
+{
+  "persistent": {
+    "server.request.headers.no_cookies": [ ... ],
+    "server.request.uri.raw": ...,
+    "http.client_ip": ...
+  },
+  "ephemeral": {
+    "grpc.server.request.message: { ... }
+  }
+}
+```
+
+Subsequent calls only need to provide the relevant gRPC message data:
+```json
+{
+  "ephemeral": {
+    "grpc.server.request.message: { ... }
+  }
+}
+```
+
+When using ephemeral addresses in this manner, each call is somewhat equivalent to creating a new context and providing all of the data at once for each message, however:
+- The new approach doesn't need to reevaluate the already evaluated persistent address for each gRPC message.
+- Consequently the new approach does not provide duplicate events for the already evaluated persistent addresses.
+- The performance impact should be much smaller when using the new approach since less rules need to be evaluated and the context can be reused rather than created & destroyed for each message.
+
+#### Matches & Caching
+
+Aside from the addresses themselves being ephemeral, the outcome of any evaluation with an ephemeral address is also ephemeral.
+
+The impact of ephemeral addresses on rules is as follows:
+- Rule matches involving an ephemeral address are not cached, this means that the relevant condition which resulted in a match might be reevaluated in a subsequent call to `ddwaf_run`.
+- Collections (set of rules with a given type) will also be reevaluated, in subsequent calls to `ddwaf_run`, if the rule match was from an ephemeral address.
+
+On exclusion filters, the impact is slightly more nuanced:
+- Exclusion filters used for exclusing only rules (rule filters) will be reevaluated if any of the conditions had an ephemeral match. The list of excluded rules resulting from an ephemeral match is also not cached, meaning those rules will be available for evaluation in a subsequent call (if no rule filter excludes them as well).
+- Exclusion filters used for excluding inputs (input filters) will also be reevaluated if any of the conditions had an ephemeral match. With regards to the excluded inputs:
+  - If the filter had an ephemeral match, none of the excluded inputs are cached and will be subsequently available in a subsequent run.
+  - If the filter didn't have an ephemeral match, only 
+
+### Address diagnostics
+In order to provide more visibility regarding the breakdown of addresses per feature and whether they are required or optional, the latest version of the WAF introduces address diagnostics. These diagnostics can typically be obtained through a call to `ddwaf_init` and `ddwaf_update` and are broken down per feature, for example:
+
+```json
+
+{
+  "rules": {
+    "loaded": [
+      "a45b55fc-5b57-4002-90bf-58cdf296124c"
+    ],
+    "failed": [],
+    "errors": {},
+    "addresses": {
+      "required": [
+        "http.client_ip",
+        "usr.id",
+        "server.request.headers.no_cookies",
+        "graphql.server.all_resolvers",
+        "grpc.server.request.message",
+        "server.request.path_params",
+        "server.request.body",
+        "server.request.query",
+        "server.request.uri.raw",
+        "server.response.status",
+        "grpc.server.request.metadata"
+      ],
+      "optional": []
+    }
+  }
+}
+```
+
+The distinction between required and optional addresses depends on the feature:
+- Rules only have required addresses.
+- Exclusion filters have both required and optional addresses:
+  - The required addresses correspond to those used within the filter conditions, i.e. those which are required for the filter to be evaluated altogether.
+  - Currently the only optional addresses are the addresses of excluded inputs, e.g. a filter could exclude `http.client_ip` for a specific endpoint, this address would be optional since it's only used if available.
+- Processors also have both required and optional addresses:
+  - The required addresses correspond to those used within the processor conditions.
+  - The optional addresses correspond to each of the processor mappings, for example if a processor uses `server.request.body.raw` to generate `server.request.body`, the former would be considered optional.
+
+Other diagnostics, such as `rules_data` or `rules_override`, do not provide the addresses key.
+
 ## Upgrading from `1.12.0` to `1.13.0`
 
 ### Interface changes
