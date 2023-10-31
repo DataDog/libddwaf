@@ -1,5 +1,32 @@
 # libddwaf release
 
+### v1.15.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+This new version of the WAF includes the following new features:
+- Ephemeral addresses for composite requests
+- Naive duplicate address support on input filters
+- Required / Optional address diagnostics
+
+The [upgrading guide](UGRADING.md) has also been updated to cover the new changes.
+
+#### API & Breaking Changes
+- Support ephemeral addresses on `ddwaf_run` ([#219](https://github.com/DataDog/libddwaf/pull/219))
+- Rename `ddwaf_required_addresses` to `ddwaf_known_addresses` ([#221](https://github.com/DataDog/libddwaf/pull/221))
+
+#### Fixes
+- Schema extraction scanners: reduce false positives on arrays ([#220](https://github.com/DataDog/libddwaf/pull/220))
+
+#### Changes
+- Ephemeral addresses for rules & exclusion filters ([#219](https://github.com/DataDog/libddwaf/pull/219))([#224](https://github.com/DataDog/libddwaf/pull/224))
+- Address diagnostics ([#221](https://github.com/DataDog/libddwaf/pull/221))
+- Naive duplicate address support on input/object filters ([#222](https://github.com/DataDog/libddwaf/pull/222))
+
+#### Miscellaneous
+- Update nuget packaging to use new musl linux binaries ([#217](https://github.com/DataDog/libddwaf/pull/217))
+- Validator improvements  ([#225](https://github.com/DataDog/libddwaf/pull/225))
+- Use `fmt::format` for logging and vendorize some dependencies within `src/` ([#226](https://github.com/DataDog/libddwaf/pull/226))
+- Reduce linux binary size and fix some flaky tests ([#227](https://github.com/DataDog/libddwaf/pull/227))
+
 ### v1.14.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 This release of the WAF includes the following new features:

@@ -7,6 +7,7 @@ foreach(EXAMPLE ${LIBDDWAF_EXAMPLE_SOURCE})
     add_executable(${EXAMPLE_NAME} ${EXAMPLE} ${LIBDDWAF_EXAMPLE_COMMON_SOURCE})
     target_link_libraries(${EXAMPLE_NAME} PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson)
     target_include_directories(${EXAMPLE_NAME} PRIVATE ${libddwaf_SOURCE_DIR}/src)
+    target_include_directories(${EXAMPLE_NAME} PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor)
 
     set_target_properties(${EXAMPLE_NAME} PROPERTIES
         CXX_STANDARD 20
