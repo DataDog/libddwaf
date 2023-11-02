@@ -7,7 +7,7 @@ This new version of the WAF includes the following new features:
 - Naive duplicate address support on input filters
 - Required / Optional address diagnostics
 
-The [upgrading guide](UGRADING.md) has also been updated to cover the new changes.
+The [upgrading guide](UPGRADING.md) has also been updated to cover the new changes.
 
 #### API & Breaking Changes
 - Support ephemeral addresses on `ddwaf_run` ([#219](https://github.com/DataDog/libddwaf/pull/219))
@@ -66,7 +66,7 @@ This new version of the WAF includes the following new features:
 - Equals operator for arbitrary type equality comparison within conditions
 - Many other quality of life, correctness and performance improvements
 
-The [upgrading guide](UGRADING.md) has also been updated to cover the new changes.
+The [upgrading guide](UPGRADING.md) has also been updated to cover the new changes.
 
 #### API & Breaking Changes
 - Add object types `DDWAF_OBJ_FLOAT` and `DDWAF_OBJ_NULL` ([#197](https://github.com/DataDog/libddwaf/pull/197))

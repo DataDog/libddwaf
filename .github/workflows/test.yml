@@ -194,3 +194,29 @@ jobs:
       - name: Tidy
         run: make tidy || true
         working-directory: Debug
+
+  tools:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Create directories
+        run: mkdir Debug
+
+      - name: CMake
+        env:
+          CC: gcc-12
+          CXX: g++-12
+        run: |
+          cmake .. -DCMAKE_BUILD_TYPE=Debug 
+        working-directory: Debug
+
+      - name: Build
+        run: VERBOSE=1 make -j $(nproc) verify_rule verify_ruleset waf_runner validate_schema
+        working-directory: Debug
+
+
