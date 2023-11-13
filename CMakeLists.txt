@@ -131,18 +131,13 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/bitstate.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/compile.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/dfa.cc
-    ${libddwaf_SOURCE_DIR}/src/vendor/re2/filtered_re2.cc
-    #${libddwaf_SOURCE_DIR}/src/vendor/re2/mimics_pcre.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/nfa.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/onepass.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/parse.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/perl_groups.cc
-    ${libddwaf_SOURCE_DIR}/src/vendor/re2/prefilter.cc
-    ${libddwaf_SOURCE_DIR}/src/vendor/re2/prefilter_tree.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/prog.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/re2.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/regexp.cc
-    ${libddwaf_SOURCE_DIR}/src/vendor/re2/set.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/simplify.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/stringpiece.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/tostring.cc
@@ -183,7 +178,6 @@ target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/v
 
 install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-target_compile_options(libddwaf_objects PRIVATE -flto -ffat-lto-objects)
 target_compile_definitions(libddwaf_objects PRIVATE UTF8PROC_STATIC=1)
 
 # System dependencies
