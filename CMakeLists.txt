@@ -127,7 +127,31 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/libinjection_html5.c
     ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/libinjection_xss.c
     ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/libinjection_sqli.c
+    ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/utf8proc.c
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/bitstate.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/compile.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/dfa.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/filtered_re2.cc
+    #${libddwaf_SOURCE_DIR}/src/vendor/re2/mimics_pcre.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/nfa.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/onepass.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/parse.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/perl_groups.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/prefilter.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/prefilter_tree.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/prog.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/re2.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/regexp.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/set.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/simplify.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/stringpiece.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/tostring.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/unicode_casefold.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/unicode_groups.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/rune.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/strutil.cc
 )
+
 add_library(libddwaf_objects OBJECT ${LIBDDWAF_SOURCE})
 
 # we need PIC even on the static lib,as it's expected to be linked in a shared lib
@@ -154,12 +178,14 @@ target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/v
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/)
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/)
 target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/)
+target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/)
+target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/re2/)
 
 install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
-set(LIBDDWAF_PRIVATE_LIBRARIES lib_re2 lib_utf8proc)
+set(LIBDDWAF_PRIVATE_LIBRARIES "")
 
 if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(libddwaf_objects PRIVATE -ggdb --coverage)
@@ -221,7 +247,6 @@ if (LIBDDWAF_BUILD_STATIC)
             COMMAND ${CMAKE_COMMAND} -E make_directory lib_comb
             COMMAND ${CMAKE_COMMAND} -E chdir lib_comb lib.exe
                 /OUT:combined${CMAKE_STATIC_LIBRARY_SUFFIX}
-                $<TARGET_FILE:libddwaf_static> $<TARGET_FILE:lib_re2> $<TARGET_FILE:lib_utf8proc>
             COMMAND ${CMAKE_COMMAND} -E copy lib_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     else()
@@ -229,8 +254,6 @@ if (LIBDDWAF_BUILD_STATIC)
           add_custom_command(TARGET libddwaf_static POST_BUILD
               COMMAND ${CMAKE_COMMAND} -E make_directory ar_comb
               COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:libddwaf_static>
-              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_re2>
-              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_utf8proc>
               COMMAND libtool -static -o ar_comb/combined.a -arch_only ${CMAKE_OSX_ARCHITECTURES} ar_comb/*.o*
 
               COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
@@ -240,8 +263,6 @@ if (LIBDDWAF_BUILD_STATIC)
           add_custom_command(TARGET libddwaf_static POST_BUILD
               COMMAND ${CMAKE_COMMAND} -E make_directory ar_comb
               COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:libddwaf_static>
-              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_re2>
-              COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:lib_utf8proc>
               COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:glibc_compat> ar_comb
               COMMAND ${CMAKE_AR} -qcs ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} ar_comb/*.o*
 

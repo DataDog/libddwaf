@@ -14,6 +14,7 @@ target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor)
 target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/)
 target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/)
 target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/)
+target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/)
 
 if(NOT STDLIB_MAP_RECURSIVE)
     target_compile_definitions(waf_test PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
