@@ -611,9 +611,12 @@ bool Prog::IsOnePass() {
     LOG(ERROR) << "nodes:\n" << dump;
   }
 
-  dfa_mem_ -= static_cast<uint64_t>(nalloc)*statesize;
-  onepass_nodes_ = PODArray<uint8_t>(nalloc*statesize);
-  memmove(onepass_nodes_.data(), nodes.data(), nalloc*statesize);
+  // nalloc can't be larger than maxnodes which is explicitly set to 65000
+  // while statesize can be a value between 0 and 256. Based on these
+  // constraints, the multiplication can't overflow.
+  dfa_mem_ -= static_cast<int64_t>(nalloc) * statesize;
+  onepass_nodes_ = PODArray<uint8_t>(nalloc * statesize);
+  memmove(onepass_nodes_.data(), nodes.data(), static_cast<uint64_t>(nalloc) * statesize);
   return true;
 
 fail:

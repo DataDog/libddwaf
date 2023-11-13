@@ -12,7 +12,6 @@
 
 extern "C" {
 #include <stdint.h>
-#define UTF8PROC_STATIC
 #include <utf8proc.h>
 }
 

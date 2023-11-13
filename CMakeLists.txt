@@ -183,6 +183,9 @@ target_include_directories(libddwaf_objects PRIVATE ${libddwaf_SOURCE_DIR}/src/v
 
 install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+target_compile_options(libddwaf_objects PRIVATE -flto -ffat-lto-objects)
+target_compile_definitions(libddwaf_objects PRIVATE UTF8PROC_STATIC=1)
+
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
 set(LIBDDWAF_PRIVATE_LIBRARIES "")
