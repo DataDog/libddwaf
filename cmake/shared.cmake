@@ -64,7 +64,7 @@ elseif (APPLE)
             DESTINATION ${CMAKE_INSTALL_LIBDIR}/.build-id/${BUILD_ID_PREFIX}
             RENAME ${BUILD_ID_SUFFIX}.debug)
     endif()
-elseif (MSVC)
+elseif (MSVC OR MINGW)
     target_link_libraries(libddwaf_shared
         PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
         PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})

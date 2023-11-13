@@ -2,7 +2,7 @@
 set(LIBDDWAF_PACKAGE_SUFFIX "" CACHE STRING "Suffix for packaging purposes")
 if(APPLE)
     set(LIBDDWAF_PACKAGE_PROCESSOR ${CMAKE_OSX_ARCHITECTURES} CACHE STRING "Alternative processor for packaging purposes")
-    #set(CPU_TYPE ${CMAKE_OSX_ARCHITECTURES})
+    set(CPU_TYPE ${CMAKE_OSX_ARCHITECTURES})
 else()
     set(LIBDDWAF_PACKAGE_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "Alternative processor for packaging purposes")
 endif()
