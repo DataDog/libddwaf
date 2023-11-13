@@ -195,6 +195,7 @@ endif()
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     if (NOT MINGW) 
         target_compile_options(libddwaf_objects PRIVATE -flto)
+        target_link_options(libddwaf_objects PRIVATE -flto)
     endif()
 # needed for glibc <2.17. We compile with --as-needed so the library won't
 # be linked on more 2.17+, but dependencies might since it's part of the public
@@ -235,6 +236,9 @@ if (LIBDDWAF_BUILD_STATIC)
     add_library(libddwaf_static STATIC $<TARGET_OBJECTS:libddwaf_objects>)
     target_link_libraries(libddwaf_static INTERFACE ${LIBDDWAF_INTERFACE_LIBRARIES})
     if (NOT MSVC)
+        if(CMAKE_SYSTEM_NAME STREQUAL Linux)
+            target_link_options(libddwaf_static PRIVATE -flto)
+        endif()
         set_target_properties(libddwaf_static PROPERTIES OUTPUT_NAME ddwaf)
     else()
         set_target_properties(libddwaf_static PROPERTIES OUTPUT_NAME ddwaf_static)
@@ -297,6 +301,7 @@ if (LIBDDWAF_BUILD_SHARED)
     elseif(NOT MSVC)
         target_link_libraries(libddwaf_shared PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})
         target_link_libraries(libddwaf_shared PRIVATE
+            -flto
             -Wl,--no-undefined
             -Wl,-version-script=${libddwaf_SOURCE_DIR}/libddwaf.version
             -Wl,--build-id=0x${BUILD_ID}
