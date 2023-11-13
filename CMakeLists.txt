@@ -193,6 +193,9 @@ if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    if (NOT MINGW) 
+        target_compile_options(libddwaf_objects PRIVATE -flto)
+    endif()
 # needed for glibc <2.17. We compile with --as-needed so the library won't
 # be linked on more 2.17+, but dependencies might since it's part of the public
 # interface of the target
