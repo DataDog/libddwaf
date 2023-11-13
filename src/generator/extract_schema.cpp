@@ -300,7 +300,7 @@ base_node generate_helper(const ddwaf_object *object, std::string_view key,
                 continue;
             }
 
-            std::string_view const key{
+            const std::string_view key{
                 child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
 
             auto schema = generate_helper(child, key, scanners, depth - 1, deadline);

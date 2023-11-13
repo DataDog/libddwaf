@@ -8,6 +8,7 @@ RUN mkdir -p build
 RUN cd build && cmake \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_VERBOSE_MAKEFILE=ON \
     -DCMAKE_TOOLCHAIN_FILE=/libddwaf/docker/libddwaf/sysroot/Toolchain.cmake.${ARCH} \
     ../libddwaf && ninja
 RUN patchelf --remove-needed $(basename /sysroot/${ARCH}-none-linux-musl/lib/libc.musl-*.so.1) /build/libddwaf.so

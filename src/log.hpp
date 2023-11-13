@@ -51,16 +51,17 @@ constexpr const char *base_name(const char *path)
 }
 
 #  define DDWAF_LOG_HELPER(level, function, file, line, fmt_str, ...)                              \
-    {                                                                                              \
-      if (ddwaf::logger::valid(level)) {                                                           \
-        constexpr const char *filename = base_name(file);                                          \
-        auto message = fmt::format(fmt_str, ##__VA_ARGS__);                                        \
-        ddwaf::logger::log(level, function, filename, line, message.c_str(), message.size());      \
-      }                                                                                            \
-    }
+      {                                                                                            \
+          if (ddwaf::logger::valid(level)) {                                                       \
+              constexpr const char *filename = base_name(file);                                    \
+              auto message = fmt::format(fmt_str, ##__VA_ARGS__);                                  \
+              ddwaf::logger::log(                                                                  \
+                  level, function, filename, line, message.c_str(), message.size());               \
+          }                                                                                        \
+      }
 
 #  define DDWAF_LOG(level, fmt, ...)                                                               \
-    DDWAF_LOG_HELPER(level, __func__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+      DDWAF_LOG_HELPER(level, __func__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 #endif
 
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_TRACE
