@@ -184,6 +184,10 @@ target_compile_definitions(libddwaf_objects PRIVATE UTF8PROC_STATIC=1)
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
 set(LIBDDWAF_PRIVATE_LIBRARIES "")
 
+if (MSVC)
+    target_compile_definitions(libddwaf_objects PRIVATE NOMINMAX)
+endif()
+
 if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(libddwaf_objects PRIVATE -ggdb --coverage)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
