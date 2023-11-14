@@ -5,6 +5,7 @@
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "yaml_helpers.hpp"
+#include <yaml-cpp/null.h>
 
 namespace YAML {
 
@@ -70,6 +71,9 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
     case DDWAF_OBJ_UNSIGNED:
         out << o.uintValue;
         break;
+    case DDWAF_OBJ_FLOAT:
+        out << o.f64;
+        break;
     case DDWAF_OBJ_STRING:
         out << o.stringValue;
         break;
@@ -87,7 +91,8 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
         out << YAML::EndMap;
         break;
     case DDWAF_OBJ_INVALID:
-        throw std::runtime_error("Invalid object");
+    case DDWAF_OBJ_NULL:
+        out << YAML::Null;
     }
 
     return out;
