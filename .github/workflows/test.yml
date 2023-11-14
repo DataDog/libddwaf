@@ -219,7 +219,7 @@ jobs:
         run: VERBOSE=1 make -j $(nproc) verify_rule verify_ruleset waf_runner validate_schema
         working-directory: Debug
 
- verify_ruleset:
+  verify_ruleset:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
