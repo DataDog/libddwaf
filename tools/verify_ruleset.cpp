@@ -37,6 +37,10 @@ int main(int argc, char *argv[])
         ddwaf_destroy(handle);
 
         for (const auto node : root) {
+            if (node.second.IsScalar()) {
+                continue;
+            }
+
             auto key = node.first.as<std::string>();
 
             auto error = node.second["error"];
@@ -53,10 +57,9 @@ int main(int argc, char *argv[])
 
             for (const auto error_instance : errors) {
                 auto err_msg = error_instance.first.as<std::string>();
-
-                for (const auto feature_key : error_instance.second) {
-                    std::cout << key << " : " << feature_key.as<std::string>() << " : " << err_msg
-                              << '\n';
+                for (const auto feature_key_node : error_instance.second) {
+                    auto feature_key = feature_key_node.as<std::string>();
+                    std::cout << key << " : " << feature_key << " : " << err_msg << '\n';
                 }
             }
             retval = EXIT_FAILURE;
