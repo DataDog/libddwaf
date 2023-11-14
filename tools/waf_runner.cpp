@@ -26,7 +26,7 @@
 auto parse_args(int argc, char *argv[])
 {
     const std::map<std::string, std::string, std::less<>> arg_mapping{
-        {"-r", "--ruleset"}, {"-d", "--data"}, {"--ruleset", "--ruleset"}, {"--data", "--data"}};
+        {"-r", "--ruleset"}, {"-i", "--input"}, {"--ruleset", "--ruleset"}, {"--input", "--input"}};
 
     std::unordered_map<std::string, std::vector<std::string>> args;
     auto last_arg = args.end();
@@ -55,10 +55,10 @@ int main(int argc, char *argv[])
     auto args = parse_args(argc, argv);
 
     const std::vector<std::string> rulesets = args["--ruleset"];
-    const std::vector<std::string> inputs = args["--data"];
+    const std::vector<std::string> inputs = args["--input"];
     if (rulesets.empty() || inputs.empty()) {
         std::cout << "Usage: " << argv[0] << " --ruleset <json/yaml file> [<json/yaml file>..]"
-                  << " --data <json input> [<json input>..]\n";
+                  << " --input <json input> [<json input>..]\n";
         return EXIT_FAILURE;
     }
 
