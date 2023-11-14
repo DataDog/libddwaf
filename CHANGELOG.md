@@ -3,7 +3,7 @@
 ### v1.15.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 #### Fixes
-- Fix duplicate processor check
+- Fix duplicate processor check ([#234](https://github.com/DataDog/libddwaf/pull/234))
 
 ### v1.15.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
