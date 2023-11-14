@@ -244,5 +244,5 @@ jobs:
         working-directory: Debug
 
       - name: Verify
-        run: ./tools/verify_ruleset /third_party/proj_event_rules-prefix/src/proj_event_rules/build/recommended.json
+        run: ./tools/verify_ruleset ./third_party/proj_event_rules-prefix/src/proj_event_rules/build/recommended.json
         working-directory: Debug
