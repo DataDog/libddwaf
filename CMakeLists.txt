@@ -53,31 +53,25 @@ try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
 if(LINUX)
     find_library(LIBPTHREAD pthread)
-    if (LIBPTHREAD)
-        list(APPEND LIBDDWAF_INTERFACE_LIBRARIES pthread)
-    endif()
     find_library(LIBRT rt)
-    if (LIBRT)
-        list(APPEND LIBDDWAF_INTERFACE_LIBRARIES rt)
-    endif()
     find_library(LIBDL dl)
-    if (LIBDL)
-        list(APPEND LIBDDWAF_INTERFACE_LIBRARIES dl)
-    endif()
     # there is also a call to ceilf that may or may not result in an import.
     # The symbol might live in libm or the normal libc (e.g. musl). In any case,
     # add the dependency
     find_library(LIBM m)
-    if (LIBM)
-        list(APPEND LIBDDWAF_INTERFACE_LIBRARIES m)
-    endif()
+
+    set(LIBDDWAF_INTERFACE_LIBRARIES
+        $<$<BOOL:LIBPTHREAD>:pthread>
+        $<$<BOOL:LIBRT>:rt>
+        $<$<BOOL:LIBDL>:dl>
+        $<$<BOOL:LIBM>:m>)
 elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
 
+message("${LIBDDWAF_INTERFACE_LIBRARIES}")
 set(LIBDDWAF_PRIVATE_LIBRARIES "")
 if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
-    target_compile_options(${target_name} PRIVATE --coverage)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()
 
