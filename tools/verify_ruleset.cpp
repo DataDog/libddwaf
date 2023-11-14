@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
             }
 
             auto errors = node.second["errors"];
-            if (!errors.IsDefined()) {
+            if (!errors.IsDefined() || errors.size() == 0) {
                 continue;
             }
 
