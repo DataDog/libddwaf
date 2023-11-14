@@ -676,7 +676,7 @@ processor_container parse_processors(
     parameter::vector &processor_array, base_section_info &info, const object_limits &limits)
 {
     processor_container processors;
-    std::unordered_set<std::string_view> known_processors;
+    std::unordered_set<std::string> known_processors;
 
     for (unsigned i = 0; i < processor_array.size(); i++) {
         const auto &node_param = processor_array[i];
