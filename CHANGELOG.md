@@ -1,5 +1,10 @@
 # libddwaf release
 
+### v1.15.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+#### Fixes
+- Fix duplicate processor check
+
 ### v1.15.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 This new version of the WAF includes the following new features:
