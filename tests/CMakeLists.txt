@@ -8,13 +8,7 @@ set_target_properties(waf_test PROPERTIES
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
 
-target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/include)
-target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src)
-target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor)
-target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/)
-target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/)
-target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/)
-target_include_directories(waf_test PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/)
+target_include_directories(waf_test PRIVATE ${LIBDDWAF_PUBLIC_INCLUDES} ${LIBDDWAF_PRIVATE_INCLUDES})
 
 if(NOT STDLIB_MAP_RECURSIVE)
     target_compile_definitions(waf_test PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)

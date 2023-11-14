@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(libddwaf)
 file(READ "version" CMAKE_PROJECT_VERSION)
+set(PROJECT_VERSION CMAKE_PROJECT_VERSION)
 
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
@@ -12,7 +13,6 @@ configure_file(src/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.hpp)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -73,6 +73,12 @@ if(LINUX)
     endif()
 elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
+endif()
+
+set(LIBDDWAF_PRIVATE_LIBRARIES "")
+if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
+    target_compile_options(${target_name} PRIVATE --coverage)
+    list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()
 
 include(cmake/objects.cmake)

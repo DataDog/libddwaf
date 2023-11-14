@@ -81,6 +81,17 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/strutil.cc
 )
 
+set(LIBDDWAF_PUBLIC_INCLUDES ${libddwaf_SOURCE_DIR}/include)
+
+set(LIBDDWAF_PRIVATE_INCLUDES
+    ${libddwaf_SOURCE_DIR}/src
+    ${libddwaf_SOURCE_DIR}/src/vendor
+    ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/
+    ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/
+    ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/
+    ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/)
+
 function(gen_objects target_name)
     add_library(${target_name} OBJECT ${LIBDDWAF_SOURCE})
 
@@ -98,25 +109,12 @@ function(gen_objects target_name)
         target_compile_definitions(${target_name} PRIVATE LIBDDWAF_VECTORIZED_TRANSFORMERS)
     endif()
 
-    target_include_directories(${target_name} PUBLIC ${libddwaf_SOURCE_DIR}/include)
-    target_include_directories(${target_name} PRIVATE ${libddwaf_SOURCE_DIR}/src)
-    target_include_directories(${target_name} PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor)
-    target_include_directories(${target_name} PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/)
-    target_include_directories(${target_name} PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/)
-    target_include_directories(${target_name} PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/)
-    target_include_directories(${target_name} PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/)
-    target_include_directories(${target_name} PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/re2/)
+    target_include_directories(${target_name} PUBLIC ${LIBDDWAF_PUBLIC_INCLUDES})
+    target_include_directories(${target_name} PRIVATE ${LIBDDWAF_PRIVATE_INCLUDES})
 
     target_compile_definitions(${target_name} PRIVATE UTF8PROC_STATIC=1)
-
     if (MSVC)
         target_compile_definitions(${target_name} PRIVATE NOMINMAX)
-    endif()
-
-    set(LIBDDWAF_PRIVATE_LIBRARIES "")
-    if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
-        target_compile_options(${target_name} PRIVATE --coverage)
-        list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
     endif()
 
     target_link_libraries(${target_name}
@@ -124,15 +122,24 @@ function(gen_objects target_name)
         INTERFACE ${LIBDDWAF_INTERFACE_LIBRARIES})
 endfunction()
 
+gen_objects(libddwaf_objects)
+add_library(libddwaf_shared_objects ALIAS libddwaf_objects)
+
 if (LIBDDWAF_ENABLE_LTO)
+    target_compile_options(libddwaf_objects PRIVATE -flto)
+
+    # If LTO is enabled, we can't use objects with -flto to generate a static
+    # library, as the contents of the object is an intermediate representation.
+    # This can be solved (in theory) using -ffat-lto-objects, but clang < 18
+    # doesn't currently support this, so we need to generate separate objects
+    # specifically for the static build.
     gen_objects(libddwaf_static_objects)
-    add_library(libddwaf_objects ALIAS libddwaf_static_objects)
-
-    gen_objects(libddwaf_shared_objects)
-    target_compile_options(libddwaf_shared_objects PRIVATE -flto)
 else()
-    gen_objects(libddwaf_objects)
     add_library(libddwaf_static_objects ALIAS libddwaf_objects)
-    add_library(libddwaf_shared_objects ALIAS libddwaf_objects)
-
 endif()
+
+if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
+    target_compile_options(libddwaf_objects PRIVATE --coverage)
+endif()
+
+
