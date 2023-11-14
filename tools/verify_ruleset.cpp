@@ -4,43 +4,67 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstdlib>
+#include <exception>
+#include <iostream>
+#include <string>
+#include <yaml-cpp/node/parse.h>
+
 #include "common/utils.hpp"
 #include "ddwaf.h"
-#include "log.hpp"
-
-#define LONG_TIME 1000000
 
 int main(int argc, char *argv[])
 {
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
+    int retval = EXIT_SUCCESS;
 
-    if (argc < 2) {
-        DDWAF_ERROR("Usage: {} <json/yaml file>", argv[0]);
-        return EXIT_FAILURE;
+    try {
+        ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
+
+        if (argc < 2) {
+            std::cout << "Usage: " << argv[0] << " <json/yaml file>\n";
+            return EXIT_FAILURE;
+        }
+
+        auto rule = YAML::Load(read_file(argv[1])).as<ddwaf_object>();
+
+        ddwaf_object diagnostics;
+        ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+        ddwaf_object_free(&rule);
+
+        auto root = object_to_yaml(diagnostics);
+        ddwaf_object_free(&diagnostics);
+
+        ddwaf_destroy(handle);
+
+        for (const auto node : root) {
+            auto key = node.first.as<std::string>();
+
+            auto error = node.second["error"];
+            if (error.IsDefined()) {
+                std::cout << key << " : " << error.as<std::string>() << '\n';
+                retval = EXIT_FAILURE;
+                continue;
+            }
+
+            auto errors = node.second["errors"];
+            if (!errors.IsDefined()) {
+                continue;
+            }
+
+            for (const auto error_instance : errors) {
+                auto err_msg = error_instance.first.as<std::string>();
+
+                for (const auto feature_key : error_instance.second) {
+                    std::cout << key << " : " << feature_key.as<std::string>() << " : " << err_msg
+                              << '\n';
+                }
+            }
+            retval = EXIT_FAILURE;
+        }
+    } catch (const std::exception &e) {
+        std::cout << "Unexpected exception: " << e.what() << '\n';
+        retval = EXIT_FAILURE;
     }
 
-    std::string rule_str = read_file(argv[1]);
-    auto rule = json_to_object(rule_str);
-
-    ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
-    ddwaf_object_free(&rule);
-
-    if (handle == nullptr) {
-        DDWAF_ERROR("Failed to load ruleset");
-        return EXIT_FAILURE;
-    }
-
-    DDWAF_INFO("Ruleset loaded successfully");
-
-    DDWAF_INFO("Diagnostics:\n{}", object_to_json(diagnostics).c_str());
-    ddwaf_object_free(&diagnostics);
-
-    uint32_t required_size;
-    const char *const *required = ddwaf_known_addresses(handle, &required_size);
-    DDWAF_INFO("Required addresses: {}", required_size);
-    for (uint32_t i = 0; i < required_size; i++) { DDWAF_INFO("    - {}", required[i]); }
-    ddwaf_destroy(handle);
-
-    return EXIT_SUCCESS;
+    return retval;
 }
