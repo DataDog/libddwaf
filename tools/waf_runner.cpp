@@ -108,6 +108,17 @@ int main(int argc, char *argv[])
                 std::cout << "Events:\n" << ss.str() << "\n\n";
             }
 
+            if (code == DDWAF_MATCH && ddwaf_object_size(&ret.actions) > 0) {
+                std::stringstream ss;
+                YAML::Emitter out(ss);
+                out.SetIndent(2);
+                out.SetMapFormat(YAML::Block);
+                out.SetSeqFormat(YAML::Block);
+                out << object_to_yaml(ret.actions);
+
+                std::cout << "Actions:\n" << ss.str() << "\n\n";
+            }
+
             if (ddwaf_object_size(&ret.derivatives) > 0) {
                 std::stringstream ss;
                 YAML::Emitter out(ss);
