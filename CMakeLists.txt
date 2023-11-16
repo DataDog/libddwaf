@@ -49,6 +49,8 @@ try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp
     CXX_STANDARD 20)
 
+target_compile_definitions(libddwaf_objects PRIVATE UTF8PROC_STATIC=1)
+
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
 if(LINUX)
