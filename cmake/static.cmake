@@ -13,6 +13,7 @@ install(TARGETS libddwaf_static EXPORT libddwaf-config
 
 # Post-processing on the static library
 if(LINUX)
+    add_dependencies(libddwaf_static glibc_compat)
     add_custom_command(TARGET libddwaf_static POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory ar_comb
       COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:libddwaf_static>
