@@ -36,7 +36,12 @@ if(NOT MSVC)
         add_compile_options(-ggdb)
     endif()
 else()
-    add_compile_options(/MT)
+    if (CMAKE_BUILD_TYPE MATCHES Debug)
+        add_compile_options(/MTd)
+    else()
+        add_compile_options(/MT)
+    endif()
+
     add_compile_definitions(-D_CRT_SECURE_NO_WARNINGS=1 -Dstrdup=_strdup -Dputenv=_putenv)
 endif()
 
