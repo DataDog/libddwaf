@@ -9,7 +9,7 @@ string(SUBSTRING "${BUILD_ID}" 0 2 BUILD_ID_PREFIX)
 string(SUBSTRING "${BUILD_ID}" 2 39 BUILD_ID_SUFFIX)
 
 add_library(libddwaf_shared SHARED
-    $<TARGET_OBJECTS:libddwaf_shared_objects> $<$<BOOL:MSVC>:libddwaf.def>)
+    $<TARGET_OBJECTS:libddwaf_shared_objects> $<$<BOOL:${MSVC}>:libddwaf.def>)
 set_target_properties(libddwaf_shared PROPERTIES OUTPUT_NAME ddwaf)
 
 install(TARGETS libddwaf_shared EXPORT libddwaf-config
@@ -19,7 +19,7 @@ install(TARGETS libddwaf_shared EXPORT libddwaf-config
 if(LINUX)
     target_link_libraries(libddwaf_shared PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})
     target_link_libraries(libddwaf_shared PRIVATE
-        $<$<BOOL:LIBDDWAF_ENABLE_LTO>:-flto>
+        $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>
         -Wl,--no-undefined
         -Wl,-version-script=${libddwaf_SOURCE_DIR}/libddwaf.version
         -Wl,--build-id=0x${BUILD_ID}
@@ -73,7 +73,7 @@ elseif (MSVC)
 elseif (MINGW)
     target_link_libraries(libddwaf_shared PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})
     target_link_libraries(libddwaf_shared PRIVATE
-        $<$<BOOL:LIBDDWAF_ENABLE_LTO>:-flto>
+        $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>
         -Wl,--no-undefined
         -Wl,-version-script=${libddwaf_SOURCE_DIR}/libddwaf.version
         -Wl,--build-id=0x${BUILD_ID}

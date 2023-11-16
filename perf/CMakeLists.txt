@@ -4,6 +4,7 @@ list(REMOVE_ITEM LIBDDWAF_BENCHMARK_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/benchcmp.
 list(REMOVE_ITEM LIBDDWAF_BENCHMARK_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/benchmerge.cpp)
 
 add_executable(benchmark ${LIBDDWAF_BENCHMARK_SOURCE})
+target_compile_options(benchmark PRIVATE $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>)
 target_link_libraries(benchmark PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson m)
 target_link_options(benchmark PRIVATE ${LIBDDWAF_EXE_LINKER_FLAGS})
 target_include_directories(benchmark PRIVATE ${libddwaf_SOURCE_DIR}/src)

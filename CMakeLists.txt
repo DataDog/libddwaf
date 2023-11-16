@@ -66,10 +66,10 @@ if(LINUX)
     find_library(LIBM m)
 
     set(LIBDDWAF_INTERFACE_LIBRARIES
-        $<$<BOOL:LIBPTHREAD>:pthread>
-        $<$<BOOL:LIBRT>:rt>
-        $<$<BOOL:LIBDL>:dl>
-        $<$<BOOL:LIBM>:m>)
+        $<$<BOOL:${LIBPTHREAD}>:pthread>
+        $<$<BOOL:${LIBRT}>:rt>
+        $<$<BOOL:${LIBDL}>:dl>
+        $<$<BOOL:${LIBM}>:m>)
 elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
@@ -79,7 +79,7 @@ if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()
 
-set(LIBDDWAF_EXE_LINKER_FLAGS $<$<BOOL:LIBDDWAF_ENABLE_LTO>:-flto>)
+set(LIBDDWAF_EXE_LINKER_FLAGS $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>)
 
 include(cmake/objects.cmake)
 
