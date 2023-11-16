@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(libddwaf)
-file(READ "version" CMAKE_PROJECT_VERSION)
-set(PROJECT_VERSION CMAKE_PROJECT_VERSION)
+file(READ "version" version)
+project(libddwaf VERSION "${version}")
+message(STATUS "Project version: ${CMAKE_PROJECT_VERSION}")
 
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
