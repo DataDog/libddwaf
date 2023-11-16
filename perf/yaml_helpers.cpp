@@ -93,6 +93,7 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
     case DDWAF_OBJ_INVALID:
     case DDWAF_OBJ_NULL:
         out << YAML::Null;
+        break;
     }
 
     return out;
