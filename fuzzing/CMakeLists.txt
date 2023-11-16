@@ -13,6 +13,7 @@ target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor)
 target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src)
 target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/radixlib)
 target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick)
+target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc)
 
 set_target_properties(fuzzer PROPERTIES COMPILE_FLAGS "-fsanitize=fuzzer,address,undefined,leak -fprofile-instr-generate -fcoverage-mapping")
 set_target_properties(fuzzer PROPERTIES LINK_FLAGS "-fsanitize=fuzzer,address,undefined,leak -fprofile-instr-generate -fcoverage-mapping")

@@ -42,36 +42,6 @@ if(NOT MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fPIC")
 endif()
 
-# To avoid building everything for re2, including test binvaries:
-#     BUILD_COMMAND cmake --build <BINARY_DIR> --target re2
-# But this is not enough, because the install target run afterwards insists on building everything
-set(RE2_COMMIT 885eb38accf49e2ccdd2fa6786f3590cf40a3e23)
-ExternalProject_Add(proj_re2
-    URL         https://github.com/google/re2/archive/${RE2_COMMIT}.tar.gz
-    INSTALL_DIR ${INSTALL_DIR}
-    CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-    -DCMAKE_INSTALL_LIBDIR=lib
-    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-    -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
-    -DCMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}
-    -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
-    -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
-    -DRE2_BUILD_TESTING=0
-    BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
-# alas, we can't use find_package because by the package is not downloaded by config time
-# so manually creating the library
-add_library(lib_re2 STATIC IMPORTED GLOBAL)
-set_property(TARGET lib_re2 PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}re2${CMAKE_STATIC_LIBRARY_SUFFIX})
-target_include_directories(lib_re2 INTERFACE ${INSTALL_DIR}/include)
-if(NOT MSVC)
-    target_link_libraries(lib_re2 INTERFACE -lpthread)
-endif()
-add_dependencies(lib_re2 proj_re2)
-
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtestd${CMAKE_STATIC_LIBRARY_SUFFIX})
     set(LIBGMOCK_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gmockd${CMAKE_STATIC_LIBRARY_SUFFIX})
@@ -79,7 +49,6 @@ else()
     set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX})
     set(LIBGMOCK_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gmock${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
-
 
 set(GOOGLETEST_COMMIT 955c7f837efad184ec63e771c42542d37545eaef)
 ExternalProject_Add(proj_gtest
@@ -114,34 +83,6 @@ endif()
 add_dependencies(lib_gtest proj_gtest)
 add_dependencies(lib_gmock proj_gtest)
 set_target_properties(lib_gtest lib_gmock proj_gtest PROPERTIES EXCLUDE_FROM_ALL TRUE)
-
-if (MSVC)
-    set(LIBUTF8PROC_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc_static${CMAKE_STATIC_LIBRARY_SUFFIX})
-else ()
-    set(LIBUTF8PROC_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}utf8proc${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
-
-set(UTF8PROC_VERSION v2.7.0)
-ExternalProject_Add(proj_utf8proc
-    URL         https://github.com/JuliaStrings/utf8proc/archive/refs/tags/${UTF8PROC_VERSION}.tar.gz
-    INSTALL_DIR ${INSTALL_DIR}
-    CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-    -DCMAKE_INSTALL_LIBDIR=lib
-    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
-    -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}
-    -DCMAKE_C_FLAGS_RELWITHDEBINFO=${CMAKE_C_FLAGS_RELWITHDEBINFO}
-    -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}
-    -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
-    BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBUTF8PROC_FILENAME}
-)
-
-add_library(lib_utf8proc STATIC IMPORTED GLOBAL)
-set_property(TARGET lib_utf8proc PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBUTF8PROC_FILENAME})
-target_include_directories(lib_utf8proc INTERFACE ${INSTALL_DIR}/include)
-add_dependencies(lib_utf8proc proj_utf8proc)
 
 # yaml-cpp
 if (NOT MSVC)
