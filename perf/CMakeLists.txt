@@ -5,12 +5,15 @@ list(REMOVE_ITEM LIBDDWAF_BENCHMARK_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/benchmerg
 
 add_executable(benchmark ${LIBDDWAF_BENCHMARK_SOURCE})
 target_link_libraries(benchmark PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson m)
+target_link_options(benchmark PRIVATE ${LIBDDWAF_EXE_LINKER_FLAGS})
 target_include_directories(benchmark PRIVATE ${libddwaf_SOURCE_DIR}/src)
 
 add_executable(benchcmp benchcmp.cpp)
+target_link_options(benchcmp PRIVATE ${LIBDDWAF_EXE_LINKER_FLAGS})
 target_link_libraries(benchcmp PRIVATE lib_yamlcpp m)
 
 add_executable(benchmerge benchmerge.cpp)
+target_link_options(benchmerge PRIVATE ${LIBDDWAF_EXE_LINKER_FLAGS})
 target_link_libraries(benchmerge PRIVATE lib_yamlcpp m)
 
 set_target_properties(benchmark PROPERTIES

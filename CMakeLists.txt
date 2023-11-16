@@ -79,6 +79,8 @@ if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()
 
+set(LIBDDWAF_EXE_LINKER_FLAGS $<$<BOOL:LIBDDWAF_ENABLE_LTO>:-flto>)
+
 include(cmake/objects.cmake)
 
 # Static library

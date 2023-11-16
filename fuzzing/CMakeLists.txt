@@ -9,6 +9,7 @@ set_target_properties(fuzzer PROPERTIES
 target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/fuzzing/tools)
 target_include_directories(fuzzer PRIVATE ${LIBDDWAF_PUBLIC_INCLUDES} ${LIBDDWAF_PRIVATE_INCLUDES})
 
+
 set_target_properties(fuzzer PROPERTIES COMPILE_FLAGS "-fsanitize=fuzzer,address,undefined,leak -fprofile-instr-generate -fcoverage-mapping")
 set_target_properties(fuzzer PROPERTIES LINK_FLAGS "-fsanitize=fuzzer,address,undefined,leak -fprofile-instr-generate -fcoverage-mapping")
 
