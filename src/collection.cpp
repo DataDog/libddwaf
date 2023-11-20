@@ -29,16 +29,14 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
         return std::nullopt;
     }
 
-    bool skip_actions = false;
     auto exclusion = policy.find(rule);
-    if (exclusion.mode == exclusion::filter_mode::bypass) {
+    if (exclusion.mode == exclusion::filter_mode::block) {
+        DDWAF_DEBUG("Potentially blocking rule '{}'", id);
+    } else if (exclusion.mode == exclusion::filter_mode::bypass) {
         DDWAF_DEBUG("Bypassing rule '{}'", id);
         return std::nullopt;
-    }
-
-    if (exclusion.mode == exclusion::filter_mode::monitor) {
+    } else if (exclusion.mode == exclusion::filter_mode::monitor) {
         DDWAF_DEBUG("Monitoring rule '{}'", id);
-        skip_actions = true;
     }
 
     DDWAF_DEBUG("Evaluating rule '{}'", id);
@@ -54,8 +52,12 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
         std::optional<event> event;
         event = rule->match(store, rule_cache, exclusion.objects, dynamic_matchers, deadline);
 
-        if (event.has_value() && skip_actions) {
-            event->skip_actions = true;
+        if (event.has_value()) {
+            if (exclusion.mode == exclusion::filter_mode::block) {
+                event->override_action = "block";
+            } else if (exclusion.mode == exclusion::filter_mode::monitor) {
+                event->skip_actions = true;
+            }
         }
 
         return event;

@@ -19,7 +19,7 @@ class rule;
 
 namespace exclusion {
 
-enum class filter_mode : uint8_t { none = 0, monitor = 1, bypass = 2 };
+enum class filter_mode : uint8_t { none = 0, monitor = 1, bypass = 2, block = 3 };
 
 struct object_set {
     std::unordered_set<const ddwaf_object *> persistent;

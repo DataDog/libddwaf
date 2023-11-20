@@ -99,7 +99,14 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
             ddwaf_object_map_add(&rule_map, "name", to_object(tmp, event.rule->get_name()));
 
             const auto &actions = event.rule->get_actions();
-            if (!actions.empty()) {
+            if (!event.override_action.empty()) {
+                all_actions.emplace(event.override_action);
+
+                ddwaf_object actions_array;
+                ddwaf_object_array(&actions_array);
+                ddwaf_object_array_add(&actions_array, to_object(tmp, event.override_action));
+                ddwaf_object_map_add(&rule_map, "on_match", &actions_array);
+            } else if (!actions.empty()) {
                 ddwaf_object actions_array;
                 ddwaf_object_array(&actions_array);
                 if (!event.skip_actions) {

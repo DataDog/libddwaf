@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "exception.hpp"
+#include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
 #include "generator/extract_schema.hpp"
 #include "indexer.hpp"
@@ -433,7 +434,9 @@ rule_filter_spec parse_rule_filter(
         on_match = exclusion::filter_mode::bypass;
     } else if (on_match_str == "monitor") {
         on_match = exclusion::filter_mode::monitor;
-    } else {
+    } else if (on_match_str == "block") {
+        on_match = exclusion::filter_mode::block;
+    }else {
         throw ddwaf::parsing_error("unsupported on_match value: " + std::string(on_match_str));
     }
 
