@@ -436,7 +436,7 @@ rule_filter_spec parse_rule_filter(
         on_match = exclusion::filter_mode::monitor;
     } else if (on_match_str == "block") {
         on_match = exclusion::filter_mode::block;
-    }else {
+    } else {
         throw ddwaf::parsing_error("unsupported on_match value: " + std::string(on_match_str));
     }
 
