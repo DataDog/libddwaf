@@ -438,6 +438,8 @@ rule_filter_spec parse_rule_filter(
     } else if (!on_match_str.empty()) {
         on_match = exclusion::filter_mode::custom;
         action = on_match_str;
+    } else {
+        throw ddwaf::parsing_error("empty on_match value");
     }
 
     if (expr->empty() && rules_target.empty()) {

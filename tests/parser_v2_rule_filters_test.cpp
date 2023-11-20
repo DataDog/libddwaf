@@ -595,6 +595,47 @@ TEST(TestParserV2RuleFilters, ParseOnMatchMonitor)
     EXPECT_EQ(filter.on_match, exclusion::filter_mode::monitor);
 }
 
+TEST(TestParserV2RuleFilters, ParseOnMatchCustom)
+{
+    ddwaf::object_limits limits;
+
+    auto object = yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: block}])");
+
+    ddwaf::ruleset_info::section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
+
+    const auto &filter_it = filters.rule_filters.begin();
+    EXPECT_STR(filter_it->first, "1");
+
+    const auto &filter = filter_it->second;
+    EXPECT_EQ(filter.on_match, exclusion::filter_mode::custom);
+    EXPECT_STR(filter.action, "block");
+}
+
 TEST(TestParserV2RuleFilters, ParseOnMatchBypass)
 {
     ddwaf::object_limits limits;
@@ -639,8 +680,7 @@ TEST(TestParserV2RuleFilters, ParseInvalidOnMatch)
 {
     ddwaf::object_limits limits;
 
-    auto object =
-        yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: obliterate}])");
+    auto object = yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: ""}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
@@ -662,7 +702,7 @@ TEST(TestParserV2RuleFilters, ParseInvalidOnMatch)
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("unsupported on_match value: obliterate");
+        auto it = errors.find("empty on_match value");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
