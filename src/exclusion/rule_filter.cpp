@@ -12,8 +12,8 @@ namespace ddwaf::exclusion {
 using excluded_set = rule_filter::excluded_set;
 
 rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
-    std::set<rule *> rule_targets, filter_mode mode)
-    : id_(std::move(id)), expr_(std::move(expr)), mode_(mode)
+    std::set<rule *> rule_targets, filter_mode mode, std::string action)
+    : id_(std::move(id)), expr_(std::move(expr)), mode_(mode), action_(std::move(action))
 {
     if (!expr_) {
         throw std::invalid_argument("rule filter constructed with null expression");
@@ -40,7 +40,7 @@ std::optional<excluded_set> rule_filter::match(
         return std::nullopt;
     }
 
-    return {{rule_targets_, res.ephemeral, mode_}};
+    return {{rule_targets_, res.ephemeral, mode_, action_}};
 }
 
 } // namespace ddwaf::exclusion

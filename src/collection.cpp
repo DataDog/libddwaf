@@ -30,13 +30,15 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     }
 
     auto exclusion = policy.find(rule);
-    if (exclusion.mode == exclusion::filter_mode::block) {
-        DDWAF_DEBUG("Potentially blocking rule '{}'", id);
-    } else if (exclusion.mode == exclusion::filter_mode::bypass) {
+    if (exclusion.mode == exclusion::filter_mode::bypass) {
         DDWAF_DEBUG("Bypassing rule '{}'", id);
         return std::nullopt;
-    } else if (exclusion.mode == exclusion::filter_mode::monitor) {
+    }
+
+    if (exclusion.mode == exclusion::filter_mode::monitor) {
         DDWAF_DEBUG("Monitoring rule '{}'", id);
+    } else if (exclusion.mode == exclusion::filter_mode::custom) {
+        DDWAF_DEBUG("Applying custom action '{}' to rule '{}'", exclusion.action, id);
     }
 
     DDWAF_DEBUG("Evaluating rule '{}'", id);
@@ -53,13 +55,12 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
         event = rule->match(store, rule_cache, exclusion.objects, dynamic_matchers, deadline);
 
         if (event.has_value()) {
-            if (exclusion.mode == exclusion::filter_mode::block) {
-                event->override_action = "block";
-            } else if (exclusion.mode == exclusion::filter_mode::monitor) {
+            if (exclusion.mode == exclusion::filter_mode::monitor) {
                 event->skip_actions = true;
+            } else if (exclusion.mode == exclusion::filter_mode::custom) {
+                event->override_action = exclusion.action;
             }
         }
-
         return event;
     } catch (const ddwaf::timeout_exception &) {
         DDWAF_INFO("Ran out of time while evaluating rule '{}'", id);

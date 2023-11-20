@@ -162,7 +162,8 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                exclusion_policy_.add_rule_exclusion(rule, exclusion->mode, exclusion->ephemeral);
+                exclusion_policy_.add_rule_exclusion(
+                    rule, exclusion->mode, exclusion->action, exclusion->ephemeral);
             }
         }
     }

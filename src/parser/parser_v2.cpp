@@ -429,22 +429,22 @@ rule_filter_spec parse_rule_filter(
     }
 
     exclusion::filter_mode on_match;
+    std::string action{};
     auto on_match_str = at<std::string_view>(filter, "on_match", "bypass");
     if (on_match_str == "bypass") {
         on_match = exclusion::filter_mode::bypass;
     } else if (on_match_str == "monitor") {
         on_match = exclusion::filter_mode::monitor;
-    } else if (on_match_str == "block") {
-        on_match = exclusion::filter_mode::block;
-    } else {
-        throw ddwaf::parsing_error("unsupported on_match value: " + std::string(on_match_str));
+    } else if (!on_match_str.empty()) {
+        on_match = exclusion::filter_mode::custom;
+        action = on_match_str;
     }
 
     if (expr->empty() && rules_target.empty()) {
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 
-    return {std::move(expr), std::move(rules_target), on_match};
+    return {std::move(expr), std::move(rules_target), on_match, std::move(action)};
 }
 
 std::vector<processor::target_mapping> parse_processor_mappings(
