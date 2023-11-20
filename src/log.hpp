@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include <fmt/core.h>
 #include <string>
 #include <type_traits>
 
 #include "ddwaf.h"
-#include "vendor/fmt/core.h"
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define DDWAF_COMPILE_LOG_TRACE 0
