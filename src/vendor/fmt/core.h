@@ -172,9 +172,11 @@
 
 #ifndef FMT_BEGIN_NAMESPACE
 #  define FMT_BEGIN_NAMESPACE \
+    namespace ddwaf {         \
     namespace fmt {           \
     inline namespace v10 {
 #  define FMT_END_NAMESPACE \
+    }                       \
     }                       \
     }
 #endif

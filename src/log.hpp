@@ -54,7 +54,7 @@ constexpr const char *base_name(const char *path)
     {                                                                                              \
       if (ddwaf::logger::valid(level)) {                                                           \
         constexpr const char *filename = base_name(file);                                          \
-        auto message = fmt::format(fmt_str, ##__VA_ARGS__);                                        \
+        auto message = ddwaf::fmt::format(fmt_str, ##__VA_ARGS__);                                 \
         ddwaf::logger::log(level, function, filename, line, message.c_str(), message.size());      \
       }                                                                                            \
     }
