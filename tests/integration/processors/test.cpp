@@ -116,10 +116,11 @@ TEST(TestProcessors, Processor)
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
-    EXPECT_EQ(size, 3);
+    EXPECT_EQ(size, 4);
     std::unordered_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.body.schema"));
+    EXPECT_TRUE(address_set.contains("server.request.query"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
     ddwaf_context context = ddwaf_context_init(handle);
@@ -619,6 +620,244 @@ TEST(TestProcessors, EmptyProcessorUpdate)
         ddwaf_context_destroy(context);
     }
 
+    ddwaf_destroy(handle);
+}
+
+TEST(TestProcessors, PostprocessorWithEphemeralMapping)
+{
+    auto rule = read_json_file("postprocessor.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    uint32_t size;
+    const char *const *addresses = ddwaf_known_addresses(handle, &size);
+    EXPECT_EQ(size, 2);
+    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    EXPECT_TRUE(address_set.contains("server.request.body"));
+    EXPECT_TRUE(address_set.contains("waf.context.processor"));
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object value;
+
+    ddwaf_object persistent = DDWAF_OBJECT_MAP;
+    ddwaf_object settings = DDWAF_OBJECT_MAP;
+
+    ddwaf_object_bool(&value, true);
+    ddwaf_object_map_add(&settings, "extract-schema", &value);
+    ddwaf_object_map_add(&persistent, "waf.context.processor", &settings);
+
+    {
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_string(&value, "value");
+        ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, &persistent, &ephemeral, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        auto schema = test::object_to_json(out.derivatives);
+        EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
+
+        ddwaf_result_free(&out);
+    }
+
+    {
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_string(&value, "value");
+        ddwaf_object_map_add(&map, "key", &value);
+        ddwaf_object_map_add(&ephemeral, "server.request.body", &map);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, nullptr, &ephemeral, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        auto schema = test::object_to_json(out.derivatives);
+        EXPECT_STR(schema, R"({"server.request.body.schema":[{"key":[8]}]})");
+
+        ddwaf_result_free(&out);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestProcessors, PreprocessorWithEphemeralMapping)
+{
+    auto rule = read_json_file("preprocessor.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    uint32_t size;
+    const char *const *addresses = ddwaf_known_addresses(handle, &size);
+    EXPECT_EQ(size, 3);
+    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    EXPECT_TRUE(address_set.contains("server.request.body"));
+    EXPECT_TRUE(address_set.contains("server.request.body.schema"));
+    EXPECT_TRUE(address_set.contains("waf.context.processor"));
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object value;
+
+    ddwaf_object persistent = DDWAF_OBJECT_MAP;
+    ddwaf_object settings = DDWAF_OBJECT_MAP;
+
+    ddwaf_object_bool(&value, true);
+    ddwaf_object_map_add(&settings, "extract-schema", &value);
+    ddwaf_object_map_add(&persistent, "waf.context.processor", &settings);
+
+    {
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_string(&value, "value");
+        ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, &persistent, &ephemeral, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EVENTS(out, {.id = "rule1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "equals",
+                                   .op_value = "",
+                                   .address = "server.request.body.schema",
+                                   .path = {"0"},
+                                   .value = "8",
+                                   .highlight = ""}}});
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+
+        ddwaf_result_free(&out);
+    }
+
+    {
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_string(&value, "value");
+        ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, nullptr, &ephemeral, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EVENTS(out, {.id = "rule1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "equals",
+                                   .op_value = "",
+                                   .address = "server.request.body.schema",
+                                   .path = {"0"},
+                                   .value = "8",
+                                   .highlight = ""}}});
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+
+        ddwaf_result_free(&out);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestProcessors, ProcessorEphemeralExpression)
+{
+    auto rule = read_json_file("processor.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    uint32_t size;
+    const char *const *addresses = ddwaf_known_addresses(handle, &size);
+    EXPECT_EQ(size, 4);
+    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    EXPECT_TRUE(address_set.contains("server.request.body"));
+    EXPECT_TRUE(address_set.contains("server.request.body.schema"));
+    EXPECT_TRUE(address_set.contains("server.request.query"));
+    EXPECT_TRUE(address_set.contains("waf.context.processor"));
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object value;
+
+    {
+        ddwaf_object persistent = DDWAF_OBJECT_MAP;
+        ddwaf_object_string(&value, "value");
+        ddwaf_object_map_add(&persistent, "server.request.query", &value);
+
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object_bool(&value, true);
+        ddwaf_object_map_add(&settings, "extract-schema", &value);
+        ddwaf_object_map_add(&ephemeral, "waf.context.processor", &settings);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, &persistent, &ephemeral, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        auto schema = test::object_to_json(out.derivatives);
+        EXPECT_STR(schema, R"({"server.request.query.schema":[8]})");
+
+        ddwaf_result_free(&out);
+    }
+
+    {
+        ddwaf_object persistent = DDWAF_OBJECT_MAP;
+        ddwaf_object_string(&value, "value");
+        ddwaf_object_map_add(&persistent, "server.request.body", &value);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, &persistent, nullptr, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+
+        ddwaf_result_free(&out);
+    }
+
+    {
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object_bool(&value, true);
+        ddwaf_object_map_add(&settings, "extract-schema", &value);
+        ddwaf_object_map_add(&ephemeral, "waf.context.processor", &settings);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, nullptr, &ephemeral, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EVENTS(out, {.id = "rule1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "equals",
+                                   .op_value = "",
+                                   .address = "server.request.body.schema",
+                                   .path = {"0"},
+                                   .value = "8",
+                                   .highlight = ""}}});
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        auto schema = test::object_to_json(out.derivatives);
+        EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
+
+        ddwaf_result_free(&out);
+    }
+
+    ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
