@@ -8,7 +8,6 @@ set_target_properties(waf_validator PROPERTIES
 
 target_include_directories(waf_validator PRIVATE ${libddwaf_SOURCE_DIR}/include)
 target_link_libraries(waf_validator PRIVATE  libddwaf_objects lib_yamlcpp)
-target_link_options(waf_validator PRIVATE ${LIBDDWAF_EXE_LINKER_FLAGS})
 
 add_custom_target(validate
     COMMAND ${CMAKE_BINARY_DIR}/validator/waf_validator

@@ -29,7 +29,6 @@ else()
   set_target_properties(waf_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ".")
 endif()
 
-target_link_options(waf_test PRIVATE ${LIBDDWAF_EXE_LINKER_FLAGS})
 target_link_libraries(waf_test PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
     ${LIBDDWAF_INTERFACE_LIBRARIES} ${LIBDDWAF_TEST_LIBRARIES})
 

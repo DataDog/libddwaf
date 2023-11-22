@@ -41,7 +41,7 @@ if(LINUX)
 elseif (APPLE)
     target_link_libraries(libddwaf_shared PRIVATE -Wl,-undefined,error libddwaf_shared_objects)
 
-    if(NOT (CMAKE_BUILD_TYPE MATCHES Debug) AND NOT MSVC)
+    if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
         # Ensure that dsymutil and strip is present
         find_program(DSYMUTIL dsymutil)
         if (DSYMUTIL STREQUAL "DSYMUTIL-NOTFOUND")
