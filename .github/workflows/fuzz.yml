@@ -27,8 +27,8 @@ jobs:
       - name: Install deps
         run: |
           DEBIAN_FRONTEND="noninteractive" sudo apt-get -y remove python3-lldb-14
-          sudo .github/workflows/scripts/llvm.sh 15
-          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install libfuzzer-15-dev
+          sudo .github/workflows/scripts/llvm.sh 17
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install libfuzzer-17-dev
 
       - name: Build
         run: ./fuzzing/build.sh

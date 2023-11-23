@@ -44,7 +44,7 @@ bool lowercase::needs_transform(std::string_view str)
     const __m128i sse_mask_lower_bound = _mm_set1_epi8('A');
     const __m128i sse_mask_upper_bound = _mm_set1_epi8('Z');
 
-    std::size_t const aligned_size = str.size() & ~0xF;
+    const std::size_t aligned_size = str.size() & ~0xF;
 
     __m128i cmp_result_final = _mm_setzero_si128();
     for (std::size_t i = 0; i < aligned_size; i += 16) {
@@ -76,7 +76,7 @@ bool lowercase::transform_impl(cow_string &str)
     const __m128i sse_mask_lower_bound = _mm_set1_epi8('A');
     const __m128i sse_addition_value = _mm_set1_epi8(0x20); // value to add to convert up to lc
 
-    std::size_t const aligned_size = size & ~0xF;
+    const std::size_t aligned_size = size & ~0xF;
 
     for (std::size_t i = 0; i < aligned_size; i += 16) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)

@@ -7,19 +7,13 @@ set_target_properties(fuzzer PROPERTIES
     CXX_EXTENSIONS NO)
 
 target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/fuzzing/tools)
-target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/include)
-target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src)
-target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor)
-target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src)
-target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/radixlib)
-target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick)
-target_include_directories(fuzzer PRIVATE ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc)
+target_include_directories(fuzzer PRIVATE ${LIBDDWAF_PUBLIC_INCLUDES} ${LIBDDWAF_PRIVATE_INCLUDES})
+
 
 set_target_properties(fuzzer PROPERTIES COMPILE_FLAGS "-fsanitize=fuzzer,address,undefined,leak -fprofile-instr-generate -fcoverage-mapping")
 set_target_properties(fuzzer PROPERTIES LINK_FLAGS "-fsanitize=fuzzer,address,undefined,leak -fprofile-instr-generate -fcoverage-mapping")
 
-target_link_libraries(fuzzer
-    PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES} ${LIBDDWAF_INTERFACE_LIBRARIES}
-    ${LIBDDWAF_EXE_LINKER_FLAGS} lib_yamlcpp)
+target_link_libraries(fuzzer PRIVATE
+    ${LIBDDWAF_PRIVATE_LIBRARIES} ${LIBDDWAF_INTERFACE_LIBRARIES} lib_yamlcpp)
 
 
