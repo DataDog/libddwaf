@@ -183,25 +183,25 @@ std::list<ddwaf::test::event::match> from_matches(const std::vector<ddwaf::event
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
-  {                                                                                                \
-    auto data = ddwaf::test::object_to_json(result.events);                                        \
-    EXPECT_TRUE(ValidateSchema(data));                                                             \
-    YAML::Node doc = YAML::Load(data.c_str());                                                     \
-    auto events = doc.as<std::list<ddwaf::test::event>>();                                         \
-    EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                                \
-  }
+    {                                                                                              \
+        auto data = ddwaf::test::object_to_json(result.events);                                    \
+        EXPECT_TRUE(ValidateSchema(data));                                                         \
+        YAML::Node doc = YAML::Load(data.c_str());                                                 \
+        auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
+        EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                            \
+    }
 
 #define EXPECT_MATCHES(matches, ...) EXPECT_THAT(from_matches(matches), WithMatches({__VA_ARGS__}));
 
 #define EXPECT_SCHEMA_EQ(obtained, expected)                                                       \
-  {                                                                                                \
-    auto obtained_doc = test::object_to_rapidjson(obtained);                                       \
-    EXPECT_TRUE(ValidateSchemaSchema(obtained_doc));                                               \
-    rapidjson::Document expected_doc;                                                              \
-    expected_doc.Parse(expected);                                                                  \
-    EXPECT_FALSE(expected_doc.HasParseError());                                                    \
-    EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);        \
-  }
+    {                                                                                              \
+        auto obtained_doc = test::object_to_rapidjson(obtained);                                   \
+        EXPECT_TRUE(ValidateSchemaSchema(obtained_doc));                                           \
+        rapidjson::Document expected_doc;                                                          \
+        expected_doc.Parse(expected);                                                              \
+        EXPECT_FALSE(expected_doc.HasParseError());                                                \
+        EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);    \
+    }
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 ddwaf_object read_file(std::string_view filename, std::string_view base = "./");
@@ -232,7 +232,7 @@ bool json_equals(const T &lhs, const T &rhs)
         std::vector<bool> seen(lhs.MemberCount(), false);
         for (const auto &lkv : lhs.GetObject()) {
             bool found = false;
-            std::string_view const lkey = lkv.name.GetString();
+            const std::string_view lkey = lkv.name.GetString();
             for (auto it = rhs.MemberBegin(); it != rhs.MemberEnd(); ++it) {
                 auto i = it - rhs.MemberBegin();
                 if (seen[i]) {
@@ -240,7 +240,7 @@ bool json_equals(const T &lhs, const T &rhs)
                 }
 
                 const auto &rkv = *it;
-                std::string_view const rkey = rkv.name.GetString();
+                const std::string_view rkey = rkv.name.GetString();
                 if (lkey != rkey) {
                     continue;
                 }
