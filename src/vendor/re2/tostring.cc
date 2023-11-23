@@ -38,10 +38,10 @@ class ToStringWalker : public Regexp::Walker<int> {
  public:
   explicit ToStringWalker(std::string* t) : t_(t) {}
 
-  virtual int PreVisit(Regexp* re, int parent_arg, bool* stop);
-  virtual int PostVisit(Regexp* re, int parent_arg, int pre_arg,
-                        int* child_args, int nchild_args);
-  virtual int ShortVisit(Regexp*  /*re*/, int  /*parent_arg*/) override {
+   int PreVisit(Regexp* re, int parent_arg, bool* stop) override;
+   int PostVisit(Regexp* re, int parent_arg, int pre_arg,
+                        int* child_args, int nchild_args) override;
+   int ShortVisit(Regexp*  /*re*/, int  /*parent_arg*/) override {
     return 0;
   }
 

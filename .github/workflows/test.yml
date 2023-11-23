@@ -171,16 +171,16 @@ jobs:
       - name: Install clang-{tidy,format}
         run: |
           DEBIAN_FRONTEND="noninteractive" sudo apt-get -y remove python3-lldb-14
-          sudo .github/workflows/scripts/llvm.sh 15
-          sudo apt-get install -y clang-tidy-15 clang-format-15
+          sudo .github/workflows/scripts/llvm.sh 17
+          sudo apt-get install -y clang-tidy-17 clang-format-17
 
       - name: CMake
         env:
-          CXX: clang++-15
-          CC: clang-15
+          CXX: clang++-17
+          CC: clang-17
         run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/run-clang-tidy-15 \
-            -DCLANG_FORMAT=/usr/bin/clang-format-15
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/run-clang-tidy-17 \
+            -DCLANG_FORMAT=/usr/bin/clang-format-17
         working-directory: Debug
 
       - name: Build

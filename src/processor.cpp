@@ -40,8 +40,10 @@ void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, c
             continue;
         }
 
-        // Whatever the outcome, we don't want to try and generate it again
-        cache.generated.emplace(mapping.output);
+        if (attr != object_store::attribute::ephemeral) {
+            // Whatever the outcome, we don't want to try and generate it again
+            cache.generated.emplace(mapping.output);
+        }
 
         auto object = generator_->generate(input, scanners_, deadline);
         if (object.type == DDWAF_OBJ_INVALID) {
@@ -49,7 +51,7 @@ void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, c
         }
 
         if (evaluate_) {
-            store.insert(mapping.output, mapping.output_address, object);
+            store.insert(mapping.output, mapping.output_address, object, attr);
         }
 
         if (output_ && derived.has_value()) {

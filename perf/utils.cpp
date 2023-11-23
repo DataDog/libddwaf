@@ -25,6 +25,9 @@ void debug_str_helper(std::string &res, const ddwaf_object &p)
     case DDWAF_OBJ_INVALID:
         res += "<invalid>";
         break;
+    case DDWAF_OBJ_NULL:
+        res += "<null>";
+        break;
     case DDWAF_OBJ_BOOL:
         res += p.boolean ? "true" : "false";
         break;
@@ -33,6 +36,9 @@ void debug_str_helper(std::string &res, const ddwaf_object &p)
         break;
     case DDWAF_OBJ_UNSIGNED:
         res += std::to_string(p.uintValue);
+        break;
+    case DDWAF_OBJ_FLOAT:
+        res += std::to_string(p.f64);
         break;
     case DDWAF_OBJ_STRING:
         res += '"';
@@ -79,6 +85,9 @@ ddwaf_object object_dup(const ddwaf_object &o) noexcept
     case DDWAF_OBJ_INVALID:
         ddwaf_object_invalid(&copy);
         break;
+    case DDWAF_OBJ_NULL:
+        ddwaf_object_null(&copy);
+        break;
     case DDWAF_OBJ_BOOL:
         ddwaf_object_bool(&copy, o.boolean);
         break;
@@ -87,6 +96,9 @@ ddwaf_object object_dup(const ddwaf_object &o) noexcept
         break;
     case DDWAF_OBJ_UNSIGNED:
         ddwaf_object_unsigned(&copy, o.uintValue);
+        break;
+    case DDWAF_OBJ_FLOAT:
+        ddwaf_object_float(&copy, o.f64);
         break;
     case DDWAF_OBJ_STRING:
         ddwaf_object_stringl(&copy, o.stringValue, o.nbEntries);
