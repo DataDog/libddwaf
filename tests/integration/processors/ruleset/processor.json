@@ -57,6 +57,14 @@
               }
             ],
             "output": "server.request.body.schema"
+          },
+          {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              }
+            ],
+            "output": "server.request.query.schema"
           }
         ]
       },
