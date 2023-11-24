@@ -38,8 +38,8 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
 
 override_spec_container parse_overrides(parameter::vector &override_array, base_section_info &info);
 
-filter_spec_container parse_filters(
-    parameter::vector &filter_array, base_section_info &info, const object_limits &limits);
+filter_spec_container parse_filters(parameter::vector &filter_array, base_section_info &info,
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits);
 
 processor_container parse_processors(
     parameter::vector &processor_array, base_section_info &info, const object_limits &limits);

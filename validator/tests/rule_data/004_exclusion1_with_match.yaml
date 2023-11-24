@@ -1,0 +1,12 @@
+{
+  name: "Exclusion filter with no data",
+  runs: [
+    {
+      persistent-input: {
+        exclusion-filter-1-input: 192.168.1.5,
+        rule2-input: rule2
+      },
+      code: ok
+    }
+  ]
+}

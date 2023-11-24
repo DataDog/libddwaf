@@ -34,7 +34,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -63,7 +63,7 @@ TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -97,7 +97,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -131,7 +131,7 @@ TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -163,7 +163,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -195,7 +195,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -231,7 +231,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -267,7 +267,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -299,7 +299,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -330,7 +330,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_FALSE(opt_spec.has_value());
 }
 
@@ -363,7 +363,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -400,7 +400,7 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_FALSE(opt_spec.has_value());
 }
 
@@ -434,7 +434,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -447,7 +447,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -488,7 +488,7 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -509,7 +509,7 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        ASSERT_FALSE(filter.match(store, cache, deadline));
+        ASSERT_FALSE(filter.match(store, cache, {}, deadline));
     }
 
     {
@@ -522,7 +522,7 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
         store.insert(root, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -560,7 +560,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -574,7 +574,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 }
 
@@ -609,7 +609,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -624,7 +624,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        auto opt_spec = filter.match(store, cache, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -667,7 +667,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -686,7 +686,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        ASSERT_FALSE(filter.match(store, cache, deadline).has_value());
+        ASSERT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 }
 
@@ -725,7 +725,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -743,7 +743,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -785,7 +785,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -804,7 +804,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 }
 
@@ -844,7 +844,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -857,7 +857,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        auto opt_spec = filter.match(store, cache, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -904,7 +904,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -922,6 +922,6 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        ASSERT_FALSE(filter.match(store, cache, deadline).has_value());
+        ASSERT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 }

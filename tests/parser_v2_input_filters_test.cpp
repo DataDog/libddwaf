@@ -15,11 +15,12 @@ namespace {
 TEST(TestParserV2InputFilters, ParseEmpty)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
     auto object = yaml_to_object(R"([{id: 1, inputs: []}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -54,12 +55,13 @@ TEST(TestParserV2InputFilters, ParseEmpty)
 TEST(TestParserV2InputFilters, ParseFilterWithoutID)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
 
     auto object = yaml_to_object(R"([{inputs: [{address: http.client_ip}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -94,13 +96,14 @@ TEST(TestParserV2InputFilters, ParseFilterWithoutID)
 TEST(TestParserV2InputFilters, ParseDuplicateFilters)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
 
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}]}, {id: 1, inputs: [{address: usr.id}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -136,12 +139,13 @@ TEST(TestParserV2InputFilters, ParseDuplicateFilters)
 TEST(TestParserV2InputFilters, ParseUnconditionalNoTargets)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
 
     auto object = yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -178,13 +182,14 @@ TEST(TestParserV2InputFilters, ParseUnconditionalNoTargets)
 TEST(TestParserV2InputFilters, ParseUnconditionalTargetID)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
 
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -226,13 +231,14 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetID)
 TEST(TestParserV2InputFilters, ParseUnconditionalTargetTags)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
 
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -276,13 +282,14 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetTags)
 TEST(TestParserV2InputFilters, ParseUnconditionalTargetPriority)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
 
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -324,13 +331,14 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetPriority)
 TEST(TestParserV2InputFilters, ParseUnconditionalMultipleTargets)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
 
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}, {tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -383,13 +391,14 @@ TEST(TestParserV2InputFilters, ParseUnconditionalMultipleTargets)
 TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
 
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}, {id: 2, inputs: [{address: usr.id}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -451,13 +460,14 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
 TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
 
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {
@@ -499,12 +509,13 @@ TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
 TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
 {
     ddwaf::object_limits limits;
+    std::unordered_map<std::string, std::string> data_ids;
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     ddwaf::ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    auto filters = parser::v2::parse_filters(filters_array, section, limits);
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
     ddwaf_object_free(&object);
 
     {

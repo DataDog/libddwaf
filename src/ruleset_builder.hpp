@@ -67,6 +67,7 @@ protected:
     // Map representing rule data IDs to matcher type, this is obtained
     // from parsing the ruleset ('rules' key).
     std::unordered_map<std::string, std::string> rule_data_ids_;
+    std::unordered_map<std::string, std::string> exclusion_data_ids_;
 
     // These contain the specification of each main component obtained directly
     // from the parser. These are only modified on update, if the relevant key

@@ -72,7 +72,11 @@ public:
     ~rule_filter() override = default;
 
     MOCK_METHOD(std::optional<ddwaf::exclusion::rule_filter::excluded_set>, match,
-        (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
+        (const object_store &store, cache_type &cache,
+            (const std::unordered_map<std::string, std::shared_ptr<matcher::base>>
+                    &dynamic_matchers),
+            ddwaf::timer &deadline),
+        (const override));
 };
 
 class input_filter : public ddwaf::exclusion::input_filter {
@@ -87,7 +91,11 @@ public:
     ~input_filter() override = default;
 
     MOCK_METHOD(std::optional<excluded_set>, match,
-        (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
+        (const object_store &store, cache_type &cache,
+            (const std::unordered_map<std::string, std::shared_ptr<matcher::base>>
+                    &dynamic_matchers),
+            ddwaf::timer &deadline),
+        (const override));
 };
 
 class processor : public ddwaf::processor {
@@ -964,7 +972,7 @@ TEST(TestContext, SkipRuleFilterNoTargets)
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _, _)).Times(0);
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -1010,7 +1018,7 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
+    EXPECT_CALL(*filter, match(_, _, _, _)).WillOnce(Return(std::nullopt));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -1744,7 +1752,7 @@ TEST(TestContext, SkipInputFilterNoTargets)
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _, _)).Times(0);
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -1789,7 +1797,7 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
+    EXPECT_CALL(*filter, match(_, _, _, _)).WillOnce(Return(std::nullopt));
 
     ddwaf_object root;
     ddwaf_object tmp;

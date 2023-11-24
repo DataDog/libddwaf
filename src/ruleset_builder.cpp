@@ -321,8 +321,10 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         auto &section = info.add_section("exclusions");
         try {
             auto exclusions = static_cast<parameter::vector>(it->second);
+            exclusion_data_ids_.clear();
             if (!exclusions.empty()) {
-                exclusions_ = parser::v2::parse_filters(exclusions, section, limits_);
+                exclusions_ =
+                    parser::v2::parse_filters(exclusions, section, rule_data_ids_, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all exclusions");
                 exclusions_.clear();
