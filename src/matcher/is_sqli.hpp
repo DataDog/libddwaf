@@ -12,7 +12,7 @@
 
 namespace ddwaf::matcher {
 
-class is_sqli : public base_impl<is_sqli> {
+class is_sqli : public scalar_base_impl<is_sqli> {
 public:
     is_sqli() = default;
     ~is_sqli() override = default;
@@ -30,7 +30,7 @@ protected:
 
     static std::pair<bool, std::string> match_impl(std::string_view pattern);
 
-    friend class base_impl<is_sqli>;
+    friend class scalar_base_impl<is_sqli>;
 };
 
 } // namespace ddwaf::matcher

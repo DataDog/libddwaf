@@ -13,7 +13,7 @@
 
 namespace ddwaf::matcher {
 
-class phrase_match : public base_impl<phrase_match> {
+class phrase_match : public scalar_base_impl<phrase_match> {
 public:
     phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths);
     ~phrase_match() override = default;
@@ -31,7 +31,7 @@ protected:
 
     std::unique_ptr<ac_t, void (*)(void *)> ac{nullptr, nullptr};
 
-    friend class base_impl<phrase_match>;
+    friend class scalar_base_impl<phrase_match>;
 };
 
 } // namespace ddwaf::matcher

@@ -124,15 +124,9 @@ const matcher::base *expression::evaluator::get_matcher(const condition &cond) c
     return it->second.get();
 }
 
-expression::eval_result expression::evaluator::eval_condition(
-    const condition &cond, condition::cache_type &cache)
+expression::eval_result expression::evaluator::eval_scalar_condition(
+    const condition &cond, const matcher::base &matcher, condition::cache_type &cache)
 {
-    const auto *matcher = get_matcher(cond);
-    if (matcher == nullptr) {
-        DDWAF_DEBUG("Condition doesn't have a valid matcher");
-        return {false, false};
-    }
-
     if (cache.targets.size() != cond.targets.size()) {
         cache.targets.assign(cond.targets.size(), nullptr);
     }
@@ -157,10 +151,10 @@ expression::eval_result expression::evaluator::eval_condition(
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, *matcher, target.transformers);
+            optional_match = eval_target(it, matcher, target.transformers);
         } else {
             object::value_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, *matcher, target.transformers);
+            optional_match = eval_target(it, matcher, target.transformers);
         }
 
         if (optional_match.has_value()) {
@@ -175,6 +169,59 @@ expression::eval_result expression::evaluator::eval_condition(
     }
 
     return {false, false};
+}
+
+expression::eval_result expression::evaluator::eval_structured_condition(
+    const condition &cond, const matcher::base &matcher, condition::cache_type &cache)
+{
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
+    bool ephemeral = false;
+    std::vector<optional_ref<const ddwaf_object>> args;
+    args.reserve(cond.targets.size());
+    for (unsigned i = 0; i < cond.targets.size(); ++i) {
+        const auto &target = cond.targets[i];
+        auto [object, attr] = store.get_target(target.root);
+        if (object == nullptr) {
+            return {false, false};
+        }
+
+        if (attr == object_store::attribute::ephemeral) {
+            ephemeral = true;
+        }
+
+        args.emplace_back(*object);
+    }
+
+    std::optional<event::match> optional_match;
+    auto [res, highlight] = matcher.match(args);
+
+    if (res) {
+        cache.match = event::match{
+            {}, std::move(highlight), matcher.name(), matcher.to_string(), {}, {}, ephemeral};
+        return {true, ephemeral};
+    }
+
+    return {false, false};
+}
+
+expression::eval_result expression::evaluator::eval_condition(
+    const condition &cond, condition::cache_type &cache)
+{
+    const auto *matcher = get_matcher(cond);
+    if (matcher == nullptr) {
+        DDWAF_DEBUG("Condition doesn't have a valid matcher");
+        return {false, false};
+    }
+
+    if (matcher->type() == matcher::matcher_type::scalar) {
+        return eval_scalar_condition(cond, *matcher, cache);
+    }
+
+    // Structure condition
+    return eval_structured_condition(cond, *matcher, cache);
 }
 
 expression::eval_result expression::evaluator::eval()

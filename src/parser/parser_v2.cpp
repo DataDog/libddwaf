@@ -20,6 +20,7 @@
 #include "matcher/ip_match.hpp"
 #include "matcher/is_sqli.hpp"
 #include "matcher/is_xss.hpp"
+#include "matcher/lfi_detector.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
 #include "parameter.hpp"
@@ -119,6 +120,9 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
         } else {
             throw ddwaf::parsing_error("invalid type for matcher equals " + value_type);
         }
+    } else if (name == "lfi_detector") {
+        matcher = std::make_unique<matcher::lfi_detector>();
+        DDWAF_DEBUG("LFI DETECTOR = {}", static_cast<unsigned>(matcher->type()));
     } else {
         throw ddwaf::parsing_error("unknown matcher: " + std::string(name));
     }
@@ -168,43 +172,74 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         auto params = at<parameter::map>(root, "parameters");
 
         auto [rule_data_id, matcher] = parse_matcher(matcher_name, params);
+
+        if (!matcher || matcher->type() == matcher::matcher_type::scalar) {
+            auto inputs = at<parameter::vector>(params, "inputs");
+            if (inputs.empty()) {
+                throw ddwaf::parsing_error("empty inputs");
+            }
+
+            for (const auto &input_param : inputs) {
+                auto input = static_cast<parameter::map>(input_param);
+                auto address = at<std::string>(input, "address");
+
+                if (address.empty()) {
+                    throw ddwaf::parsing_error("empty address");
+                }
+
+                auto kp = at<std::vector<std::string>>(input, "key_path", {});
+                for (const auto &path : kp) {
+                    if (path.empty()) {
+                        throw ddwaf::parsing_error("empty key_path");
+                    }
+                }
+
+                addresses.required.emplace(address);
+                auto it = input.find("transformers");
+                if (it == input.end()) {
+                    builder.add_target(address, std::move(kp), transformers, source);
+                } else {
+                    auto input_transformers = static_cast<parameter::vector>(it->second);
+                    source = expression::data_source::values;
+                    auto new_transformers = parse_transformers(input_transformers, source);
+                    builder.add_target(address, std::move(kp), std::move(new_transformers), source);
+                }
+            }
+        } else {
+            auto inputs = at<parameter::map>(params, "inputs");
+            if (inputs.empty()) {
+                throw ddwaf::parsing_error("empty inputs");
+            }
+
+            for (auto arg_name : matcher->arguments()) {
+                auto input = at<parameter::map>(inputs, arg_name);
+                if (input.empty()) {
+                    throw ddwaf::parsing_error("missing argument " + std::string(arg_name));
+                }
+
+                auto address = at<std::string>(input, "address");
+
+                if (address.empty()) {
+                    throw ddwaf::parsing_error("empty address");
+                }
+
+                auto kp = at<std::vector<std::string>>(input, "key_path", {});
+                for (const auto &path : kp) {
+                    if (path.empty()) {
+                        throw ddwaf::parsing_error("empty key_path");
+                    }
+                }
+
+                addresses.required.emplace(address);
+                builder.add_target(address, std::move(kp));
+            }
+        }
+
         builder.set_data_id(rule_data_id);
-        builder.set_matcher(std::move(matcher));
         if (!matcher && !rule_data_id.empty()) {
             rule_data_ids.emplace(rule_data_id, matcher_name);
         }
-
-        auto inputs = at<parameter::vector>(params, "inputs");
-        if (inputs.empty()) {
-            throw ddwaf::parsing_error("empty inputs");
-        }
-
-        for (const auto &input_param : inputs) {
-            auto input = static_cast<parameter::map>(input_param);
-            auto address = at<std::string>(input, "address");
-
-            if (address.empty()) {
-                throw ddwaf::parsing_error("empty address");
-            }
-
-            auto kp = at<std::vector<std::string>>(input, "key_path", {});
-            for (const auto &path : kp) {
-                if (path.empty()) {
-                    throw ddwaf::parsing_error("empty key_path");
-                }
-            }
-
-            addresses.required.emplace(address);
-            auto it = input.find("transformers");
-            if (it == input.end()) {
-                builder.add_target(address, std::move(kp), transformers, source);
-            } else {
-                auto input_transformers = static_cast<parameter::vector>(it->second);
-                source = expression::data_source::values;
-                auto new_transformers = parse_transformers(input_transformers, source);
-                builder.add_target(address, std::move(kp), std::move(new_transformers), source);
-            }
-        }
+        builder.set_matcher(std::move(matcher));
     }
 
     return builder.build();

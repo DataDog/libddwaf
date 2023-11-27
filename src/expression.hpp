@@ -29,7 +29,7 @@ namespace ddwaf {
 
 class expression {
 public:
-    enum class data_source : uint8_t { values, keys };
+    enum class data_source : uint8_t { values, keys, object };
 
     struct eval_result {
         bool outcome;
@@ -47,6 +47,7 @@ public:
 
         struct target_type {
             std::string name;
+            std::string argname;
             target_index root{};
             std::vector<std::string> key_path{};
             std::vector<transformer_id> transformers{};
@@ -66,6 +67,10 @@ public:
     struct evaluator {
         eval_result eval();
 
+        eval_result eval_scalar_condition(
+            const condition &cond, const matcher::base &matcher, condition::cache_type &cache);
+        eval_result eval_structured_condition(
+            const condition &cond, const matcher::base &matcher, condition::cache_type &cache);
         eval_result eval_condition(const condition &cond, condition::cache_type &cache);
 
         template <typename T>
