@@ -29,13 +29,10 @@ protected:
     static constexpr std::string_view to_string_impl() { return ""; }
 
     static constexpr unsigned arity_impl() { return 2; }
-    static constexpr std::vector<std::string_view> arguments_impl() { return {"body", "query"}; }
+    static constexpr std::vector<std::string_view> arguments_impl() { return {"path", "query"}; }
 
-    [[nodiscard]] static std::pair<bool, std::string> match_impl(
-        const std::vector<optional_ref<const ddwaf_object>> & /*args*/)
-    {
-        return {true, "Hello"};
-    }
+    [[nodiscard]] static std::tuple<bool, std::string, std::size_t> match_impl(
+        const std::vector<optional_ref<const ddwaf_object>> &args);
 
     friend class structured_base_impl<lfi_detector>;
 };

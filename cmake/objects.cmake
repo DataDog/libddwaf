@@ -33,6 +33,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/matcher/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/ip_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/exact_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/lowercase.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/compress_whitespace.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/normalize_path.cpp

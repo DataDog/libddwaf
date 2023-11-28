@@ -196,11 +196,28 @@ expression::eval_result expression::evaluator::eval_structured_condition(
     }
 
     std::optional<event::match> optional_match;
-    auto [res, highlight] = matcher.match(args);
+    auto [res, highlight, index] = matcher.match(args);
 
     if (res) {
-        cache.match = event::match{
-            {}, std::move(highlight), matcher.name(), matcher.to_string(), {}, {}, ephemeral};
+        std::string value;
+
+        if (index < args.size()) {
+            auto matched_object = args[index];
+            if (matched_object.has_value()) {
+                value = object_to_string(matched_object->get());
+            }
+        }
+
+        if (index < cond.targets.size()) {
+            const auto &target = cond.targets[index];
+            cache.match = event::match{std::move(value), std::move(highlight), matcher.name(),
+                matcher.to_string(), target.name, target.key_path, ephemeral};
+        } else {
+            // This shouldn't ever happen....
+            cache.match = event::match{std::move(value), std::move(highlight), matcher.name(),
+                matcher.to_string(), "", {}, ephemeral};
+        }
+
         return {true, ephemeral};
     }
 

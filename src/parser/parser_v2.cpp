@@ -122,7 +122,6 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
         }
     } else if (name == "lfi_detector") {
         matcher = std::make_unique<matcher::lfi_detector>();
-        DDWAF_DEBUG("LFI DETECTOR = {}", static_cast<unsigned>(matcher->type()));
     } else {
         throw ddwaf::parsing_error("unknown matcher: " + std::string(name));
     }

@@ -49,7 +49,7 @@ public:
     [[nodiscard]] virtual constexpr unsigned arity() const = 0;
     [[nodiscard]] virtual constexpr std::vector<std::string_view> arguments() const = 0;
 
-    [[nodiscard]] virtual std::pair<bool, std::string> match(
+    [[nodiscard]] virtual std::tuple<bool, std::string, std::size_t> match(
         const std::vector<optional_ref<const ddwaf_object>> &args) const = 0;
 };
 
@@ -121,7 +121,7 @@ public:
     [[nodiscard]] constexpr unsigned arity() const override { return 0; }
     [[nodiscard]] constexpr std::vector<std::string_view> arguments() const override { return {}; }
 
-    [[nodiscard]] std::pair<bool, std::string> match(
+    [[nodiscard]] std::tuple<bool, std::string, std::size_t> match(
         const std::vector<optional_ref<const ddwaf_object>> & /*args*/) const override
     {
         return {};
@@ -159,7 +159,7 @@ public:
         return T::arguments_impl();
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match(
+    [[nodiscard]] std::tuple<bool, std::string, std::size_t> match(
         const std::vector<optional_ref<const ddwaf_object>> &args) const override
     {
         return static_cast<const T *>(this)->match_impl(args);
