@@ -132,6 +132,9 @@ eval_result matcher_proxy::eval_impl(const argument_stack &stack, cache_type &ca
     const object_limits &limits, ddwaf::timer &deadline) const
 {
     const auto *matcher = get_matcher(dynamic_matchers);
+    if (matcher == nullptr) {
+        return {};
+    }
 
     const auto &targets = stack.get<argument_stack::variadic>(0);
     if (cache.targets.size() != targets.size()) {
