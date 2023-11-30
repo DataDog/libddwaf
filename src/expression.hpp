@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "analyser/base.hpp"
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "context_allocator.hpp"
