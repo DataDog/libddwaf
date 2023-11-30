@@ -23,17 +23,6 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         }
     }
 
-    // Prevent combining version 1 of the ruleset and the builder
-    if (version == 1) {
-        ddwaf::ruleset rs;
-        rs.free_fn = free_fn;
-        rs.event_obfuscator = event_obfuscator;
-        DDWAF_DEBUG("Parsing ruleset with schema version 1.x");
-        parser::v1::parse(input_map, info, rs, limits);
-        ruleset_ = std::make_shared<ddwaf::ruleset>(std::move(rs));
-        return;
-    }
-
     if (version == 2) {
         DDWAF_DEBUG("Parsing ruleset with schema version 2.x");
         builder_ = std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));

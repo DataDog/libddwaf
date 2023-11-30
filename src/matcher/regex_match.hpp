@@ -14,7 +14,7 @@
 
 namespace ddwaf::matcher {
 
-class regex_match : public scalar_base_impl<regex_match> {
+class regex_match : public base_impl<regex_match> {
 public:
     regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive);
     ~regex_match() override = default;
@@ -34,7 +34,7 @@ protected:
     std::unique_ptr<re2::RE2> regex{nullptr};
     std::size_t min_length;
 
-    friend class scalar_base_impl<regex_match>;
+    friend class base_impl<regex_match>;
 };
 
 } // namespace ddwaf::matcher

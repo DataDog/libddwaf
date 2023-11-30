@@ -12,7 +12,7 @@
 
 namespace ddwaf::matcher {
 
-class is_xss : public scalar_base_impl<is_xss> {
+class is_xss : public base_impl<is_xss> {
 public:
     is_xss() = default;
     ~is_xss() override = default;
@@ -28,7 +28,7 @@ protected:
 
     static std::pair<bool, std::string> match_impl(std::string_view pattern);
 
-    friend class scalar_base_impl<is_xss>;
+    friend class base_impl<is_xss>;
 };
 
 } // namespace ddwaf::matcher

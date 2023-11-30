@@ -36,6 +36,11 @@ template <typename T> using optional_ref = std::optional<std::reference_wrapper<
 
 namespace ddwaf {
 
+struct eval_result {
+    bool outcome;
+    bool ephemeral;
+};
+
 struct object_limits {
     static constexpr uint32_t default_max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
     static constexpr uint32_t default_max_container_size{DDWAF_MAX_CONTAINER_SIZE};

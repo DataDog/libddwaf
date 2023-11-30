@@ -14,7 +14,7 @@
 
 namespace ddwaf::matcher {
 
-class ip_match : public scalar_base_impl<ip_match> {
+class ip_match : public base_impl<ip_match> {
 public:
     using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
@@ -37,7 +37,7 @@ protected:
     static constexpr unsigned radix_tree_bits = 128; // IPv6
     std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_{nullptr, nullptr};
 
-    friend class scalar_base_impl<ip_match>;
+    friend class base_impl<ip_match>;
 };
 
 } // namespace ddwaf::matcher

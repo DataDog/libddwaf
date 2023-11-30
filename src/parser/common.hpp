@@ -15,6 +15,16 @@
 
 namespace ddwaf::parser {
 
+enum class operator_type {
+    matcher,
+    analyser
+};
+
+struct address_container {
+    std::unordered_set<std::string> required;
+    std::unordered_set<std::string> optional;
+};
+
 template <typename T, typename Key = std::string> T at(const parameter::map &map, const Key &key)
 {
     try {
@@ -38,5 +48,7 @@ T at(const parameter::map &map, const Key &key, const T &default_)
 }
 
 std::optional<transformer_id> transformer_from_string(std::string_view str);
+
+std::optional<operator_type> operator_type_from_string(std::string_view str);
 
 } // namespace ddwaf::parser

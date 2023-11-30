@@ -15,7 +15,7 @@
 
 namespace ddwaf::matcher {
 
-template <typename T> class equals : public scalar_base_impl<equals<T>> {
+template <typename T> class equals : public base_impl<equals<T>> {
 public:
     explicit equals(T expected)
         requires(!std::is_floating_point_v<T>)
@@ -63,10 +63,10 @@ protected:
 
     T expected_;
 
-    friend class scalar_base_impl<equals<T>>;
+    friend class base_impl<equals<T>>;
 };
 
-template <> class equals<double> : public scalar_base_impl<equals<double>> {
+template <> class equals<double> : public base_impl<equals<double>> {
 public:
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     equals(double expected, double delta) : expected_(expected), delta_(delta) {}
@@ -89,7 +89,7 @@ protected:
     double expected_;
     double delta_;
 
-    friend class scalar_base_impl<equals<double>>;
+    friend class base_impl<equals<double>>;
 };
 
 } // namespace ddwaf::matcher

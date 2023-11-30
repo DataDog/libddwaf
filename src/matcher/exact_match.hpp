@@ -14,7 +14,7 @@
 
 namespace ddwaf::matcher {
 
-class exact_match : public scalar_base_impl<exact_match> {
+class exact_match : public base_impl<exact_match> {
 public:
     using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
@@ -37,7 +37,7 @@ protected:
     std::vector<std::string> data_;
     std::unordered_map<std::string_view, uint64_t> values_;
 
-    friend class scalar_base_impl<exact_match>;
+    friend class base_impl<exact_match>;
 };
 
 } // namespace ddwaf::matcher

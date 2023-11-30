@@ -24,16 +24,16 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/generator/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/common.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/matcher_condition.cpp
+    ${libddwaf_SOURCE_DIR}/src/analyser/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/phrase_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/regex_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/is_sqli.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/ip_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/exact_match.cpp
-    ${libddwaf_SOURCE_DIR}/src/matcher/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/lowercase.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/compress_whitespace.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/normalize_path.cpp
