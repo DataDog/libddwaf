@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "condition/lfi_detector.hpp"
 #include "condition/matcher_proxy.hpp"
 #include "exception.hpp"
 #include "exclusion/object_filter.hpp"
@@ -148,33 +149,33 @@ std::vector<transformer_id> parse_transformers(
     return transformers;
 }
 
-std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
-    std::unordered_map<std::string, std::string> &data_ids, condition::data_source source,
-    const std::vector<transformer_id> &transformers, address_container &addresses,
-    const object_limits &limits)
+template <typename T>
+std::vector<condition::argument_definition> parse_arguments(const parameter::map &params,
+    condition::data_source source, const std::vector<transformer_id> &transformers,
+    address_container &addresses)
 {
-    std::vector<std::unique_ptr<condition::base>> conditions;
-    for (const auto &cond_param : conditions_array) {
-        auto root = static_cast<parameter::map>(cond_param);
+    const auto &specification = T::arguments();
+    std::vector<condition::argument_definition> definitions;
 
-        auto matcher_name = at<std::string_view>(root, "operator");
-        auto params = at<parameter::map>(root, "parameters");
+    definitions.reserve(specification.size());
 
-        auto [data_id, matcher] = parse_matcher(matcher_name, params);
+    for (const auto spec : specification) {
+        definitions.emplace_back();
+        condition::argument_definition &def = definitions.back();
 
-        if (!matcher && !data_id.empty()) {
-            data_ids.emplace(data_id, matcher_name);
-        }
-
-        auto inputs = at<parameter::vector>(params, "inputs");
+        auto inputs = at<parameter::vector>(params, spec.name);
         if (inputs.empty()) {
-            throw ddwaf::parsing_error("empty inputs");
+            if (!spec.optional) {
+                throw ddwaf::parsing_error("empty non-optional argument");
+            }
+            continue;
         }
 
-        std::vector<condition::argument_definition> arguments;
-        arguments.emplace({});
-        auto &targets = arguments[0].targets;
+        if (!spec.variadic && inputs.size() > 1) {
+            throw ddwaf::parsing_error("multiple targets for non-variadic argument");
+        }
 
+        auto &targets = def.targets;
         for (const auto &input_param : inputs) {
             auto input = static_cast<parameter::map>(input_param);
             auto address = at<std::string>(input, "address");
@@ -205,9 +206,42 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
                     get_target_index(address), std::move(kp), std::move(new_transformers), source});
             }
         }
+    }
 
-        conditions.emplace_back(std::make_unique<condition::matcher_proxy>(
-            std::move(matcher), data_id, std::move(arguments)));
+    return definitions;
+}
+
+std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
+    std::unordered_map<std::string, std::string> &data_ids, condition::data_source source,
+    const std::vector<transformer_id> &transformers, address_container &addresses,
+    const object_limits &limits)
+{
+    std::vector<std::unique_ptr<condition::base>> conditions;
+    for (const auto &cond_param : conditions_array) {
+        auto root = static_cast<parameter::map>(cond_param);
+
+        auto operator_name = at<std::string_view>(root, "operator");
+        auto params = at<parameter::map>(root, "parameters");
+
+        if (operator_name == "lfi_detector") {
+            auto arguments =
+                parse_arguments<condition::lfi_detector>(params, source, transformers, addresses);
+
+            conditions.emplace_back(
+                std::make_unique<condition::lfi_detector>(std::move(arguments)));
+        } else {
+            auto [data_id, matcher] = parse_matcher(operator_name, params);
+
+            if (!matcher && !data_id.empty()) {
+                data_ids.emplace(data_id, operator_name);
+            }
+
+            auto arguments =
+                parse_arguments<condition::matcher_proxy>(params, source, transformers, addresses);
+
+            conditions.emplace_back(std::make_unique<condition::matcher_proxy>(
+                std::move(matcher), data_id, std::move(arguments)));
+        }
     }
 
     return std::make_shared<expression>(std::move(conditions), limits);
@@ -322,57 +356,6 @@ std::shared_ptr<expression> parse_simplified_expression(const parameter::vector 
     std::unordered_map<std::string, std::string> data_ids;
     return parse_expression(
         conditions_array, data_ids, condition::data_source::values, {}, addresses, limits);
-    /*    for (const auto &cond_param : conditions_array) {*/
-    /*auto root = static_cast<parameter::map>(cond_param);*/
-
-    /*builder.start_condition();*/
-
-    /*auto matcher_name = at<std::string_view>(root, "operator");*/
-    /*auto params = at<parameter::map>(root, "parameters");*/
-
-    /*auto [rule_data_id, matcher] = parse_matcher(matcher_name, params);*/
-    /*if (!rule_data_id.empty()) {*/
-    /*throw ddwaf::parsing_error("dynamic data on filter condition");*/
-    /*}*/
-
-    /*builder.set_matcher(std::move(matcher));*/
-
-    /*auto inputs = at<parameter::vector>(params, "inputs");*/
-    /*if (inputs.empty()) {*/
-    /*throw ddwaf::parsing_error("empty inputs");*/
-    /*}*/
-
-    /*for (const auto &input_param : inputs) {*/
-    /*auto input = static_cast<parameter::map>(input_param);*/
-    /*auto address = at<std::string>(input, "address");*/
-
-    /*if (address.empty()) {*/
-    /*throw ddwaf::parsing_error("empty address");*/
-    /*}*/
-
-    /*auto kp = at<std::vector<std::string>>(input, "key_path", {});*/
-    /*for (const auto &path : kp) {*/
-    /*if (path.empty()) {*/
-    /*throw ddwaf::parsing_error("empty key_path");*/
-    /*}*/
-    /*}*/
-
-    /*addresses.required.emplace(address);*/
-
-    /*auto source = condition::data_source::values;*/
-    /*auto it = input.find("transformers");*/
-    /*if (it == input.end()) {*/
-    /*builder.add_target(address, std::move(kp), {}, source);*/
-    /*} else {*/
-    /*auto input_transformers = static_cast<parameter::vector>(it->second);*/
-    /*source = condition::data_source::values;*/
-    /*auto new_transformers = parse_transformers(input_transformers, source);*/
-    /*builder.add_target(address, std::move(kp), std::move(new_transformers), source);*/
-    /*}*/
-    /*}*/
-    /*}*/
-
-    /*return builder.build();*/
 }
 
 input_filter_spec parse_input_filter(

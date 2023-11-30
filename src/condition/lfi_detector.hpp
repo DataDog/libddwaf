@@ -22,10 +22,12 @@ protected:
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         const object_limits &limits, ddwaf::timer &deadline);
 
-    static constexpr std::vector<argument_specification> arguments()
+    static const std::vector<argument_specification> &arguments_impl()
     {
-        return {{"path", object_type::string, false, false},
+        static std::vector<argument_specification> args = {
+            {"path", object_type::string, false, false},
             {"params", object_type::container, true, false}};
+        return args;
     };
 
     friend class base_impl<lfi_detector>;

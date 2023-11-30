@@ -135,7 +135,7 @@ template <typename T> class base_impl : public base {
 public:
     explicit base_impl(std::vector<argument_definition> args) : arguments_(std::move(args))
     {
-        auto specifications = T::arguments();
+        auto specifications = T::arguments_impl();
 
         if (specifications.size() != arguments_.size()) {
             throw std::invalid_argument("incorrect specification of condition");
@@ -161,12 +161,14 @@ public:
     base_impl &operator=(const base_impl &) = default;
     base_impl &operator=(base_impl &&) noexcept = default;
 
+    static const std::vector<argument_specification> &arguments() { return T::arguments_impl(); }
+
     eval_result eval(cache_type &cache, const object_store &store,
         const exclusion::object_set_ref &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         const object_limits &limits, ddwaf::timer &deadline) const override
     {
-        auto specifications = T::arguments();
+        auto specifications = T::arguments_impl();
 
         argument_stack stack{arguments_.size()};
         for (unsigned i = 0; i < arguments_.size(); ++i) {

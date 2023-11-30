@@ -28,9 +28,11 @@ protected:
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers)
         const;
 
-    static constexpr std::vector<argument_specification> arguments()
+    static const std::vector<argument_specification> &arguments_impl()
     {
-        return {{"inputs", object_type::any, true, false}};
+        static std::vector<argument_specification> args = {
+            {"inputs", object_type::any, true, false}};
+        return args;
     };
 
     std::unique_ptr<matcher::base> matcher_;
