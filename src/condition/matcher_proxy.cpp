@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "matcher_condition.hpp"
+#include "matcher_proxy.hpp"
 #include "exception.hpp"
 
 #include "matcher/equals.hpp"
@@ -45,9 +45,8 @@ std::string object_to_string(const ddwaf_object &object)
     return {};
 }
 
-std::optional<event::match> eval_object(const ddwaf_object *object,
-    const matcher::base &matcher, const std::vector<transformer_id> &transformers,
-    const object_limits &limits)
+std::optional<event::match> eval_object(const ddwaf_object *object, const matcher::base &matcher,
+    const std::span<const transformer_id> &transformers, const object_limits &limits)
 {
     ddwaf_object src = *object;
 
@@ -85,8 +84,8 @@ std::optional<event::match> eval_object(const ddwaf_object *object,
 
 template <typename Iterator>
 std::optional<event::match> eval_target(Iterator &it, const matcher::base &matcher,
-    const std::vector<transformer_id> &transformers,
-    const object_limits &limits, ddwaf::timer &deadline)
+    const std::span<const transformer_id> &transformers, const object_limits &limits,
+    ddwaf::timer &deadline)
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -112,7 +111,7 @@ std::optional<event::match> eval_target(Iterator &it, const matcher::base &match
 
 } // namespace
 
-const matcher::base *matcher_condition::get_matcher(
+const matcher::base *matcher_proxy::get_matcher(
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers) const
 {
     if (matcher_ || data_id_.empty()) {
@@ -127,14 +126,14 @@ const matcher::base *matcher_condition::get_matcher(
     return nullptr;
 }
 
-eval_result matcher_condition::eval_impl(cache_type &cache, const object_store &store,
+eval_result matcher_proxy::eval_impl(const argument_stack &stack, cache_type &cache,
     const exclusion::object_set_ref &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     const object_limits &limits, ddwaf::timer &deadline) const
 {
     const auto *matcher = get_matcher(dynamic_matchers);
 
-    const auto &targets = arguments_[0].targets;
+    const auto &targets = stack.get<argument_stack::variadic>(0);
     if (cache.targets.size() != targets.size()) {
         cache.targets.assign(targets.size(), nullptr);
     }
@@ -145,34 +144,32 @@ eval_result matcher_condition::eval_impl(cache_type &cache, const object_store &
         }
 
         const auto &target = targets[i];
-        auto [object, attr] = store.get_target(target.root);
-        if (object == nullptr || object == cache.targets[i]) {
+        if (target.object == cache.targets[i]) {
             continue;
         }
 
-        const bool ephemeral = (attr == object_store::attribute::ephemeral);
-        if (!ephemeral) {
-            cache.targets[i] = object;
+        if (!target.ephemeral) {
+            cache.targets[i] = target.object;
         }
 
         std::optional<event::match> optional_match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
-            object::key_iterator it(object, target.key_path, objects_excluded, limits);
+            object::key_iterator it(target.object, target.key_path, objects_excluded, limits);
             optional_match = eval_target(it, *matcher, target.transformers, limits, deadline);
         } else {
-            object::value_iterator it(object, target.key_path, objects_excluded, limits);
+            object::value_iterator it(target.object, target.key_path, objects_excluded, limits);
             optional_match = eval_target(it, *matcher, target.transformers, limits, deadline);
         }
 
         if (optional_match.has_value()) {
-            optional_match->address = target.name;
-            optional_match->ephemeral = ephemeral;
+            optional_match->address = target.address;
+            optional_match->ephemeral = target.ephemeral;
             DDWAF_TRACE(
-                "Target {} matched parameter value {}", target.name, optional_match->resolved);
+                "Target {} matched parameter value {}", target.address, optional_match->resolved);
 
             cache.match = std::move(optional_match);
-            return {true, ephemeral};
+            return {true, target.ephemeral};
         }
     }
 

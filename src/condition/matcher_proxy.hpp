@@ -6,34 +6,37 @@
 
 #pragma once
 
-#include "base.hpp"
+#include "condition/base.hpp"
 
 namespace ddwaf::condition {
 
-class matcher_condition : public base_impl<matcher_condition> {
+class matcher_proxy : public base_impl<matcher_proxy> {
 public:
-    matcher_condition(std::unique_ptr<matcher::base> &&matcher, std::string data_id, std::vector<argument_definition> args):
-        base_impl<matcher_condition>(std::move(args)), matcher_(std::move(matcher)), data_id_(std::move(data_id)) {}
+    matcher_proxy(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
+        std::vector<argument_definition> args)
+        : base_impl<matcher_proxy>(std::move(args)), matcher_(std::move(matcher)),
+          data_id_(std::move(data_id))
+    {}
 
 protected:
-    eval_result eval_impl(cache_type &cache, const object_store &store,
+    eval_result eval_impl(const argument_stack &stack, cache_type &cache,
         const exclusion::object_set_ref &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         const object_limits &limits, ddwaf::timer &deadline) const;
 
     [[nodiscard]] const matcher::base *get_matcher(
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers) const;
+        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers)
+        const;
 
-    static constexpr std::vector<argument_specification> arguments() {
-        return {
-            {"inputs", object_type::any, true, false}
-        };
+    static constexpr std::vector<argument_specification> arguments()
+    {
+        return {{"inputs", object_type::any, true, false}};
     };
 
     std::unique_ptr<matcher::base> matcher_;
     std::string data_id_;
 
-    friend class base_impl<matcher_condition>;
+    friend class base_impl<matcher_proxy>;
 };
 
 } // namespace ddwaf::condition

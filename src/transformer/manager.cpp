@@ -70,7 +70,7 @@ bool call_transformer(transformer_id id, cow_string &str)
 }
 
 bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
-    const std::vector<transformer_id> &transformers)
+    const std::span<const transformer_id> &transformers)
 {
     if (source.type != DDWAF_OBJ_STRING || source.stringValue == nullptr) {
         return false;

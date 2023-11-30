@@ -61,16 +61,11 @@ std::optional<transformer_id> transformer_from_string(std::string_view str)
 
 std::optional<operator_type> operator_type_from_string(std::string_view str)
 {
-    static const std::unordered_map<std::string_view, operator_type> operator_mapping {
-        { "phrase_match", operator_type::matcher },
-        { "match_regex", operator_type::matcher },
-        { "is_xss", operator_type::matcher },
-        { "is_sqli", operator_type::matcher },
-        { "ip_match", operator_type::matcher },
-        { "exact_match", operator_type::matcher },
-        { "equals", operator_type::matcher },
-        { "lfi_detector", operator_type::analyser }
-    };
+    static const std::unordered_map<std::string_view, operator_type> operator_mapping{
+        {"phrase_match", operator_type::matcher}, {"match_regex", operator_type::matcher},
+        {"is_xss", operator_type::matcher}, {"is_sqli", operator_type::matcher},
+        {"ip_match", operator_type::matcher}, {"exact_match", operator_type::matcher},
+        {"equals", operator_type::matcher}, {"lfi_detector", operator_type::analyser}};
 
     auto it = operator_mapping.find(str);
     if (it != operator_mapping.end()) {

@@ -26,7 +26,8 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/condition/matcher_condition.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/matcher_proxy.cpp
     ${libddwaf_SOURCE_DIR}/src/analyser/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/phrase_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/regex_match.cpp

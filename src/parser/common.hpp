@@ -15,10 +15,7 @@
 
 namespace ddwaf::parser {
 
-enum class operator_type {
-    matcher,
-    analyser
-};
+enum class operator_type { matcher, analyser };
 
 struct address_container {
     std::unordered_set<std::string> required;

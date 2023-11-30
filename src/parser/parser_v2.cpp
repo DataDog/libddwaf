@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "condition/matcher_condition.hpp"
+#include "condition/matcher_proxy.hpp"
 #include "exception.hpp"
 #include "exclusion/object_filter.hpp"
 #include "generator/extract_schema.hpp"
@@ -195,19 +195,18 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
             addresses.required.emplace(address);
             auto it = input.find("transformers");
             if (it == input.end()) {
-                targets.emplace_back(condition::target_definition{address,
-                    get_target_index(address), std::move(kp), transformers, source});
+                targets.emplace_back(condition::target_definition{
+                    address, get_target_index(address), std::move(kp), transformers, source});
             } else {
                 auto input_transformers = static_cast<parameter::vector>(it->second);
                 source = condition::data_source::values;
                 auto new_transformers = parse_transformers(input_transformers, source);
-                targets.emplace_back(condition::target_definition{
-                    address, get_target_index(address), std::move(kp),
-                    std::move(new_transformers), source});
+                targets.emplace_back(condition::target_definition{address,
+                    get_target_index(address), std::move(kp), std::move(new_transformers), source});
             }
         }
 
-        conditions.emplace_back(std::make_unique<condition::matcher_condition>(
+        conditions.emplace_back(std::make_unique<condition::matcher_proxy>(
             std::move(matcher), data_id, std::move(arguments)));
     }
 
@@ -321,56 +320,56 @@ std::shared_ptr<expression> parse_simplified_expression(const parameter::vector 
     address_container &addresses, const object_limits &limits)
 {
     std::unordered_map<std::string, std::string> data_ids;
-    return parse_expression(conditions_array, data_ids, condition::data_source::values,
-        {}, addresses, limits);
-/*    for (const auto &cond_param : conditions_array) {*/
-        /*auto root = static_cast<parameter::map>(cond_param);*/
+    return parse_expression(
+        conditions_array, data_ids, condition::data_source::values, {}, addresses, limits);
+    /*    for (const auto &cond_param : conditions_array) {*/
+    /*auto root = static_cast<parameter::map>(cond_param);*/
 
-        /*builder.start_condition();*/
+    /*builder.start_condition();*/
 
-        /*auto matcher_name = at<std::string_view>(root, "operator");*/
-        /*auto params = at<parameter::map>(root, "parameters");*/
+    /*auto matcher_name = at<std::string_view>(root, "operator");*/
+    /*auto params = at<parameter::map>(root, "parameters");*/
 
-        /*auto [rule_data_id, matcher] = parse_matcher(matcher_name, params);*/
-        /*if (!rule_data_id.empty()) {*/
-            /*throw ddwaf::parsing_error("dynamic data on filter condition");*/
-        /*}*/
+    /*auto [rule_data_id, matcher] = parse_matcher(matcher_name, params);*/
+    /*if (!rule_data_id.empty()) {*/
+    /*throw ddwaf::parsing_error("dynamic data on filter condition");*/
+    /*}*/
 
-        /*builder.set_matcher(std::move(matcher));*/
+    /*builder.set_matcher(std::move(matcher));*/
 
-        /*auto inputs = at<parameter::vector>(params, "inputs");*/
-        /*if (inputs.empty()) {*/
-            /*throw ddwaf::parsing_error("empty inputs");*/
-        /*}*/
+    /*auto inputs = at<parameter::vector>(params, "inputs");*/
+    /*if (inputs.empty()) {*/
+    /*throw ddwaf::parsing_error("empty inputs");*/
+    /*}*/
 
-        /*for (const auto &input_param : inputs) {*/
-            /*auto input = static_cast<parameter::map>(input_param);*/
-            /*auto address = at<std::string>(input, "address");*/
+    /*for (const auto &input_param : inputs) {*/
+    /*auto input = static_cast<parameter::map>(input_param);*/
+    /*auto address = at<std::string>(input, "address");*/
 
-            /*if (address.empty()) {*/
-                /*throw ddwaf::parsing_error("empty address");*/
-            /*}*/
+    /*if (address.empty()) {*/
+    /*throw ddwaf::parsing_error("empty address");*/
+    /*}*/
 
-            /*auto kp = at<std::vector<std::string>>(input, "key_path", {});*/
-            /*for (const auto &path : kp) {*/
-                /*if (path.empty()) {*/
-                    /*throw ddwaf::parsing_error("empty key_path");*/
-                /*}*/
-            /*}*/
+    /*auto kp = at<std::vector<std::string>>(input, "key_path", {});*/
+    /*for (const auto &path : kp) {*/
+    /*if (path.empty()) {*/
+    /*throw ddwaf::parsing_error("empty key_path");*/
+    /*}*/
+    /*}*/
 
-            /*addresses.required.emplace(address);*/
+    /*addresses.required.emplace(address);*/
 
-            /*auto source = condition::data_source::values;*/
-            /*auto it = input.find("transformers");*/
-            /*if (it == input.end()) {*/
-                /*builder.add_target(address, std::move(kp), {}, source);*/
-            /*} else {*/
-                /*auto input_transformers = static_cast<parameter::vector>(it->second);*/
-                /*source = condition::data_source::values;*/
-                /*auto new_transformers = parse_transformers(input_transformers, source);*/
-                /*builder.add_target(address, std::move(kp), std::move(new_transformers), source);*/
-            /*}*/
-        /*}*/
+    /*auto source = condition::data_source::values;*/
+    /*auto it = input.find("transformers");*/
+    /*if (it == input.end()) {*/
+    /*builder.add_target(address, std::move(kp), {}, source);*/
+    /*} else {*/
+    /*auto input_transformers = static_cast<parameter::vector>(it->second);*/
+    /*source = condition::data_source::values;*/
+    /*auto new_transformers = parse_transformers(input_transformers, source);*/
+    /*builder.add_target(address, std::move(kp), std::move(new_transformers), source);*/
+    /*}*/
+    /*}*/
     /*}*/
 
     /*return builder.build();*/
