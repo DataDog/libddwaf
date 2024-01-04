@@ -40,3 +40,5 @@ add_custom_target(run_benchmark
     --raw
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
+
+add_dependencies(run_benchmark benchmark)

@@ -34,6 +34,7 @@ namespace benchmark = ddwaf::benchmark;
 namespace fs = std::filesystem;
 namespace utils = ddwaf::benchmark::utils;
 
+using test_result = ddwaf::benchmark::runner::test_result;
 using generator_type = benchmark::object_generator::generator_type;
 
 std::map<std::string, benchmark::object_generator::settings> default_tests = {
@@ -201,6 +202,7 @@ int main(int argc, char *argv[])
 
     benchmark::random::seed(s.seed);
 
+    std::map<std::string, test_result> all_results;
     for (const auto &scenario : s.scenarios) {
         YAML::Node spec = YAML::Load(utils::read_file(scenario));
 
@@ -219,11 +221,12 @@ int main(int argc, char *argv[])
         initialise_runner(runner, handle, s, spec);
 
         auto results = runner.run();
-
-        benchmark::output_results(s, results);
+        all_results.merge(results);
 
         ddwaf_destroy(handle);
     }
+
+    benchmark::output_results(s, all_results);
 
     return EXIT_SUCCESS;
 }
