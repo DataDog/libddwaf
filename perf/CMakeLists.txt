@@ -30,12 +30,9 @@ set_target_properties(benchmerge PROPERTIES
     CXX_EXTENSIONS NO)
 
 
-ExternalProject_Get_property(proj_event_rules SOURCE_DIR)
-set(EVENT_RULES_SOURCE_DIR ${SOURCE_DIR})
-
 add_custom_target(run_benchmark
     COMMAND ${CMAKE_BINARY_DIR}/perf/benchmark
-    --rule-repo=${EVENT_RULES_SOURCE_DIR}
+    --scenarios=${CMAKE_CURRENT_SOURCE_DIR}/scenarios
     --iterations=100
     --format=cbmf
     --seed=1729
@@ -43,5 +40,3 @@ add_custom_target(run_benchmark
     --raw
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
-
-add_dependencies(run_benchmark benchmark proj_event_rules)
