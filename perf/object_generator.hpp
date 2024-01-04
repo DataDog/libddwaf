@@ -14,8 +14,7 @@
 #include <vector>
 
 #include <ddwaf.h>
-
-namespace fs = std::filesystem;
+#include <yaml-cpp/node/node.h>
 
 namespace ddwaf::benchmark {
 
@@ -46,7 +45,7 @@ public:
     };
 
     object_generator() = default;
-    object_generator(const std::vector<std::string_view> &addresses, const fs::path &rules_dir);
+    object_generator(const std::vector<std::string_view> &addresses, const YAML::Node &spec);
 
     ~object_generator();
 
@@ -59,7 +58,6 @@ public:
     std::vector<ddwaf_object> operator()(const settings &l, size_t n) const;
 
 protected:
-    void parse_rule(const fs::path &rule_path);
     std::unordered_map<std::string_view, std::vector<ddwaf_object>> addresses_;
 
     // Objects generated from the ruleset will be stored here and freed on

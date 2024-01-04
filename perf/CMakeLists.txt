@@ -36,8 +36,8 @@ set(EVENT_RULES_SOURCE_DIR ${SOURCE_DIR})
 add_custom_target(run_benchmark
     COMMAND ${CMAKE_BINARY_DIR}/perf/benchmark
     --rule-repo=${EVENT_RULES_SOURCE_DIR}
-    --iterations=1000
-    --format=json
+    --iterations=100
+    --format=cbmf
     --seed=1729
     --output=benchmark_results.json
     --raw

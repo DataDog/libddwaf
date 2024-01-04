@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <charconv>
 #include <ddwaf.h>
 #include <filesystem>
 
@@ -16,5 +17,28 @@ namespace ddwaf::benchmark::utils {
 std::string object_to_string(const ddwaf_object &o) noexcept;
 ddwaf_object object_dup(const ddwaf_object &o) noexcept;
 std::string read_file(const fs::path &filename);
+
+inline void exit_failure()
+{
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    exit(EXIT_FAILURE);
+}
+
+inline void exit_success()
+{
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    exit(EXIT_SUCCESS);
+}
+
+template <typename T> T from_string(std::string_view str)
+{
+    T result;
+    const auto *end = str.data() + str.size();
+    auto [endConv, err] = std::from_chars(str.data(), end, result);
+    if (err == std::errc{} && endConv == end) {
+        return result;
+    }
+    return T();
+}
 
 } // namespace ddwaf::benchmark::utils

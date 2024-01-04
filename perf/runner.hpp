@@ -24,8 +24,9 @@ public:
     };
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    runner(settings &s)
-        : iterations_(s.iterations), threads_(s.threads), store_samples(s.store_samples)
+    explicit runner(std::string scenario, settings &s)
+        : scenario_(std::move(scenario)), iterations_(s.iterations), threads_(s.threads),
+          store_samples(s.store_samples)
     {}
 
     template <typename F, typename... Args>
@@ -34,12 +35,13 @@ public:
         tests_.emplace(name, std::make_unique<F>(std::forward<Args &&>(args)...));
     }
 
-    std::map<std::string_view, test_result> run();
+    std::map<std::string, test_result> run();
 
 protected:
-    std::map<std::string_view, test_result> run_st();
-    std::map<std::string_view, test_result> run_mt();
+    std::map<std::string, test_result> run_st();
+    std::map<std::string, test_result> run_mt();
 
+    std::string scenario_;
     unsigned iterations_;
     unsigned threads_;
     bool store_samples;

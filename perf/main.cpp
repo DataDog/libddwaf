@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <charconv>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -19,7 +20,6 @@
 #include <clock.hpp>
 #include <ddwaf.h>
 
-#include "context_destroy_fixture.hpp"
 #include "object_generator.hpp"
 #include "output_formatter.hpp"
 #include "random.hpp"
@@ -27,61 +27,55 @@
 #include "run_fixture.hpp"
 #include "runner.hpp"
 #include "settings.hpp"
+#include "utils.hpp"
 #include "yaml_helpers.hpp"
 
 namespace benchmark = ddwaf::benchmark;
 namespace fs = std::filesystem;
+namespace utils = ddwaf::benchmark::utils;
 
 using generator_type = benchmark::object_generator::generator_type;
 
 std::map<std::string, benchmark::object_generator::settings> default_tests = {
-    {"run.random.any", {.type = generator_type::random}},
-    {"run.random.long_strings", {.string_length = {1024, 4096}, .type = generator_type::random}},
-    {"run.random.deep_containers", {.container_depth = {5, 20}, .type = generator_type::random}},
-    {"run.valid", {.type = generator_type::valid}},
-    {"run.mixed", {.type = generator_type::mixed}},
-    {"context_destroy", {.type = generator_type::mixed}},
-
+    {"random.any", {.type = generator_type::random}},
+    {"random.long_strings", {.string_length = {1024, 4096}, .type = generator_type::random}},
+    {"random.deep_containers", {.container_depth = {5, 20}, .type = generator_type::random}},
+    {"valid", {.type = generator_type::valid}},
+    {"mixed", {.type = generator_type::mixed}},
 };
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void print_help_and_exit(std::string_view name, std::string_view error = {})
 {
     std::cerr << "Usage: " << name << " [OPTION]...\n"
-              << "    --rule-repo VALUE     AppSec rules repository path\n"
+              << "    --scenarios VALUE     Scenarios repository path\n"
               << "    --iterations VALUE    Number of iterations per test\n"
               << "    --seed VALUE          Seed for the random number generator\n"
-              << "    --format VALUE        Output format: csv, json, human, none\n"
-              << "    --list-tests          List all of the available tests\n"
-              << "    --test                A comma-separated list of tests to run\n"
-              << "    --rtest               A regex matching the tests to run\n"
-              << "    --threads VALUE       Number of threads for concurrent "
-                 "testing\n"
+              << "    --format VALUE        Output format: csv, json, human, cbmf, none\n"
               << "    --output VALUE        Results output file\n"
-              << "    --max-objects VALUE   Maximum number of objects to cache per "
-                 "test\n"
               << "    --raw                 Include all samples in output (only "
-                 "works with --format=json\n";
+                 "works with --format=json or cbmf\n";
     // " "
 
     if (!error.empty()) {
         std::cerr << "\nError: " << error << "\n";
-        exit(EXIT_FAILURE);
+        utils::exit_failure();
     }
-    exit(EXIT_SUCCESS);
+    utils::exit_success();
 }
 
 void print_tests_and_exit()
 {
     for (auto &[k, v] : default_tests) { std::cerr << k << std::endl; }
-    exit(EXIT_SUCCESS);
+    utils::exit_success();
 }
 
-std::map<std::string_view, std::string_view> parse_args(int argc, char *argv[])
+std::map<std::string_view, std::string_view> parse_args(const std::vector<std::string> &args)
 {
     std::map<std::string_view, std::string_view> parsed_args;
 
-    for (int i = 1; i < argc; i++) {
-        std::string_view arg = argv[i];
+    for (std::size_t i = 1; i < args.size(); i++) {
+        std::string_view arg = args[i];
         if (arg.substr(0, 2) != "--") {
             continue;
         }
@@ -94,8 +88,8 @@ std::map<std::string_view, std::string_view> parse_args(int argc, char *argv[])
             std::string_view opt_name = arg.substr(2);
             parsed_args[opt_name] = {};
 
-            if ((i + 1) < argc) {
-                std::string_view value = argv[i + 1];
+            if ((i + 1) < args.size()) {
+                std::string_view value = args[i + 1];
                 if (value.substr(0, 2) != "--") {
                     parsed_args[opt_name] = value;
                 }
@@ -111,27 +105,31 @@ bool contains(std::map<std::string_view, std::string_view> &opts, std::string_vi
     return opts.find(name) != opts.end();
 }
 
-benchmark::settings generate_settings(int argc, char *argv[])
+benchmark::settings generate_settings(const std::vector<std::string> &args)
 {
     benchmark::settings s;
 
-    auto opts = parse_args(argc, argv);
+    auto opts = parse_args(args);
 
     if (contains(opts, "help")) {
-        print_help_and_exit(argv[0]);
+        print_help_and_exit(args[0]);
     }
 
-    if (contains(opts, "list-tests")) {
-        print_tests_and_exit();
-    }
-
-    if (!contains(opts, "rule-repo")) {
-        print_help_and_exit(argv[0], "Missing option --rule-repo");
+    if (!contains(opts, "scenarios")) {
+        print_help_and_exit(args[0], "Missing option --scenarios");
     } else {
-        s.rule_repo = opts["rule-repo"];
-        if (!fs::is_directory(s.rule_repo)) {
-            std::cerr << "Rule repository should be a directory" << std::endl;
-            exit(EXIT_FAILURE);
+        s.scenario_root = opts["scenarios"];
+        if (!fs::is_directory(s.scenario_root)) {
+            std::cerr << "Scenarios should be a directory" << std::endl;
+            utils::exit_failure();
+        }
+
+        for (const auto &dir_entry : fs::directory_iterator{s.scenario_root}) {
+            const fs::path &scenario_path = dir_entry;
+
+            if (is_regular_file(scenario_path) && scenario_path.extension() == ".json") {
+                s.scenarios.push_back(scenario_path);
+            }
         }
     }
 
@@ -143,10 +141,12 @@ benchmark::settings generate_settings(int argc, char *argv[])
             s.format = benchmark::output_fmt::human;
         } else if (format == "json") {
             s.format = benchmark::output_fmt::json;
+        } else if (format == "cbmf") {
+            s.format = benchmark::output_fmt::cbmf;
         } else if (format == "none") {
             s.format = benchmark::output_fmt::none;
         } else {
-            print_help_and_exit(argv[0], "Unsupported value for --format");
+            print_help_and_exit(args[0], "Unsupported value for --format");
         }
     }
 
@@ -155,120 +155,75 @@ benchmark::settings generate_settings(int argc, char *argv[])
     }
 
     if (contains(opts, "iterations")) {
-        s.iterations = atoi(opts["iterations"].data());
+        s.iterations = utils::from_string<unsigned>(opts["iterations"]);
         if (s.iterations == 0) {
-            print_help_and_exit(argv[0], "Iterations should be a positive number");
+            print_help_and_exit(args[0], "Iterations should be a positive number");
         }
     }
 
     if (contains(opts, "seed")) {
-        s.seed = atoi(opts["seed"].data());
+        s.seed = utils::from_string<uint64_t>(opts["seed"]);
     } else {
         s.seed = std::random_device()();
     }
 
-    if (contains(opts, "threads")) {
-        s.threads = atoi(opts["threads"].data());
-    }
-
-    if (contains(opts, "max-objects")) {
-        s.max_objects = atoi(opts["max-objects"].data());
-        if (s.max_objects == 0) {
-            print_help_and_exit(argv[0], "Max objects should be a positive number");
-        }
-    }
-
     if (contains(opts, "raw")) {
-        if (s.format != benchmark::output_fmt::json) {
-            print_help_and_exit(argv[0], "Raw only works with json format");
+        if (s.format != benchmark::output_fmt::json && s.format != benchmark::output_fmt::cbmf) {
+            print_help_and_exit(args[0], "Raw only works with json or cbmf format");
         }
         s.store_samples = true;
-    }
-
-    if (contains(opts, "test")) {
-        auto test_str = opts["test"];
-
-        std::size_t delimiter = 0;
-
-        std::string_view remaining = test_str;
-        while ((delimiter = remaining.find(',')) != std::string::npos) {
-            auto substr = remaining.substr(0, delimiter);
-            if (!substr.empty()) {
-                s.test_list.emplace(substr);
-            }
-            remaining = remaining.substr(delimiter + 1);
-        }
-
-        if (!remaining.empty()) {
-            s.test_list.emplace(remaining);
-        }
-    }
-
-    if (contains(opts, "rtest")) {
-        std::regex test_regex(opts["rtest"].data());
-        for (auto &[k, v] : default_tests) {
-            if (std::regex_match(k, test_regex)) {
-                s.test_list.emplace(k);
-            }
-        }
     }
 
     return s;
 }
 
-void initialise_runner(benchmark::runner &runner, ddwaf_handle handle, benchmark::settings &s)
+void initialise_runner(
+    benchmark::runner &runner, ddwaf_handle handle, benchmark::settings &s, const YAML::Node &spec)
 {
     uint32_t addrs_len;
     const auto *const addrs = ddwaf_known_addresses(handle, &addrs_len);
 
     std::vector<std::string_view> addresses{addrs, addrs + static_cast<size_t>(addrs_len)};
 
-    benchmark::object_generator generator(addresses, s.rule_repo / "rules/recommended/");
+    benchmark::object_generator generator(addresses, spec);
 
     unsigned num_objects = std::min(s.max_objects, s.iterations);
     for (auto &[k, v] : default_tests) {
-        if (!s.test_list.empty() && s.test_list.find(k) == s.test_list.end()) {
-            continue;
-        }
-
-        auto objects = generator(v, num_objects);
-        if (k.starts_with("run")) {
-            runner.register_fixture<benchmark::run_fixture>(k, handle, std::move(objects));
-        } else if (k.starts_with("context_destroy")) {
-            runner.register_fixture<benchmark::context_destroy_fixture>(
-                k, handle, std::move(objects));
-        } else {
-            std::cerr << "Unknown fixture type: " << k << '\n';
-        }
+        runner.register_fixture<benchmark::run_fixture>(k, handle, generator(v, num_objects));
     }
 }
 
 int main(int argc, char *argv[])
 {
-    auto s = generate_settings(argc, argv);
+    std::vector<std::string> args(argv, argv + argc);
+
+    auto s = generate_settings(args);
 
     benchmark::random::seed(s.seed);
 
-    fs::path rule_file = s.rule_repo / "build/recommended.json";
+    for (const auto &scenario : s.scenarios) {
+        YAML::Node spec = YAML::Load(utils::read_file(scenario));
 
-    ddwaf_object rule = benchmark::rule_parser::from_file(rule_file);
+        auto name = spec["scenario"].as<std::string>();
+        auto ruleset = spec["ruleset"].as<ddwaf_object>();
 
-    ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
-    ddwaf_handle handle = ddwaf_init(&rule, &cfg, nullptr);
-    ddwaf_object_free(&rule);
-    if (handle == nullptr) {
-        std::cerr << "Invalid ruleset file" << std::endl;
-        exit(EXIT_FAILURE);
+        ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+        ddwaf_handle handle = ddwaf_init(&ruleset, &cfg, nullptr);
+        ddwaf_object_free(&ruleset);
+        if (handle == nullptr) {
+            std::cerr << "Invalid ruleset file" << std::endl;
+            utils::exit_failure();
+        }
+
+        benchmark::runner runner(std::move(name), s);
+        initialise_runner(runner, handle, s, spec);
+
+        auto results = runner.run();
+
+        benchmark::output_results(s, results);
+
+        ddwaf_destroy(handle);
     }
-
-    benchmark::runner runner(s);
-    initialise_runner(runner, handle, s);
-
-    auto results = runner.run();
-
-    benchmark::output_results(s, results);
-
-    ddwaf_destroy(handle);
 
     return EXIT_SUCCESS;
 }

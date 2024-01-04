@@ -15,13 +15,51 @@ namespace ddwaf::benchmark {
 namespace {
 
 using output_fn_type = void (*)(
-    std::ostream &, const settings &, const std::map<std::string_view, runner::test_result> &);
+    std::ostream &, const settings &, const std::map<std::string, runner::test_result> &);
 
-static constexpr double MILLI = 1e3;
-static constexpr double MICRO = 1e6;
+constexpr double MILLI = 1e3;
+constexpr double MICRO = 1e6;
+
+void output_cbmf(
+    std::ostream &o, const settings &s, const std::map<std::string, runner::test_result> &results)
+{
+    std::string_view version = ddwaf_get_version();
+
+    o << R"({"schema_version":"v1","benchmarks":[)";
+
+    bool first_scenario = true;
+    for (const auto &[scenario, result] : results) {
+        if (!first_scenario) {
+            o << ",";
+        } else {
+            first_scenario = false;
+        }
+
+        o << R"({"parameters":{)"
+          << R"("scenario":")" << scenario << R"(",)"
+          << R"("waf_version":")" << version << R"(",)"
+          << R"("seed":)" << s.seed
+          << R"(},"runs":{"run-0":{"execution_time":{"uom":"ns","value":[)";
+
+        bool first = true;
+        for (const auto sample : result.samples) {
+            if (!first) {
+                o << ",";
+            } else {
+                first = false;
+            }
+
+            o << sample;
+        }
+
+        o << R"(]}}}})";
+    }
+
+    o << R"(]})";
+}
 
 void output_csv(std::ostream &o, const settings &s [[maybe_unused]],
-    const std::map<std::string_view, runner::test_result> &results)
+    const std::map<std::string, runner::test_result> &results)
 {
     o << "name,average,p0,p75,p90,p95,p99,p100,sd" << std::endl;
     for (const auto &[k, v] : results) {
@@ -30,8 +68,8 @@ void output_csv(std::ostream &o, const settings &s [[maybe_unused]],
     }
 }
 
-void output_json(std::ostream &o, const settings &s,
-    const std::map<std::string_view, runner::test_result> &results)
+void output_json(
+    std::ostream &o, const settings &s, const std::map<std::string, runner::test_result> &results)
 {
     // Lazy JSON
     bool start = false;
@@ -75,8 +113,8 @@ void output_json(std::ostream &o, const settings &s,
 }
 
 // NOLINTBEGIN(*-narrowing-conversions)
-void output_human(std::ostream &o, const settings &s,
-    const std::map<std::string_view, runner::test_result> &results)
+void output_human(
+    std::ostream &o, const settings &s, const std::map<std::string, runner::test_result> &results)
 {
     o << "Seed : " << s.seed << std::endl
       << "Iterations : " << s.iterations << std::endl
@@ -99,7 +137,7 @@ void output_human(std::ostream &o, const settings &s,
 } // namespace
 
 void output_results(
-    const benchmark::settings &s, const std::map<std::string_view, runner::test_result> &results)
+    const benchmark::settings &s, const std::map<std::string, runner::test_result> &results)
 {
     output_fn_type fn = output_json;
 
@@ -112,6 +150,9 @@ void output_results(
         break;
     case output_fmt::csv:
         fn = output_csv;
+        break;
+    case output_fmt::cbmf:
+        fn = output_cbmf;
         break;
     case output_fmt::none:
     default:

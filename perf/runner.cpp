@@ -36,7 +36,7 @@ double standard_deviation(const std::vector<uint64_t> &values, double average)
 
 } // namespace
 
-std::map<std::string_view, runner::test_result> runner::run()
+std::map<std::string, runner::test_result> runner::run()
 {
     if (threads_ <= 1) {
         return run_st();
@@ -44,11 +44,12 @@ std::map<std::string_view, runner::test_result> runner::run()
     return run_mt();
 }
 
-std::map<std::string_view, runner::test_result> runner::run_st()
+std::map<std::string, runner::test_result> runner::run_st()
 {
-    std::map<std::string_view, test_result> results;
+    std::map<std::string, test_result> results;
     std::vector<uint64_t> times(iterations_);
-    for (auto &[name, f] : tests_) {
+    for (auto &[test_name, f] : tests_) {
+        std::string name = scenario_ + '.' + test_name;
         double average = 0.0;
 
         for (std::size_t i = 0; i < iterations_; i++) {
@@ -69,7 +70,7 @@ std::map<std::string_view, runner::test_result> runner::run_st()
         auto samples = store_samples ? times : std::vector<uint64_t>();
 
         std::sort(times.begin(), times.end());
-        results.emplace(name,
+        results.emplace(std::move(name),
             test_result{average, percentile(times, 0), percentile(times, 50), percentile(times, 75),
                 percentile(times, 90), percentile(times, 95), percentile(times, 99),
                 percentile(times, 100), standard_deviation(times, average), samples});
@@ -78,24 +79,24 @@ std::map<std::string_view, runner::test_result> runner::run_st()
     return results;
 }
 
-std::map<std::string_view, runner::test_result> runner::run_mt()
+std::map<std::string, runner::test_result> runner::run_mt()
 {
     std::mutex test_mtx;
     std::mutex result_mtx;
-    std::map<std::string_view, test_result> results;
+    std::map<std::string, test_result> results;
     auto test_it = tests_.begin();
     std::vector<std::thread> tid(threads_);
 
     auto fn = [&]() {
         std::vector<uint64_t> times(iterations_);
         while (true) {
-            std::string_view name;
+            std::string name;
             fixture_base *f;
 
             {
                 std::lock_guard<std::mutex> lg(test_mtx);
                 if (test_it != tests_.end()) {
-                    name = test_it->first;
+                    name = scenario_ + '.' + test_it->first;
                     f = test_it->second.get();
                     test_it++;
                 } else {
@@ -129,7 +130,7 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
 
             {
                 std::lock_guard<std::mutex> lg(result_mtx);
-                results.emplace(name, std::move(tr));
+                results.emplace(std::move(name), std::move(tr));
             }
         }
     };
