@@ -33,8 +33,8 @@ set_target_properties(benchmerge PROPERTIES
 add_custom_target(run_benchmark
     COMMAND ${CMAKE_BINARY_DIR}/perf/benchmark
     --scenarios=${CMAKE_CURRENT_SOURCE_DIR}/scenarios
-    --iterations=100
-    --format=cbmf
+    --iterations=1000
+    --format=json
     --seed=1729
     --output=benchmark_results.json
     --raw

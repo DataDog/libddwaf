@@ -54,7 +54,7 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
               << "    --runs VALUE          Number of runs per scenario\n"
               << "    --iterations VALUE    Number of iterations per run\n"
               << "    --seed VALUE          Seed for the random number generator\n"
-              << "    --format VALUE        Output format: csv, json, human, cbmf, none\n"
+              << "    --format VALUE        Output format: csv, json, human, none\n"
               << "    --output VALUE        Results output file\n";
 
     if (!error.empty()) {
@@ -178,15 +178,26 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
 void initialise_runner(
     benchmark::runner &runner, ddwaf_handle handle, benchmark::settings &s, const YAML::Node &spec)
 {
+    std::unordered_set<std::string> fixtures;
+    auto fixtures_spec = spec["fixtures"];
+    if (fixtures_spec.IsDefined()) {
+        fixtures.reserve(fixtures_spec.size());
+        for (auto it = fixtures_spec.begin(); it != fixtures_spec.end(); ++it) {
+            fixtures.emplace(it->as<std::string>());
+        }
+    }
+
     uint32_t addrs_len;
     const auto *const addrs = ddwaf_known_addresses(handle, &addrs_len);
-
     std::vector<std::string_view> addresses{addrs, addrs + static_cast<size_t>(addrs_len)};
 
     benchmark::object_generator generator(addresses, spec);
 
     unsigned num_objects = std::min(s.max_objects, s.iterations);
     for (auto &[k, v] : default_tests) {
+        if (!fixtures.empty() && !fixtures.contains(k)) {
+            continue;
+        }
         runner.register_fixture<benchmark::run_fixture>(k, handle, generator(v, num_objects));
     }
 }
