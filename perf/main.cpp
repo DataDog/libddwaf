@@ -119,17 +119,16 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
         print_help_and_exit(args[0], "Missing option --scenarios");
     } else {
         auto root = opts["scenarios"];
-        if (!fs::is_directory(root)) {
-            std::cerr << "Scenarios should be a directory" << std::endl;
-            utils::exit_failure();
-        }
+        if (fs::is_directory(root)) {
+            for (const auto &dir_entry : fs::directory_iterator{root}) {
+                const fs::path &scenario_path = dir_entry;
 
-        for (const auto &dir_entry : fs::directory_iterator{root}) {
-            const fs::path &scenario_path = dir_entry;
-
-            if (is_regular_file(scenario_path) && scenario_path.extension() == ".json") {
-                s.scenarios.push_back(scenario_path);
+                if (is_regular_file(scenario_path) && scenario_path.extension() == ".json") {
+                    s.scenarios.emplace_back(scenario_path);
+                }
             }
+        } else {
+            s.scenarios.emplace_back(root);
         }
     }
 
