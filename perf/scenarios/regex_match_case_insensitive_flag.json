@@ -1,4 +1,4 @@
-
+{
     "scenario": "rule-regex-match.case_insensitive_flag",
     "ruleset": {
         "rules": [
