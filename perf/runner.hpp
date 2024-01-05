@@ -19,7 +19,7 @@ namespace ddwaf::benchmark {
 class runner {
 public:
     struct test_result {
-        uint64_t average, p0, p50, p75, p90, p95, p99, p100, sd;
+        // uint64_t average, p0, p50, p75, p90, p95, p99, p100, sd;
         std::vector<uint64_t> samples;
     };
 

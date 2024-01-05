@@ -19,6 +19,7 @@
 
 #include <clock.hpp>
 #include <ddwaf.h>
+#include <yaml-cpp/node/node.h>
 
 #include "object_generator.hpp"
 #include "output_formatter.hpp"
@@ -39,8 +40,8 @@ using generator_type = benchmark::object_generator::generator_type;
 
 std::map<std::string, benchmark::object_generator::settings> default_tests = {
     {"random.any", {.type = generator_type::random}},
-    {"random.long_strings", {.string_length = {1024, 4096}, .type = generator_type::random}},
-    {"random.deep_containers", {.container_depth = {5, 20}, .type = generator_type::random}},
+    {"random.long_strings", {.string_length = {512, 1024}, .type = generator_type::random}},
+    {"random.deep_containers", {.container_depth = {5, 10}, .type = generator_type::random}},
     {"valid", {.type = generator_type::valid}},
     {"mixed", {.type = generator_type::mixed}},
 };
@@ -50,13 +51,11 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
 {
     std::cerr << "Usage: " << name << " [OPTION]...\n"
               << "    --scenarios VALUE     Scenarios repository path\n"
-              << "    --iterations VALUE    Number of iterations per test\n"
+              << "    --runs VALUE          Number of runs per scenario\n"
+              << "    --iterations VALUE    Number of iterations per run\n"
               << "    --seed VALUE          Seed for the random number generator\n"
               << "    --format VALUE        Output format: csv, json, human, cbmf, none\n"
-              << "    --output VALUE        Results output file\n"
-              << "    --raw                 Include all samples in output (only "
-                 "works with --format=json or cbmf\n";
-    // " "
+              << "    --output VALUE        Results output file\n";
 
     if (!error.empty()) {
         std::cerr << "\nError: " << error << "\n";
@@ -119,13 +118,13 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
     if (!contains(opts, "scenarios")) {
         print_help_and_exit(args[0], "Missing option --scenarios");
     } else {
-        s.scenario_root = opts["scenarios"];
-        if (!fs::is_directory(s.scenario_root)) {
+        auto root = opts["scenarios"];
+        if (!fs::is_directory(root)) {
             std::cerr << "Scenarios should be a directory" << std::endl;
             utils::exit_failure();
         }
 
-        for (const auto &dir_entry : fs::directory_iterator{s.scenario_root}) {
+        for (const auto &dir_entry : fs::directory_iterator{root}) {
             const fs::path &scenario_path = dir_entry;
 
             if (is_regular_file(scenario_path) && scenario_path.extension() == ".json") {
@@ -142,8 +141,6 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
             s.format = benchmark::output_fmt::human;
         } else if (format == "json") {
             s.format = benchmark::output_fmt::json;
-        } else if (format == "cbmf") {
-            s.format = benchmark::output_fmt::cbmf;
         } else if (format == "none") {
             s.format = benchmark::output_fmt::none;
         } else {
@@ -153,6 +150,13 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
 
     if (s.format != benchmark::output_fmt::none && contains(opts, "output")) {
         s.output_file = opts["output"];
+    }
+
+    if (contains(opts, "runs")) {
+        s.runs = utils::from_string<unsigned>(opts["runs"]);
+        if (s.runs == 0) {
+            print_help_and_exit(args[0], "Runs should be a positive number");
+        }
     }
 
     if (contains(opts, "iterations")) {
@@ -166,13 +170,6 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
         s.seed = utils::from_string<uint64_t>(opts["seed"]);
     } else {
         s.seed = std::random_device()();
-    }
-
-    if (contains(opts, "raw")) {
-        if (s.format != benchmark::output_fmt::json && s.format != benchmark::output_fmt::cbmf) {
-            print_help_and_exit(args[0], "Raw only works with json or cbmf format");
-        }
-        s.store_samples = true;
     }
 
     return s;
@@ -202,28 +199,38 @@ int main(int argc, char *argv[])
 
     benchmark::random::seed(s.seed);
 
-    std::map<std::string, test_result> all_results;
-    for (const auto &scenario : s.scenarios) {
-        YAML::Node spec = YAML::Load(utils::read_file(scenario));
+    std::map<std::string, std::vector<test_result>> all_results;
+    for (unsigned i = 0; i < s.runs; ++i) {
+        for (const auto &scenario : s.scenarios) {
+            YAML::Node spec = YAML::Load(utils::read_file(scenario));
 
-        auto name = spec["scenario"].as<std::string>();
-        auto ruleset = spec["ruleset"].as<ddwaf_object>();
+            auto name = spec["scenario"].as<std::string>();
+            auto ruleset = spec["ruleset"].as<ddwaf_object>();
 
-        ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
-        ddwaf_handle handle = ddwaf_init(&ruleset, &cfg, nullptr);
-        ddwaf_object_free(&ruleset);
-        if (handle == nullptr) {
-            std::cerr << "Invalid ruleset file" << std::endl;
-            utils::exit_failure();
+            ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+            ddwaf_handle handle = ddwaf_init(&ruleset, &cfg, nullptr);
+            ddwaf_object_free(&ruleset);
+            if (handle == nullptr) {
+                std::cerr << "Invalid ruleset file" << std::endl;
+                utils::exit_failure();
+            }
+
+            benchmark::runner runner(std::move(name), s);
+            initialise_runner(runner, handle, s, spec);
+
+            auto results = runner.run();
+
+            for (auto &[key, value] : results) {
+                auto it = all_results.find(key);
+                if (it == all_results.end()) {
+                    all_results.emplace(key, std::vector<test_result>{std::move(value)});
+                } else {
+                    it->second.emplace_back(std::move(value));
+                }
+            }
+
+            ddwaf_destroy(handle);
         }
-
-        benchmark::runner runner(std::move(name), s);
-        initialise_runner(runner, handle, s, spec);
-
-        auto results = runner.run();
-        all_results.merge(results);
-
-        ddwaf_destroy(handle);
     }
 
     benchmark::output_results(s, all_results);

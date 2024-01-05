@@ -14,130 +14,138 @@ namespace ddwaf::benchmark {
 
 namespace {
 
-using output_fn_type = void (*)(
-    std::ostream &, const settings &, const std::map<std::string, runner::test_result> &);
+using output_fn_type = void (*)(std::ostream &, const settings &,
+    const std::map<std::string, std::vector<runner::test_result>> &);
 
 constexpr double MILLI = 1e3;
 constexpr double MICRO = 1e6;
 
-void output_cbmf(
-    std::ostream &o, const settings &s, const std::map<std::string, runner::test_result> &results)
+// NOLINTBEGIN(*-narrowing-conversions,*-magic-numbers)
+double percentile(const std::vector<uint64_t> &values, unsigned percentile)
+{
+    std::size_t size = values.size();
+    std::size_t index = ceil((size * percentile) / 100.0);
+    if (index > 0) {
+        index = index - 1;
+    }
+    return values[index];
+}
+
+double standard_deviation(const std::vector<uint64_t> &values, double mean)
+{
+    double sd = 0.0;
+    for (auto v : values) { sd += (v - mean) * (v - mean); }
+    return sqrt(sd / values.size());
+}
+
+double mean(const std::vector<uint64_t> &values)
+{
+    double m = 0.0;
+    for (auto v : values) { m += v; }
+    return m / values.size();
+}
+// NOLINTEND(*-narrowing-conversions,*-magic-numbers)
+
+void output_json(std::ostream &o, const settings &s,
+    const std::map<std::string, std::vector<runner::test_result>> &results)
 {
     std::string_view version = ddwaf_get_version();
 
     o << R"({"schema_version":"v1","benchmarks":[)";
 
     bool first_scenario = true;
-    for (const auto &[scenario, result] : results) {
-        if (!first_scenario) {
-            o << ",";
-        } else {
-            first_scenario = false;
-        }
-
+    for (const auto &[scenario, result_vec] : results) {
         o << R"({"parameters":{)"
           << R"("scenario":")" << scenario << R"(",)"
           << R"("waf_version":")" << version << R"(",)"
-          << R"("seed":)" << s.seed
-          << R"(},"runs":{"run-0":{"execution_time":{"uom":"ns","value":[)";
+          << R"("seed":)" << s.seed << R"(},"runs":{)";
 
-        bool first = true;
-        for (const auto sample : result.samples) {
-            if (!first) {
+        for (std::size_t i = 0; i < result_vec.size(); ++i) {
+            const auto &result = result_vec[i];
+
+            if (!first_scenario) {
                 o << ",";
             } else {
-                first = false;
+                first_scenario = false;
             }
 
-            o << sample;
-        }
+            o << R"(")" << i << R"(":{"execution_time":{"uom":"ns","value":[)";
 
-        o << R"(]}}}})";
+            bool first = true;
+            for (const auto sample : result.samples) {
+                if (!first) {
+                    o << ",";
+                } else {
+                    first = false;
+                }
+
+                o << sample;
+            }
+
+            o << R"(]}})";
+        }
+        o << R"(}})";
     }
 
     o << R"(]})";
 }
 
 void output_csv(std::ostream &o, const settings &s [[maybe_unused]],
-    const std::map<std::string, runner::test_result> &results)
+    const std::map<std::string, std::vector<runner::test_result>> &results)
 {
     o << "name,average,p0,p75,p90,p95,p99,p100,sd" << std::endl;
-    for (const auto &[k, v] : results) {
-        o << k << ", " << v.average << "," << v.p0 << "," << v.p50 << "," << v.p75 << "," << v.p90
-          << "," << v.p95 << "," << v.p99 << "," << v.p100 << "," << v.sd << std::endl;
-    }
-}
-
-void output_json(
-    std::ostream &o, const settings &s, const std::map<std::string, runner::test_result> &results)
-{
-    // Lazy JSON
-    bool start = false;
-
-    o << R"({"seed":)" << s.seed << R"(,"last_random_value":)" << random::get()
-      << R"(,"iterations":)" << s.iterations << R"(,"results":{)";
-    for (const auto &[k, v] : results) {
-        if (start) {
-            o << ",";
-        } else {
-            start = true;
+    for (const auto &[k, vec] : results) {
+        std::vector<uint64_t> samples;
+        for (const auto &v : vec) {
+            samples.reserve(samples.size() + v.samples.size());
+            for (auto sample : v.samples) { samples.emplace_back(sample); }
         }
+        std::sort(samples.begin(), samples.end());
 
-        o << R"(")" << k << R"(":{)"
-          << R"("average":)" << v.average << ","
-          << R"("p0":)" << v.p0 << ","
-          << R"("p50":)" << v.p50 << ","
-          << R"("p75":)" << v.p75 << ","
-          << R"("p90":)" << v.p90 << ","
-          << R"("p95":)" << v.p95 << ","
-          << R"("p99":)" << v.p99 << ","
-          << R"("p100":)" << v.p100 << ","
-          << R"("sd":)" << v.sd;
+        double average = mean(samples);
 
-        if (!v.samples.empty()) {
-            bool sample_start = false;
-            o << R"(,"samples":[)";
-            for (const auto &sample : v.samples) {
-                if (sample_start) {
-                    o << ",";
-                } else {
-                    sample_start = true;
-                }
-                o << sample;
-            }
-            o << "]";
-        }
-        o << "}";
+        o << k << ',' << average << ',' << percentile(samples, 0) << ',' << percentile(samples, 50)
+          << ',' << percentile(samples, 75) << ',' << percentile(samples, 90) << ','
+          << percentile(samples, 95) << ',' << percentile(samples, 99) << ','
+          << percentile(samples, 100) << ',' << standard_deviation(samples, average) << '\n';
     }
-    o << "}}" << std::endl;
 }
 
 // NOLINTBEGIN(*-narrowing-conversions)
-void output_human(
-    std::ostream &o, const settings &s, const std::map<std::string, runner::test_result> &results)
+void output_human(std::ostream &o, const settings &s,
+    const std::map<std::string, std::vector<runner::test_result>> &results)
 {
-    o << "Seed : " << s.seed << std::endl
-      << "Iterations : " << s.iterations << std::endl
-      << "Last Random Value : " << random::get() << std::endl;
-    for (const auto &[k, v] : results) {
-        o << "---- " << k << " ----" << std::endl
-          << std::fixed << std::setprecision(3) << "  average      : " << v.average / MICRO << " ms"
-          << std::endl
-          << "  p0           : " << v.p0 / MICRO << " ms" << std::endl
-          << "  p50          : " << v.p50 / MICRO << " ms" << std::endl
-          << "  p75          : " << v.p75 / MICRO << " ms" << std::endl
-          << "  p90          : " << v.p90 / MICRO << " ms" << std::endl
-          << "  p95          : " << v.p95 / MICRO << " ms" << std::endl
-          << "  p99          : " << v.p99 / MICRO << " ms" << std::endl
-          << "  p100         : " << v.p100 / MICRO << " ms" << std::endl
-          << "  s. deviation : " << v.sd / MILLI << " us" << std::endl;
+    o << "Seed : " << s.seed << '\n'
+      << "Runs : " << s.runs << '\n'
+      << "Iterations : " << s.iterations << '\n'
+      << "Last Random Value : " << random::get() << '\n';
+    for (const auto &[k, vec] : results) {
+        std::vector<uint64_t> samples;
+        for (const auto &v : vec) {
+            samples.reserve(samples.size() + v.samples.size());
+            for (auto sample : v.samples) { samples.emplace_back(sample); }
+        }
+        std::sort(samples.begin(), samples.end());
+
+        double average = mean(samples);
+
+        o << "---- " << k << "----\n"
+          << std::fixed << std::setprecision(3) << "  average      : " << average / MICRO << " ms\n"
+          << "  p0           : " << percentile(samples, 0) / MICRO << " ms\n"
+          << "  p50          : " << percentile(samples, 50) / MICRO << " ms\n"
+          << "  p75          : " << percentile(samples, 75) / MICRO << " ms\n"
+          << "  p90          : " << percentile(samples, 90) / MICRO << " ms\n"
+          << "  p95          : " << percentile(samples, 95) / MICRO << " ms\n"
+          << "  p99          : " << percentile(samples, 99) / MICRO << " ms\n"
+          << "  p100         : " << percentile(samples, 100) / MICRO << " ms\n"
+          << "  s. deviation : " << standard_deviation(samples, average) / MILLI << " us\n";
     }
 }
 // NOLINTEND(*-narrowing-conversions)
 } // namespace
 
-void output_results(
-    const benchmark::settings &s, const std::map<std::string, runner::test_result> &results)
+void output_results(const benchmark::settings &s,
+    const std::map<std::string, std::vector<runner::test_result>> &results)
 {
     output_fn_type fn = output_json;
 
@@ -150,9 +158,6 @@ void output_results(
         break;
     case output_fmt::csv:
         fn = output_csv;
-        break;
-    case output_fmt::cbmf:
-        fn = output_cbmf;
         break;
     case output_fmt::none:
     default:

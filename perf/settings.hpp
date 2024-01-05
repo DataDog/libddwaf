@@ -16,13 +16,13 @@ namespace fs = std::filesystem;
 
 namespace ddwaf::benchmark {
 
-enum class output_fmt { none, human, csv, json, cbmf };
+enum class output_fmt { none, human, csv, json };
 
 struct settings {
-    fs::path scenario_root;
     std::vector<fs::path> scenarios;
-    output_fmt format{output_fmt::cbmf};
+    output_fmt format{output_fmt::json};
     fs::path output_file;
+    unsigned runs{1};
     unsigned iterations{100};
     uint64_t seed{20};
     unsigned threads{0};
