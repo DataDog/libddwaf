@@ -1,0 +1,38 @@
+{
+    "scenario": "rule-regex-match.lowercase-transformer",
+    "ruleset": {
+        "rules": [
+            {
+              "id": "crs-920-260",
+              "name": "Unicode Full/Half Width Abuse Attack Attempt",
+              "tags": {
+                "type": "http_protocol_violation",
+                "category": "attack_attempt"
+              },
+              "conditions": [
+                {
+                  "parameters": {
+                    "inputs": [
+                      {
+                        "address": "server.request.uri.raw"
+                      }
+                    ],
+                    "regex": "\\%u[fF]{2}[0-9a-fA-F]{2}",
+                    "options": {
+                      "min_length": 6
+                    }
+                  },
+                  "operator": "match_regex"
+                }
+              ],
+              "transformers": ["lowercase"]
+            }
+        ]
+    },
+    "vectors": {
+        "server.request.uri.raw": [
+            "%uFf28",
+            "%uFFab"
+        ]
+    }
+}
