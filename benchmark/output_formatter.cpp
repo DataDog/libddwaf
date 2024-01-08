@@ -75,7 +75,7 @@ void output_json(std::ostream &o, const settings & /*s*/,
                 o << ",";
             }
 
-            o << R"(")" << i << R"(":{"execution_time":{"uom":"ns","value":[)";
+            o << R"(")" << i << R"(":{"execution_time":{"uom":"ns","values":[)";
 
             bool first_sample = true;
             for (const auto sample : result.samples) {
