@@ -46,7 +46,7 @@ double mean(const std::vector<uint64_t> &values)
 }
 // NOLINTEND(*-narrowing-conversions,*-magic-numbers)
 
-void output_json(std::ostream &o, const settings &s,
+void output_json(std::ostream &o, const settings & /*s*/,
     const std::map<std::string, std::vector<runner::test_result>> &results)
 {
     std::string_view version = ddwaf_get_version();
@@ -55,28 +55,34 @@ void output_json(std::ostream &o, const settings &s,
 
     bool first_scenario = true;
     for (const auto &[scenario, result_vec] : results) {
+        if (first_scenario) {
+            first_scenario = false;
+        } else {
+            o << ",";
+        }
+
         o << R"({"parameters":{)"
           << R"("scenario":")" << scenario << R"(",)"
-          << R"("waf_version":")" << version << R"(",)"
-          << R"("seed":)" << s.seed << R"(},"runs":{)";
+          << R"("waf_version":")" << version << R"("},"runs":{)";
 
+        bool first_run = true;
         for (std::size_t i = 0; i < result_vec.size(); ++i) {
             const auto &result = result_vec[i];
 
-            if (!first_scenario) {
-                o << ",";
+            if (first_run) {
+                first_run = false;
             } else {
-                first_scenario = false;
+                o << ",";
             }
 
             o << R"(")" << i << R"(":{"execution_time":{"uom":"ns","value":[)";
 
-            bool first = true;
+            bool first_sample = true;
             for (const auto sample : result.samples) {
-                if (!first) {
-                    o << ",";
+                if (first_sample) {
+                    first_sample = false;
                 } else {
-                    first = false;
+                    o << ",";
                 }
 
                 o << sample;
