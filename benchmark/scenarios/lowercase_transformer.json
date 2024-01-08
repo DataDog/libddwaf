@@ -16,7 +16,7 @@
                     "inputs": [
                       {
                         "address": "server.request.headers.user-agent",
-                        "transformer": [ "lowercase" ]
+                        "transformers": [ "lowercase" ]
                       }
                     ],
                     "type": "string",
