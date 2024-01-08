@@ -45,11 +45,6 @@ jobs:
           branch: master
         continue-on-error: true
 
-      - name: Compare performance
-        run: |
-            ./build/perf/benchcmp previous/benchmark_results.json benchmark_results.json
-        continue-on-error: true
-
       - name: Artifact
         uses: actions/upload-artifact@v3
         if: ${{ always() }}
