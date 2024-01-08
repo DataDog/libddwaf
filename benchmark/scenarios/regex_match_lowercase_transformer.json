@@ -1,5 +1,5 @@
 {
-    "scenario": "rule-regex-match.lowercase-transformer",
+    "scenario": "regex_match_matcher.lowercase_transformer",
     "ruleset": {
         "rules": [
             {

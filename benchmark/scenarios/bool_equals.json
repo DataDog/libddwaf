@@ -1,0 +1,37 @@
+{
+    "scenario": "bool_equals_matcher",
+    "ruleset": {
+        "rules": [
+            {
+              "id": "bool-equals",
+              "name": "bool-equals",
+              "tags": {
+                "type": "flow",
+                "category": "category"
+              },
+              "conditions": [
+                {
+                  "operator": "equals",
+                  "parameters": {
+                    "inputs": [
+                      {
+                        "address": "waf.context.processor.extract-schema"
+                      }
+                    ],
+                    "type": "boolean",
+                    "value": true
+                  }
+                }
+              ]
+            }
+        ]
+    },
+    "vectors": {
+        "waf.context.processor.extract-schema": [
+            true
+        ]
+    }
+}
+
+
+

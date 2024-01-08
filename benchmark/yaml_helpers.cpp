@@ -35,16 +35,37 @@ ddwaf_object node_to_arg(const Node &node)
         return arg;
     }
     case NodeType::Scalar: {
-        const std::string &value = node.Scalar();
         ddwaf_object arg;
+        if (node.Tag() == "?") {
+            try {
+                ddwaf_object_unsigned(&arg, node.as<uint64_t>());
+                return arg;
+            } catch (...) {}
+
+            try {
+                ddwaf_object_signed(&arg, node.as<int64_t>());
+                return arg;
+            } catch (...) {}
+
+            try {
+                ddwaf_object_float(&arg, node.as<double>());
+                return arg;
+            } catch (...) {}
+
+            try {
+                ddwaf_object_bool(&arg, node.as<bool>());
+                return arg;
+            } catch (...) {}
+        }
+
+        const std::string &value = node.Scalar();
         ddwaf_object_stringl(&arg, value.c_str(), value.size());
         return arg;
     }
     case NodeType::Null:
     case NodeType::Undefined:
         ddwaf_object arg;
-        ddwaf_object_array(&arg);
-        // ddwaf_object_invalid(&arg);
+        ddwaf_object_invalid(&arg);
         return arg;
     }
 

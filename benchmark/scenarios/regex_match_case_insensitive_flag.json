@@ -1,5 +1,5 @@
 {
-    "scenario": "rule-regex-match.case_insensitive_flag",
+    "scenario": "regex_match_matcher.case_insensitive_flag",
     "ruleset": {
         "rules": [
             {
