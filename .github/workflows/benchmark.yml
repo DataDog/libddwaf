@@ -28,7 +28,7 @@ jobs:
             set -ex
             mkdir build && cd build
             cmake .. -DCMAKE_BUILD_TYPE=Release -DLIBDDWAF_ENABLE_LTO=ON
-            VERBOSE=1 make -j benchmark benchcmp
+            VERBOSE=1 make -j benchmark
 
       - name: Run Benchmark
         run: |
