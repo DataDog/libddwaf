@@ -33,7 +33,7 @@ jobs:
       - name: Run Benchmark
         run: |
             cd build
-            make run_benchmark
+            make run_benchmark_human
 
       - name: Download previous run
         uses: dawidd6/action-download-artifact@v2

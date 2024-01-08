@@ -24,7 +24,7 @@ struct settings {
     fs::path output_file;
     unsigned runs{1};
     unsigned iterations{100};
-    uint64_t seed{20};
+    uint64_t seed{1729};
     unsigned threads{0};
     unsigned max_objects{100};
     bool store_samples{false};

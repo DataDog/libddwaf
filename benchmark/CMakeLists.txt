@@ -10,15 +10,22 @@ set_target_properties(benchmark PROPERTIES
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
 
-add_custom_target(run_benchmark
-    COMMAND ${CMAKE_BINARY_DIR}/perf/benchmark
+add_custom_target(run_benchmark_json
+    COMMAND ${CMAKE_BINARY_DIR}/benchmark/benchmark
     --scenarios=${CMAKE_CURRENT_SOURCE_DIR}/scenarios
     --iterations=1000
     --format=json
-    --seed=1729
     --output=benchmark_results.json
-    --raw
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
+add_dependencies(run_benchmark_json benchmark)
 
-add_dependencies(run_benchmark benchmark)
+add_custom_target(run_benchmark_human
+    COMMAND ${CMAKE_BINARY_DIR}/benchmark/benchmark
+    --scenarios=${CMAKE_CURRENT_SOURCE_DIR}/scenarios
+    --runs 2
+    --iterations=1000
+    --format=human
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+add_dependencies(run_benchmark_human benchmark)
