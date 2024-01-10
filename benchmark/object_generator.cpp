@@ -122,81 +122,27 @@ void generate_object(
 
 } // namespace
 
-void object_generator::parse_rule(const fs::path &rule_path)
+object_generator::object_generator(
+    const std::vector<std::string_view> &addresses, const YAML::Node &spec)
 {
-    std::string rule_str = utils::read_file(rule_path);
-    YAML::Node doc = YAML::Load(rule_str);
+    for (auto addr : addresses) { addresses_[addr] = {}; }
 
-    const YAML::Node &conditions = doc["conditions"];
-    for (auto it = conditions.begin(); it != conditions.end(); ++it) {
-        const YAML::Node &condition = *it;
-        const YAML::Node &parameters = condition["parameters"];
-        const YAML::Node &op = condition["operator"];
-
-        std::vector<ddwaf_object> cond_values;
-        if (op.as<std::string>() == "phrase_match") {
-            const YAML::Node &list = parameters["list"];
-            cond_values = list.as<std::vector<ddwaf_object>>();
-            objects_.insert(objects_.end(), cond_values.begin(), cond_values.end());
-        } else {
-            continue;
-        }
-
-        const YAML::Node &inputs = parameters["inputs"];
-        for (auto addr = inputs.begin(); addr != inputs.end(); ++addr) {
-            auto key = (*addr)["address"].as<std::string>();
-            auto &current_values = addresses_[key];
-            current_values.insert(current_values.end(), cond_values.begin(), cond_values.end());
-        }
-    }
-
-    const YAML::Node &test_vectors = doc["test_vectors"];
+    const YAML::Node &test_vectors = spec["vectors"];
     if (!test_vectors) {
         return;
     }
 
-    const YAML::Node &matches = test_vectors["matches"];
-    if (!matches) {
-        return;
-    }
-
-    for (auto it = matches.begin(); it != matches.end(); ++it) {
+    for (auto it = test_vectors.begin(); it != test_vectors.end(); ++it) {
         auto first_entry = it->begin();
         auto key = first_entry->first.as<std::string>();
-        auto vector = first_entry->second.as<ddwaf_object>();
-
-        objects_.push_back(vector);
 
         auto &current_values = addresses_[key];
-        current_values.push_back(vector);
-    }
-}
 
-object_generator::object_generator(
-    const std::vector<std::string_view> &addresses, const fs::path &rules_dir)
-{
-    if (!fs::is_directory(rules_dir)) {
-        throw std::invalid_argument(std::string(rules_dir) + " should be a directory");
-    }
-
-    for (auto addr : addresses) { addresses_[addr] = {}; }
-
-    for (const auto &entry : fs::directory_iterator{rules_dir}) {
-        if (!entry.is_regular_file()) {
-            continue;
-        }
-
-        const auto entry_path = entry.path();
-        if (entry_path.extension() != ".yaml") {
-            continue;
-        }
-
-        try {
-            parse_rule(entry_path);
-        } catch (const std::exception &e) {
-            std::cerr << entry_path << std::endl;
-            std::cerr << e.what() << std::endl;
-            break;
+        auto array = first_entry->second;
+        for (auto value_it = array.begin(); value_it != array.end(); ++value_it) {
+            auto vector = value_it->as<ddwaf_object>();
+            objects_.push_back(vector);
+            current_values.push_back(vector);
         }
     }
 }

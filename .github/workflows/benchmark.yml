@@ -28,12 +28,12 @@ jobs:
             set -ex
             mkdir build && cd build
             cmake .. -DCMAKE_BUILD_TYPE=Release -DLIBDDWAF_ENABLE_LTO=ON
-            VERBOSE=1 make -j benchmark benchcmp
+            VERBOSE=1 make -j benchmark
 
       - name: Run Benchmark
         run: |
             cd build
-            make run_benchmark
+            make run_benchmark_human
 
       - name: Download previous run
         uses: dawidd6/action-download-artifact@v2
@@ -43,11 +43,6 @@ jobs:
           name: benchmark-data
           path: previous
           branch: master
-        continue-on-error: true
-
-      - name: Compare performance
-        run: |
-            ./build/perf/benchcmp previous/benchmark_results.json benchmark_results.json
         continue-on-error: true
 
       - name: Artifact

@@ -101,7 +101,7 @@ if (LIBDDWAF_TESTING)
     add_subdirectory(third_party EXCLUDE_FROM_ALL)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
     add_subdirectory(validator EXCLUDE_FROM_ALL)
-    add_subdirectory(perf EXCLUDE_FROM_ALL)
+    add_subdirectory(benchmark EXCLUDE_FROM_ALL)
     add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
     add_subdirectory(tools EXCLUDE_FROM_ALL)
 

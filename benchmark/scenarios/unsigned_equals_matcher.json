@@ -1,0 +1,37 @@
+{
+    "scenario": "unsigned_equals_matcher",
+    "ruleset": {
+        "rules": [
+            {
+              "id": "unsigned-equals",
+              "name": "unsigned-equals",
+              "tags": {
+                "type": "flow",
+                "category": "category"
+              },
+              "conditions": [
+                {
+                  "operator": "equals",
+                  "parameters": {
+                    "inputs": [
+                      {
+                        "address": "waf.context.events.length"
+                      }
+                    ],
+                    "type": "unsigned",
+                    "value": 2123
+                  }
+                }
+              ]
+            }
+        ]
+    },
+    "vectors": {
+        "waf.context.processor.extract-schema": [
+            2123
+        ]
+    }
+}
+
+
+

@@ -1,0 +1,137 @@
+{
+    "scenario": "lowercase_transformer",
+    "ruleset": {
+        "rules": [
+            {
+              "id": "string-equals",
+              "name": "string-equals",
+              "tags": {
+                "type": "flow",
+                "category": "category"
+              },
+              "conditions": [
+                {
+                  "operator": "equals",
+                  "parameters": {
+                    "inputs": [
+                      {
+                        "address": "server.request.headers.user-agent",
+                        "transformers": [ "lowercase" ]
+                      }
+                    ],
+                    "type": "string",
+                    "value": "thisisarachni"
+                  }
+                }
+              ]
+            }
+        ]
+    },
+    "vectors": {
+        "server.request.headers.user-agent": [
+            "THIsiSaRaCHnI",
+            "thisisarAcHnI",
+            "THiSisaraCHNi",
+            "tHISISARaCHni",
+            "ThiSISAraChNI",
+            "tHiSISAraCHNi",
+            "tHIsISArAcHNi",
+            "tHIsiSaraChnI",
+            "THISIsaRAcHNi",
+            "THisisaraChNi",
+            "tHISISaRacHNi",
+            "THIsISARacHnI",
+            "THiSisArachNi",
+            "THiSISaRaCHnI",
+            "tHiSISARACHNi",
+            "ThiSISaRAcHNi",
+            "THIsiSaRaChNI",
+            "THIsiSARACHnI",
+            "tHisIsArAcHNi",
+            "thisIsArAChNi",
+            "THisiSARAcHni",
+            "THISisARAchNI",
+            "ThisisARAcHNI",
+            "THisISaRACHNI",
+            "ThisiSarACHnI",
+            "THIsiSaraCHni",
+            "thIsIsarAchnI",
+            "THISisARaChNi",
+            "ThIsISaRaCHni",
+            "THIsIsaracHNI",
+            "tHisiSArachni",
+            "thIsIsaRachNI",
+            "ThIsisARACHNI",
+            "thisiSarAcHnI",
+            "ThISIsaRaChNi",
+            "thIsISaRacHNI",
+            "ThisISAraCHni",
+            "THiSiSArAchnI",
+            "THiSiSARAcHni",
+            "THISISARachnI",
+            "THIsIsaraChni",
+            "THIsIsaracHNi",
+            "ThIsISAraChNi",
+            "THisIsARACHnI",
+            "THiSIsaRaChNi",
+            "ThIsIsarACHnI",
+            "ThiSiSARAChni",
+            "THisIsaraCHnI",
+            "tHiSiSaRAchNi",
+            "ThISisAraCHNi",
+            "thISIsARacHni",
+            "tHIsiSarACHNI",
+            "thisisAraCHNi",
+            "THISiSarACHnI",
+            "ThIsISARaCHNi",
+            "ThiSIsArACHnI",
+            "thISIsArachNi",
+            "THISiSARAchni",
+            "THisIsArAcHnI",
+            "tHisISarAChNi",
+            "THIsisAraChnI",
+            "ThIsisARachni",
+            "tHISisARAchni",
+            "ThIsIsaRacHni",
+            "THiSiSaRACHni",
+            "tHiSIsAraChni",
+            "tHIsISARaChni",
+            "thisIsARAChni",
+            "thIsISaRAchnI",
+            "thISiSaRachNi",
+            "tHiSISaraCHNI",
+            "ThisIsaRAChnI",
+            "thISiSARAcHNi",
+            "thIsiSarACHni",
+            "tHIsiSArAChnI",
+            "thisIsARaChNi",
+            "ThisisARaChnI",
+            "ThiSiSaRachnI",
+            "THisiSARacHnI",
+            "tHiSiSAraChNI",
+            "tHIsiSaRaCHNI",
+            "tHIsisaraChNI",
+            "tHISiSARAcHNi",
+            "tHIsisARAchnI",
+            "thiSisaRacHni",
+            "thiSisARAcHnI",
+            "ThiSISAraCHni",
+            "ThisIsARacHnI",
+            "tHisIsAraCHnI",
+            "THisIsaRachNI",
+            "tHIsISarACHni",
+            "ThisIsARAChni",
+            "thisiSarACHNi",
+            "tHiSISaRAChNI",
+            "thiSiSARAchnI",
+            "ThISiSarAChni",
+            "THisiSAracHni",
+            "tHISisArachni",
+            "ThisisARAcHni",
+            "ThISiSArAChnI"
+        ]
+    }
+}
+
+
+

@@ -16,27 +16,7 @@
 namespace ddwaf::benchmark {
 
 // NOLINTBEGIN(*-narrowing-conversions,*-magic-numbers)
-namespace {
-double percentile(const std::vector<uint64_t> &values, unsigned percentile)
-{
-    std::size_t size = values.size();
-    std::size_t index = ceil((size * percentile) / 100.0);
-    if (index > 0) {
-        index = index - 1;
-    }
-    return values[index];
-}
-
-double standard_deviation(const std::vector<uint64_t> &values, double average)
-{
-    double sd = 0.0;
-    for (auto v : values) { sd += (v - average) * (v - average); }
-    return sqrt(sd / values.size());
-}
-
-} // namespace
-
-std::map<std::string_view, runner::test_result> runner::run()
+std::map<std::string, runner::test_result> runner::run()
 {
     if (threads_ <= 1) {
         return run_st();
@@ -44,12 +24,12 @@ std::map<std::string_view, runner::test_result> runner::run()
     return run_mt();
 }
 
-std::map<std::string_view, runner::test_result> runner::run_st()
+std::map<std::string, runner::test_result> runner::run_st()
 {
-    std::map<std::string_view, test_result> results;
+    std::map<std::string, test_result> results;
     std::vector<uint64_t> times(iterations_);
-    for (auto &[name, f] : tests_) {
-        double average = 0.0;
+    for (auto &[test_name, f] : tests_) {
+        std::string name = scenario_ + '.' + test_name;
 
         for (std::size_t i = 0; i < iterations_; i++) {
             if (!f->set_up()) {
@@ -60,42 +40,39 @@ std::map<std::string_view, runner::test_result> runner::run_st()
 
             auto duration = f->test_main();
             times[i] = duration;
-            average += duration;
 
             f->tear_down();
         }
 
-        average /= times.size();
-        auto samples = store_samples ? times : std::vector<uint64_t>();
-
-        std::sort(times.begin(), times.end());
-        results.emplace(name,
-            test_result{average, percentile(times, 0), percentile(times, 50), percentile(times, 75),
-                percentile(times, 90), percentile(times, 95), percentile(times, 99),
-                percentile(times, 100), standard_deviation(times, average), samples});
+        results.emplace(std::move(name), times);
     }
 
     return results;
 }
 
-std::map<std::string_view, runner::test_result> runner::run_mt()
+// This method is currently unused as originally it was just meant as a way to
+// speed up benchmarking.
+// The objective now is to be able to test the performance of the WAF when the
+// same instance is being used concurrently. This should allow exercising any
+// contention and synchronisation overhead.
+std::map<std::string, runner::test_result> runner::run_mt()
 {
     std::mutex test_mtx;
     std::mutex result_mtx;
-    std::map<std::string_view, test_result> results;
+    std::map<std::string, test_result> results;
     auto test_it = tests_.begin();
     std::vector<std::thread> tid(threads_);
 
     auto fn = [&]() {
         std::vector<uint64_t> times(iterations_);
         while (true) {
-            std::string_view name;
+            std::string name;
             fixture_base *f;
 
             {
                 std::lock_guard<std::mutex> lg(test_mtx);
                 if (test_it != tests_.end()) {
-                    name = test_it->first;
+                    name = scenario_ + '.' + test_it->first;
                     f = test_it->second.get();
                     test_it++;
                 } else {
@@ -104,7 +81,6 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
             }
 
             // Do work
-            double average = 0.0;
             for (std::size_t i = 0; i < iterations_; i++) {
                 if (!f->set_up()) {
                     std::cerr << "Failed to initialise iteration " << i << " for fixture " << name
@@ -114,22 +90,15 @@ std::map<std::string_view, runner::test_result> runner::run_mt()
 
                 auto duration = f->test_main();
                 times[i] = duration;
-                average += duration;
 
                 f->tear_down();
             }
 
-            average /= times.size();
-            auto samples = store_samples ? times : std::vector<uint64_t>();
-            std::sort(times.begin(), times.end());
-            test_result tr = {average, percentile(times, 0), percentile(times, 50),
-                percentile(times, 75), percentile(times, 90), percentile(times, 95),
-                percentile(times, 99), percentile(times, 100), standard_deviation(times, average),
-                samples};
+            test_result tr{times};
 
             {
                 std::lock_guard<std::mutex> lg(result_mtx);
-                results.emplace(name, std::move(tr));
+                results.emplace(std::move(name), std::move(tr));
             }
         }
     };

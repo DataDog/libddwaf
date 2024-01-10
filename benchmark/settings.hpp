@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <string_view>
 #include <unordered_set>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -18,12 +19,12 @@ namespace ddwaf::benchmark {
 enum class output_fmt { none, human, csv, json };
 
 struct settings {
-    fs::path rule_repo;
-    std::unordered_set<std::string_view> test_list;
+    std::vector<fs::path> scenarios;
     output_fmt format{output_fmt::json};
     fs::path output_file;
+    unsigned runs{1};
     unsigned iterations{100};
-    unsigned long seed{20};
+    uint64_t seed{1729};
     unsigned threads{0};
     unsigned max_objects{100};
     bool store_samples{false};
