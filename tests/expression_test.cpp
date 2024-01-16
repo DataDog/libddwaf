@@ -14,9 +14,11 @@ using namespace std::literals;
 
 TEST(TestExpression, SimpleMatch)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>(".*", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>(".*", 0, true);
 
     auto expr = builder.build();
 
@@ -48,9 +50,11 @@ TEST(TestExpression, SimpleMatch)
 
 TEST(TestExpression, EphemeralMatch)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>(".*", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>(".*", 0, true);
 
     auto expr = builder.build();
 
@@ -82,10 +86,12 @@ TEST(TestExpression, EphemeralMatch)
 
 TEST(TestExpression, MultiInputMatchOnSecondEval)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
     builder.add_target("server.request.body");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -137,9 +143,11 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
 TEST(TestExpression, EphemeralMatchOnSecondEval)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.body");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -191,11 +199,16 @@ TEST(TestExpression, EphemeralMatchOnSecondEval)
 
 TEST(TestExpression, EphemeralMatchTwoConditions)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
+
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.body");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -243,11 +256,16 @@ TEST(TestExpression, EphemeralMatchTwoConditions)
 
 TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
+
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.body");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -291,11 +309,16 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
 
 TEST(TestExpression, EphemeralMatchOnFirstConditionSecondEval)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
+
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.body");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -339,9 +362,11 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionSecondEval)
 
 TEST(TestExpression, DuplicateInput)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -385,9 +410,11 @@ TEST(TestExpression, DuplicateInput)
 
 TEST(TestExpression, DuplicateEphemeralInput)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -431,9 +458,11 @@ TEST(TestExpression, DuplicateEphemeralInput)
 
 TEST(TestExpression, MatchDuplicateInputNoCache)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -483,13 +512,16 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
 TEST(TestExpression, TwoConditionsSingleInputNoMatch)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::regex_match>("value", 0, true);
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("value", 0, true);
 
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -529,13 +561,16 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
 
 TEST(TestExpression, TwoConditionsSingleInputMatch)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::regex_match>("value", 0, true);
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("value", 0, true);
 
-    builder.start_condition<matcher::regex_match>("^value$", 0, true);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
 
     auto expr = builder.build();
 
@@ -555,13 +590,16 @@ TEST(TestExpression, TwoConditionsSingleInputMatch)
 
 TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::regex_match>("query", 0, true);
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("query", 0, true);
 
-    builder.start_condition<matcher::regex_match>("body", 0, true);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.body");
+    builder.end_condition<matcher::regex_match>("body", 0, true);
 
     auto expr = builder.build();
 
@@ -583,13 +621,16 @@ TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
 
 TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::regex_match>("query", 0, true);
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("query", 0, true);
 
-    builder.start_condition<matcher::regex_match>("body", 0, true);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.body");
+    builder.end_condition<matcher::regex_match>("body", 0, true);
 
     auto expr = builder.build();
 
@@ -631,9 +672,11 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
 
 TEST(TestExpression, MatchWithKeyPath)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>(".*", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query", {"key"});
+    builder.end_condition<matcher::regex_match>(".*", 0, true);
     auto expr = builder.build();
 
     ddwaf_object root;
@@ -662,9 +705,11 @@ TEST(TestExpression, MatchWithKeyPath)
 
 TEST(TestExpression, MatchWithTransformer)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("value", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query", {}, {transformer_id::lowercase});
+    builder.end_condition<matcher::regex_match>("value", 0, true);
     auto expr = builder.build();
 
     ddwaf_object root;
@@ -690,10 +735,12 @@ TEST(TestExpression, MatchWithTransformer)
 
 TEST(TestExpression, MatchWithMultipleTransformers)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("^ value $", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query", {},
         {transformer_id::compress_whitespace, transformer_id::lowercase});
+    builder.end_condition<matcher::regex_match>("^ value $", 0, true);
     auto expr = builder.build();
 
     ddwaf_object root;
@@ -719,9 +766,11 @@ TEST(TestExpression, MatchWithMultipleTransformers)
 
 TEST(TestExpression, MatchOnKeys)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("value", 0, true);
-    builder.add_target("server.request.query", {}, {}, expression::data_source::keys);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("server.request.query", {}, {}, condition::data_source::keys);
+    builder.end_condition<matcher::regex_match>("value", 0, true);
     auto expr = builder.build();
 
     ddwaf_object root;
@@ -750,10 +799,12 @@ TEST(TestExpression, MatchOnKeys)
 
 TEST(TestExpression, MatchOnKeysWithTransformer)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>("value", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target(
-        "server.request.query", {}, {transformer_id::lowercase}, expression::data_source::keys);
+        "server.request.query", {}, {transformer_id::lowercase}, condition::data_source::keys);
+    builder.end_condition<matcher::regex_match>("value", 0, true);
     auto expr = builder.build();
 
     ddwaf_object root;
@@ -782,9 +833,11 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
 
 TEST(TestExpression, ExcludeInput)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>(".*", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>(".*", 0, true);
     auto expr = builder.build();
 
     ddwaf_object root;
@@ -804,9 +857,11 @@ TEST(TestExpression, ExcludeInput)
 
 TEST(TestExpression, ExcludeKeyPath)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::regex_match>(".*", 0, true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>(".*", 0, true);
     auto expr = builder.build();
 
     ddwaf_object root;

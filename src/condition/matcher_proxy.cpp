@@ -126,7 +126,7 @@ const matcher::base *matcher_proxy::get_matcher(
     return nullptr;
 }
 
-eval_result matcher_proxy::eval_impl(const argument_stack &stack, cache_type &cache,
+eval_result matcher_proxy::eval(cache_type &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     const object_limits &limits, ddwaf::timer &deadline) const
@@ -136,43 +136,44 @@ eval_result matcher_proxy::eval_impl(const argument_stack &stack, cache_type &ca
         return {};
     }
 
-    const auto &targets = stack.get<argument_stack::variadic>(0);
-    if (cache.targets.size() != targets.size()) {
-        cache.targets.assign(targets.size(), nullptr);
+    if (cache.targets.size() != targets_.size()) {
+        cache.targets.assign(targets_.size(), nullptr);
     }
 
-    for (unsigned i = 0; i < targets.size(); ++i) {
+    for (unsigned i = 0; i < targets_.size(); ++i) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto &target = targets[i];
-        if (target.object == cache.targets[i]) {
+        const auto &target = targets_[i];
+        auto [object, attr] = store.get_target(target.root);
+        if (object == nullptr || object == cache.targets[i]) {
             continue;
         }
 
-        if (!target.ephemeral) {
-            cache.targets[i] = target.object;
+        const bool ephemeral = (attr == object_store::attribute::ephemeral);
+        if (!ephemeral) {
+            cache.targets[i] = object;
         }
 
         std::optional<event::match> optional_match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
-            object::key_iterator it(target.object, target.key_path, objects_excluded, limits);
+            object::key_iterator it(object, target.key_path, objects_excluded, limits);
             optional_match = eval_target(it, *matcher, target.transformers, limits, deadline);
         } else {
-            object::value_iterator it(target.object, target.key_path, objects_excluded, limits);
+            object::value_iterator it(object, target.key_path, objects_excluded, limits);
             optional_match = eval_target(it, *matcher, target.transformers, limits, deadline);
         }
 
         if (optional_match.has_value()) {
-            optional_match->address = target.address;
-            optional_match->ephemeral = target.ephemeral;
+            optional_match->address = target.name;
+            optional_match->ephemeral = ephemeral;
             DDWAF_TRACE(
-                "Target {} matched parameter value {}", target.address, optional_match->resolved);
+                "Target {} matched parameter value {}", target.name, optional_match->resolved);
 
             cache.match = std::move(optional_match);
-            return {true, target.ephemeral};
+            return {true, ephemeral};
         }
     }
 

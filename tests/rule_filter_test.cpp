@@ -17,9 +17,11 @@ namespace {
 
 TEST(TestRuleFilter, Match)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     auto rule =
         std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
@@ -51,9 +53,11 @@ TEST(TestRuleFilter, Match)
 
 TEST(TestRuleFilter, EphemeralMatch)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     auto rule =
         std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
@@ -85,9 +89,11 @@ TEST(TestRuleFilter, EphemeralMatch)
 
 TEST(TestRuleFilter, NoMatch)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{});
 
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {}};
 
@@ -107,13 +113,17 @@ TEST(TestRuleFilter, NoMatch)
 
 TEST(TestRuleFilter, ValidateCachedMatch)
 {
-    expression_builder builder(2);
+    test::expression_builder builder(2);
 
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto rule =
         std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
@@ -159,13 +169,17 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
 TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
 {
-    expression_builder builder(2);
+    test::expression_builder builder(2);
 
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto rule =
         std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
@@ -213,13 +227,17 @@ TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
 
 TEST(TestRuleFilter, ValidateEphemeralMatchCache)
 {
-    expression_builder builder(2);
+    test::expression_builder builder(2);
 
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto rule =
         std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
@@ -262,13 +280,17 @@ TEST(TestRuleFilter, ValidateEphemeralMatchCache)
 
 TEST(TestRuleFilter, MatchWithoutCache)
 {
-    expression_builder builder(2);
+    test::expression_builder builder(2);
 
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto rule =
         std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
@@ -307,13 +329,17 @@ TEST(TestRuleFilter, MatchWithoutCache)
 
 TEST(TestRuleFilter, NoMatchWithoutCache)
 {
-    expression_builder builder(2);
+    test::expression_builder builder(2);
 
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto rule =
         std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
@@ -352,13 +378,17 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
 
 TEST(TestRuleFilter, FullCachedMatchSecondRun)
 {
-    expression_builder builder(2);
+    test::expression_builder builder(2);
 
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto rule =
         std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));

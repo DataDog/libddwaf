@@ -10,35 +10,48 @@
 
 namespace ddwaf::condition {
 
-class matcher_proxy : public base_impl<matcher_proxy> {
+class matcher_proxy : public base {
 public:
     matcher_proxy(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
         std::vector<argument_definition> args)
-        : base_impl<matcher_proxy>(std::move(args)), matcher_(std::move(matcher)),
-          data_id_(std::move(data_id))
-    {}
+        : matcher_(std::move(matcher)), data_id_(std::move(data_id))
+    {
+        if (args.size() > 1) {
+            throw std::invalid_argument("Matcher initialised with more than one argument");
+        }
 
-protected:
-    eval_result eval_impl(const argument_stack &stack, cache_type &cache,
+        if (args.empty()) {
+            throw std::invalid_argument("Matcher initialised without arguments");
+        }
+
+        targets_ = std::move(args[0].targets);
+    }
+
+    eval_result eval(cache_type &cache, const object_store &store,
         const exclusion::object_set_ref &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-        const object_limits &limits, ddwaf::timer &deadline) const;
+        const object_limits &limits, ddwaf::timer &deadline) const override;
 
-    [[nodiscard]] const matcher::base *get_matcher(
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers)
-        const;
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
+    {
+        for (const auto &target : targets_) { addresses.emplace(target.root, target.name); }
+    }
 
-    static const std::vector<argument_specification> &arguments_impl()
+    static const std::vector<argument_specification> &arguments()
     {
         static std::vector<argument_specification> args = {
             {"inputs", object_type::any, true, false}};
         return args;
-    };
+    }
+
+protected:
+    [[nodiscard]] const matcher::base *get_matcher(
+        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers)
+        const;
 
     std::unique_ptr<matcher::base> matcher_;
     std::string data_id_;
-
-    friend class base_impl<matcher_proxy>;
+    std::vector<target_definition> targets_;
 };
 
 } // namespace ddwaf::condition

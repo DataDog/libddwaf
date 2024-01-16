@@ -14,10 +14,14 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "condition/matcher_proxy.hpp"
 #include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
+#include "expression.hpp"
+#include "matcher/base.hpp"
 #include "test.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::test {
 struct event {
@@ -45,6 +49,62 @@ std::ostream &operator<<(std::ostream &os, const event::match &m);
 
 std::string object_to_json(const ddwaf_object &obj);
 rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
+
+class expression_builder {
+public:
+    explicit expression_builder(std::size_t num_conditions, ddwaf::object_limits limits = {})
+        : limits_(limits)
+    {
+        conditions_.reserve(num_conditions);
+    }
+
+    void start_condition() { arguments_.clear(); }
+
+    template <typename T, typename... Args>
+    void end_condition(Args... args)
+        requires std::is_base_of_v<matcher::base, T>
+    {
+        conditions_.emplace_back(std::make_unique<condition::matcher_proxy>(
+            std::make_unique<T>(std::forward<Args>(args)...), std::string{},
+            std::move(arguments_)));
+    }
+
+    template <typename T>
+    void end_condition(std::string data_id)
+        requires std::is_base_of_v<matcher::base, T>
+    {
+        conditions_.emplace_back(std::make_unique<condition::matcher_proxy>(
+            std::move(arguments_), std::move(data_id), std::make_unique<T>()));
+    }
+
+    template <typename T>
+    void end_condition()
+        requires std::is_base_of_v<condition::base, T>
+    {
+        conditions_.emplace_back(std::make_unique<T>(std::move(arguments_)));
+    }
+
+    void add_argument() { arguments_.emplace_back(); }
+
+    void add_target(const std::string &name, std::vector<std::string> key_path = {},
+        std::vector<transformer_id> transformers = {},
+        condition::data_source source = condition::data_source::values)
+    {
+        auto &argument = arguments_.back();
+        argument.targets.emplace_back(condition::target_definition{
+            name, get_target_index(name), std::move(key_path), std::move(transformers), source});
+    }
+
+    std::shared_ptr<expression> build()
+    {
+        return std::make_shared<expression>(std::move(conditions_), limits_);
+    }
+
+protected:
+    ddwaf::object_limits limits_{};
+    std::vector<condition::argument_definition> arguments_{};
+    std::vector<std::unique_ptr<condition::base>> conditions_{};
+};
 
 } // namespace ddwaf::test
 

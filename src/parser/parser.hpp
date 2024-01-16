@@ -22,6 +22,12 @@ using base_section_info = ddwaf::base_ruleset_info::base_section_info;
 namespace ddwaf::parser {
 
 unsigned parse_schema_version(parameter::map &ruleset);
+
+namespace v1 {
+void parse(
+    parameter::map &ruleset, base_ruleset_info &info, ddwaf::ruleset &rs, object_limits limits);
+} // namespace v1
+
 namespace v2 {
 
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
