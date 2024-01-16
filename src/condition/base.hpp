@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
 #include <span>
 #include <string>
@@ -20,11 +19,9 @@
 #include "context_allocator.hpp"
 #include "event.hpp"
 #include "exclusion/common.hpp"
-#include "iterator.hpp"
-#include "log.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
-#include "transformer/manager.hpp"
+#include "transformer/base.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::condition {

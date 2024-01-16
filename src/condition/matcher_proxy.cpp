@@ -6,14 +6,8 @@
 
 #include "matcher_proxy.hpp"
 #include "exception.hpp"
-
-#include "matcher/equals.hpp"
-#include "matcher/exact_match.hpp"
-#include "matcher/ip_match.hpp"
-#include "matcher/is_sqli.hpp"
-#include "matcher/is_xss.hpp"
-#include "matcher/phrase_match.hpp"
-#include "matcher/regex_match.hpp"
+#include "iterator.hpp"
+#include "transformer/manager.hpp"
 
 namespace ddwaf::condition {
 
