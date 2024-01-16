@@ -32,7 +32,8 @@ std::vector<std::string_view> match_params(std::string_view path, const ddwaf_ob
             const ddwaf_object &child = container.array[i];
 
             if (child.parameterName != nullptr && child.parameterNameLength >= min_str_len) {
-                std::string_view key{child.parameterName, child.parameterNameLength};
+                std::string_view key{
+                    child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
                 if (path.find(key) != std::string_view::npos) {
                     strings.emplace_back(key);
                 }
@@ -46,7 +47,8 @@ std::vector<std::string_view> match_params(std::string_view path, const ddwaf_ob
             }
 
             if (child.type == DDWAF_OBJ_STRING && child.nbEntries >= min_str_len) {
-                std::string_view value{child.stringValue, child.nbEntries};
+                std::string_view value{
+                    child.stringValue, static_cast<std::size_t>(child.nbEntries)};
                 if (path.find(value) != std::string_view::npos) {
                     strings.emplace_back(value);
                 }
@@ -118,7 +120,8 @@ eval_result lfi_detector::eval_impl(const argument_stack &stack, cache_type &cac
     auto path_arg = stack.get<argument_stack::unary>(0);
     auto params_arg = stack.get<argument_stack::variadic>(1);
 
-    std::string_view path_sv{path_arg.object->stringValue, path_arg.object->nbEntries};
+    std::string_view path_sv{
+        path_arg.object->stringValue, static_cast<std::size_t>(path_arg.object->nbEntries)};
 
     for (const auto &params : params_arg) {
         if (deadline.expired()) {
