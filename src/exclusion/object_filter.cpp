@@ -37,7 +37,7 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
     }
 
     std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie::traverser>> path_stack;
-    path_stack.push({object, 0, filter});
+    path_stack.emplace(object, 0, filter);
 
     while (!path_stack.empty()) {
         auto &[current_object, current_index, current_trie] = path_stack.top();
@@ -76,7 +76,7 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
             if (object::is_container(child) && path_stack.size() < limits.max_container_depth) {
                 ++current_index;
                 found_node = true;
-                path_stack.push({child, 0, child_traverser});
+                path_stack.emplace(child, 0, child_traverser);
                 break;
             }
         }

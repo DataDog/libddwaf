@@ -80,7 +80,7 @@ public:
 
     void set_ruleset_version(std::string_view /*version*/) override{};
 
-    void to_object(ddwaf_object & /*output*/) override{};
+    void to_object(ddwaf_object & /*output*/) override {};
 };
 
 class ruleset_info : public base_ruleset_info {
