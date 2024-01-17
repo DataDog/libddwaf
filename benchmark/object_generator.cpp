@@ -133,12 +133,10 @@ object_generator::object_generator(
     }
 
     for (auto it = test_vectors.begin(); it != test_vectors.end(); ++it) {
-        auto first_entry = it->begin();
-        auto key = first_entry->first.as<std::string>();
-
+        auto key = it->first.as<std::string>();
         auto &current_values = addresses_[key];
 
-        auto array = first_entry->second;
+        auto array = it->second;
         for (auto value_it = array.begin(); value_it != array.end(); ++value_it) {
             auto vector = value_it->as<ddwaf_object>();
             objects_.push_back(vector);
