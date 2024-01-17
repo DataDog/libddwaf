@@ -25,17 +25,6 @@ public:
         random = 2,
     };
 
-    struct settings {
-        static constexpr std::size_t default_depth = 5;
-        static constexpr std::size_t default_size = 16;
-        static constexpr std::size_t default_length = 4096;
-
-        std::size_t container_depth = default_depth;
-        std::size_t container_size = default_size;
-        std::size_t string_length = default_length;
-        generator_type type{generator_type::random};
-    };
-
     object_generator() = default;
     object_generator(const std::vector<std::string_view> &addresses, const YAML::Node &spec);
 
@@ -47,7 +36,7 @@ public:
     object_generator(object_generator &&) = default;
     object_generator &operator=(object_generator &&) = default;
 
-    std::vector<ddwaf_object> operator()(const settings &l, size_t n) const;
+    std::vector<ddwaf_object> operator()(generator_type type, size_t n) const;
 
 protected:
     std::unordered_map<std::string_view, std::vector<ddwaf_object>> addresses_;

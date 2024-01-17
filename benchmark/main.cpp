@@ -38,22 +38,9 @@ namespace utils = ddwaf::benchmark::utils;
 using test_result = ddwaf::benchmark::runner::test_result;
 using generator_type = benchmark::object_generator::generator_type;
 
-std::map<std::string, benchmark::object_generator::settings> default_tests = {
-    {"random.1x1.128", {.string_length = 128, .type = generator_type::random}},
-    {"random.1x1.512", {.string_length = 512, .type = generator_type::random}},
-    {"random.1x1.1024", {.string_length = 1024, .type = generator_type::random}},
-    {"random.1x1.4096", {.string_length = 4096, .type = generator_type::random}},
-
-    {"random.1x16.128", {.container_size = 16, .type = generator_type::random}},
-    {"random.1x64.128", {.container_size = 64, .type = generator_type::random}},
-    {"random.1x128.128", {.container_size = 128, .type = generator_type::random}},
-    {"random.1x256.128", {.container_size = 256, .type = generator_type::random}},
-
-    {"random.5x1.128", {.container_depth = 5, .type = generator_type::random}},
-    {"random.10x1.128", {.container_depth = 10, .type = generator_type::random}},
-    {"random.20x1.128", {.container_depth = 20, .type = generator_type::random}},
-
-    {"valid", {.type = generator_type::valid}},
+std::map<std::string, benchmark::object_generator::generator_type> default_tests = {
+    {"random", generator_type::random},
+    {"valid",  generator_type::valid},
 };
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
