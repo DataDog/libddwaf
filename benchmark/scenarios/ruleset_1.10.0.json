@@ -10579,6 +10579,12 @@
             {
                 "xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?><!DOCTYPE attack [<!ENTITY a SYSTEM \"file:///etc/passwd\">]><attack>&a;</attack>"
             }
+        ],
+        "server.response.status": [ "404" ],
+        "waf.context.processor": [
+            {
+                "extract-schema": true
+            }
         ]
     }
 }

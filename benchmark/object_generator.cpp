@@ -19,22 +19,20 @@ namespace {
 using settings = object_generator::settings;
 
 void generate_object(
-    ddwaf_object &o, const settings &l, std::size_t &max_elements, std::size_t depth = 0);
+    ddwaf_object &o, const settings &l, std::size_t depth = 0);
 
 char *generate_random_string(const settings &l, std::size_t *length)
 {
     static const auto &charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                  "`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"!";
 
-    std::size_t numchars = l.string_length.min + random::get() % l.string_length.range();
-
     // NOLINTNEXTLINE
-    char *str = (char *)malloc(numchars + 1);
-    for (std::size_t i = 0; i < numchars; i++) {
+    char *str = (char *)malloc(l.string_length + 1);
+    for (std::size_t i = 0; i < l.string_length; i++) {
         str[i] = charset[random::get() % (sizeof(charset) - 2)];
     }
-    str[numchars] = '\0';
-    *length = numchars;
+    str[l.string_length] = '\0';
+    *length = l.string_length;
 
     return str;
 }
@@ -48,60 +46,48 @@ void generate_string_object(ddwaf_object &o, const settings &l)
 
 // NOLINTNEXTLINE(misc-no-recursion)
 void generate_map_object(
-    ddwaf_object &o, const settings &l, std::size_t &max_elements, std::size_t depth)
+    ddwaf_object &o, const settings &l, std::size_t depth)
 
 {
     ddwaf_object_map(&o);
 
-    std::size_t n = l.container_size.min + random::get() % l.container_size.range();
-
-    n = std::min(n, max_elements);
-
-    for (std::size_t i = 0; i < n; i++) {
+    for (std::size_t i = 0; i < l.container_size; i++) {
         std::size_t length = 0;
         char *key = generate_random_string(l, &length);
 
         ddwaf_object value;
-        generate_object(value, l, max_elements, depth + 1);
+        generate_object(value, l, depth + 1);
         ddwaf_object_map_addl_nc(&o, key, length, &value);
     }
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
 void generate_array_object(
-    ddwaf_object &o, const settings &l, std::size_t &max_elements, std::size_t depth)
+    ddwaf_object &o, const settings &l, std::size_t depth)
 {
     ddwaf_object_array(&o);
 
-    std::size_t n = l.container_size.min + random::get() % l.container_size.range();
-
-    n = std::min(n, max_elements);
-
-    for (std::size_t i = 0; i < n; i++) {
+    for (std::size_t i = 0; i < l.container_size; i++) {
         ddwaf_object value;
-        generate_object(value, l, max_elements, depth + 1);
+        generate_object(value, l, depth + 1);
         ddwaf_object_array_add(&o, &value);
     }
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
 void generate_object(
-    ddwaf_object &o, const settings &l, std::size_t &max_elements, std::size_t depth)
+    ddwaf_object &o, const settings &l, std::size_t depth)
 {
-    if (max_elements > 0) {
-        max_elements--;
-    }
-
-    if (depth >= l.container_depth.max) {
+    if (depth >= l.container_depth) {
         generate_string_object(o, l);
         return;
     }
 
-    if (depth < l.container_depth.min) {
+    if (depth < l.container_depth) {
         if (random::get_bool()) {
-            generate_map_object(o, l, max_elements, depth);
+            generate_map_object(o, l, depth);
         } else {
-            generate_array_object(o, l, max_elements, depth);
+            generate_array_object(o, l, depth);
         }
         return;
     }
@@ -112,10 +98,10 @@ void generate_object(
         generate_string_object(o, l);
         break;
     case 1: // Map
-        generate_map_object(o, l, max_elements, depth);
+        generate_map_object(o, l, depth);
         break;
     case 2: // Array
-        generate_array_object(o, l, max_elements, depth);
+        generate_array_object(o, l, depth);
         break;
     }
 }
@@ -133,12 +119,10 @@ object_generator::object_generator(
     }
 
     for (auto it = test_vectors.begin(); it != test_vectors.end(); ++it) {
-        auto first_entry = it->begin();
-        auto key = first_entry->first.as<std::string>();
-
+        auto key = it->first.as<std::string>();
         auto &current_values = addresses_[key];
 
-        auto array = first_entry->second;
+        auto array = it->second;
         for (auto value_it = array.begin(); value_it != array.end(); ++value_it) {
             auto vector = value_it->as<ddwaf_object>();
             objects_.push_back(vector);
@@ -164,29 +148,24 @@ std::vector<ddwaf_object> object_generator::operator()(
         for (const auto &[addr, valid_values] : addresses_) {
             ddwaf_object value;
 
-            std::size_t max_elements = l.elements.max / addresses_.size();
-            if (max_elements == 0) {
-                max_elements = 1;
-            }
-
             generator_type type = l.type;
-            if (valid_values.empty()) {
-                type = generator_type::random;
-            } else {
-                if (type == generator_type::mixed) {
-                    type = static_cast<generator_type>(random::get() % 2);
+            if (type == generator_type::valid) {
+                if (valid_values.empty()) {
+                    continue;
                 }
-            }
 
-            if (type == generator_type::random) {
-                generate_object(value, l, max_elements);
-            } else {
                 std::size_t index = random::get() % valid_values.size();
                 value = utils::object_dup(valid_values[index]);
+            } else {
+                generate_object(value, l);
             }
 
             ddwaf_object_map_add(&root, addr.data(), &value);
         }
+    }
+
+    if (output.empty() && l.type == generator_type::valid) {
+        throw std::runtime_error("No valid values available");
     }
 
     return output;
