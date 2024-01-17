@@ -168,15 +168,13 @@ std::vector<ddwaf_object> object_generator::operator()(
             }
 
             generator_type type = l.type;
-            if (valid_values.empty()) {
-                type = generator_type::random;
-            } else {
-                if (type == generator_type::mixed) {
-                    type = static_cast<generator_type>(random::get() % 2);
-                }
+            if (type == generator_type::valid && valid_values.empty()) {
+                continue;
             }
 
-            if (type == generator_type::random) {
+            if (type == generator_type::mixed) {
+                type = static_cast<generator_type>(random::get() % 2);
+            } else if (type == generator_type::random) {
                 generate_object(value, l, max_elements);
             } else {
                 std::size_t index = random::get() % valid_values.size();
@@ -185,6 +183,10 @@ std::vector<ddwaf_object> object_generator::operator()(
 
             ddwaf_object_map_add(&root, addr.data(), &value);
         }
+    }
+
+    if (output.empty() && l.type == generator_type::valid) {
+        throw std::runtime_error("No valid values available");
     }
 
     return output;

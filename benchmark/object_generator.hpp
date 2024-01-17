@@ -32,9 +32,9 @@ public:
             [[nodiscard]] std::size_t range() const { return max - min; }
         };
 
-        static constexpr std::size_t max_depth = 20;
+        static constexpr std::size_t max_depth = 5;
         static constexpr std::size_t max_size = 256;
-        static constexpr std::size_t max_length = 1024;
+        static constexpr std::size_t max_length = 512;
         static constexpr std::size_t max_elements = 512;
 
         limit_type container_depth{0, max_depth};

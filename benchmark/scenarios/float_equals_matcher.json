@@ -27,7 +27,7 @@
         ]
     },
     "vectors": {
-        "waf.context.processor.extract-schema": [
+        "waf.context.duration": [
             5.23
         ]
     }

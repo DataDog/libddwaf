@@ -27,7 +27,7 @@
         ]
     },
     "vectors": {
-        "waf.context.processor.extract-schema": [
+        "waf.context.events.length": [
             2123
         ]
     }
