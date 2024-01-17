@@ -17,6 +17,7 @@ benchmarks:
     - ./steps/analyze-results.sh
     - "./steps/upload-results-to-s3.sh || :"
     - "./steps/post-pr-comment.sh || :"
+    - "./steps/upload-results-to-benchmarking-api.sh || :"
   artifacts:
     name: "reports"
     paths:
