@@ -48,8 +48,16 @@
         ]
     },
     "fixtures": [
-        "random.any",
-        "random.long_strings",
-        "random.deep_containers"
+        "random.1x1.128",
+        "random.1x1.512",
+        "random.1x1.1024",
+        "random.1x1.4096",
+        "random.1x16.128",
+        "random.1x64.128",
+        "random.1x128.128",
+        "random.1x256.128",
+        "random.5x1.128",
+        "random.10x1.128",
+        "random.20x1.128"
     ]
 }

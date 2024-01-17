@@ -42,7 +42,7 @@ std::map<std::string, benchmark::object_generator::settings> default_tests = {
     {"random.1x1.128", {.string_length = 128, .type = generator_type::random}},
     {"random.1x1.512", {.string_length = 512, .type = generator_type::random}},
     {"random.1x1.1024", {.string_length = 1024, .type = generator_type::random}},
-    {"random.1x1.4096", {.string_length = 1024, .type = generator_type::random}},
+    {"random.1x1.4096", {.string_length = 4096, .type = generator_type::random}},
 
     {"random.1x16.128", {.container_size = 16, .type = generator_type::random}},
     {"random.1x64.128", {.container_size = 64, .type = generator_type::random}},
