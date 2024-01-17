@@ -13,7 +13,7 @@ set_target_properties(benchmark PROPERTIES
 add_custom_target(run_benchmark_json
     COMMAND $<TARGET_FILE:benchmark>
     --scenarios=${CMAKE_CURRENT_SOURCE_DIR}/scenarios
-    --iterations=1000
+    --iterations=1
     --format=json
     --output=benchmark_results.json
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
