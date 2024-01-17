@@ -26,9 +26,9 @@ public:
     };
 
     struct settings {
-        static constexpr std::size_t default_depth = 1;
-        static constexpr std::size_t default_size = 1;
-        static constexpr std::size_t default_length = 128;
+        static constexpr std::size_t default_depth = 5;
+        static constexpr std::size_t default_size = 16;
+        static constexpr std::size_t default_length = 4096;
 
         std::size_t container_depth = default_depth;
         std::size_t container_size = default_size;
