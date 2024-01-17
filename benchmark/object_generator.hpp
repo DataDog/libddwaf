@@ -23,24 +23,16 @@ public:
     enum class generator_type : unsigned {
         valid = 1,
         random = 2,
-        mixed = valid | random,
     };
 
     struct settings {
-        struct limit_type {
-            std::size_t min, max;
-            [[nodiscard]] std::size_t range() const { return max - min; }
-        };
+        static constexpr std::size_t default_depth = 1;
+        static constexpr std::size_t default_size = 1;
+        static constexpr std::size_t default_length = 128;
 
-        static constexpr std::size_t max_depth = 5;
-        static constexpr std::size_t max_size = 256;
-        static constexpr std::size_t max_length = 512;
-        static constexpr std::size_t max_elements = 512;
-
-        limit_type container_depth{0, max_depth};
-        limit_type container_size{0, max_size};
-        limit_type string_length{0, max_length};
-        limit_type elements{0, max_elements};
+        std::size_t container_depth = default_depth;
+        std::size_t container_size = default_size;
+        std::size_t string_length = default_length;
         generator_type type{generator_type::random};
     };
 
