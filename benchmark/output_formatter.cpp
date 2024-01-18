@@ -5,7 +5,8 @@
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "output_formatter.hpp"
-#include "random.hpp"
+
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -121,9 +122,7 @@ void output_csv(std::ostream &o, const settings &s [[maybe_unused]],
 void output_human(std::ostream &o, const settings &s,
     const std::map<std::string, std::vector<runner::test_result>> &results)
 {
-    o << "Runs : " << s.runs << '\n'
-      << "Iterations : " << s.iterations << '\n'
-      << "Last Random Value : " << random::get() << '\n';
+    o << "Runs : " << s.runs << '\n' << "Iterations : " << s.iterations << '\n';
     for (const auto &[k, vec] : results) {
         std::vector<uint64_t> samples;
         for (const auto &v : vec) {

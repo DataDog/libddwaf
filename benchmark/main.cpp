@@ -35,6 +35,7 @@ namespace fs = std::filesystem;
 namespace utils = ddwaf::benchmark::utils;
 
 using test_result = ddwaf::benchmark::runner::test_result;
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void print_help_and_exit(std::string_view name, std::string_view error = {})
 {
@@ -54,52 +55,17 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
     utils::exit_success();
 }
 
-std::map<std::string_view, std::string_view> parse_args(const std::vector<std::string> &args)
-{
-    std::map<std::string_view, std::string_view> parsed_args;
-
-    for (std::size_t i = 1; i < args.size(); i++) {
-        std::string_view arg = args[i];
-        if (arg.substr(0, 2) != "--") {
-            continue;
-        }
-
-        auto assignment = arg.find('=');
-        if (assignment != std::string::npos) {
-            std::string_view opt_name = arg.substr(2, assignment - 2);
-            parsed_args[opt_name] = arg.substr(assignment + 1);
-        } else {
-            std::string_view opt_name = arg.substr(2);
-            parsed_args[opt_name] = {};
-
-            if ((i + 1) < args.size()) {
-                std::string_view value = args[i + 1];
-                if (value.substr(0, 2) != "--") {
-                    parsed_args[opt_name] = value;
-                }
-            }
-        }
-    }
-
-    return parsed_args;
-}
-
-bool contains(std::map<std::string_view, std::string_view> &opts, std::string_view name)
-{
-    return opts.find(name) != opts.end();
-}
-
 benchmark::settings generate_settings(const std::vector<std::string> &args)
 {
     benchmark::settings s;
 
-    auto opts = parse_args(args);
+    auto opts = utils::parse_args(args);
 
-    if (contains(opts, "help")) {
+    if (opts.contains("help")) {
         print_help_and_exit(args[0]);
     }
 
-    if (!contains(opts, "scenarios")) {
+    if (!opts.contains("scenarios")) {
         print_help_and_exit(args[0], "Missing option --scenarios");
     } else {
         auto root = opts["scenarios"];
@@ -116,7 +82,7 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
         }
     }
 
-    if (contains(opts, "fixtures")) {
+    if (opts.contains("fixtures")) {
         auto root = opts["fixtures"];
         if (fs::is_directory(root)) {
             for (const auto &dir_entry : fs::directory_iterator{root}) {
@@ -131,7 +97,7 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
         }
     }
 
-    if (contains(opts, "format")) {
+    if (opts.contains("format")) {
         auto format = opts["format"];
         if (format == "csv") {
             s.format = benchmark::output_fmt::csv;
@@ -146,25 +112,25 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
         }
     }
 
-    if (s.format != benchmark::output_fmt::none && contains(opts, "output")) {
+    if (s.format != benchmark::output_fmt::none && opts.contains("output")) {
         s.output_file = opts["output"];
     }
 
-    if (contains(opts, "runs")) {
+    if (opts.contains("runs")) {
         s.runs = utils::from_string<unsigned>(opts["runs"]);
         if (s.runs == 0) {
             print_help_and_exit(args[0], "Runs should be a positive number");
         }
     }
 
-    if (contains(opts, "iterations")) {
+    if (opts.contains("iterations")) {
         s.iterations = utils::from_string<unsigned>(opts["iterations"]);
         if (s.iterations == 0) {
             print_help_and_exit(args[0], "Iterations should be a positive number");
         }
     }
 
-    if (contains(opts, "warmup")) {
+    if (opts.contains("warmup")) {
         s.warmup_iterations = utils::from_string<unsigned>(opts["warmup"]);
     }
 

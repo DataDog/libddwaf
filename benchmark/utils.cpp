@@ -139,4 +139,34 @@ std::string read_file(const fs::path &filename)
     return buffer;
 }
 
+std::map<std::string_view, std::string_view> parse_args(const std::vector<std::string> &args)
+{
+    std::map<std::string_view, std::string_view> parsed_args;
+
+    for (std::size_t i = 1; i < args.size(); i++) {
+        std::string_view arg = args[i];
+        if (arg.substr(0, 2) != "--") {
+            continue;
+        }
+
+        auto assignment = arg.find('=');
+        if (assignment != std::string::npos) {
+            std::string_view opt_name = arg.substr(2, assignment - 2);
+            parsed_args[opt_name] = arg.substr(assignment + 1);
+        } else {
+            std::string_view opt_name = arg.substr(2);
+            parsed_args[opt_name] = {};
+
+            if ((i + 1) < args.size()) {
+                std::string_view value = args[i + 1];
+                if (value.substr(0, 2) != "--") {
+                    parsed_args[opt_name] = value;
+                }
+            }
+        }
+    }
+
+    return parsed_args;
+}
+
 } // namespace ddwaf::benchmark::utils
