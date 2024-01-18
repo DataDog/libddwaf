@@ -30,7 +30,7 @@
     ]
   },
   "fixtures": {
-    "valid": {
+    "eval.valid": {
       "server.request.headers.user-agent": [
         "THIsiSaRaCHnI",
         "thisisarAcHnI",

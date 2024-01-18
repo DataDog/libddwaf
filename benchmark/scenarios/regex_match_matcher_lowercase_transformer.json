@@ -32,7 +32,7 @@
     ]
   },
   "fixtures": {
-    "valid": {
+    "eval.valid": {
       "server.request.uri.raw": [
         "%uFf28",
         "%uFFab",

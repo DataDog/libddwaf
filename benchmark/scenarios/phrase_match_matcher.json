@@ -33,7 +33,7 @@
     ]
   },
   "fixtures": {
-    "valid": {
+    "eval.valid": {
       "server.request.headers.no_cookies": [
         "acunetix-product",
         "(acunetix web vulnerability scanner",

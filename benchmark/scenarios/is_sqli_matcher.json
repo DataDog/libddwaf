@@ -26,7 +26,7 @@
     ]
   },
   "fixtures": {
-    "valid": {
+    "eval.valid": {
       "server.request.query": [
         "-1190 union select 1,2,3,version(),5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5--",
         "0x3127 union select 1,2,3,concat_ws(0x3a,user(),database(),version()),5,6,7,8,9,10/*",

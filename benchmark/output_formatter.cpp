@@ -121,8 +121,7 @@ void output_csv(std::ostream &o, const settings &s [[maybe_unused]],
 void output_human(std::ostream &o, const settings &s,
     const std::map<std::string, std::vector<runner::test_result>> &results)
 {
-    o << "Seed : " << s.seed << '\n'
-      << "Runs : " << s.runs << '\n'
+    o << "Runs : " << s.runs << '\n'
       << "Iterations : " << s.iterations << '\n'
       << "Last Random Value : " << random::get() << '\n';
     for (const auto &[k, vec] : results) {

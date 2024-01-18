@@ -27,7 +27,7 @@
     ]
   },
   "fixtures": {
-    "valid": {
+    "eval.valid": {
       "server.request.headers.user-agent": [
         "thisisarachni"
       ]

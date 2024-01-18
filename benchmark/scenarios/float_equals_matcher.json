@@ -27,7 +27,7 @@
     ]
   },
   "fixtures": {
-    "valid": {
+    "eval.valid": {
       "waf.context.duration": [
         5.23
       ]

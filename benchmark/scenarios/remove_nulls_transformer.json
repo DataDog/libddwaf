@@ -30,7 +30,7 @@
     ]
   },
   "fixtures": {
-    "valid": {
+    "eval.valid": {
       "server.request.headers.user-agent": [
         "\u0000t\u0000hisis\u0000arachni",
         "t\u0000hi\u0000s\u0000isar\u0000ac\u0000h\u0000n\u0000i",

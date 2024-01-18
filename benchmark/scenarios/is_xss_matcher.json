@@ -26,7 +26,7 @@
     ]
   },
   "fixtures": {
-    "valid": {
+    "eval.valid": {
       "server.request.query": [
         "11|IE|EUC-JP|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
         "11|IE|Windows-1250|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%00=alert(1)%3E",
