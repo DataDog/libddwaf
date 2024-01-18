@@ -1,48 +1,52 @@
 {
-    "scenario": "regex_match_matcher.lowercase_transformer",
-    "ruleset": {
-        "rules": [
-            {
-              "id": "crs-920-260",
-              "name": "Unicode Full/Half Width Abuse Attack Attempt",
-              "tags": {
-                "type": "http_protocol_violation",
-                "category": "attack_attempt"
-              },
-              "conditions": [
+  "scenario": "regex_match_matcher.lowercase_transformer",
+  "ruleset": {
+    "rules": [
+      {
+        "id": "crs-920-260",
+        "name": "Unicode Full/Half Width Abuse Attack Attempt",
+        "tags": {
+          "type": "http_protocol_violation",
+          "category": "attack_attempt"
+        },
+        "conditions": [
+          {
+            "parameters": {
+              "inputs": [
                 {
-                  "parameters": {
-                    "inputs": [
-                      {
-                        "address": "server.request.uri.raw"
-                      }
-                    ],
-                    "regex": "\\%u[fF]{2}[0-9a-fA-F]{2}",
-                    "options": {
-                      "min_length": 6
-                    }
-                  },
-                  "operator": "match_regex"
+                  "address": "server.request.uri.raw"
                 }
               ],
-              "transformers": ["lowercase"]
-            }
+              "regex": "\\%u[fF]{2}[0-9a-fA-F]{2}",
+              "options": {
+                "min_length": 6
+              }
+            },
+            "operator": "match_regex"
+          }
+        ],
+        "transformers": [
+          "lowercase"
         ]
-    },
-    "vectors": {
-        "server.request.uri.raw": [
-            "%uFf28",
-            "%uFFab",
-            "%uFfE2",
-            "%uff8F",
-            "%ufFCF",
-            "%ufF3A",
-            "%uFfAa",
-            "%uFfFC",
-            "%uffDc",
-            "%uFfCB",
-            "%uffBD",
-            "%ufFb7"
-        ]
+      }
+    ]
+  },
+  "fixtures": {
+    "valid": {
+      "server.request.uri.raw": [
+        "%uFf28",
+        "%uFFab",
+        "%uFfE2",
+        "%uff8F",
+        "%ufFCF",
+        "%ufF3A",
+        "%uFfAa",
+        "%uFfFC",
+        "%uffDc",
+        "%uFfCB",
+        "%uffBD",
+        "%ufFb7"
+      ]
     }
+  }
 }

@@ -1,47 +1,48 @@
 {
-    "scenario": "remove_nulls_transformer",
-    "ruleset": {
-        "rules": [
-            {
-              "id": "string-equals",
-              "name": "string-equals",
-              "tags": {
-                "type": "flow",
-                "category": "category"
-              },
-              "conditions": [
+  "scenario": "remove_nulls_transformer",
+  "ruleset": {
+    "rules": [
+      {
+        "id": "string-equals",
+        "name": "string-equals",
+        "tags": {
+          "type": "flow",
+          "category": "category"
+        },
+        "conditions": [
+          {
+            "operator": "equals",
+            "parameters": {
+              "inputs": [
                 {
-                  "operator": "equals",
-                  "parameters": {
-                    "inputs": [
-                      {
-                        "address": "server.request.headers.user-agent",
-                        "transformers": [ "remove_nulls" ]
-                      }
-                    ],
-                    "type": "string",
-                    "value": "thisisarachni"
-                  }
+                  "address": "server.request.headers.user-agent",
+                  "transformers": [
+                    "remove_nulls"
+                  ]
                 }
-              ]
+              ],
+              "type": "string",
+              "value": "thisisarachni"
             }
+          }
         ]
-    },
-    "vectors": {
-        "server.request.headers.user-agent": [
-            "\u0000t\u0000hisis\u0000arachni",
-            "t\u0000hi\u0000s\u0000isar\u0000ac\u0000h\u0000n\u0000i",
-            "thi\u0000s\u0000i\u0000s\u0000ar\u0000ac\u0000hni\u0000",
-            "\u0000t\u0000his\u0000i\u0000s\u0000ar\u0000ach\u0000ni\u0000",
-            "\u0000th\u0000is\u0000i\u0000s\u0000arachni",
-            "th\u0000isis\u0000ar\u0000a\u0000chn\u0000i\u0000",
-            "\u0000t\u0000hi\u0000si\u0000s\u0000a\u0000r\u0000a\u0000c\u0000h\u0000n\u0000i\u0000",
-            "\u0000thi\u0000s\u0000isa\u0000ra\u0000ch\u0000n\u0000i\u0000",
-            "\u0000t\u0000hi\u0000s\u0000i\u0000sa\u0000r\u0000a\u0000c\u0000h\u0000ni\u0000",
-            "t\u0000hi\u0000si\u0000sar\u0000a\u0000c\u0000h\u0000n\u0000i\u0000"
-        ]
+      }
+    ]
+  },
+  "fixtures": {
+    "valid": {
+      "server.request.headers.user-agent": [
+        "\u0000t\u0000hisis\u0000arachni",
+        "t\u0000hi\u0000s\u0000isar\u0000ac\u0000h\u0000n\u0000i",
+        "thi\u0000s\u0000i\u0000s\u0000ar\u0000ac\u0000hni\u0000",
+        "\u0000t\u0000his\u0000i\u0000s\u0000ar\u0000ach\u0000ni\u0000",
+        "\u0000th\u0000is\u0000i\u0000s\u0000arachni",
+        "th\u0000isis\u0000ar\u0000a\u0000chn\u0000i\u0000",
+        "\u0000t\u0000hi\u0000si\u0000s\u0000a\u0000r\u0000a\u0000c\u0000h\u0000n\u0000i\u0000",
+        "\u0000thi\u0000s\u0000isa\u0000ra\u0000ch\u0000n\u0000i\u0000",
+        "\u0000t\u0000hi\u0000s\u0000i\u0000sa\u0000r\u0000a\u0000c\u0000h\u0000ni\u0000",
+        "t\u0000hi\u0000si\u0000sar\u0000a\u0000c\u0000h\u0000n\u0000i\u0000"
+      ]
     }
+  }
 }
-
-
-

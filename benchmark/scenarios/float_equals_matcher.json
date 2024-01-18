@@ -1,37 +1,36 @@
 {
-    "scenario": "float_equals_matcher",
-    "ruleset": {
-        "rules": [
-            {
-              "id": "float-equals",
-              "name": "float-equals",
-              "tags": {
-                "type": "flow",
-                "category": "category"
-              },
-              "conditions": [
+  "scenario": "float_equals_matcher",
+  "ruleset": {
+    "rules": [
+      {
+        "id": "float-equals",
+        "name": "float-equals",
+        "tags": {
+          "type": "flow",
+          "category": "category"
+        },
+        "conditions": [
+          {
+            "operator": "equals",
+            "parameters": {
+              "inputs": [
                 {
-                  "operator": "equals",
-                  "parameters": {
-                    "inputs": [
-                      {
-                        "address": "waf.context.duration"
-                      }
-                    ],
-                    "type": "float",
-                    "value": 5.23
-                  }
+                  "address": "waf.context.duration"
                 }
-              ]
+              ],
+              "type": "float",
+              "value": 5.23
             }
+          }
         ]
-    },
-    "vectors": {
-        "waf.context.duration": [
-            5.23
-        ]
+      }
+    ]
+  },
+  "fixtures": {
+    "valid": {
+      "waf.context.duration": [
+        5.23
+      ]
     }
+  }
 }
-
-
-

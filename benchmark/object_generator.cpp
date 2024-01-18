@@ -52,15 +52,40 @@ void generate_container(ddwaf_object &o) {
     }
 }
 
+struct level_nodes {
+    unsigned intermediate{0};
+    unsigned terminal{0};
+};
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+std::vector<level_nodes> generate_node_distribution(unsigned nodes, unsigned intermediate, unsigned terminal)
+{
+    std::vector<level_nodes> levels;
+    levels.resize(nodes);
+
+    // Distribute intermediate nodes, this doesn't apply to the last level
+    while (intermediate > 0) {
+        for (unsigned i = 0; intermediate > 0 && i < (max_depth - 1); ++i) {
+            auto extra_nodes = 1 + random::get(intermediate);
+            levels[i].intermediate += extra_nodes;
+            intermediate -= extra_nodes;
+        }
+    }
+
+    while (terminal > 0) {
+        for (unsigned i = 0; terminal > 0 && i < max_depth; ++i) {
+            auto extra_nodes = 1 + random::get(terminal);
+            levels[i].terminal += extra_nodes;
+            terminal -= extra_nodes;
+        }
+    }
+
+    return levels;
+}
+
 void generate_object(ddwaf_object &o)
 {
-    struct level_nodes {
-        unsigned intermediate{max_intermediate_nodes / (max_depth - 1)};
-        unsigned terminal{max_terminal_nodes / max_depth};
-    };
-
-    std::vector<level_nodes> levels(max_depth, level_nodes{});
-    levels.back().intermediate = 0;
+    auto levels = generate_node_distribution(max_depth, max_intermediate_nodes, max_terminal_nodes);
 
     struct queue_node {
         ddwaf_object *object;
@@ -76,16 +101,16 @@ void generate_object(ddwaf_object &o)
         auto &next_nodes = levels[node.level];
 
         unsigned terminal = 0;
-        if (next_nodes.terminal > 0) {
-            terminal = 1 + random::get(next_nodes.terminal);
-            next_nodes.terminal -= terminal;
-        }
-
         unsigned intermediate = 0;
-        if (next_nodes.intermediate > 0) {
-            intermediate = 1 + random::get(next_nodes.intermediate);
-            next_nodes.intermediate -= intermediate;
+        if (node.level == 0) {
+            terminal = next_nodes.terminal;
+            intermediate = next_nodes.intermediate;
+        } else {
+            terminal = next_nodes.terminal > 0 ? 1 + random::get(next_nodes.terminal) : 0;
+            intermediate = next_nodes.intermediate > 0 ? 1 + random::get(next_nodes.intermediate) : 0;
         }
+        next_nodes.terminal -= terminal;
+        next_nodes.intermediate -= intermediate;
 
         while ((terminal + intermediate) > 0) {
             ddwaf_object next;

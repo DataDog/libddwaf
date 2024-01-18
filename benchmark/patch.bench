@@ -1,0 +1,297 @@
+diff --git a/benchmark/main.cpp b/benchmark/main.cpp
+index 385ad92..d830a6e 100644
+--- a/benchmark/main.cpp
++++ b/benchmark/main.cpp
+@@ -38,22 +38,9 @@ namespace utils = ddwaf::benchmark::utils;
+ using test_result = ddwaf::benchmark::runner::test_result;
+ using generator_type = benchmark::object_generator::generator_type;
+ 
+-std::map<std::string, benchmark::object_generator::settings> default_tests = {
+-    {"random.1x1.128", {.string_length = 128, .type = generator_type::random}},
+-    {"random.1x1.512", {.string_length = 512, .type = generator_type::random}},
+-    {"random.1x1.1024", {.string_length = 1024, .type = generator_type::random}},
+-    {"random.1x1.4096", {.string_length = 4096, .type = generator_type::random}},
+-
+-    {"random.1x16.128", {.container_size = 16, .type = generator_type::random}},
+-    {"random.1x64.128", {.container_size = 64, .type = generator_type::random}},
+-    {"random.1x128.128", {.container_size = 128, .type = generator_type::random}},
+-    {"random.1x256.128", {.container_size = 256, .type = generator_type::random}},
+-
+-    {"random.5x1.128", {.container_depth = 5, .type = generator_type::random}},
+-    {"random.10x1.128", {.container_depth = 10, .type = generator_type::random}},
+-    {"random.20x1.128", {.container_depth = 20, .type = generator_type::random}},
+-
+-    {"valid", {.type = generator_type::valid}},
++std::map<std::string, benchmark::object_generator::generator_type> default_tests = {
++    {"random", generator_type::random},
++    {"valid",  generator_type::valid},
+ };
+ 
+ // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+diff --git a/benchmark/object_generator.cpp b/benchmark/object_generator.cpp
+index 8979e4d..0d8cabd 100644
+--- a/benchmark/object_generator.cpp
++++ b/benchmark/object_generator.cpp
+@@ -5,6 +5,7 @@
+ // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+ 
+ #include <iostream>
++#include <stack>
+ #include <yaml-cpp/yaml.h>
+ 
+ #include "object_generator.hpp"
+@@ -16,93 +17,106 @@ namespace ddwaf::benchmark {
+ 
+ namespace {
+ 
+-using settings = object_generator::settings;
++constexpr unsigned max_terminal_nodes = 100;
++constexpr unsigned max_intermediate_nodes = 500;
++constexpr unsigned max_depth = 10;
++constexpr unsigned max_string_length = 4096;
++constexpr unsigned max_key_length = 128;
+ 
+-void generate_object(
+-    ddwaf_object &o, const settings &l, std::size_t depth = 0);
+-
+-char *generate_random_string(const settings &l, std::size_t *length)
++char *generate_random_string(std::size_t length)
+ {
+     static const auto &charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+-                                 "`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"!";
++                                 "`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"\0!";
+ 
+     // NOLINTNEXTLINE
+-    char *str = (char *)malloc(l.string_length + 1);
+-    for (std::size_t i = 0; i < l.string_length; i++) {
++    char *str = (char *)malloc(length + 1);
++    for (std::size_t i = 0; i < length; i++) {
+         str[i] = charset[random::get() % (sizeof(charset) - 2)];
+     }
+-    str[l.string_length] = '\0';
+-    *length = l.string_length;
++    str[length] = '\0';
+ 
+     return str;
+ }
+ 
+-void generate_string_object(ddwaf_object &o, const settings &l)
++void generate_string_object(ddwaf_object &o)
+ {
+-    std::size_t length = 0;
+-    char *str = generate_random_string(l, &length);
+-    ddwaf_object_stringl_nc(&o, str, length);
++    char *str = generate_random_string(max_string_length);
++    ddwaf_object_stringl_nc(&o, str, max_string_length);
+ }
+ 
+-// NOLINTNEXTLINE(misc-no-recursion)
+-void generate_map_object(
+-    ddwaf_object &o, const settings &l, std::size_t depth)
++void generate_container(ddwaf_object &o) {
++    if (random::get_bool()) {
++        ddwaf_object_array(&o);
++    } else {
++        ddwaf_object_map(&o);
++    }
++}
+ 
++void generate_object(ddwaf_object &o)
+ {
+-    ddwaf_object_map(&o);
++    struct level_nodes {
++        unsigned intermediate{max_intermediate_nodes / (max_depth - 1)};
++        unsigned terminal{max_terminal_nodes / max_depth};
++    };
++
++    std::vector<level_nodes> levels(max_depth, level_nodes{});
++    levels.back().intermediate = 0;
++
++    struct queue_node {
++        ddwaf_object *object;
++        unsigned level;
++    };
++
++    std::deque<queue_node> object_queue;
++    generate_container(o);
++    object_queue.emplace_back(&o, 0);
++
++    while (!object_queue.empty()) {
++        auto &node = object_queue.front();
++        auto &next_nodes = levels[node.level];
++
++        std::cout << node.object << " " << node.level << std::endl;
++        unsigned terminal = 0;
++        if (next_nodes.terminal > 0) {
++            terminal = 1 + random::get(next_nodes.terminal);
++            next_nodes.terminal -= terminal;
++        }
+ 
+-    for (std::size_t i = 0; i < l.container_size; i++) {
+-        std::size_t length = 0;
+-        char *key = generate_random_string(l, &length);
++        unsigned intermediate = 0;
++        if (next_nodes.intermediate > 0) {
++            intermediate = 1 + random::get(next_nodes.intermediate);
++            next_nodes.intermediate -= intermediate;
++        }
+ 
+-        ddwaf_object value;
+-        generate_object(value, l, depth + 1);
+-        ddwaf_object_map_addl_nc(&o, key, length, &value);
+-    }
+-}
++        std::cout << "Terminal: " << terminal << ", Intermediate: " << intermediate << '\n';
++        while ((terminal + intermediate) > 0) {
++            ddwaf_object next;
+ 
+-// NOLINTNEXTLINE(misc-no-recursion)
+-void generate_array_object(
+-    ddwaf_object &o, const settings &l, std::size_t depth)
+-{
+-    ddwaf_object_array(&o);
++            bool build_terminal = random::get_bool() ? terminal > 0 : intermediate == 0;
+ 
+-    for (std::size_t i = 0; i < l.container_size; i++) {
+-        ddwaf_object value;
+-        generate_object(value, l, depth + 1);
+-        ddwaf_object_array_add(&o, &value);
+-    }
+-}
++            if (build_terminal) {
++                generate_string_object(next);
++                --terminal;
++            } else {
++                generate_container(next);
++                --intermediate;
++            }
+ 
+-// NOLINTNEXTLINE(misc-no-recursion)
+-void generate_object(
+-    ddwaf_object &o, const settings &l, std::size_t depth)
+-{
+-    if (depth >= l.container_depth) {
+-        generate_string_object(o, l);
+-        return;
+-    }
++            if (node.object->type == DDWAF_OBJ_MAP) {
++                auto *str = generate_random_string(max_key_length);
++                ddwaf_object_map_addl_nc(node.object, str, max_key_length, &next);
++            } else {
++                ddwaf_object_array_add(node.object, &next);
++            }
+ 
+-    if (depth < l.container_depth) {
+-        if (random::get_bool()) {
+-            generate_map_object(o, l, depth);
+-        } else {
+-            generate_array_object(o, l, depth);
++            if (!build_terminal) {
++                uint64_t index = node.object->nbEntries - 1;
++                object_queue.emplace_back(&node.object->array[index], node.level + 1);
++                std::cout << "Inserting: " << &node.object->array[index] << '\n';
++            }
+         }
+-        return;
+-    }
+ 
+-    // Decide type (map, array, string)
+-    switch (random::get() % 3) {
+-    case 0: // String
+-        generate_string_object(o, l);
+-        break;
+-    case 1: // Map
+-        generate_map_object(o, l, depth);
+-        break;
+-    case 2: // Array
+-        generate_array_object(o, l, depth);
+-        break;
++        object_queue.pop_front();
+     }
+ }
+ 
+@@ -137,7 +151,7 @@ object_generator::~object_generator()
+ }
+ 
+ std::vector<ddwaf_object> object_generator::operator()(
+-    const object_generator::settings &l, size_t n) const
++    object_generator::generator_type type, size_t n) const
+ {
+     std::vector<ddwaf_object> output(n);
+ 
+@@ -148,7 +162,6 @@ std::vector<ddwaf_object> object_generator::operator()(
+         for (const auto &[addr, valid_values] : addresses_) {
+             ddwaf_object value;
+ 
+-            generator_type type = l.type;
+             if (type == generator_type::valid) {
+                 if (valid_values.empty()) {
+                     continue;
+@@ -157,14 +170,14 @@ std::vector<ddwaf_object> object_generator::operator()(
+                 std::size_t index = random::get() % valid_values.size();
+                 value = utils::object_dup(valid_values[index]);
+             } else {
+-                generate_object(value, l);
++                generate_object(value);
+             }
+ 
+             ddwaf_object_map_add(&root, addr.data(), &value);
+         }
+     }
+ 
+-    if (output.empty() && l.type == generator_type::valid) {
++    if (output.empty() && type == generator_type::valid) {
+         throw std::runtime_error("No valid values available");
+     }
+ 
+diff --git a/benchmark/object_generator.hpp b/benchmark/object_generator.hpp
+index 20e16be..402e2d8 100644
+--- a/benchmark/object_generator.hpp
++++ b/benchmark/object_generator.hpp
+@@ -25,17 +25,6 @@ public:
+         random = 2,
+     };
+ 
+-    struct settings {
+-        static constexpr std::size_t default_depth = 5;
+-        static constexpr std::size_t default_size = 16;
+-        static constexpr std::size_t default_length = 4096;
+-
+-        std::size_t container_depth = default_depth;
+-        std::size_t container_size = default_size;
+-        std::size_t string_length = default_length;
+-        generator_type type{generator_type::random};
+-    };
+-
+     object_generator() = default;
+     object_generator(const std::vector<std::string_view> &addresses, const YAML::Node &spec);
+ 
+@@ -47,7 +36,7 @@ public:
+     object_generator(object_generator &&) = default;
+     object_generator &operator=(object_generator &&) = default;
+ 
+-    std::vector<ddwaf_object> operator()(const settings &l, size_t n) const;
++    std::vector<ddwaf_object> operator()(generator_type type, size_t n) const;
+ 
+ protected:
+     std::unordered_map<std::string_view, std::vector<ddwaf_object>> addresses_;
+diff --git a/benchmark/random.hpp b/benchmark/random.hpp
+index f568edc..1d5e83f 100644
+--- a/benchmark/random.hpp
++++ b/benchmark/random.hpp
+@@ -27,6 +27,15 @@ public:
+         return (*rng_)();
+     }
+ 
++    static uint64_t get(uint64_t mod)
++    {
++        if (!rng_) {
++            rng_ = std::make_unique<std::mt19937>();
++        }
++        return (*rng_)() % mod;
++    }
++
++
+     static bool get_bool()
+     {
+         if (!rng_) {

@@ -36,13 +36,6 @@ namespace fs = std::filesystem;
 namespace utils = ddwaf::benchmark::utils;
 
 using test_result = ddwaf::benchmark::runner::test_result;
-using generator_type = benchmark::object_generator::generator_type;
-
-std::map<std::string, benchmark::object_generator::generator_type> default_tests = {
-    {"random", generator_type::random},
-    {"valid",  generator_type::valid},
-};
-
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void print_help_and_exit(std::string_view name, std::string_view error = {})
 {
@@ -58,12 +51,6 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
         std::cerr << "\nError: " << error << "\n";
         utils::exit_failure();
     }
-    utils::exit_success();
-}
-
-void print_tests_and_exit()
-{
-    for (auto &[k, v] : default_tests) { std::cerr << k << std::endl; }
     utils::exit_success();
 }
 
@@ -171,33 +158,6 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
     return s;
 }
 
-void initialise_runner(
-    benchmark::runner &runner, ddwaf_handle handle, benchmark::settings &s, const YAML::Node &spec)
-{
-    std::unordered_set<std::string> fixtures;
-    auto fixtures_spec = spec["fixtures"];
-    if (fixtures_spec.IsDefined()) {
-        fixtures.reserve(fixtures_spec.size());
-        for (auto it = fixtures_spec.begin(); it != fixtures_spec.end(); ++it) {
-            fixtures.emplace(it->as<std::string>());
-        }
-    }
-
-    uint32_t addrs_len;
-    const auto *const addrs = ddwaf_known_addresses(handle, &addrs_len);
-    std::vector<std::string_view> addresses{addrs, addrs + static_cast<size_t>(addrs_len)};
-
-    benchmark::object_generator generator(addresses, spec);
-
-    unsigned num_objects = std::min(s.max_objects, s.iterations);
-    for (auto &[k, v] : default_tests) {
-        if (!fixtures.empty() && !fixtures.contains(k)) {
-            continue;
-        }
-        runner.register_fixture<benchmark::run_fixture>(k, handle, generator(v, num_objects));
-    }
-}
-
 int main(int argc, char *argv[])
 {
     std::vector<std::string> args(argv, argv + argc);
@@ -211,8 +171,18 @@ int main(int argc, char *argv[])
         for (const auto &scenario : s.scenarios) {
             YAML::Node spec = YAML::Load(utils::read_file(scenario));
 
+            std::cout << "Scenario" << scenario << "\n";
             auto name = spec["scenario"].as<std::string>();
             auto ruleset = spec["ruleset"].as<ddwaf_object>();
+
+            std::unordered_map<std::string, ddwaf_object> fixtures;
+            auto fixtures_spec = spec["fixtures"];
+            if (fixtures_spec.IsDefined()) {
+                fixtures.reserve(fixtures_spec.size());
+                for (auto it = fixtures_spec.begin(); it != fixtures_spec.end(); ++it) {
+                    fixtures.emplace(it->first.as<std::string>(), it->second.as<ddwaf_object>());
+                }
+            }
 
             ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
             ddwaf_handle handle = ddwaf_init(&ruleset, &cfg, nullptr);
@@ -223,8 +193,9 @@ int main(int argc, char *argv[])
             }
 
             benchmark::runner runner(std::move(name), s);
-            initialise_runner(runner, handle, s, spec);
-
+            for (auto &[k, v] : fixtures) {
+                runner.register_fixture<benchmark::run_fixture>(k, handle, v);
+            }
             auto results = runner.run();
 
             for (auto &[key, value] : results) {
