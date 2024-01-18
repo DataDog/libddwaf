@@ -25,9 +25,8 @@ public:
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     explicit runner(std::string scenario, settings &s)
-        : scenario_(std::move(scenario)), iterations_(s.iterations), threads_(s.threads),
-          store_samples(s.store_samples)
-    {}
+        : scenario_(std::move(scenario)), iterations_(s.iterations),
+        warmup_iterations_(s.warmup_iterations) {}
 
     template <typename F, typename... Args>
     void register_fixture(const std::string &name, Args &&...args)
@@ -43,8 +42,7 @@ protected:
 
     std::string scenario_;
     unsigned iterations_;
-    unsigned threads_;
-    bool store_samples;
+    unsigned warmup_iterations_;
     std::unordered_map<std::string, std::unique_ptr<fixture_base>> tests_;
 };
 

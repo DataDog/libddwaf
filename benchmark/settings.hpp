@@ -20,14 +20,12 @@ enum class output_fmt { none, human, csv, json };
 
 struct settings {
     std::vector<fs::path> scenarios;
+    std::vector<fs::path> fixtures;
     output_fmt format{output_fmt::json};
     fs::path output_file;
     unsigned runs{1};
-    unsigned iterations{100};
-    uint64_t seed{1729};
-    unsigned threads{0};
-    unsigned max_objects{100};
-    bool store_samples{false};
+    unsigned iterations{1000};
+    unsigned warmup_iterations{10};
 };
 
 } // namespace ddwaf::benchmark

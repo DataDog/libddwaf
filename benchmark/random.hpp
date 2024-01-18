@@ -27,6 +27,15 @@ public:
         return (*rng_)();
     }
 
+    static uint64_t get(uint64_t mod)
+    {
+        if (!rng_) {
+            rng_ = std::make_unique<std::mt19937>();
+        }
+        return (*rng_)() % mod;
+    }
+
+
     static bool get_bool()
     {
         if (!rng_) {

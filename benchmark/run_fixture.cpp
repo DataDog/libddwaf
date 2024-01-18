@@ -8,20 +8,15 @@
 #include <iostream>
 #include <vector>
 
-#include "random.hpp"
 #include "run_fixture.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::benchmark {
 
-run_fixture::run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&objects)
-    : objects_(std::move(objects)), handle_(handle)
+run_fixture::run_fixture(ddwaf_handle handle, ddwaf_object &object)
+    : object_(object), handle_(handle)
 {}
 
-run_fixture::~run_fixture()
-{
-    for (auto &o : objects_) { ddwaf_object_free(&o); }
-}
 
 bool run_fixture::set_up()
 {
@@ -31,10 +26,8 @@ bool run_fixture::set_up()
 
 uint64_t run_fixture::test_main()
 {
-    ddwaf_object &data = objects_[random::get() % objects_.size()];
-
     ddwaf_result res;
-    auto code = ddwaf_run(ctx_, &data, nullptr, &res, std::numeric_limits<uint32_t>::max());
+    auto code = ddwaf_run(ctx_, &object_, nullptr, &res, std::numeric_limits<uint32_t>::max());
     if (code < 0) {
         throw std::runtime_error("WAF returned " + std::to_string(code));
     }

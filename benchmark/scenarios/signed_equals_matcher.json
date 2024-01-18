@@ -1,34 +1,36 @@
 {
-    "scenario": "signed_equals_matcher",
-    "ruleset": {
-        "rules": [
-            {
-              "id": "signed-equals",
-              "name": "signed-equals",
-              "tags": {
-                "type": "flow",
-                "category": "category"
-              },
-              "conditions": [
+  "scenario": "signed_equals_matcher",
+  "ruleset": {
+    "rules": [
+      {
+        "id": "signed-equals",
+        "name": "signed-equals",
+        "tags": {
+          "type": "flow",
+          "category": "category"
+        },
+        "conditions": [
+          {
+            "operator": "equals",
+            "parameters": {
+              "inputs": [
                 {
-                  "operator": "equals",
-                  "parameters": {
-                    "inputs": [
-                      {
-                        "address": "waf.context.events.length"
-                      }
-                    ],
-                    "type": "signed",
-                    "value": -2123
-                  }
+                  "address": "waf.context.events.length"
                 }
-              ]
+              ],
+              "type": "signed",
+              "value": -2123
             }
+          }
         ]
-    },
-    "vectors": {
-        "waf.context.events.length": [
-            -2123
-        ]
+      }
+    ]
+  },
+  "fixtures": {
+    "eval.valid": {
+      "waf.context.events.length": [
+        -2123
+      ]
     }
+  }
 }

@@ -1,55 +1,50 @@
 {
-    "scenario": "schema_extraction_processor",
-    "ruleset": {
-        "rules": [
-            {
-                "id": "dummy-rule",
-                "name": "Dummy rule",
-                "tags": {
-                    "type": "none",
-                    "category": "none"
-                },
-                "conditions": [
-                    {
-                        "parameters": {
-                            "inputs": [
-                                {
-                                    "address": "dummy_address"
-                                }
-                            ],
-                            "data": "dummy_data"
-                        },
-                        "operator": "exact_match"
-                    }
-                ],
-                "transformers": []
-            }
+  "scenario": "schema_extraction_processor",
+  "ruleset": {
+    "rules": [
+      {
+        "id": "dummy-rule",
+        "name": "Dummy rule",
+        "tags": {
+          "type": "none",
+          "category": "none"
+        },
+        "conditions": [
+          {
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "dummy_address"
+                }
+              ],
+              "data": "dummy_data"
+            },
+            "operator": "exact_match"
+          }
         ],
-        "processors": [
+        "transformers": []
+      }
+    ],
+    "processors": [
+      {
+        "id": "extract-content",
+        "generator": "extract_schema",
+        "parameters": {
+          "mappings": [
             {
-                "id": "extract-content",
-                "generator": "extract_schema",
-                "parameters": {
-                    "mappings": [
-                        {
-                            "inputs": [
-                                {
-                                    "address": "server.request.body"
-                                }
-                            ],
-                            "output": "_dd.appsec.s.req.body"
-                        }
-                    ],
-                    "scanners": []
-                },
-                "evaluate": false,
-                "output": true
+              "inputs": [
+                {
+                  "address": "server.request.body"
+                }
+              ],
+              "output": "_dd.appsec.s.req.body"
             }
-        ]
-    },
-    "fixtures": [
-        "random.any",
-        "random.long_strings",
-        "random.deep_containers"
+          ],
+          "scanners": []
+        },
+        "evaluate": false,
+        "output": true
+      }
     ]
+  }
 }

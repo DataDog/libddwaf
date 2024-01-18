@@ -18,15 +18,14 @@ namespace {
 void debug_str_helper(std::string &res, const ddwaf_object &p)
 {
     if (p.parameterNameLength != 0U) {
+        res += '"';
         res += p.parameterName;
-        res += ": ";
+        res += R"(": )";
     }
     switch (p.type) {
     case DDWAF_OBJ_INVALID:
-        res += "<invalid>";
-        break;
     case DDWAF_OBJ_NULL:
-        res += "<null>";
+        res += "null";
         break;
     case DDWAF_OBJ_BOOL:
         res += p.boolean ? "true" : "false";
