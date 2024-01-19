@@ -6,15 +6,11 @@
 
 #include <ddwaf.h>
 #include <deque>
-#include <iostream>
-#include <string>
 #include <vector>
 #include <yaml-cpp/node/node.h>
 
 #include "object_generator.hpp"
 #include "random.hpp"
-#include "utils.hpp"
-#include "yaml_helpers.hpp"
 
 namespace ddwaf::benchmark {
 namespace {
@@ -54,39 +50,28 @@ struct level_nodes {
     unsigned terminal{0};
 };
 
+void generate_node_distribution(std::vector<level_nodes> &slots, unsigned nodes, auto getter)
+{
+    for (unsigned i = 0; nodes > 0; i = (i + 1) % slots.size()) {
+        auto extra_nodes = random::get(nodes + 1);
+        getter(slots[i]) += extra_nodes;
+        nodes -= extra_nodes;
+    }
+}
+
 std::vector<level_nodes> generate_vertical_distribution(
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     unsigned depth, unsigned intermediate, unsigned terminal)
 {
-    if (depth == 0) {
-        return {};
-    }
+    std::vector<level_nodes> levels{depth, {1, 0}};
+    levels.back().intermediate = 0;
+    intermediate -= intermediate < depth ? 0 : (depth - 1);
 
-    std::vector<level_nodes> levels;
-    levels.resize(depth);
-
-    if (intermediate > 0) {
-        // Ensure each level has at least an intermediate node, except the last
-        for (unsigned i = 0; i < (depth - 1); ++i) { levels[i].intermediate += 1; }
-        intermediate -= (depth - 1);
-    }
-
-    while (intermediate > 0) {
-        // Distribute the remaining intermediate nodes
-        for (unsigned i = 0; intermediate > 0 && i < depth; ++i) {
-            auto extra_nodes = random::get(intermediate + 1);
-            levels[i].intermediate += extra_nodes;
-            intermediate -= extra_nodes;
-        }
-    }
-
-    while (terminal > 0) {
-        for (unsigned i = 0; terminal > 0 && i < depth; ++i) {
-            auto extra_nodes = random::get(terminal + 1);
-            levels[i].terminal += extra_nodes;
-            terminal -= extra_nodes;
-        }
-    }
+    // Distribute the remaining intermediate nodes
+    generate_node_distribution(
+        levels, intermediate, [](auto &node) -> unsigned & { return node.intermediate; });
+    generate_node_distribution(
+        levels, terminal, [](auto &node) -> unsigned & { return node.terminal; });
 
     return levels;
 }
@@ -95,29 +80,13 @@ std::vector<level_nodes> generate_horizontal_distribution(
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     unsigned nodes, unsigned intermediate, unsigned terminal)
 {
-    if (nodes == 0) {
-        return {};
-    }
-
-    std::vector<level_nodes> slots;
-    slots.resize(nodes);
+    std::vector<level_nodes> slots{nodes, level_nodes{}};
 
     // Distribute intermediate nodes, this doesn't apply to the last level
-    while (intermediate > 0) {
-        for (unsigned i = 0; intermediate > 0 && i < nodes; ++i) {
-            auto extra_nodes = 1 + random::get(intermediate);
-            slots[i].intermediate += extra_nodes;
-            intermediate -= extra_nodes;
-        }
-    }
-
-    while (terminal > 0) {
-        for (unsigned i = 0; terminal > 0 && i < nodes; ++i) {
-            auto extra_nodes = random::get(terminal + 1);
-            slots[i].terminal += extra_nodes;
-            terminal -= extra_nodes;
-        }
-    }
+    generate_node_distribution(
+        slots, intermediate, [](auto &node) -> unsigned & { return node.intermediate; });
+    generate_node_distribution(
+        slots, terminal, [](auto &node) -> unsigned & { return node.terminal; });
 
     return slots;
 }
@@ -141,40 +110,37 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
     object_queue.emplace_back(&root, 0, levels[0].intermediate, levels[0].terminal);
 
     for (; !object_queue.empty(); object_queue.pop_front()) {
-        auto &node = object_queue.front();
-        unsigned intermediate_nodes_in_current = 0;
+        auto &[object, level, intermediate, terminal] = object_queue.front();
+        unsigned intermediate_nodes_in_current = intermediate;
 
-        while ((node.terminal + node.intermediate) > 0) {
+        while ((terminal + intermediate) > 0) {
             ddwaf_object next;
 
-            bool build_terminal = random::get_bool() ? node.terminal > 0 : node.intermediate == 0;
-
-            if (build_terminal) {
+            if ((random::get_bool() && terminal > 0) || intermediate == 0) {
                 generate_string_object(next, s.string_length);
-                --node.terminal;
+                --terminal;
             } else {
                 generate_container(next);
-                --node.intermediate;
-                ++intermediate_nodes_in_current;
+                --intermediate;
             }
 
-            if (node.object->type == DDWAF_OBJ_MAP) {
+            if (object->type == DDWAF_OBJ_MAP) {
                 auto *str = generate_random_string(s.key_length);
-                ddwaf_object_map_addl_nc(node.object, str, s.key_length, &next);
+                ddwaf_object_map_addl_nc(object, str, s.key_length, &next);
             } else {
-                ddwaf_object_array_add(node.object, &next);
+                ddwaf_object_array_add(object, &next);
             }
         }
 
-        if (s.depth > (node.level + 1) && intermediate_nodes_in_current > 0) {
-            auto [next_intermediate, next_terminal] = levels[node.level + 1];
+        if (s.depth > (level + 1) && intermediate_nodes_in_current > 0) {
+            auto [next_intermediate, next_terminal] = levels[level + 1];
             auto next_level = generate_horizontal_distribution(
                 intermediate_nodes_in_current, next_intermediate, next_terminal);
 
-            for (unsigned i = 0, j = 0; i < node.object->nbEntries; ++i) {
-                auto type = node.object->array[i].type;
+            for (unsigned i = 0, j = 0; i < object->nbEntries; ++i) {
+                auto type = object->array[i].type;
                 if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
-                    object_queue.emplace_back(&node.object->array[i], node.level + 1,
+                    object_queue.emplace_back(&object->array[i], level + 1,
                         next_level[j].intermediate, next_level[j].terminal);
                     ++j;
                 }
@@ -187,14 +153,6 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
 
 ddwaf_object object_generator::operator()(object_specification spec) const
 {
-    if (spec.depth > spec.intermediate_nodes) {
-        spec.intermediate_nodes = spec.depth;
-    }
-
-    if (spec.depth == 0) {
-        spec.intermediate_nodes = 0;
-    }
-
     ddwaf_object root;
     ddwaf_object_map(&root);
 
