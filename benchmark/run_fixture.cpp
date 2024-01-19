@@ -17,7 +17,6 @@ run_fixture::run_fixture(ddwaf_handle handle, ddwaf_object &object)
     : object_(object), handle_(handle)
 {}
 
-
 bool run_fixture::set_up()
 {
     ctx_ = ddwaf_context_init(handle_);

@@ -197,17 +197,13 @@ int main(int argc, char *argv[])
                 }
             }
 
-            for (auto &[k, v] : fixtures) {
-                ddwaf_object_free(&v);
-            }
+            for (auto &[k, v] : fixtures) { ddwaf_object_free(&v); }
 
             ddwaf_destroy(handle);
         }
     }
 
-    for (auto &[k, v] : common_fixtures) {
-        ddwaf_object_free(&v);
-    }
+    for (auto &[k, v] : common_fixtures) { ddwaf_object_free(&v); }
 
     benchmark::output_results(s, all_results);
 
