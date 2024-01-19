@@ -1,12 +1,4 @@
-set(LIBDDWAF_BENCHMARK_SOURCE 
-    main.cpp
-    utils.cpp
-    output_formatter.cpp
-    rule_parser.cpp
-    run_fixture.cpp
-    runner.cpp
-    utils.cpp
-    yaml_helpers.cpp)
+file(GLOB_RECURSE LIBDDWAF_BENCHMARK_SOURCE *.cpp)
 
 add_executable(benchmark ${LIBDDWAF_BENCHMARK_SOURCE})
 target_compile_options(benchmark PRIVATE $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>)
@@ -27,13 +19,3 @@ add_custom_target(run_benchmark
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 add_dependencies(run_benchmark benchmark)
-
-set(LIBDDWAF_OBJECT_GENERATOR_SOURCE 
-    object_generator.cpp
-    random.cpp
-    utils.cpp
-    yaml_helpers.cpp)
-
-add_executable(object_generator ${LIBDDWAF_OBJECT_GENERATOR_SOURCE})
-target_link_libraries(object_generator PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson m)
-target_include_directories(object_generator PRIVATE ${libddwaf_SOURCE_DIR}/src)

@@ -20,7 +20,6 @@ enum class output_fmt { none, human, csv, json };
 
 struct settings {
     std::vector<fs::path> scenarios;
-    std::vector<fs::path> fixtures;
     output_fmt format{output_fmt::json};
     fs::path output_file;
     unsigned runs{1};
