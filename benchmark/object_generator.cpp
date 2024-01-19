@@ -4,11 +4,12 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include <iostream>
-#include <stack>
-#include <yaml-cpp/yaml.h>
+#include <deque>
+#include <string>
+#include <vector>
+#include <ddwaf.h>
+#include <yaml-cpp/node/node.h>
 
-#include "object_generator.hpp"
 #include "random.hpp"
 #include "utils.hpp"
 #include "yaml_helpers.hpp"
@@ -92,53 +93,45 @@ void generate_object(ddwaf_object &o)
     struct queue_node {
         ddwaf_object *object;
         unsigned level;
+        unsigned intermediate;
+        unsigned terminal;
     };
 
     std::deque<queue_node> object_queue;
     generate_container(o);
-    object_queue.emplace_back(&o, 0);
+    object_queue.emplace_back(&o, 0, levels[0].intermediate, levels[0].terminal);
 
     for (; !object_queue.empty(); object_queue.pop_front()) {
         auto &node = object_queue.front();
-        auto &next_nodes = levels[node.level];
 
-        unsigned terminal = 0;
-        unsigned intermediate = 0;
-        if (node.level == 0) {
-            terminal = next_nodes.terminal;
-            intermediate = next_nodes.intermediate;
-        } else {
-            terminal = next_nodes.terminal > 0 ? 1 + random::get(next_nodes.terminal) : 0;
-            intermediate = next_nodes.intermediate > 0 ? 1 + random::get(next_nodes.intermediate) : 0;
-        }
-        next_nodes.terminal -= terminal;
-        next_nodes.intermediate -= intermediate;
-
-        while ((terminal + intermediate) > 0) {
+        while ((node.terminal + node.intermediate) > 0) {
             ddwaf_object next;
 
-            bool build_terminal = random::get_bool() ? terminal > 0 : intermediate == 0;
+            bool build_terminal = random::get_bool() ? node.terminal > 0 : node.intermediate == 0;
 
             if (build_terminal) {
                 generate_string_object(next);
-                --terminal;
+                --node.terminal;
             } else {
                 generate_container(next);
-                --intermediate;
+                --node.intermediate;
             }
 
             if (node.object->type == DDWAF_OBJ_MAP) {
                 auto *str = generate_random_string(max_key_length);
                 ddwaf_object_map_addl_nc(node.object, str, max_key_length, &next);
-            } else {
+
                 ddwaf_object_array_add(node.object, &next);
             }
         }
 
+        auto [next_intermediate, next_terminal] = levels[node.level + 1];
+        auto next_level = generate_node_distribution(node.object->nbEntries, next_intermediate, next_terminal);
+
         for (unsigned i = 0; i < node.object->nbEntries; ++i) {
             auto type = node.object->array[i].type;
             if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
-                object_queue.emplace_back(&node.object->array[i], node.level + 1);
+                object_queue.emplace_back(&node.object->array[i], node.level + 1, next_level[i].intermediate, next_level[i].terminal);
             }
         }
     }
@@ -146,66 +139,17 @@ void generate_object(ddwaf_object &o)
 
 } // namespace
 
-object_generator::object_generator(
-    const std::vector<std::string_view> &addresses, const YAML::Node &spec)
-{
-    for (auto addr : addresses) { addresses_[addr] = {}; }
+ddwaf_object generate_root_object(const std::vector<std::string_view> &addresses) {
+    ddwaf_object root;
+    ddwaf_object_map(&root);
 
-    const YAML::Node &test_vectors = spec["vectors"];
-    if (!test_vectors) {
-        return;
+    for (const auto addr : addresses) {
+        ddwaf_object value;
+        generate_object(value);
+        ddwaf_object_map_add(&root, addr.data(), &value);
     }
 
-    for (auto it = test_vectors.begin(); it != test_vectors.end(); ++it) {
-        auto key = it->first.as<std::string>();
-        auto &current_values = addresses_[key];
-
-        auto array = it->second;
-        for (auto value_it = array.begin(); value_it != array.end(); ++value_it) {
-            auto vector = value_it->as<ddwaf_object>();
-            objects_.push_back(vector);
-            current_values.push_back(vector);
-        }
-    }
-}
-
-object_generator::~object_generator()
-{
-    for (auto &obj : objects_) { ddwaf_object_free(&obj); }
-}
-
-std::vector<ddwaf_object> object_generator::operator()(
-    object_generator::generator_type type, size_t n) const
-{
-    std::vector<ddwaf_object> output(n);
-
-    while (n-- > 0) {
-        ddwaf_object &root = output[n];
-        ddwaf_object_map(&root);
-
-        for (const auto &[addr, valid_values] : addresses_) {
-            ddwaf_object value;
-
-            if (type == generator_type::valid) {
-                if (valid_values.empty()) {
-                    continue;
-                }
-
-                std::size_t index = random::get() % valid_values.size();
-                value = utils::object_dup(valid_values[index]);
-            } else {
-                generate_object(value);
-            }
-
-            ddwaf_object_map_add(&root, addr.data(), &value);
-        }
-    }
-
-    if (output.empty() && type == generator_type::valid) {
-        throw std::runtime_error("No valid values available");
-    }
-
-    return output;
+    return root;
 }
 
 } // namespace ddwaf::benchmark
@@ -313,8 +257,32 @@ std::vector<ddwaf_object> object_generator::operator()(
 
 int main(int argc, char *argv[])
 {
+    std::vector<std::string_view> default_addresses{
+         "graphql.server.all_resolvers",
+         "graphql.server.resolver",
+         "grpc.server.request.message",
+         "grpc.server.request.metadata",
+         "http.client_ip",
+         "server.request.body",
+         "server.request.cookies",
+         "server.request.headers.no_cookies",
+         "server.request.headers.user-agent",
+         "server.request.path_params",
+         "server.request.query",
+         "server.request.uri.raw",
+         "server.response.body",
+         "server.response.headers.no_cookies",
+         "server.response.status",
+         "usr.id",
+         "waf.context.duration",
+         "waf.context.events.length",
+         "waf.context.processor",
+         "waf.context.processor.extract-schema"
+    };
+
     std::vector<std::string> args(argv, argv + argc);
     auto s = utils::parse_args(args);
 
+    ddwaf::benchmark::generate_root_object(default_addresses);
     return EXIT_SUCCESS;
 }
