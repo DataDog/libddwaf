@@ -18,6 +18,7 @@
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
+#include "matcher/is_passwd.hpp"
 #include "matcher/is_sqli.hpp"
 #include "matcher/is_xss.hpp"
 #include "matcher/phrase_match.hpp"
@@ -82,6 +83,8 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
         matcher = std::make_unique<matcher::is_xss>();
     } else if (name == "is_sqli") {
         matcher = std::make_unique<matcher::is_sqli>();
+    } else if (name == "is_passwd") {
+        matcher = std::make_unique<matcher::is_passwd>();
     } else if (name == "ip_match") {
         auto it = params.find("list");
         if (it == params.end()) {
