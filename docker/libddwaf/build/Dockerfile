@@ -3,6 +3,7 @@ FROM datadog/libddwaf:toolchain AS libddwaf_build
 ARG ARCH
 
 COPY . /libddwaf
+RUN apt-get update ; apt-get install -y cargo
 
 RUN mkdir -p build
 RUN cd build && cmake \
