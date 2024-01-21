@@ -6,6 +6,7 @@ COPY . /libddwaf
 
 RUN wget https://sh.rustup.rs -O rustup.sh && chmod u+x rustup.sh && ./rustup.sh -y
 RUN ls /root/.cargo/bin | xargs bash -c 'ln -s /root/.cargo/bin/$0 /usr/bin/$0'
+RUN rustup target add x86_64-unknown-linux-musl
 
 RUN mkdir -p build
 RUN cd build && cmake \
