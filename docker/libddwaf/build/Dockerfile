@@ -4,7 +4,7 @@ ARG ARCH
 
 COPY . /libddwaf
 
-RUN wget https://sh.rustup.rs -O rustup.sh && chmod u+x rustup.sh && ./rustup.sh -y -t x86_64-unknown-linux-musl
+RUN wget https://sh.rustup.rs -O rustup.sh && chmod u+x rustup.sh && ./rustup.sh -y -t x86_64-unknown-linux-musl aarch64-unknown-linux-musl armv7-unknown-linux-musleabihf i386-unknown-linux-musl
 RUN ls /root/.cargo/bin | xargs bash -c 'echo "Linking $0" ; ln -s /root/.cargo/bin/$0 /usr/bin/$0'
 
 RUN mkdir -p build
