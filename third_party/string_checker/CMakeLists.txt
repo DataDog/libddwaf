@@ -6,8 +6,8 @@ add_custom_target(
     COMMAND cargo build --release
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Compiling Rust library"
+    BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/target/release/libstring_checker.a
 )
-set_target_properties(libstring_checker_build PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 add_library(libstring_checker STATIC IMPORTED GLOBAL)
 set_target_properties(libstring_checker PROPERTIES  IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/target/release/libstring_checker.a)
