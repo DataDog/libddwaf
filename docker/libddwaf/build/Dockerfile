@@ -3,7 +3,9 @@ FROM datadog/libddwaf:toolchain AS libddwaf_build
 ARG ARCH
 
 COPY . /libddwaf
-RUN apt-get update ; apt-get install -y cargo
+
+RUN wget https://sh.rustup.rs -O rustup.sh && chmod u+x rustup.sh && ./rustup.sh -y
+RUN ls /root/.cargo/bin | xargs bash -c 'ln -s /root/.cargo/bin/$0 /usr/bin/$0'
 
 RUN mkdir -p build
 RUN cd build && cmake \
