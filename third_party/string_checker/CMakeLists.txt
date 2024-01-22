@@ -19,7 +19,7 @@ if (APPLE AND "${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
 endif()
 
 if (MINGW)
-    set(BUILD_TARGET "x86_64-windows-pc-gnu")
+    set(BUILD_TARGET "x86_64-pc-windows-gnu")
 endif()
 
 if (NOT "${BUILD_TARGET}" STREQUAL "")
