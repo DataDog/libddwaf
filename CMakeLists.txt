@@ -70,13 +70,11 @@ if(LINUX)
         $<$<BOOL:${LIBRT}>:rt>
         $<$<BOOL:${LIBDL}>:dl>
         $<$<BOOL:${LIBM}>:m>)
-elseif(WIN32 OR MINGW)
-    list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 elseif(MSVC)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES NtDll UserEnv Bcrypt crypt32 wsock32 ws2_32)
 endif()
 
-set(LIBDDWAF_PRIVATE_LIBRARIES "libstring_checker")
+set(LIBDDWAF_PRIVATE_LIBRARIES libstring_checker)
 if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()
