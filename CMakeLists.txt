@@ -70,7 +70,7 @@ if(LINUX)
         $<$<BOOL:${LIBRT}>:rt>
         $<$<BOOL:${LIBDL}>:dl>
         $<$<BOOL:${LIBM}>:m>)
-elseif(WIN32)
+elseif(WIN32 OR MINGW)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
 

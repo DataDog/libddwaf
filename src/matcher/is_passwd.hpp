@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <string_view>
 #include <string_checker.h>
+#include <string_view>
 
 #include "matcher/base.hpp"
 
@@ -26,14 +26,11 @@ protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "is_passwd"; }
 
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl()
-    {
-        return DDWAF_OBJ_STRING;
-    }
+    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view obtained) const
     {
-        return {check_string(obtained.data()), std::string{obtained}} ;
+        return {check_string(obtained.data()), std::string{obtained}};
     }
 
     friend class base_impl<is_passwd>;
