@@ -28,22 +28,22 @@ if (NOT "${BUILD_TARGET}" STREQUAL "")
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Release OR CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
-    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/release/")
+    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}release")
     set(CARGO_BUILD ${CARGO_BUILD} --release)
 else()
-    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/debug/")
+    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}debug")
 endif()
-set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/libstring_checker${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/string_checker${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 add_custom_target(
-    libstring_checker_build
+    string_checker_build
     COMMAND ${CARGO_BUILD}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Compiling Rust library"
     BYPRODUCTS ${BUILD_BYPRODUCT}
 )
 
-add_library(libstring_checker STATIC IMPORTED GLOBAL)
-set_target_properties(libstring_checker PROPERTIES  IMPORTED_LOCATION ${BUILD_BYPRODUCT})
-target_include_directories(libstring_checker INTERFACE include)
-add_dependencies(libstring_checker libstring_checker_build)
+add_library(string_checker STATIC IMPORTED GLOBAL)
+set_target_properties(string_checker PROPERTIES  IMPORTED_LOCATION ${BUILD_BYPRODUCT})
+target_include_directories(string_checker INTERFACE include)
+add_dependencies(string_checker string_checker_build)
