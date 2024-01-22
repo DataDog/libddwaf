@@ -5,6 +5,8 @@ FROM alpine:3.14 AS build
 RUN apk --update-cache add cmake make mingw-w64-gcc mingw-w64-winpthreads git rustup
 RUN rustup-init -y --target x86_64-pc-windows-gnu
 
+RUN ls /root/.cargo/bin | xargs bash -c 'echo "Linking $0" ; ln -s /root/.cargo/bin/$0 /usr/bin/$0'
+
 ARG BUILD_TYPE=Release
 COPY . /usr/local/src/libddwaf
 
