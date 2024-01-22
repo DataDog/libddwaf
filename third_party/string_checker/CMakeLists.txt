@@ -2,7 +2,7 @@
 set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES target)
 
 set(CARGO_BUILD cargo build)
-set(BUILD_BYPRODUCT "${CMAKE_CURRENT_SOURCE_DIR}/target/")
+set(BUILD_BYPRODUCT "${CMAKE_CURRENT_SOURCE_DIR}/target")
 
 if (LINUX)
     if (NOT "${CMAKE_C_COMPILER_TARGET}" STREQUAL "")
@@ -23,18 +23,22 @@ if (MINGW)
 endif()
 
 if (NOT "${BUILD_TARGET}" STREQUAL "")
-    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/${BUILD_TARGET}/")
+    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/${BUILD_TARGET}")
     set(CARGO_BUILD ${CARGO_BUILD} --target ${BUILD_TARGET})
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Release OR CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
-    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/release/")
+    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/release")
     set(CARGO_BUILD ${CARGO_BUILD} --release)
 else()
-    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/debug/")
+    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/debug")
 endif()
-set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/libstring_checker${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
+if (MSVC)
+    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/string_checker${CMAKE_STATIC_LIBRARY_SUFFIX}")
+else()
+    set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/libstring_checker${CMAKE_STATIC_LIBRARY_SUFFIX}")
+endif()
 add_custom_target(
     libstring_checker_build
     COMMAND ${CARGO_BUILD}
