@@ -73,7 +73,7 @@ if(LINUX)
 elseif(WIN32 OR MINGW)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 elseif(MSVC)
-    list(APPEND LIBDDWAF_INTERFACE_LIBRARIES userenv.lib ntdll.lib bcrypt.lib)
+    list(APPEND LIBDDWAF_INTERFACE_LIBRARIES NtDll UserEnv Bcrypt crypt32 wsock32 ws2_32)
 endif()
 
 set(LIBDDWAF_PRIVATE_LIBRARIES "libstring_checker")
