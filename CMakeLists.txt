@@ -72,6 +72,8 @@ if(LINUX)
         $<$<BOOL:${LIBM}>:m>)
 elseif(WIN32 OR MINGW)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
+elseif(MSVC)
+    list(APPEND LIBDDWAF_INTERFACE_LIBRARIES userenv.lib ntdll.lib bcrypt.lib)
 endif()
 
 set(LIBDDWAF_PRIVATE_LIBRARIES "libstring_checker")
