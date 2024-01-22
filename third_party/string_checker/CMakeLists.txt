@@ -6,7 +6,11 @@ set(BUILD_BYPRODUCT "${CMAKE_CURRENT_SOURCE_DIR}/target/")
 
 if (LINUX)
     if (NOT "${CMAKE_C_COMPILER_TARGET}" STREQUAL "")
-        string(REPLACE "none" "unknown" BUILD_TARGET ${CMAKE_C_COMPILER_TARGET})
+        if ("{CMAKE_C_COMPILER_TARGET}" STREQUAL "i386-none-linux-musl")
+            set(BUILD_TARGET "i686-unknown-linux-musl")
+        else()
+            string(REPLACE "none" "unknown" BUILD_TARGET ${CMAKE_C_COMPILER_TARGET})
+        endif()
     endif()
 
     if (NOT "${BUILD_TARGET}" STREQUAL "")
