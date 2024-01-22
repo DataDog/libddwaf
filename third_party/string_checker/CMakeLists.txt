@@ -18,6 +18,10 @@ if (APPLE AND "${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
     set(BUILD_TARGET "aarch64-apple-darwin")
 endif()
 
+if (MINGW)
+    set(BUILD_TARGET "x86_64-windows-pc-gnu")
+endif()
+
 if (NOT "${BUILD_TARGET}" STREQUAL "")
     set(BUILD_BYPRODUCT "${BUILD_BYPRODUCT}/${BUILD_TARGET}/")
     set(CARGO_BUILD ${CARGO_BUILD} --target ${BUILD_TARGET})

@@ -2,7 +2,8 @@
 # win64)
 FROM alpine:3.14 AS build
 
-RUN apk --update-cache add cmake make mingw-w64-gcc mingw-w64-winpthreads git
+RUN apk --update-cache add cmake make mingw-w64-gcc mingw-w64-winpthreads git rustup
+RUN rustup-init -y --target x86_64-pc-windows-gnu
 
 ARG BUILD_TYPE=Release
 COPY . /usr/local/src/libddwaf
