@@ -9,6 +9,8 @@
 #include <charconv>
 #include <ddwaf.h>
 #include <filesystem>
+#include <map>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -17,6 +19,7 @@ namespace ddwaf::benchmark::utils {
 std::string object_to_string(const ddwaf_object &o) noexcept;
 ddwaf_object object_dup(const ddwaf_object &o) noexcept;
 std::string read_file(const fs::path &filename);
+std::map<std::string_view, std::string_view> parse_args(const std::vector<std::string> &args);
 
 inline void exit_failure()
 {

@@ -15,8 +15,8 @@ namespace ddwaf::benchmark {
 
 class run_fixture : public fixture_base {
 public:
-    run_fixture(ddwaf_handle handle, ddwaf_object &object);
-    ~run_fixture() override = default;
+    run_fixture(ddwaf_handle handle, ddwaf_object object);
+    ~run_fixture() override { ddwaf_object_free(&object_); }
 
     run_fixture(const run_fixture &) = delete;
     run_fixture &operator=(const run_fixture &) = delete;
@@ -31,7 +31,7 @@ public:
     void tear_down() override;
 
 protected:
-    ddwaf_object &object_;
+    ddwaf_object object_;
     ddwaf_handle handle_{nullptr};
     ddwaf_context ctx_{nullptr};
 };
