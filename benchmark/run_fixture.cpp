@@ -13,10 +13,9 @@
 
 namespace ddwaf::benchmark {
 
-run_fixture::run_fixture(ddwaf_handle handle, ddwaf_object &object)
+run_fixture::run_fixture(ddwaf_handle handle, ddwaf_object object)
     : object_(object), handle_(handle)
 {}
-
 
 bool run_fixture::set_up()
 {

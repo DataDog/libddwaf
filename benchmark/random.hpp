@@ -35,7 +35,6 @@ public:
         return (*rng_)() % mod;
     }
 
-
     static bool get_bool()
     {
         if (!rng_) {

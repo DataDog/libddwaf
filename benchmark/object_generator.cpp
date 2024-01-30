@@ -4,24 +4,16 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include <iostream>
-#include <stack>
-#include <yaml-cpp/yaml.h>
+#include <ddwaf.h>
+#include <deque>
+#include <vector>
+#include <yaml-cpp/node/node.h>
 
 #include "object_generator.hpp"
 #include "random.hpp"
-#include "utils.hpp"
-#include "yaml_helpers.hpp"
 
 namespace ddwaf::benchmark {
-
 namespace {
-
-constexpr unsigned max_terminal_nodes = 100;
-constexpr unsigned max_intermediate_nodes = 500;
-constexpr unsigned max_depth = 10;
-constexpr unsigned max_string_length = 4096;
-constexpr unsigned max_key_length = 128;
 
 char *generate_random_string(std::size_t length)
 {
@@ -38,13 +30,14 @@ char *generate_random_string(std::size_t length)
     return str;
 }
 
-void generate_string_object(ddwaf_object &o)
+void generate_string_object(ddwaf_object &o, std::size_t length)
 {
-    char *str = generate_random_string(max_string_length);
-    ddwaf_object_stringl_nc(&o, str, max_string_length);
+    char *str = generate_random_string(length);
+    ddwaf_object_stringl_nc(&o, str, length);
 }
 
-void generate_container(ddwaf_object &o) {
+void generate_container(ddwaf_object &o)
+{
     if (random::get_bool()) {
         ddwaf_object_array(&o);
     } else {
@@ -57,86 +50,100 @@ struct level_nodes {
     unsigned terminal{0};
 };
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-std::vector<level_nodes> generate_node_distribution(unsigned nodes, unsigned intermediate, unsigned terminal)
+void generate_node_distribution(std::vector<level_nodes> &slots, unsigned nodes, auto getter)
 {
-    std::vector<level_nodes> levels;
-    levels.resize(nodes);
-
-    // Distribute intermediate nodes, this doesn't apply to the last level
-    while (intermediate > 0) {
-        for (unsigned i = 0; intermediate > 0 && i < (max_depth - 1); ++i) {
-            auto extra_nodes = 1 + random::get(intermediate);
-            levels[i].intermediate += extra_nodes;
-            intermediate -= extra_nodes;
-        }
+    for (unsigned i = 0; nodes > 0; i = (i + 1) % slots.size()) {
+        auto extra_nodes = random::get(nodes + 1);
+        getter(slots[i]) += extra_nodes;
+        nodes -= extra_nodes;
     }
+}
 
-    while (terminal > 0) {
-        for (unsigned i = 0; terminal > 0 && i < max_depth; ++i) {
-            auto extra_nodes = 1 + random::get(terminal);
-            levels[i].terminal += extra_nodes;
-            terminal -= extra_nodes;
-        }
-    }
+std::vector<level_nodes> generate_vertical_distribution(
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    unsigned depth, unsigned intermediate, unsigned terminal)
+{
+    std::vector<level_nodes> levels{depth, {1, 0}};
+    levels.back().intermediate = 0;
+    intermediate -= intermediate < depth ? 0 : (depth - 1);
+
+    // Distribute the remaining intermediate nodes
+    generate_node_distribution(
+        levels, intermediate, [](auto &node) -> unsigned & { return node.intermediate; });
+    generate_node_distribution(
+        levels, terminal, [](auto &node) -> unsigned & { return node.terminal; });
 
     return levels;
 }
 
-void generate_object(ddwaf_object &o)
+std::vector<level_nodes> generate_horizontal_distribution(
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    unsigned nodes, unsigned intermediate, unsigned terminal)
 {
-    auto levels = generate_node_distribution(max_depth, max_intermediate_nodes, max_terminal_nodes);
+    std::vector<level_nodes> slots{nodes, level_nodes{}};
 
-    struct queue_node {
-        ddwaf_object *object;
-        unsigned level;
-    };
+    // Distribute intermediate nodes, this doesn't apply to the last level
+    generate_node_distribution(
+        slots, intermediate, [](auto &node) -> unsigned & { return node.intermediate; });
+    generate_node_distribution(
+        slots, terminal, [](auto &node) -> unsigned & { return node.terminal; });
+
+    return slots;
+}
+
+struct queue_node {
+    ddwaf_object *object;
+    unsigned level;
+    unsigned intermediate;
+    unsigned terminal;
+};
+
+void generate_objects(ddwaf_object &root, const object_specification &s)
+{
+    generate_container(root);
+
+    auto levels =
+        generate_vertical_distribution(s.depth, s.intermediate_nodes - 1, s.terminal_nodes);
 
     std::deque<queue_node> object_queue;
-    generate_container(o);
-    object_queue.emplace_back(&o, 0);
+    generate_container(root);
+    object_queue.emplace_back(&root, 0, levels[0].intermediate, levels[0].terminal);
 
     for (; !object_queue.empty(); object_queue.pop_front()) {
-        auto &node = object_queue.front();
-        auto &next_nodes = levels[node.level];
-
-        unsigned terminal = 0;
-        unsigned intermediate = 0;
-        if (node.level == 0) {
-            terminal = next_nodes.terminal;
-            intermediate = next_nodes.intermediate;
-        } else {
-            terminal = next_nodes.terminal > 0 ? 1 + random::get(next_nodes.terminal) : 0;
-            intermediate = next_nodes.intermediate > 0 ? 1 + random::get(next_nodes.intermediate) : 0;
-        }
-        next_nodes.terminal -= terminal;
-        next_nodes.intermediate -= intermediate;
+        auto &[object, level, intermediate, terminal] = object_queue.front();
+        unsigned intermediate_nodes_in_current = intermediate;
 
         while ((terminal + intermediate) > 0) {
             ddwaf_object next;
 
-            bool build_terminal = random::get_bool() ? terminal > 0 : intermediate == 0;
-
-            if (build_terminal) {
-                generate_string_object(next);
+            if ((random::get_bool() && terminal > 0) || intermediate == 0) {
+                generate_string_object(next, s.string_length);
                 --terminal;
             } else {
                 generate_container(next);
                 --intermediate;
             }
 
-            if (node.object->type == DDWAF_OBJ_MAP) {
-                auto *str = generate_random_string(max_key_length);
-                ddwaf_object_map_addl_nc(node.object, str, max_key_length, &next);
+            if (object->type == DDWAF_OBJ_MAP) {
+                auto *str = generate_random_string(s.key_length);
+                ddwaf_object_map_addl_nc(object, str, s.key_length, &next);
             } else {
-                ddwaf_object_array_add(node.object, &next);
+                ddwaf_object_array_add(object, &next);
             }
         }
 
-        for (unsigned i = 0; i < node.object->nbEntries; ++i) {
-            auto type = node.object->array[i].type;
-            if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
-                object_queue.emplace_back(&node.object->array[i], node.level + 1);
+        if (s.depth > (level + 1) && intermediate_nodes_in_current > 0) {
+            auto [next_intermediate, next_terminal] = levels[level + 1];
+            auto next_level = generate_horizontal_distribution(
+                intermediate_nodes_in_current, next_intermediate, next_terminal);
+
+            for (unsigned i = 0, j = 0; i < object->nbEntries; ++i) {
+                auto type = object->array[i].type;
+                if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
+                    object_queue.emplace_back(&object->array[i], level + 1,
+                        next_level[j].intermediate, next_level[j].terminal);
+                    ++j;
+                }
             }
         }
     }
@@ -144,66 +151,23 @@ void generate_object(ddwaf_object &o)
 
 } // namespace
 
-object_generator::object_generator(
-    const std::vector<std::string_view> &addresses, const YAML::Node &spec)
+ddwaf_object object_generator::operator()(object_specification spec) const
 {
-    for (auto addr : addresses) { addresses_[addr] = {}; }
+    ddwaf_object root;
+    ddwaf_object_map(&root);
 
-    const YAML::Node &test_vectors = spec["vectors"];
-    if (!test_vectors) {
-        return;
-    }
-
-    for (auto it = test_vectors.begin(); it != test_vectors.end(); ++it) {
-        auto key = it->first.as<std::string>();
-        auto &current_values = addresses_[key];
-
-        auto array = it->second;
-        for (auto value_it = array.begin(); value_it != array.end(); ++value_it) {
-            auto vector = value_it->as<ddwaf_object>();
-            objects_.push_back(vector);
-            current_values.push_back(vector);
+    for (const auto addr : addresses_) {
+        ddwaf_object value;
+        if (spec.depth == 0) {
+            generate_string_object(value, spec.string_length);
+        } else {
+            generate_objects(value, spec);
         }
-    }
-}
 
-object_generator::~object_generator()
-{
-    for (auto &obj : objects_) { ddwaf_object_free(&obj); }
-}
-
-std::vector<ddwaf_object> object_generator::operator()(
-    object_generator::generator_type type, size_t n) const
-{
-    std::vector<ddwaf_object> output(n);
-
-    while (n-- > 0) {
-        ddwaf_object &root = output[n];
-        ddwaf_object_map(&root);
-
-        for (const auto &[addr, valid_values] : addresses_) {
-            ddwaf_object value;
-
-            if (type == generator_type::valid) {
-                if (valid_values.empty()) {
-                    continue;
-                }
-
-                std::size_t index = random::get() % valid_values.size();
-                value = utils::object_dup(valid_values[index]);
-            } else {
-                generate_object(value);
-            }
-
-            ddwaf_object_map_add(&root, addr.data(), &value);
-        }
+        ddwaf_object_map_add(&root, addr.data(), &value);
     }
 
-    if (output.empty() && type == generator_type::valid) {
-        throw std::runtime_error("No valid values available");
-    }
-
-    return output;
+    return root;
 }
 
 } // namespace ddwaf::benchmark

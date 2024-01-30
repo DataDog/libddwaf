@@ -21,6 +21,7 @@
 #include <ddwaf.h>
 #include <yaml-cpp/node/node.h>
 
+#include "object_generator.hpp"
 #include "output_formatter.hpp"
 #include "random.hpp"
 #include "rule_parser.hpp"
@@ -35,15 +36,16 @@ namespace fs = std::filesystem;
 namespace utils = ddwaf::benchmark::utils;
 
 using test_result = ddwaf::benchmark::runner::test_result;
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void print_help_and_exit(std::string_view name, std::string_view error = {})
 {
     std::cerr << "Usage: " << name << " [OPTION]...\n"
               << "    --scenarios VALUE     Scenarios repository path\n"
-              << "    --fixtures VALUE      Common fixtures repository path\n"
               << "    --runs VALUE          Number of runs per scenario\n"
               << "    --iterations VALUE    Number of iterations per run\n"
               << "    --warmup VALUE        Number of warmup iterations per run\n"
+              << "    --seed VALUE Seed for the random number generator\n"
               << "    --format VALUE        Output format: csv, json, human, none\n"
               << "    --output VALUE        Results output file\n";
 
@@ -54,52 +56,17 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
     utils::exit_success();
 }
 
-std::map<std::string_view, std::string_view> parse_args(const std::vector<std::string> &args)
-{
-    std::map<std::string_view, std::string_view> parsed_args;
-
-    for (std::size_t i = 1; i < args.size(); i++) {
-        std::string_view arg = args[i];
-        if (arg.substr(0, 2) != "--") {
-            continue;
-        }
-
-        auto assignment = arg.find('=');
-        if (assignment != std::string::npos) {
-            std::string_view opt_name = arg.substr(2, assignment - 2);
-            parsed_args[opt_name] = arg.substr(assignment + 1);
-        } else {
-            std::string_view opt_name = arg.substr(2);
-            parsed_args[opt_name] = {};
-
-            if ((i + 1) < args.size()) {
-                std::string_view value = args[i + 1];
-                if (value.substr(0, 2) != "--") {
-                    parsed_args[opt_name] = value;
-                }
-            }
-        }
-    }
-
-    return parsed_args;
-}
-
-bool contains(std::map<std::string_view, std::string_view> &opts, std::string_view name)
-{
-    return opts.find(name) != opts.end();
-}
-
 benchmark::settings generate_settings(const std::vector<std::string> &args)
 {
     benchmark::settings s;
 
-    auto opts = parse_args(args);
+    auto opts = utils::parse_args(args);
 
-    if (contains(opts, "help")) {
+    if (opts.contains("help")) {
         print_help_and_exit(args[0]);
     }
 
-    if (!contains(opts, "scenarios")) {
+    if (!opts.contains("scenarios")) {
         print_help_and_exit(args[0], "Missing option --scenarios");
     } else {
         auto root = opts["scenarios"];
@@ -116,22 +83,7 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
         }
     }
 
-    if (contains(opts, "fixtures")) {
-        auto root = opts["fixtures"];
-        if (fs::is_directory(root)) {
-            for (const auto &dir_entry : fs::directory_iterator{root}) {
-                const fs::path &scenario_path = dir_entry;
-
-                if (is_regular_file(scenario_path) && scenario_path.extension() == ".json") {
-                    s.fixtures.emplace_back(scenario_path);
-                }
-            }
-        } else {
-            s.fixtures.emplace_back(root);
-        }
-    }
-
-    if (contains(opts, "format")) {
+    if (opts.contains("format")) {
         auto format = opts["format"];
         if (format == "csv") {
             s.format = benchmark::output_fmt::csv;
@@ -146,25 +98,30 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
         }
     }
 
-    if (s.format != benchmark::output_fmt::none && contains(opts, "output")) {
+    if (opts.contains("seed")) {
+        auto seed = utils::from_string<unsigned>(opts["seed"]);
+        benchmark::random::seed(seed);
+    }
+
+    if (s.format != benchmark::output_fmt::none && opts.contains("output")) {
         s.output_file = opts["output"];
     }
 
-    if (contains(opts, "runs")) {
+    if (opts.contains("runs")) {
         s.runs = utils::from_string<unsigned>(opts["runs"]);
         if (s.runs == 0) {
             print_help_and_exit(args[0], "Runs should be a positive number");
         }
     }
 
-    if (contains(opts, "iterations")) {
+    if (opts.contains("iterations")) {
         s.iterations = utils::from_string<unsigned>(opts["iterations"]);
         if (s.iterations == 0) {
             print_help_and_exit(args[0], "Iterations should be a positive number");
         }
     }
 
-    if (contains(opts, "warmup")) {
+    if (opts.contains("warmup")) {
         s.warmup_iterations = utils::from_string<unsigned>(opts["warmup"]);
     }
 
@@ -177,15 +134,6 @@ int main(int argc, char *argv[])
 
     auto s = generate_settings(args);
 
-    std::unordered_map<std::string, ddwaf_object> common_fixtures;
-    for (const auto &fixture : s.fixtures) {
-        YAML::Node spec = YAML::Load(utils::read_file(fixture));
-        common_fixtures.reserve(common_fixtures.size() + spec.size());
-        for (auto it = spec.begin(); it != spec.end(); ++it) {
-            common_fixtures.emplace(it->first.as<std::string>(), it->second.as<ddwaf_object>());
-        }
-    }
-
     std::map<std::string, std::vector<test_result>> all_results;
     for (unsigned i = 0; i < s.runs; ++i) {
         for (const auto &scenario : s.scenarios) {
@@ -193,15 +141,6 @@ int main(int argc, char *argv[])
 
             auto name = spec["scenario"].as<std::string>();
             auto ruleset = spec["ruleset"].as<ddwaf_object>();
-
-            std::unordered_map<std::string, ddwaf_object> fixtures;
-            auto fixtures_spec = spec["fixtures"];
-            if (fixtures_spec.IsDefined()) {
-                fixtures.reserve(fixtures_spec.size());
-                for (auto it = fixtures_spec.begin(); it != fixtures_spec.end(); ++it) {
-                    fixtures.emplace(it->first.as<std::string>(), it->second.as<ddwaf_object>());
-                }
-            }
 
             ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
             ddwaf_handle handle = ddwaf_init(&ruleset, &cfg, nullptr);
@@ -211,13 +150,20 @@ int main(int argc, char *argv[])
                 utils::exit_failure();
             }
 
-            benchmark::runner runner(std::move(name), s);
-            for (auto &[k, v] : common_fixtures) {
-                runner.register_fixture<benchmark::run_fixture>(k, handle, v);
-            }
+            uint32_t addrs_len;
+            const auto *const addrs = ddwaf_known_addresses(handle, &addrs_len);
+            std::vector<std::string_view> addresses{addrs, addrs + static_cast<size_t>(addrs_len)};
 
-            for (auto &[k, v] : fixtures) {
-                runner.register_fixture<benchmark::run_fixture>(k, handle, v);
+            benchmark::runner runner(std::move(name), s);
+            benchmark::object_generator generator(addresses);
+            runner.register_fixture<benchmark::run_fixture>("random", handle, generator());
+
+            auto fixtures_spec = spec["fixtures"];
+            if (fixtures_spec.IsDefined()) {
+                for (auto it = fixtures_spec.begin(); it != fixtures_spec.end(); ++it) {
+                    runner.register_fixture<benchmark::run_fixture>(
+                        it->first.as<std::string>(), handle, it->second.as<ddwaf_object>());
+                }
             }
 
             auto results = runner.run();
@@ -231,16 +177,8 @@ int main(int argc, char *argv[])
                 }
             }
 
-            for (auto &[k, v] : fixtures) {
-                ddwaf_object_free(&v);
-            }
-
             ddwaf_destroy(handle);
         }
-    }
-
-    for (auto &[k, v] : common_fixtures) {
-        ddwaf_object_free(&v);
     }
 
     benchmark::output_results(s, all_results);
