@@ -39,7 +39,7 @@ public:
 
     static constexpr auto arguments()
     {
-        return std::array<argument_specification, 1>{{"inputs", true, false}};
+        return std::array<argument_specification, 1>{{{"inputs", true, false}}};
     }
 
 protected:

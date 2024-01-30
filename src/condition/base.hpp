@@ -75,29 +75,6 @@ struct argument_definition {
     std::vector<target_definition> targets;
 };
 
-template <typename Char, Char... Cs> struct constexpr_string {
-    constexpr constexpr_string() noexcept = default;
-    static constexpr size_t length() noexcept { return sizeof...(Cs); }
-    constexpr operator const Char *() const noexcept { return value; }
-    constexpr static const Char value[]{Cs..., 0};
-};
-
-// NOLINTNEXTLINE
-template <typename Char, Char... Cs> constexpr auto operator""_cs() -> constexpr_string<Char, Cs...>
-{
-    return {};
-}
-
-template <const char *...Names> struct param_names_spec {
-    static constexpr size_t size() { return sizeof...(Names); }
-    static constexpr std::array<std::string_view, sizeof...(Names)> names = {Names...};
-    template <size_t I> static constexpr std::string_view get()
-    {
-        static_assert(I < sizeof...(Names), "Index out of bounds");
-        return std::get<I>(names);
-    }
-};
-
 template <typename T> struct argument {
     std::string_view address{};
     std::span<const std::string> key_path;
@@ -222,7 +199,7 @@ public:
             std::make_index_sequence<func_traits::nargs>{});
         // static_assert(sizeof(decltype(args)) == 0);
         return std::apply(
-            [this, &cache](auto &&...args) {
+            [this](auto &&...args) {
                 return static_cast<const Self *>(this)->eval_impl(
                     std::forward<decltype(args)>(args)...);
             },
@@ -231,18 +208,19 @@ public:
 
     static constexpr auto arguments()
     {
-        constexpr auto param_names = typename Self::param_names{};
+        constexpr auto param_names = Self::param_names;
         return generate_argument_spec(std::make_index_sequence<param_names.size()>());
     }
 
     template <size_t... Is>
     static constexpr auto generate_argument_spec(std::index_sequence<Is...>) // NOLINT
     {
-        constexpr auto param_names = typename Self::param_names{};
+        constexpr auto param_names = Self::param_names;
         using func_traits = decltype(make_traits(&Self::eval_impl));
+        static_assert(param_names.size() <= func_traits::nargs);
         return std::array<argument_specification, sizeof...(Is)>{{
             {
-                param_names.template get<Is>(),
+                param_names[Is],
                 argument_retriever<typename func_traits::template arg_type<Is>>::is_optional,
                 argument_retriever<typename func_traits::template arg_type<Is>>::is_variadic,
             }...,

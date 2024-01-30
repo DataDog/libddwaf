@@ -12,7 +12,7 @@ namespace ddwaf::condition {
 
 class lfi_detector : public base_impl<lfi_detector> {
 public:
-    using param_names = param_names_spec<"resource"_cs, "params"_cs>;
+    static constexpr std::array<std::string_view, 2> param_names{"resource", "params"};
 
     explicit lfi_detector(std::vector<argument_definition> args)
         : base_impl<lfi_detector>(std::move(args))
