@@ -10,7 +10,7 @@ rules:
       module: rasp
     conditions:
       - parameters:
-          path:
+          resource:
             - address: server.app.include_path
           params:
             - address: server.request.query

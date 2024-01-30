@@ -12,23 +12,16 @@ namespace ddwaf::condition {
 
 class lfi_detector : public base_impl<lfi_detector> {
 public:
+    using param_names = param_names_spec<"resource"_cs, "params"_cs>;
+
     explicit lfi_detector(std::vector<argument_definition> args)
         : base_impl<lfi_detector>(std::move(args))
     {}
 
 protected:
-    static eval_result eval_impl(const argument_stack &stack, cache_type &cache,
-        const exclusion::object_set_ref &objects_excluded,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-        const object_limits &limits, ddwaf::timer &deadline);
-
-    static const std::vector<argument_specification> &arguments_impl()
-    {
-        static std::vector<argument_specification> args = {
-            {"path", object_type::string, false, false},
-            {"params", object_type::container, true, false}};
-        return args;
-    };
+    eval_result eval_impl(argument<std::string_view> path,
+        variadic_argument<const ddwaf_object *> params, std::reference_wrapper<cache_type> cache,
+        std::reference_wrapper<timer> deadline) const;
 
     friend class base_impl<lfi_detector>;
 };

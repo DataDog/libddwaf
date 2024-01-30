@@ -37,11 +37,9 @@ public:
         for (const auto &target : targets_) { addresses.emplace(target.root, target.name); }
     }
 
-    static const std::vector<argument_specification> &arguments()
+    static constexpr auto arguments()
     {
-        static std::vector<argument_specification> args = {
-            {"inputs", object_type::any, true, false}};
-        return args;
+        return std::array<argument_specification, 1>{{"inputs", true, false}};
     }
 
 protected:

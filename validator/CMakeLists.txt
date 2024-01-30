@@ -10,7 +10,7 @@ target_include_directories(waf_validator PRIVATE ${libddwaf_SOURCE_DIR}/include)
 target_link_libraries(waf_validator PRIVATE  libddwaf_objects lib_yamlcpp)
 
 add_custom_target(validate
-    COMMAND ${CMAKE_BINARY_DIR}/validator/waf_validator
+    COMMAND ${CMAKE_BINARY_DIR}/validator/waf_validator --verbose
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/validator)
 add_dependencies(validate waf_validator)
 

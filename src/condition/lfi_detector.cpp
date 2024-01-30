@@ -112,31 +112,24 @@ std::pair<bool, std::string> lfi_impl(std::string_view path, const ddwaf_object 
 
 } // namespace
 
-eval_result lfi_detector::eval_impl(const argument_stack &stack, cache_type &cache,
-    const exclusion::object_set_ref & /*objects_excluded*/,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> & /*dynamic_matchers*/,
-    const object_limits & /*limits*/, ddwaf::timer &deadline)
+eval_result lfi_detector::eval_impl(argument<std::string_view> path,
+    variadic_argument<const ddwaf_object *> params, std::reference_wrapper<cache_type> cache,
+    std::reference_wrapper<timer> deadline) const
 {
-    auto path_arg = stack.get<argument_stack::unary>(0);
-    auto params_arg = stack.get<argument_stack::variadic>(1);
-
-    const std::string_view path_sv{
-        path_arg.object->stringValue, static_cast<std::size_t>(path_arg.object->nbEntries)};
-
-    for (const auto &params : params_arg) {
-        if (deadline.expired()) {
+    for (const auto &param : params) {
+        if (deadline.get().expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        auto [res, highlight] = lfi_impl(path_sv, *params.object);
+        auto [res, highlight] = lfi_impl(path.value, *param.value);
 
         if (res) {
-            std::vector<std::string> key_path{params.key_path.begin(), params.key_path.end()};
+            std::vector<std::string> key_path{param.key_path.begin(), param.key_path.end()};
 
-            cache.match = {{std::string{path_sv}, std::move(highlight), "lfi_detector", {},
-                params.address, std::move(key_path), params.ephemeral}};
+            cache.get().match = {{std::string{path.value}, std::move(highlight), "lfi_detector", {},
+                param.address, std::move(key_path), param.ephemeral}};
 
-            return {res, path_arg.ephemeral || params.ephemeral};
+            return {res, path.ephemeral || param.ephemeral};
         }
     }
 
