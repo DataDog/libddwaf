@@ -30,29 +30,12 @@ namespace ddwaf::condition {
 
 enum class data_source : uint8_t { values, keys, object };
 
-enum class object_type : uint8_t {
-    boolean = DDWAF_OBJ_BOOL,
-    integer = DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED,
-    real = DDWAF_OBJ_FLOAT,
-    string = DDWAF_OBJ_STRING,
-    array = DDWAF_OBJ_ARRAY,
-    map = DDWAF_OBJ_MAP,
-    container = map | array,
-    scalar = boolean | integer | real | string,
-    any = container | scalar,
-};
-
 struct cache_type {
     // The targets cache mirrors the array of targets for the given condition.
     // Each element in this array caches the pointer of the last non-ephemeral
     // object evaluated by the target in the same index within the condition.
     memory::vector<const ddwaf_object *> targets;
     std::optional<event::match> match;
-};
-
-enum class target_error {
-    unavailable,
-    invalid_type,
 };
 
 struct argument_specification {
@@ -91,31 +74,36 @@ struct default_argument_retriever {
     static constexpr bool is_optional = false;
 };
 
-template <typename T> T convert(const ddwaf_object *obj)
+template <typename T> std::optional<T> convert(const ddwaf_object *obj)
 {
     if constexpr (std::is_same_v<T, decltype(obj)>) {
         return obj;
     } else if constexpr (std::is_same_v<T, std::string_view>) {
         if (obj->type == DDWAF_OBJ_STRING) {
-            return {obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
-        } else {
-            throw ddwaf::bad_cast("string", "unknown");
-        }
+            return T{obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
+        } 
     }
+    return {};
 }
 
 template <typename T> struct argument_retriever : default_argument_retriever {};
 
 template <typename T> struct argument_retriever<argument<T>> : default_argument_retriever {
-    static argument<T> retrieve(const object_store &store, const target_definition &target)
+    static std::variant<argument<T>, std::monostate> retrieve(
+            const object_store &store, const target_definition &target)
     {
         auto [object, attr] = store.get_target(target.root);
         if (object == nullptr) {
-            throw std::runtime_error("object not available");
+            return {};
         }
 
-        return {target.name, target.key_path, attr == object_store::attribute::ephemeral,
-            convert<T>(object)};
+        auto converted = convert<T>(object);
+        if (!converted.has_value()) {
+            return {};
+        }
+
+        return argument<T>{target.name, target.key_path, attr == object_store::attribute::ephemeral,
+            std::move(converted.value())};
     }
 };
 
@@ -123,11 +111,11 @@ template <typename T> struct argument_retriever<optional_argument<T>> : default_
     static constexpr bool is_optional = true;
     static optional_argument<T> retrieve(const object_store &store, const target_definition &target)
     {
-        try {
-            return argument_retriever<argument<T>>::retrieve(store, target);
-        } catch (...) {
-            return std::nullopt;
+        auto arg = argument_retriever<argument<T>>::retrieve(store, target);
+        if (std::holds_alternative<std::monostate>(arg)) {
+            return {};
         }
+        return std::move(std::get<argument<T>>(arg));
     }
 };
 
@@ -138,25 +126,36 @@ template <typename T> struct argument_retriever<variadic_argument<T>> : default_
     {
         variadic_argument<T> args;
         for (const auto &target : targets) {
-            try {
-                args.emplace_back(argument_retriever<argument<T>>::retrieve(store, target));
-            } catch (...) {
-                // Variadic arguments can be ignored if not present
+            auto arg = argument_retriever<argument<T>>::retrieve(store, target);
+            if (std::holds_alternative<std::monostate>(arg)) {
+                continue;
             }
-        }
-
-        if (args.empty()) {
-            throw std::runtime_error("Argument unavailable");
+            args.emplace_back(std::move(std::get<argument<T>>(arg)));
         }
 
         return args;
     }
 };
 
+
+template <typename T, typename Enable = void>
+struct is_argument : std::false_type {};
+
+template <typename T>
+struct is_argument<argument<T>> : std::true_type {};
+
+template <typename T, typename Enable = void>
+struct is_variadic_argument : std::false_type {};
+
+template <typename T>
+struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
+
+
 template <typename Class, typename... Args> struct eval_function_traits {
     using function_type = eval_result (Class::*)(Args...) const;
     static inline constexpr size_t nargs = sizeof...(Args);
     template <size_t I> using arg_type = std::tuple_element_t<I, std::tuple<Args...>>;
+    using tuple_type = std::tuple<Args...>;
 };
 
 template <typename Class, typename... Args>
@@ -181,6 +180,7 @@ public:
 
 template <typename Self> class base_impl : public base {
 public:
+
     explicit base_impl(std::vector<argument_definition> args) : arguments_(std::move(args)) {}
     ~base_impl() override = default;
     base_impl(const base_impl &) = default;
@@ -189,19 +189,25 @@ public:
     base_impl &operator=(base_impl &&) noexcept = default;
 
     [[nodiscard]] eval_result eval(cache_type &cache, const object_store &store,
-        const exclusion::object_set_ref &objects_excluded,
+        const exclusion::object_set_ref & /*objects_excluded*/,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>>
             & /*dynamic_matchers*/,
-        const object_limits &limits, ddwaf::timer &deadline) const override
+        const object_limits &/*limits*/, ddwaf::timer &deadline) const override
     {
-        using func_traits = decltype(make_traits(&Self::eval_impl));
-        auto &&args = resolve_arguments(cache, store, objects_excluded, limits, deadline,
-            std::make_index_sequence<func_traits::nargs>{});
+        typename Self::param_types args;
+        static constexpr auto params_n = std::tuple_size_v<typename Self::param_types>;
+
+        static_assert(params_n == Self::param_names.size());
+
+        if (!resolve_arguments(store, args, std::make_index_sequence<params_n>{})) {
+            return {};
+        }
+
         // static_assert(sizeof(decltype(args)) == 0);
         return std::apply(
-            [this](auto &&...args) {
+            [&](auto &&...args) {
                 return static_cast<const Self *>(this)->eval_impl(
-                    std::forward<decltype(args)>(args)...);
+                    std::forward<decltype(args)>(args)..., cache, deadline);
             },
             std::move(args));
     }
@@ -235,33 +241,43 @@ public:
     }
 
 protected:
-    template <size_t... Is>
-    auto resolve_arguments(cache_type &cache, const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-        ddwaf::timer &deadline, std::index_sequence<Is...> /*unused*/) const
+    template <size_t I, size_t... Is, typename Args>
+    bool resolve_arguments(const object_store &store, Args &args,
+            std::index_sequence<I, Is...> /*unused*/) const
     {
-        return std::tuple{
-            resolve_argument<Is>(cache, store, objects_excluded, limits, deadline)...};
+        using TupleElement = std::tuple_element_t<I, Args>;
+        auto arg = resolve_argument<I>(store);
+        if constexpr (is_argument<TupleElement>::value) {
+            if (std::holds_alternative<std::monostate>(arg)) {
+                return false;
+            }
+
+            std::get<I>(args) = std::move(std::get<TupleElement>(arg));
+        } else if constexpr (is_variadic_argument<TupleElement>::value) {
+            if (arg.empty()) {
+                return false;
+            }
+
+            std::get<I>(args) = std::move(arg);
+        } else {
+            std::get<I>(args) = std::move(arg);
+        }
+
+        if constexpr (sizeof...(Is) > 0) {
+            return resolve_arguments(store, args, std::index_sequence<Is...>{});
+        } else {
+            return true;
+        }
+
     }
 
     template <size_t I>
-    auto resolve_argument(cache_type &cache, const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-        ddwaf::timer &deadline) const
+    auto resolve_argument(const object_store &store) const
     {
-        using func_traits = decltype(make_traits(&Self::eval_impl));
-        using target_type = typename func_traits::template arg_type<I>;
+        using target_type = std::tuple_element_t<I, typename Self::param_types>;
 
         using retriever = argument_retriever<target_type>;
-        if constexpr (std::is_same_v<target_type, std::reference_wrapper<cache_type>>) {
-            return std::reference_wrapper{cache};
-        } else if constexpr (std::is_same_v<target_type, decltype(objects_excluded)>) {
-            return objects_excluded;
-        } else if constexpr (std::is_same_v<target_type, decltype(limits)>) {
-            return limits;
-        } else if constexpr (std::is_same_v<target_type, std::reference_wrapper<timer>>) {
-            return std::reference_wrapper<timer>{deadline};
-        } else if constexpr (retriever::is_variadic) {
+        if constexpr (retriever::is_variadic) {
             return retriever::retrieve(store, arguments_.at(I).targets);
         } else {
             return retriever::retrieve(store, arguments_.at(I).targets.at(0));

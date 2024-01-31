@@ -12,6 +12,8 @@ namespace ddwaf::condition {
 
 class lfi_detector : public base_impl<lfi_detector> {
 public:
+    using param_types = std::tuple<argument<std::string_view>,
+          variadic_argument<const ddwaf_object *>>;
     static constexpr std::array<std::string_view, 2> param_names{"resource", "params"};
 
     explicit lfi_detector(std::vector<argument_definition> args)
