@@ -58,16 +58,16 @@ struct argument_definition {
     std::vector<target_definition> targets;
 };
 
-template <typename T> struct argument {
+template <typename T> struct unary_argument {
     std::string_view address{};
     std::span<const std::string> key_path;
     bool ephemeral{false};
     T value;
 };
 
-template <typename T> using optional_argument = std::optional<argument<T>>;
+template <typename T> using optional_argument = std::optional<unary_argument<T>>;
 
-template <typename T> using variadic_argument = std::vector<argument<T>>;
+template <typename T> using variadic_argument = std::vector<unary_argument<T>>;
 
 struct default_argument_retriever {
     static constexpr bool is_variadic = false;
@@ -81,29 +81,29 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
     } else if constexpr (std::is_same_v<T, std::string_view>) {
         if (obj->type == DDWAF_OBJ_STRING) {
             return T{obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
-        } 
+        }
     }
     return {};
 }
 
 template <typename T> struct argument_retriever : default_argument_retriever {};
 
-template <typename T> struct argument_retriever<argument<T>> : default_argument_retriever {
-    static std::variant<argument<T>, std::monostate> retrieve(
-            const object_store &store, const target_definition &target)
+template <typename T> struct argument_retriever<unary_argument<T>> : default_argument_retriever {
+    static std::optional<unary_argument<T>> retrieve(
+        const object_store &store, const target_definition &target)
     {
         auto [object, attr] = store.get_target(target.root);
         if (object == nullptr) {
-            return {};
+            return std::nullopt;
         }
 
         auto converted = convert<T>(object);
         if (!converted.has_value()) {
-            return {};
+            return std::nullopt;
         }
 
-        return argument<T>{target.name, target.key_path, attr == object_store::attribute::ephemeral,
-            std::move(converted.value())};
+        return unary_argument<T>{target.name, target.key_path,
+            attr == object_store::attribute::ephemeral, std::move(converted.value())};
     }
 };
 
@@ -111,11 +111,11 @@ template <typename T> struct argument_retriever<optional_argument<T>> : default_
     static constexpr bool is_optional = true;
     static optional_argument<T> retrieve(const object_store &store, const target_definition &target)
     {
-        auto arg = argument_retriever<argument<T>>::retrieve(store, target);
-        if (std::holds_alternative<std::monostate>(arg)) {
+        auto arg = argument_retriever<unary_argument<T>>::retrieve(store, target);
+        if (!arg.has_value()) {
             return {};
         }
-        return std::move(std::get<argument<T>>(arg));
+        return std::move(arg.value());
     }
 };
 
@@ -126,30 +126,24 @@ template <typename T> struct argument_retriever<variadic_argument<T>> : default_
     {
         variadic_argument<T> args;
         for (const auto &target : targets) {
-            auto arg = argument_retriever<argument<T>>::retrieve(store, target);
-            if (std::holds_alternative<std::monostate>(arg)) {
+            auto arg = argument_retriever<unary_argument<T>>::retrieve(store, target);
+            if (!arg.has_value()) {
                 continue;
             }
-            args.emplace_back(std::move(std::get<argument<T>>(arg)));
+            args.emplace_back(std::move(arg.value()));
         }
 
         return args;
     }
 };
 
+template <typename T, typename Enable = void> struct is_argument : std::false_type {};
 
-template <typename T, typename Enable = void>
-struct is_argument : std::false_type {};
+template <typename T> struct is_argument<unary_argument<T>> : std::true_type {};
 
-template <typename T>
-struct is_argument<argument<T>> : std::true_type {};
+template <typename T, typename Enable = void> struct is_variadic_argument : std::false_type {};
 
-template <typename T, typename Enable = void>
-struct is_variadic_argument : std::false_type {};
-
-template <typename T>
-struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
-
+template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
 
 template <typename Class, typename... Args> struct eval_function_traits {
     using function_type = eval_result (Class::*)(Args...) const;
@@ -180,7 +174,6 @@ public:
 
 template <typename Self> class base_impl : public base {
 public:
-
     explicit base_impl(std::vector<argument_definition> args) : arguments_(std::move(args)) {}
     ~base_impl() override = default;
     base_impl(const base_impl &) = default;
@@ -192,7 +185,7 @@ public:
         const exclusion::object_set_ref & /*objects_excluded*/,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>>
             & /*dynamic_matchers*/,
-        const object_limits &/*limits*/, ddwaf::timer &deadline) const override
+        const object_limits & /*limits*/, ddwaf::timer &deadline) const override
     {
         typename Self::param_types args;
         static constexpr auto params_n = std::tuple_size_v<typename Self::param_types>;
@@ -242,17 +235,17 @@ public:
 
 protected:
     template <size_t I, size_t... Is, typename Args>
-    bool resolve_arguments(const object_store &store, Args &args,
-            std::index_sequence<I, Is...> /*unused*/) const
+    bool resolve_arguments(
+        const object_store &store, Args &args, std::index_sequence<I, Is...> /*unused*/) const
     {
         using TupleElement = std::tuple_element_t<I, Args>;
         auto arg = resolve_argument<I>(store);
         if constexpr (is_argument<TupleElement>::value) {
-            if (std::holds_alternative<std::monostate>(arg)) {
+            if (!arg.has_value()) {
                 return false;
             }
 
-            std::get<I>(args) = std::move(std::get<TupleElement>(arg));
+            std::get<I>(args) = std::move(arg.value());
         } else if constexpr (is_variadic_argument<TupleElement>::value) {
             if (arg.empty()) {
                 return false;
@@ -268,11 +261,9 @@ protected:
         } else {
             return true;
         }
-
     }
 
-    template <size_t I>
-    auto resolve_argument(const object_store &store) const
+    template <size_t I> auto resolve_argument(const object_store &store) const
     {
         using target_type = std::tuple_element_t<I, typename Self::param_types>;
 
