@@ -13,7 +13,7 @@ namespace ddwaf::condition {
 class matcher_proxy : public base {
 public:
     matcher_proxy(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
-        std::vector<argument_definition> args)
+        std::vector<parameter_definition> args)
         : matcher_(std::move(matcher)), data_id_(std::move(data_id))
     {
         if (args.size() > 1) {
@@ -39,7 +39,7 @@ public:
 
     static constexpr auto arguments()
     {
-        return std::array<argument_specification, 1>{{{"inputs", true, false}}};
+        return std::array<parameter_specification, 1>{{{"inputs", true, false}}};
     }
 
 protected:

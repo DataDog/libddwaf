@@ -78,9 +78,9 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
             throw ddwaf::parsing_error("unknown matcher: " + std::string(matcher_name));
         }
 
-        std::vector<condition::argument_definition> definitions;
+        std::vector<condition::parameter_definition> definitions;
         definitions.emplace_back();
-        condition::argument_definition &def = definitions.back();
+        condition::parameter_definition &def = definitions.back();
 
         auto inputs = at<parameter::vector>(params, "inputs");
         for (const auto &input_param : inputs) {

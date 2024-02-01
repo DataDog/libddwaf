@@ -102,7 +102,7 @@ public:
 
 protected:
     ddwaf::object_limits limits_{};
-    std::vector<condition::argument_definition> arguments_{};
+    std::vector<condition::parameter_definition> arguments_{};
     std::vector<std::unique_ptr<condition::base>> conditions_{};
 };
 

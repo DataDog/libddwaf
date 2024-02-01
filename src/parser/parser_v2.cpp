@@ -150,18 +150,18 @@ std::vector<transformer_id> parse_transformers(
 }
 
 template <typename T>
-std::vector<condition::argument_definition> parse_arguments(const parameter::map &params,
+std::vector<condition::parameter_definition> parse_arguments(const parameter::map &params,
     condition::data_source source, const std::vector<transformer_id> &transformers,
     address_container &addresses)
 {
     const auto &specification = T::arguments();
-    std::vector<condition::argument_definition> definitions;
+    std::vector<condition::parameter_definition> definitions;
 
     definitions.reserve(specification.size());
 
     for (const auto spec : specification) {
         definitions.emplace_back();
-        condition::argument_definition &def = definitions.back();
+        condition::parameter_definition &def = definitions.back();
 
         auto inputs = at<parameter::vector>(params, spec.name);
         if (inputs.empty()) {

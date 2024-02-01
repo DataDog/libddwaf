@@ -13,13 +13,11 @@
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "event.hpp"
-#include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
@@ -38,14 +36,16 @@ struct cache_type {
     std::optional<event::match> match;
 };
 
-struct argument_specification {
+// Provides the specification of a specific operator parameter. Note that the
+// type of the parameter is inferred at compile type.
+struct parameter_specification {
     std::string_view name;
     bool variadic{false};
     bool optional{false};
 };
 
-// Provides the definition of the arguments for an instance of the condition,
-// each argument definition must satisfy the argument specification.
+// Provides the definition of an individual address(target) to parameter mapping.
+// Each target must satisfy the associated parameter specification.
 struct target_definition {
     std::string name;
     target_index root{};
@@ -54,10 +54,14 @@ struct target_definition {
     data_source source{data_source::values};
 };
 
-struct argument_definition {
+// Provides the definition of a parameter, which essentially consists of all the
+// mappings available for it. If the parameter is non-variadic, only one mapping
+// should be present.
+struct parameter_definition {
     std::vector<target_definition> targets;
 };
 
+// A type of argument with a single address (target) mapping
 template <typename T> struct unary_argument {
     std::string_view address{};
     std::span<const std::string> key_path;
@@ -66,15 +70,18 @@ template <typename T> struct unary_argument {
 };
 
 template <typename T, typename Enable = void> struct is_unary_argument : std::false_type {};
-
 template <typename T> struct is_unary_argument<unary_argument<T>> : std::true_type {};
 
+// A type of argument which is considered to be optional
 template <typename T> using optional_argument = std::optional<unary_argument<T>>;
 
+template <typename T, typename Enable = void> struct is_optional_argument : std::false_type {};
+template <typename T> struct is_optional_argument<optional_argument<T>> : std::true_type {};
+
+// A type of argument with multiple address(target) mappings
 template <typename T> using variadic_argument = std::vector<unary_argument<T>>;
 
 template <typename T, typename Enable = void> struct is_variadic_argument : std::false_type {};
-
 template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
 
 struct default_argument_retriever {
@@ -119,11 +126,7 @@ template <typename T> struct argument_retriever<optional_argument<T>> : default_
     static constexpr bool is_optional = true;
     static optional_argument<T> retrieve(const object_store &store, const target_definition &target)
     {
-        auto arg = argument_retriever<unary_argument<T>>::retrieve(store, target);
-        if (!arg.has_value()) {
-            return {};
-        }
-        return std::move(arg.value());
+        return argument_retriever<unary_argument<T>>::retrieve(store, target);
     }
 };
 
@@ -140,11 +143,12 @@ template <typename T> struct argument_retriever<variadic_argument<T>> : default_
             }
             args.emplace_back(std::move(arg.value()));
         }
-
         return args;
     }
 };
 
+// Generate a tuple containing a subset of the arguments
+// Reference: https://stackoverflow.com/questions/71301988
 template <typename... Ts> struct typelist;
 
 template <size_t N, typename, typename> struct make_n_typelist;
@@ -171,6 +175,7 @@ template <typename... Ts> struct tuple_from_typelist<typelist<Ts...>> {
 template <size_t N, typename... Args>
 using n_tuple_from_args_t = typename tuple_from_typelist<make_n_typelist_t<N, Args...>>::type;
 
+// Function traits
 template <typename Class, typename... Args> struct eval_function_traits {
     using tuple_type = n_tuple_from_args_t<Class::param_names.size(), Args...>;
     static inline constexpr size_t nargs = std::tuple_size_v<tuple_type>;
@@ -199,7 +204,7 @@ public:
 
 template <typename Self> class base_impl : public base {
 public:
-    explicit base_impl(std::vector<argument_definition> args) : arguments_(std::move(args)) {}
+    explicit base_impl(std::vector<parameter_definition> args) : arguments_(std::move(args)) {}
     ~base_impl() override = default;
     base_impl(const base_impl &) = default;
     base_impl &operator=(const base_impl &) = default;
@@ -233,8 +238,7 @@ public:
 
     static constexpr auto arguments()
     {
-        constexpr auto param_names = Self::param_names;
-        return generate_argument_spec(std::make_index_sequence<param_names.size()>());
+        return generate_argument_spec(std::make_index_sequence<Self::param_names.size()>());
     }
 
     template <size_t... Is>
@@ -243,7 +247,8 @@ public:
         constexpr auto param_names = Self::param_names;
         using func_traits = decltype(make_traits(&Self::eval_impl));
         static_assert(param_names.size() <= func_traits::nargs);
-        return std::array<argument_specification, sizeof...(Is)>{{
+
+        return std::array<parameter_specification, sizeof...(Is)>{{
             {
                 param_names[Is],
                 argument_retriever<typename func_traits::template arg_type<Is>>::is_optional,
@@ -296,13 +301,24 @@ protected:
 
         using retriever = argument_retriever<target_type>;
         if constexpr (retriever::is_variadic) {
-            return retriever::retrieve(store, arguments_.at(I).targets);
+            if (arguments_.size() <= I) {
+                return target_type{};
+            }
+            return retriever::retrieve(store, arguments_[I].targets);
         } else {
-            return retriever::retrieve(store, arguments_.at(I).targets.at(0));
+            if (arguments_.size() <= I) {
+                return std::optional<target_type>{};
+            }
+
+            const auto &arg = arguments_[I];
+            if (arg.targets.empty()) {
+                return std::optional<target_type>{};
+            }
+            return retriever::retrieve(store, arg.targets.at(0));
         }
     }
 
-    std::vector<argument_definition> arguments_;
+    std::vector<parameter_definition> arguments_;
 };
 
 } // namespace ddwaf::condition
