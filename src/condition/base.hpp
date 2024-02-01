@@ -65,9 +65,17 @@ template <typename T> struct unary_argument {
     T value;
 };
 
+template <typename T, typename Enable = void> struct is_unary_argument : std::false_type {};
+
+template <typename T> struct is_unary_argument<unary_argument<T>> : std::true_type {};
+
 template <typename T> using optional_argument = std::optional<unary_argument<T>>;
 
 template <typename T> using variadic_argument = std::vector<unary_argument<T>>;
+
+template <typename T, typename Enable = void> struct is_variadic_argument : std::false_type {};
+
+template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
 
 struct default_argument_retriever {
     static constexpr bool is_variadic = false;
@@ -137,19 +145,36 @@ template <typename T> struct argument_retriever<variadic_argument<T>> : default_
     }
 };
 
-template <typename T, typename Enable = void> struct is_argument : std::false_type {};
+template <typename... Ts> struct typelist;
 
-template <typename T> struct is_argument<unary_argument<T>> : std::true_type {};
+template <size_t N, typename, typename> struct make_n_typelist;
 
-template <typename T, typename Enable = void> struct is_variadic_argument : std::false_type {};
+template <typename Keep, typename Drop> struct make_n_typelist<0, Keep, Drop> {
+    using type = Keep;
+};
 
-template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
+template <size_t N, typename K, typename... Ks, typename... Ds>
+    requires(N > 0)
+struct make_n_typelist<N, typelist<Ks...>, typelist<K, Ds...>> {
+    using type = typename make_n_typelist<N - 1, typelist<Ks..., K>, typelist<Ds...>>::type;
+};
+
+template <size_t N, typename... Ts>
+using make_n_typelist_t = typename make_n_typelist<N, typelist<>, typelist<Ts...>>::type;
+
+template <typename... Ts> struct tuple_from_typelist;
+
+template <typename... Ts> struct tuple_from_typelist<typelist<Ts...>> {
+    using type = std::tuple<std::remove_cv_t<std::remove_reference_t<Ts>>...>;
+};
+
+template <size_t N, typename... Args>
+using n_tuple_from_args_t = typename tuple_from_typelist<make_n_typelist_t<N, Args...>>::type;
 
 template <typename Class, typename... Args> struct eval_function_traits {
-    using function_type = eval_result (Class::*)(Args...) const;
-    static inline constexpr size_t nargs = sizeof...(Args);
-    template <size_t I> using arg_type = std::tuple_element_t<I, std::tuple<Args...>>;
-    using tuple_type = std::tuple<Args...>;
+    using tuple_type = n_tuple_from_args_t<Class::param_names.size(), Args...>;
+    static inline constexpr size_t nargs = std::tuple_size_v<tuple_type>;
+    template <size_t I> using arg_type = std::tuple_element_t<I, tuple_type>;
 };
 
 template <typename Class, typename... Args>
@@ -187,12 +212,13 @@ public:
             & /*dynamic_matchers*/,
         const object_limits & /*limits*/, ddwaf::timer &deadline) const override
     {
-        typename Self::param_types args;
-        static constexpr auto params_n = std::tuple_size_v<typename Self::param_types>;
 
-        static_assert(params_n == Self::param_names.size());
+        using func_traits = decltype(make_traits(&Self::eval_impl));
+        typename func_traits::tuple_type args;
 
-        if (!resolve_arguments(store, args, std::make_index_sequence<params_n>{})) {
+        static_assert(func_traits::nargs == Self::param_names.size());
+
+        if (!resolve_arguments(store, args, std::make_index_sequence<func_traits::nargs>{})) {
             return {};
         }
 
@@ -240,7 +266,7 @@ protected:
     {
         using TupleElement = std::tuple_element_t<I, Args>;
         auto arg = resolve_argument<I>(store);
-        if constexpr (is_argument<TupleElement>::value) {
+        if constexpr (is_unary_argument<TupleElement>::value) {
             if (!arg.has_value()) {
                 return false;
             }
@@ -265,7 +291,8 @@ protected:
 
     template <size_t I> auto resolve_argument(const object_store &store) const
     {
-        using target_type = std::tuple_element_t<I, typename Self::param_types>;
+        using func_traits = decltype(make_traits(&Self::eval_impl));
+        using target_type = typename func_traits::template arg_type<I>;
 
         using retriever = argument_retriever<target_type>;
         if constexpr (retriever::is_variadic) {

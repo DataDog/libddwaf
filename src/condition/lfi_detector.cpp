@@ -113,11 +113,11 @@ std::pair<bool, std::string> lfi_impl(std::string_view path, const ddwaf_object 
 } // namespace
 
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
-    const variadic_argument<const ddwaf_object *> &params, std::reference_wrapper<cache_type> cache,
-    std::reference_wrapper<timer> deadline) const
+    const variadic_argument<const ddwaf_object *> &params, cache_type &cache,
+    ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
-        if (deadline.get().expired()) {
+        if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
@@ -126,7 +126,7 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
         if (res) {
             std::vector<std::string> key_path{param.key_path.begin(), param.key_path.end()};
 
-            cache.get().match = {{std::string{path.value}, std::move(highlight), "lfi_detector", {},
+            cache.match = {{std::string{path.value}, std::move(highlight), "lfi_detector", {},
                 param.address, std::move(key_path), param.ephemeral}};
 
             return {res, path.ephemeral || param.ephemeral};
