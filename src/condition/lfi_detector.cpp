@@ -113,7 +113,7 @@ std::pair<bool, std::string> lfi_impl(std::string_view path, const ddwaf_object 
 } // namespace
 
 eval_result lfi_detector::eval_impl(argument<std::string_view> path,
-    variadic_argument<const ddwaf_object *> params, std::reference_wrapper<cache_type> cache,
+    const variadic_argument<const ddwaf_object *> &params, std::reference_wrapper<cache_type> cache,
     std::reference_wrapper<timer> deadline) const
 {
     for (const auto &param : params) {
