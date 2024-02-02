@@ -99,8 +99,7 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
     }
 
     if (opts.contains("seed")) {
-        auto seed = utils::from_string<unsigned>(opts["seed"]);
-        benchmark::random::seed(seed);
+        s.seed = utils::from_string<unsigned>(opts["seed"]);
     }
 
     if (s.format != benchmark::output_fmt::none && opts.contains("output")) {
@@ -137,6 +136,7 @@ int main(int argc, char *argv[])
     std::map<std::string, std::vector<test_result>> all_results;
     for (unsigned i = 0; i < s.runs; ++i) {
         for (const auto &scenario : s.scenarios) {
+            benchmark::random::seed(s.seed);
             YAML::Node spec = YAML::Load(utils::read_file(scenario));
 
             auto name = spec["scenario"].as<std::string>();

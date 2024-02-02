@@ -25,6 +25,7 @@ struct settings {
     unsigned runs{1};
     unsigned iterations{1000};
     unsigned warmup_iterations{10};
+    unsigned seed{1729};
 };
 
 } // namespace ddwaf::benchmark
