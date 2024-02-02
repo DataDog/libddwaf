@@ -30,7 +30,7 @@ enum class scalar_type : uint8_t { null = 1, boolean = 2, integer = 4, string = 
 
 struct node_scalar {
     scalar_type type{scalar_type::null};
-    std::unordered_map<std::string, std::string> tags;
+    std::unordered_map<std::string, std::string> tags{};
     mutable std::size_t hash{0};
 };
 

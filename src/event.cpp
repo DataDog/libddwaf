@@ -14,7 +14,7 @@ namespace ddwaf {
 
 namespace {
 
-bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
+bool redact_match(const ddwaf::obfuscator &obfuscator, const event::univariate_match &match)
 {
     for (const auto &key : match.key_path) {
         if (obfuscator.is_sensitive_key(key)) {
@@ -26,6 +26,16 @@ bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match
            obfuscator.is_sensitive_value(match.matched);
 }
 
+bool redact_match(const ddwaf::obfuscator &obfuscator, const event::multivariate_match &match)
+{
+    return false;
+}
+
+bool redact_match(const ddwaf::obfuscator & /*obfuscator*/, const std::monostate & /*match*/)
+{
+    return false;
+}
+
 ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str, bool redact = false)
 {
     if (redact) {
@@ -35,7 +45,7 @@ ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str, bool redact = f
     return ddwaf_object_stringl(&tmp, str.data(), str.size());
 }
 
-void serialize_match(ddwaf_object &match_map, const event::match &match, bool redact)
+void serialize_match(const event::univariate_match &match, ddwaf_object &match_map, bool redact)
 {
     ddwaf_object tmp;
     ddwaf_object key_path;
@@ -65,6 +75,53 @@ void serialize_match(ddwaf_object &match_map, const event::match &match, bool re
     ddwaf_object_map_add(&match_map, "operator_value", to_object(tmp, match.operator_value));
     ddwaf_object_map_add(&match_map, "parameters", &parameters);
 }
+
+void serialize_match(const event::multivariate_match &match, ddwaf_object &match_map, bool redact)
+{
+    ddwaf_object tmp;
+    ddwaf_object param;
+    ddwaf_object_map(&param);
+
+    for (const auto &arg : match.arguments) {
+        ddwaf_object argument;
+        ddwaf_object_map(&argument);
+
+        ddwaf_object key_path;
+        ddwaf_object_array(&key_path);
+        for (const auto &key : arg.key_path) {
+            ddwaf_object_array_add(&key_path, to_object(tmp, key));
+        }
+
+        ddwaf_object_map_add(&argument, "address", to_object(tmp, arg.address));
+        ddwaf_object_map_add(&argument, "key_path", &key_path);
+        ddwaf_object_map_add(&argument, "value", to_object(tmp, arg.resolved, redact));
+
+        ddwaf_object_map_addl(&param, arg.name.data(), arg.name.size(), &argument);
+    }
+
+    ddwaf_object highlight;
+    ddwaf_object_array(&highlight);
+    if (!match.matched.empty()) {
+        ddwaf_object_array_add(&highlight, to_object(tmp, match.matched, redact));
+    }
+
+    ddwaf_object_map_add(&param, "highlight", &highlight);
+
+    ddwaf_object parameters;
+    ddwaf_object_array(&parameters);
+    ddwaf_object_array_add(&parameters, &param);
+
+    ddwaf_object_map_add(&match_map, "operator", to_object(tmp, match.operator_name));
+    ddwaf_object_map_add(&match_map, "operator_value", to_object(tmp, match.operator_value));
+    ddwaf_object_map_add(&match_map, "parameters", &parameters);
+}
+
+void serialize_match(
+    const std::monostate & /*match*/, ddwaf_object & /*match_map*/, bool /*redact*/)
+{
+    throw std::runtime_error("invalid match found during serialisation");
+}
+
 } // namespace
 
 void event_serializer::serialize(const std::vector<event> &events, ddwaf_result &output) const
@@ -122,11 +179,12 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 
         for (const auto &match : event.matches) {
-            const bool redact = redact_match(obfuscator_, match);
+            const bool redact =
+                std::visit([&](auto &&arg) { return redact_match(obfuscator_, arg); }, match);
 
             ddwaf_object match_map;
             ddwaf_object_map(&match_map);
-            serialize_match(match_map, match, redact);
+            std::visit([&](auto &&arg) { serialize_match(arg, match_map, redact); }, match);
 
             ddwaf_object_array_add(&match_array, &match_map);
         }

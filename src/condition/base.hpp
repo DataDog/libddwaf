@@ -33,7 +33,7 @@ struct cache_type {
     // Each element in this array caches the pointer of the last non-ephemeral
     // object evaluated by the target in the same index within the condition.
     memory::vector<const ddwaf_object *> targets;
-    std::optional<event::match> match;
+    event::match match;
 };
 
 // Provides the specification of a specific operator parameter. Note that the

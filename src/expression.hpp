@@ -12,6 +12,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "clock.hpp"
@@ -19,11 +20,8 @@
 #include "context_allocator.hpp"
 #include "event.hpp"
 #include "exclusion/common.hpp"
-#include "iterator.hpp"
-#include "log.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
-#include "transformer/manager.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -58,11 +56,12 @@ public:
         matches.reserve(cache.conditions.size());
         for (auto &cond_cache : cache.conditions) {
             auto &match = cond_cache.match;
-            if (match.has_value()) {
-                if (match->ephemeral) {
-                    matches.emplace_back(std::move(match.value()));
+            if (!std::holds_alternative<std::monostate>(match)) {
+                if (is_ephemeral_match(match)) {
+                    matches.emplace_back(std::move(match));
+                    cond_cache.match = {};
                 } else {
-                    matches.emplace_back(match.value());
+                    matches.emplace_back(match);
                 }
             }
         }

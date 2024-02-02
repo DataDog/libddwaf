@@ -39,14 +39,14 @@ std::string object_to_string(const ddwaf_object &object)
     return {};
 }
 
-std::optional<event::match> eval_object(const ddwaf_object *object, const matcher::base &matcher,
+event::match eval_object(const ddwaf_object *object, const matcher::base &matcher,
     const std::span<const transformer_id> &transformers, const object_limits &limits)
 {
     ddwaf_object src = *object;
 
     if (src.type == DDWAF_OBJ_STRING) {
         if (src.stringValue == nullptr) {
-            return std::nullopt;
+            return {};
         }
 
         src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
@@ -59,25 +59,25 @@ std::optional<event::match> eval_object(const ddwaf_object *object, const matche
             if (transformed) {
                 auto [res, highlight] = matcher.match(dst);
                 if (!res) {
-                    return std::nullopt;
+                    return {};
                 }
-                return {{object_to_string(dst), std::move(highlight), matcher.name(),
-                    matcher.to_string(), {}, {}}};
+                return event::univariate_match{object_to_string(dst), std::move(highlight),
+                    matcher.name(), matcher.to_string(), {}, {}};
             }
         }
     }
 
     auto [res, highlight] = matcher.match(src);
     if (!res) {
-        return std::nullopt;
+        return {};
     }
 
-    return {
-        {object_to_string(src), std::move(highlight), matcher.name(), matcher.to_string(), {}, {}}};
+    return event::univariate_match{
+        object_to_string(src), std::move(highlight), matcher.name(), matcher.to_string(), {}, {}};
 }
 
 template <typename Iterator>
-std::optional<event::match> eval_target(Iterator &it, const matcher::base &matcher,
+event::match eval_target(Iterator &it, const matcher::base &matcher,
     const std::span<const transformer_id> &transformers, const object_limits &limits,
     ddwaf::timer &deadline)
 {
@@ -90,17 +90,17 @@ std::optional<event::match> eval_target(Iterator &it, const matcher::base &match
             continue;
         }
 
-        auto optional_match = eval_object(*it, matcher, transformers, limits);
-        if (!optional_match.has_value()) {
+        auto match = eval_object(*it, matcher, transformers, limits);
+        if (!std::holds_alternative<event::univariate_match>(match)) {
             continue;
         }
 
-        optional_match->key_path = std::move(it.get_current_path());
+        std::get<event::univariate_match>(match).key_path = std::move(it.get_current_path());
         // If this target matched, we can stop processing
-        return optional_match;
+        return match;
     }
 
-    return std::nullopt;
+    return {};
 }
 
 } // namespace
@@ -150,23 +150,23 @@ eval_result matcher_proxy::eval(cache_type &cache, const object_store &store,
             cache.targets[i] = object;
         }
 
-        std::optional<event::match> optional_match;
+        event::match match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, *matcher, target.transformers, limits, deadline);
+            match = eval_target(it, *matcher, target.transformers, limits, deadline);
         } else {
             object::value_iterator it(object, target.key_path, objects_excluded, limits);
-            optional_match = eval_target(it, *matcher, target.transformers, limits, deadline);
+            match = eval_target(it, *matcher, target.transformers, limits, deadline);
         }
 
-        if (optional_match.has_value()) {
-            optional_match->address = target.name;
-            optional_match->ephemeral = ephemeral;
-            DDWAF_TRACE(
-                "Target {} matched parameter value {}", target.name, optional_match->resolved);
+        if (std::holds_alternative<event::univariate_match>(match)) {
+            auto &umatch = std::get<event::univariate_match>(match);
+            umatch.address = target.name;
+            umatch.ephemeral = ephemeral;
+            DDWAF_TRACE("Target {} matched parameter value {}", target.name, umatch.resolved);
 
-            cache.match = std::move(optional_match);
+            cache.match = std::move(match);
             return {true, ephemeral};
         }
     }

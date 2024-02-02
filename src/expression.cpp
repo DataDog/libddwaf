@@ -7,8 +7,9 @@
 #include <charconv>
 #include <iostream>
 #include <memory>
+#include <variant>
 
-#include "exception.hpp"
+#include "event.hpp"
 #include "exclusion/common.hpp"
 #include "expression.hpp"
 #include "log.hpp"
@@ -35,7 +36,8 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         const auto &cond = conditions_[i];
         auto &cond_cache = cache.conditions[i];
 
-        if (cond_cache.match.has_value() && !cond_cache.match->ephemeral) {
+        if (!std::holds_alternative<std::monostate>(cond_cache.match) &&
+            !is_ephemeral_match(cond_cache.match)) {
             continue;
         }
 

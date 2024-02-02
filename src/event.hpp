@@ -9,9 +9,8 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_set>
+#include <variant>
 
-#include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "obfuscator.hpp"
 
@@ -20,7 +19,7 @@ namespace ddwaf {
 class rule;
 
 struct event {
-    struct match {
+    struct univariate_match {
         std::string resolved;
         std::string matched;
         std::string_view operator_name;
@@ -30,12 +29,38 @@ struct event {
         bool ephemeral{false};
     };
 
+    struct multivariate_match {
+        struct condition_argument {
+            std::string_view name;
+            std::string resolved;
+            std::string_view address;
+            std::vector<std::string> key_path;
+        };
+        std::vector<condition_argument> arguments;
+        std::string matched;
+        std::string_view operator_name;
+        std::string_view operator_value;
+        bool ephemeral{false};
+    };
+
+    using match = std::variant<std::monostate, univariate_match, multivariate_match>;
     const ddwaf::rule *rule{nullptr};
     std::vector<match> matches;
     bool ephemeral{false};
     bool skip_actions{false};
 };
 
+inline bool is_ephemeral_match(const event::match &m)
+{
+    if (std::holds_alternative<event::univariate_match>(m)) {
+        return std::get<event::univariate_match>(m).ephemeral;
+    }
+    if (std::holds_alternative<event::multivariate_match>(m)) {
+        return std::get<event::multivariate_match>(m).ephemeral;
+    }
+
+    return false;
+}
 using optional_event = std::optional<event>;
 using optional_match = std::optional<event::match>;
 
