@@ -16,7 +16,11 @@ public:
     static void seed(uint64_t value)
     {
         seed_ = value;
-        rng_ = std::make_unique<std::mt19937>(value);
+        if (!rng_) {
+            rng_ = std::make_unique<std::mt19937>(value);
+        } else {
+            rng_->seed(value);
+        }
     }
 
     static uint64_t get()
