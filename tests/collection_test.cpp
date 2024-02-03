@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "collection.hpp"
-#include "condition/matcher_proxy.hpp"
+#include "condition/scalar_condition.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
 #include "test.hpp"

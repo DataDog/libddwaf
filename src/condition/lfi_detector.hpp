@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "condition/base.hpp"
+#include "condition/structured_condition.hpp"
 
-namespace ddwaf::condition {
+namespace ddwaf {
 
 class lfi_detector : public base_impl<lfi_detector> {
 public:
@@ -20,10 +20,10 @@ public:
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &path,
-        const variadic_argument<const ddwaf_object *> &params, cache_type &cache,
+        const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
         ddwaf::timer &deadline) const;
 
     friend class base_impl<lfi_detector>;
 };
 
-} // namespace ddwaf::condition
+} // namespace ddwaf

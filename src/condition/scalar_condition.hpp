@@ -8,11 +8,11 @@
 
 #include "condition/base.hpp"
 
-namespace ddwaf::condition {
+namespace ddwaf {
 
-class matcher_proxy : public base {
+class scalar_condition : public base_condition {
 public:
-    matcher_proxy(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
+    scalar_condition(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
         std::vector<parameter_definition> args)
         : matcher_(std::move(matcher)), data_id_(std::move(data_id))
     {
@@ -27,7 +27,7 @@ public:
         targets_ = std::move(args[0].targets);
     }
 
-    eval_result eval(cache_type &cache, const object_store &store,
+    eval_result eval(condition_cache &cache, const object_store &store,
         const exclusion::object_set_ref &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         const object_limits &limits, ddwaf::timer &deadline) const override;
@@ -52,4 +52,4 @@ protected:
     std::vector<target_definition> targets_;
 };
 
-} // namespace ddwaf::condition
+} // namespace ddwaf

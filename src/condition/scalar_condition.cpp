@@ -4,12 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "matcher_proxy.hpp"
+#include "scalar_condition.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
 #include "transformer/manager.hpp"
 
-namespace ddwaf::condition {
+namespace ddwaf {
 
 namespace {
 
@@ -105,7 +105,7 @@ event::match eval_target(Iterator &it, const matcher::base &matcher,
 
 } // namespace
 
-const matcher::base *matcher_proxy::get_matcher(
+const matcher::base *scalar_condition::get_matcher(
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers) const
 {
     if (matcher_ || data_id_.empty()) {
@@ -120,7 +120,7 @@ const matcher::base *matcher_proxy::get_matcher(
     return nullptr;
 }
 
-eval_result matcher_proxy::eval(cache_type &cache, const object_store &store,
+eval_result scalar_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     const object_limits &limits, ddwaf::timer &deadline) const
@@ -174,4 +174,4 @@ eval_result matcher_proxy::eval(cache_type &cache, const object_store &store,
     return {false, false};
 }
 
-} // namespace ddwaf::condition
+} // namespace ddwaf

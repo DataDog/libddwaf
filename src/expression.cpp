@@ -28,7 +28,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
     }
 
     if (cache.conditions.size() < conditions_.size()) {
-        cache.conditions.assign(conditions_.size(), condition::cache_type{});
+        cache.conditions.assign(conditions_.size(), condition_cache{});
     }
 
     bool ephemeral_match = false;

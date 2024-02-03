@@ -14,7 +14,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "condition/matcher_proxy.hpp"
+#include "condition/scalar_condition.hpp"
 #include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
@@ -64,16 +64,16 @@ public:
     void end_condition(Args... args)
         requires std::is_base_of_v<matcher::base, T>
     {
-        conditions_.emplace_back(std::make_unique<condition::matcher_proxy>(
-            std::make_unique<T>(std::forward<Args>(args)...), std::string{},
-            std::move(arguments_)));
+        conditions_.emplace_back(
+            std::make_unique<scalar_condition>(std::make_unique<T>(std::forward<Args>(args)...),
+                std::string{}, std::move(arguments_)));
     }
 
     template <typename T>
     void end_condition(std::string data_id)
         requires std::is_base_of_v<matcher::base, T>
     {
-        conditions_.emplace_back(std::make_unique<condition::matcher_proxy>(
+        conditions_.emplace_back(std::make_unique<scalar_condition>(
             std::move(arguments_), std::move(data_id), std::make_unique<T>()));
     }
 

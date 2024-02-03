@@ -30,13 +30,13 @@ class expression {
 public:
     struct cache_type {
         bool result{false};
-        memory::vector<condition::cache_type> conditions;
+        memory::vector<condition_cache> conditions;
     };
 
     expression() = default;
 
-    explicit expression(std::vector<std::unique_ptr<condition::base>> &&conditions,
-        ddwaf::object_limits limits = {})
+    explicit expression(
+        std::vector<std::unique_ptr<base_condition>> &&conditions, ddwaf::object_limits limits = {})
         : limits_(limits), conditions_(std::move(conditions))
     {}
 
@@ -75,7 +75,7 @@ public:
 
 protected:
     ddwaf::object_limits limits_;
-    std::vector<std::unique_ptr<condition::base>> conditions_;
+    std::vector<std::unique_ptr<base_condition>> conditions_;
 };
 
 } // namespace ddwaf

@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "condition/matcher_proxy.hpp"
+#include "condition/scalar_condition.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "matcher/is_sqli.hpp"
@@ -30,7 +30,7 @@ namespace {
 std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array,
     const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
 {
-    std::vector<std::unique_ptr<condition::base>> conditions;
+    std::vector<std::unique_ptr<base_condition>> conditions;
 
     for (const auto &cond_param : conditions_array) {
         auto cond = static_cast<parameter::map>(cond_param);
@@ -78,9 +78,9 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
             throw ddwaf::parsing_error("unknown matcher: " + std::string(matcher_name));
         }
 
-        std::vector<condition::parameter_definition> definitions;
+        std::vector<parameter_definition> definitions;
         definitions.emplace_back();
-        condition::parameter_definition &def = definitions.back();
+        parameter_definition &def = definitions.back();
 
         auto inputs = at<parameter::vector>(params, "inputs");
         for (const auto &input_param : inputs) {
@@ -99,11 +99,11 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
                 key_path.emplace_back(input.substr(pos + 1, input.size()));
             }
 
-            def.targets.emplace_back(condition::target_definition{root, get_target_index(root),
-                std::move(key_path), transformers, condition::data_source::values});
+            def.targets.emplace_back(target_definition{root, get_target_index(root),
+                std::move(key_path), transformers, data_source::values});
         }
 
-        conditions.emplace_back(std::make_unique<condition::matcher_proxy>(
+        conditions.emplace_back(std::make_unique<scalar_condition>(
             std::move(matcher), std::string{}, std::move(definitions)));
     }
 

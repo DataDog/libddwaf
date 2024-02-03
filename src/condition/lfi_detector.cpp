@@ -11,7 +11,7 @@
 #include "log.hpp"
 #include "utils.hpp"
 
-namespace ddwaf::condition {
+namespace ddwaf {
 
 namespace {
 
@@ -113,7 +113,7 @@ std::pair<bool, std::string> lfi_impl(std::string_view path, const ddwaf_object 
 } // namespace
 
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
-    const variadic_argument<const ddwaf_object *> &params, cache_type &cache,
+    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
     ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
@@ -136,4 +136,4 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
     return {};
 }
 
-} // namespace ddwaf::condition
+} // namespace ddwaf

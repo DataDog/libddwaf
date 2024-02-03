@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "condition/lfi_detector.hpp"
-#include "condition/matcher_proxy.hpp"
+#include "condition/scalar_condition.hpp"
 #include "exception.hpp"
 #include "exclusion/object_filter.hpp"
 #include "generator/extract_schema.hpp"
@@ -123,8 +123,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
     return {std::move(rule_data_id), std::move(matcher)};
 }
 
-std::vector<transformer_id> parse_transformers(
-    const parameter::vector &root, condition::data_source &source)
+std::vector<transformer_id> parse_transformers(const parameter::vector &root, data_source &source)
 {
     if (root.empty()) {
         return {};
@@ -139,9 +138,9 @@ std::vector<transformer_id> parse_transformers(
         if (id.has_value()) {
             transformers.emplace_back(id.value());
         } else if (transformer == "keys_only") {
-            source = ddwaf::condition::data_source::keys;
+            source = ddwaf::data_source::keys;
         } else if (transformer == "values_only") {
-            source = ddwaf::condition::data_source::values;
+            source = ddwaf::data_source::values;
         } else {
             throw ddwaf::parsing_error("invalid transformer " + std::string(transformer));
         }
@@ -150,18 +149,17 @@ std::vector<transformer_id> parse_transformers(
 }
 
 template <typename T>
-std::vector<condition::parameter_definition> parse_arguments(const parameter::map &params,
-    condition::data_source source, const std::vector<transformer_id> &transformers,
-    address_container &addresses)
+std::vector<parameter_definition> parse_arguments(const parameter::map &params, data_source source,
+    const std::vector<transformer_id> &transformers, address_container &addresses)
 {
     const auto &specification = T::arguments();
-    std::vector<condition::parameter_definition> definitions;
+    std::vector<parameter_definition> definitions;
 
     definitions.reserve(specification.size());
 
     for (const auto spec : specification) {
         definitions.emplace_back();
-        condition::parameter_definition &def = definitions.back();
+        parameter_definition &def = definitions.back();
 
         auto inputs = at<parameter::vector>(params, spec.name);
         if (inputs.empty()) {
@@ -196,14 +194,14 @@ std::vector<condition::parameter_definition> parse_arguments(const parameter::ma
             addresses.required.emplace(address);
             auto it = input.find("transformers");
             if (it == input.end()) {
-                targets.emplace_back(condition::target_definition{
+                targets.emplace_back(target_definition{
                     address, get_target_index(address), std::move(kp), transformers, source});
             } else {
                 auto input_transformers = static_cast<parameter::vector>(it->second);
-                source = condition::data_source::values;
+                source = data_source::values;
                 auto new_transformers = parse_transformers(input_transformers, source);
-                targets.emplace_back(condition::target_definition{address,
-                    get_target_index(address), std::move(kp), std::move(new_transformers), source});
+                targets.emplace_back(target_definition{address, get_target_index(address),
+                    std::move(kp), std::move(new_transformers), source});
             }
         }
     }
@@ -212,11 +210,11 @@ std::vector<condition::parameter_definition> parse_arguments(const parameter::ma
 }
 
 std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
-    std::unordered_map<std::string, std::string> &data_ids, condition::data_source source,
+    std::unordered_map<std::string, std::string> &data_ids, data_source source,
     const std::vector<transformer_id> &transformers, address_container &addresses,
     const object_limits &limits)
 {
-    std::vector<std::unique_ptr<condition::base>> conditions;
+    std::vector<std::unique_ptr<base_condition>> conditions;
     for (const auto &cond_param : conditions_array) {
         auto root = static_cast<parameter::map>(cond_param);
 
@@ -224,11 +222,9 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         auto params = at<parameter::map>(root, "parameters");
 
         if (operator_name == "lfi_detector") {
-            auto arguments =
-                parse_arguments<condition::lfi_detector>(params, source, transformers, addresses);
+            auto arguments = parse_arguments<lfi_detector>(params, source, transformers, addresses);
 
-            conditions.emplace_back(
-                std::make_unique<condition::lfi_detector>(std::move(arguments)));
+            conditions.emplace_back(std::make_unique<lfi_detector>(std::move(arguments)));
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 
@@ -237,9 +233,9 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
             }
 
             auto arguments =
-                parse_arguments<condition::matcher_proxy>(params, source, transformers, addresses);
+                parse_arguments<scalar_condition>(params, source, transformers, addresses);
 
-            conditions.emplace_back(std::make_unique<condition::matcher_proxy>(
+            conditions.emplace_back(std::make_unique<scalar_condition>(
                 std::move(matcher), data_id, std::move(arguments)));
         }
     }
@@ -252,7 +248,7 @@ rule_spec parse_rule(parameter::map &rule,
     rule::source_type source, address_container &addresses)
 {
     std::vector<transformer_id> rule_transformers;
-    auto data_source = ddwaf::condition::data_source::values;
+    auto data_source = ddwaf::data_source::values;
     auto transformers = at<parameter::vector>(rule, "transformers", {});
     rule_transformers = parse_transformers(transformers, data_source);
 
@@ -354,8 +350,7 @@ std::shared_ptr<expression> parse_simplified_expression(const parameter::vector 
     address_container &addresses, const object_limits &limits)
 {
     std::unordered_map<std::string, std::string> data_ids;
-    return parse_expression(
-        conditions_array, data_ids, condition::data_source::values, {}, addresses, limits);
+    return parse_expression(conditions_array, data_ids, data_source::values, {}, addresses, limits);
 }
 
 input_filter_spec parse_input_filter(
