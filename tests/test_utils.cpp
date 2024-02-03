@@ -15,7 +15,7 @@ using namespace std::literals;
 
 namespace ddwaf::test {
 
-bool operator==(const event::match &lhs, const event::match &rhs)
+bool operator==(const condition_match &lhs, const condition_match &rhs)
 {
     return lhs.op == rhs.op && lhs.op_value == rhs.op_value && lhs.address == rhs.address &&
            lhs.path == rhs.path && lhs.value == rhs.value && lhs.highlight == rhs.highlight;
@@ -42,7 +42,7 @@ std::ostream &operator<<(std::ostream &os, const indent &offset)
 
 } // namespace
 
-std::ostream &operator<<(std::ostream &os, const event::match &m)
+std::ostream &operator<<(std::ostream &os, const condition_match &m)
 {
     os << indent(4) << "{\n"
        << indent(8) << "operator: " << m.op << ",\n"
@@ -241,7 +241,7 @@ rapidjson::Document object_to_rapidjson(const ddwaf_object &obj)
 
 namespace YAML {
 using event = ddwaf::test::event;
-using match = ddwaf::test::event::match;
+using match = ddwaf::test::condition_match;
 
 template <class T> T as(const YAML::Node &node, const std::string &key)
 {
@@ -469,7 +469,7 @@ void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os)
     for (const auto &e : events) { *os << e; }
 }
 
-void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os)
+void PrintTo(const std::list<ddwaf::test::condition_match> &matches, ::std::ostream *os)
 {
     for (const auto &m : matches) { *os << m; }
 }
@@ -536,8 +536,8 @@ bool WafResultDataMatcher::MatchAndExplain(
     return events.empty();
 }
 
-bool MatchMatcher::MatchAndExplain(
-    std::list<ddwaf::test::event::match> matches, ::testing::MatchResultListener * /*unused*/) const
+bool MatchMatcher::MatchAndExplain(std::list<ddwaf::test::condition_match> matches,
+    ::testing::MatchResultListener * /*unused*/) const
 {
     if (matches.size() != expected_matches_.size()) {
         return false;
@@ -561,12 +561,13 @@ bool MatchMatcher::MatchAndExplain(
     return matches.empty();
 }
 
-std::list<ddwaf::test::event::match> from_matches(const std::vector<ddwaf::event::match> &matches)
+std::list<ddwaf::test::condition_match> from_matches(
+    const std::vector<ddwaf::condition_match> &matches)
 {
-    std::list<ddwaf::test::event::match> match_list;
+    std::list<ddwaf::test::condition_match> match_list;
 
     for (const auto &m : matches) {
-        ddwaf::test::event::match new_match;
+        ddwaf::test::condition_match new_match;
         new_match.value = m.resolved;
         new_match.highlight = m.matched;
         new_match.op = m.operator_name;

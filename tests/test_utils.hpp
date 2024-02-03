@@ -79,7 +79,7 @@ public:
 
     template <typename T>
     void end_condition()
-        requires std::is_base_of_v<condition::base, T>
+        requires std::is_base_of_v<base_condition, T>
     {
         conditions_.emplace_back(std::make_unique<T>(std::move(arguments_)));
     }
@@ -87,11 +87,10 @@ public:
     void add_argument() { arguments_.emplace_back(); }
 
     void add_target(const std::string &name, std::vector<std::string> key_path = {},
-        std::vector<transformer_id> transformers = {},
-        condition::data_source source = condition::data_source::values)
+        std::vector<transformer_id> transformers = {}, data_source source = data_source::values)
     {
         auto &argument = arguments_.back();
-        argument.targets.emplace_back(condition::target_definition{
+        argument.targets.emplace_back(target_definition{
             name, get_target_index(name), std::move(key_path), std::move(transformers), source});
     }
 
@@ -102,8 +101,8 @@ public:
 
 protected:
     ddwaf::object_limits limits_{};
-    std::vector<condition::parameter_definition> arguments_{};
-    std::vector<std::unique_ptr<condition::base>> conditions_{};
+    std::vector<parameter_definition> arguments_{};
+    std::vector<std::unique_ptr<base_condition>> conditions_{};
 };
 
 } // namespace ddwaf::test
@@ -239,7 +238,8 @@ inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
     return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected)));
 }
 
-std::list<ddwaf::test::event::match> from_matches(const std::vector<ddwaf::event::match> &matches);
+std::list<ddwaf::test::event::match> from_matches(
+    const std::vector<ddwaf::condition_match> &matches);
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \

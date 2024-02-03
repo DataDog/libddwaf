@@ -130,10 +130,10 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
             std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
             bool ephemeral = path.ephemeral || param.ephemeral;
 
-            cache.match = condition_match{
-                {{"resource"sv, std::string{path.value}, path.address, path_kp},
-                    {"params"sv, object_to_string(*param.value), param.address, param_kp}},
-                {std::move(highlight)}, "lfi_detector", {}, ephemeral};
+            cache.match =
+                condition_match{{{"resource"sv, std::string{path.value}, path.address, path_kp},
+                                    {"params"sv, highlight, param.address, param_kp}},
+                    {std::move(highlight)}, "lfi_detector", {}, ephemeral};
 
             return {res, path.ephemeral || param.ephemeral};
         }
