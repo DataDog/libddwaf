@@ -769,7 +769,7 @@ TEST(TestExpression, MatchOnKeys)
     test::expression_builder builder(1);
     builder.start_condition();
     builder.add_argument();
-    builder.add_target("server.request.query", {}, {}, condition::data_source::keys);
+    builder.add_target("server.request.query", {}, {}, data_source::keys);
     builder.end_condition<matcher::regex_match>("value", 0, true);
     auto expr = builder.build();
 
@@ -802,8 +802,7 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
     test::expression_builder builder(1);
     builder.start_condition();
     builder.add_argument();
-    builder.add_target(
-        "server.request.query", {}, {transformer_id::lowercase}, condition::data_source::keys);
+    builder.add_target("server.request.query", {}, {transformer_id::lowercase}, data_source::keys);
     builder.end_condition<matcher::regex_match>("value", 0, true);
     auto expr = builder.build();
 

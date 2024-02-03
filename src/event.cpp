@@ -14,15 +14,27 @@ namespace ddwaf {
 
 namespace {
 
-bool redact_match(const ddwaf::obfuscator &obfuscator, const condition_match::argument &match)
+bool redact_match(const ddwaf::obfuscator &obfuscator, const condition_match &match)
 {
-    for (const auto &key : match.key_path) {
-        if (obfuscator.is_sensitive_key(key)) {
+    for (auto arg : match.args) {
+        for (const auto &key : arg.key_path) {
+            if (obfuscator.is_sensitive_key(key)) {
+                return true;
+            }
+        }
+
+        if (obfuscator.is_sensitive_value(arg.resolved)) {
             return true;
         }
     }
 
-    return obfuscator.is_sensitive_value(match.resolved);
+    for (const auto &highlight : match.highlights) {
+        if (obfuscator.is_sensitive_value(highlight)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str, bool redact = false)
@@ -40,13 +52,11 @@ void serialize_match(const condition_match &match, ddwaf_object &match_map, auto
     ddwaf_object param;
     ddwaf_object_map(&param);
 
-    bool redact = false;
+    bool redact = redact_match(obfuscator, match);
+
     ddwaf_object highlight_arr;
     ddwaf_object_array(&highlight_arr);
     for (auto highlight : match.highlights) {
-        if (!redact) {
-            redact = redact || obfuscator.is_sensitive_value(highlight);
-        }
         ddwaf_object_array_add(&highlight_arr, to_object(tmp, highlight, redact));
     }
 
@@ -65,10 +75,6 @@ void serialize_match(const condition_match &match, ddwaf_object &match_map, auto
         ddwaf_object_map_add(&param, "value", to_object(tmp, arg.resolved, redact));
     } else {
         for (const auto &arg : match.args) {
-            if (!redact) {
-                redact = redact || redact_match(obfuscator, arg);
-            }
-
             ddwaf_object argument;
             ddwaf_object_map(&argument);
 

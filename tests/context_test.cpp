@@ -337,12 +337,12 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_EQ(event.matches.size(), 1);
 
     auto &match = event.matches[0];
-    EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-    EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+    EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+    EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
     EXPECT_STREQ(match.operator_name.data(), "ip_match");
     EXPECT_STREQ(match.operator_value.data(), "");
-    EXPECT_STREQ(match.address.data(), "http.client_ip");
-    EXPECT_TRUE(match.key_path.empty());
+    EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+    EXPECT_TRUE(match.args[0].key_path.empty());
 }
 
 TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
@@ -476,12 +476,12 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "http.client_ip");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 
     {
@@ -553,12 +553,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "http.client_ip");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 
     {
@@ -584,12 +584,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "admin");
-        EXPECT_STREQ(match.matched.c_str(), "admin");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "admin");
+        EXPECT_STREQ(match.highlights[0].c_str(), "admin");
         EXPECT_STREQ(match.operator_name.data(), "exact_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "usr.id");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "usr.id");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 }
 
@@ -650,12 +650,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "http.client_ip");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 
     {
@@ -727,12 +727,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_TRUE(event.rule->get_actions().empty());
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "http.client_ip");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 
     {
@@ -758,12 +758,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "admin");
-        EXPECT_STREQ(match.matched.c_str(), "admin");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "admin");
+        EXPECT_STREQ(match.highlights[0].c_str(), "admin");
         EXPECT_STREQ(match.operator_name.data(), "exact_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "usr.id");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "usr.id");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 }
 

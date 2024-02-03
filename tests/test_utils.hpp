@@ -27,17 +27,17 @@ namespace ddwaf::test {
 struct event {
     struct match {
         std::string op;
-        std::string op_value;
+        std::string op_value{};
         std::string address;
-        std::vector<std::string> path;
+        std::vector<std::string> path{};
         std::string value;
-        std::string highlight;
+        std::string highlight{};
     };
 
     std::string id;
     std::string name;
     std::map<std::string, std::string> tags{{"type", ""}, {"category", ""}};
-    std::vector<std::string> actions;
+    std::vector<std::string> actions{};
     std::vector<match> matches;
 };
 

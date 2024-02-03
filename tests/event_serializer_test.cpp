@@ -11,6 +11,7 @@
 #include "utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 
@@ -44,8 +45,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 
     ddwaf::event event;
     event.rule = &rule;
-    event.matches =
-        decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}}};
+    event.matches = {{{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"}};
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
@@ -76,11 +76,10 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 
     ddwaf::event event;
     event.rule = &rule;
-    event.matches =
-        decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}},
-            {"string", "string", "match_regex", ".*", "response.body", {}},
-            {"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}},
-            {"<script>", "", "is_xss", "", "path_params", {"key"}}};
+    event.matches = {{{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
+        {{{"input", "string", "response.body"}}, {"string"}, "match_regex", ".*"},
+        {{{"input", "192.168.0.1", "client.ip"}}, {"192.168.0.1"}, "ip_match", ""},
+        {{{"input", "<script>", "path_params", {"key"}}}, {}, "is_xss", ""}};
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
@@ -132,18 +131,18 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     {
         ddwaf::event event;
         event.rule = &rule1;
-        event.matches =
-            decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}},
-                {"string", "string", "match_regex", ".*", "response.body", {}},
-                {"<script>", "", "is_xss", "", "path_params", {"key"}}};
+        event.matches = {{{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
+            {{{"input", "string", "response.body"}}, {"string"}, "match_regex", ".*"},
+            {{{"input", "<script>", "path_params", {"key"}}}, {}, "is_xss", ""}};
         events.emplace_back(std::move(event));
     }
 
     {
         ddwaf::event event;
         event.rule = &rule2;
-        event.matches = decltype(event.matches){
-            {"192.168.0.1", "192.168.0.1", "ip_match", "", "client.ip", {}}};
+        event.matches = {
+            {{{"input", "192.168.0.1", "client.ip"}}, {"192.168.0.1"}, "ip_match", ""},
+        };
         events.emplace_back(std::move(event));
     }
 
@@ -195,8 +194,9 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
     ddwaf::event event;
     event.rule = &rule;
-    event.matches =
-        decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}}};
+    event.matches = {
+        {{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
+    };
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
@@ -231,8 +231,9 @@ TEST(TestEventSerializer, SerializeAllTags)
 
     ddwaf::event event;
     event.rule = &rule;
-    event.matches =
-        decltype(event.matches){{"value", "val", "random", "val", "query", {"root", "key"}}};
+    event.matches = {
+        {{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
+    };
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator);
