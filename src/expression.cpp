@@ -36,8 +36,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         const auto &cond = conditions_[i];
         auto &cond_cache = cache.conditions[i];
 
-        if (!std::holds_alternative<std::monostate>(cond_cache.match) &&
-            !is_ephemeral_match(cond_cache.match)) {
+        if (cond_cache.match.has_value() && !cond_cache.match->ephemeral) {
             continue;
         }
 

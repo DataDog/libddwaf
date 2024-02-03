@@ -11,6 +11,8 @@
 #include "log.hpp"
 #include "utils.hpp"
 
+using namespace std::literals;
+
 namespace ddwaf {
 
 namespace {
@@ -124,10 +126,14 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
         auto [res, highlight] = lfi_impl(path.value, *param.value);
 
         if (res) {
-            std::vector<std::string> key_path{param.key_path.begin(), param.key_path.end()};
+            std::vector<std::string> param_kp{param.key_path.begin(), param.key_path.end()};
+            std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
+            bool ephemeral = path.ephemeral || param.ephemeral;
 
-            cache.match = event::univariate_match{std::string{path.value}, std::move(highlight),
-                "lfi_detector", {}, param.address, std::move(key_path), param.ephemeral};
+            cache.match = condition_match{
+                {{"resource"sv, std::string{path.value}, path.address, path_kp},
+                    {"params"sv, object_to_string(*param.value), param.address, param_kp}},
+                {std::move(highlight)}, "lfi_detector", {}, ephemeral};
 
             return {res, path.ephemeral || param.ephemeral};
         }

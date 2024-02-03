@@ -10,7 +10,6 @@
 #include <unordered_map>
 
 #include "matcher/base.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::matcher {
 

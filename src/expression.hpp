@@ -6,19 +6,15 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "context_allocator.hpp"
-#include "event.hpp"
 #include "exclusion/common.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
@@ -50,18 +46,17 @@ public:
         for (const auto &cond : conditions_) { cond->get_addresses(addresses); }
     }
 
-    static std::vector<event::match> get_matches(cache_type &cache)
+    static std::vector<condition_match> get_matches(cache_type &cache)
     {
-        std::vector<event::match> matches;
+        std::vector<condition_match> matches;
         matches.reserve(cache.conditions.size());
         for (auto &cond_cache : cache.conditions) {
-            auto &match = cond_cache.match;
-            if (!std::holds_alternative<std::monostate>(match)) {
-                if (is_ephemeral_match(match)) {
-                    matches.emplace_back(std::move(match));
+            if (cond_cache.match.has_value()) {
+                if (cond_cache.match->ephemeral) {
+                    matches.emplace_back(std::move(cond_cache.match.value()));
                     cond_cache.match = {};
                 } else {
-                    matches.emplace_back(match);
+                    matches.emplace_back(cond_cache.match.value());
                 }
             }
         }

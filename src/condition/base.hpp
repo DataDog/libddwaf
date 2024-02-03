@@ -12,7 +12,6 @@
 
 #include "clock.hpp"
 #include "context_allocator.hpp"
-#include "event.hpp"
 #include "exclusion/common.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
@@ -23,12 +22,27 @@ namespace ddwaf {
 
 enum class data_source : uint8_t { values, keys, object };
 
+struct condition_match {
+    struct argument {
+        std::string_view name;
+        std::string resolved;
+        std::string_view address{};
+        std::vector<std::string> key_path{};
+    };
+
+    std::vector<argument> args;
+    std::vector<std::string> highlights;
+    std::string_view operator_name;
+    std::string_view operator_value;
+    bool ephemeral{false};
+};
+
 struct condition_cache {
     // The targets cache mirrors the array of targets for the given condition.
     // Each element in this array caches the pointer of the last non-ephemeral
     // object evaluated by the target in the same index within the condition.
     memory::vector<const ddwaf_object *> targets;
-    event::match match;
+    std::optional<condition_match> match;
 };
 
 // Provides the specification of a specific operator parameter. Note that the

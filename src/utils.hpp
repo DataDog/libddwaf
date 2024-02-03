@@ -11,13 +11,12 @@
 #include <cstdint>
 #include <functional>
 #include <iomanip>
-#include <iterator>
+#include <limits>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <system_error>
 #include <type_traits>
-#include <unordered_map>
 
 #include "ddwaf.h"
 
@@ -229,6 +228,31 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
     }
 
     return {false, {}};
+}
+
+inline std::string object_to_string(const ddwaf_object &object)
+{
+    if (object.type == DDWAF_OBJ_STRING) {
+        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
+    }
+
+    if (object.type == DDWAF_OBJ_BOOL) {
+        return to_string<std::string>(object.boolean);
+    }
+
+    if (object.type == DDWAF_OBJ_SIGNED) {
+        return to_string<std::string>(object.intValue);
+    }
+
+    if (object.type == DDWAF_OBJ_UNSIGNED) {
+        return to_string<std::string>(object.uintValue);
+    }
+
+    if (object.type == DDWAF_OBJ_FLOAT) {
+        return to_string<std::string>(object.f64);
+    }
+
+    return {};
 }
 
 } // namespace ddwaf

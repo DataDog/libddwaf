@@ -6,14 +6,10 @@
 
 #pragma once
 
-#include <optional>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "ddwaf.h"
-#include "event.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::matcher {
 

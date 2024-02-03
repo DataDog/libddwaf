@@ -9,40 +9,20 @@
 #include "iterator.hpp"
 #include "transformer/manager.hpp"
 
+using namespace std::literals;
+
 namespace ddwaf {
 
 namespace {
 
-// TODO store as std::variant<memory::string, bool, int64_t, uint64_t>?
-std::string object_to_string(const ddwaf_object &object)
+template <typename Iterator>
+std::optional<condition_match> eval_object(Iterator &it, std::string_view address, bool ephemeral,
+    const matcher::base &matcher, const std::span<const transformer_id> &transformers,
+    const object_limits &limits)
 {
-    if (object.type == DDWAF_OBJ_STRING) {
-        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
-    }
-
-    if (object.type == DDWAF_OBJ_BOOL) {
-        return to_string<std::string>(object.boolean);
-    }
-
-    if (object.type == DDWAF_OBJ_SIGNED) {
-        return to_string<std::string>(object.intValue);
-    }
-
-    if (object.type == DDWAF_OBJ_UNSIGNED) {
-        return to_string<std::string>(object.uintValue);
-    }
-
-    if (object.type == DDWAF_OBJ_FLOAT) {
-        return to_string<std::string>(object.f64);
-    }
-
-    return {};
-}
-
-event::match eval_object(const ddwaf_object *object, const matcher::base &matcher,
-    const std::span<const transformer_id> &transformers, const object_limits &limits)
-{
-    ddwaf_object src = *object;
+    // The iterator is guaranteed to be valid at this point, which means the
+    // object pointer should not be nullptr
+    ddwaf_object src = *(*it);
 
     if (src.type == DDWAF_OBJ_STRING) {
         if (src.stringValue == nullptr) {
@@ -61,8 +41,11 @@ event::match eval_object(const ddwaf_object *object, const matcher::base &matche
                 if (!res) {
                     return {};
                 }
-                return event::univariate_match{object_to_string(dst), std::move(highlight),
-                    matcher.name(), matcher.to_string(), {}, {}};
+
+                DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
+
+                return {{{{"input"sv, object_to_string(dst), address, it.get_current_path()}},
+                    {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
             }
         }
     }
@@ -72,14 +55,16 @@ event::match eval_object(const ddwaf_object *object, const matcher::base &matche
         return {};
     }
 
-    return event::univariate_match{
-        object_to_string(src), std::move(highlight), matcher.name(), matcher.to_string(), {}, {}};
+    DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
+
+    return {{{{"input"sv, object_to_string(src), address, it.get_current_path()}},
+        {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
 }
 
 template <typename Iterator>
-event::match eval_target(Iterator &it, const matcher::base &matcher,
-    const std::span<const transformer_id> &transformers, const object_limits &limits,
-    ddwaf::timer &deadline)
+std::optional<condition_match> eval_target(Iterator &it, std::string_view address, bool ephemeral,
+    const matcher::base &matcher, const std::span<const transformer_id> &transformers,
+    const object_limits &limits, ddwaf::timer &deadline)
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -90,14 +75,11 @@ event::match eval_target(Iterator &it, const matcher::base &matcher,
             continue;
         }
 
-        auto match = eval_object(*it, matcher, transformers, limits);
-        if (!std::holds_alternative<event::univariate_match>(match)) {
-            continue;
+        auto match = eval_object(it, address, ephemeral, matcher, transformers, limits);
+        if (match.has_value()) {
+            // If this target matched, we can stop processing
+            return match;
         }
-
-        std::get<event::univariate_match>(match).key_path = std::move(it.get_current_path());
-        // If this target matched, we can stop processing
-        return match;
     }
 
     return {};
@@ -150,22 +132,19 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
             cache.targets[i] = object;
         }
 
-        event::match match;
+        std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
             object::key_iterator it(object, target.key_path, objects_excluded, limits);
-            match = eval_target(it, *matcher, target.transformers, limits, deadline);
+            match = eval_target(
+                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         } else {
             object::value_iterator it(object, target.key_path, objects_excluded, limits);
-            match = eval_target(it, *matcher, target.transformers, limits, deadline);
+            match = eval_target(
+                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         }
 
-        if (std::holds_alternative<event::univariate_match>(match)) {
-            auto &umatch = std::get<event::univariate_match>(match);
-            umatch.address = target.name;
-            umatch.ephemeral = ephemeral;
-            DDWAF_TRACE("Target {} matched parameter value {}", target.name, umatch.resolved);
-
+        if (match.has_value()) {
             cache.match = std::move(match);
             return {true, ephemeral};
         }
