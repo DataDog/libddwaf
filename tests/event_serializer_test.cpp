@@ -59,10 +59,11 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
                               .actions = {"block", "monitor"},
                               .matches = {{.op = "random",
                                   .op_value = "val",
-                                  .address = "query",
-                                  .path = {"root", "key"},
-                                  .value = "value",
-                                  .highlight = "val"}}});
+                                  .highlight = "val",
+                                  .args = {{.name = "input",
+                                      .value = "value",
+                                      .address = "query",
+                                      .path = {"root", "key"}}}}}});
 
     EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
 
@@ -93,25 +94,37 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
                               .actions = {"block", "monitor"},
                               .matches = {{.op = "random",
                                               .op_value = "val",
-                                              .address = "query",
-                                              .path = {"root", "key"},
-                                              .value = "value",
-                                              .highlight = "val"},
-                                  {.op = "match_regex",
-                                      .op_value = ".*",
-                                      .address = "response.body",
-                                      .value = "string",
-                                      .highlight = "string"},
-                                  {.op = "ip_match",
-                                      .address = "client.ip",
-                                      .value = "192.168.0.1",
-                                      .highlight = "192.168.0.1"},
+                                              .highlight = "val",
+                                              .args = {{
+                                                  .name = "input",
+                                                  .value = "value",
+                                                  .address = "query",
+                                                  .path = {"root", "key"},
+                                              }}},
                                   {
-                                      .op = "is_xss",
-                                      .address = "path_params",
-                                      .path = {"key"},
-                                      .value = "<script>",
-                                  }}});
+                                      .op = "match_regex",
+                                      .op_value = ".*",
+                                      .highlight = "string",
+                                      .args = {{
+                                          .name = "input",
+                                          .value = "string",
+                                          .address = "response.body",
+                                      }},
+                                  },
+                                  {.op = "ip_match",
+                                      .highlight = "192.168.0.1",
+                                      .args = {{
+                                          .name = "input",
+                                          .value = "192.168.0.1",
+                                          .address = "client.ip",
+                                      }}},
+                                  {.op = "is_xss",
+                                      .args = {{
+                                          .name = "input",
+                                          .value = "<script>",
+                                          .address = "path_params",
+                                          .path = {"key"},
+                                      }}}}});
 
     EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
 
@@ -157,29 +170,35 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
             .actions = {"block", "monitor"},
             .matches = {{.op = "random",
                             .op_value = "val",
-                            .address = "query",
-                            .path = {"root", "key"},
-                            .value = "value",
-                            .highlight = "val"},
+                            .highlight = "val",
+                            .args = {{
+                                .value = "value",
+                                .address = "query",
+                                .path = {"root", "key"},
+                            }}},
                 {.op = "match_regex",
                     .op_value = ".*",
-                    .address = "response.body",
-                    .value = "string",
-                    .highlight = "string"},
-                {
-                    .op = "is_xss",
-                    .address = "path_params",
-                    .path = {"key"},
-                    .value = "<script>",
-                }}},
+                    .highlight = "string",
+                    .args = {{
+                        .value = "string",
+                        .address = "response.body",
+                    }}},
+                {.op = "is_xss",
+                    .args = {{
+                        .value = "<script>",
+                        .address = "path_params",
+                        .path = {"key"},
+                    }}}}},
         {.id = "xasd1023",
             .name = "pseudorandom rule",
             .tags = {{"type", "test"}, {"category", "none"}},
             .actions = {"unblock"},
             .matches = {{.op = "ip_match",
-                .address = "client.ip",
-                .value = "192.168.0.1",
-                .highlight = "192.168.0.1"}}},
+                .highlight = "192.168.0.1",
+                .args = {{
+                    .value = "192.168.0.1",
+                    .address = "client.ip",
+                }}}}},
         {});
 
     EXPECT_THAT(output.actions, WithActions({"block", "monitor", "unblock"}));
@@ -209,10 +228,12 @@ TEST(TestEventSerializer, SerializeEventNoActions)
                               .tags = {{"type", "test"}, {"category", "none"}},
                               .matches = {{.op = "random",
                                   .op_value = "val",
-                                  .address = "query",
-                                  .path = {"root", "key"},
-                                  .value = "value",
-                                  .highlight = "val"}}});
+                                  .highlight = "val",
+                                  .args = {{
+                                      .value = "value",
+                                      .address = "query",
+                                      .path = {"root", "key"},
+                                  }}}}});
 
     EXPECT_THAT(output.actions, WithActions({}));
 
@@ -248,10 +269,12 @@ TEST(TestEventSerializer, SerializeAllTags)
                               .actions = {"unblock"},
                               .matches = {{.op = "random",
                                   .op_value = "val",
-                                  .address = "query",
-                                  .path = {"root", "key"},
-                                  .value = "value",
-                                  .highlight = "val"}}});
+                                  .highlight = "val",
+                                  .args = {{
+                                      .value = "value",
+                                      .address = "query",
+                                      .path = {"root", "key"},
+                                  }}}}});
 
     EXPECT_THAT(output.actions, WithActions({"unblock"}));
 

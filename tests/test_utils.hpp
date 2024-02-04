@@ -26,12 +26,16 @@
 namespace ddwaf::test {
 struct event {
     struct match {
+        struct argument {
+            std::string name{"input"};
+            std::string value;
+            std::string address;
+            std::vector<std::string> path{};
+        };
         std::string op;
         std::string op_value{};
-        std::string address;
-        std::vector<std::string> path{};
-        std::string value;
         std::string highlight{};
+        std::vector<argument> args;
     };
 
     std::string id;
@@ -41,6 +45,7 @@ struct event {
     std::vector<match> matches;
 };
 
+bool operator==(const event::match::argument &lhs, const event::match::argument &rhs);
 bool operator==(const event::match &lhs, const event::match &rhs);
 bool operator==(const event &lhs, const event &rhs);
 

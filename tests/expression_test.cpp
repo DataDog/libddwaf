@@ -42,10 +42,11 @@ TEST(TestExpression, SimpleMatch)
     EXPECT_FALSE(matches[0].ephemeral);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
-                                .address = "server.request.query",
-                                .path = {},
-                                .value = "value",
-                                .highlight = "value"});
+                                .highlight = "value",
+                                .args = {{
+                                    .value = "value",
+                                    .address = "server.request.query",
+                                }}});
 }
 
 TEST(TestExpression, EphemeralMatch)
@@ -78,10 +79,11 @@ TEST(TestExpression, EphemeralMatch)
     EXPECT_TRUE(matches[0].ephemeral);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
-                                .address = "server.request.query",
-                                .path = {},
-                                .value = "value",
-                                .highlight = "value"});
+                                .highlight = "value",
+                                .args = {{
+                                    .value = "value",
+                                    .address = "server.request.query",
+                                }}});
 }
 
 TEST(TestExpression, MultiInputMatchOnSecondEval)
@@ -134,10 +136,11 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
         auto matches = expr->get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
                                     .op_value = "^value$",
-                                    .address = "server.request.body",
-                                    .path = {},
-                                    .value = "value",
-                                    .highlight = "value"});
+                                    .highlight = "value",
+                                    .args = {{
+                                        .value = "value",
+                                        .address = "server.request.body",
+                                    }}});
     }
 }
 
@@ -190,10 +193,11 @@ TEST(TestExpression, EphemeralMatchOnSecondEval)
         auto matches = expr->get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
                                     .op_value = "^value$",
-                                    .address = "server.request.body",
-                                    .path = {},
-                                    .value = "value",
-                                    .highlight = "value"});
+                                    .highlight = "value",
+                                    .args = {{
+                                        .value = "value",
+                                        .address = "server.request.body",
+                                    }}});
     }
 }
 
@@ -241,16 +245,18 @@ TEST(TestExpression, EphemeralMatchTwoConditions)
     EXPECT_MATCHES(matches, {
                                 {.op = "match_regex",
                                     .op_value = "^value$",
-                                    .address = "server.request.query",
-                                    .path = {},
-                                    .value = "value",
-                                    .highlight = "value"},
+                                    .highlight = "value",
+                                    .args = {{
+                                        .value = "value",
+                                        .address = "server.request.query",
+                                    }}},
                                 {.op = "match_regex",
                                     .op_value = "^value$",
-                                    .address = "server.request.body",
-                                    .path = {},
-                                    .value = "value",
-                                    .highlight = "value"},
+                                    .highlight = "value",
+                                    .args = {{
+                                        .value = "value",
+                                        .address = "server.request.body",
+                                    }}},
                             });
 }
 
@@ -503,10 +509,11 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
         EXPECT_FALSE(matches[0].ephemeral);
         EXPECT_MATCHES(matches, {.op = "match_regex",
                                     .op_value = "^value$",
-                                    .address = "server.request.query",
-                                    .path = {},
-                                    .value = "value",
-                                    .highlight = "value"});
+                                    .highlight = "value",
+                                    .args = {{
+                                        .value = "value",
+                                        .address = "server.request.query",
+                                    }}});
     }
 }
 
@@ -697,10 +704,12 @@ TEST(TestExpression, MatchWithKeyPath)
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
-                                .address = "server.request.query",
-                                .path = {"key"},
-                                .value = "value",
-                                .highlight = "value"});
+                                .highlight = "value",
+                                .args = {{
+                                    .value = "value",
+                                    .address = "server.request.query",
+                                    .path = {"key"},
+                                }}});
 }
 
 TEST(TestExpression, MatchWithTransformer)
@@ -727,10 +736,11 @@ TEST(TestExpression, MatchWithTransformer)
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
-                                .address = "server.request.query",
-                                .path = {},
-                                .value = "value",
-                                .highlight = "value"});
+                                .highlight = "value",
+                                .args = {{
+                                    .value = "value",
+                                    .address = "server.request.query",
+                                }}});
 }
 
 TEST(TestExpression, MatchWithMultipleTransformers)
@@ -758,10 +768,11 @@ TEST(TestExpression, MatchWithMultipleTransformers)
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "^ value $",
-                                .address = "server.request.query",
-                                .path = {},
-                                .value = " value ",
-                                .highlight = " value "});
+                                .highlight = " value ",
+                                .args = {{
+                                    .value = " value ",
+                                    .address = "server.request.query",
+                                }}});
 }
 
 TEST(TestExpression, MatchOnKeys)
@@ -791,10 +802,12 @@ TEST(TestExpression, MatchOnKeys)
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
-                                .address = "server.request.query",
-                                .path = {"value"},
-                                .value = "value",
-                                .highlight = "value"});
+                                .highlight = "value",
+                                .args = {{
+                                    .value = "value",
+                                    .address = "server.request.query",
+                                    .path = {"value"},
+                                }}});
 }
 
 TEST(TestExpression, MatchOnKeysWithTransformer)
@@ -824,10 +837,12 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
-                                .address = "server.request.query",
-                                .path = {"VALUE"},
-                                .value = "value",
-                                .highlight = "value"});
+                                .highlight = "value",
+                                .args = {{
+                                    .value = "value",
+                                    .address = "server.request.query",
+                                    .path = {"VALUE"},
+                                }}});
 }
 
 TEST(TestExpression, ExcludeInput)

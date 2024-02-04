@@ -41,15 +41,19 @@ TEST(TestContextIntegration, Basic)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                            .op_value = "rule2",
-                                           .address = "value",
-                                           .value = "rule2",
-                                           .highlight = "rule2"},
+                                           .highlight = "rule2",
+                                           .args = {{
+                                               .value = "rule2",
+                                               .address = "value",
+                                           }}},
                                {.op = "match_regex",
                                    .op_value = "rule3",
-                                   .address = "value2",
-                                   .path = {"key"},
-                                   .value = "rule3",
-                                   .highlight = "rule3"}}});
+                                   .highlight = "rule3",
+                                   .args = {{
+                                       .value = "rule3",
+                                       .address = "value2",
+                                       .path = {"key"},
+                                   }}}}});
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -84,10 +88,12 @@ TEST(TestContextIntegration, KeyPaths)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "Sqreen",
-                               .address = "param",
-                               .path = {"x"},
-                               .value = "Sqreen",
-                               .highlight = "Sqreen"}}});
+                               .highlight = "Sqreen",
+                               .args = {{
+                                   .value = "Sqreen",
+                                   .address = "param",
+                                   .path = {"x"},
+                               }}}}});
 
     ddwaf_result_free(&ret);
 
@@ -104,10 +110,12 @@ TEST(TestContextIntegration, KeyPaths)
                            .tags = {{"type", "flow2"}, {"category", "category2"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "Sqreen",
-                               .address = "param",
-                               .path = {"z"},
-                               .value = "Sqreen",
-                               .highlight = "Sqreen"}}});
+                               .highlight = "Sqreen",
+                               .args = {{
+                                   .value = "Sqreen",
+                                   .address = "param",
+                                   .path = {"z"},
+                               }}}}});
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
 
@@ -128,10 +136,12 @@ TEST(TestContextIntegration, KeyPaths)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "Sqreen",
-                               .address = "param",
-                               .path = {"y"},
-                               .value = "Sqreen",
-                               .highlight = "Sqreen"}}});
+                               .highlight = "Sqreen",
+                               .args = {{
+                                   .value = "Sqreen",
+                                   .address = "param",
+                                   .path = {"y"},
+                               }}}}});
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
@@ -237,9 +247,11 @@ TEST(TestContextIntegration, SingleCollectionMatch)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "Sqreen",
-                                   .address = "param1",
-                                   .value = "Sqreen",
-                                   .highlight = "Sqreen"}}});
+                                   .highlight = "Sqreen",
+                                   .args = {{
+                                       .value = "Sqreen",
+                                       .address = "param1",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -286,9 +298,11 @@ TEST(TestContextIntegration, MultiCollectionMatches)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "Sqreen",
-                                   .address = "param1",
-                                   .value = "Sqreen",
-                                   .highlight = "Sqreen"}}});
+                                   .highlight = "Sqreen",
+                                   .args = {{
+                                       .value = "Sqreen",
+                                       .address = "param1",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -317,9 +331,11 @@ TEST(TestContextIntegration, MultiCollectionMatches)
                                .tags = {{"type", "flow2"}, {"category", "category2"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "Sqreen",
-                                   .address = "param2",
-                                   .value = "Sqreen",
-                                   .highlight = "Sqreen"}}});
+                                   .highlight = "Sqreen",
+                                   .args = {{
+                                       .value = "Sqreen",
+                                       .address = "param2",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -388,14 +404,18 @@ TEST(TestContextIntegration, ParameterOverride)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                            .op_value = "^string.*",
-                                           .address = "arg1",
-                                           .value = "string 1",
-                                           .highlight = "string 1"},
+                                           .highlight = "string 1",
+                                           .args = {{
+                                               .value = "string 1",
+                                               .address = "arg1",
+                                           }}},
                                {.op = "match_regex",
                                    .op_value = ".*",
-                                   .address = "arg2",
-                                   .value = "string 2",
-                                   .highlight = "string 2"}}});
+                                   .highlight = "string 2",
+                                   .args = {{
+                                       .value = "string 2",
+                                       .address = "arg2",
+                                   }}}}});
 
     ddwaf_result_free(&ret);
 
@@ -433,9 +453,11 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "Sqreen",
-                                   .address = "param1",
-                                   .value = "Sqreen",
-                                   .highlight = "Sqreen"}}});
+                                   .highlight = "Sqreen",
+                                   .args = {{
+                                       .value = "Sqreen",
+                                       .address = "param1",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -451,9 +473,11 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "Sqreen",
-                                   .address = "param1",
-                                   .value = "Sqreen",
-                                   .highlight = "Sqreen"}}});
+                                   .highlight = "Sqreen",
+                                   .args = {{
+                                       .value = "Sqreen",
+                                       .address = "param1",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -487,14 +511,18 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                                .op_value = "^string.*",
-                                               .address = "arg1",
-                                               .value = "string 1",
-                                               .highlight = "string 1"},
+                                               .highlight = "string 1",
+                                               .args = {{
+                                                   .value = "string 1",
+                                                   .address = "arg1",
+                                               }}},
                                    {.op = "match_regex",
                                        .op_value = ".*",
-                                       .address = "arg2",
-                                       .value = "string 2",
-                                       .highlight = "string 2"}}});
+                                       .highlight = "string 2",
+                                       .args = {{
+                                           .value = "string 2",
+                                           .address = "arg2",
+                                       }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -510,14 +538,18 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                                .op_value = "^string.*",
-                                               .address = "arg1",
-                                               .value = "string 1",
-                                               .highlight = "string 1"},
+                                               .highlight = "string 1",
+                                               .args = {{
+                                                   .value = "string 1",
+                                                   .address = "arg1",
+                                               }}},
                                    {.op = "match_regex",
                                        .op_value = ".*",
-                                       .address = "arg2",
-                                       .value = "string 8",
-                                       .highlight = "string 8"}}});
+                                       .highlight = "string 8",
+                                       .args = {{
+                                           .value = "string 8",
+                                           .address = "arg2",
+                                       }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -533,14 +565,18 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                                .op_value = "^string.*",
-                                               .address = "arg1",
-                                               .value = "string 1",
-                                               .highlight = "string 1"},
+                                               .highlight = "string 1",
+                                               .args = {{
+                                                   .value = "string 1",
+                                                   .address = "arg1",
+                                               }}},
                                    {.op = "match_regex",
                                        .op_value = ".*",
-                                       .address = "arg2",
-                                       .value = "string 3",
-                                       .highlight = "string 3"}}});
+                                       .highlight = "string 3",
+                                       .args = {{
+                                           .value = "string 3",
+                                           .address = "arg2",
+                                       }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -572,9 +608,11 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "^string.*",
-                                   .address = "arg1",
-                                   .value = "string 1",
-                                   .highlight = "string 1"}}});
+                                   .highlight = "string 1",
+                                   .args = {{
+                                       .value = "string 1",
+                                       .address = "arg1",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -592,9 +630,11 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = ".*",
-                                   .address = "arg2",
-                                   .value = "string 8",
-                                   .highlight = "string 8"}}});
+                                   .highlight = "string 8",
+                                   .args = {{
+                                       .value = "string 8",
+                                       .address = "arg2",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -628,9 +668,11 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = ".*",
-                                   .address = "arg2",
-                                   .value = "string 8",
-                                   .highlight = "string 8"}}});
+                                   .highlight = "string 8",
+                                   .args = {{
+                                       .value = "string 8",
+                                       .address = "arg2",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -646,9 +688,11 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "^string.*",
-                                   .address = "arg1",
-                                   .value = "string 1",
-                                   .highlight = "string 1"}}});
+                                   .highlight = "string 1",
+                                   .args = {{
+                                       .value = "string 1",
+                                       .address = "arg1",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -680,9 +724,11 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "^string.*",
-                                   .address = "arg1",
-                                   .value = "string 1",
-                                   .highlight = "string 1"}}});
+                                   .highlight = "string 1",
+                                   .args = {{
+                                       .value = "string 1",
+                                       .address = "arg1",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -699,9 +745,11 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = ".*",
-                                   .address = "arg2",
-                                   .value = "string 8",
-                                   .highlight = "string 8"}}});
+                                   .highlight = "string 8",
+                                   .args = {{
+                                       .value = "string 8",
+                                       .address = "arg2",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -734,9 +782,11 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = ".*",
-                                   .address = "arg2",
-                                   .value = "string 8",
-                                   .highlight = "string 8"}}});
+                                   .highlight = "string 8",
+                                   .args = {{
+                                       .value = "string 8",
+                                       .address = "arg2",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
@@ -752,9 +802,11 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "^string.*",
-                                   .address = "arg1",
-                                   .value = "string 1",
-                                   .highlight = "string 1"}}});
+                                   .highlight = "string 1",
+                                   .args = {{
+                                       .value = "string 1",
+                                       .address = "arg1",
+                                   }}}}});
 
         ddwaf_result_free(&ret);
     }
@@ -788,9 +840,11 @@ TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = ".*",
-                                   .address = "arg2",
-                                   .value = "string 8",
-                                   .highlight = "string 8"}}});
+                                   .highlight = "string 8",
+                                   .args = {{
+                                       .value = "string 8",
+                                       .address = "arg2",
+                                   }}}}});
         ddwaf_result_free(&ret);
     }
 
