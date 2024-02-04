@@ -17,7 +17,7 @@ namespace ddwaf::test {
 
 bool operator==(const event::match::argument &lhs, const event::match::argument &rhs)
 {
-    return lhs.address == rhs.address && lhs.name == rhs.name && lhs.value == rhs.name &&
+    return lhs.address == rhs.address && lhs.name == rhs.name && lhs.value == rhs.value &&
            lhs.path == rhs.path;
 }
 

@@ -28,11 +28,11 @@ struct event {
     struct match {
         struct argument {
             std::string name{"input"};
-            std::string value;
-            std::string address;
+            std::string value{};
+            std::string address{};
             std::vector<std::string> path{};
         };
-        std::string op;
+        std::string op{};
         std::string op_value{};
         std::string highlight{};
         std::vector<argument> args;

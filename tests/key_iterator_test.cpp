@@ -617,7 +617,6 @@ TEST(TestKeyIterator, TestSimplePath)
     ddwaf_object_map_add(&object, "key1", ddwaf_object_string(&tmp, "value"));
     ddwaf_object_map_add(&object, "key2", ddwaf_object_string(&tmp, "value"));
 
-    exclusion::object_set_ref exclude;
     {
         std::vector<std::string> key_path{"key"};
         ddwaf::object::key_iterator it(&object, key_path, {});

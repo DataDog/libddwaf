@@ -72,12 +72,15 @@ TEST(TestIsSQLi, TestRuleset)
     auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_EVENTS(ret,
-        {.id = "1",
-            .name = "rule1",
-            .tags = {{"type", "flow1"}, {"category", "category1"}},
-            .matches = {
-                {.op = "is_sqli", .address = "arg1", .value = "'OR 1=1/*", .highlight = "s&1c"}}});
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "is_sqli",
+                               .highlight = "s&1c",
+                               .args = {{
+                                   .value = "'OR 1=1/*",
+                                   .address = "arg1",
+                               }}}}});
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

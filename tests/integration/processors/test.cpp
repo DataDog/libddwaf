@@ -94,10 +94,12 @@ TEST(TestProcessors, Preprocessor)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "equals",
                                .op_value = "",
-                               .address = "server.request.body.schema",
-                               .path = {"0"},
-                               .value = "8",
-                               .highlight = ""}}});
+                               .highlight = "",
+                               .args = {{
+                                   .value = "8",
+                                   .address = "server.request.body.schema",
+                                   .path = {"0"},
+                               }}}}});
 
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
 
@@ -147,10 +149,12 @@ TEST(TestProcessors, Processor)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "equals",
                                .op_value = "",
-                               .address = "server.request.body.schema",
-                               .path = {"0"},
-                               .value = "8",
-                               .highlight = ""}}});
+                               .highlight = "",
+                               .args = {{
+                                   .value = "8",
+                                   .address = "server.request.body.schema",
+                                   .path = {"0"},
+                               }}}}});
 
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
@@ -731,10 +735,12 @@ TEST(TestProcessors, PreprocessorWithEphemeralMapping)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "equals",
                                    .op_value = "",
-                                   .address = "server.request.body.schema",
-                                   .path = {"0"},
-                                   .value = "8",
-                                   .highlight = ""}}});
+                                   .highlight = "",
+                                   .args = {{
+                                       .value = "8",
+                                       .address = "server.request.body.schema",
+                                       .path = {"0"},
+                                   }}}}});
 
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
 
@@ -755,10 +761,12 @@ TEST(TestProcessors, PreprocessorWithEphemeralMapping)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "equals",
                                    .op_value = "",
-                                   .address = "server.request.body.schema",
-                                   .path = {"0"},
-                                   .value = "8",
-                                   .highlight = ""}}});
+                                   .highlight = "",
+                                   .args = {{
+                                       .value = "8",
+                                       .address = "server.request.body.schema",
+                                       .path = {"0"},
+                                   }}}}});
 
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
 
@@ -844,10 +852,12 @@ TEST(TestProcessors, ProcessorEphemeralExpression)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "equals",
                                    .op_value = "",
-                                   .address = "server.request.body.schema",
-                                   .path = {"0"},
-                                   .value = "8",
-                                   .highlight = ""}}});
+                                   .highlight = "",
+                                   .args = {{
+                                       .value = "8",
+                                       .address = "server.request.body.schema",
+                                       .path = {"0"},
+                                   }}}}});
 
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 

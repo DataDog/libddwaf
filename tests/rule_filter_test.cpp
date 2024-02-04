@@ -449,9 +449,11 @@ TEST(TestRuleFilter, ExcludeSingleRule)
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
                            .matches = {{.op = "ip_match",
-                               .address = "http.client_ip",
-                               .value = "192.168.0.1",
-                               .highlight = "192.168.0.1"}}});
+                               .highlight = "192.168.0.1",
+                               .args = {{
+                                   .value = "192.168.0.1",
+                                   .address = "http.client_ip",
+                               }}}}});
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -480,9 +482,11 @@ TEST(TestRuleFilter, ExcludeByType)
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .matches = {{.op = "ip_match",
-                               .address = "http.client_ip",
-                               .value = "192.168.0.1",
-                               .highlight = "192.168.0.1"}}});
+                               .highlight = "192.168.0.1",
+                               .args = {{
+                                   .value = "192.168.0.1",
+                                   .address = "http.client_ip",
+                               }}}}});
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -536,9 +540,11 @@ TEST(TestRuleFilter, ExcludeByTags)
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
                            .matches = {{.op = "ip_match",
-                               .address = "http.client_ip",
-                               .value = "192.168.0.1",
-                               .highlight = "192.168.0.1"}}});
+                               .highlight = "192.168.0.1",
+                               .args = {{
+                                   .value = "192.168.0.1",
+                                   .address = "http.client_ip",
+                               }}}}});
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -586,16 +592,20 @@ TEST(TestRuleFilter, ExcludeAllWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}},
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}});
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -627,9 +637,11 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .address = "http.client_ip",
-                                   .value = "192.168.0.1",
-                                   .highlight = "192.168.0.1"}}});
+                                   .highlight = "192.168.0.1",
+                                   .args = {{
+                                       .value = "192.168.0.1",
+                                       .address = "http.client_ip",
+                                   }}}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -651,16 +663,20 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}},
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}});
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -692,9 +708,11 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithConditionAndTransformers)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .address = "http.client_ip",
-                                   .value = "192.168.0.1",
-                                   .highlight = "192.168.0.1"}}});
+                                   .highlight = "192.168.0.1",
+                                   .args = {{
+                                       .value = "192.168.0.1",
+                                       .address = "http.client_ip",
+                                   }}}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -716,16 +734,20 @@ TEST(TestRuleFilter, ExcludeSingleRuleWithConditionAndTransformers)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}},
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}});
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -756,9 +778,11 @@ TEST(TestRuleFilter, ExcludeByTypeWithCondition)
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .address = "http.client_ip",
-                                   .value = "192.168.0.1",
-                                   .highlight = "192.168.0.1"}}});
+                                   .highlight = "192.168.0.1",
+                                   .args = {{
+                                       .value = "192.168.0.1",
+                                       .address = "http.client_ip",
+                                   }}}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -780,16 +804,20 @@ TEST(TestRuleFilter, ExcludeByTypeWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}},
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}});
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -838,16 +866,20 @@ TEST(TestRuleFilter, ExcludeByCategoryWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}},
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}});
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -879,9 +911,11 @@ TEST(TestRuleFilter, ExcludeByTagsWithCondition)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .address = "http.client_ip",
-                                   .value = "192.168.0.1",
-                                   .highlight = "192.168.0.1"}}});
+                                   .highlight = "192.168.0.1",
+                                   .args = {{
+                                       .value = "192.168.0.1",
+                                       .address = "http.client_ip",
+                                   }}}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -903,16 +937,20 @@ TEST(TestRuleFilter, ExcludeByTagsWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}},
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .address = "http.client_ip",
-                    .value = "192.168.0.1",
-                    .highlight = "192.168.0.1"}}});
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -943,9 +981,11 @@ TEST(TestRuleFilter, MonitorSingleRule)
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .actions = {"monitor"},
                            .matches = {{.op = "ip_match",
-                               .address = "http.client_ip",
-                               .value = "192.168.0.1",
-                               .highlight = "192.168.0.1"}}});
+                               .highlight = "192.168.0.1",
+                               .args = {{
+                                   .value = "192.168.0.1",
+                                   .address = "http.client_ip",
+                               }}}}});
     EXPECT_THAT(out.actions, WithActions({}));
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -976,9 +1016,11 @@ TEST(TestRuleFilter, AvoidHavingTwoMonitorOnActions)
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .actions = {"monitor"},
                            .matches = {{.op = "ip_match",
-                               .address = "http.client_ip",
-                               .value = "192.168.0.1",
-                               .highlight = "192.168.0.1"}}});
+                               .highlight = "192.168.0.1",
+                               .args = {{
+                                   .value = "192.168.0.1",
+                                   .address = "http.client_ip",
+                               }}}}});
     EXPECT_THAT(out.actions, WithActions({}));
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
