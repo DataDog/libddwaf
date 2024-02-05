@@ -242,22 +242,21 @@ TEST(TestExpression, EphemeralMatchTwoConditions)
     EXPECT_TRUE(res.ephemeral);
 
     auto matches = expr->get_matches(cache);
-    EXPECT_MATCHES(matches, {
-                                {.op = "match_regex",
-                                    .op_value = "^value$",
-                                    .highlight = "value",
-                                    .args = {{
-                                        .value = "value",
-                                        .address = "server.request.query",
-                                    }}},
-                                {.op = "match_regex",
-                                    .op_value = "^value$",
-                                    .highlight = "value",
-                                    .args = {{
-                                        .value = "value",
-                                        .address = "server.request.body",
-                                    }}},
-                            });
+    EXPECT_MATCHES(matches,
+        {.op = "match_regex",
+            .op_value = "^value$",
+            .highlight = "value",
+            .args = {{
+                .value = "value",
+                .address = "server.request.query",
+            }}},
+        {.op = "match_regex",
+            .op_value = "^value$",
+            .highlight = "value",
+            .args = {{
+                .value = "value",
+                .address = "server.request.body",
+            }}});
 }
 
 TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
