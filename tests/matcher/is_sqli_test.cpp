@@ -31,12 +31,22 @@ TEST(TestIsSQLi, TestNoMatch)
 {
     is_sqli matcher;
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "*");
+    auto no_match = {
+        "*",
+        "00119007249934829312950000808000953OR-240128165430155"
+    };
+    
+    for (auto pattern : no_match) {
+        std::cout << pattern << std::endl;
+        ddwaf_object param;
+        ddwaf_object_string(&param, pattern);
 
-    EXPECT_FALSE(matcher.match(param).first);
+        auto match = matcher.match(param);
+        EXPECT_FALSE(match.first);
+        std::cout << match.second << std::endl;
 
-    ddwaf_object_free(&param);
+        ddwaf_object_free(&param);        
+    }
 }
 
 TEST(TestIsSQLi, TestInvalidInput)

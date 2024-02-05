@@ -290,18 +290,6 @@ static void st_clear(stoken_t * st)
     memset(st, 0, sizeof(stoken_t));
 }
 
-static void st_assign_char(stoken_t * st, const char stype, size_t pos, size_t len,
-                           const char value)
-{
-    /* done to eliminate unused warning */
-    (void)len;
-    st->type = (char) stype;
-    st->pos = pos;
-    st->len = 1;
-    st->val[0] = value;
-    st->val[1] = CHAR_NULL;
-}
-
 static void st_assign(stoken_t * st, const char stype,
                       size_t pos, size_t len, const char* value)
 {
@@ -312,6 +300,12 @@ static void st_assign(stoken_t * st, const char stype,
     st->len = last;
     memcpy(st->val, value, last);
     st->val[last] = CHAR_NULL;
+}
+
+static void sf_update_state(struct libinjection_sqli_state * sf, const char stype,
+                            size_t pos, size_t len, const char* value) {
+    st_assign(sf->current, stype, pos, len, value);
+    sf->hadWordBoundary = stype == TYPE_COMMENT;
 }
 
 static void st_copy(stoken_t * dest, const stoken_t * src)
@@ -354,6 +348,7 @@ static int st_is_unary_op(const stoken_t * st)
 
 static size_t parse_white(struct libinjection_sqli_state * sf)
 {
+    sf->hadWordBoundary = true;
     return sf->pos + 1;
 }
 
@@ -362,7 +357,7 @@ static size_t parse_operator1(struct libinjection_sqli_state * sf)
     const char *cs = sf->s;
     size_t pos = sf->pos;
 
-    st_assign_char(sf->current, TYPE_OPERATOR, pos, 1, cs[pos]);
+    sf_update_state(sf, TYPE_OPERATOR, pos, 1, &cs[pos]);
     return pos + 1;
 }
 
@@ -371,7 +366,7 @@ static size_t parse_other(struct libinjection_sqli_state * sf)
     const char *cs = sf->s;
     size_t pos = sf->pos;
 
-    st_assign_char(sf->current, TYPE_UNKNOWN, pos, 1, cs[pos]);
+    sf_update_state(sf, TYPE_UNKNOWN, pos, 1, &cs[pos]);
     return pos + 1;
 }
 
@@ -380,7 +375,8 @@ static size_t parse_char(struct libinjection_sqli_state * sf)
     const char *cs = sf->s;
     size_t pos = sf->pos;
 
-    st_assign_char(sf->current, cs[pos], pos, 1, cs[pos]);
+    sf_update_state(sf, cs[pos], pos, 1, &cs[pos]);
+    sf->hadWordBoundary = true;
     return pos + 1;
 }
 
@@ -393,10 +389,10 @@ static size_t parse_eol_comment(struct libinjection_sqli_state * sf)
     const char *endpos =
         (const char *) memchr((const void *) (cs + pos), '\n', slen - pos);
     if (endpos == NULL) {
-        st_assign(sf->current, TYPE_COMMENT, pos, slen - pos, cs + pos);
+        sf_update_state(sf, TYPE_COMMENT, pos, slen - pos, cs + pos);
         return slen;
     } else {
-        st_assign(sf->current, TYPE_COMMENT, pos, (size_t)(endpos - cs) - pos, cs + pos);
+        sf_update_state(sf, TYPE_COMMENT, pos, (size_t)(endpos - cs) - pos, cs + pos);
         return (size_t)((endpos - cs) + 1);
     }
 }
@@ -411,7 +407,8 @@ static size_t parse_hash(struct libinjection_sqli_state * sf)
         sf->stats_comment_hash += 1;
         return parse_eol_comment(sf);
     } else {
-        st_assign_char(sf->current, TYPE_OPERATOR, sf->pos, 1, '#');
+        char c = '#';
+        sf_update_state(sf, TYPE_OPERATOR, sf->pos, 1, &c);
         return sf->pos + 1;
     }
 }
@@ -442,7 +439,8 @@ static size_t parse_dash(struct libinjection_sqli_state * sf)
         sf->stats_comment_ddx += 1;
         return parse_eol_comment(sf);
     } else {
-        st_assign_char(sf->current, TYPE_OPERATOR, pos, 1, '-');
+        char c = '-';
+        sf_update_state(sf, TYPE_OPERATOR, pos, 1, &c);
         return pos + 1;
     }
 }
@@ -534,7 +532,7 @@ static size_t parse_slash(struct libinjection_sqli_state * sf)
         ctype = TYPE_EVIL;
     }
 
-    st_assign(sf->current, ctype, pos, clen, cs + pos);
+    sf_update_state(sf, ctype, pos, clen, cs + pos);
     return pos + clen;
 }
 
@@ -549,10 +547,10 @@ static size_t parse_backslash(struct libinjection_sqli_state * sf)
      * Weird MySQL alias for NULL, "\N" (capital N only)
      */
     if (pos + 1 < slen && cs[pos +1] == 'N') {
-        st_assign(sf->current, TYPE_NUMBER, pos, 2, cs + pos);
+        sf_update_state(sf, TYPE_NUMBER, pos, 2, cs + pos);
         return pos + 2;
     } else {
-        st_assign_char(sf->current, TYPE_BACKSLASH, pos, 1, cs[pos]);
+        sf_update_state(sf, TYPE_BACKSLASH, pos, 1, &cs[pos]);
         return pos + 1;
     }
 }
@@ -575,13 +573,13 @@ static size_t parse_operator2(struct libinjection_sqli_state * sf)
         /*
          * special 3-char operator
          */
-        st_assign(sf->current, TYPE_OPERATOR, pos, 3, cs + pos);
+        sf_update_state(sf, TYPE_OPERATOR, pos, 3, cs + pos);
         return pos + 3;
     }
 
     ch = sf->lookup(sf, LOOKUP_OPERATOR, cs + pos, 2);
     if (ch != CHAR_NULL) {
-        st_assign(sf->current, ch, pos, 2, cs+pos);
+        sf_update_state(sf, ch, pos, 2, cs+pos);
         return pos + 2;
     }
 
@@ -592,7 +590,7 @@ static size_t parse_operator2(struct libinjection_sqli_state * sf)
 
     if (cs[pos] == ':') {
         /* ':' is not an operator */
-        st_assign(sf->current, TYPE_COLON, pos, 1, cs+pos);
+        sf_update_state(sf, TYPE_COLON, pos, 1, cs+pos);
         return pos + 1;
     } else {
         /*
@@ -697,6 +695,7 @@ static size_t parse_string(struct libinjection_sqli_state * sf)
     const char *cs = sf->s;
     const size_t slen = sf->slen;
     size_t pos = sf->pos;
+    sf->hadWordBoundary = true;
 
     /*
      * assert cs[pos] == single or double quote
@@ -718,6 +717,8 @@ static size_t parse_estring(struct libinjection_sqli_state * sf)
     if (pos + 2 >= slen || cs[pos+1] != CHAR_SINGLE) {
         return parse_word(sf);
     }
+    
+    sf->hadWordBoundary = true;
     return parse_string_core(cs, slen, pos, sf->current, CHAR_SINGLE, 2);
 }
 
@@ -778,12 +779,12 @@ static size_t parse_qstring_core(struct libinjection_sqli_state * sf, size_t off
 
     strend = memchr2(cs + pos + 3, slen - pos - 3, ch, CHAR_SINGLE);
     if (strend == NULL) {
-        st_assign(sf->current, TYPE_STRING, pos + 3, slen - pos - 3, cs + pos + 3);
+        sf_update_state(sf, TYPE_STRING, pos + 3, slen - pos - 3, cs + pos + 3);
         sf->current->str_open = 'q';
         sf->current->str_close = CHAR_NULL;
         return slen;
     } else {
-        st_assign(sf->current, TYPE_STRING, pos + 3, (size_t)(strend - cs) - pos -  3, cs + pos + 3);
+        sf_update_state(sf, TYPE_STRING, pos + 3, (size_t)(strend - cs) - pos -  3, cs + pos + 3);
         sf->current->str_open = 'q';
         sf->current->str_close = 'q';
         return (size_t)(strend - cs + 2);
@@ -835,7 +836,7 @@ static size_t parse_bstring(struct libinjection_sqli_state *sf)
     if (pos + 2 + wlen  >= slen || cs[pos + 2 + wlen] != CHAR_SINGLE) {
         return parse_word(sf);
     }
-    st_assign(sf->current, TYPE_NUMBER, pos, wlen + 3, cs + pos);
+    sf_update_state(sf, TYPE_NUMBER, pos, wlen + 3, cs + pos);
     return pos + 2 + wlen + 1;
 }
 
@@ -864,7 +865,7 @@ static size_t parse_xstring(struct libinjection_sqli_state *sf)
     if (pos + 2 + wlen  >= slen || cs[pos + 2 + wlen] != CHAR_SINGLE) {
         return parse_word(sf);
     }
-    st_assign(sf->current, TYPE_NUMBER, pos, wlen + 3, cs + pos);
+    sf_update_state(sf, TYPE_NUMBER, pos, wlen + 3, cs + pos);
     return pos + 2 + wlen + 1;
 }
 
@@ -879,10 +880,10 @@ static size_t parse_bword(struct libinjection_sqli_state * sf)
     size_t pos = sf->pos;
     const char* endptr = (const char*) memchr(cs + pos, ']', sf->slen - pos);
     if (endptr == NULL) {
-        st_assign(sf->current, TYPE_BAREWORD, pos, sf->slen - pos, cs + pos);
+        sf_update_state(sf, TYPE_BAREWORD, pos, sf->slen - pos, cs + pos);
         return sf->slen;
     } else {
-        st_assign(sf->current, TYPE_BAREWORD, pos, (size_t)(endptr - cs) - pos + 1, cs + pos);
+        sf_update_state(sf, TYPE_BAREWORD, pos, (size_t)(endptr - cs) - pos + 1, cs + pos);
         return (size_t)((endptr - cs) + 1);
     }
 }
@@ -897,7 +898,12 @@ static size_t parse_word(struct libinjection_sqli_state * sf)
     size_t wlen = strlencspn(cs + pos, sf->slen - pos,
                              " []{}<>:\\?=@!#~+-*/&|^%(),';\t\n\v\f\r\"\240\000");
 
-    st_assign(sf->current, TYPE_BAREWORD, pos, wlen, cs + pos);
+    if(!sf->hadWordBoundary) {
+        sf->illegalState = true;
+        return 0;
+    }
+
+    sf_update_state(sf, TYPE_BAREWORD, pos, wlen, cs + pos);
 
     /* now we need to look inside what we good for "." and "`"
      * and see if what is before is a keyword or not
@@ -913,7 +919,7 @@ static size_t parse_word(struct libinjection_sqli_state * sf)
                  * we got something like "SELECT.1"
                  * or SELECT`column`
                  */
-                st_assign(sf->current, ch, pos, i, cs + pos);
+                sf_update_state(sf, ch, pos, i, cs + pos);
                 return pos + i;
             }
         }
@@ -940,6 +946,7 @@ static size_t parse_word(struct libinjection_sqli_state * sf)
 static size_t parse_tick(struct libinjection_sqli_state* sf)
 {
     size_t pos =  parse_string_core(sf->s, sf->slen, sf->pos, sf->current, CHAR_TICK, 1);
+    sf->hadWordBoundary = true;
 
     /* we could check to see if start and end of
      * of string are both "`", i.e. make sure we have
@@ -1007,10 +1014,10 @@ static size_t parse_var(struct libinjection_sqli_state * sf)
     xlen = strlencspn(cs + pos, slen - pos,
                      " <>:\\?=@!#~+-*/&|^%(),';\t\n\v\f\r'`\"");
     if (xlen == 0) {
-        st_assign(sf->current, TYPE_VARIABLE, pos, 0, cs + pos);
+        sf_update_state(sf, TYPE_VARIABLE, pos, 0, cs + pos);
         return pos;
     } else {
-        st_assign(sf->current, TYPE_VARIABLE, pos, xlen, cs + pos);
+        sf_update_state(sf, TYPE_VARIABLE, pos, xlen, cs + pos);
         return pos + xlen;
     }
 }
@@ -1025,7 +1032,8 @@ static size_t parse_money(struct libinjection_sqli_state *sf)
 
     if (pos + 1 == slen) {
         /* end of line */
-        st_assign_char(sf->current, TYPE_BAREWORD, pos, 1, '$');
+        char c = '$';
+        sf_update_state(sf, TYPE_BAREWORD, pos, 1, &c);
         return slen;
     }
 
@@ -1041,30 +1049,31 @@ static size_t parse_money(struct libinjection_sqli_state *sf)
             strend = memchr2(cs + pos + 2, slen - pos -2, '$', '$');
             if (strend == NULL) {
                 /* fell off edge */
-                st_assign(sf->current, TYPE_STRING, pos + 2, slen - (pos + 2), cs + pos + 2);
+                sf_update_state(sf, TYPE_STRING, pos + 2, slen - (pos + 2), cs + pos + 2);
                 sf->current->str_open = '$';
                 sf->current->str_close = CHAR_NULL;
                 return slen;
             } else {
-                st_assign(sf->current, TYPE_STRING, pos + 2,
+                sf_update_state(sf, TYPE_STRING, pos + 2,
                           (size_t)(strend - (cs + pos + 2)), cs + pos + 2);
                 sf->current->str_open = '$';
                 sf->current->str_close = '$';
                 return (size_t)(strend - cs + 2);
             }
         } else {
+            char c = '$';
             /* ok it's not a number or '$$', but maybe it's pgsql "$ quoted strings" */
             xlen = strlenspn(cs + pos + 1, slen - pos - 1, "abcdefghjiklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
             if (xlen == 0) {
                 /* hmm it's "$" _something_ .. just add $ and keep going*/
-                st_assign_char(sf->current, TYPE_BAREWORD, pos, 1, '$');
+                sf_update_state(sf, TYPE_BAREWORD, pos, 1, &c);
                 return pos + 1;
             }
             /* we have $foobar????? */
             /* is it $foobar$ */
             if (pos + xlen + 1 == slen || cs[pos+xlen+1] != '$') {
                 /* not $foobar$, or fell off edge */
-                st_assign_char(sf->current, TYPE_BAREWORD, pos, 1, '$');
+                sf_update_state(sf, TYPE_BAREWORD, pos, 1, &c);
                 return pos + 1;
             }
 
@@ -1073,13 +1082,13 @@ static size_t parse_money(struct libinjection_sqli_state *sf)
 
             if (strend == NULL || ((size_t)(strend - cs) < (pos+xlen+2))) {
                 /* fell off edge */
-                st_assign(sf->current, TYPE_STRING, pos+xlen+2, slen - pos - xlen - 2, cs+pos+xlen+2);
+                sf_update_state(sf, TYPE_STRING, pos+xlen+2, slen - pos - xlen - 2, cs+pos+xlen+2);
                 sf->current->str_open = '$';
                 sf->current->str_close = CHAR_NULL;
                 return slen;
             } else {
                 /* got one */
-                st_assign(sf->current, TYPE_STRING, pos+xlen+2,
+                sf_update_state(sf, TYPE_STRING, pos+xlen+2,
                           (size_t)(strend - (cs + pos + xlen + 2)), cs+pos+xlen+2);
                 sf->current->str_open = '$';
                 sf->current->str_close = '$';
@@ -1090,7 +1099,7 @@ static size_t parse_money(struct libinjection_sqli_state *sf)
         /* $. should parsed as a word */
         return parse_word(sf);
     } else {
-        st_assign(sf->current, TYPE_NUMBER, pos, 1 + xlen, cs + pos);
+        sf_update_state(sf, TYPE_NUMBER, pos, 1 + xlen, cs + pos);
         return pos + 1 + xlen;
     }
 }
@@ -1119,10 +1128,10 @@ static size_t parse_number(struct libinjection_sqli_state * sf)
         if (digits) {
             xlen = strlenspn(cs + pos + 2, slen - pos - 2, digits);
             if (xlen == 0) {
-                st_assign(sf->current, TYPE_BAREWORD, pos, 2, cs + pos);
+                sf_update_state(sf, TYPE_BAREWORD, pos, 2, cs + pos);
                 return pos + 2;
             } else {
-                st_assign(sf->current, TYPE_NUMBER, pos, 2 + xlen, cs + pos);
+                sf_update_state(sf, TYPE_NUMBER, pos, 2 + xlen, cs + pos);
                 return pos + 2 + xlen;
             }
         }
@@ -1140,7 +1149,8 @@ static size_t parse_number(struct libinjection_sqli_state * sf)
         }
         if (pos - start == 1) {
             /* only one character read so far */
-            st_assign_char(sf->current, TYPE_DOT, start, 1, '.');
+            char c = '.';
+            sf_update_state(sf, TYPE_DOT, start, 1, &c);
             return pos;
         }
     }
@@ -1188,9 +1198,9 @@ static size_t parse_number(struct libinjection_sqli_state * sf)
          * "10.10E"
          * ".E"
          * this is a WORD not a number!! */
-        st_assign(sf->current, TYPE_BAREWORD, start, pos - start, cs + start);
+        sf_update_state(sf, TYPE_BAREWORD, start, pos - start, cs + start);
     } else {
-        st_assign(sf->current, TYPE_NUMBER, start, pos - start, cs + start);
+        sf_update_state(sf, TYPE_NUMBER, start, pos - start, cs + start);
     }
     return pos;
 }
@@ -1200,7 +1210,7 @@ static size_t parse_number(struct libinjection_sqli_state * sf)
  * without having to regenerated the SWIG (or other binding) in minor
  * releases.
  */
-const char* libinjection_version()
+const char* libinjection_version(void)
 {
     return LIBINJECTION_VERSION;
 }
@@ -1228,6 +1238,7 @@ int libinjection_sqli_tokenize(struct libinjection_sqli_state * sf)
     if (*pos == 0 && (sf->flags & (FLAG_QUOTE_SINGLE | FLAG_QUOTE_DOUBLE | FLAG_QUOTE_TICK))) {
         *pos = parse_string_core(s, slen, 0, current, flag2delim(sf->flags), 0);
         sf->stats_tokens += 1;
+        sf->hadWordBoundary = true;
         return TRUE;
     }
 
@@ -1251,6 +1262,11 @@ int libinjection_sqli_tokenize(struct libinjection_sqli_state * sf)
         /*
          *
          */
+        
+        if (sf->illegalState) {
+            return FALSE;
+        }
+        
         if (current->type != CHAR_NULL) {
             sf->stats_tokens += 1;
             return TRUE;
@@ -1272,6 +1288,8 @@ void libinjection_sqli_init(struct libinjection_sqli_state * sf, const char *s, 
     sf->userdata = 0;
     sf->flags    = flags;
     sf->current  = &(sf->tokenvec[0]);
+    sf->illegalState = false;
+    sf->hadWordBoundary = true;
 }
 
 void libinjection_sqli_reset(struct libinjection_sqli_state * sf, int flags)
@@ -1285,6 +1303,8 @@ void libinjection_sqli_reset(struct libinjection_sqli_state * sf, int flags)
     libinjection_sqli_init(sf, sf->s, sf->slen, flags);
     sf->lookup = lookup;
     sf->userdata = userdata;
+    sf->illegalState = false;
+    sf->hadWordBoundary = true;
 }
 
 void libinjection_sqli_callback(struct libinjection_sqli_state * sf, ptr_lookup_fn fn, void* userdata)
@@ -1475,6 +1495,12 @@ int libinjection_sqli_fold(struct libinjection_sqli_state * sf)
                 }
             }
         }
+        
+        /* If the parameter can't be interpreted as SQL, we bail out */
+        if (sf->illegalState) {
+            return 0;
+        }
+        
         FOLD_DEBUG;
         /* did we get 2 tokens? if not then we are done */
         if (pos - left < 2) {

@@ -18,6 +18,7 @@ extern "C" {
  * Pull in size_t
  */
 #include <string.h>
+#include <stdbool.h>
 
 enum sqli_flags {
     FLAG_NONE            = 0
@@ -121,6 +122,9 @@ struct libinjection_sqli_state {
      * Minimum of 8 bytes to add gcc's -fstack-protector to work
      */
     char fingerprint[8];
+    
+    bool hadWordBoundary;
+    bool illegalState;
 
     /*
      * Line number of code that said decided if the input was SQLi or
