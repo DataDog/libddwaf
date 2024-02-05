@@ -37,14 +37,9 @@ TEST(TestIsSQLi, TestNoMatch)
     };
     
     for (auto pattern : no_match) {
-        std::cout << pattern << std::endl;
         ddwaf_object param;
         ddwaf_object_string(&param, pattern);
-
-        auto match = matcher.match(param);
-        EXPECT_FALSE(match.first);
-        std::cout << match.second << std::endl;
-
+        EXPECT_FALSE(matcher.match(param));        
         ddwaf_object_free(&param);        
     }
 }
