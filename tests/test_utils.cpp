@@ -303,15 +303,15 @@ match as_if<match, void>::operator()() const
     }
 
     if (parameters["address"].IsDefined()) {
-        m.args.emplace_back("input", as<std::string>(parameters, "value"),
+        m.args.emplace_back(match::argument{"input", as<std::string>(parameters, "value"),
             as<std::string>(parameters, "address"),
-            as<std::vector<std::string>>(parameters, "key_path"));
+            as<std::vector<std::string>>(parameters, "key_path")});
     } else {
         for (auto it = parameters.begin(); it != parameters.end(); ++it) {
             if (it->second.IsMap()) {
-                m.args.emplace_back(it->first.as<std::string>(),
+                m.args.emplace_back(match::argument{it->first.as<std::string>(),
                     as<std::string>(it->second, "value"), as<std::string>(it->second, "address"),
-                    as<std::vector<std::string>>(it->second, "key_path"));
+                    as<std::vector<std::string>>(it->second, "key_path")});
             }
         }
     }
@@ -599,8 +599,8 @@ std::list<ddwaf::test::event::match> from_matches(
         new_match.op = m.operator_name;
         new_match.op_value = m.operator_value;
         for (const auto &arg : m.args) {
-            new_match.args.emplace_back(
-                std::string{arg.name}, arg.resolved, std::string{arg.address}, arg.key_path);
+            new_match.args.emplace_back(ddwaf::test::event::match::argument{
+                std::string{arg.name}, arg.resolved, std::string{arg.address}, arg.key_path});
         }
 
         match_list.emplace_back(std::move(new_match));
@@ -609,7 +609,7 @@ std::list<ddwaf::test::event::match> from_matches(
     return match_list;
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameter)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 ddwaf_object read_file(std::string_view filename, std::string_view base)
 {
     std::string base_dir{base};
