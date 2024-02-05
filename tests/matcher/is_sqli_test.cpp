@@ -36,7 +36,7 @@ TEST(TestIsSQLi, TestNoMatch)
     for (auto pattern : no_match) {
         ddwaf_object param;
         ddwaf_object_string(&param, pattern);
-        EXPECT_FALSE(matcher.match(param));
+        EXPECT_FALSE(matcher.match(param).first);
         ddwaf_object_free(&param);
     }
 }
