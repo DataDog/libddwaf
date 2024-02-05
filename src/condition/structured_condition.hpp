@@ -83,11 +83,11 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
 template <typename T> struct argument_retriever : default_argument_retriever {};
 
 template <typename T> struct argument_retriever<unary_argument<T>> : default_argument_retriever {
-    static std::optional<unary_argument<T>> retrieve(
-        const object_store &store, const target_definition &target)
+    static std::optional<unary_argument<T>> retrieve(const object_store &store,
+        const exclusion::object_set_ref &objects_excluded, const target_definition &target)
     {
         auto [object, attr] = store.get_target(target.root);
-        if (object == nullptr) {
+        if (object == nullptr || objects_excluded.contains(object)) {
             return std::nullopt;
         }
 
@@ -103,20 +103,23 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
 
 template <typename T> struct argument_retriever<optional_argument<T>> : default_argument_retriever {
     static constexpr bool is_optional = true;
-    static optional_argument<T> retrieve(const object_store &store, const target_definition &target)
+    static optional_argument<T> retrieve(const object_store &store,
+        const exclusion::object_set_ref &objects_excluded, const target_definition &target)
     {
-        return argument_retriever<unary_argument<T>>::retrieve(store, target);
+        return argument_retriever<unary_argument<T>>::retrieve(store, objects_excluded, target);
     }
 };
 
 template <typename T> struct argument_retriever<variadic_argument<T>> : default_argument_retriever {
     static constexpr bool is_variadic = true;
-    static variadic_argument<T> retrieve(
-        const object_store &store, const std::vector<target_definition> &targets)
+    static variadic_argument<T> retrieve(const object_store &store,
+        const exclusion::object_set_ref &objects_excluded,
+        const std::vector<target_definition> &targets)
     {
         variadic_argument<T> args;
         for (const auto &target : targets) {
-            auto arg = argument_retriever<unary_argument<T>>::retrieve(store, target);
+            auto arg =
+                argument_retriever<unary_argument<T>>::retrieve(store, objects_excluded, target);
             if (!arg.has_value()) {
                 continue;
             }
@@ -132,7 +135,9 @@ function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
 
 template <typename Self> class base_impl : public base_condition {
 public:
-    explicit base_impl(std::vector<parameter_definition> args) : arguments_(std::move(args)) {}
+    explicit base_impl(std::vector<parameter_definition> args, const object_limits &limits)
+        : arguments_(std::move(args)), limits_(limits)
+    {}
     ~base_impl() override = default;
     base_impl(const base_impl &) = default;
     base_impl &operator=(const base_impl &) = default;
@@ -140,10 +145,9 @@ public:
     base_impl &operator=(base_impl &&) noexcept = default;
 
     [[nodiscard]] eval_result eval(condition_cache &cache, const object_store &store,
-        const exclusion::object_set_ref & /*objects_excluded*/,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>>
-            & /*dynamic_matchers*/,
-        const object_limits & /*limits*/, ddwaf::timer &deadline) const override
+        const exclusion::object_set_ref &objects_excluded,
+        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> & /*unused*/,
+        ddwaf::timer &deadline) const override
     {
 
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));
@@ -151,11 +155,11 @@ public:
 
         static_assert(func_traits::nargs == Self::param_names.size());
 
-        if (!resolve_arguments(store, args, std::make_index_sequence<func_traits::nargs>{})) {
+        if (!resolve_arguments(
+                store, objects_excluded, args, std::make_index_sequence<func_traits::nargs>{})) {
             return {};
         }
 
-        // static_assert(sizeof(decltype(args)) == 0);
         return std::apply(
             [&](auto &&...args) {
                 return static_cast<const Self *>(this)->eval_impl(
@@ -194,11 +198,12 @@ public:
 
 protected:
     template <size_t I, size_t... Is, typename Args>
-    bool resolve_arguments(
-        const object_store &store, Args &args, std::index_sequence<I, Is...> /*unused*/) const
+    bool resolve_arguments(const object_store &store,
+        const exclusion::object_set_ref &objects_excluded, Args &args,
+        std::index_sequence<I, Is...> /*unused*/) const
     {
         using TupleElement = std::tuple_element_t<I, Args>;
-        auto arg = resolve_argument<I>(store);
+        auto arg = resolve_argument<I>(store, objects_excluded);
         if constexpr (is_unary_argument<TupleElement>::value) {
             if (!arg.has_value()) {
                 return false;
@@ -216,13 +221,15 @@ protected:
         }
 
         if constexpr (sizeof...(Is) > 0) {
-            return resolve_arguments(store, args, std::index_sequence<Is...>{});
+            return resolve_arguments(store, objects_excluded, args, std::index_sequence<Is...>{});
         } else {
             return true;
         }
     }
 
-    template <size_t I> auto resolve_argument(const object_store &store) const
+    template <size_t I>
+    auto resolve_argument(
+        const object_store &store, const exclusion::object_set_ref &objects_excluded) const
     {
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));
         using target_type = typename func_traits::template arg_type<I>;
@@ -232,7 +239,7 @@ protected:
             if (arguments_.size() <= I) {
                 return target_type{};
             }
-            return retriever::retrieve(store, arguments_[I].targets);
+            return retriever::retrieve(store, objects_excluded, arguments_[I].targets);
         } else {
             if (arguments_.size() <= I) {
                 return std::optional<target_type>{};
@@ -242,11 +249,12 @@ protected:
             if (arg.targets.empty()) {
                 return std::optional<target_type>{};
             }
-            return retriever::retrieve(store, arg.targets.at(0));
+            return retriever::retrieve(store, objects_excluded, arg.targets.at(0));
         }
     }
 
     std::vector<parameter_definition> arguments_;
+    const object_limits limits_;
 };
 
 } // namespace ddwaf

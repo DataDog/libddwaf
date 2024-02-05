@@ -41,7 +41,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         }
 
         auto [res, ephemeral] =
-            cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, limits_, deadline);
+            cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, deadline);
         if (!res) {
             return {false, false};
         }

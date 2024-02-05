@@ -104,7 +104,7 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
         }
 
         conditions.emplace_back(std::make_unique<scalar_condition>(
-            std::move(matcher), std::string{}, std::move(definitions)));
+            std::move(matcher), std::string{}, std::move(definitions), limits));
     }
 
     return std::make_shared<expression>(std::move(conditions), limits);

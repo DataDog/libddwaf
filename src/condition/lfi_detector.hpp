@@ -14,8 +14,8 @@ class lfi_detector : public base_impl<lfi_detector> {
 public:
     static constexpr std::array<std::string_view, 2> param_names{"resource", "params"};
 
-    explicit lfi_detector(std::vector<parameter_definition> args)
-        : base_impl<lfi_detector>(std::move(args))
+    explicit lfi_detector(std::vector<parameter_definition> args, const object_limits &limits = {})
+        : base_impl<lfi_detector>(std::move(args), limits)
     {}
 
 protected:

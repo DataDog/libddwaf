@@ -224,7 +224,7 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         if (operator_name == "lfi_detector") {
             auto arguments = parse_arguments<lfi_detector>(params, source, transformers, addresses);
 
-            conditions.emplace_back(std::make_unique<lfi_detector>(std::move(arguments)));
+            conditions.emplace_back(std::make_unique<lfi_detector>(std::move(arguments), limits));
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 
@@ -236,7 +236,7 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
                 parse_arguments<scalar_condition>(params, source, transformers, addresses);
 
             conditions.emplace_back(std::make_unique<scalar_condition>(
-                std::move(matcher), data_id, std::move(arguments)));
+                std::move(matcher), data_id, std::move(arguments), limits));
         }
     }
 
