@@ -240,7 +240,7 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         }
     }
 
-    return std::make_shared<expression>(std::move(conditions), limits);
+    return std::make_shared<expression>(std::move(conditions));
 }
 
 rule_spec parse_rule(parameter::map &rule,

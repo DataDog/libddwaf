@@ -31,9 +31,8 @@ public:
 
     expression() = default;
 
-    explicit expression(
-        std::vector<std::unique_ptr<base_condition>> &&conditions, ddwaf::object_limits limits = {})
-        : limits_(limits), conditions_(std::move(conditions))
+    explicit expression(std::vector<std::unique_ptr<base_condition>> &&conditions)
+        : conditions_(std::move(conditions))
     {}
 
     eval_result eval(cache_type &cache, const object_store &store,
@@ -69,7 +68,6 @@ public:
     [[nodiscard]] std::size_t size() const { return conditions_.size(); }
 
 protected:
-    ddwaf::object_limits limits_;
     std::vector<std::unique_ptr<base_condition>> conditions_;
 };
 

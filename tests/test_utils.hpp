@@ -57,11 +57,7 @@ rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
 
 class expression_builder {
 public:
-    explicit expression_builder(std::size_t num_conditions, ddwaf::object_limits limits = {})
-        : limits_(limits)
-    {
-        conditions_.reserve(num_conditions);
-    }
+    explicit expression_builder(std::size_t num_conditions) { conditions_.reserve(num_conditions); }
 
     void start_condition() { arguments_.clear(); }
 
@@ -101,11 +97,10 @@ public:
 
     std::shared_ptr<expression> build()
     {
-        return std::make_shared<expression>(std::move(conditions_), limits_);
+        return std::make_shared<expression>(std::move(conditions_));
     }
 
 protected:
-    ddwaf::object_limits limits_{};
     std::vector<parameter_definition> arguments_{};
     std::vector<std::unique_ptr<base_condition>> conditions_{};
 };

@@ -107,7 +107,7 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
             std::move(matcher), std::string{}, std::move(definitions), limits));
     }
 
-    return std::make_shared<expression>(std::move(conditions), limits);
+    return std::make_shared<expression>(std::move(conditions));
 }
 
 void parseRule(parameter::map &rule, base_section_info &info,
