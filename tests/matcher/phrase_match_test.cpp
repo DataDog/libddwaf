@@ -95,6 +95,41 @@ TEST(TestPhraseMatch, TestComplex)
     run("nonsense", nullptr);
 }
 
+TEST(TestPhraseMatch, TestWordBoundary)
+{
+    std::vector<const char *> strings{"String1", "string2", "string 3", "string_4", "string21"};
+    std::vector<uint32_t> lengths(strings.size());
+    std::generate(lengths.begin(), lengths.end(),
+        [i = 0, &strings]() mutable { return strlen(strings[i++]); });
+
+    phrase_match matcher(strings, lengths, true);
+
+    auto run = [&matcher](const char *str, const char *expect) {
+        ddwaf_object param;
+        ddwaf_object_string(&param, str);
+        if (expect != nullptr) {
+            auto [res, highlight] = matcher.match(param);
+            EXPECT_TRUE(res);
+            EXPECT_STREQ(highlight.c_str(), expect);
+        } else {
+            EXPECT_FALSE(matcher.match(param).first);
+        }
+        ddwaf_object_free(&param);
+    };
+
+    run("bla_String1_bla", nullptr);
+    run("\xF0\x82\x82\xAC\xC1string2\xF0\x82\x82\xAC\xC1", "string2");
+    run("bla_string 3", "string 3");
+    run("string_4bla", nullptr);
+    run("string21", "string21");
+
+    run("", nullptr);
+    run("String", nullptr);
+    run("string_", nullptr);
+    run("String21", nullptr);
+    run("nonsense", nullptr);
+}
+
 TEST(TestPhraseMatch, TestInvalidInput)
 {
     std::vector<const char *> strings{"aaaa", "bbbb", "cccc"};

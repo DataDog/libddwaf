@@ -50,6 +50,8 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
 
     if (name == "phrase_match") {
         auto list = at<parameter::vector>(params, "list");
+        options = at<parameter::map>(params, "options", options);
+        auto word_boundary = at<bool>(options, "enforce_word_boundary", false);
 
         std::vector<const char *> patterns;
         std::vector<uint32_t> lengths;
@@ -66,7 +68,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
             lengths.push_back((uint32_t)pattern.nbEntries);
         }
 
-        matcher = std::make_unique<matcher::phrase_match>(patterns, lengths);
+        matcher = std::make_unique<matcher::phrase_match>(patterns, lengths, word_boundary);
     } else if (name == "match_regex") {
         auto regex = at<std::string>(params, "regex");
         options = at<parameter::map>(params, "options", options);
