@@ -911,7 +911,8 @@ static const keyword_t sql_keywords[] = {
     // `(02) -  (signed) employment contract.pdf`
 	{"01)O(N", '~'},
     {"01)O(S", 'F'},
-    {"01)O(V", 'F'},
+    // Incorrectly match passwords
+    {"01)O(V", '~'},
     // Incorrectly match phone numbers: `(000)-000-0000`
 	{"01)O1", '~'},
     {"01)O1&", 'F'},
@@ -3084,7 +3085,8 @@ static const keyword_t sql_keywords[] = {
     {"0EVKV)", 'F'},
     {"0EVKVK", 'F'},
     {"0EVKVO", 'F'},
-    {"0EVN", 'F'},
+    // Match passwords
+    {"0EVN", '~'},
     {"0EVN)U", 'F'},
     {"0EVN;", 'F'},
     {"0EVN;C", 'F'},
@@ -4076,7 +4078,8 @@ static const keyword_t sql_keywords[] = {
     // Passwords
 	{"0N)ON;", '~'},
     {"0N)ONB", 'F'},
-    {"0N)ONC", 'F'},
+    // Passwords
+    {"0N)ONC", '~'},
     {"0N)ONK", 'F'},
     {"0N)ONU", 'F'},
     {"0N)OS", 'F'},
@@ -5751,7 +5754,8 @@ static const keyword_t sql_keywords[] = {
     {"0S1V", 'F'},
     {"0S1V;", 'F'},
     {"0S1V;C", 'F'},
-    {"0S1VC", 'F'},
+    // Incorrectly match passwords and binary blobs
+    {"0S1VC", '~'},
     {"0S1VO(", 'F'},
     {"0S1VOF", 'F'},
     {"0S1VOS", 'F'},
