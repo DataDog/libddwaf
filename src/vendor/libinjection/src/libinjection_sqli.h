@@ -18,6 +18,7 @@ extern "C" {
  * Pull in size_t
  */
 #include <string.h>
+#include <stdbool.h>
 
 enum sqli_flags {
     FLAG_NONE            = 0
@@ -121,7 +122,7 @@ struct libinjection_sqli_state {
      * Minimum of 8 bytes to add gcc's -fstack-protector to work
      */
     char fingerprint[8];
-
+    
     /*
      * Line number of code that said decided if the input was SQLi or
      * not.  Most of the time it's line that said "it's not a matching
@@ -170,7 +171,9 @@ struct libinjection_sqli_state {
      * total tokens processed
      */
     int stats_tokens;
-
+    
+    bool hadWordBoundary;
+    bool illegalState;
 };
 
 typedef struct libinjection_sqli_state sfilter;

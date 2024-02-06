@@ -27,16 +27,32 @@ TEST(TestIsSQLi, TestBasic)
     ddwaf_object_free(&param);
 }
 
+TEST(TestIsSQLi, TestMatch)
+{
+    is_sqli matcher;
+
+    auto match = {"1, -sin(1)) UNION SELECT 1"};
+
+    for (auto pattern : match) {
+        ddwaf_object param;
+        ddwaf_object_string(&param, pattern);
+        EXPECT_TRUE(matcher.match(param).first);
+        ddwaf_object_free(&param);
+    }
+}
+
 TEST(TestIsSQLi, TestNoMatch)
 {
     is_sqli matcher;
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "*");
+    auto no_match = {"*", "00119007249934829312950000808000953OR-240128165430155"};
 
-    EXPECT_FALSE(matcher.match(param).first);
-
-    ddwaf_object_free(&param);
+    for (auto pattern : no_match) {
+        ddwaf_object param;
+        ddwaf_object_string(&param, pattern);
+        EXPECT_FALSE(matcher.match(param).first);
+        ddwaf_object_free(&param);
+    }
 }
 
 TEST(TestIsSQLi, TestInvalidInput)
