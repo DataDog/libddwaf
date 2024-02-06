@@ -27,6 +27,20 @@ TEST(TestIsSQLi, TestBasic)
     ddwaf_object_free(&param);
 }
 
+TEST(TestIsSQLi, TestMatch)
+{
+    is_sqli matcher;
+
+    auto match = {"1, -sin(1)) UNION SELECT 1"};
+
+    for (auto pattern : match) {
+        ddwaf_object param;
+        ddwaf_object_string(&param, pattern);
+        EXPECT_TRUE(matcher.match(param).first);
+        ddwaf_object_free(&param);
+    }
+}
+
 TEST(TestIsSQLi, TestNoMatch)
 {
     is_sqli matcher;

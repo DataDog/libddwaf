@@ -441,6 +441,7 @@ static size_t parse_dash(struct libinjection_sqli_state * sf)
     } else {
         char c = '-';
         sf_update_state(sf, TYPE_OPERATOR, pos, 1, &c);
+        sf->hadWordBoundary = true;
         return pos + 1;
     }
 }
@@ -563,7 +564,9 @@ static size_t parse_operator2(struct libinjection_sqli_state * sf)
     size_t pos = sf->pos;
 
     if (pos + 1 >= slen) {
-        return parse_operator1(sf);
+        size_t ret = parse_operator1(sf);
+        sf->hadWordBoundary = true;
+        return ret;
     }
 
     if (pos + 2 < slen &&
@@ -574,12 +577,14 @@ static size_t parse_operator2(struct libinjection_sqli_state * sf)
          * special 3-char operator
          */
         sf_update_state(sf, TYPE_OPERATOR, pos, 3, cs + pos);
+        sf->hadWordBoundary = true;
         return pos + 3;
     }
 
     ch = sf->lookup(sf, LOOKUP_OPERATOR, cs + pos, 2);
     if (ch != CHAR_NULL) {
         sf_update_state(sf, ch, pos, 2, cs+pos);
+        sf->hadWordBoundary = true;
         return pos + 2;
     }
 
@@ -591,12 +596,15 @@ static size_t parse_operator2(struct libinjection_sqli_state * sf)
     if (cs[pos] == ':') {
         /* ':' is not an operator */
         sf_update_state(sf, TYPE_COLON, pos, 1, cs+pos);
+        sf->hadWordBoundary = true;
         return pos + 1;
     } else {
         /*
          * must be a single char operator
          */
-        return parse_operator1(sf);
+        size_t ret = parse_operator1(sf);
+        sf->hadWordBoundary = true;
+        return ret;
     }
 }
 
@@ -1074,6 +1082,7 @@ static size_t parse_money(struct libinjection_sqli_state *sf)
             if (pos + xlen + 1 == slen || cs[pos+xlen+1] != '$') {
                 /* not $foobar$, or fell off edge */
                 sf_update_state(sf, TYPE_BAREWORD, pos, 1, &c);
+                sf->hadWordBoundary = true;
                 return pos + 1;
             }
 
