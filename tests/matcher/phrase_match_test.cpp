@@ -117,17 +117,24 @@ TEST(TestPhraseMatch, TestWordBoundary)
         ddwaf_object_free(&param);
     };
 
-    run("bla_String1_bla", nullptr);
     run("\xF0\x82\x82\xAC\xC1string2\xF0\x82\x82\xAC\xC1", "string2");
     run("bla_string 3", "string 3");
-    run("string_4bla", nullptr);
     run("string21", "string21");
+    run("string21 ", "string21");
+    run("asdnjdstring21;", "string21");
+    run("   string_4", "string_4");
+    run("*****string_4****", "string_4");
+    run("____String1\n", "String1");
 
     run("", nullptr);
     run("String", nullptr);
     run("string_", nullptr);
     run("String21", nullptr);
     run("nonsense", nullptr);
+    run("string213", nullptr);
+    run("string21_", nullptr);
+    run("string_4bla", nullptr);
+    run("bla_String1_bla", nullptr);
 }
 
 TEST(TestPhraseMatch, TestInvalidInput)

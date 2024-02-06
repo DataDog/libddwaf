@@ -55,19 +55,16 @@ std::pair<bool, std::string> phrase_match::match_impl(std::string_view pattern) 
     auto match_begin = static_cast<std::size_t>(result.match_begin);
     auto match_end = static_cast<std::size_t>(result.match_end);
 
-    if (match_begin < 0 || match_end < 0 || match_begin >= match_end) {
+    if (result.match_begin < 0 || result.match_end < 0 || match_begin >= match_end ||
+        (enforce_word_boundary_ && !is_bounded_word(pattern, match_end))) {
         return {false, {}};
     }
 
-    if (enforce_word_boundary_ && !is_bounded_word(pattern, match_end)) {
-        return {false, {}};
+    if (pattern.size() <= match_end) [[unlikely]] {
+        return {true, {}};
     }
 
-    if (pattern.size() > match_end) {
-        return {true, std::string{pattern.substr(match_begin, (match_end - match_begin + 1))}};
-    }
-
-    return {true, {}};
+    return {true, std::string{pattern.substr(match_begin, (match_end - match_begin + 1))}};
 }
 
 } // namespace ddwaf::matcher
