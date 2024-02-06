@@ -298,7 +298,11 @@ static void st_assign(stoken_t * st, const char stype,
     st->type = (char) stype;
     st->pos = pos;
     st->len = last;
-    memcpy(st->val, value, last);
+    if(len == 1) {
+        st->val[0] = *value;
+    } else {
+        memcpy(st->val, value, last);
+    }
     st->val[last] = CHAR_NULL;
 }
 
