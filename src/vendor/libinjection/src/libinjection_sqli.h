@@ -123,9 +123,6 @@ struct libinjection_sqli_state {
      */
     char fingerprint[8];
     
-    bool hadWordBoundary;
-    bool illegalState;
-
     /*
      * Line number of code that said decided if the input was SQLi or
      * not.  Most of the time it's line that said "it's not a matching
@@ -174,7 +171,9 @@ struct libinjection_sqli_state {
      * total tokens processed
      */
     int stats_tokens;
-
+    
+    bool hadWordBoundary;
+    bool illegalState;
 };
 
 typedef struct libinjection_sqli_state sfilter;

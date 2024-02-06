@@ -293,17 +293,19 @@ static void st_clear(stoken_t * st)
 static void st_assign(stoken_t * st, const char stype,
                       size_t pos, size_t len, const char* value)
 {
-    const size_t MSIZE = LIBINJECTION_SQLI_TOKEN_SIZE;
-    size_t last = len < MSIZE ? len : (MSIZE - 1);
     st->type = (char) stype;
     st->pos = pos;
-    st->len = last;
-    if(len == 1) {
+    if (len == 1) {
+        st->len = 1;
         st->val[0] = *value;
+        st->val[1] = CHAR_NULL;
     } else {
+        const size_t MSIZE = LIBINJECTION_SQLI_TOKEN_SIZE;
+        size_t last = len < MSIZE ? len : (MSIZE - 1);
+        st->len = last;
         memcpy(st->val, value, last);
+        st->val[last] = CHAR_NULL;
     }
-    st->val[last] = CHAR_NULL;
 }
 
 static void sf_update_state(struct libinjection_sqli_state * sf, const char stype,
