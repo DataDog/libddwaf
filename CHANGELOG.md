@@ -9,8 +9,11 @@
 - Support ephemeral addresses on processors ([#240](https://github.com/DataDog/libddwaf/pull/240))
 
 #### Miscellaneous
-- Microbenchmarks ([#242](https://github.com/DataDog/libddwaf/pull/242), [#243](https://github.com/DataDog/libddwaf/pull/243), [#244](https://github.com/DataDog/libddwaf/pull/244), [#245](https://github.com/DataDog/libddwaf/pull/245), [#246](https://github.com/DataDog/libddwaf/pull/246), [#247](https://github.com/DataDog/libddwaf/pull/247), [#248](https://github.com/DataDog/libddwaf/pull/248), [#250](https://github.com/DataDog/libddwaf/pull/250))
+- Build tools on CI to avoid breaking tool users ([#229](https://github.com/DataDog/libddwaf/pull/229))
+- Remove legacy linux builds ([#230](https://github.com/DataDog/libddwaf/pull/230))
+- Vendorize re2 and utf8proc ([#231](https://github.com/DataDog/libddwaf/pull/231))
 - Refactor cmake scripts and support LTO ([#232](https://github.com/DataDog/libddwaf/pull/232))
+- Microbenchmarks ([#242](https://github.com/DataDog/libddwaf/pull/242), [#243](https://github.com/DataDog/libddwaf/pull/243), [#244](https://github.com/DataDog/libddwaf/pull/244), [#245](https://github.com/DataDog/libddwaf/pull/245), [#246](https://github.com/DataDog/libddwaf/pull/246), [#247](https://github.com/DataDog/libddwaf/pull/247), [#248](https://github.com/DataDog/libddwaf/pull/248), [#250](https://github.com/DataDog/libddwaf/pull/250))
 
 ### v1.15.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
