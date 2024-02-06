@@ -15,7 +15,7 @@ namespace ddwaf::matcher {
 namespace {
 bool is_bounded_word(std::string_view pattern, std::size_t end)
 {
-    return (end + 1 == pattern.size()) ||
+    return (end + 1 >= pattern.size()) ||
            ((end + 1 < pattern.size()) && isboundary(pattern[end + 1]));
 }
 
