@@ -1,0 +1,22 @@
+{
+  name: "Basic run with phrase_match and word bounding",
+  runs: [
+    {
+      persistent-input: {
+        rule2-input: "asjkdansdstring00 asdkjasndk"
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input,
+              value: "asjkdansdstring00 asdkjasndk",
+              highlight: "string00"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
