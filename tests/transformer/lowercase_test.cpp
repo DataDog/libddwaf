@@ -26,6 +26,7 @@ TEST(TestLowercase, ValidTransform)
     EXPECT_TRANSFORM(lowercase, "LoWeRCase", "lowercase");
     EXPECT_TRANSFORM(lowercase, "LowercasE", "lowercase");
     EXPECT_TRANSFORM(lowercase, "lowercasE", "lowercase");
+    EXPECT_TRANSFORM(lowercase, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz");
     EXPECT_TRANSFORM(
         lowercase, "lowercasEasndasnjdkans1823712nka", "lowercaseasndasnjdkans1823712nka");
 }
