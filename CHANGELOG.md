@@ -7,6 +7,7 @@
 
 #### Changes
 - Support ephemeral addresses on processors ([#240](https://github.com/DataDog/libddwaf/pull/240))
+- Phrase match: enforce word boundary option ([#256](https://github.com/DataDog/libddwaf/pull/256))
 
 #### Miscellaneous
 - Build tools on CI to avoid breaking tool users ([#229](https://github.com/DataDog/libddwaf/pull/229))
