@@ -95,6 +95,89 @@ TEST(TestPhraseMatch, TestComplex)
     run("nonsense", nullptr);
 }
 
+TEST(TestPhraseMatch, TestWordBoundary)
+{
+    std::vector<const char *> strings{"banana", "$apple", "orange$", "$pear$"};
+    std::vector<uint32_t> lengths(strings.size());
+    std::generate(lengths.begin(), lengths.end(),
+        [i = 0, &strings]() mutable { return strlen(strings[i++]); });
+
+    phrase_match matcher(strings, lengths, true);
+
+    auto run = [&matcher](const char *str, const char *expect) {
+        ddwaf_object param;
+        ddwaf_object_string(&param, str);
+        if (expect != nullptr) {
+            auto [res, highlight] = matcher.match(param);
+            EXPECT_TRUE(res);
+            EXPECT_STREQ(highlight.c_str(), expect);
+        } else {
+            EXPECT_FALSE(matcher.match(param).first);
+        }
+        ddwaf_object_free(&param);
+    };
+
+    run("banana", "banana");
+    run(" banana", "banana");
+    run("banana ", "banana");
+    run("word banana word", "banana");
+    run("word   ;banana/ word", "banana");
+
+    run("banan", nullptr);
+    run("abanana", nullptr);
+    run("bananaa", nullptr);
+    run("abananaa", nullptr);
+    run("banana_", nullptr);
+    run("_banana", nullptr);
+    run("_banana_", nullptr);
+    run("   _banana   ", nullptr);
+    run("   banana_   ", nullptr);
+    run("   _banana_   ", nullptr);
+
+    run("$apple", "$apple");
+    run("s$apple", "$apple");
+    run(";$apple", "$apple");
+    run(";$apple;", "$apple");
+    run("$apple;", "$apple");
+    run("word $apple word", "$apple");
+
+    run("apple", nullptr);
+    run("$applea", nullptr);
+    run("a$applea", nullptr);
+    run("$apple_", nullptr);
+    run("_$apple_", nullptr);
+    run("   $apple_   ", nullptr);
+    run("   _$apple_   ", nullptr);
+
+    run("orange$", "orange$");
+    run("orange$s", "orange$");
+    run(";orange$", "orange$");
+    run(";orange$;", "orange$");
+    run("orange$;", "orange$");
+    run("word orange$word", "orange$");
+
+    run("orange", nullptr);
+    run("aorange$", nullptr);
+    run("aorange$a", nullptr);
+    run("_orange$", nullptr);
+    run("_orange$_", nullptr);
+    run("   _orange$   ", nullptr);
+    run("   _orange$_   ", nullptr);
+
+    run("$pear$", "$pear$");
+    run("$pear$s", "$pear$");
+    run("s$pear$", "$pear$");
+    run("s$pear$s", "$pear$");
+    run(";$pear$", "$pear$");
+    run(";$pear$;", "$pear$");
+    run("$pear$;", "$pear$");
+    run("word$pear$word", "$pear$");
+    run("word $pear$ word", "$pear$");
+
+    run("pear$", nullptr);
+    run("$pear", nullptr);
+}
+
 TEST(TestPhraseMatch, TestInvalidInput)
 {
     std::vector<const char *> strings{"aaaa", "bbbb", "cccc"};
