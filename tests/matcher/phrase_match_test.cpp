@@ -97,7 +97,7 @@ TEST(TestPhraseMatch, TestComplex)
 
 TEST(TestPhraseMatch, TestWordBoundary)
 {
-    std::vector<const char *> strings{"String1", "string2", "string 3", "string_4", "string21"};
+    std::vector<const char *> strings{"banana", "$apple", "orange$", "$pear$"};
     std::vector<uint32_t> lengths(strings.size());
     std::generate(lengths.begin(), lengths.end(),
         [i = 0, &strings]() mutable { return strlen(strings[i++]); });
@@ -117,28 +117,65 @@ TEST(TestPhraseMatch, TestWordBoundary)
         ddwaf_object_free(&param);
     };
 
-    run("\xF0\x82\x82\xAC\xC1string2\xF0\x82\x82\xAC\xC1", "string2");
-    run("bla@string 3", "string 3");
-    run("string21", "string21");
-    run("string21 ", "string21");
-    run(" string21 ", "string21");
-    run("asdnjd;string21;", "string21");
-    run("   string_4", "string_4");
-    run("*****string_4****", "string_4");
-    run("____ String1\n", "String1");
+    run("banana", "banana");
+    run(" banana", "banana");
+    run("banana ", "banana");
+    run("word banana word", "banana");
+    run("word   ;banana/ word", "banana");
 
-    run("", nullptr);
-    run("String", nullptr);
-    run("string_", nullptr);
-    run("String21", nullptr);
-    run("astring21", nullptr);
-    run("astring21b", nullptr);
-    run("string21b", nullptr);
-    run("nonsense", nullptr);
-    run("string213", nullptr);
-    run("string21_", nullptr);
-    run("string_4bla", nullptr);
-    run("bla_String1_bla", nullptr);
+    run("banan", nullptr);
+    run("abanana", nullptr);
+    run("bananaa", nullptr);
+    run("abananaa", nullptr);
+    run("banana_", nullptr);
+    run("_banana", nullptr);
+    run("_banana_", nullptr);
+    run("   _banana   ", nullptr);
+    run("   banana_   ", nullptr);
+    run("   _banana_   ", nullptr);
+
+    run("$apple", "$apple");
+    run("s$apple", "$apple");
+    run(";$apple", "$apple");
+    run(";$apple;", "$apple");
+    run("$apple;", "$apple");
+    run("word $apple word", "$apple");
+
+    run("apple", nullptr);
+    run("$applea", nullptr);
+    run("a$applea", nullptr);
+    run("$apple_", nullptr);
+    run("_$apple_", nullptr);
+    run("   $apple_   ", nullptr);
+    run("   _$apple_   ", nullptr);
+
+    run("orange$", "orange$");
+    run("orange$s", "orange$");
+    run(";orange$", "orange$");
+    run(";orange$;", "orange$");
+    run("orange$;", "orange$");
+    run("word orange$word", "orange$");
+
+    run("orange", nullptr);
+    run("aorange$", nullptr);
+    run("aorange$a", nullptr);
+    run("_orange$", nullptr);
+    run("_orange$_", nullptr);
+    run("   _orange$   ", nullptr);
+    run("   _orange$_   ", nullptr);
+
+    run("$pear$", "$pear$");
+    run("$pear$s", "$pear$");
+    run("s$pear$", "$pear$");
+    run("s$pear$s", "$pear$");
+    run(";$pear$", "$pear$");
+    run(";$pear$;", "$pear$");
+    run("$pear$;", "$pear$");
+    run("word$pear$word", "$pear$");
+    run("word $pear$ word", "$pear$");
+
+    run("pear$", nullptr);
+    run("$pear", nullptr);
 }
 
 TEST(TestPhraseMatch, TestInvalidInput)
