@@ -210,9 +210,11 @@ TEST(TestIntegrationOperation, PhraseMatch)
                            .name = "rule1-phrase-match",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "phrase_match",
-                               .address = "input1",
-                               .value = "string00",
-                               .highlight = "string00"}}});
+                               .highlight = "string00",
+                               .args = {{
+                                   .value = "string00",
+                                   .address = "input1",
+                               }}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -243,9 +245,11 @@ TEST(TestIntegrationOperation, PhraseMatchWordBound)
                                .name = "rule2-phrase-match-word-bound",
                                .tags = {{"type", "flow"}, {"category", "category"}},
                                .matches = {{.op = "phrase_match",
-                                   .address = "input2",
-                                   .value = "string01;",
-                                   .highlight = "string01"}}});
+                                   .highlight = "string01",
+                                   .args = {{
+                                       .value = "string01;",
+                                       .address = "input2",
+                                   }}}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);

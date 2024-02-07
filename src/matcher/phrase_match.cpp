@@ -9,6 +9,7 @@
 
 #include "exception.hpp"
 #include "matcher/phrase_match.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::matcher {
 
