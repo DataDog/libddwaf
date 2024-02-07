@@ -391,6 +391,9 @@ class InitPayloadGenerator:
 
             if operator == "phrase_match":
                 result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
+                result["parameters"]["options"] = {
+                  "enforce_word_boundary": choice((True, False))
+                }
             elif operator == "match_regex":
                 temp = choice(self.regexs)
 

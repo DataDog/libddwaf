@@ -12,7 +12,19 @@
 
 namespace ddwaf::matcher {
 
-phrase_match::phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths)
+namespace {
+bool is_bounded_word(std::string_view pattern, std::size_t begin, std::size_t end)
+{
+    return ((end + 1 >= pattern.size()) || isboundary(pattern[end]) ||
+               isboundary(pattern[end + 1])) &&
+           (begin == 0 || (isboundary(pattern[begin]) || isboundary(pattern[begin - 1])));
+}
+
+} // namespace
+
+phrase_match::phrase_match(
+    std::vector<const char *> pattern, std::vector<uint32_t> lengths, bool enforce_word_boundary)
+    : enforce_word_boundary_(enforce_word_boundary)
 {
     if (pattern.size() != lengths.size()) {
         throw std::invalid_argument("inconsistent pattern and lengths array size");
@@ -33,22 +45,27 @@ std::pair<bool, std::string> phrase_match::match_impl(std::string_view pattern) 
         return {false, {}};
     }
 
-    const ac_result_t result =
-        ac_match(acStructure, pattern.data(), static_cast<uint32_t>(pattern.size()));
+    auto u32_size = static_cast<uint32_t>(pattern.size());
+    ac_result_t result;
+    if (!enforce_word_boundary_) {
+        result = ac_match(acStructure, pattern.data(), u32_size);
+    } else {
+        result = ac_match_longest_l(acStructure, pattern.data(), u32_size);
+    }
 
-    const bool didMatch =
-        result.match_begin >= 0 && result.match_end >= 0 && result.match_begin < result.match_end;
-    if (!didMatch) {
+    auto begin = static_cast<std::size_t>(result.match_begin);
+    auto end = static_cast<std::size_t>(result.match_end);
+
+    if (result.match_begin < 0 || result.match_end < 0 || begin >= end ||
+        (enforce_word_boundary_ && !is_bounded_word(pattern, begin, end))) {
         return {false, {}};
     }
 
-    std::string matched_value;
-    if (pattern.size() > static_cast<std::size_t>(result.match_end)) {
-        matched_value =
-            pattern.substr(result.match_begin, (result.match_end - result.match_begin + 1));
+    if (pattern.size() <= end) [[unlikely]] {
+        return {true, {}};
     }
 
-    return {true, matched_value};
+    return {true, std::string{pattern.substr(begin, (end - begin + 1))}};
 }
 
 } // namespace ddwaf::matcher

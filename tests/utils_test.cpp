@@ -92,6 +92,17 @@ TEST(TestUtils, IsAlnum)
     }
 }
 
+TEST(TestUtils, IsBoundary)
+{
+    for (char c = char_min; c < char_max; ++c) {
+        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+            c == '_') {
+            EXPECT_FALSE(isboundary(c));
+        } else {
+            EXPECT_TRUE(isboundary(c));
+        }
+    }
+}
 TEST(TestUtils, ToLower)
 {
     std::unordered_map<char, char> mapping{{'A', 'a'}, {'B', 'b'}, {'C', 'c'}, {'D', 'd'},

@@ -1,0 +1,22 @@
+{
+  name: "Basic run with phrase_match",
+  runs: [
+    {
+      persistent-input: {
+        rule1-input: "asjkdansdstring00asdkjasndk"
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: "asjkdansdstring00asdkjasndk",
+              highlight: "string00"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
