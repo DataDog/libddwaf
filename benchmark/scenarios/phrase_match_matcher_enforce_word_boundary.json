@@ -1,5 +1,5 @@
 {
-  "scenario": "phrase_match_matcher",
+  "scenario": "phrase_match_matcher.enforce_word_boundary",
   "ruleset": {
     "rules": [
       {
