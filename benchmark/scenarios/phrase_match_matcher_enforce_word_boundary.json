@@ -1,0 +1,49 @@
+{
+  "scenario": "phrase_match_matcher.enforce_word_boundary",
+  "ruleset": {
+    "rules": [
+      {
+        "id": "crs-913-110",
+        "name": "Acunetix",
+        "tags": {
+          "type": "commercial_scanner",
+          "category": "attack_attempt"
+        },
+        "conditions": [
+          {
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "server.request.headers.no_cookies"
+                }
+              ],
+              "list": [
+                "acunetix-product",
+                "(acunetix web vulnerability scanner",
+                "acunetix-scanning-agreement",
+                "acunetix-user-agreement",
+                "md5(acunetix_wvs_security_test)"
+              ],
+              "options": {
+                  "enforce_word_boundary": true
+              }
+            },
+            "operator": "phrase_match"
+          }
+        ],
+        "transformers": []
+      }
+    ]
+  },
+  "fixtures": {
+    "eval.valid": {
+      "server.request.headers.no_cookies": [
+        "acunetix-product",
+        "(acunetix web vulnerability scanner",
+        "acunetix-scanning-agreement",
+        "acunetix-user-agreement",
+        "md5(acunetix_wvs_security_test)"
+      ]
+    }
+  }
+}
