@@ -3,14 +3,14 @@
   runs: [
     {
       persistent-input: {
-        rule2-input: "asjkdansdstring00 asdkjasndk"
+        rule2-input: "asjkdansd;string00 asdkjasndk"
       },
       rules: [
         {
           2: [
             {
               address: rule2-input,
-              value: "asjkdansdstring00 asdkjasndk",
+              value: "asjkdansd;string00 asdkjasndk",
               highlight: "string00"
             }
           ]

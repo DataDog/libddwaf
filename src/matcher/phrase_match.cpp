@@ -13,10 +13,11 @@
 namespace ddwaf::matcher {
 
 namespace {
-bool is_bounded_word(std::string_view pattern, std::size_t end)
+bool is_bounded_word(std::string_view pattern, std::size_t begin, std::size_t end)
 {
-    return (end + 1 >= pattern.size()) ||
-           ((end + 1 < pattern.size()) && isboundary(pattern[end + 1]));
+    return ((end + 1 >= pattern.size()) ||
+               ((end + 1 < pattern.size()) && isboundary(pattern[end + 1]))) &&
+           (begin == 0 || isboundary(pattern[begin - 1]));
 }
 
 } // namespace
@@ -52,19 +53,19 @@ std::pair<bool, std::string> phrase_match::match_impl(std::string_view pattern) 
         result = ac_match_longest_l(acStructure, pattern.data(), u32_size);
     }
 
-    auto match_begin = static_cast<std::size_t>(result.match_begin);
-    auto match_end = static_cast<std::size_t>(result.match_end);
+    auto begin = static_cast<std::size_t>(result.match_begin);
+    auto end = static_cast<std::size_t>(result.match_end);
 
-    if (result.match_begin < 0 || result.match_end < 0 || match_begin >= match_end ||
-        (enforce_word_boundary_ && !is_bounded_word(pattern, match_end))) {
+    if (result.match_begin < 0 || result.match_end < 0 || begin >= end ||
+        (enforce_word_boundary_ && !is_bounded_word(pattern, begin, end))) {
         return {false, {}};
     }
 
-    if (pattern.size() <= match_end) [[unlikely]] {
+    if (pattern.size() <= end) [[unlikely]] {
         return {true, {}};
     }
 
-    return {true, std::string{pattern.substr(match_begin, (match_end - match_begin + 1))}};
+    return {true, std::string{pattern.substr(begin, (end - begin + 1))}};
 }
 
 } // namespace ddwaf::matcher
