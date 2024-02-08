@@ -8,6 +8,7 @@
 
 #include <ddwaf.h>
 #include <filesystem>
+#include <regex>
 #include <string_view>
 #include <unordered_set>
 #include <vector>
@@ -24,8 +25,9 @@ struct settings {
     fs::path output_file;
     unsigned runs{1};
     unsigned iterations{1000};
-    unsigned warmup_iterations{10};
+    unsigned warmup_iterations{100};
     unsigned seed{1729};
+    std::regex fixtures{".*"};
 };
 
 } // namespace ddwaf::benchmark

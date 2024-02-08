@@ -16,6 +16,7 @@ add_custom_target(run_benchmark
     --iterations=1000
     --format=json
     --output=benchmark_results.json
+    --fixtures="random"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 add_dependencies(run_benchmark benchmark)

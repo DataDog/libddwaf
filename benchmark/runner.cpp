@@ -20,11 +20,13 @@ std::map<std::string, runner::test_result> runner::run()
 {
     std::map<std::string, test_result> results;
     std::vector<uint64_t> times(iterations_);
+
     for (auto &[test_name, f] : tests_) {
         std::string name = scenario_ + '.' + test_name;
 
         for (std::size_t i = 0; i < warmup_iterations_; i++) {
             f->set_up();
+            f->warmup();
             f->test_main();
             f->tear_down();
         }
@@ -35,6 +37,8 @@ std::map<std::string, runner::test_result> runner::run()
                           << std::endl;
                 break;
             }
+
+            f->warmup();
 
             auto duration = f->test_main();
             times[i] = duration;

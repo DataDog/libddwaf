@@ -47,7 +47,8 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
               << "    --warmup VALUE        Number of warmup iterations per run\n"
               << "    --seed VALUE Seed for the random number generator\n"
               << "    --format VALUE        Output format: csv, json, human, none\n"
-              << "    --output VALUE        Results output file\n";
+              << "    --output VALUE        Results output file\n"
+              << "    --fixtures REGEX      Regex to determine the fixtures to run\n";
 
     if (!error.empty()) {
         std::cerr << "\nError: " << error << "\n";
@@ -124,6 +125,11 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
         s.warmup_iterations = utils::from_string<unsigned>(opts["warmup"]);
     }
 
+    if (opts.contains("fixtures")) {
+        std::string_view fixtures = opts["fixtures"];
+        s.fixtures = std::regex(fixtures.data(), fixtures.size());
+    }
+
     return s;
 }
 
@@ -156,13 +162,20 @@ int main(int argc, char *argv[])
 
             benchmark::runner runner(std::move(name), s);
             benchmark::object_generator generator(addresses);
-            runner.register_fixture<benchmark::run_fixture>("random", handle, generator());
+
+            if (std::regex_search("random", s.fixtures)) {
+                runner.register_fixture<benchmark::run_fixture>("random", handle, generator());
+            }
 
             auto fixtures_spec = spec["fixtures"];
             if (fixtures_spec.IsDefined()) {
                 for (auto it = fixtures_spec.begin(); it != fixtures_spec.end(); ++it) {
+                    auto custom_name = it->first.as<std::string>();
+                    if (!std::regex_search(custom_name, s.fixtures)) {
+                        continue;
+                    }
                     runner.register_fixture<benchmark::run_fixture>(
-                        it->first.as<std::string>(), handle, it->second.as<ddwaf_object>());
+                        custom_name, handle, it->second.as<ddwaf_object>());
                 }
             }
 
