@@ -4,8 +4,10 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <chrono>
 #include <ddwaf.h>
 #include <iostream>
+#include <stack>
 #include <vector>
 
 #include "run_fixture.hpp"
@@ -21,6 +23,28 @@ bool run_fixture::set_up()
 {
     ctx_ = ddwaf_context_init(handle_);
     return ctx_ != nullptr;
+}
+
+void run_fixture::warmup()
+{
+    static constexpr std::size_t max_depth = 3;
+    std::stack<std::pair<const ddwaf_object *, std::size_t>> object_stack;
+    object_stack.emplace(&object_, 0);
+    while (!object_stack.empty()) {
+        auto &[current, i] = object_stack.top();
+        for (; i < current->nbEntries; ++i) {
+            const auto &next = current->array[i];
+            if (object_stack.size() <= max_depth &&
+                (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP)) {
+                break;
+            }
+        }
+        if (i == current->nbEntries) {
+            object_stack.pop();
+        } else {
+            object_stack.push({&current->array[i++], 0});
+        }
+    }
 }
 
 uint64_t run_fixture::test_main()
