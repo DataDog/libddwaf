@@ -26,6 +26,7 @@ public:
 
     bool set_up() override;
 
+    void warmup() override;
     uint64_t test_main() override;
 
     void tear_down() override;

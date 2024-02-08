@@ -23,6 +23,7 @@ public:
 
     virtual bool set_up() { return true; }
 
+    virtual void warmup() = 0;
     virtual uint64_t test_main() = 0;
 
     virtual void tear_down(){};
