@@ -26,7 +26,6 @@ std::map<std::string, runner::test_result> runner::run()
 
         for (std::size_t i = 0; i < warmup_iterations_; i++) {
             f->set_up();
-            f->warmup();
             f->test_main();
             f->tear_down();
         }

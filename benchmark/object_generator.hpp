@@ -21,9 +21,9 @@ namespace ddwaf::benchmark {
 
 struct object_specification {
     static constexpr unsigned default_terminal_nodes = 100;
-    static constexpr unsigned default_intermediate_nodes = 100;
+    static constexpr unsigned default_intermediate_nodes = 200;
     static constexpr unsigned default_depth = 10;
-    static constexpr unsigned default_string_length = 1024;
+    static constexpr unsigned default_string_length = 2048;
     static constexpr unsigned default_key_length = 128;
 
     unsigned terminal_nodes{default_terminal_nodes};
