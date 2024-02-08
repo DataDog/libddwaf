@@ -27,13 +27,15 @@ bool run_fixture::set_up()
 
 void run_fixture::warmup()
 {
+    static constexpr std::size_t max_depth = 3;
     std::stack<std::pair<const ddwaf_object *, std::size_t>> object_stack;
     object_stack.emplace(&object_, 0);
     while (!object_stack.empty()) {
         auto &[current, i] = object_stack.top();
         for (; i < current->nbEntries; ++i) {
             const auto &next = current->array[i];
-            if (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP) {
+            if (object_stack.size() <= max_depth &&
+                (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP)) {
                 break;
             }
         }
