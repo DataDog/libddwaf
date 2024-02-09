@@ -133,3 +133,5 @@ ExternalProject_Add(proj_event_rules
 
 set_target_properties(proj_event_rules PROPERTIES EXCLUDE_FROM_ALL TRUE)
 # vim: et
+
+add_subdirectory(string_checker)
