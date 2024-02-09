@@ -8,6 +8,7 @@
 
 #include "condition/lfi_detector.hpp"
 #include "exception.hpp"
+#include "iterator.hpp"
 #include "log.hpp"
 #include "utils.hpp"
 
@@ -18,48 +19,6 @@ namespace ddwaf {
 namespace {
 
 constexpr std::size_t min_str_len = 5;
-
-std::vector<std::string_view> match_params(std::string_view path, const ddwaf_object &params)
-{
-    std::stack<const ddwaf_object *> stack;
-    std::vector<std::string_view> strings;
-
-    stack.push(&params);
-
-    while (!stack.empty() && stack.size() <= object_limits::default_max_container_depth) {
-        const ddwaf_object &container = *stack.top();
-        stack.pop();
-
-        for (std::size_t i = 0; i < container.nbEntries; ++i) {
-            const ddwaf_object &child = container.array[i];
-
-            if (child.parameterName != nullptr && child.parameterNameLength >= min_str_len) {
-                const std::string_view key{
-                    child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-                if (path.find(key) != std::string_view::npos) {
-                    strings.emplace_back(key);
-                }
-            }
-
-            if (object::is_container(&child)) {
-                if (stack.size() < object_limits::default_max_container_depth) {
-                    stack.push(&child);
-                }
-                continue;
-            }
-
-            if (child.type == DDWAF_OBJ_STRING && child.nbEntries >= min_str_len) {
-                const std::string_view value{
-                    child.stringValue, static_cast<std::size_t>(child.nbEntries)};
-                if (path.find(value) != std::string_view::npos) {
-                    strings.emplace_back(value);
-                }
-            }
-        }
-    }
-
-    return strings;
-}
 
 std::vector<std::string_view> split(std::string_view str, char sep)
 {
@@ -89,23 +48,30 @@ std::vector<std::string_view> split(std::string_view str, char sep)
 
 std::pair<bool, std::string> lfi_impl(std::string_view path, const ddwaf_object &params)
 {
-    auto matched_params = match_params(path, params);
-    if (matched_params.empty()) {
-        return {};
-    }
-
-    for (const auto &param : matched_params) {
-        if (param[0] == '/' && param == path) {
-            return {true, std::string(param)};
-        }
-
-        if (!path.ends_with(param)) {
+    object::kv_iterator it(&params, {}, {});
+    for (; it; ++it) {
+        const ddwaf_object &param = *(*it);
+        if (param.type != DDWAF_OBJ_STRING || param.stringValue == nullptr ||
+            param.nbEntries < min_str_len) {
             continue;
         }
 
-        auto parts = split(param, '/');
+        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        if (path.find(value) == std::string_view::npos) {
+            continue;
+        }
+
+        if (value[0] == '/' && value == path) {
+            return {true, std::string(value)};
+        }
+
+        if (!path.ends_with(value)) {
+            continue;
+        }
+
+        auto parts = split(value, '/');
         if (parts.size() > 1 && std::find(parts.begin(), parts.end(), "..") != parts.end()) {
-            return {true, std::string(param)};
+            return {true, std::string(value)};
         }
     }
 
