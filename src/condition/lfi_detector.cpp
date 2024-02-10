@@ -4,13 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <iostream>
-#include <stack>
-
 #include "condition/lfi_detector.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
-#include "log.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;
@@ -69,10 +65,6 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
-
         auto res = lfi_impl(path.value, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
             std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};

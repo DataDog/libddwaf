@@ -15,8 +15,10 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <type_traits>
+#include <vector>
 
 #include "ddwaf.h"
 
@@ -267,6 +269,7 @@ inline std::vector<std::string_view> split(std::string_view str, char sep)
         if (end == start) {
             // Ignore zero-sized strings
             start = end + 1;
+            continue;
         }
 
         if (end == std::string_view::npos) {

@@ -349,4 +349,27 @@ TEST(TestUtils, CloneMap)
     ddwaf_object_free(&output);
 }
 
+#define EXPECT_VEC(expected, ...)                                                                  \
+    {                                                                                              \
+        std::vector<std::string_view> vec{__VA_ARGS__};                                            \
+        EXPECT_EQ(expected, vec);                                                                  \
+    }
+
+TEST(TestUtils, Split)
+{
+    EXPECT_VEC(ddwaf::split("|", '|'));
+    EXPECT_VEC(ddwaf::split("||", '|'));
+    EXPECT_VEC(ddwaf::split("|||||||", '|'));
+    EXPECT_VEC(ddwaf::split("value", '|'), "value");
+    EXPECT_VEC(ddwaf::split("|value", '|'), "value");
+    EXPECT_VEC(ddwaf::split("value|", '|'), "value");
+    EXPECT_VEC(ddwaf::split("|value|", '|'), "value");
+    EXPECT_VEC(ddwaf::split("||||value||||", '|'), "value");
+    EXPECT_VEC(ddwaf::split("hello|value", '|'), "hello", "value");
+    EXPECT_VEC(ddwaf::split("hello|value|", '|'), "hello", "value");
+    EXPECT_VEC(ddwaf::split("|hello|value", '|'), "hello", "value");
+    EXPECT_VEC(ddwaf::split("|hello|value|", '|'), "hello", "value");
+    EXPECT_VEC(ddwaf::split("a,b,c,d,e,f,g", ','), "a", "b", "c", "d", "e", "f", "g");
+}
+
 } // namespace

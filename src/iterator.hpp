@@ -98,7 +98,7 @@ public:
 
     [[nodiscard]] DDWAF_OBJ_TYPE type() const
     {
-        if (current_->parameterName != nullptr) {
+        if (current_ != nullptr && current_->parameterName != nullptr) {
             return DDWAF_OBJ_STRING;
         }
         return DDWAF_OBJ_INVALID;
@@ -138,24 +138,31 @@ public:
 
     [[nodiscard]] DDWAF_OBJ_TYPE type() const
     {
-        if (current_->parameterName != nullptr) {
-            return DDWAF_OBJ_STRING;
+        if (current_ != nullptr) {
+            if (scalar_value_) {
+                return current_->type;
+            }
+
+            if (current_->parameterName != nullptr) {
+                return DDWAF_OBJ_STRING;
+            }
         }
         return DDWAF_OBJ_INVALID;
     }
 
     [[nodiscard]] const ddwaf_object *operator*()
     {
-        if (current_ == nullptr) {
-            return nullptr;
-        }
+        if (current_ != nullptr) {
+            if (scalar_value_) {
+                return current_;
+            }
 
-        if (scalar_value_) {
-            return current_;
+            if (current_->parameterName != nullptr) {
+                return ddwaf_object_stringl_nc(
+                    &current_key_, current_->parameterName, current_->parameterNameLength);
+            }
         }
-
-        return ddwaf_object_stringl_nc(
-            &current_key_, current_->parameterName, current_->parameterNameLength);
+        return nullptr;
     }
 
 protected:
