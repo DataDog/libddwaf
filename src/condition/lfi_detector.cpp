@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <iostream>
 #include <stack>
 
 #include "condition/lfi_detector.hpp"
@@ -19,32 +20,6 @@ namespace ddwaf {
 namespace {
 
 constexpr std::size_t min_str_len = 5;
-
-std::vector<std::string_view> split(std::string_view str, char sep)
-{
-    std::vector<std::string_view> components;
-
-    std::size_t start = 0;
-    while (start < str.size()) {
-        const std::size_t end = str.find(sep, start);
-
-        if (end == start) {
-            // Ignore zero-sized strings
-            start = end + 1;
-        }
-
-        if (end == std::string_view::npos) {
-            // Last element
-            components.emplace_back(str.substr(start));
-            start = str.size();
-        } else {
-            components.emplace_back(str.substr(start, end - start));
-            start = end + 1;
-        }
-    }
-
-    return components;
-}
 
 std::pair<bool, std::string> lfi_impl(std::string_view path, const ddwaf_object &params)
 {
@@ -70,6 +45,7 @@ std::pair<bool, std::string> lfi_impl(std::string_view path, const ddwaf_object 
         }
 
         auto parts = split(value, '/');
+        // for (auto p : parts) { std::cout << p << std::endl; }
         if (parts.size() > 1 && std::find(parts.begin(), parts.end(), "..") != parts.end()) {
             return {true, std::string(value)};
         }
