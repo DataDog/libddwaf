@@ -163,7 +163,7 @@ public:
         return std::apply(
             [&](auto &&...args) {
                 return static_cast<const Self *>(this)->eval_impl(
-                    std::forward<decltype(args)>(args)..., cache, deadline);
+                    std::forward<decltype(args)>(args)..., cache, objects_excluded, deadline);
             },
             std::move(args));
     }

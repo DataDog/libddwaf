@@ -17,7 +17,7 @@ template <typename... Args> std::vector<parameter_definition> gen_param_def(Args
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
-TEST(TestLFIDetector, BasicMatches)
+TEST(TestLFIDetector, MatchBasic)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
@@ -46,15 +46,123 @@ TEST(TestLFIDetector, BasicMatches)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
+        EXPECT_FALSE(res.ephemeral);
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
         EXPECT_STR(cache.match->args[0].resolved, path.c_str());
+        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
         EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
         EXPECT_STR(cache.match->highlights[0], input.c_str());
     }
+}
+
+TEST(TestLFIDetector, MatchWithKeyPath)
+{
+    lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
+
+    auto root = yaml_to_object(
+        R"({server.io.fs.file: documents/../etc/passwd,
+        server.request.query: {array: [ {map: ../etc/passwd}]}})");
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    EXPECT_TRUE(res.outcome);
+    EXPECT_FALSE(res.ephemeral);
+
+    EXPECT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
+    EXPECT_STR(cache.match->args[0].resolved, "documents/../etc/passwd");
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    EXPECT_STR(cache.match->args[1].resolved, "../etc/passwd");
+
+    std::vector<std::string> kp{"array", "0", "map"};
+    EXPECT_EQ(cache.match->args[1].key_path, kp);
+
+    EXPECT_STR(cache.match->highlights[0], "../etc/passwd");
+}
+
+TEST(TestLFIDetector, PartiallyEphemeralMatch)
+{
+    lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
+
+    object_store store;
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+
+    {
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "server.io.fs.file",
+            ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
+        store.insert(root);
+    }
+
+    {
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, "../../../etc/passwd"));
+        store.insert(root, object_store::attribute::ephemeral);
+    }
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    EXPECT_TRUE(res.outcome);
+    EXPECT_TRUE(res.ephemeral);
+
+    EXPECT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
+    EXPECT_STR(cache.match->args[0].resolved, "/var/www/html/../../../etc/passwd");
+    EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    EXPECT_STR(cache.match->args[1].resolved, "../../../etc/passwd");
+    EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+    EXPECT_STR(cache.match->highlights[0], "../../../etc/passwd");
+}
+
+TEST(TestLFIDetector, EphemeralMatch)
+{
+    lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
+
+    object_store store;
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(
+        &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
+    ddwaf_object_map_add(
+        &root, "server.request.query", ddwaf_object_string(&tmp, "../../../etc/passwd"));
+    store.insert(root, object_store::attribute::ephemeral);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    EXPECT_TRUE(res.outcome);
+    EXPECT_TRUE(res.ephemeral);
+
+    EXPECT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
+    EXPECT_STR(cache.match->args[0].resolved, "/var/www/html/../../../etc/passwd");
+    EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    EXPECT_STR(cache.match->args[1].resolved, "../../../etc/passwd");
+    EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+    EXPECT_STR(cache.match->highlights[0], "../../../etc/passwd");
 }
 
 TEST(TestLFIDetector, NoMatch)
@@ -87,8 +195,69 @@ TEST(TestLFIDetector, NoMatch)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
+        EXPECT_FALSE(res.ephemeral);
         EXPECT_FALSE(cache.match);
     }
+}
+
+TEST(TestLFIDetector, NoMatchExcludedPath)
+{
+    lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+    ddwaf_object params_map;
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(
+        &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
+
+    ddwaf_object_map(&params_map);
+    ddwaf_object_map_add(&params_map, "endpoint", ddwaf_object_string(&tmp, "../../../etc/passwd"));
+    ddwaf_object_map_add(&root, "server.request.query", &params_map);
+
+    std::unordered_set<const ddwaf_object *> persistent{&params_map.array[0]};
+    exclusion::object_set_ref exclusion{persistent, {}};
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, exclusion, {}, deadline);
+    EXPECT_FALSE(res.outcome);
+    EXPECT_FALSE(res.ephemeral);
+    EXPECT_FALSE(cache.match);
+}
+
+TEST(TestLFIDetector, NoMatchExcludedAddress)
+{
+    lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+    ddwaf_object params_map;
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(
+        &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
+
+    ddwaf_object_map(&params_map);
+    ddwaf_object_map_add(&params_map, "endpoint", ddwaf_object_string(&tmp, "../../../etc/passwd"));
+    ddwaf_object_map_add(&root, "server.request.query", &params_map);
+
+    std::unordered_set<const ddwaf_object *> persistent{&root.array[1]};
+    exclusion::object_set_ref exclusion{persistent, {}};
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, exclusion, {}, deadline);
+    EXPECT_FALSE(res.outcome);
+    EXPECT_FALSE(res.ephemeral);
+    EXPECT_FALSE(cache.match);
 }
 
 } // namespace
