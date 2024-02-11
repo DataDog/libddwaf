@@ -1,5 +1,6 @@
 {
   "scenario": "signed_equals_matcher",
+  "max_cycles": 100,
   "ruleset": {
     "rules": [
       {
