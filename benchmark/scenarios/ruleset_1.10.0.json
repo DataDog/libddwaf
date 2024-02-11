@@ -1,5 +1,6 @@
 {
   "scenario": "ruleset_1.10.0",
+  "max_cycles": 1,
   "ruleset": {
     "version": "2.2",
     "metadata": {
