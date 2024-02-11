@@ -37,8 +37,6 @@ std::map<std::string, runner::test_result> runner::run()
                 break;
             }
 
-            f->warmup();
-
             auto duration = f->test_main();
             times[i] = duration;
 

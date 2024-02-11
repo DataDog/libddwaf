@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include <chrono>
 #include <ddwaf.h>
 #include <iostream>
 #include <stack>
@@ -15,8 +14,8 @@
 
 namespace ddwaf::benchmark {
 
-run_fixture::run_fixture(ddwaf_handle handle, ddwaf_object object)
-    : object_(object), handle_(handle)
+run_fixture::run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&objects)
+    : objects_(std::move(objects)), handle_(handle)
 {}
 
 bool run_fixture::set_up()
@@ -28,39 +27,45 @@ bool run_fixture::set_up()
 void run_fixture::warmup()
 {
     static constexpr std::size_t max_depth = 3;
-    std::stack<std::pair<const ddwaf_object *, std::size_t>> object_stack;
-    object_stack.emplace(&object_, 0);
-    while (!object_stack.empty()) {
-        auto &[current, i] = object_stack.top();
-        for (; i < current->nbEntries; ++i) {
-            const auto &next = current->array[i];
-            if (object_stack.size() <= max_depth &&
-                (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP)) {
-                break;
+    for (auto &object : objects_) {
+        std::stack<std::pair<const ddwaf_object *, std::size_t>> object_stack;
+        object_stack.emplace(&object, 0);
+        while (!object_stack.empty()) {
+            auto &[current, i] = object_stack.top();
+            for (; i < current->nbEntries; ++i) {
+                const auto &next = current->array[i];
+                if (object_stack.size() <= max_depth &&
+                    (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP)) {
+                    break;
+                }
             }
-        }
-        if (i == current->nbEntries) {
-            object_stack.pop();
-        } else {
-            object_stack.push({&current->array[i++], 0});
+            if (i == current->nbEntries) {
+                object_stack.pop();
+            } else {
+                object_stack.push({&current->array[i++], 0});
+            }
         }
     }
 }
 
 uint64_t run_fixture::test_main()
 {
-    ddwaf_result res;
-    auto code = ddwaf_run(ctx_, &object_, nullptr, &res, std::numeric_limits<uint32_t>::max());
-    if (code < 0) {
-        throw std::runtime_error("WAF returned " + std::to_string(code));
-    }
+    uint64_t total_runtime = 0;
 
-    if (res.timeout) {
-        throw std::runtime_error("WAF timed-out");
-    }
+    for (auto &object : objects_) {
+        ddwaf_result res;
+        auto code = ddwaf_run(ctx_, nullptr, &object, &res, std::numeric_limits<uint32_t>::max());
+        if (code < 0) {
+            throw std::runtime_error("WAF returned " + std::to_string(code));
+        }
 
-    uint64_t total_runtime = res.total_runtime;
-    ddwaf_result_free(&res);
+        if (res.timeout) {
+            throw std::runtime_error("WAF timed-out");
+        }
+
+        total_runtime += res.total_runtime;
+        ddwaf_result_free(&res);
+    }
 
     return total_runtime;
 }

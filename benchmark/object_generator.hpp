@@ -21,9 +21,9 @@ namespace ddwaf::benchmark {
 
 struct object_specification {
     static constexpr unsigned default_terminal_nodes = 100;
-    static constexpr unsigned default_intermediate_nodes = 200;
+    static constexpr unsigned default_intermediate_nodes = 100;
     static constexpr unsigned default_depth = 10;
-    static constexpr unsigned default_string_length = 2048;
+    static constexpr unsigned default_string_length = 1048;
     static constexpr unsigned default_key_length = 128;
 
     unsigned terminal_nodes{default_terminal_nodes};
@@ -47,7 +47,7 @@ public:
     object_generator(object_generator &&) = default;
     object_generator &operator=(object_generator &&) = default;
 
-    ddwaf_object operator()(object_specification spec = {}) const;
+    std::vector<ddwaf_object> operator()(unsigned n, object_specification spec = {}) const;
 
 protected:
     std::vector<std::string_view> addresses_;
