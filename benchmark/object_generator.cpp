@@ -151,23 +151,26 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
 
 } // namespace
 
-ddwaf_object object_generator::operator()(object_specification spec) const
+std::vector<ddwaf_object> object_generator::operator()(unsigned n, object_specification spec) const
 {
-    ddwaf_object root;
-    ddwaf_object_map(&root);
+    std::vector<ddwaf_object> objects;
+    while (n-- > 0) {
+        ddwaf_object root;
+        ddwaf_object_map(&root);
 
-    for (const auto addr : addresses_) {
-        ddwaf_object value;
-        if (spec.depth == 0) {
-            generate_string_object(value, spec.string_length);
-        } else {
-            generate_objects(value, spec);
+        for (const auto addr : addresses_) {
+            ddwaf_object value;
+            if (spec.depth == 0) {
+                generate_string_object(value, spec.string_length);
+            } else {
+                generate_objects(value, spec);
+            }
+
+            ddwaf_object_map_add(&root, addr.data(), &value);
         }
-
-        ddwaf_object_map_add(&root, addr.data(), &value);
+        objects.emplace_back(root);
     }
-
-    return root;
+    return objects;
 }
 
 } // namespace ddwaf::benchmark

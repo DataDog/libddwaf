@@ -45,7 +45,7 @@ void print_help_and_exit(std::string_view name, std::string_view error = {})
               << "    --runs VALUE          Number of runs per scenario\n"
               << "    --iterations VALUE    Number of iterations per run\n"
               << "    --warmup VALUE        Number of warmup iterations per run\n"
-              << "    --seed VALUE Seed for the random number generator\n"
+              << "    --seed VALUE          Seed for the random number generator\n"
               << "    --format VALUE        Output format: csv, json, human, none\n"
               << "    --output VALUE        Results output file\n"
               << "    --fixtures REGEX      Regex to determine the fixtures to run\n";
@@ -161,10 +161,17 @@ int main(int argc, char *argv[])
             std::vector<std::string_view> addresses{addrs, addrs + static_cast<size_t>(addrs_len)};
 
             benchmark::runner runner(std::move(name), s);
-            benchmark::object_generator generator(addresses);
 
             if (std::regex_search("random", s.fixtures)) {
-                runner.register_fixture<benchmark::run_fixture>("random", handle, generator());
+                unsigned max_cycles = 10;
+                auto cycle_spec = spec["max_cycles"];
+                if (cycle_spec.IsDefined()) {
+                    max_cycles = cycle_spec.as<unsigned>();
+                }
+
+                benchmark::object_generator generator(addresses);
+                runner.register_fixture<benchmark::run_fixture>(
+                    "random", handle, generator(max_cycles));
             }
 
             auto fixtures_spec = spec["fixtures"];
@@ -174,8 +181,9 @@ int main(int argc, char *argv[])
                     if (!std::regex_search(custom_name, s.fixtures)) {
                         continue;
                     }
+                    std::vector objects{it->second.as<ddwaf_object>()};
                     runner.register_fixture<benchmark::run_fixture>(
-                        custom_name, handle, it->second.as<ddwaf_object>());
+                        custom_name, handle, std::move(objects));
                 }
             }
 
