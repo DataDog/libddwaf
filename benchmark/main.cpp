@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
             benchmark::runner runner(std::move(name), s);
 
             if (std::regex_search("random", s.fixtures)) {
-                unsigned max_cycles = 10;
+                unsigned max_cycles = 20;
                 auto cycle_spec = spec["max_cycles"];
                 if (cycle_spec.IsDefined()) {
                     max_cycles = cycle_spec.as<unsigned>();
