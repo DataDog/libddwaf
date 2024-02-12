@@ -8,6 +8,7 @@ COPY smoketest /smoketest
 RUN yum -y install gcc cmake make
 
 RUN tar -kxf packages/libddwaf-*-${ARCH}-linux-*.tar.gz --strip-components=1
+RUN ln -s /lib/libddwaf.* /lib64/
 
 RUN mkdir build_static && cd build_static && \
     cmake -DCMAKE_C_FLAGS="-I/include" \
