@@ -7,6 +7,7 @@
 #pragma once
 
 #include <functional>
+#include <span>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -54,7 +55,7 @@ protected:
 
 class value_iterator : public iterator_base<value_iterator> {
 public:
-    explicit value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+    explicit value_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~value_iterator() = default;
@@ -73,8 +74,9 @@ public:
     }
 
 protected:
-    void initialise_cursor(const ddwaf_object *obj, const std::vector<std::string> &path);
-    void initialise_cursor_with_path(const ddwaf_object *obj, const std::vector<std::string> &path);
+    void initialise_cursor(const ddwaf_object *obj, const std::span<const std::string> &path);
+    void initialise_cursor_with_path(
+        const ddwaf_object *obj, const std::span<const std::string> &path);
 
     void set_cursor_to_next_object();
 
@@ -83,7 +85,7 @@ protected:
 
 class key_iterator : public iterator_base<key_iterator> {
 public:
-    explicit key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+    explicit key_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~key_iterator() = default;
@@ -110,8 +112,9 @@ public:
     }
 
 protected:
-    void initialise_cursor(const ddwaf_object *obj, const std::vector<std::string> &path);
-    void initialise_cursor_with_path(const ddwaf_object *obj, const std::vector<std::string> &path);
+    void initialise_cursor(const ddwaf_object *obj, const std::span<const std::string> &path);
+    void initialise_cursor_with_path(
+        const ddwaf_object *obj, const std::span<const std::string> &path);
 
     void set_cursor_to_next_object();
 

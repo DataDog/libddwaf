@@ -34,9 +34,8 @@ TEST(TestTransformers, Base64Decode)
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "is_sqli",
-                               .address = "value1",
-                               .value = "'OR 1=1/*",
-                               .highlight = "s&1c"}}});
+                               .highlight = "s&1c",
+                               .args = {{.value = "'OR 1=1/*", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -66,9 +65,8 @@ TEST(TestTransformers, Base64DecodeAlias)
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "is_sqli",
-                               .address = "value2",
-                               .value = "'OR 1=1/*",
-                               .highlight = "s&1c"}}});
+                               .highlight = "s&1c",
+                               .args = {{.value = "'OR 1=1/*", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -99,9 +97,8 @@ TEST(TestTransformers, Base64Encode)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "J09SIDE9MS8q",
-                               .address = "value1",
-                               .value = "J09SIDE9MS8q",
-                               .highlight = "J09SIDE9MS8q"}}});
+                               .highlight = "J09SIDE9MS8q",
+                               .args = {{.value = "J09SIDE9MS8q", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -132,9 +129,8 @@ TEST(TestTransformers, Base64EncodeAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "J09SIDE9MS8q",
-                               .address = "value2",
-                               .value = "J09SIDE9MS8q",
-                               .highlight = "J09SIDE9MS8q"}}});
+                               .highlight = "J09SIDE9MS8q",
+                               .args = {{.value = "J09SIDE9MS8q", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -165,9 +161,8 @@ TEST(TestTransformers, CompressWhitespace)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "attack value",
-                               .address = "value1",
-                               .value = "attack value",
-                               .highlight = "attack value"}}});
+                               .highlight = "attack value",
+                               .args = {{.value = "attack value", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -198,9 +193,8 @@ TEST(TestTransformers, CompressWhitespaceAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "attack value",
-                               .address = "value2",
-                               .value = "attack value",
-                               .highlight = "attack value"}}});
+                               .highlight = "attack value",
+                               .args = {{.value = "attack value", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -231,9 +225,8 @@ TEST(TestTransformers, CssDecode)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "CSS transformations",
-                               .address = "value1",
-                               .value = "CSS transformations",
-                               .highlight = "CSS transformations"}}});
+                               .highlight = "CSS transformations",
+                               .args = {{.value = "CSS transformations", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -264,9 +257,8 @@ TEST(TestTransformers, CssDecodeAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "CSS transformations",
-                               .address = "value2",
-                               .value = "CSS transformations",
-                               .highlight = "CSS transformations"}}});
+                               .highlight = "CSS transformations",
+                               .args = {{.value = "CSS transformations", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -292,14 +284,14 @@ TEST(TestTransformers, HtmlEntityDecode)
     ddwaf_result out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
-    EXPECT_EVENTS(out, {.id = "1",
-                           .name = "rule1",
-                           .tags = {{"type", "flow1"}, {"category", "category1"}},
-                           .matches = {{.op = "match_regex",
-                               .op_value = "HTML A A transformation",
-                               .address = "value1",
-                               .value = "HTML A A transformation",
-                               .highlight = "HTML A A transformation"}}});
+    EXPECT_EVENTS(
+        out, {.id = "1",
+                 .name = "rule1",
+                 .tags = {{"type", "flow1"}, {"category", "category1"}},
+                 .matches = {{.op = "match_regex",
+                     .op_value = "HTML A A transformation",
+                     .highlight = "HTML A A transformation",
+                     .args = {{.value = "HTML A A transformation", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -325,14 +317,14 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
     ddwaf_result out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
-    EXPECT_EVENTS(out, {.id = "2",
-                           .name = "rule2",
-                           .tags = {{"type", "flow1"}, {"category", "category1"}},
-                           .matches = {{.op = "match_regex",
-                               .op_value = "HTML A A transformation",
-                               .address = "value2",
-                               .value = "HTML A A transformation",
-                               .highlight = "HTML A A transformation"}}});
+    EXPECT_EVENTS(
+        out, {.id = "2",
+                 .name = "rule2",
+                 .tags = {{"type", "flow1"}, {"category", "category1"}},
+                 .matches = {{.op = "match_regex",
+                     .op_value = "HTML A A transformation",
+                     .highlight = "HTML A A transformation",
+                     .args = {{.value = "HTML A A transformation", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -363,9 +355,8 @@ TEST(TestTransformers, JsDecode)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "A JS transformation",
-                               .address = "value1",
-                               .value = "A JS transformation",
-                               .highlight = "A JS transformation"}}});
+                               .highlight = "A JS transformation",
+                               .args = {{.value = "A JS transformation", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -396,9 +387,8 @@ TEST(TestTransformers, JsDecodeAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "A JS transformation",
-                               .address = "value2",
-                               .value = "A JS transformation",
-                               .highlight = "A JS transformation"}}});
+                               .highlight = "A JS transformation",
+                               .args = {{.value = "A JS transformation", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -429,9 +419,8 @@ TEST(TestTransformers, Lowercase)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "arachni",
-                               .address = "value1",
-                               .value = "arachni",
-                               .highlight = "arachni"}}});
+                               .highlight = "arachni",
+                               .args = {{.value = "arachni", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -462,9 +451,8 @@ TEST(TestTransformers, NormalizePath)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -495,9 +483,8 @@ TEST(TestTransformers, NormalizePathAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value2",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -528,9 +515,8 @@ TEST(TestTransformers, NormalizePathWin)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -561,9 +547,8 @@ TEST(TestTransformers, NormalizePathAliasWin)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value2",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -594,9 +579,8 @@ TEST(TestTransformers, RemoveComments)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "passwd",
-                               .address = "value1",
-                               .value = "passwd",
-                               .highlight = "passwd"}}});
+                               .highlight = "passwd",
+                               .args = {{.value = "passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -627,9 +611,8 @@ TEST(TestTransformers, RemoveCommentsAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "passwd",
-                               .address = "value2",
-                               .value = "passwd",
-                               .highlight = "passwd"}}});
+                               .highlight = "passwd",
+                               .args = {{.value = "passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -660,9 +643,8 @@ TEST(TestTransformers, RemoveNulls)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -693,9 +675,8 @@ TEST(TestTransformers, RemoveNullsAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value2",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -726,9 +707,8 @@ TEST(TestTransformers, ShellUnescape)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -759,9 +739,8 @@ TEST(TestTransformers, ShellUnescapeAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value2",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -792,9 +771,8 @@ TEST(TestTransformers, UnicodeNormalize)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -825,9 +803,8 @@ TEST(TestTransformers, UrlBasename)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "index.php",
-                               .address = "value1",
-                               .value = "index.php",
-                               .highlight = "index.php"}}});
+                               .highlight = "index.php",
+                               .args = {{.value = "index.php", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -858,9 +835,8 @@ TEST(TestTransformers, UrlBasenameAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "index.php",
-                               .address = "value2",
-                               .value = "index.php",
-                               .highlight = "index.php"}}});
+                               .highlight = "index.php",
+                               .args = {{.value = "index.php", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -891,9 +867,8 @@ TEST(TestTransformers, UrlDecode)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "an attack value",
-                               .address = "value1",
-                               .value = "an attack value",
-                               .highlight = "an attack value"}}});
+                               .highlight = "an attack value",
+                               .args = {{.value = "an attack value", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -924,9 +899,8 @@ TEST(TestTransformers, UrlDecodeAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "an attack value",
-                               .address = "value2",
-                               .value = "an attack value",
-                               .highlight = "an attack value"}}});
+                               .highlight = "an attack value",
+                               .args = {{.value = "an attack value", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -957,9 +931,8 @@ TEST(TestTransformers, UrlDecodeIis)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "an attack value",
-                               .address = "value1",
-                               .value = "an attack value",
-                               .highlight = "an attack value"}}});
+                               .highlight = "an attack value",
+                               .args = {{.value = "an attack value", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -990,9 +963,8 @@ TEST(TestTransformers, UrlDecodeIisAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "an attack value",
-                               .address = "value2",
-                               .value = "an attack value",
-                               .highlight = "an attack value"}}});
+                               .highlight = "an attack value",
+                               .args = {{.value = "an attack value", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1023,9 +995,8 @@ TEST(TestTransformers, UrlPath)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/path/to/index.php",
-                               .address = "value1",
-                               .value = "/path/to/index.php",
-                               .highlight = "/path/to/index.php"}}});
+                               .highlight = "/path/to/index.php",
+                               .args = {{.value = "/path/to/index.php", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1056,9 +1027,8 @@ TEST(TestTransformers, UrlPathAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/path/to/index.php",
-                               .address = "value2",
-                               .value = "/path/to/index.php",
-                               .highlight = "/path/to/index.php"}}});
+                               .highlight = "/path/to/index.php",
+                               .args = {{.value = "/path/to/index.php", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1089,9 +1059,8 @@ TEST(TestTransformers, UrlQuerystring)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "a=b",
-                               .address = "value1",
-                               .value = "a=b",
-                               .highlight = "a=b"}}});
+                               .highlight = "a=b",
+                               .args = {{.value = "a=b", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1122,9 +1091,8 @@ TEST(TestTransformers, UrlQuerystringAlias)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "a=b",
-                               .address = "value2",
-                               .value = "a=b",
-                               .highlight = "a=b"}}});
+                               .highlight = "a=b",
+                               .args = {{.value = "a=b", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1150,14 +1118,14 @@ TEST(TestTransformers, Mixed)
     ddwaf_result out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
-    EXPECT_EVENTS(out, {.id = "1",
-                           .name = "rule1",
-                           .tags = {{"type", "flow1"}, {"category", "category1"}},
-                           .matches = {{.op = "match_regex",
-                               .op_value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
-                               .address = "value1",
-                               .value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
-                               .highlight = "L3AgYSB0aC90IG8vZmlsZS5waHA="}}});
+    EXPECT_EVENTS(
+        out, {.id = "1",
+                 .name = "rule1",
+                 .tags = {{"type", "flow1"}, {"category", "category1"}},
+                 .matches = {{.op = "match_regex",
+                     .op_value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
+                     .highlight = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
+                     .args = {{.value = "L3AgYSB0aC90IG8vZmlsZS5waHA=", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);

@@ -70,7 +70,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     return keys;
 }
 
-value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+value_iterator::value_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
@@ -78,7 +78,7 @@ value_iterator::value_iterator(const ddwaf_object *obj, const std::vector<std::s
 }
 
 void value_iterator::initialise_cursor(
-    const ddwaf_object *obj, const std::vector<std::string> &path)
+    const ddwaf_object *obj, const std::span<const std::string> &path)
 {
     if (excluded_.contains(obj)) {
         return;
@@ -106,7 +106,7 @@ void value_iterator::initialise_cursor(
 }
 
 void value_iterator::initialise_cursor_with_path(
-    const ddwaf_object *obj, const std::vector<std::string> &path)
+    const ddwaf_object *obj, const std::span<const std::string> &path)
 {
     // An object with a path should always start with a container
     if (!is_container(obj)) {
@@ -218,14 +218,15 @@ void value_iterator::set_cursor_to_next_object()
     }
 }
 
-key_iterator::key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+key_iterator::key_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void key_iterator::initialise_cursor(const ddwaf_object *obj, const std::vector<std::string> &path)
+void key_iterator::initialise_cursor(
+    const ddwaf_object *obj, const std::span<const std::string> &path)
 {
     if (excluded_.contains(obj)) {
         return;
@@ -247,7 +248,7 @@ void key_iterator::initialise_cursor(const ddwaf_object *obj, const std::vector<
 }
 
 void key_iterator::initialise_cursor_with_path(
-    const ddwaf_object *obj, const std::vector<std::string> &path)
+    const ddwaf_object *obj, const std::span<const std::string> &path)
 {
     if (path.size() >= limits_.max_container_depth) {
         return;

@@ -1,0 +1,17 @@
+version: "2.2"
+metadata:
+  rules_version: 1.8.0
+rules:
+  - id: rsp-930-001
+    name: LFI Exploit detection
+    tags:
+      type: lfi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.app.include_path
+          params:
+            - address: server.request.query
+        operator: lfi_detector

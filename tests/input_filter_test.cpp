@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "test.hpp"
+#include "test_utils.hpp"
 
 #include "exclusion/input_filter.hpp"
 #include "matcher/exact_match.hpp"
@@ -142,9 +143,11 @@ TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
 
 TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -174,9 +177,11 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
 
 TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -206,9 +211,11 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
 
 TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     ddwaf::object_store store;
 
@@ -242,9 +249,11 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
 
 TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     ddwaf::object_store store;
 
@@ -278,9 +287,11 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
 
 TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id", {}, {transformer_id::lowercase});
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -309,9 +320,11 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 
 TEST(TestInputFilter, InputExclusionFailedCondition)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -336,9 +349,11 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
 
 TEST(TestInputFilter, ObjectExclusionWithCondition)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     ddwaf_object root;
     ddwaf_object child;
@@ -373,9 +388,11 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
 
 TEST(TestInputFilter, ObjectExclusionFailedCondition)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     ddwaf_object root;
     ddwaf_object child;
@@ -406,13 +423,16 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
 
 TEST(TestInputFilter, InputValidateCachedMatch)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("usr.id"), "usr.id");
@@ -458,10 +478,11 @@ TEST(TestInputFilter, InputValidateCachedMatch)
 
 TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("usr.id"), "usr.id");
@@ -533,13 +554,16 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
 
 TEST(TestInputFilter, InputMatchWithoutCache)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
@@ -580,13 +604,16 @@ TEST(TestInputFilter, InputMatchWithoutCache)
 
 TEST(TestInputFilter, InputNoMatchWithoutCache)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
@@ -635,13 +662,16 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
 TEST(TestInputFilter, InputCachedMatchSecondRun)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
@@ -692,13 +722,16 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
 
 TEST(TestInputFilter, ObjectValidateCachedMatch)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -753,13 +786,16 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
 
 TEST(TestInputFilter, ObjectMatchWithoutCache)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -810,13 +846,16 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
 TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -867,13 +906,16 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 
 TEST(TestInputFilter, ObjectCachedMatchSecondRun)
 {
-    expression_builder builder(2);
-
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});

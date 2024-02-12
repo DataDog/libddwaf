@@ -71,14 +71,18 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
                            .tags = {{"type", "flow1"}, {"category", "category2"}},
                            .matches = {{.op = "match_regex",
                                            .op_value = "Sqreen",
-                                           .address = "param1",
-                                           .value = "Sqreen",
-                                           .highlight = "Sqreen"},
+                                           .highlight = "Sqreen",
+                                           .args = {{
+                                               .value = "Sqreen",
+                                               .address = "param1",
+                                           }}},
                                {.op = "match_regex",
                                    .op_value = "Duplicate",
-                                   .address = "param2",
-                                   .value = "Duplicate",
-                                   .highlight = "Duplicate"}}});
+                                   .highlight = "Duplicate",
+                                   .args = {{
+                                       .value = "Duplicate",
+                                       .address = "param2",
+                                   }}}}});
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);

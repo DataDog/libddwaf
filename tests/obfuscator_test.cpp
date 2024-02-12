@@ -80,9 +80,11 @@ TEST(TestObfuscator, TestConfigKeyValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -102,10 +104,12 @@ TEST(TestObfuscator, TestConfigKeyValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -124,9 +128,11 @@ TEST(TestObfuscator, TestConfigKeyValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -146,10 +152,12 @@ TEST(TestObfuscator, TestConfigKeyValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -182,9 +190,11 @@ TEST(TestObfuscator, TestConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -204,10 +214,12 @@ TEST(TestObfuscator, TestConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -226,9 +238,11 @@ TEST(TestObfuscator, TestConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1_obf",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1_obf",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -261,9 +275,11 @@ TEST(TestObfuscator, TestConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -283,10 +299,12 @@ TEST(TestObfuscator, TestConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -305,9 +323,11 @@ TEST(TestObfuscator, TestConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -339,9 +359,11 @@ TEST(TestObfuscator, TestConfigHighlight)
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
                                .matches = {{.op = "phrase_match",
-                                   .address = "value",
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -359,9 +381,11 @@ TEST(TestObfuscator, TestConfigHighlight)
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
                                .matches = {{.op = "phrase_match",
-                                   .address = "value",
-                                   .value = "othervalue_badvalue",
-                                   .highlight = "othervalue"}}});
+                                   .highlight = "othervalue",
+                                   .args = {{
+                                       .value = "othervalue_badvalue",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -394,9 +418,11 @@ TEST(TestObfuscator, TestConfigEmpty)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -416,10 +442,12 @@ TEST(TestObfuscator, TestConfigEmpty)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -438,9 +466,11 @@ TEST(TestObfuscator, TestConfigEmpty)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1_obf",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1_obf",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -473,9 +503,11 @@ TEST(TestObfuscator, TestInvalidConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -495,10 +527,12 @@ TEST(TestObfuscator, TestInvalidConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -517,9 +551,11 @@ TEST(TestObfuscator, TestInvalidConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1_obf",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1_obf",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -552,9 +588,11 @@ TEST(TestObfuscator, TestInvalidConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -574,10 +612,12 @@ TEST(TestObfuscator, TestInvalidConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -596,9 +636,11 @@ TEST(TestObfuscator, TestInvalidConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1_obf",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1_obf",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }

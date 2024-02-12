@@ -5,9 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "collection.hpp"
+#include "condition/scalar_condition.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
 #include "test.hpp"
+#include "test_utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -23,9 +25,11 @@ TYPED_TEST_SUITE(TestCollection, CollectionTypes);
 // Validate that a rule within the collection matches only once
 TYPED_TEST(TestCollection, SingleRuleMatch)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -72,9 +76,11 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
     std::vector<std::shared_ptr<rule>> rules;
     TypeParam rule_collection;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -86,9 +92,11 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -137,9 +145,11 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
     std::vector<std::shared_ptr<rule>> rules;
     TypeParam rule_collection;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -151,9 +161,11 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -199,12 +211,16 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 // Validate that the rule cache is acted on
 TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 {
-    expression_builder builder(2);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -254,9 +270,11 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
     collection regular;
     priority_collection priority;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -268,9 +286,11 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -323,9 +343,11 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
     collection regular;
     priority_collection priority;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -337,9 +359,11 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -392,9 +416,11 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
     std::vector<std::shared_ptr<rule>> rules;
     priority_collection priority;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -407,9 +433,11 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -461,9 +489,11 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
     std::vector<std::shared_ptr<rule>> rules;
     priority_collection priority;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -476,9 +506,11 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -535,9 +567,11 @@ TEST(TestPriorityCollection, EphemeralPriorityMatchNoOtherMatches)
     std::vector<std::shared_ptr<rule>> rules;
     priority_collection priority;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -550,9 +584,11 @@ TEST(TestPriorityCollection, EphemeralPriorityMatchNoOtherMatches)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};

@@ -6,14 +6,10 @@
 
 #pragma once
 
-#include <optional>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "ddwaf.h"
-#include "event.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::matcher {
 
@@ -26,14 +22,18 @@ public:
     base &operator=(const base &) = default;
     base &operator=(base &&) noexcept = default;
 
-    [[nodiscard]] virtual DDWAF_OBJ_TYPE supported_type() const = 0;
-    // Returns a string representing this particular instance of the operator, for example,
-    // an operator matching regexes could provide the regex as its string representation.
-    [[nodiscard]] virtual std::string_view to_string() const = 0;
+    // Generic matcher methods
+
     // The return value of this function should outlive the function scope,
     // for example, through a constexpr class static string_view initialised
     // with a literal.
     [[nodiscard]] virtual std::string_view name() const = 0;
+    // Returns a string representing this particular instance of the operator, for example,
+    // an operator matching regexes could provide the regex as its string representation.
+    [[nodiscard]] virtual std::string_view to_string() const = 0;
+
+    // Scalar matcher methods
+    [[nodiscard]] virtual DDWAF_OBJ_TYPE supported_type() const = 0;
 
     [[nodiscard]] virtual std::pair<bool, std::string> match(const ddwaf_object &obj) const = 0;
 };
@@ -47,12 +47,12 @@ public:
     base_impl &operator=(const base_impl &) = default;
     base_impl &operator=(base_impl &&) noexcept = default;
 
+    [[nodiscard]] std::string_view name() const override { return T::name_impl(); }
+
     [[nodiscard]] std::string_view to_string() const override
     {
         return static_cast<const T *>(this)->to_string_impl();
     }
-
-    [[nodiscard]] std::string_view name() const override { return T::name_impl(); }
 
     [[nodiscard]] DDWAF_OBJ_TYPE supported_type() const override
     {

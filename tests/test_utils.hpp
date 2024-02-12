@@ -14,29 +14,38 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "condition/scalar_condition.hpp"
 #include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
+#include "expression.hpp"
+#include "matcher/base.hpp"
 #include "test.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::test {
 struct event {
     struct match {
-        std::string op;
-        std::string op_value;
-        std::string address;
-        std::vector<std::string> path;
-        std::string value;
-        std::string highlight;
+        struct argument {
+            std::string name{"input"};
+            std::string value{};
+            std::string address{};
+            std::vector<std::string> path{};
+        };
+        std::string op{};
+        std::string op_value{};
+        std::string highlight{};
+        std::vector<argument> args;
     };
 
     std::string id;
     std::string name;
     std::map<std::string, std::string> tags{{"type", ""}, {"category", ""}};
-    std::vector<std::string> actions;
+    std::vector<std::string> actions{};
     std::vector<match> matches;
 };
 
+bool operator==(const event::match::argument &lhs, const event::match::argument &rhs);
 bool operator==(const event::match &lhs, const event::match &rhs);
 bool operator==(const event &lhs, const event &rhs);
 
@@ -45,6 +54,56 @@ std::ostream &operator<<(std::ostream &os, const event::match &m);
 
 std::string object_to_json(const ddwaf_object &obj);
 rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
+
+class expression_builder {
+public:
+    explicit expression_builder(std::size_t num_conditions) { conditions_.reserve(num_conditions); }
+
+    void start_condition() { arguments_.clear(); }
+
+    template <typename T, typename... Args>
+    void end_condition(Args... args)
+        requires std::is_base_of_v<matcher::base, T>
+    {
+        conditions_.emplace_back(
+            std::make_unique<scalar_condition>(std::make_unique<T>(std::forward<Args>(args)...),
+                std::string{}, std::move(arguments_)));
+    }
+
+    template <typename T>
+    void end_condition(std::string data_id)
+        requires std::is_base_of_v<matcher::base, T>
+    {
+        conditions_.emplace_back(std::make_unique<scalar_condition>(
+            std::move(arguments_), std::move(data_id), std::make_unique<T>()));
+    }
+
+    template <typename T>
+    void end_condition()
+        requires std::is_base_of_v<base_condition, T>
+    {
+        conditions_.emplace_back(std::make_unique<T>(std::move(arguments_)));
+    }
+
+    void add_argument() { arguments_.emplace_back(); }
+
+    void add_target(const std::string &name, std::vector<std::string> key_path = {},
+        std::vector<transformer_id> transformers = {}, data_source source = data_source::values)
+    {
+        auto &argument = arguments_.back();
+        argument.targets.emplace_back(target_definition{
+            name, get_target_index(name), std::move(key_path), std::move(transformers), source});
+    }
+
+    std::shared_ptr<expression> build()
+    {
+        return std::make_shared<expression>(std::move(conditions_));
+    }
+
+protected:
+    std::vector<parameter_definition> arguments_{};
+    std::vector<std::unique_ptr<base_condition>> conditions_{};
+};
 
 } // namespace ddwaf::test
 
@@ -179,7 +238,8 @@ inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
     return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected)));
 }
 
-std::list<ddwaf::test::event::match> from_matches(const std::vector<ddwaf::event::match> &matches);
+std::list<ddwaf::test::event::match> from_matches(
+    const std::vector<ddwaf::condition_match> &matches);
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
