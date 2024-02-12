@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <array>
 #include <ddwaf.h>
 #include <deque>
 #include <vector>
@@ -39,9 +40,8 @@ void generate_string_object(ddwaf_object &o, std::size_t length)
 void generate_ip_object(ddwaf_object &o)
 {
     std::stringstream ss;
-    ss << random::get() % 256 << "." << random::get() % 256 << "." << random::get() % 256 << "."
-       << random::get() % 256;
-
+    auto b = random::get_n<uint8_t, 4>();
+    ss << b[0] << "." << b[1] << "." << b[2] << "." << b[3];
     ddwaf_object_string(&o, ss.str().c_str());
 }
 
@@ -206,18 +206,19 @@ std::vector<ddwaf_object> object_generator::operator()(unsigned n, object_specif
             case object_type::ip:
                 generate_ip_object(value);
                 break;
+            case object_type::boolean:
+                ddwaf_object_bool(&value, random::get_bool());
+                break;
+            case object_type::none:
+                ddwaf_object_null(&value);
+                break;
             case object_type::any:
+            default:
                 if (spec.depth == 0) {
                     generate_string_object(value, spec.string_length);
                 } else {
                     generate_objects(value, spec);
                 }
-                break;
-            case object_type::boolean:
-                ddwaf_object_bool(&value, random::get_bool());
-                break;
-            default:
-                ddwaf_object_null(&value);
                 break;
             }
 
