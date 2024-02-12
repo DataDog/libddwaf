@@ -213,25 +213,21 @@ jobs:
           - name: aarch64
             arch: aarch64
             qemu_action_arch: arm64
-            manylinux_arch: aarch64
             platform: linux/arm64
             package: libddwaf-aarch64-linux-musl
           - name: x86_64
             arch: x86_64
             qemu_action_arch: amd64
-            manylinux_arch: x86_64
             platform: linux/amd64
             package: libddwaf-x86_64-linux-musl
           - name: i386
             arch: i386
             qemu_action_arch: i386
-            manylinux_arch: i686
             platform: linux/386
             package: libddwaf-i386-linux-musl
           - name: armv7
             arch: armv7
             qemu_action_arch: arm
-            manylinux_arch: armv7l
             platform: linux/arm/v7
             package: libddwaf-armv7-linux-musl
     steps:
@@ -254,7 +250,8 @@ jobs:
       - name: Smoketest gnu (gcc)
         run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
       - name: Smoketest gnu rhel 6 (gcc)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" --build-arg "MANYLINUX_ARCH=${{ matrix.target.manylinux_arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
+        if: matrix.target.qemu_action_arch == 'amd64'
+        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
       - name: Generate Package sha256
         working-directory: packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done

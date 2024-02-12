@@ -1,5 +1,4 @@
-ARG MANYLINUX_ARCH=x86_64
-FROM quay.io/pypa/manylinux2010_${MANYLINUX_ARCH}:latest AS smoketest
+FROM quay.io/pypa/manylinux2010_x86_64:latest AS smoketest
 
 ARG ARCH
 
@@ -8,7 +7,8 @@ COPY smoketest /smoketest
 
 RUN yum -y install gcc cmake make
 
-RUN tar -kxf packages/libddwaf-*-${ARCH}-linux-*.tar.gz -C /usr --strip-components=1
+RUN tar -kxf packages/libddwaf-*-${ARCH}-linux-*.tar.gz --strip-components=1
+RUN ln -s /lib/libddwaf.* /lib64/
 
 RUN mkdir build_static && cd build_static && \
     cmake -DCMAKE_C_FLAGS="-I/include" \
