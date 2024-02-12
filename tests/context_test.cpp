@@ -12,6 +12,7 @@
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
 #include "test.hpp"
+#include "test_utils.hpp"
 
 #include <gmock/gmock.h>
 
@@ -105,9 +106,11 @@ public:
 
 TEST(TestContext, PreprocessorEval)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -136,9 +139,11 @@ TEST(TestContext, PreprocessorEval)
 
 TEST(TestContext, PostprocessorEval)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -167,9 +172,11 @@ TEST(TestContext, PostprocessorEval)
 
 TEST(TestContext, SkipRuleNoTargets)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -193,9 +200,11 @@ TEST(TestContext, SkipRuleNoTargets)
 
 TEST(TestContext, MatchTimeout)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -218,9 +227,11 @@ TEST(TestContext, MatchTimeout)
 
 TEST(TestContext, NoMatch)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -244,9 +255,11 @@ TEST(TestContext, NoMatch)
 
 TEST(TestContext, Match)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -272,9 +285,11 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -285,9 +300,11 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -320,21 +337,23 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_EQ(event.matches.size(), 1);
 
     auto &match = event.matches[0];
-    EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-    EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+    EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+    EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
     EXPECT_STREQ(match.operator_name.data(), "ip_match");
     EXPECT_STREQ(match.operator_value.data(), "");
-    EXPECT_STREQ(match.address.data(), "http.client_ip");
-    EXPECT_TRUE(match.key_path.empty());
+    EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+    EXPECT_TRUE(match.args[0].key_path.empty());
 }
 
 TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -345,9 +364,11 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -403,9 +424,11 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -416,9 +439,11 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -451,12 +476,12 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "http.client_ip");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 
     {
@@ -475,9 +500,11 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -488,9 +515,11 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -524,12 +553,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "http.client_ip");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 
     {
@@ -555,12 +584,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "admin");
-        EXPECT_STREQ(match.matched.c_str(), "admin");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "admin");
+        EXPECT_STREQ(match.highlights[0].c_str(), "admin");
         EXPECT_STREQ(match.operator_name.data(), "exact_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "usr.id");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "usr.id");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 }
 
@@ -568,9 +597,11 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -582,9 +613,11 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -617,12 +650,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "http.client_ip");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 
     {
@@ -643,9 +676,11 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
@@ -656,9 +691,11 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
@@ -690,12 +727,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_TRUE(event.rule->get_actions().empty());
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.matched.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
+        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "http.client_ip");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 
     {
@@ -721,12 +758,12 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.resolved.c_str(), "admin");
-        EXPECT_STREQ(match.matched.c_str(), "admin");
+        EXPECT_STREQ(match.args[0].resolved.c_str(), "admin");
+        EXPECT_STREQ(match.highlights[0].c_str(), "admin");
         EXPECT_STREQ(match.operator_name.data(), "exact_match");
         EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.address.data(), "usr.id");
-        EXPECT_TRUE(match.key_path.empty());
+        EXPECT_STREQ(match.args[0].address.data(), "usr.id");
+        EXPECT_TRUE(match.args[0].key_path.empty());
     }
 }
 
@@ -734,9 +771,11 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
@@ -747,9 +786,11 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
@@ -777,9 +818,11 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
@@ -791,9 +834,11 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
@@ -822,9 +867,11 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
@@ -835,9 +882,11 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
@@ -877,9 +926,11 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
@@ -891,9 +942,11 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
@@ -938,9 +991,11 @@ TEST(TestContext, SkipRuleFilterNoTargets)
     std::shared_ptr<mock::rule> rule;
     std::shared_ptr<mock::rule_filter> filter;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -952,9 +1007,11 @@ TEST(TestContext, SkipRuleFilterNoTargets)
 
     // Generate filter
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         filter = std::make_shared<mock::rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
@@ -984,9 +1041,11 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
     std::shared_ptr<mock::rule> rule;
     std::shared_ptr<mock::rule_filter> filter;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -998,9 +1057,11 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
 
     // Generate filter
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         filter = std::make_shared<mock::rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
@@ -1029,9 +1090,11 @@ TEST(TestContext, RuleFilterWithCondition)
     // Generate rule
     std::shared_ptr<rule> rule;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -1043,9 +1106,11 @@ TEST(TestContext, RuleFilterWithCondition)
 
     // Generate filter
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         auto filter = std::make_shared<rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
@@ -1077,9 +1142,11 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
     // Generate rule
     std::shared_ptr<rule> rule;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -1091,9 +1158,11 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
 
     // Generate filter
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         auto filter = std::make_shared<rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
@@ -1134,9 +1203,11 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
     // Generate rule
     std::shared_ptr<rule> rule;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -1148,9 +1219,11 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
 
     // Generate filter
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         auto filter = std::make_shared<rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
@@ -1158,9 +1231,11 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.route");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
 
         auto filter = std::make_shared<rule_filter>("2", builder.build(),
             std::set<ddwaf::rule *>{rule.get()}, exclusion::filter_mode::monitor);
@@ -1207,9 +1282,11 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
     // Generate rule
     std::shared_ptr<rule> rule;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -1221,9 +1298,11 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
 
     // Generate filter
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         auto filter = std::make_shared<rule_filter>("1", builder.build(),
             std::set<ddwaf::rule *>{rule.get()}, exclusion::filter_mode::monitor);
@@ -1231,9 +1310,11 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.route");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
 
         auto filter = std::make_shared<rule_filter>(
             "2", builder.build(), std::set<ddwaf::rule *>{rule.get()});
@@ -1277,9 +1358,11 @@ TEST(TestContext, RuleFilterTimeout)
     // Generate rule
     std::shared_ptr<rule> rule;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -1291,9 +1374,11 @@ TEST(TestContext, RuleFilterTimeout)
 
     // Generate filter
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         auto filter = std::make_shared<rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
@@ -1320,9 +1405,11 @@ TEST(TestContext, NoRuleFilterWithCondition)
     // Generate rule
     std::shared_ptr<rule> rule;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -1334,9 +1421,11 @@ TEST(TestContext, NoRuleFilterWithCondition)
 
     // Generate filter
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         auto filter = std::make_shared<rule_filter>(
             "1", builder.build(), std::set<ddwaf::rule *>{rule.get()});
@@ -1567,9 +1656,11 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     ddwaf::test::context ctx(ruleset);
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         auto filter = std::make_shared<rule_filter>("1", builder.build(),
             std::set<ddwaf::rule *>{
@@ -1578,9 +1669,11 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         auto filter = std::make_shared<rule_filter>("2", builder.build(),
             std::set<ddwaf::rule *>{
@@ -1650,9 +1743,11 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     ddwaf::test::context ctx(ruleset);
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         auto filter = std::make_shared<rule_filter>("1", builder.build(),
             std::set<ddwaf::rule *>{rules[0].get(), rules[1].get(), rules[2].get(), rules[3].get(),
@@ -1661,9 +1756,11 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         auto filter = std::make_shared<rule_filter>("2", builder.build(),
             std::set<ddwaf::rule *>{rules[3].get(), rules[4].get(), rules[5].get(), rules[6].get(),
@@ -1719,9 +1816,11 @@ TEST(TestContext, SkipInputFilterNoTargets)
     std::shared_ptr<mock::rule> rule;
     std::shared_ptr<mock::input_filter> filter;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -1764,9 +1863,11 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
     std::shared_ptr<mock::rule> rule;
     std::shared_ptr<mock::input_filter> filter;
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -1803,9 +1904,11 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
 
 TEST(TestContext, InputFilterExclude)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -1840,10 +1943,12 @@ TEST(TestContext, InputFilterExclude)
 
 TEST(TestContext, InputFilterExcludeEphemeral)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
     builder.add_target("http.peer_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -1890,10 +1995,12 @@ TEST(TestContext, InputFilterExcludeEphemeral)
 
 TEST(TestContext, InputFilterExcludeEphemeralReuseObject)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
     builder.add_target("http.peer_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -1932,9 +2039,11 @@ TEST(TestContext, InputFilterExcludeEphemeralReuseObject)
 
 TEST(TestContext, InputFilterExcludeRule)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -1985,9 +2094,11 @@ TEST(TestContext, InputFilterExcludeRule)
 
 TEST(TestContext, InputFilterExcludeRuleEphemeral)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -2033,9 +2144,11 @@ TEST(TestContext, InputFilterExcludeRuleEphemeral)
 
 TEST(TestContext, InputFilterMonitorRuleEphemeral)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -2086,9 +2199,11 @@ TEST(TestContext, InputFilterMonitorRuleEphemeral)
 
 TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -2145,9 +2260,11 @@ TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
 
 TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
 {
-    expression_builder builder(1);
-    builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
@@ -2211,9 +2328,11 @@ TEST(TestContext, InputFilterWithCondition)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -2224,9 +2343,11 @@ TEST(TestContext, InputFilterWithCondition)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
@@ -2297,9 +2418,11 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
@@ -2310,9 +2433,11 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
@@ -2353,9 +2478,11 @@ TEST(TestContext, InputFilterMultipleRules)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "ip_type"}, {"category", "category"}};
@@ -2367,9 +2494,11 @@ TEST(TestContext, InputFilterMultipleRules)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "usr_type"}, {"category", "category"}};
@@ -2462,9 +2591,11 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "ip_type"}, {"category", "category"}};
@@ -2476,9 +2607,11 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr_id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "usr_type"}, {"category", "category"}};
@@ -2584,9 +2717,11 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "ip_type"}, {"category", "category"}};
@@ -2598,9 +2733,11 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("usr_id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "usr_type"}, {"category", "category"}};
@@ -2612,9 +2749,11 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
     }
 
     {
-        expression_builder builder(1);
-        builder.start_condition<matcher::exact_match>(std::vector<std::string>{"mycookie"});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
         builder.add_target("server.request.headers", {"cookie"});
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"mycookie"});
 
         std::unordered_map<std::string, std::string> tags{
             {"type", "cookie_type"}, {"category", "category"}};

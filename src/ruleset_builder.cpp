@@ -20,16 +20,16 @@ constexpr ruleset_builder::change_state operator|(
     ruleset_builder::change_state lhs, ruleset_builder::change_state rhs)
 {
     return static_cast<ruleset_builder::change_state>(
-        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(lhs) |
-        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(rhs));
+        static_cast<std::underlying_type_t<ruleset_builder::change_state>>(lhs) |
+        static_cast<std::underlying_type_t<ruleset_builder::change_state>>(rhs));
 }
 
 constexpr ruleset_builder::change_state operator&(
     ruleset_builder::change_state lhs, ruleset_builder::change_state rhs)
 {
     return static_cast<ruleset_builder::change_state>(
-        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(lhs) &
-        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(rhs));
+        static_cast<std::underlying_type_t<ruleset_builder::change_state>>(lhs) &
+        static_cast<std::underlying_type_t<ruleset_builder::change_state>>(rhs));
 }
 
 namespace {

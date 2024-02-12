@@ -71,7 +71,7 @@ ddwaf_object *ddwaf_object_string(ddwaf_object *object, const char *string)
     }
 
     if (string == nullptr) {
-        DDWAF_DEBUG("tried to create a string from an nullptr pointer");
+        DDWAF_DEBUG("tried to create a string from a nullptr pointer");
         return nullptr;
     }
     return ddwaf_object_string_helper(object, string, strlen(string));
@@ -84,7 +84,7 @@ ddwaf_object *ddwaf_object_stringl(ddwaf_object *object, const char *string, siz
     }
 
     if (string == nullptr) {
-        DDWAF_DEBUG("Tried to create a string from an nullptr pointer");
+        DDWAF_DEBUG("Tried to create a string from a nullptr pointer");
         return nullptr;
     }
 

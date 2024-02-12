@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "condition/scalar_condition.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "matcher/is_sqli.hpp"
@@ -29,11 +30,10 @@ namespace {
 std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array,
     const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
 {
-    expression_builder builder(conditions_array.size(), limits);
+    std::vector<std::unique_ptr<base_condition>> conditions;
+
     for (const auto &cond_param : conditions_array) {
         auto cond = static_cast<parameter::map>(cond_param);
-
-        builder.start_condition();
 
         auto matcher_name = at<std::string_view>(cond, "operation");
         auto params = at<parameter::map>(cond, "parameters");
@@ -77,7 +77,10 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
         } else {
             throw ddwaf::parsing_error("unknown matcher: " + std::string(matcher_name));
         }
-        builder.set_matcher(std::move(matcher));
+
+        std::vector<parameter_definition> definitions;
+        definitions.emplace_back();
+        parameter_definition &def = definitions.back();
 
         auto inputs = at<parameter::vector>(params, "inputs");
         for (const auto &input_param : inputs) {
@@ -96,11 +99,15 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
                 key_path.emplace_back(input.substr(pos + 1, input.size()));
             }
 
-            builder.add_target(std::move(root), std::move(key_path), transformers);
+            def.targets.emplace_back(target_definition{root, get_target_index(root),
+                std::move(key_path), transformers, data_source::values});
         }
+
+        conditions.emplace_back(std::make_unique<scalar_condition>(
+            std::move(matcher), std::string{}, std::move(definitions), limits));
     }
 
-    return builder.build();
+    return std::make_shared<expression>(std::move(conditions));
 }
 
 void parseRule(parameter::map &rule, base_section_info &info,

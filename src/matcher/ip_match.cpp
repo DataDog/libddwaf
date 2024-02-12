@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <chrono>
 #include <cstring>
 #include <stdexcept>
 #include <string_view>
 
+#include "ip_utils.hpp"
 #include "matcher/ip_match.hpp"
 
 namespace ddwaf::matcher {

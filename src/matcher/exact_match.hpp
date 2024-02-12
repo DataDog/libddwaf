@@ -8,9 +8,9 @@
 
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 #include "matcher/base.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::matcher {
 

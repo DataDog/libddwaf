@@ -15,10 +15,16 @@ using namespace std::literals;
 
 namespace ddwaf::test {
 
+bool operator==(const event::match::argument &lhs, const event::match::argument &rhs)
+{
+    return lhs.address == rhs.address && lhs.name == rhs.name && lhs.value == rhs.value &&
+           lhs.path == rhs.path;
+}
+
 bool operator==(const event::match &lhs, const event::match &rhs)
 {
-    return lhs.op == rhs.op && lhs.op_value == rhs.op_value && lhs.address == rhs.address &&
-           lhs.path == rhs.path && lhs.value == rhs.value && lhs.highlight == rhs.highlight;
+    return lhs.op == rhs.op && lhs.op_value == rhs.op_value && lhs.args == rhs.args &&
+           lhs.highlight == rhs.highlight;
 }
 
 bool operator==(const event &lhs, const event &rhs)
@@ -46,24 +52,29 @@ std::ostream &operator<<(std::ostream &os, const event::match &m)
 {
     os << indent(4) << "{\n"
        << indent(8) << "operator: " << m.op << ",\n"
-       << indent(8) << "operator_value: " << m.op_value << ",\n"
-       << indent(8) << "address: " << m.address << ",\n"
-       << indent(8) << "path: [";
+       << indent(8) << "operator_value: " << m.op_value << ",\n";
 
-    bool start = true;
-    for (const auto &p : m.path) {
-        if (!start) {
-            os << ", ";
-        } else {
-            start = false;
+    os << indent(8) << "parameters: {\n";
+
+    for (const auto &arg : m.args) {
+        os << indent(12) << arg.name << ": {\n"
+           << indent(16) << "address: " << arg.address << ",\n"
+           << indent(16) << "path: [";
+
+        bool start = true;
+        for (const auto &p : arg.path) {
+            if (!start) {
+                os << ", ";
+            } else {
+                start = false;
+            }
+            os << p;
         }
-        os << p;
+
+        os << "],\n" << indent(16) << "value: " << arg.value << ",\n" << indent(12) << "}\n";
     }
 
-    os << "],\n"
-       << indent(8) << "value: " << m.value << ",\n"
-       << indent(8) << "highlight: " << m.highlight << "\n"
-       << indent(4) << "}\n";
+    os << indent(8) << "highlight: " << m.highlight << "\n" << indent(4) << "}\n";
 
     return os;
 }
@@ -100,27 +111,31 @@ std::ostream &operator<<(std::ostream &os, const event &e)
     os << "],\n" << indent(4) << "matches: [\n";
 
     for (const auto &m : e.matches) {
-        os << indent(8) << "{\n";
+        os << indent(8) << "{\n"
+           << indent(12) << "operator: " << m.op << ",\n"
+           << indent(12) << "operator_value: " << m.op_value << ",\n";
 
-        os << indent(12) << "operator: " << m.op << ",\n"
-           << indent(12) << "operator_value: " << m.op_value << ",\n"
-           << indent(12) << "address: " << m.address << ",\n"
-           << indent(12) << "path: [";
+        os << indent(12) << "parameters: {\n";
 
-        bool start = true;
-        for (const auto &p : m.path) {
-            if (!start) {
-                os << ", ";
-            } else {
-                start = false;
+        for (const auto &arg : m.args) {
+            os << indent(16) << arg.name << ": {\n"
+               << indent(20) << "address: " << arg.address << ",\n"
+               << indent(20) << "path: [";
+
+            bool start = true;
+            for (const auto &p : arg.path) {
+                if (!start) {
+                    os << ", ";
+                } else {
+                    start = false;
+                }
+                os << p;
             }
-            os << p;
+
+            os << "],\n" << indent(20) << "value: " << arg.value << ",\n" << indent(16) << "}\n";
         }
 
-        os << "],\n"
-           << indent(12) << "value: " << m.value << ",\n"
-           << indent(12) << "highlight: " << m.highlight << "\n"
-           << indent(8) << "}\n";
+        os << indent(12) << "highlight: " << m.highlight << "\n" << indent(8) << "}\n";
     }
 
     os << indent(4) << "]\n}\n";
@@ -287,9 +302,19 @@ match as_if<match, void>::operator()() const
         throw parsing_error("parameter should be a map");
     }
 
-    m.address = as<std::string>(parameters, "address");
-    m.path = as<std::vector<std::string>>(parameters, "key_path");
-    m.value = as<std::string>(parameters, "value");
+    if (parameters["address"].IsDefined()) {
+        m.args.emplace_back(match::argument{"input", as<std::string>(parameters, "value"),
+            as<std::string>(parameters, "address"),
+            as<std::vector<std::string>>(parameters, "key_path")});
+    } else {
+        for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+            if (it->second.IsMap()) {
+                m.args.emplace_back(match::argument{it->first.as<std::string>(),
+                    as<std::string>(it->second, "value"), as<std::string>(it->second, "address"),
+                    as<std::vector<std::string>>(it->second, "key_path")});
+            }
+        }
+    }
 
     auto highlight = parameters["highlight"];
     if (!highlight || highlight.Type() != NodeType::Sequence) {
@@ -561,18 +586,22 @@ bool MatchMatcher::MatchAndExplain(
     return matches.empty();
 }
 
-std::list<ddwaf::test::event::match> from_matches(const std::vector<ddwaf::event::match> &matches)
+std::list<ddwaf::test::event::match> from_matches(
+    const std::vector<ddwaf::condition_match> &matches)
 {
     std::list<ddwaf::test::event::match> match_list;
 
     for (const auto &m : matches) {
         ddwaf::test::event::match new_match;
-        new_match.value = m.resolved;
-        new_match.highlight = m.matched;
+        if (!m.highlights.empty()) {
+            new_match.highlight = m.highlights[0];
+        }
         new_match.op = m.operator_name;
         new_match.op_value = m.operator_value;
-        new_match.address = m.address;
-        for (const auto &k : m.key_path) { new_match.path.emplace_back(k); }
+        for (const auto &arg : m.args) {
+            new_match.args.emplace_back(ddwaf::test::event::match::argument{
+                std::string{arg.name}, arg.resolved, std::string{arg.address}, arg.key_path});
+        }
 
         match_list.emplace_back(std::move(new_match));
     }
@@ -580,7 +609,7 @@ std::list<ddwaf::test::event::match> from_matches(const std::vector<ddwaf::event
     return match_list;
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameter)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 ddwaf_object read_file(std::string_view filename, std::string_view base)
 {
     std::string base_dir{base};

@@ -73,7 +73,7 @@ TEST(TestParameter, ToBool)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
-        EXPECT_THROW(static_cast<bool>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<bool>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 }
 
@@ -105,7 +105,7 @@ TEST(TestParameter, ToUint64)
 
     {
         ddwaf_object root;
-        ddwaf_object_float(&root, std::numeric_limits<uint64_t>::max() - 1024);
+        ddwaf_object_float(&root, static_cast<double>(std::numeric_limits<uint64_t>::max() - 1024));
 
         uint64_t value = static_cast<uint64_t>(parameter(root));
         EXPECT_EQ(value, 18446744073709549568U);
@@ -135,28 +135,28 @@ TEST(TestParameter, ToUint64)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
-        EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 
     {
         ddwaf_object root;
         ddwaf_object_signed(&root, -2123);
 
-        EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 
     {
         ddwaf_object root;
         ddwaf_object_float(&root, -21.0);
 
-        EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 
     {
         ddwaf_object root;
         ddwaf_object_float(&root, std::numeric_limits<double>::max());
 
-        EXPECT_THROW(static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<uint64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 }
 
@@ -188,7 +188,7 @@ TEST(TestParameter, ToInt64)
 
     {
         ddwaf_object root;
-        ddwaf_object_float(&root, std::numeric_limits<int64_t>::max() - 512);
+        ddwaf_object_float(&root, static_cast<double>(std::numeric_limits<int64_t>::max() - 512));
 
         int64_t value = static_cast<int64_t>(parameter(root));
         EXPECT_EQ(value, 9223372036854774784);
@@ -218,21 +218,21 @@ TEST(TestParameter, ToInt64)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
-        EXPECT_THROW(static_cast<int64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<int64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 
     {
         ddwaf_object root;
         ddwaf_object_unsigned(&root, std::numeric_limits<uint64_t>::max());
 
-        EXPECT_THROW(static_cast<int64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<int64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 
     {
         ddwaf_object root;
         ddwaf_object_float(&root, std::numeric_limits<double>::max());
 
-        EXPECT_THROW(static_cast<int64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<int64_t>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 }
 
@@ -260,7 +260,7 @@ TEST(TestParameter, ToFloat)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
-        EXPECT_THROW(static_cast<double>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<double>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 }
 
@@ -280,7 +280,7 @@ TEST(TestParameter, ToString)
         ddwaf_object root;
         ddwaf_object_array(&root);
 
-        EXPECT_THROW(static_cast<std::string>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<std::string>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 }
 
@@ -300,7 +300,7 @@ TEST(TestParameter, ToStringView)
         ddwaf_object root;
         ddwaf_object_array(&root);
 
-        EXPECT_THROW(static_cast<std::string_view>(ddwaf::parameter(root)), ddwaf::bad_cast);
+        EXPECT_THROW((void)static_cast<std::string_view>(ddwaf::parameter(root)), ddwaf::bad_cast);
     }
 }
 

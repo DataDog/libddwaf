@@ -11,6 +11,8 @@
 
 #include <gmock/gmock.h>
 
+#include "test_utils.hpp"
+
 using ::testing::_;
 using ::testing::Return;
 
@@ -155,9 +157,11 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     std::vector<processor::target_mapping> mappings{{get_target_index("input_address"),
         "input_address", get_target_index("output_address"), "output_address"}};
 
-    expression_builder builder(1);
-    builder.start_condition<matcher::equals<bool>>(true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("enabled?");
+    builder.end_condition<matcher::equals<bool>>(true);
 
     processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
@@ -199,9 +203,11 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     std::vector<processor::target_mapping> mappings{{get_target_index("input_address"),
         "input_address", get_target_index("output_address"), "output_address"}};
 
-    expression_builder builder(1);
-    builder.start_condition<matcher::equals<bool>>(true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("enabled?");
+    builder.end_condition<matcher::equals<bool>>(true);
 
     processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
@@ -258,9 +264,11 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     std::vector<processor::target_mapping> mappings{{get_target_index("input_address"),
         "input_address", get_target_index("output_address"), "output_address"}};
 
-    expression_builder builder(1);
-    builder.start_condition<matcher::equals<bool>>(true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("enabled?");
+    builder.end_condition<matcher::equals<bool>>(true);
 
     processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
@@ -348,9 +356,11 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     std::vector<processor::target_mapping> mappings{{get_target_index("input_address"),
         "input_address", get_target_index("output_address"), "output_address"}};
 
-    expression_builder builder(1);
-    builder.start_condition<matcher::equals<bool>>(true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("enabled?");
+    builder.end_condition<matcher::equals<bool>>(true);
 
     processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
@@ -393,9 +403,11 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     std::vector<processor::target_mapping> mappings{{get_target_index("input_address"),
         "input_address", get_target_index("output_address"), "output_address"}};
 
-    expression_builder builder(1);
-    builder.start_condition<matcher::equals<bool>>(true);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
     builder.add_target("enabled?");
+    builder.end_condition<matcher::equals<bool>>(true);
 
     processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");

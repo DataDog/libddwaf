@@ -50,7 +50,7 @@ auto parse_args(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
+    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
 
     auto args = parse_args(argc, argv);
 

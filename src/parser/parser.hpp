@@ -29,6 +29,7 @@ void parse(
 } // namespace v1
 
 namespace v2 {
+
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source = rule::source_type::base);
