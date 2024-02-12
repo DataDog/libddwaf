@@ -25,7 +25,7 @@ struct settings {
     fs::path output_file;
     unsigned runs{1};
     unsigned iterations{1000};
-    unsigned warmup_iterations{20};
+    unsigned warmup_iterations{100};
     unsigned seed{1729};
     std::regex fixtures{".*"};
 };

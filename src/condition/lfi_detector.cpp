@@ -49,7 +49,6 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
         }
 
         auto parts = split(value, '/');
-        // for (auto p : parts) { std::cout << p << std::endl; }
         if (parts.size() > 1 && std::find(parts.begin(), parts.end(), "..") != parts.end()) {
             return {{std::string(value), it.get_current_path()}};
         }
