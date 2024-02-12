@@ -17,7 +17,7 @@ template <typename... Args> std::vector<parameter_definition> gen_param_def(Args
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
-TEST(TestLFIDetector, MatchBasic)
+TEST(TestLFIDetector, MatchBasicUnix)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
@@ -28,6 +28,56 @@ TEST(TestLFIDetector, MatchBasic)
         {"/etc/passwd", "/etc/passwd"},
         {"./../etc/passwd", "../etc/passwd"},
         {"imgs/../secret.yml", "../secret.yml"},
+        {"/safe/dir/../../secret.yml", "../../secret.yml"},
+    };
+
+    for (const auto &[path, input] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "server.io.fs.file", ddwaf_object_string(&tmp, path.c_str()));
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        EXPECT_TRUE(res.outcome);
+        EXPECT_FALSE(res.ephemeral);
+
+        EXPECT_TRUE(cache.match);
+        EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
+        EXPECT_STR(cache.match->args[0].resolved, path.c_str());
+        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
+        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+        EXPECT_STR(cache.match->highlights[0], input.c_str());
+    }
+}
+
+TEST(TestLFIDetector, MatchBasicWindows)
+{
+    lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
+
+    std::vector<std::pair<std::string, std::string>> samples{
+        {R"(documents\..\..\..\..\..\..\..\..\..\etc\passwd)",
+            R"(..\..\..\..\..\..\..\..\..\etc\passwd)"},
+        {R"(..\..\..\..\..\..\..\..\..\etc\passwd)", R"(..\..\..\..\..\..\..\..\..\etc\passwd)"},
+        {R"(\etc\passwd)", R"(\etc\passwd)"},
+        {R"(C:\etc\passwd)", R"(\etc\passwd)"},
+        {R"(.\..\etc\passwd)", R"(..\etc\passwd)"},
+        {R"(imgs\..\secret.yml)", R"(..\secret.yml)"},
+        {R"(\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
+        {R"(C:\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
+        {R"(ABCDEFC:\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
+        {R"(C:\safe\dir\..\..\secret.yml)", R"(C:\safe\dir\..\..\secret.yml)"},
     };
 
     for (const auto &[path, input] : samples) {
@@ -165,7 +215,7 @@ TEST(TestLFIDetector, EphemeralMatch)
     EXPECT_STR(cache.match->highlights[0], "../../../etc/passwd");
 }
 
-TEST(TestLFIDetector, NoMatch)
+TEST(TestLFIDetector, NoMatchUnix)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
@@ -194,8 +244,45 @@ TEST(TestLFIDetector, NoMatch)
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
-        EXPECT_FALSE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_FALSE(res.outcome) << path;
+        EXPECT_FALSE(res.ephemeral) << path;
+        EXPECT_FALSE(cache.match);
+    }
+}
+
+TEST(TestLFIDetector, NoMatchWindows)
+{
+    lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
+
+    std::vector<std::pair<std::string, std::string>> samples{
+        {R"(documents\..\..\..\..\..\..\..\..\..\etc\passwd)", R"(etc\passwd)"},
+        {R"(\home\my\documents\pony.txt)", R"(\home\my\documents\)"},
+        {R"(a\etc\password)", R"(a\etc\password)"},
+        {R"(documents\pony.txt)", R"(my\documents\pony.txt)"},
+        {R"(XXX\YYY\documents\pony.txt)", R"(documents\pony.txt)"},
+        {R"(C:\XXX\YYY\documents\pony.txt)", R"(documents\pony.txt)"},
+        {R"(documents\unicorn)", R"(pony.txt)"},
+        {R"(documents\unicorn.jp)", R"(pony.jp)"},
+        {R"(C:\documents\unicorn.jp)", R"(pony.jp)"},
+    };
+
+    for (const auto &[path, input] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "server.io.fs.file", ddwaf_object_string(&tmp, path.c_str()));
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        EXPECT_FALSE(res.outcome) << path;
+        EXPECT_FALSE(res.ephemeral) << path;
         EXPECT_FALSE(cache.match);
     }
 }

@@ -6,6 +6,7 @@
 
 #include "transformer/manager.hpp"
 #include "ddwaf.h"
+#include "log.hpp"
 #include "transformer/base64_decode.hpp"
 #include "transformer/base64_encode.hpp"
 #include "transformer/compress_whitespace.hpp"

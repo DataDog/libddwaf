@@ -27,19 +27,19 @@ template <typename T> struct unary_argument {
     T value;
 };
 
-template <typename T, typename Enable = void> struct is_unary_argument : std::false_type {};
+template <typename T, typename = void> struct is_unary_argument : std::false_type {};
 template <typename T> struct is_unary_argument<unary_argument<T>> : std::true_type {};
 
 // A type of argument which is considered to be optional
 template <typename T> using optional_argument = std::optional<unary_argument<T>>;
 
-template <typename T, typename Enable = void> struct is_optional_argument : std::false_type {};
+template <typename T, typename = void> struct is_optional_argument : std::false_type {};
 template <typename T> struct is_optional_argument<optional_argument<T>> : std::true_type {};
 
 // A type of argument with multiple address(target) mappings
 template <typename T> using variadic_argument = std::vector<unary_argument<T>>;
 
-template <typename T, typename Enable = void> struct is_variadic_argument : std::false_type {};
+template <typename T, typename = void> struct is_variadic_argument : std::false_type {};
 template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
 
 struct default_argument_retriever {
@@ -60,13 +60,16 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
     }
 
     if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, unsigned>) {
-        if (obj->type == DDWAF_OBJ_UNSIGNED) {
+        using limits = std::numeric_limits<T>;
+        if (obj->type == DDWAF_OBJ_UNSIGNED && obj->uintValue <= limits::max()) {
             return static_cast<T>(obj->uintValue);
         }
     }
 
     if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, int>) {
-        if (obj->type == DDWAF_OBJ_SIGNED) {
+        using limits = std::numeric_limits<T>;
+        if (obj->type == DDWAF_OBJ_SIGNED && obj->intValue >= limits::min() &&
+            obj->intValue <= limits::max()) {
             return static_cast<T>(obj->intValue);
         }
     }

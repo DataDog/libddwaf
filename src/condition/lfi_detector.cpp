@@ -19,7 +19,7 @@ constexpr std::size_t min_str_len = 5;
 
 using lfi_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
 
-lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
+lfi_result lfi_impl_unix(std::string_view path, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
@@ -36,16 +36,12 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
         }
 
         std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        if (path.find(value) == std::string_view::npos) {
+        if (value.find('/') == std::string_view::npos || !path.ends_with(value)) {
             continue;
         }
 
         if (value[0] == '/' && value == path) {
             return {{std::string(value), it.get_current_path()}};
-        }
-
-        if (!path.ends_with(value)) {
-            continue;
         }
 
         auto parts = split(value, '/');
@@ -54,6 +50,66 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
         }
     }
 
+    return {};
+}
+
+lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline)
+{
+    auto rpath = path;
+    auto drive_end = path.find(':');
+    if (drive_end != std::string_view::npos) {
+        rpath = path.substr(drive_end + 1, path.size() - (drive_end + 1));
+    }
+
+    // TODO perhaps we should perform case-insensitive checks
+    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    for (; it; ++it) {
+        if (deadline.expired()) {
+            throw ddwaf::timeout_exception();
+        }
+
+        const ddwaf_object &param = *(*it);
+        if (param.type != DDWAF_OBJ_STRING || param.stringValue == nullptr ||
+            param.nbEntries < min_str_len) {
+            continue;
+        }
+
+        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        if (value.find('\\') == std::string_view::npos || !path.ends_with(value)) {
+            continue;
+        }
+
+        if ((value[0] == '\\' && value == rpath) ||
+            (value.find(':') != std::string_view::npos && value == path)) {
+            return {{std::string(value), it.get_current_path()}};
+        }
+
+        auto parts = split(value, '\\');
+        if (parts.size() > 1 && std::find(parts.begin(), parts.end(), "..") != parts.end()) {
+            return {{std::string(value), it.get_current_path()}};
+        }
+    }
+
+    return {};
+}
+
+lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline)
+{
+    if (path.find('/') == std::string_view::npos) {
+        // The character '/' is not allowed on windows filenames (NTFS, FAT32, ExFAT, VFAT, etc)
+        if (path.find('\\') != std::string_view::npos) {
+            // Windows path
+            return lfi_impl_windows(path, params, objects_excluded, limits, deadline);
+        }
+    } else {
+        return lfi_impl_unix(path, params, objects_excluded, limits, deadline);
+    }
+
+    // No separators, unlikely exploit
     return {};
 }
 
