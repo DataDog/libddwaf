@@ -1,4 +1,5 @@
-FROM quay.io/pypa/manylinux2010_x86_64:latest AS smoketest
+ARG MANYLINUX_ARCH=x86_64
+FROM quay.io/pypa/manylinux2010_${MANYLINUX_ARCH}:latest AS smoketest
 
 ARG ARCH
 
