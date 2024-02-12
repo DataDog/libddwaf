@@ -254,7 +254,7 @@ jobs:
       - name: Smoketest gnu (gcc)
         run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
       - name: Smoketest gnu rhel 6 (gcc)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" --build-arg "MANYLINUX_ARCH=${{ matric.target.manylinux_arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
+        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" --build-arg "MANYLINUX_ARCH=${{ matrix.target.manylinux_arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
       - name: Generate Package sha256
         working-directory: packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
