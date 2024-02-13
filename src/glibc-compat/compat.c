@@ -75,30 +75,6 @@ static inline void fp_force_evalf(float x)
     (void)y;
 }
 
-static inline void fp_force_eval(double x)
-{
-    volatile double y;
-    y = x;
-    (void)y;
-}
-
-static inline void fp_force_evall(long double x)
-{
-    volatile long double y;
-    y = x;
-    (void)y;
-}
-
-#define FORCE_EVAL(x) do {                        \
-    if (sizeof(x) == sizeof(float)) {         \
-        fp_force_evalf(x);                \
-    } else if (sizeof(x) == sizeof(double)) { \
-        fp_force_eval(x);                 \
-    } else {                                  \
-        fp_force_evall(x);                \
-    }                                         \
-} while(0)
-
 __attribute__((weak))
 float ceilf(float x)
 {
@@ -114,13 +90,13 @@ float ceilf(float x)
         if ((u.i & m) == 0) {
             return x;
         }
-        FORCE_EVAL(x + 0x1p120f);
+        fp_force_evalf(x + 0x1p120f);
         if (u.i >> 31 == 0){
             u.i += m;
         }
         u.i &= ~m;
     } else {
-        FORCE_EVAL(x + 0x1p120f);
+        fp_force_evalf(x + 0x1p120f);
         if (u.i >> 31) {
             u.f = -0.0;
     } else if (u.i << 1) {
