@@ -247,7 +247,7 @@ int main() {
     puts("result is valid");
 
     double x = 10.2;
-    printf("\nceilf(%ld)=%ld\n", ceilf(x));
+    printf("\nceilf(%lf)=%lf\n", x, ceilf(x));
 
     return 0;
 }
