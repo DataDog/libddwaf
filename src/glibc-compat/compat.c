@@ -4,11 +4,9 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
 
-#include <stdlib.h>
-#include <stdint.h>
-
 #if defined(__linux__) && !defined(__GLIBC__) && (defined(__arm__) || defined(__i386__))
 
+#include <stdlib.h>
 #include <features.h>
 
 __attribute__((weak))
@@ -48,41 +46,48 @@ void *__dlsym_time64(void *handle, const char *name) {
 #endif
 
 #if defined(__linux__)
+
+#if defined(__aarch64__)
+// Extracted from https://git.musl-libc.org/cgit/musl/tree/src/math/aarch64/ceilf.c
+
+__attribute__((weak))
+float ceilf(float x)
+{
+	__asm__ ("frintp %s0, %s1" : "=w"(x) : "w"(x));
+	return x;
+}
+#else
+
+#include <stdint.h>
+
+// Extracted from https://git.musl-libc.org/cgit/musl/tree/src/math/ceilf.c
+
 /* fp_force_eval ensures that the input value is computed when that's
    otherwise unused.  To prevent the constant folding of the input
    expression, an additional fp_barrier may be needed or a compilation
    mode that does so (e.g. -frounding-math in gcc). Then it can be
    used to evaluate an expression for its fenv side-effects only.   */
 
-#ifndef fp_force_evalf
-#define fp_force_evalf fp_force_evalf
 static inline void fp_force_evalf(float x)
 {
     volatile float y;
     y = x;
     (void)y;
 }
-#endif
 
-#ifndef fp_force_eval
-#define fp_force_eval fp_force_eval
 static inline void fp_force_eval(double x)
 {
     volatile double y;
     y = x;
     (void)y;
 }
-#endif
 
-#ifndef fp_force_evall
-#define fp_force_evall fp_force_evall
 static inline void fp_force_evall(long double x)
 {
     volatile long double y;
     y = x;
     (void)y;
 }
-#endif
 
 #define FORCE_EVAL(x) do {                        \
     if (sizeof(x) == sizeof(float)) {         \
@@ -124,4 +129,5 @@ float ceilf(float x)
     }
     return u.f;
 }
+#endif
 #endif

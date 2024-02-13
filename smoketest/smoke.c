@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <string.h>
+#include <math.h>
 
 static ddwaf_object *prepare_rule() {
     ddwaf_object *ret = malloc(sizeof *ret);
@@ -244,5 +245,9 @@ int main() {
         return 1;
     }
     puts("result is valid");
+
+    double x = 10.2;
+    printf("\nceilf(%ld)=%ld\n", ceilf(x));
+
     return 0;
 }
