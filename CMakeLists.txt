@@ -47,7 +47,7 @@ endif()
 
 include(GNUInstallDirs)
 
-add_library(glibc_compat OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/time64.c)
+add_library(glibc_compat OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/compat.c)
 set_target_properties(glibc_compat PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
