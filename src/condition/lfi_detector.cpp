@@ -15,7 +15,7 @@ namespace ddwaf {
 
 namespace {
 
-constexpr std::size_t min_str_len = 5;
+constexpr const auto &npos = std::string_view::npos;
 
 using lfi_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
 
@@ -23,6 +23,8 @@ lfi_result lfi_impl_unix(std::string_view path, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
+    static constexpr std::size_t min_str_len = 5;
+
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -36,7 +38,7 @@ lfi_result lfi_impl_unix(std::string_view path, const ddwaf_object &params,
         }
 
         std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        if (value.find('/') == std::string_view::npos || !path.ends_with(value)) {
+        if (value.find('/') == npos || !path.ends_with(value)) {
             continue;
         }
 
@@ -53,17 +55,19 @@ lfi_result lfi_impl_unix(std::string_view path, const ddwaf_object &params,
     return {};
 }
 
+// TODO: https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths
 lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
+    static constexpr std::size_t min_str_len = 2;
+
     auto rpath = path;
     auto drive_end = path.find(':');
-    if (drive_end != std::string_view::npos) {
+    if (drive_end != npos) {
         rpath = path.substr(drive_end + 1, path.size() - (drive_end + 1));
     }
 
-    // TODO perhaps we should perform case-insensitive checks
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -77,12 +81,11 @@ lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
         }
 
         std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        if (value.find('\\') == std::string_view::npos || !path.ends_with(value)) {
+        if (!path.ends_with(value)) {
             continue;
         }
 
-        if ((value[0] == '\\' && value == rpath) ||
-            (value.find(':') != std::string_view::npos && value == path)) {
+        if ((value[0] == '\\' && value == rpath) || (value[1] == ':' && value == path)) {
             return {{std::string(value), it.get_current_path()}};
         }
 
@@ -99,9 +102,9 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    if (path.find('/') == std::string_view::npos) {
+    if (path.find('/') == npos) {
         // The character '/' is not allowed on windows filenames (NTFS, FAT32, ExFAT, VFAT, etc)
-        if (path.find('\\') != std::string_view::npos) {
+        if (path.find('\\') != npos || (path.size() >= 2 && path[1] == ':')) {
             // Windows path
             return lfi_impl_windows(path, params, objects_excluded, limits, deadline);
         }

@@ -78,6 +78,8 @@ TEST(TestLFIDetector, MatchBasicWindows)
         {R"(C:\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
         {R"(ABCDEFC:\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
         {R"(C:\safe\dir\..\..\secret.yml)", R"(C:\safe\dir\..\..\secret.yml)"},
+        {R"(E:\)", R"(E:\)"},
+        {R"(E:)", R"(E:)"},
     };
 
     for (const auto &[path, input] : samples) {
@@ -264,6 +266,8 @@ TEST(TestLFIDetector, NoMatchWindows)
         {R"(documents\unicorn)", R"(pony.txt)"},
         {R"(documents\unicorn.jp)", R"(pony.jp)"},
         {R"(C:\documents\unicorn.jp)", R"(pony.jp)"},
+        {R"(C:)", R"(file.json)"},
+        {R"(C:\)", R"(file.json)"},
     };
 
     for (const auto &[path, input] : samples) {
