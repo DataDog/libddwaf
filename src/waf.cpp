@@ -25,9 +25,6 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         }
     }
 
-    auto dversion = ceilf(static_cast<float>(version) + 201.223);
-    std::cout << "Some nonesense " <<  dversion << std::endl;
-
     // Prevent combining version 1 of the ruleset and the builder
     if (version == 1) {
         ddwaf::ruleset rs;
