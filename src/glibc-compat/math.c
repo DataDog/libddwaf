@@ -74,7 +74,7 @@ typedef float (*ceilf_t)(float);
 
 static ceilf_t ceilf_global_;
 
-__attribute__((weak, noinline))
+__attribute__((weak, visibility("default")))
 float ceilf(float x)
 {
     if (unlikely(ceilf_global_ == NULL)) {
