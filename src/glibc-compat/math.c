@@ -4,47 +4,6 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
 
-#if defined(__linux__) && !defined(__GLIBC__) && (defined(__arm__) || defined(__i386__))
-
-#include <stdlib.h>
-#include <features.h>
-
-__attribute__((weak, noinline))
-int __nanosleep64(void *req, void *rem) {
-    (void) req;
-    (void) rem;
-    abort();
-}
-__attribute__((weak, noinline))
-int __nanosleep_time64(void *req, void *rem) {
-    return __nanosleep64(req, rem);
-}
-
-__attribute__((weak, noinline))
-int __pthread_cond_timedwait64(void *cond, void *mutex, void *abstime) {
-    (void) cond;
-    (void) mutex;
-    (void) abstime;
-    abort();
-}
-__attribute__((weak, noinline))
-int __pthread_cond_timedwait_time64(void *cond, void *mutex, void *abstime) {
-    return __pthread_cond_timedwait64(cond, mutex, abstime);
-}
-
-__attribute__((weak, noinline))
-void *dlsym(void * handle, const char *name) {
-    (void) handle;
-    (void) name;
-    abort();
-}
-__attribute__((weak, noinline))
-void *__dlsym_time64(void *handle, const char *name) {
-    return dlsym(handle, name);
-}
-
-#endif
-
 #if defined(__linux__)
 
 #include <stdint.h>
@@ -128,3 +87,4 @@ float ceilf(float x)
     return ceilf_global_(x);
 }
 #endif
+
