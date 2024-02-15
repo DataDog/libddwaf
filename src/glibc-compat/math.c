@@ -9,11 +9,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#ifndef __USE_GNU
-#define __USE_GNU
-#endif
-#include <dlfcn.h>
-
 #if defined(__aarch64__)
 // Extracted from https://git.musl-libc.org/cgit/musl/tree/src/math/aarch64/ceilf.c
 static float ceilf_local(float x)
@@ -68,6 +63,12 @@ static float ceilf_local(float x)
 #endif
 
 #define unlikely(x)    __builtin_expect(!!(x), 0)
+
+void *dlsym(void *handle, const char *symbol);
+
+#ifndef RTLD_NEXT
+# define RTLD_NEXT	((void *) -1l)
+#endif
 
 typedef float (*ceilf_t)(float);
 
