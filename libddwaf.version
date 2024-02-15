@@ -1,4 +1,4 @@
 {
-	global: ddwaf_*;ceilf;__dlsym_time64;
+	global: ddwaf_*;
 	local: *;
 };

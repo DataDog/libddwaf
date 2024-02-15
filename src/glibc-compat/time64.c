@@ -9,33 +9,13 @@
 #include <stdlib.h>
 #include <features.h>
 
-__attribute__((weak, visibility("default")))
-int __nanosleep64(void *req, void *rem) {
-    (void) req;
-    (void) rem;
-    abort();
-}
-__attribute__((weak, visibility("default")))
-int __nanosleep_time64(void *req, void *rem) {
-    return __nanosleep64(req, rem);
-}
-
-__attribute__((weak, visibility("default")))
-int __pthread_cond_timedwait64(void *cond, void *mutex, void *abstime) {
-    (void) cond;
-    (void) mutex;
-    (void) abstime;
-    abort();
-}
-__attribute__((weak, visibility("default")))
-int __pthread_cond_timedwait_time64(void *cond, void *mutex, void *abstime) {
-    return __pthread_cond_timedwait64(cond, mutex, abstime);
-}
-
 void *dlsym(void * handle, const char *name);
 
-__attribute__((weak, visibility("default")))
+// use weak attribute so that on static builds there is no indirection
+__attribute__((weak))
 void *__dlsym_time64(void *handle, const char *name) {
+    // no problem calling the plain dlsym as we don't use the function for which
+    // it would make a difference
     return dlsym(handle, name);
 }
 

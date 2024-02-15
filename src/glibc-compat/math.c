@@ -6,6 +6,7 @@
 
 #if defined(__linux__)
 
+#include <dlfcn.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -64,21 +65,16 @@ static float ceilf_local(float x)
 
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 
-void *dlsym(void *handle, const char *symbol);
-
-#ifndef RTLD_NEXT
-# define RTLD_NEXT	((void *) -1l)
-#endif
-
 typedef float (*ceilf_t)(float);
 
-static ceilf_t ceilf_global_;
-
-__attribute__((weak, visibility("default")))
+__attribute__((weak))
 float ceilf(float x)
 {
+    static ceilf_t ceilf_global_;
+
+    // benign race
     if (unlikely(ceilf_global_ == NULL)) {
-        void *ceilf_sym = dlsym(RTLD_NEXT, "ceilf");
+        void *ceilf_sym = dlsym(RTLD_DEFAULT, "ceilf");
         if (ceilf_sym == NULL || ceilf_sym == &ceilf) {
             ceilf_global_ = &ceilf_local;
         } else {
