@@ -9,36 +9,36 @@
 #include <stdlib.h>
 #include <features.h>
 
-__attribute__((weak))
+__attribute__((weak, noinline))
 int __nanosleep64(void *req, void *rem) {
     (void) req;
     (void) rem;
     abort();
 }
-__attribute__((weak))
+__attribute__((weak, noinline))
 int __nanosleep_time64(void *req, void *rem) {
     return __nanosleep64(req, rem);
 }
 
-__attribute__((weak))
+__attribute__((weak, noinline))
 int __pthread_cond_timedwait64(void *cond, void *mutex, void *abstime) {
     (void) cond;
     (void) mutex;
     (void) abstime;
     abort();
 }
-__attribute__((weak))
+__attribute__((weak, noinline))
 int __pthread_cond_timedwait_time64(void *cond, void *mutex, void *abstime) {
     return __pthread_cond_timedwait64(cond, mutex, abstime);
 }
 
-__attribute__((weak))
+__attribute__((weak, noinline))
 void *dlsym(void * handle, const char *name) {
     (void) handle;
     (void) name;
     abort();
 }
-__attribute__((weak))
+__attribute__((weak, noinline))
 void *__dlsym_time64(void *handle, const char *name) {
     return dlsym(handle, name);
 }
@@ -114,7 +114,7 @@ typedef float (*ceilf_t)(float);
 
 static ceilf_t ceilf_global_;
 
-__attribute__((weak))
+__attribute__((weak, noinline))
 float ceilf(float x)
 {
     if (unlikely(ceilf_global_ == NULL)) {
