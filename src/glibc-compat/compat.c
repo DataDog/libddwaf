@@ -119,7 +119,7 @@ float ceilf(float x)
 {
     if (unlikely(ceilf_global_ == NULL)) {
         void *ceilf_sym = dlsym(RTLD_NEXT, "ceilf");
-        if (ceilf_sym == NULL) {
+        if (ceilf_sym == NULL || ceilf_sym == &ceilf) {
             ceilf_global_ = &ceilf_local;
         } else {
             ceilf_global_ = (ceilf_t)ceilf_sym;
