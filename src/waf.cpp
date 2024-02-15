@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include "waf.hpp"
+#include <cmath>
 
 namespace ddwaf {
 
@@ -35,6 +36,8 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
     }
 
     if (version == 2) {
+        auto dversion = ceilf(static_cast<float>(version) + 201.223);
+        DDWAF_DEBUG("Some nonesense {}", dversion);
         DDWAF_DEBUG("Parsing ruleset with schema version 2.x");
         builder_ = std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
         ruleset_ = builder_->build(input, info);
