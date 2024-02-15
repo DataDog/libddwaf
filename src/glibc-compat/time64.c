@@ -32,12 +32,8 @@ int __pthread_cond_timedwait_time64(void *cond, void *mutex, void *abstime) {
     return __pthread_cond_timedwait64(cond, mutex, abstime);
 }
 
-__attribute__((weak, visibility("default")))
-void *dlsym(void * handle, const char *name) {
-    (void) handle;
-    (void) name;
-    abort();
-}
+void *dlsym(void * handle, const char *name);
+
 __attribute__((weak, visibility("default")))
 void *__dlsym_time64(void *handle, const char *name) {
     return dlsym(handle, name);
