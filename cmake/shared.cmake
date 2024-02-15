@@ -27,17 +27,17 @@ if(LINUX)
         -static-libstdc++
         glibc_compat)
 
-    if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
-        set(SYMBOL_FILE $<TARGET_FILE:libddwaf_shared>.debug)
-        add_custom_command(TARGET libddwaf_shared POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:libddwaf_shared> ${SYMBOL_FILE}
-            COMMAND ${CMAKE_STRIP} --only-keep-debug ${SYMBOL_FILE}
-            COMMAND ${CMAKE_STRIP} $<TARGET_FILE:libddwaf_shared>)
+#    if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
+        #set(SYMBOL_FILE $<TARGET_FILE:libddwaf_shared>.debug)
+        #add_custom_command(TARGET libddwaf_shared POST_BUILD
+            #COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:libddwaf_shared> ${SYMBOL_FILE}
+            #COMMAND ${CMAKE_STRIP} --only-keep-debug ${SYMBOL_FILE}
+            #COMMAND ${CMAKE_STRIP} $<TARGET_FILE:libddwaf_shared>)
 
-        install(FILES ${SYMBOL_FILE}
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/.build-id/${BUILD_ID_PREFIX}
-            RENAME ${BUILD_ID_SUFFIX}.debug)
-    endif()
+        #install(FILES ${SYMBOL_FILE}
+            #DESTINATION ${CMAKE_INSTALL_LIBDIR}/.build-id/${BUILD_ID_PREFIX}
+            #RENAME ${BUILD_ID_SUFFIX}.debug)
+    #endif()
 elseif (APPLE)
     target_link_libraries(libddwaf_shared PRIVATE -Wl,-undefined,error libddwaf_shared_objects)
 

@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 #include "waf.hpp"
 #include <cmath>
+#include <iostream>
 
 namespace ddwaf {
 
@@ -24,6 +25,9 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         }
     }
 
+    auto dversion = ceilf(static_cast<float>(version) + 201.223);
+    std::cout << "Some nonesense " <<  dversion << std::endl;
+
     // Prevent combining version 1 of the ruleset and the builder
     if (version == 1) {
         ddwaf::ruleset rs;
@@ -34,10 +38,7 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         ruleset_ = std::make_shared<ddwaf::ruleset>(std::move(rs));
         return;
     }
-
     if (version == 2) {
-        auto dversion = ceilf(static_cast<float>(version) + 201.223);
-        DDWAF_DEBUG("Some nonesense {}", dversion);
         DDWAF_DEBUG("Parsing ruleset with schema version 2.x");
         builder_ = std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
         ruleset_ = builder_->build(input, info);
