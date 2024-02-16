@@ -63,8 +63,9 @@ bool lfi_impl_windows(std::string_view path, std::string_view param)
         return false;
     }
 
-    bool is_absolute =
-        param[0] == '/' || param[0] == '\\' || (ddwaf::isalpha(param[0]) && param[1] == ':');
+    bool is_absolute = param[0] == '/' || param[0] == '\\' ||
+                       (param.size() >= 3 && (ddwaf::isalpha(param[0]) && param[1] == ':' &&
+                                                 (param[2] == '/' || param[2] == '\\')));
     return (is_absolute && param == path) || find_directory_escape(param, "/\\");
 }
 

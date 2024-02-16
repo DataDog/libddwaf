@@ -99,7 +99,6 @@ TEST(TestLFIDetector, MatchBasicWindows)
         {R"(/safe\dir\../../secret.yml)", R"(../../secret.yml)"},
         {R"(C:/safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
         {R"(C:/safe/dir/..\..\secret.yml)", R"(C:/safe/dir/..\..\secret.yml)"},
-        {R"(E:)", R"(E:)"},
     };
 
     for (const auto &[path, input] : samples) {
