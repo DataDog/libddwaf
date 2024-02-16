@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "condition/lfi_detector.hpp"
+#include "platform.hpp"
 #include "test_utils.hpp"
 
 using namespace ddwaf;
@@ -64,9 +65,21 @@ TEST(TestLFIDetector, MatchBasicUnix)
 
 TEST(TestLFIDetector, MatchBasicWindows)
 {
+    system_platform_override spo{platform::windows};
+
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
     std::vector<std::pair<std::string, std::string>> samples{
+        {"documents/../../../../../../../../../etc/passwd",
+            "../../../../../../../../../etc/passwd"},
+        {"../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd"},
+        {"/etc/passwd", "/etc/passwd"},
+        {"./../etc/passwd", "../etc/passwd"},
+        {"imgs/../secret.yml", "../secret.yml"},
+        {"/safe/dir/../../secret.yml", "../../secret.yml"},
+        {R"(C:/safe/dir/../../secret.yml)", R"(../../secret.yml)"},
+        {R"(C:/safe/dir/../../secret.yml)", R"(C:/safe/dir/../../secret.yml)"},
+        {R"(E:/)", R"(E:/)"},
         {R"(documents\..\..\..\..\..\..\..\..\..\etc\passwd)",
             R"(..\..\..\..\..\..\..\..\..\etc\passwd)"},
         {R"(..\..\..\..\..\..\..\..\..\etc\passwd)", R"(..\..\..\..\..\..\..\..\..\etc\passwd)"},
@@ -76,7 +89,6 @@ TEST(TestLFIDetector, MatchBasicWindows)
         {R"(imgs\..\secret.yml)", R"(..\secret.yml)"},
         {R"(\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
         {R"(C:\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
-        {R"(ABCDEFC:\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
         {R"(C:\safe\dir\..\..\secret.yml)", R"(C:\safe\dir\..\..\secret.yml)"},
         {R"(E:\)", R"(E:\)"},
         {R"(E:)", R"(E:)"},
