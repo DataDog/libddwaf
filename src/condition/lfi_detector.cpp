@@ -20,13 +20,13 @@ constexpr const auto &npos = std::string_view::npos;
 
 using lfi_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
 
-bool find_directory_escape(std::string_view value, char sep)
+bool find_directory_escape(std::string_view value, std::string_view sep)
 {
     std::size_t start = 0;
     unsigned part_count = 0;
     bool part_seen = false;
     while (start < value.size()) {
-        const std::size_t end = value.find(sep, start);
+        const std::size_t end = value.find_first_of(sep, start);
 
         if (end == start) {
             // Ignore zero-sized strings
@@ -61,13 +61,6 @@ lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
 {
     static constexpr std::size_t min_str_len = 2;
 
-    auto path_sep = '\\';
-    if (path.find('/') != npos) {
-        // Since windows filenames do not allow the forward slash character,
-        // it's presence must imply that it's being used as the path separator
-        path_sep = '/';
-    }
-
     auto rpath = path;
     auto drive_end = path.find(':');
     if (drive_end != npos) {
@@ -90,11 +83,12 @@ lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
             continue;
         }
 
-        if ((value[0] == path_sep && value == rpath) || (value[1] == ':' && value == path)) {
+        if (((value[0] == '/' || value[0] == '\\') && value == rpath) ||
+            (value[1] == ':' && value == path)) {
             return {{std::string(value), it.get_current_path()}};
         }
 
-        if (find_directory_escape(value, path_sep)) {
+        if (find_directory_escape(value, "/\\")) {
             return {{std::string(value), it.get_current_path()}};
         }
     }
@@ -128,7 +122,7 @@ lfi_result lfi_impl_unix(std::string_view path, const ddwaf_object &params,
             return {{std::string(value), it.get_current_path()}};
         }
 
-        if (find_directory_escape(value, '/')) {
+        if (find_directory_escape(value, "/")) {
             return {{std::string(value), it.get_current_path()}};
         }
     }

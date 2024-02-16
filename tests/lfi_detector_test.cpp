@@ -91,6 +91,16 @@ TEST(TestLFIDetector, MatchBasicWindows)
         {R"(C:\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
         {R"(C:\safe\dir\..\..\secret.yml)", R"(C:\safe\dir\..\..\secret.yml)"},
         {R"(E:\)", R"(E:\)"},
+        {R"(documents/..\..\..\..\../..\..\../../etc\passwd)",
+            R"(..\..\..\..\../..\..\../../etc\passwd)"},
+        {R"(..\..\..\../..\..\..\..\..\etc\passwd)", R"(..\..\..\../..\..\..\..\..\etc\passwd)"},
+        {R"(\etc/passwd)", R"(\etc/passwd)"},
+        {R"(C:/etc\passwd)", R"(/etc\passwd)"},
+        {R"(.\../etc\passwd)", R"(../etc\passwd)"},
+        {R"(imgs\../secret.yml)", R"(../secret.yml)"},
+        {R"(/safe\dir\../../secret.yml)", R"(../../secret.yml)"},
+        {R"(C:/safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
+        {R"(C:/safe/dir/..\..\secret.yml)", R"(C:/safe/dir/..\..\secret.yml)"},
         {R"(E:)", R"(E:)"},
     };
 
