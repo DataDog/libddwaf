@@ -6,6 +6,9 @@
 
 #if defined(__linux__)
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <dlfcn.h>
 #include <stdint.h>
 #include <stdlib.h>
