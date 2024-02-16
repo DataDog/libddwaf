@@ -84,7 +84,6 @@ TEST(TestLFIDetector, MatchBasicWindows)
             R"(..\..\..\..\..\..\..\..\..\etc\passwd)"},
         {R"(..\..\..\..\..\..\..\..\..\etc\passwd)", R"(..\..\..\..\..\..\..\..\..\etc\passwd)"},
         {R"(\etc\passwd)", R"(\etc\passwd)"},
-        {R"(C:\etc\passwd)", R"(\etc\passwd)"},
         {R"(.\..\etc\passwd)", R"(..\etc\passwd)"},
         {R"(imgs\..\secret.yml)", R"(..\secret.yml)"},
         {R"(\safe\dir\..\..\secret.yml)", R"(..\..\secret.yml)"},
@@ -95,7 +94,6 @@ TEST(TestLFIDetector, MatchBasicWindows)
             R"(..\..\..\..\../..\..\../../etc\passwd)"},
         {R"(..\..\..\../..\..\..\..\..\etc\passwd)", R"(..\..\..\../..\..\..\..\..\etc\passwd)"},
         {R"(\etc/passwd)", R"(\etc/passwd)"},
-        {R"(C:/etc\passwd)", R"(/etc\passwd)"},
         {R"(.\../etc\passwd)", R"(../etc\passwd)"},
         {R"(imgs\../secret.yml)", R"(../secret.yml)"},
         {R"(/safe\dir\../../secret.yml)", R"(../../secret.yml)"},
@@ -119,7 +117,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
-        EXPECT_TRUE(res.outcome);
+        EXPECT_TRUE(res.outcome) << path;
         EXPECT_FALSE(res.ephemeral);
 
         EXPECT_TRUE(cache.match);

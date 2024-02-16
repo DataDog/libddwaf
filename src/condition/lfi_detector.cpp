@@ -61,12 +61,6 @@ lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
 {
     static constexpr std::size_t min_str_len = 2;
 
-    auto rpath = path;
-    auto drive_end = path.find(':');
-    if (drive_end != npos) {
-        rpath = path.substr(drive_end + 1, path.size() - (drive_end + 1));
-    }
-
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -83,8 +77,9 @@ lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
             continue;
         }
 
-        if (((value[0] == '/' || value[0] == '\\') && value == rpath) ||
-            (value[1] == ':' && value == path)) {
+        if (((value[0] == '/' || value[0] == '\\' ||
+                 (ddwaf::isalpha(path[0]) && value[1] == ':')) &&
+                value == path)) {
             return {{std::string(value), it.get_current_path()}};
         }
 
