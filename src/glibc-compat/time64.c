@@ -10,6 +10,18 @@
 #include <features.h>
 
 void *dlsym(void * handle, const char *name);
+int __pthread_cond_timedwait64(void *cond, void *mutex, void *abstime);
+int __nanosleep64(void *req, void *rem);
+
+__attribute__((weak))
+int __nanosleep_time64(void *req, void *rem) {
+    return __nanosleep64(req, rem);
+}
+
+__attribute__((weak))
+int __pthread_cond_timedwait_time64(void *cond, void *mutex, void *abstime) {
+    return __pthread_cond_timedwait64(cond, mutex, abstime);
+}
 
 // use weak attribute so that on static builds there is no indirection
 __attribute__((weak))
