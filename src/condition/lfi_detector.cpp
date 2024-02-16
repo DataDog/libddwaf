@@ -55,85 +55,57 @@ bool find_directory_escape(std::string_view value, std::string_view sep)
 }
 
 // TODO: https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths
-lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+bool lfi_impl_windows(std::string_view path, std::string_view param)
 {
     static constexpr std::size_t min_str_len = 2;
 
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
-    for (; it; ++it) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
-
-        const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING || param.nbEntries < min_str_len) {
-            continue;
-        }
-
-        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        if (!path.ends_with(value)) {
-            continue;
-        }
-
-        if (((value[0] == '/' || value[0] == '\\' ||
-                 (ddwaf::isalpha(path[0]) && value[1] == ':')) &&
-                value == path)) {
-            return {{std::string(value), it.get_current_path()}};
-        }
-
-        if (find_directory_escape(value, "/\\")) {
-            return {{std::string(value), it.get_current_path()}};
-        }
+    if (param.size() < min_str_len && !path.ends_with(param)) {
+        return false;
     }
 
-    return {};
+    bool is_absolute =
+        param[0] == '/' || param[0] == '\\' || (ddwaf::isalpha(param[0]) && param[1] == ':');
+    return (is_absolute && param == path) || find_directory_escape(param, "/\\");
 }
 
-lfi_result lfi_impl_unix(std::string_view path, const ddwaf_object &params,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+bool lfi_impl_unix(std::string_view path, std::string_view param)
 {
     static constexpr std::size_t min_str_len = 5;
 
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
-    for (; it; ++it) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
-
-        const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING || param.nbEntries < min_str_len) {
-            continue;
-        }
-
-        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        if (value.find('/') == npos || !path.ends_with(value)) {
-            continue;
-        }
-
-        if (value[0] == '/' && value == path) {
-            return {{std::string(value), it.get_current_path()}};
-        }
-
-        if (find_directory_escape(value, "/")) {
-            return {{std::string(value), it.get_current_path()}};
-        }
+    if (param.size() < min_str_len || param.find('/') == npos || !path.ends_with(param)) {
+        return false;
     }
 
-    return {};
+    return (param[0] == '/' && param == path) || find_directory_escape(param, "/");
 }
 
 lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
+    auto *lfi_fn = &lfi_impl_unix;
     if (system_platform::current() == platform::windows) {
-        return lfi_impl_windows(path, params, objects_excluded, limits, deadline);
+        lfi_fn = &lfi_impl_windows;
     }
 
-    return lfi_impl_unix(path, params, objects_excluded, limits, deadline);
+    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    for (; it; ++it) {
+        if (deadline.expired()) {
+            throw ddwaf::timeout_exception();
+        }
+
+        const ddwaf_object &param = *(*it);
+        if (param.type != DDWAF_OBJ_STRING) {
+            continue;
+        }
+
+        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        if (lfi_fn(path, value)) {
+            return {{std::string(value), it.get_current_path()}};
+        }
+    }
+
+    return {};
 }
 } // namespace
 
