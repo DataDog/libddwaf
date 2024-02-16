@@ -20,6 +20,40 @@ constexpr const auto &npos = std::string_view::npos;
 
 using lfi_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
 
+bool find_directory_escape(std::string_view value, char sep)
+{
+    std::size_t start = 0;
+    unsigned part_count = 0;
+    bool part_seen = false;
+    while (start < value.size()) {
+        const std::size_t end = value.find(sep, start);
+
+        if (end == start) {
+            // Ignore zero-sized strings
+            start = end + 1;
+            continue;
+        }
+
+        ++part_count;
+
+        std::string_view part;
+        if (end != npos) {
+            part = value.substr(start, end - start);
+            start = end + 1;
+        } else {
+            part = value.substr(start);
+            start = value.size();
+        }
+
+        part_seen = part_seen || part == "..";
+        if (part_count > 1 && part_seen) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // TODO: https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths
 lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
@@ -60,8 +94,7 @@ lfi_result lfi_impl_windows(std::string_view path, const ddwaf_object &params,
             return {{std::string(value), it.get_current_path()}};
         }
 
-        auto parts = split(value, path_sep);
-        if (parts.size() > 1 && std::find(parts.begin(), parts.end(), "..") != parts.end()) {
+        if (find_directory_escape(value, path_sep)) {
             return {{std::string(value), it.get_current_path()}};
         }
     }
@@ -95,8 +128,7 @@ lfi_result lfi_impl_unix(std::string_view path, const ddwaf_object &params,
             return {{std::string(value), it.get_current_path()}};
         }
 
-        auto parts = split(value, '/');
-        if (parts.size() > 1 && std::find(parts.begin(), parts.end(), "..") != parts.end()) {
+        if (find_directory_escape(value, '/')) {
             return {{std::string(value), it.get_current_path()}};
         }
     }
