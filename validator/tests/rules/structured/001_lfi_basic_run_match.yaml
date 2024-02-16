@@ -1,0 +1,28 @@
+{
+  name: "Basic run with match",
+  runs: [
+    {
+      persistent-input: {
+        server.app.include_path: "documents/../../../../../../../../../etc/passwd",
+        server.request.query: [ "../../../../../../../../../etc/passwd" ]
+      },
+      rules: [
+        {
+          "rsp-930-001": [
+            {
+              resource: {
+                address: "server.app.include_path",
+                value: "documents/../../../../../../../../../etc/passwd"
+              },
+              params: {
+                address: "server.request.query",
+                value: "../../../../../../../../../etc/passwd"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

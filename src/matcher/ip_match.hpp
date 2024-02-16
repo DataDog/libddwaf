@@ -8,8 +8,8 @@
 
 #include <memory>
 #include <radixlib.h>
+#include <vector>
 
-#include "ip_utils.hpp"
 #include "matcher/base.hpp"
 
 namespace ddwaf::matcher {

@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <unordered_map>
+
 #include "test.hpp"
 #include "utils.hpp"
 
@@ -90,6 +92,17 @@ TEST(TestUtils, IsAlnum)
     }
 }
 
+TEST(TestUtils, IsBoundary)
+{
+    for (char c = char_min; c < char_max; ++c) {
+        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+            c == '_') {
+            EXPECT_FALSE(isboundary(c));
+        } else {
+            EXPECT_TRUE(isboundary(c));
+        }
+    }
+}
 TEST(TestUtils, ToLower)
 {
     std::unordered_map<char, char> mapping{{'A', 'a'}, {'B', 'b'}, {'C', 'c'}, {'D', 'd'},
@@ -334,6 +347,29 @@ TEST(TestUtils, CloneMap)
 
     ddwaf_object_free(&input);
     ddwaf_object_free(&output);
+}
+
+#define EXPECT_VEC(expected, ...)                                                                  \
+    {                                                                                              \
+        std::vector<std::string_view> vec{__VA_ARGS__};                                            \
+        EXPECT_EQ(expected, vec);                                                                  \
+    }
+
+TEST(TestUtils, Split)
+{
+    EXPECT_VEC(ddwaf::split("|", '|'));
+    EXPECT_VEC(ddwaf::split("||", '|'));
+    EXPECT_VEC(ddwaf::split("|||||||", '|'));
+    EXPECT_VEC(ddwaf::split("value", '|'), "value");
+    EXPECT_VEC(ddwaf::split("|value", '|'), "value");
+    EXPECT_VEC(ddwaf::split("value|", '|'), "value");
+    EXPECT_VEC(ddwaf::split("|value|", '|'), "value");
+    EXPECT_VEC(ddwaf::split("||||value||||", '|'), "value");
+    EXPECT_VEC(ddwaf::split("hello|value", '|'), "hello", "value");
+    EXPECT_VEC(ddwaf::split("hello|value|", '|'), "hello", "value");
+    EXPECT_VEC(ddwaf::split("|hello|value", '|'), "hello", "value");
+    EXPECT_VEC(ddwaf::split("|hello|value|", '|'), "hello", "value");
+    EXPECT_VEC(ddwaf::split("a,b,c,d,e,f,g", ','), "a", "b", "c", "d", "e", "f", "g");
 }
 
 } // namespace

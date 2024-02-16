@@ -18,6 +18,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
     ${libddwaf_SOURCE_DIR}/src/utils.cpp
     ${libddwaf_SOURCE_DIR}/src/waf.cpp
+    ${libddwaf_SOURCE_DIR}/src/platform.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
@@ -27,6 +28,8 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/scalar_condition.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/phrase_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/regex_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/is_sqli.cpp

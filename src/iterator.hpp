@@ -7,6 +7,7 @@
 #pragma once
 
 #include <functional>
+#include <span>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -54,7 +55,7 @@ protected:
 
 class value_iterator : public iterator_base<value_iterator> {
 public:
-    explicit value_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+    explicit value_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~value_iterator() = default;
@@ -73,8 +74,9 @@ public:
     }
 
 protected:
-    void initialise_cursor(const ddwaf_object *obj, const std::vector<std::string> &path);
-    void initialise_cursor_with_path(const ddwaf_object *obj, const std::vector<std::string> &path);
+    void initialise_cursor(const ddwaf_object *obj, const std::span<const std::string> &path);
+    void initialise_cursor_with_path(
+        const ddwaf_object *obj, const std::span<const std::string> &path);
 
     void set_cursor_to_next_object();
 
@@ -83,7 +85,7 @@ protected:
 
 class key_iterator : public iterator_base<key_iterator> {
 public:
-    explicit key_iterator(const ddwaf_object *obj, const std::vector<std::string> &path,
+    explicit key_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~key_iterator() = default;
@@ -96,7 +98,7 @@ public:
 
     [[nodiscard]] DDWAF_OBJ_TYPE type() const
     {
-        if (current_->parameterName != nullptr) {
+        if (current_ != nullptr && current_->parameterName != nullptr) {
             return DDWAF_OBJ_STRING;
         }
         return DDWAF_OBJ_INVALID;
@@ -110,14 +112,70 @@ public:
     }
 
 protected:
-    void initialise_cursor(const ddwaf_object *obj, const std::vector<std::string> &path);
-    void initialise_cursor_with_path(const ddwaf_object *obj, const std::vector<std::string> &path);
+    void initialise_cursor(const ddwaf_object *obj, const std::span<const std::string> &path);
+    void initialise_cursor_with_path(
+        const ddwaf_object *obj, const std::span<const std::string> &path);
 
     void set_cursor_to_next_object();
 
     ddwaf_object current_key_{};
 
     friend class iterator_base<key_iterator>;
+};
+
+class kv_iterator : public iterator_base<kv_iterator> {
+public:
+    explicit kv_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
+        const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
+
+    ~kv_iterator() = default;
+
+    kv_iterator(const kv_iterator &) = default;
+    kv_iterator(kv_iterator &&) = delete;
+
+    kv_iterator &operator=(const kv_iterator &) = delete;
+    kv_iterator &operator=(kv_iterator &&) = delete;
+
+    [[nodiscard]] DDWAF_OBJ_TYPE type() const
+    {
+        if (current_ != nullptr) {
+            if (scalar_value_) {
+                return current_->type;
+            }
+
+            if (current_->parameterName != nullptr) {
+                return DDWAF_OBJ_STRING;
+            }
+        }
+        return DDWAF_OBJ_INVALID;
+    }
+
+    [[nodiscard]] const ddwaf_object *operator*()
+    {
+        if (current_ != nullptr) {
+            if (scalar_value_) {
+                return current_;
+            }
+
+            if (current_->parameterName != nullptr) {
+                return ddwaf_object_stringl_nc(
+                    &current_key_, current_->parameterName, current_->parameterNameLength);
+            }
+        }
+        return nullptr;
+    }
+
+protected:
+    void initialise_cursor(const ddwaf_object *obj, const std::span<const std::string> &path);
+    void initialise_cursor_with_path(
+        const ddwaf_object *obj, const std::span<const std::string> &path);
+
+    void set_cursor_to_next_object();
+
+    bool scalar_value_{false};
+    ddwaf_object current_key_{};
+
+    friend class iterator_base<kv_iterator>;
 };
 
 } // namespace ddwaf::object

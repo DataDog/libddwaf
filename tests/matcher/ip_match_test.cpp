@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <chrono>
+
 #include "../test.hpp"
 #include "matcher/ip_match.hpp"
 

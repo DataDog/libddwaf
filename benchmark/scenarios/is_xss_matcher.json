@@ -1,0 +1,116 @@
+{
+  "scenario": "is_xss_matcher",
+  "ruleset": {
+    "rules": [
+      {
+        "id": "crs-941-100",
+        "name": "XSS Attack Detected via libinjection",
+        "tags": {
+          "type": "xss",
+          "category": "attack_attempt"
+        },
+        "conditions": [
+          {
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "server.request.query"
+                }
+              ]
+            },
+            "operator": "is_xss"
+          }
+        ],
+        "transformers": []
+      }
+    ]
+  },
+  "fixtures": {
+    "eval.valid": {
+      "server.request.query": [
+        "11|IE|EUC-JP|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
+        "11|IE|Windows-1250|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%00=alert(1)%3E",
+        "104|Chrome|Windows-874|0|16|<script>alert(1)</script",
+        "114|Chrome|Shift-JIS|0|16|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%3A/favicon.ico%22/%3E",
+        "11|Chromium|utf-8|0|16|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%09=alert(1)%3E",
+        "114|IE|GB2312|0|9|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%00/favicon.ico%22/%3E",
+        "11|Firefox|ISO-8859-1|0|20|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%09=alert(1)%3E",
+        "11|Chromium|EUC-KR|0|16|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%09=alert(1)%3E",
+        "104|Chrome|ISO-8859-9|0|16|<script>alert(1)</script",
+        "12|IE|ISO-8859-7|0|9|%3Ca%20href=%22javas%0Acript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|Firefox|ISO-8859-9|0|22|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
+        "12|IE|Windows-874|0|9|%3Ca%20href=%22javas%00cript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "12|IE|EUC-KR|0|9|%3Ca%20href=%22javas%00cript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|IE|TIS-620|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0A=alert(1)%3E",
+        "11|Firefox|utf-8|0|11|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0D=alert(1)%3E",
+        "105|Safari|ISO-8859-1|0|5|%3C!--%3E%3Cimg%20src=xxx:x%20onerror=alert(1)%3E%20--%3E",
+        "12|IE|Windows-1256|0|9|%3Ca%20href=%22javas%00cript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|Chromium|utf-8|0|16|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0D=alert(1)%3E",
+        "114|Safari|utf-8|0|5|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%EF%B8%81/favicon.ico%22/%3E",
+        "12|Chrome|Windows-1252|0|21|%3Ca%20href=%22javas%09cript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "114|IE|EUC-KR|0|9|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%3A/favicon.ico%22/%3E",
+        "114|IE|utf-8|0|9|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%EF%BB%BF/favicon.ico%22/%3E",
+        "114|Safari|utf-8|0|5|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%EF%B8%8F/favicon.ico%22/%3E",
+        "105|Chrome|ISO-8859-2|0|16|%3C!--%3E%3Cimg%20src=xxx:x%20onerror=alert(1)%3E%20--%3E",
+        "11|IE|Windows-1255|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0D=alert(1)%3E",
+        "114|Chrome|Windows-1250|0|16|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%3A/favicon.ico%22/%3E",
+        "11|IE|US-ASCII|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%20=alert(1)%3E",
+        "11|Chrome|utf-8|0|13|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%09=alert(1)%3E",
+        "12|IE|Shift-JIS|0|9|%3Ca%20href=%22javas%0Acript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|Firefox|ISO-8859-15|0|22|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%20=alert(1)%3E",
+        "12|IE|Shift-JIS|0|9|%3Ca%20href=%22javas%00cript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "12|IE|Windows-1251|0|9|%3Ca%20href=%22javas%00cript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "105|Safari|Windows-1251|0|5|%3C!--%3E%3Cimg%20src=xxx:x%20onerror=alert(1)%3E%20--%3E",
+        "114|IE|US-ASCII|0|9|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk./favicon.ico%22/%3E",
+        "11|Firefox|utf-8|0|12|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0D=alert(1)%3E",
+        "11|IE|ISO-8859-1|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0A=alert(1)%3E",
+        "11|Chromium|Windows-1254|0|25|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
+        "114|Chrome|Windows-1250|0|16|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk./favicon.ico%22/%3E",
+        "11|Chromium|Big5|0|25|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%09=alert(1)%3E",
+        "11|Chromium|Windows-1250|0|16|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0A=alert(1)%3E",
+        "11|Chrome|ISO-8859-15|0|16|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%09=alert(1)%3E",
+        "114|Chrome|GBK|0|16|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk./favicon.ico%22/%3E",
+        "12|IE|TIS-620|0|9|%3Ca%20href=%22javas%00cript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|Chrome|ISO-8859-1|0|19|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%20=alert(1)%3E",
+        "11|Chromium|Windows-1250|0|25|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0A=alert(1)%3E",
+        "12|Chrome|Windows-1256|0|21|%3Ca%20href=%22javas%0Acript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|IE|GB2312|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
+        "12|Chrome|EUC-KR|0|21|%3Ca%20href=%22javas%09cript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|IE|Windows-1252|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0D=alert(1)%3E",
+        "11|Firefox|GBK|0|22|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%09=alert(1)%3E",
+        "11|IE|ISO-8859-15|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%09=alert(1)%3E",
+        "114|Chrome|EUC-JP|0|16|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%5C/favicon.ico%22/%3E",
+        "11|IE|Windows-1252|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
+        "11|Chrome|Shift-JIS|0|19|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0D=alert(1)%3E",
+        "114|IE|GBK|0|9|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%0D/favicon.ico%22/%3E",
+        "11|Chrome|utf-8|0|21|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
+        "11|Chromium|TIS-620|0|25|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
+        "11|Chrome|utf-8|0|19|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0A=alert(1)%3E",
+        "11|Chrome|utf-8|0|27|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%20=alert(1)%3E",
+        "12|IE|utf-8|0|9|%3Ca%20href=%22javas%00cript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|Safari|utf-8|0|5|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%20=alert(1)%3E",
+        "114|IE|utf-8|0|9|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%2F/favicon.ico%22/%3E",
+        "12|IE|ISO-8859-1|0|9|%3Ca%20href=%22javas%0Acript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "12|Chrome|ISO-8859-15|0|21|%3Ca%20href=%22javas%0Dcript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|Chromium|ISO-8859-15|0|25|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%20=alert(1)%3E",
+        "11|Chrome|GBK|0|19|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
+        "12|IE|Shift-JIS|0|9|%3Ca%20href=%22javas%0Dcript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|Firefox|ISO-8859-9|0|22|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0A=alert(1)%3E",
+        "12|Chrome|x-euc|0|18|%3Ca%20href=%22javas%0Acript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "14|Chrome|ISO-8859-1|0|20|%22'%60%3E%3C%3Cimg%20src=xxx:x%20onerror=alert(1)%3E",
+        "11|Chrome|ISO-8859-1|0|28|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0C=alert(1)%3E",
+        "114|IE|Windows-1250|0|9|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%09/favicon.ico%22/%3E",
+        "11|Chrome|ISO-8859-15|0|19|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0A=alert(1)%3E",
+        "11|Firefox|Windows-1252|0|22|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%09=alert(1)%3E",
+        "11|IE|Windows-1256|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0B=alert(1)%3E",
+        "11|IE|Shift-JIS|0|9|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%20=alert(1)%3E",
+        "12|IE|Windows-1255|0|9|%3Ca%20href=%22javas%0Dcript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "12|Chrome|EUC-JP|0|21|%3Ca%20href=%22javas%0Dcript:alert(1)%22%20id=%22fuzzelement1%22%3Etest%3C/a%3E",
+        "11|Firefox|utf-8|0|22|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0A=alert(1)%3E",
+        "114|IE|ISO-8859-1|0|9|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%5C/favicon.ico%22/%3E",
+        "114|Safari|utf-8|0|5|%22%60'/%3E%3Cimg/onload=alert(1)%20src=%22http://shazzer.co.uk%EF%B8%82/favicon.ico%22/%3E",
+        "11|Chrome|ISO-8859-1|0|28|%60%22'%3E%3Cimg%20src=xxx:x%20onerror%0A=alert(1)%3E"
+      ]
+    }
+  }
+}

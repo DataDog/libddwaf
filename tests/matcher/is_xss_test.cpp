@@ -74,11 +74,11 @@ TEST(TestIsXSS, TestRuleset)
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
-                           .matches = {{
-                               .op = "is_xss",
-                               .address = "arg1",
-                               .value = "<script>alert(1);</script>",
-                           }}});
+                           .matches = {{.op = "is_xss",
+                               .args = {{
+                                   .value = "<script>alert(1);</script>",
+                                   .address = "arg1",
+                               }}}}});
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

@@ -47,8 +47,11 @@ endif()
 
 include(GNUInstallDirs)
 
-add_library(glibc_compat OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/time64.c)
-set_target_properties(glibc_compat PROPERTIES POSITION_INDEPENDENT_CODE 1)
+add_library(glibc_compat_time64 OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/time64.c)
+set_target_properties(glibc_compat_time64 PROPERTIES POSITION_INDEPENDENT_CODE 1)
+
+add_library(glibc_compat_math OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/math.c)
+set_target_properties(glibc_compat_math PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp
@@ -68,8 +71,7 @@ if(LINUX)
     set(LIBDDWAF_INTERFACE_LIBRARIES
         $<$<BOOL:${LIBPTHREAD}>:pthread>
         $<$<BOOL:${LIBRT}>:rt>
-        $<$<BOOL:${LIBDL}>:dl>
-        $<$<BOOL:${LIBM}>:m>)
+        $<$<BOOL:${LIBDL}>:dl>)
 elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
@@ -101,7 +103,7 @@ if (LIBDDWAF_TESTING)
     add_subdirectory(third_party EXCLUDE_FROM_ALL)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
     add_subdirectory(validator EXCLUDE_FROM_ALL)
-    add_subdirectory(perf EXCLUDE_FROM_ALL)
+    add_subdirectory(benchmark EXCLUDE_FROM_ALL)
     add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
     add_subdirectory(tools EXCLUDE_FROM_ALL)
 

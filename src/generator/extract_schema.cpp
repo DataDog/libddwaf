@@ -67,14 +67,14 @@ struct node_equal {
 struct node_record {
     std::size_t hash{0};
     bool truncated{false};
-    std::unordered_map<std::string_view, base_node> children{};
+    std::unordered_map<std::string_view, base_node> children;
 };
 
 struct node_array {
     std::size_t hash{0};
     bool truncated{false};
     std::size_t length{0};
-    std::unordered_set<base_node, node_hash, node_equal> children{};
+    std::unordered_set<base_node, node_hash, node_equal> children;
 };
 
 std::size_t node_hash::operator()(const base_node &node) const noexcept
@@ -86,7 +86,7 @@ std::size_t node_hash::operator()(const node_scalar &node) const noexcept
 {
     // Accept the risk of collision with the hash value 0
     if (node.hash == 0) {
-        using underlying_type = typename std::underlying_type<scalar_type>::type;
+        using underlying_type = std::underlying_type_t<scalar_type>;
         auto value = std::hash<underlying_type>{}(static_cast<underlying_type>(node.type));
         for (const auto &[k, v] : node.tags) {
             value ^= std::hash<std::string_view>{}(k) ^ std::hash<std::string_view>{}(v);
@@ -188,9 +188,8 @@ ddwaf_object node_serialize::operator()(const node_scalar &node) const noexcept
     ddwaf_object array;
     ddwaf_object_array(&array);
 
-    ddwaf_object_array_add(
-        &array, ddwaf_object_unsigned(
-                    &tmp, static_cast<std::underlying_type<scalar_type>::type>(node.type)));
+    ddwaf_object_array_add(&array,
+        ddwaf_object_unsigned(&tmp, static_cast<std::underlying_type_t<scalar_type>>(node.type)));
 
     if (!node.tags.empty()) {
         ddwaf_object meta;

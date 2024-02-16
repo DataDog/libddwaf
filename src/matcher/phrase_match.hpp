@@ -15,7 +15,8 @@ namespace ddwaf::matcher {
 
 class phrase_match : public base_impl<phrase_match> {
 public:
-    phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths);
+    phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths,
+        bool enforce_word_boundary = false);
     ~phrase_match() override = default;
     phrase_match(const phrase_match &) = delete;
     phrase_match(phrase_match &&) noexcept = default;
@@ -29,6 +30,7 @@ protected:
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view pattern) const;
 
+    bool enforce_word_boundary_{false};
     std::unique_ptr<ac_t, void (*)(void *)> ac{nullptr, nullptr};
 
     friend class base_impl<phrase_match>;
