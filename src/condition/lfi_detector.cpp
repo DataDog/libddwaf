@@ -4,11 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <stack>
-
 #include "condition/lfi_detector.hpp"
 #include "exception.hpp"
-#include "log.hpp"
+#include "iterator.hpp"
+#include "platform.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;
@@ -17,125 +16,117 @@ namespace ddwaf {
 
 namespace {
 
-constexpr std::size_t min_str_len = 5;
+constexpr const auto &npos = std::string_view::npos;
 
-std::vector<std::string_view> match_params(std::string_view path, const ddwaf_object &params)
+using lfi_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
+
+bool find_directory_escape(std::string_view value, std::string_view sep)
 {
-    std::stack<const ddwaf_object *> stack;
-    std::vector<std::string_view> strings;
-
-    stack.push(&params);
-
-    while (!stack.empty() && stack.size() <= object_limits::default_max_container_depth) {
-        const ddwaf_object &container = *stack.top();
-        stack.pop();
-
-        for (std::size_t i = 0; i < container.nbEntries; ++i) {
-            const ddwaf_object &child = container.array[i];
-
-            if (child.parameterName != nullptr && child.parameterNameLength >= min_str_len) {
-                const std::string_view key{
-                    child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-                if (path.find(key) != std::string_view::npos) {
-                    strings.emplace_back(key);
-                }
-            }
-
-            if (object::is_container(&child)) {
-                if (stack.size() < object_limits::default_max_container_depth) {
-                    stack.push(&child);
-                }
-                continue;
-            }
-
-            if (child.type == DDWAF_OBJ_STRING && child.nbEntries >= min_str_len) {
-                const std::string_view value{
-                    child.stringValue, static_cast<std::size_t>(child.nbEntries)};
-                if (path.find(value) != std::string_view::npos) {
-                    strings.emplace_back(value);
-                }
-            }
-        }
-    }
-
-    return strings;
-}
-
-std::vector<std::string_view> split(std::string_view str, char sep)
-{
-    std::vector<std::string_view> components;
-
     std::size_t start = 0;
-    while (start < str.size()) {
-        const std::size_t end = str.find(sep, start);
+    unsigned part_count = 0;
+    bool part_seen = false;
+    while (start < value.size()) {
+        const std::size_t end = value.find_first_of(sep, start);
 
         if (end == start) {
             // Ignore zero-sized strings
             start = end + 1;
-        }
-
-        if (end == std::string_view::npos) {
-            // Last element
-            components.emplace_back(str.substr(start));
-            start = str.size();
-        } else {
-            components.emplace_back(str.substr(start, end - start));
-            start = end + 1;
-        }
-    }
-
-    return components;
-}
-
-std::pair<bool, std::string> lfi_impl(std::string_view path, const ddwaf_object &params)
-{
-    auto matched_params = match_params(path, params);
-    if (matched_params.empty()) {
-        return {};
-    }
-
-    for (const auto &param : matched_params) {
-        if (param[0] == '/' && param == path) {
-            return {true, std::string(param)};
-        }
-
-        if (!path.ends_with(param)) {
             continue;
         }
 
-        auto parts = split(param, '/');
-        if (parts.size() > 1 && std::find(parts.begin(), parts.end(), "..") != parts.end()) {
-            return {true, std::string(param)};
+        ++part_count;
+
+        std::string_view part;
+        if (end != npos) {
+            part = value.substr(start, end - start);
+            start = end + 1;
+        } else {
+            part = value.substr(start);
+            start = value.size();
+        }
+
+        part_seen = part_seen || part == "..";
+        if (part_count > 1 && part_seen) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// TODO: https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths
+bool lfi_impl_windows(std::string_view path, std::string_view param)
+{
+    static constexpr std::size_t min_str_len = 2;
+
+    if (param.size() < min_str_len && !path.ends_with(param)) {
+        return false;
+    }
+
+    bool is_absolute = param[0] == '/' || param[0] == '\\' ||
+                       (param.size() >= 3 && (ddwaf::isalpha(param[0]) && param[1] == ':' &&
+                                                 (param[2] == '/' || param[2] == '\\')));
+    return (is_absolute && param == path) || find_directory_escape(param, "/\\");
+}
+
+bool lfi_impl_unix(std::string_view path, std::string_view param)
+{
+    static constexpr std::size_t min_str_len = 5;
+
+    if (param.size() < min_str_len || param.find('/') == npos || !path.ends_with(param)) {
+        return false;
+    }
+
+    return (param[0] == '/' && param == path) || find_directory_escape(param, "/");
+}
+
+lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline)
+{
+    auto *lfi_fn = &lfi_impl_unix;
+    if (system_platform::current() == platform::windows) {
+        lfi_fn = &lfi_impl_windows;
+    }
+
+    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    for (; it; ++it) {
+        if (deadline.expired()) {
+            throw ddwaf::timeout_exception();
+        }
+
+        const ddwaf_object &param = *(*it);
+        if (param.type != DDWAF_OBJ_STRING) {
+            continue;
+        }
+
+        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        if (lfi_fn(path, value)) {
+            return {{std::string(value), it.get_current_path()}};
         }
     }
 
     return {};
 }
-
 } // namespace
 
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-    ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
-
-        auto [res, highlight] = lfi_impl(path.value, *param.value);
-
-        if (res) {
-            std::vector<std::string> param_kp{param.key_path.begin(), param.key_path.end()};
+        auto res = lfi_impl(path.value, *param.value, objects_excluded, limits_, deadline);
+        if (res.has_value()) {
             std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
             bool ephemeral = path.ephemeral || param.ephemeral;
 
+            auto &[highlight, param_kp] = res.value();
             cache.match =
                 condition_match{{{"resource"sv, std::string{path.value}, path.address, path_kp},
                                     {"params"sv, highlight, param.address, param_kp}},
                     {std::move(highlight)}, "lfi_detector", {}, ephemeral};
 
-            return {res, path.ephemeral || param.ephemeral};
+            return {true, path.ephemeral || param.ephemeral};
         }
     }
 

@@ -38,9 +38,10 @@ struct condition_match {
 };
 
 struct condition_cache {
-    // The targets cache mirrors the array of targets for the given condition.
-    // Each element in this array caches the pointer of the last non-ephemeral
-    // object evaluated by the target in the same index within the condition.
+    // Stores the pointer to the object of the i-th target of the condition,
+    // used in the previous evaluation, if said object is non-ephemeral. This
+    // ensures that the evaluation of the condition can be skipped for the same
+    // object in the future.
     memory::vector<const ddwaf_object *> targets;
     std::optional<condition_match> match;
 };
@@ -63,9 +64,8 @@ struct target_definition {
     data_source source{data_source::values};
 };
 
-// Provides the definition of a parameter, which essentially consists of all the
-// mappings available for it. If the parameter is non-variadic, only one mapping
-// should be present.
+// Provides the list of targets mapped to the given condition parameter. If the
+// parameter is non-variadic, only one mapping should be present.
 struct parameter_definition {
     std::vector<target_definition> targets;
 };

@@ -15,8 +15,10 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <type_traits>
+#include <vector>
 
 #include "ddwaf.h"
 
@@ -254,6 +256,33 @@ inline std::string object_to_string(const ddwaf_object &object)
     }
 
     return {};
+}
+
+inline std::vector<std::string_view> split(std::string_view str, char sep)
+{
+    std::vector<std::string_view> components;
+
+    std::size_t start = 0;
+    while (start < str.size()) {
+        const std::size_t end = str.find(sep, start);
+
+        if (end == start) {
+            // Ignore zero-sized strings
+            start = end + 1;
+            continue;
+        }
+
+        if (end == std::string_view::npos) {
+            // Last element
+            components.emplace_back(str.substr(start));
+            start = str.size();
+        } else {
+            components.emplace_back(str.substr(start, end - start));
+            start = end + 1;
+        }
+    }
+
+    return components;
 }
 
 } // namespace ddwaf
