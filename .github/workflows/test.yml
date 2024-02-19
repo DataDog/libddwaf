@@ -147,7 +147,7 @@ jobs:
         working-directory: Debug
 
       - name: Submit coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: waf_test_${{ matrix.suffix }}
