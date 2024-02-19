@@ -1,7 +1,15 @@
 cmake_minimum_required(VERSION 3.14)
 
 file(READ "version" version)
-project(libddwaf VERSION "${version}")
+
+string(REGEX REPLACE "-(alpha|beta)[0-9]*$" "" mmp_version ${version})
+
+project(libddwaf VERSION "${mmp_version}")
+
+# Resetting the version allows for alpha and beta suffix releases
+set(PROJECT_VERSION ${version})
+set(CMAKE_PROJECT_VERSION ${version})
+
 message(STATUS "Project version: ${CMAKE_PROJECT_VERSION}")
 
 if(UNIX AND NOT APPLE)
