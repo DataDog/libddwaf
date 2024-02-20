@@ -24,7 +24,7 @@ jobs:
           - none
           - sse2
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -65,7 +65,7 @@ jobs:
           - none
           - sse2
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -106,7 +106,7 @@ jobs:
           - none
           - sse2
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -147,13 +147,13 @@ jobs:
         working-directory: Debug
 
       - name: Submit coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: waf_test_${{ matrix.suffix }}
           verbose: true
           files: coverage.xml
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage_${{ matrix.suffix }}
           path: ${{ github.workspace }}/Debug/coverage/
@@ -161,7 +161,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -200,7 +200,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -224,7 +224,7 @@ jobs:
     #strategy:
       #fail-fast: false
     #steps:
-      #- uses: actions/checkout@v3
+      #- uses: actions/checkout@v4
         #with:
           #submodules: recursive
 

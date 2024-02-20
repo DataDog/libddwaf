@@ -24,7 +24,7 @@ jobs:
           - Win32
           - x64
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: ilammy/msvc-dev-cmd@v1
@@ -46,7 +46,7 @@ jobs:
         working-directory: ${{ github.workspace }}/packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
         shell: bash
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: libddwaf-windows-${{ matrix.arch }}
           path: |
@@ -56,7 +56,7 @@ jobs:
   macos-build:
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Create Build Directory
@@ -79,7 +79,7 @@ jobs:
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
         run: for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: libddwaf-macos-x86_64
           path: |
@@ -89,7 +89,7 @@ jobs:
   macos-cross-build:
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Create Build Directory
@@ -109,7 +109,7 @@ jobs:
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
         run: for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: libddwaf-macos-arm64
           path: |
@@ -120,8 +120,8 @@ jobs:
     runs-on: macos-11
     needs: [macos-build, macos-cross-build]
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
 
@@ -129,6 +129,8 @@ jobs:
         run: |
           # Create temporal folders
           mkdir -p ./pack-temp/{osx-x64,osx-arm64,osx}
+
+          ls ./artifacts
 
           # Extract x86_64 and arm64 artifacts
           tar -zxf ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.tar.gz -C ./pack-temp/osx-x64
@@ -170,7 +172,7 @@ jobs:
           brew install coreutils
           for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: libddwaf-macos-universal
           path: |
@@ -187,7 +189,7 @@ jobs:
             dockerfile: docker/libddwaf/gcc/mingw64/Dockerfile
             package: libddwaf-linux-mingw64
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - run: docker build -f ${{ matrix.target.dockerfile }} -o /tmp/packages .
@@ -197,7 +199,7 @@ jobs:
       - name: Generate Package sha256
         working-directory: /tmp/packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target.package }}
           path: |
@@ -231,10 +233,10 @@ jobs:
             platform: linux/arm/v7
             package: libddwaf-armv7-linux-musl
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: docker/setup-buildx-action@v2
+      - uses: docker/setup-buildx-action@v3
         id: buildx
         with:
           install: true
@@ -255,7 +257,7 @@ jobs:
       - name: Generate Package sha256
         working-directory: packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target.package }}
           path: |
@@ -266,9 +268,9 @@ jobs:
     needs: [ windows-builds, macos-universal-package, linux-musl-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: nuget/setup-nuget@v1
+      - uses: nuget/setup-nuget@v2
         with:
           nuget-version: '5.x'
 
@@ -313,7 +315,7 @@ jobs:
         working-directory: ${{ github.workspace }}/output-packages
         run: for file in *.nupkg; do sha256sum "$file" > "$file.sha256"; done
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: nuget
           path: ${{ github.workspace }}/output-packages
@@ -323,7 +325,7 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
         with:
           path: artifacts
