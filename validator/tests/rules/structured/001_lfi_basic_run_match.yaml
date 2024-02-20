@@ -3,7 +3,7 @@
   runs: [
     {
       persistent-input: {
-        server.app.include_path: "documents/../../../../../../../../../etc/passwd",
+        server.io.fs.file: "documents/../../../../../../../../../etc/passwd",
         server.request.query: [ "../../../../../../../../../etc/passwd" ]
       },
       rules: [
@@ -11,7 +11,7 @@
           "rsp-930-001": [
             {
               resource: {
-                address: "server.app.include_path",
+                address: "server.io.fs.file",
                 value: "documents/../../../../../../../../../etc/passwd"
               },
               params: {

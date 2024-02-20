@@ -186,8 +186,8 @@ public:
         return std::array<parameter_specification, sizeof...(Is)>{{
             {
                 param_names[Is],
-                argument_retriever<typename func_traits::template arg_type<Is>>::is_optional,
                 argument_retriever<typename func_traits::template arg_type<Is>>::is_variadic,
+                argument_retriever<typename func_traits::template arg_type<Is>>::is_optional,
             }...,
         }};
     }
