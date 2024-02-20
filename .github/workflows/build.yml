@@ -130,6 +130,8 @@ jobs:
           # Create temporal folders
           mkdir -p ./pack-temp/{osx-x64,osx-arm64,osx}
 
+          ls ./artifacts
+
           # Extract x86_64 and arm64 artifacts
           tar -zxf ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.tar.gz -C ./pack-temp/osx-x64
           tar -zxf ./artifacts/libddwaf-macos-arm64/libddwaf-*-darwin-arm64*.tar.gz -C ./pack-temp/osx-arm64
