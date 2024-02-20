@@ -1,4 +1,11 @@
 # libddwaf release
+### v1.17.0-alpha1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Fixes
+- Fix parsing of variadic arguments ([#267](https://github.com/DataDog/libddwaf/pull/267))
+
+#### Miscellaneous
+- Update node-16 actions to node-20 ones ([#266](https://github.com/DataDog/libddwaf/pull/266))
+
 ### v1.17.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Multivariate operator support ([#241](https://github.com/DataDog/libddwaf/pull/241))
