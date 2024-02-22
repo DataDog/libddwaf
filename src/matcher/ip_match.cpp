@@ -9,7 +9,6 @@
 #include <stdexcept>
 #include <string_view>
 
-#include "ip_utils.hpp"
 #include "matcher/ip_match.hpp"
 
 namespace ddwaf::matcher {
@@ -21,16 +20,7 @@ ip_match::ip_match(const std::vector<std::string_view> &ip_list)
         throw std::runtime_error("failed to instantiate radix tree");
     }
 
-    for (auto str : ip_list) {
-        // Parse and populate each IP/network
-        ipaddr ip{};
-        if (ddwaf::parse_cidr(str, ip)) {
-            prefix_t prefix;
-            // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
-            radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
-            radix_put_if_absent(rtree_.get(), &prefix, 0);
-        }
-    }
+    init_tree(ip_list);
 }
 
 ip_match::ip_match(const std::vector<std::pair<std::string_view, uint64_t>> &ip_list)

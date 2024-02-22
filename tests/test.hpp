@@ -39,4 +39,4 @@
     }
 
 #define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), b)
-#define EXPECT_STRV(a, b) EXPECT_STREQ(a.data(), b)
+#define EXPECT_STRV(a, b) EXPECT_STR(std::string{a}, b)
