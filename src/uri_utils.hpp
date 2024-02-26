@@ -24,7 +24,12 @@ struct uri_decomposed {
         std::string_view raw;
     } authority;
     std::string_view scheme_and_authority;
+    std::size_t path_index;
     std::string_view path;
+    std::size_t query_index;
+    std::string_view query;
+    std::size_t fragment_index;
+    std::string_view fragment;
     std::string_view raw;
 };
 

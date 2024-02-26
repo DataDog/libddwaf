@@ -54,16 +54,16 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
     }
     i += 3; // Past '//'
 
-    auto end = uri.find_first_of("/?#", i);
-    if (end == i) {
+    auto authority_end = uri.find_first_of("/?#", i);
+    if (authority_end == i) {
         return std::nullopt;
     }
 
     decomposed.authority.index = i;
-    if (end != npos) {
+    if (authority_end != npos) {
         // Discard everything after the authority
-        uri = decomposed.scheme_and_authority = uri.substr(0, end);
-        decomposed.authority.raw = uri.substr(i, end);
+        uri = decomposed.scheme_and_authority = uri.substr(0, authority_end);
+        decomposed.authority.raw = uri.substr(i, authority_end);
     } else {
         decomposed.scheme_and_authority = uri;
         decomposed.authority.raw = uri.substr(i);
@@ -155,7 +155,36 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
         decomposed.authority.port = uri.substr(port_begin);
     }
 
-    // Identify the path
+    // Identify the path, fragment and query. Note that the validity of these
+    // is not evaluated.
+    auto next_sep = authority_end;
+
+    if (next_sep != npos && decomposed.raw[next_sep] == '/') {
+        auto path_end = decomposed.raw.find_first_of("?#", next_sep);
+        decomposed.path_index = next_sep;
+        if (path_end != npos) {
+            decomposed.path = decomposed.raw.substr(next_sep, path_end - next_sep);
+        } else {
+            decomposed.path = decomposed.raw.substr(next_sep);
+        }
+        next_sep = path_end;
+    }
+
+    if (next_sep != npos && decomposed.raw[next_sep] == '?') {
+        auto path_end = decomposed.raw.find_first_of("#", next_sep);
+        decomposed.query_index = next_sep;
+        if (path_end != npos) {
+            decomposed.query = decomposed.raw.substr(next_sep + 1, path_end - (next_sep + 1));
+        } else {
+            decomposed.query = decomposed.raw.substr(next_sep + 1);
+        }
+        next_sep = path_end;
+    }
+
+    if (next_sep != npos && decomposed.raw[next_sep] == '#') {
+        decomposed.fragment_index = next_sep;
+        decomposed.fragment = decomposed.raw.substr(next_sep + 1);
+    }
 
     return decomposed;
 }

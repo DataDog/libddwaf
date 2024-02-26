@@ -24,6 +24,7 @@ TEST(TestURI, Complete)
         EXPECT_STRV(uri->authority.port, "1929");
         EXPECT_STRV(uri->authority.raw, "user@hello.com:1929");
         EXPECT_STRV(uri->scheme_and_authority, "http+s.i-a://user@hello.com:1929");
+        EXPECT_STRV(uri->path, "/path/to/nowhere");
         EXPECT_STRV(
             uri->raw, "http+s.i-a://user@hello.com:1929/path/to/nowhere?query=none#fragment");
     }
@@ -36,6 +37,8 @@ TEST(TestURI, Complete)
         EXPECT_STRV(uri->authority.host, "h");
         EXPECT_STRV(uri->authority.userinfo, "u");
         EXPECT_STRV(uri->authority.port, "1");
+        EXPECT_STRV(uri->scheme_and_authority, "s://u@h:1");
+        EXPECT_STRV(uri->path, "/p");
         EXPECT_STRV(uri->authority.raw, "u@h:1");
     }
 }
@@ -106,6 +109,7 @@ TEST(TestURI, SchemeHostQuery)
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->query, "query");
 }
 
 TEST(TestURI, SchemeHostPath)
@@ -115,6 +119,7 @@ TEST(TestURI, SchemeHostPath)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
     EXPECT_STRV(uri->authority.host, "authority");
+    EXPECT_STRV(uri->path, "/path");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_TRUE(uri->authority.port.empty());
 }
@@ -128,6 +133,7 @@ TEST(TestURI, SchemeHostFragment)
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->fragment, "f");
 }
 
 TEST(TestURI, SchemeHostPortQuery)
@@ -139,6 +145,7 @@ TEST(TestURI, SchemeHostPortQuery)
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_STRV(uri->authority.port, "123");
+    EXPECT_STRV(uri->query, "query");
 }
 
 TEST(TestURI, SchemeHostPortPath)
@@ -150,6 +157,7 @@ TEST(TestURI, SchemeHostPortPath)
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_STRV(uri->authority.port, "12");
+    EXPECT_STRV(uri->path, "/path");
 }
 
 TEST(TestURI, SchemeHostPortFragment)
@@ -161,6 +169,7 @@ TEST(TestURI, SchemeHostPortFragment)
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_STRV(uri->authority.port, "1");
+    EXPECT_STRV(uri->fragment, "f");
 }
 
 TEST(TestURI, SchemeUserHostQuery)
@@ -172,6 +181,7 @@ TEST(TestURI, SchemeUserHostQuery)
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "user");
     EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->query, "query");
 }
 
 TEST(TestURI, SchemeUserHostPath)
@@ -183,6 +193,7 @@ TEST(TestURI, SchemeUserHostPath)
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "us");
     EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->path, "/path");
 }
 
 TEST(TestURI, SchemeUserHostFragment)
@@ -194,6 +205,7 @@ TEST(TestURI, SchemeUserHostFragment)
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "u");
     EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->fragment, "f");
 }
 
 TEST(TestURI, NoAuthorityOrPath)
