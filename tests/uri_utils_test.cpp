@@ -14,7 +14,7 @@ namespace {
 TEST(TestURI, Complete)
 {
     {
-        auto uri = ddwaf::uri_parse_scheme_and_authority(
+        auto uri = ddwaf::uri_parse(
             "http+s.i-a://user@hello.com:1929/path/to/nowhere?query=none#fragment");
 
         ASSERT_TRUE(uri);
@@ -23,30 +23,29 @@ TEST(TestURI, Complete)
         EXPECT_STRV(uri->authority.userinfo, "user");
         EXPECT_STRV(uri->authority.port, "1929");
         EXPECT_STRV(uri->authority.raw, "user@hello.com:1929");
-        EXPECT_STRV(uri->raw, "http+s.i-a://user@hello.com:1929");
+        EXPECT_STRV(uri->scheme_and_authority, "http+s.i-a://user@hello.com:1929");
         EXPECT_STRV(
-            uri->original, "http+s.i-a://user@hello.com:1929/path/to/nowhere?query=none#fragment");
+            uri->raw, "http+s.i-a://user@hello.com:1929/path/to/nowhere?query=none#fragment");
     }
 
     {
-        auto uri = ddwaf::uri_parse_scheme_and_authority("s://u@h:p/p?q#f");
+        auto uri = ddwaf::uri_parse("s://u@h:1/p?q#f");
 
         ASSERT_TRUE(uri);
         EXPECT_STRV(uri->scheme, "s");
         EXPECT_STRV(uri->authority.host, "h");
         EXPECT_STRV(uri->authority.userinfo, "u");
-        EXPECT_STRV(uri->authority.port, "p");
-        EXPECT_STRV(uri->authority.raw, "u@h:p");
+        EXPECT_STRV(uri->authority.port, "1");
+        EXPECT_STRV(uri->authority.raw, "u@h:1");
     }
 }
 
 TEST(TestURI, SchemeHost)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://authority");
+    auto uri = ddwaf::uri_parse("http://authority");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_TRUE(uri->authority.port.empty());
@@ -60,22 +59,17 @@ TEST(TestURI, MalformedAuthority)
     };
 
     for (auto &[uri_raw, authority] : samples) {
-        auto uri = ddwaf::uri_parse_scheme_and_authority(uri_raw);
-        ASSERT_TRUE(uri);
-        EXPECT_STRV(uri->scheme, "http");
-        EXPECT_FALSE(uri->authority.ipv6_host);
-        EXPECT_TRUE(uri->authority.malformed);
-        EXPECT_STRV(uri->authority.host, authority.data());
+        auto uri = ddwaf::uri_parse(uri_raw);
+        ASSERT_FALSE(uri);
     }
 }
 
 TEST(TestURI, SchemeIPv6Host)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://[200:22:11:33:44:ab:cc:bf]");
+    auto uri = ddwaf::uri_parse("http://[200:22:11:33:44:ab:cc:bf]");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_TRUE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "200:22:11:33:44:ab:cc:bf");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_TRUE(uri->authority.port.empty());
@@ -83,11 +77,10 @@ TEST(TestURI, SchemeIPv6Host)
 
 TEST(TestURI, SchemeUserHost)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://paco@authority");
+    auto uri = ddwaf::uri_parse("http://paco@authority");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "paco");
     EXPECT_TRUE(uri->authority.port.empty());
@@ -95,11 +88,10 @@ TEST(TestURI, SchemeUserHost)
 
 TEST(TestURI, SchemeHostPort)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://authority:1");
+    auto uri = ddwaf::uri_parse("http://authority:1");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_STRV(uri->authority.port, "1");
@@ -107,11 +99,10 @@ TEST(TestURI, SchemeHostPort)
 
 TEST(TestURI, SchemeHostQuery)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://authority?query");
+    auto uri = ddwaf::uri_parse("http://authority?query");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_TRUE(uri->authority.port.empty());
@@ -119,11 +110,10 @@ TEST(TestURI, SchemeHostQuery)
 
 TEST(TestURI, SchemeHostPath)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://authority/path");
+    auto uri = ddwaf::uri_parse("http://authority/path");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_TRUE(uri->authority.port.empty());
@@ -131,11 +121,10 @@ TEST(TestURI, SchemeHostPath)
 
 TEST(TestURI, SchemeHostFragment)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://authority#f");
+    auto uri = ddwaf::uri_parse("http://authority#f");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_TRUE(uri->authority.port.empty());
@@ -143,11 +132,10 @@ TEST(TestURI, SchemeHostFragment)
 
 TEST(TestURI, SchemeHostPortQuery)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://authority:123?query");
+    auto uri = ddwaf::uri_parse("http://authority:123?query");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_STRV(uri->authority.port, "123");
@@ -155,11 +143,10 @@ TEST(TestURI, SchemeHostPortQuery)
 
 TEST(TestURI, SchemeHostPortPath)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://authority:12/path");
+    auto uri = ddwaf::uri_parse("http://authority:12/path");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_STRV(uri->authority.port, "12");
@@ -167,11 +154,10 @@ TEST(TestURI, SchemeHostPortPath)
 
 TEST(TestURI, SchemeHostPortFragment)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://authority:1#f");
+    auto uri = ddwaf::uri_parse("http://authority:1#f");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_STRV(uri->authority.port, "1");
@@ -179,11 +165,10 @@ TEST(TestURI, SchemeHostPortFragment)
 
 TEST(TestURI, SchemeUserHostQuery)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://user@authority?query");
+    auto uri = ddwaf::uri_parse("http://user@authority?query");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "user");
     EXPECT_TRUE(uri->authority.port.empty());
@@ -191,11 +176,10 @@ TEST(TestURI, SchemeUserHostQuery)
 
 TEST(TestURI, SchemeUserHostPath)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://us@authority/path");
+    auto uri = ddwaf::uri_parse("http://us@authority/path");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "us");
     EXPECT_TRUE(uri->authority.port.empty());
@@ -203,25 +187,24 @@ TEST(TestURI, SchemeUserHostPath)
 
 TEST(TestURI, SchemeUserHostFragment)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://u@authority#f");
+    auto uri = ddwaf::uri_parse("http://u@authority#f");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_FALSE(uri->authority.malformed);
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "u");
     EXPECT_TRUE(uri->authority.port.empty());
 }
 
-TEST(TestURI, NoAuthority)
+TEST(TestURI, NoAuthorityOrPath)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("http://");
-    ASSERT_TRUE(uri);
+    auto uri = ddwaf::uri_parse("http://");
+    ASSERT_FALSE(uri);
 }
 
 TEST(TestURI, NoScheme)
 {
-    auto uri = ddwaf::uri_parse_scheme_and_authority("url.com");
+    auto uri = ddwaf::uri_parse("url.com");
     EXPECT_FALSE(uri);
 }
 

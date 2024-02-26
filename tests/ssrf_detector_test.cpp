@@ -18,21 +18,26 @@ template <typename... Args> std::vector<parameter_definition> gen_param_def(Args
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
-TEST(TestSSRFDetector, MatchBasicUnix)
+struct ssrf_sample {
+    std::string yaml;
+    std::string resolved;
+    std::vector<std::string> key_path;
+};
+
+void match_path_and_input(
+    const std::vector<std::pair<std::string, ssrf_sample>> &samples, bool match = true)
 {
     ssrf_detector cond{{gen_param_def("server.io.net.url", "server.request.query")}};
 
-    std::vector<std::pair<std::string, std::string>> samples{
-        {"https://169.254.169.254/somewhere/in/the/app", "169.254.169.254"}};
-
-    for (const auto &[path, input] : samples) {
+    for (const auto &[path, sample] : samples) {
         ddwaf_object tmp;
         ddwaf_object root;
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.io.net.url", ddwaf_object_string(&tmp, path.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+
+        auto input = yaml_to_object(sample.yaml);
+        ddwaf_object_map_add(&root, "server.request.query", &input);
 
         object_store store;
         store.insert(root);
@@ -40,20 +45,106 @@ TEST(TestSSRFDetector, MatchBasicUnix)
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
-        EXPECT_TRUE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        if (match) {
+            ASSERT_TRUE(res.outcome) << path;
+            EXPECT_FALSE(res.ephemeral);
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.io.net.url");
-        EXPECT_STR(cache.match->args[0].resolved, path.c_str());
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+            EXPECT_TRUE(cache.match);
+            if (cache.match) { // Silence linter
+                EXPECT_STRV(cache.match->args[0].address, "server.io.net.url");
+                EXPECT_STR(cache.match->args[0].resolved, path.c_str());
+                EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
-
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+                EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+                if (sample.resolved.empty()) {
+                    EXPECT_STR(cache.match->args[1].resolved, sample.yaml.c_str());
+                    EXPECT_STR(cache.match->highlights[0], sample.yaml.c_str());
+                } else {
+                    EXPECT_STR(cache.match->args[1].resolved, sample.resolved.c_str());
+                    EXPECT_STR(cache.match->highlights[0], sample.resolved.c_str());
+                }
+                EXPECT_TRUE(cache.match->args[1].key_path == sample.key_path) << path;
+            }
+        } else {
+            EXPECT_FALSE(res.outcome) << path;
+            EXPECT_FALSE(cache.match);
+        }
     }
+}
+
+TEST(TestSSRFDetector, MatchScheme)
+{
+    match_path_and_input({
+        {"gopher://blabla.com/path", {.yaml = "gopher"}},
+    });
+}
+
+TEST(TestSSRFDetector, MatchHost)
+{
+    match_path_and_input({
+        {"https://internal-website.evil.com/path/to/stuffs?bla=42",
+            {.yaml = ".evil.com/path/to/stuffs?"}},
+        {"https://internal-website.evil.com:42/path/to/stuffs?bla=42",
+            {.yaml = ".evil.com:42/path/to/stuffs?"}},
+        {"https://internal-website:4242/path/to/stuffs?bla=42", {.yaml = ":4242/path/to/stuffs?"}},
+        {"https://blabla.com/path", {.yaml = ".com/path"}},
+        {"http://core-goals.evil.com/v1/projects/42/goals?projectId=42&",
+            {.yaml = R"({"path":".evil.com/v1/projects/42/goals?"})",
+                .resolved = ".evil.com/v1/projects/42/goals?",
+                .key_path = {"path"}}},
+        {"http://2852039166/latest/meta-data/",
+            {.yaml = R"({form: { url: "2852039166/latest/meta-data/" }})",
+                .resolved = "2852039166/latest/meta-data/",
+                .key_path = {"form", "url"}}},
+    });
+}
+TEST(TestSSRFDetector, MatchDangerousIP)
+{
+    match_path_and_input({
+        {"https://169.254.169.254/somewhere/in/the/app", {.yaml = "169.254.169.254"}},
+        {"https://[::ffff:a9fe:a9fe]/path",
+            {.yaml = R"("[::ffff:a9fe:a9fe]")", .resolved = "[::ffff:a9fe:a9fe]"}},
+        {"https://[::1]/path", {.yaml = R"("[::1]")", .resolved = "[::1]"}},
+        {"http://[::ffff:a9fe:a9fe]/latest/meta-data/",
+            {.yaml = R"({form: {url: "[::ffff:a9fe:a9fe]/latest/meta-data/"}})",
+                .resolved = "[::ffff:a9fe:a9fe]/latest/meta-data/",
+                .key_path = {"form", "url"}}},
+        {"http://[0:0:0:0:0:ffff:a9fe:a9fe]/latest/meta-data/",
+            {.yaml = R"({form: {url: "[0:0:0:0:0:ffff:a9fe:a9fe]/latest/meta-data/"}})",
+                .resolved = "[0:0:0:0:0:ffff:a9fe:a9fe]/latest/meta-data/",
+                .key_path = {"form", "url"}}},
+        //{"https://127.1/path", "127.1"} // TODO: not parsed by inet_pton
+    });
+}
+
+TEST(TestSSRFDetector, MatchDangerousDomain)
+{
+    match_path_and_input({
+        {"https://blabla.burpcollaborator.net/path", {.yaml = "burpcollaborator.net"}},
+        {"https://localhost/path", {.yaml = "localhost"}},
+        {"https://ifconfig.pro", {.yaml = "ifconfig.pro"}},
+    });
+}
+
+TEST(TestSSRFDetector, NoMatch)
+{
+    match_path_and_input(
+        {
+            {"https://metadata.google/private_keys/", {.yaml = "{trap: metadata}"}},
+            {"https://254.254.169.254/path", {.yaml = "{form: {bla: '254.254.169.254'}}"}},
+            {"https://[::ffff:fea9:a9fe]/path", {.yaml = "{form: {bla: '[::ffff:fea9:a9fe]'}}"}},
+            {"https://internal-website/path/to/stuffs?bla=42", {.yaml = "/path/to/stuffs?"}},
+            {"https://blabla.com/random/path?name=/name2", {.yaml = "{form: {bla: '/name2'}}"}},
+            {"https://blabla.com/random/path?name=name2#bla/name2",
+                {.yaml = "{form: {bla: '/name2'}}"}},
+            {"https://blabla.com/random/path#/name2", {.yaml = "{form: {bla: '#/name2'}}"}},
+            {"https://blabla.com/random/path/with?param=val",
+                {.yaml = "{form: {bla: '/random/path/with?param=val'}}"}},
+            {"https://blabla.com/random/path/with?param=val",
+                {.yaml = "{form: {bla: 'random/path/with?param=val'}}"}},
+            {"https://123.123.123.123/blablabla", {.yaml = "{form: '123.123.123.123'}"}},
+        },
+        false);
 }
 
 } // namespace

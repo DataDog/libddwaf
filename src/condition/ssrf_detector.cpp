@@ -21,13 +21,28 @@ constexpr std::array<std::string_view, 10> dangerous_ips{"169.254.0.0/16", "127.
     "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "::1/128", "fc00::/7",
     "fe80::/10", "2001:db8:1234:1a00::/56"};
 
+constexpr const std::array<std::string_view, 10> dangerous_domains{
+    "metadata.google", "burpcollaborator.net", ".local", ".internal", "ram.aliyuncs.com",
+    "ifconfig.pro", "localhost", "fuf.me", "localtest.me", "ulh.us" // Legacy domains
+};
+
+constexpr const std::array<std::string_view, 4> authorised_schemes{"https", "http", "ftps", "ftp"};
+
 using ssrf_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
 
-ssrf_result ssrf_impl(const uri_scheme_and_authority &uri, const ddwaf_object &params,
+ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    const std::unique_ptr<matcher::ip_match> &dangerous_ip_matcher, ddwaf::timer &deadline)
+    const std::unique_ptr<matcher::ip_match> &dangerous_ip_matcher,
+    const std::unordered_set<std::string_view> &authorised_scheme_set, ddwaf::timer &deadline)
 {
     static constexpr std::size_t min_str_len = 4;
+
+    std::string_view dangerous_domain = {};
+    for (const auto domain : dangerous_domains) {
+        if (uri.authority.raw.ends_with(domain)) {
+            dangerous_domain = domain;
+        }
+    }
 
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
@@ -41,42 +56,42 @@ ssrf_result ssrf_impl(const uri_scheme_and_authority &uri, const ddwaf_object &p
         }
 
         std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        auto index = uri.original.find(value);
+        auto index = uri.raw.find(value);
         if (index == std::string_view::npos) {
             // Seemingly no injection
             continue;
         }
 
         // Verify if the injected value intereferes with the authority
-        if (index < uri.raw.size() && (index + value.size()) > (uri.scheme.size() + 3)) {
-            if (uri.authority.malformed) {
-                // There is a known injection and the authority is malformed, so
-                // we return an event here. There is a small chance this isn't the
-                // relevant injection.
+        if (index < uri.scheme_and_authority.size() &&
+            (index + value.size()) > (uri.scheme.size() + 3)) {
+            // Verify if the host was modified by the injected value
+            if ((index + value.size() - 1) > uri.scheme_and_authority.size()) {
                 return {{std::string(value), it.get_current_path()}};
             }
 
-            // Verify if the host was modified by the injected value
-            if ((index + value.size()) > uri.raw.size()) {
-                // TODO Add extra FP checks
-                if ((index + value.size() - 1) > uri.raw.size()) {
-                    return {{std::string(value), it.get_current_path()}};
-                }
-            }
-
             // If the IP is injected, we want to make sure it's fully under the attacker's control
-            //	Otherwise, that's likely a false positive (bla=169.2&... in the URL match the IP
+            // Otherwise, that's likely a false positive (bla=169.2&... in the URL match the IP
             // 169.254.169.254)
             bool host_fully_injected =
                 index <= uri.authority.host_index &&
                 index + value.size() >= uri.authority.host_index + uri.authority.host.size();
 
             auto [res, match] = dangerous_ip_matcher->match(uri.authority.host);
-
             if (res && host_fully_injected) {
                 return {{std::string(value), it.get_current_path()}};
             }
+
+            if (!dangerous_domain.empty() && value == dangerous_domain) {
+                return {{std::string(value), it.get_current_path()}};
+            }
         }
+
+        if (index == 0 && !authorised_scheme_set.contains(uri.scheme)) {
+            return {{std::string(value), it.get_current_path()}};
+        }
+
+        // TODO: Check for parameter injection
     }
 
     return {};
@@ -86,21 +101,22 @@ ssrf_result ssrf_impl(const uri_scheme_and_authority &uri, const ddwaf_object &p
 
 ssrf_detector::ssrf_detector(std::vector<parameter_definition> args, const object_limits &limits)
     : base_impl<ssrf_detector>(std::move(args), limits),
-      dangerous_ip_matcher_(std::make_unique<matcher::ip_match>(dangerous_ips))
+      dangerous_ip_matcher_(std::make_unique<matcher::ip_match>(dangerous_ips)),
+      authorised_schemes_(authorised_schemes.begin(), authorised_schemes.end())
 {}
 
 eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
-    auto decomposed = uri_parse_scheme_and_authority(uri.value);
+    auto decomposed = uri_parse(uri.value);
     if (!decomposed.has_value()) {
         return {};
     }
 
     for (const auto &param : params) {
-        auto res = ssrf_impl(
-            *decomposed, *param.value, objects_excluded, limits_, dangerous_ip_matcher_, deadline);
+        auto res = ssrf_impl(*decomposed, *param.value, objects_excluded, limits_,
+            dangerous_ip_matcher_, authorised_schemes_, deadline);
         if (res.has_value()) {
             std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
             bool ephemeral = uri.ephemeral || param.ephemeral;

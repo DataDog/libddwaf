@@ -30,17 +30,17 @@ inline bool ishostchar(char c)
 
 } // namespace
 
-std::optional<uri_scheme_and_authority> uri_parse_scheme_and_authority(std::string_view uri)
+std::optional<uri_decomposed> uri_parse(std::string_view uri)
 {
-    uri_scheme_and_authority decomposed;
-    decomposed.original = uri;
+    uri_decomposed decomposed;
+    decomposed.raw = uri;
 
     // First find the scheme: ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
     // https://datatracker.ietf.org/doc/html/rfc3986#section-3.1
     std::size_t i = 0;
     while (i < uri.size() && isschemechar(uri[i])) { ++i; }
     if (i == 0 || i >= uri.size() || uri[i] != ':') {
-        return {};
+        return std::nullopt;
     }
 
     decomposed.scheme = uri.substr(0, i);
@@ -56,17 +56,16 @@ std::optional<uri_scheme_and_authority> uri_parse_scheme_and_authority(std::stri
 
     auto end = uri.find_first_of("/?#", i);
     if (end == i) {
-        decomposed.authority.malformed = true;
-        return decomposed;
+        return std::nullopt;
     }
 
     decomposed.authority.index = i;
     if (end != npos) {
         // Discard everything after the authority
-        uri = decomposed.raw = uri.substr(0, end);
+        uri = decomposed.scheme_and_authority = uri.substr(0, end);
         decomposed.authority.raw = uri.substr(i, end);
     } else {
-        decomposed.raw = uri;
+        decomposed.scheme_and_authority = uri;
         decomposed.authority.raw = uri.substr(i);
     }
 
@@ -80,10 +79,12 @@ std::optional<uri_scheme_and_authority> uri_parse_scheme_and_authority(std::stri
         // password is deprecated so allow one or more instances of it.
         // ALPHA / DIGIT / "-" / "." / "_" / "~" / "!" / "$" / "&" / "'" /
         // "(" / ")" / "*" / "+" / "," / ";" / "=" / "%"
-        for (; i < userinfo_end && !decomposed.authority.malformed; ++i) {
+        for (; i < userinfo_end; ++i) {
             // We've found an invalid character, we can consider the
             // authority malformed
-            decomposed.authority.malformed = !isuserinfochar(uri[i]);
+            if (!isuserinfochar(uri[i])) {
+                return std::nullopt;
+            }
         }
         i = userinfo_end + 1;
     }
@@ -109,10 +110,7 @@ std::optional<uri_scheme_and_authority> uri_parse_scheme_and_authority(std::stri
                 }
             }
             if (!end_found || non_ip_chars || i == (host_begin + 1)) {
-                decomposed.authority.malformed = true;
-                decomposed.authority.host = uri.substr(host_begin);
-                decomposed.authority.host_index = host_begin;
-                return decomposed;
+                return std::nullopt;
             }
 
             // Valid IPv6, remove the []
@@ -128,24 +126,21 @@ std::optional<uri_scheme_and_authority> uri_parse_scheme_and_authority(std::stri
                 }
                 if (!ishostchar(c)) {
                     // Unexpected character, find the port  and exit
-                    decomposed.authority.malformed = true;
-                    i = uri.find(':', i);
-                    break;
+                    return std::nullopt;
                 }
             }
-            if (i > host_begin) {
-                decomposed.authority.host = uri.substr(host_begin, i - host_begin);
-                decomposed.authority.host_index = host_begin;
-            } else {
+            if (i <= host_begin) {
                 // An empty host is a malformed authority however we might still
                 // be able to extract a port
-                decomposed.authority.malformed = true;
+                return std::nullopt;
             }
+
+            decomposed.authority.host = uri.substr(host_begin, i - host_begin);
+            decomposed.authority.host_index = host_begin;
         }
     } else {
         // An empty host is a malformed authority
-        decomposed.authority.malformed = true;
-        return decomposed;
+        return std::nullopt;
     }
 
     // Identify the (optional) port
@@ -153,13 +148,14 @@ std::optional<uri_scheme_and_authority> uri_parse_scheme_and_authority(std::stri
     auto port_begin = ++i; // Skip ':'
     for (; i < uri.size(); ++i) {
         if (!ddwaf::isdigit(uri[i])) {
-            decomposed.authority.malformed = true;
-            break;
+            return std::nullopt;
         }
     }
     if (port_begin < uri.size()) {
         decomposed.authority.port = uri.substr(port_begin);
     }
+
+    // Identify the path
 
     return decomposed;
 }
