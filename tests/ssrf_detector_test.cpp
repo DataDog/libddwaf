@@ -173,7 +173,7 @@ TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
 
             // TODO: fix this case
             //{"http://scrapper-proxy.awsregion.bla.iohttps//images.bla.com/whatever", {.yaml =
-            //R"({url: "https//images.bla.com/whatever"})"}},
+            // R"({url: "https//images.bla.com/whatever"})"}},
         },
         false);
 }
