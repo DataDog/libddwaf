@@ -15,8 +15,8 @@ namespace ddwaf {
 struct uri_decomposed {
     std::string_view scheme;
     struct {
-        std::size_t index;
-        std::size_t host_index;
+        std::size_t index{std::string_view::npos};
+        std::size_t host_index{std::string_view::npos};
         bool ipv6_host{false};
         std::string_view userinfo{};
         std::string_view host{};
@@ -24,11 +24,11 @@ struct uri_decomposed {
         std::string_view raw;
     } authority;
     std::string_view scheme_and_authority;
-    std::size_t path_index;
+    std::size_t path_index{std::string_view::npos};
     std::string_view path;
-    std::size_t query_index;
+    std::size_t query_index{std::string_view::npos};
     std::string_view query;
-    std::size_t fragment_index;
+    std::size_t fragment_index{std::string_view::npos};
     std::string_view fragment;
     std::string_view raw;
 };

@@ -28,22 +28,25 @@ constexpr const std::array<std::string_view, 10> dangerous_domains{
 
 constexpr const std::array<std::string_view, 4> authorised_schemes{"https", "http", "ftps", "ftp"};
 
+constexpr const auto &npos = std::string_view::npos;
+
 using ssrf_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
 
 bool detect_parameter_injection(
     const uri_decomposed &uri, std::string_view param, std::size_t index)
 {
+    const auto path_end = uri.path_index + uri.path.size();
+
     // REST parameter injection will involve introducing a / to the URL, however, such
     // slashes are allowed after the ? or the #. Check if the slash is within the parameters.
-    if (auto slash_index = param.find('/'); slash_index != std::string_view::npos) {
+    if (auto slash_index = param.find('/'); slash_index != npos) {
         slash_index += index;
-        const auto path_end = uri.path_index + uri.path.size();
         if (slash_index < path_end) {
             // The path is partially under control of the user, this might be intentional
             // so lets check for a possible LFI
 
             auto relative_dir_index = param.find("..");
-            while (relative_dir_index != std::string_view::npos) {
+            while (relative_dir_index != npos) {
                 auto dir_index = relative_dir_index + index;
                 if (dir_index < path_end && (dir_index + 2) < uri.raw.size() &&
                     uri.raw[dir_index - 1] == '/' && uri.raw[dir_index + 2] == '/') {
@@ -54,8 +57,51 @@ bool detect_parameter_injection(
         }
     }
 
-    if (uri.query.empty() && uri.fragment.empty()) {
+    // The application giving total control to the user after a given point.
+    // At this point, if it starts in the path, assume it's intentional
+    if ((uri.query.empty() && uri.fragment.empty()) ||
+        (index < path_end && (index + param.size()) == uri.raw.size())) {
         return false;
+    }
+
+    const auto query_index = param.find('?');
+    if (uri.query_index != npos && query_index != npos &&
+        (index + query_index) == uri.query_index) {
+        // We had some cases where this was expected behavior
+        // We identify them by checking whether the next character is a '&'
+        auto after_param = uri.raw.substr(index + param.length());
+        if (!after_param.empty() && after_param[0] == '&') {
+            return false;
+        }
+
+        // We can also find them if it is followed by a parameter (abc=42)
+        for (std::size_t i = 0; i < after_param.size(); ++i) {
+            const auto c = after_param[i];
+            if (c == '=' && i > 0) {
+                return false;
+            }
+
+            if (!ddwaf::isalnum(c) && c != '_') {
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    // Check if the parameter interfered with what comes after the ?
+
+    // The parameter stop before the ? or start after #, so it can't be interfering with what come
+    // after. We can stop processing this heuristic
+    const auto param_end = index + param.size() - 1;
+    if (uri.query_index > param_end || (uri.fragment_index != npos && uri.fragment_index < index)) {
+        return false;
+    }
+
+    // We compute the substring of the parameter that come after the ?
+    auto query_param = uri.query_index <= index ? param : param.substr(uri.query_index - index);
+    if (query_param.find('&') != npos) {
+        return true;
     }
 
     return false;

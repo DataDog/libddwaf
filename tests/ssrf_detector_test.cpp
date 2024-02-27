@@ -20,8 +20,8 @@ template <typename... Args> std::vector<parameter_definition> gen_param_def(Args
 
 struct ssrf_sample {
     std::string yaml;
-    std::string resolved;
-    std::vector<std::string> key_path;
+    std::string resolved{};
+    std::vector<std::string> key_path{};
 };
 
 void match_path_and_input(
@@ -151,7 +151,31 @@ TEST(TestSSRFDetector, MatchParameterInjection)
 {
     match_path_and_input({{"https://blabla.com/random/../with?param=value", {.yaml = "../with"}},
         {"https://blabla.com/random/..falsestart.something/../with?param=value",
-            {.yaml = "..falsestart.something/../with"}}});
+            {.yaml = "..falsestart.something/../with"}},
+        {"https://blabla.com/path?name=param&name2=param2", {.yaml = "param&name2=param2"}},
+        {"https://blabla.com/path?name=param&auth=43", {.yaml = "param&auth"}},
+        {"https://blabla.com/random/path?name=name2&lol=/legit", {.yaml = "path?name=name2&lol="}}
+
+    });
+}
+
+TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
+{
+    match_path_and_input(
+        {
+            {"https://graph.microsoft.com/v1.0/me/calendars/base64stuff=/events/base64stuff2='",
+                {.yaml = R"({form: {calendarId: "base64stuff="}})"}},
+            {"https://graph.microsoft.com/v1.0/me/calendars/base64stuff=/events",
+                {.yaml = R"({form: {calendarId: "base64stuff="}})"}},
+            {"https://s3-us-west-2.amazonaws.com/xxx-hosted-content/iframe_pages/424242/path/"
+             "to_file.mp3",
+                {.yaml = R"({form: {path: "path/to_file.mp3"}})"}},
+
+            // TODO: fix this case
+            //{"http://scrapper-proxy.awsregion.bla.iohttps//images.bla.com/whatever", {.yaml =
+            //R"({url: "https//images.bla.com/whatever"})"}},
+        },
+        false);
 }
 
 } // namespace
