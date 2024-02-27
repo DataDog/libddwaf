@@ -30,6 +30,37 @@ constexpr const std::array<std::string_view, 4> authorised_schemes{"https", "htt
 
 using ssrf_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
 
+bool detect_parameter_injection(
+    const uri_decomposed &uri, std::string_view param, std::size_t index)
+{
+    // REST parameter injection will involve introducing a / to the URL, however, such
+    // slashes are allowed after the ? or the #. Check if the slash is within the parameters.
+    if (auto slash_index = param.find('/'); slash_index != std::string_view::npos) {
+        slash_index += index;
+        const auto path_end = uri.path_index + uri.path.size();
+        if (slash_index < path_end) {
+            // The path is partially under control of the user, this might be intentional
+            // so lets check for a possible LFI
+
+            auto relative_dir_index = param.find("..");
+            while (relative_dir_index != std::string_view::npos) {
+                auto dir_index = relative_dir_index + index;
+                if (dir_index < path_end && (dir_index + 2) < uri.raw.size() &&
+                    uri.raw[dir_index - 1] == '/' && uri.raw[dir_index + 2] == '/') {
+                    return true;
+                }
+                relative_dir_index = param.find("..", relative_dir_index + 2);
+            }
+        }
+    }
+
+    if (uri.query.empty() && uri.fragment.empty()) {
+        return false;
+    }
+
+    return false;
+}
+
 ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     const std::unique_ptr<matcher::ip_match> &dangerous_ip_matcher,
@@ -43,6 +74,8 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
             dangerous_domain = domain;
         }
     }
+
+    std::optional<ssrf_result> parameter_injection;
 
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
@@ -91,7 +124,13 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
             return {{std::string(value), it.get_current_path()}};
         }
 
-        // TODO: Check for parameter injection
+        if (!parameter_injection.has_value() && detect_parameter_injection(uri, value, index)) {
+            parameter_injection = {{std::string(value), it.get_current_path()}};
+        }
+    }
+
+    if (parameter_injection.has_value()) {
+        return parameter_injection.value();
     }
 
     return {};

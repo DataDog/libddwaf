@@ -43,27 +43,73 @@ TEST(TestURI, Complete)
     }
 }
 
-TEST(TestURI, SchemeHost)
+TEST(TestURI, FileLocation)
 {
-    auto uri = ddwaf::uri_parse("http://authority");
-    ASSERT_TRUE(uri);
-    EXPECT_STRV(uri->scheme, "http");
-    EXPECT_FALSE(uri->authority.ipv6_host);
-    EXPECT_STRV(uri->authority.host, "authority");
-    EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    {
+        auto uri = ddwaf::uri_parse("file:///usr/lib/libddwaf.so");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "file");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_STRV(uri->path, "/usr/lib/libddwaf.so");
+    }
+
+    {
+        auto uri = ddwaf::uri_parse("file:/usr/lib/libddwaf.so");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "file");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_STRV(uri->path, "/usr/lib/libddwaf.so");
+    }
+
+    {
+        auto uri = ddwaf::uri_parse("file:/../lib/libddwaf.so");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "file");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_STRV(uri->path, "/../lib/libddwaf.so");
+    }
 }
 
-TEST(TestURI, MalformedAuthority)
+TEST(TestURI, SchemeHost)
 {
-    std::vector<std::pair<std::string_view, std::string_view>> samples{
-        {"http://auth[ority", "auth[ority"},
-        {"http://something@:123", ""},
-    };
+    {
+        auto uri = ddwaf::uri_parse("http://authority");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "http");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_STRV(uri->authority.host, "authority");
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+    }
 
-    for (auto &[uri_raw, authority] : samples) {
-        auto uri = ddwaf::uri_parse(uri_raw);
-        ASSERT_FALSE(uri);
+    {
+        auto uri = ddwaf::uri_parse("http://authority.with.dots");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "http");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_STRV(uri->authority.host, "authority.with.dots");
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+    }
+
+    {
+        auto uri = ddwaf::uri_parse("h://a");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "h");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_EQ(uri->authority.host_index, 4);
+        EXPECT_STRV(uri->authority.host, "a");
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
     }
 }
 
@@ -206,6 +252,75 @@ TEST(TestURI, SchemeUserHostFragment)
     EXPECT_STRV(uri->authority.userinfo, "u");
     EXPECT_TRUE(uri->authority.port.empty());
     EXPECT_STRV(uri->fragment, "f");
+}
+
+TEST(TestURI, EmptyAuthority)
+{
+    {
+        auto uri = ddwaf::uri_parse("http:///");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "http");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_STRV(uri->path, "/");
+        EXPECT_TRUE(uri->fragment.empty());
+    }
+    {
+        auto uri = ddwaf::uri_parse("urn:oasis:names:specification:docbook:dtd:xml:4.1.2");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "urn");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_STRV(uri->path, "oasis:names:specification:docbook:dtd:xml:4.1.2");
+        EXPECT_TRUE(uri->fragment.empty());
+    }
+
+    {
+        auto uri = ddwaf::uri_parse("tel:+1-816-555-1212");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "tel");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_STRV(uri->path, "+1-816-555-1212");
+        EXPECT_TRUE(uri->fragment.empty());
+    }
+
+    {
+        auto uri = ddwaf::uri_parse("mailto:John.Doe@example.com");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "mailto");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_STRV(uri->path, "John.Doe@example.com");
+        EXPECT_TRUE(uri->fragment.empty());
+    }
+}
+
+TEST(TestURI, MalformedScheme)
+{
+    ASSERT_FALSE(ddwaf::uri_parse("h@@:path"));
+    ASSERT_FALSE(ddwaf::uri_parse("hhttp,:"));
+    ASSERT_FALSE(ddwaf::uri_parse("http//"));
+}
+
+TEST(TestURI, MalformedAuthority)
+{
+    ASSERT_FALSE(ddwaf::uri_parse("http://host:::asdnsk"));
+    ASSERT_FALSE(ddwaf::uri_parse("http://host@@@something"));
+    ASSERT_FALSE(ddwaf::uri_parse("http://host:port"));
+    ASSERT_FALSE(ddwaf::uri_parse("http://us@er@host:1234"));
+    ASSERT_FALSE(ddwaf::uri_parse("http://user:pa]ssword@host:"));
+    ASSERT_FALSE(ddwaf::uri_parse("http://[1:1::1:1"));
+    ASSERT_FALSE(ddwaf::uri_parse("http://auth[ority"));
+    ASSERT_FALSE(ddwaf::uri_parse("http://something@:123"));
 }
 
 TEST(TestURI, NoAuthorityOrPath)

@@ -147,4 +147,11 @@ TEST(TestSSRFDetector, NoMatch)
         false);
 }
 
+TEST(TestSSRFDetector, MatchParameterInjection)
+{
+    match_path_and_input({{"https://blabla.com/random/../with?param=value", {.yaml = "../with"}},
+        {"https://blabla.com/random/..falsestart.something/../with?param=value",
+            {.yaml = "..falsestart.something/../with"}}});
+}
+
 } // namespace
