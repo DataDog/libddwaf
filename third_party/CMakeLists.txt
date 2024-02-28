@@ -132,4 +132,105 @@ ExternalProject_Add(proj_event_rules
     INSTALL_COMMAND "")
 
 set_target_properties(proj_event_rules PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+add_subdirectory(abseil-cpp)
+
+set(TCMALLOC_SOURCE
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/tcmalloc.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/common.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/memory_stats.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/cache_topology.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/experiment.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/allocation_sample.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/util.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/logging.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/central_freelist.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/transfer_cache.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/arena.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/system-alloc.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/malloc_extension.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/page_size.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/pageflags.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/pagemap.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/parameters.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/global_stats.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/static_vars.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/peak_heap_tracker.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/thread_cache.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/deallocation_profiler.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/span.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/stats.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/page_allocator.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/page_allocator_interface.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/huge_page_aware_allocator.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/huge_allocator.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/huge_cache.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/guarded_page_allocator.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/huge_address_map.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/environment.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/stack_trace_table.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/percpu_rseq_unsupported.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/percpu.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/percpu_tcmalloc.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/numa.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/sysinfo.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/sampler.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/cpu_cache.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/sizemap.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/size_classes.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/mincore.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/experimental_pow2_size_class.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/lowfrag_size_classes.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/legacy_size_classes.cc
+ ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc/tcmalloc/internal/percpu_rseq_asm.S
+)
+
+enable_language(ASM)
+
+add_library(tcmalloc STATIC ${TCMALLOC_SOURCE})
+
+target_compile_options(tcmalloc PRIVATE
+    -Wno-deprecated-declarations
+    -Wno-implicit-int-float-conversion
+    -Wno-sign-compare
+    -Wno-uninitialized
+    -Wno-unused-function
+    -Wno-unused-variable
+    -Wno-type-limits
+    -Wno-missing-field-initializers
+    -Wno-attribute-alias
+    -Wignored-qualifiers)
+
+set_target_properties(tcmalloc PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    POSITION_INDEPENDENT_CODE ON
+)
+
+target_include_directories(tcmalloc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tcmalloc)
+target_link_libraries(tcmalloc PRIVATE
+    "absl::algorithm_container"
+    "absl::base"
+    "absl::config"
+    "absl::core_headers"
+    "absl::dynamic_annotations"
+    "absl::fixed_array"
+    "absl::stacktrace"
+    "absl::symbolize"
+    "absl::synchronization"
+    "absl::status"
+    "absl::statusor"
+    "absl::hash"
+    "absl::memory"
+    "absl::strings"
+    "absl::str_format"
+    "absl::time"
+    "absl::optional"
+    "absl::span"
+    "absl::bits"
+    "absl::raw_logging_internal"
+    "absl::cord"
+    "absl::cord_internal"
+    "absl::flat_hash_set"
+)
 # vim: et

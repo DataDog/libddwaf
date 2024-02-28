@@ -93,6 +93,8 @@ if (LIBDDWAF_ENABLE_LTO)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
 endif()
 
+add_subdirectory(third_party EXCLUDE_FROM_ALL)
+
 include(cmake/objects.cmake)
 
 # Static library
@@ -108,7 +110,6 @@ endif()
 include(cmake/package.cmake)
 
 if (LIBDDWAF_TESTING)
-    add_subdirectory(third_party EXCLUDE_FROM_ALL)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
     add_subdirectory(validator EXCLUDE_FROM_ALL)
     add_subdirectory(benchmark EXCLUDE_FROM_ALL)

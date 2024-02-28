@@ -1,0 +1,6 @@
+[submodule "third_party/tcmalloc"]
+	path = third_party/tcmalloc
+	url = git@github.com:google/tcmalloc.git
+[submodule "third_party/abseil-cpp"]
+	path = third_party/abseil-cpp
+	url = git@github.com:abseil/abseil-cpp.git
