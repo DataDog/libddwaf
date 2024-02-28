@@ -35,4 +35,5 @@ struct uri_decomposed {
 
 std::optional<uri_decomposed> uri_parse(std::string_view uri);
 
+std::ostream &operator<<(std::ostream &o, const uri_decomposed &uri);
 } // namespace ddwaf

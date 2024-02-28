@@ -7,7 +7,6 @@
 #include "condition/ssrf_detector.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
-#include "platform.hpp"
 #include "uri_utils.hpp"
 #include "utils.hpp"
 

@@ -149,13 +149,17 @@ TEST(TestSSRFDetector, NoMatch)
 
 TEST(TestSSRFDetector, MatchParameterInjection)
 {
-    match_path_and_input({{"https://blabla.com/random/../with?param=value", {.yaml = "../with"}},
+    match_path_and_input({
+        {"https://blabla.com/random/../with?param=value", {.yaml = "../with"}},
         {"https://blabla.com/random/..falsestart.something/../with?param=value",
             {.yaml = "..falsestart.something/../with"}},
         {"https://blabla.com/path?name=param&name2=param2", {.yaml = "param&name2=param2"}},
+        {"https://blabla.com/path?name=param&name2=param2", {.yaml = "name=param&name2=param2"}},
         {"https://blabla.com/path?name=param&auth=43", {.yaml = "param&auth"}},
-        {"https://blabla.com/random/path?name=name2&lol=/legit", {.yaml = "path?name=name2&lol="}}
-
+        {"https://blabla.com/random/path?name=name2&value=/legit",
+            {.yaml = "path?name=name2&value="}},
+        //{"http://0:8000/composer/send_email?to=orange@chroot.org&url=http://127.0.0.1:6379/%0D%0ASET",
+        //{.yaml="http://127.0.0.1:6379/%0D%0ASET"}},
     });
 }
 
@@ -170,8 +174,39 @@ TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
             {"https://s3-us-west-2.amazonaws.com/xxx-hosted-content/iframe_pages/424242/path/"
              "to_file.mp3",
                 {.yaml = R"({form: {path: "path/to_file.mp3"}})"}},
+            {"http://policies.production.svc.cluster.local/"
+             "findTravelPolicies?include[]=rules&where=mongoQuery",
+                {.yaml = R"({product: flight})"}},
+            {"http://internal-microservices-production-4242.eu-west-1.elb.amazonaws.com/"
+             "service-legacy/users/4242/evaluations.json?page=1",
+                {.yaml = R"({request: {path: "/users/1519111/evaluations.json?page=1"}})"}},
+            {"http://pro.orange.fr/css/fonts/opus-meteo/fonts/opus-meteo.ttf?blablabla",
+                {.yaml =
+                        R"({query: {base: "https://pro.orange.fr/css/fonts/opus-meteo/style.css", uri: "fonts/opus-meteo.ttf?blablabla"}})"}},
+            {"http://threatguard-prod-tg-api.iaas.checkpoint.com/api/v1/lookalike/"
+             "screenshotB64?date=2020-01-17&lookalike=base64=",
+                {.yaml = R"({query: {lookalike: base64=}})"}},
+            {"http://cn-cache.ryzerobotics.com/support/"
+             "service-policies?cache=update&cache-gateway=1",
+                {.yaml = R"({path: "/support/service-policies?cache=update"})"}},
+            {"http://core-goals/v1/projects/42/goals?projectId=42&",
+                {.yaml = R"({path: "/v1/projects/42/goals?"})"}},
+            {"http://s3.eu-central-1.amazonaws.com/bla/production/p/bla/blablabla.../"
+             "BLABLABLA.html",
+                {.yaml = R"({path: "/p/bla/blablabla.../BLABLABLA"})"}},
+            {"http://blablabla.com/api/v3/ds/data-checks", {.yaml = R"({bla: "ds/data-checks"})"}},
+            {"http://blablabla.comhttps://blablabla", {.yaml = R"({bla: https})"}},
+            {"http://172.16.87.100:1234/pouet/bla/_search?stuff=87.1",
+                {.yaml = R"({stuff: "87.1"})"}},
+            {"tax.internal.patreon.com/services/tax/1.0/quote/batch",
+                {.yaml = R"({query: {utm_campaign: ["patreon"]}})"}},
+            {"http://bla.patreon.com/batch", {.yaml = R"({query: {param: "patreon.com/"}})"}},
+            {"file/blabla/metadata", {.yaml = R"({query: {param: "blabla"}})"}}
 
-            // TODO: fix this case
+            // {"http://127.0.0.1:4000/batch",
+            // {.yaml = R"({headers: {host: "127.0.0.1"}})"}},
+
+            // TODO: fix this case? The concatenated URL isn't even valid...
             //{"http://scrapper-proxy.awsregion.bla.iohttps//images.bla.com/whatever", {.yaml =
             // R"({url: "https//images.bla.com/whatever"})"}},
         },

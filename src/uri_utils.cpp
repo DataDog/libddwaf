@@ -198,4 +198,15 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
     return decomposed;
 }
 
+std::ostream &operator<<(std::ostream &o, const uri_decomposed &uri)
+{
+    o << "Scheme   : " << uri.scheme << '\n'
+      << "Userinfo : " << uri.authority.userinfo << '\n'
+      << "Host     : " << uri.authority.host << '\n'
+      << "Port     : " << uri.authority.port << '\n'
+      << "Path     : " << uri.path << '\n'
+      << "Query    : " << uri.query << '\n'
+      << "Fragment : " << uri.fragment << '\n';
+    return o;
+}
 } // namespace ddwaf
