@@ -187,7 +187,7 @@ set(TCMALLOC_SOURCE
 
 enable_language(ASM)
 
-add_library(tcmalloc STATIC ${TCMALLOC_SOURCE})
+add_library(tcmalloc OBJECT ${TCMALLOC_SOURCE})
 
 target_compile_options(tcmalloc PRIVATE
     -Wno-deprecated-declarations
@@ -195,11 +195,12 @@ target_compile_options(tcmalloc PRIVATE
     -Wno-sign-compare
     -Wno-uninitialized
     -Wno-unused-function
+    -Wno-unused-parameter
     -Wno-unused-variable
     -Wno-type-limits
     -Wno-missing-field-initializers
     -Wno-attribute-alias
-    -Wignored-qualifiers)
+    -Wno-ignored-qualifiers)
 
 set_target_properties(tcmalloc PROPERTIES
     CXX_STANDARD 17
