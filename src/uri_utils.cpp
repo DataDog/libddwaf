@@ -54,6 +54,10 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
     decomposed.scheme = uri.substr(0, i);
 
     std::size_t next_sep = ++i;
+    if (next_sep >= uri.size()) {
+        return decomposed;
+    }
+
     bool authority_found = false;
     // Find the authority, which always starts with //
     // https://datatracker.ietf.org/doc/html/rfc3986#section-3.2
