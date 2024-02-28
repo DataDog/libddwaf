@@ -79,7 +79,8 @@ if(LINUX)
     set(LIBDDWAF_INTERFACE_LIBRARIES
         $<$<BOOL:${LIBPTHREAD}>:pthread>
         $<$<BOOL:${LIBRT}>:rt>
-        $<$<BOOL:${LIBDL}>:dl>)
+        $<$<BOOL:${LIBDL}>:dl>
+        $<$<BOOL:${LIBM}>:m>)
 elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
