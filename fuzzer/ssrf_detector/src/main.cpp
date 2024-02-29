@@ -11,8 +11,7 @@
 using namespace ddwaf;
 using namespace std::literals;
 
-extern "C" size_t
-LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
+extern "C" size_t LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
 
 extern "C" int LLVMFuzzerInitialize(const int * /*argc*/, char *** /*argv*/)
 {
@@ -26,44 +25,52 @@ template <typename... Args> std::vector<parameter_definition> gen_param_def(Args
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-std::pair<std::string, std::string> deserialize(const uint8_t *data, size_t size)
+std::pair<std::string_view, std::string_view> deserialize(const uint8_t *data, size_t size)
 {
-    if (size < sizeof(std::size_t)) { return {}; }
+    if (size < sizeof(std::size_t)) {
+        return {};
+    }
 
-    const auto resource_size = *reinterpret_cast<const std::size_t*>(data);
+    const auto resource_size = *reinterpret_cast<const std::size_t *>(data);
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
 
-    if (size < resource_size) { return {}; }
+    if (size < resource_size) {
+        return {};
+    }
 
-    std::string resource{reinterpret_cast<const char *>(data), resource_size};
+    std::string_view resource{reinterpret_cast<const char *>(data), resource_size};
     data += resource_size;
     size -= resource_size;
 
-    if (size < sizeof(std::size_t)) { return {}; }
+    if (size < sizeof(std::size_t)) {
+        return {};
+    }
 
-    const auto param_size = *reinterpret_cast<const std::size_t*>(data);
+    const auto param_size = *reinterpret_cast<const std::size_t *>(data);
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
 
-    if (size < param_size) { return {}; }
+    if (size < param_size) {
+        return {};
+    }
 
-    std::string param{reinterpret_cast<const char *>(data), param_size};
+    std::string_view param{reinterpret_cast<const char *>(data), param_size};
 
     return {resource, param};
 }
 
-uint8_t *serialize_string(uint8_t *Data, const std::string &str)
+uint8_t *serialize_string(uint8_t *Data, const std::vector<char> &str)
 {
     std::size_t size = str.size();
-    memcpy(Data, reinterpret_cast<uint8_t*>(&size), sizeof(std::size_t));
+    memcpy(Data, reinterpret_cast<uint8_t *>(&size), sizeof(std::size_t));
     Data += sizeof(std::size_t);
-    memcpy(Data, str.c_str(), size);
+    memcpy(Data, str.data(), size);
     Data += size;
     return Data;
 }
 
-void serialize(uint8_t *Data, const std::string &resource, const std::string &param)
+void serialize(uint8_t *Data, const std::vector<char> &resource, const std::vector<char> &param)
 {
     Data = serialize_string(Data, resource);
     serialize_string(Data, param);
@@ -71,22 +78,30 @@ void serialize(uint8_t *Data, const std::string &resource, const std::string &pa
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
 // NOLINTNEXTLINE
-extern "C" size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
-    [[maybe_unused]] size_t MaxSize, [[maybe_unused]] unsigned int Seed) 
+extern "C" size_t LLVMFuzzerCustomMutator(
+    uint8_t *Data, size_t Size, [[maybe_unused]] size_t MaxSize, [[maybe_unused]] unsigned int Seed)
 {
     auto [resource, param] = deserialize(Data, Size);
 
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    auto new_size = LLVMFuzzerMutate(reinterpret_cast<uint8_t *>(resource.data()),
-            resource.size(), resource.size());
-    resource.resize(new_size);
+    MaxSize -= sizeof(std::size_t) * 2;
+
+    std::vector<char> resource_buffer{resource.begin(), resource.end()};
+    resource_buffer.resize(resource_buffer.size() + MaxSize / 2);
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    new_size = LLVMFuzzerMutate(reinterpret_cast<uint8_t *>(param.data()),
-            param.size(), param.size());
-    param.resize(new_size);
+    auto new_size = LLVMFuzzerMutate(reinterpret_cast<uint8_t *>(resource_buffer.data()),
+        resource.size(), resource_buffer.size());
+    resource_buffer.resize(new_size);
 
-    serialize(Data, resource, param);
+    std::vector<char> param_buffer{resource.begin(), resource.end()};
+    param_buffer.resize(resource_buffer.size() + MaxSize / 2);
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    new_size = LLVMFuzzerMutate(
+        reinterpret_cast<uint8_t *>(param_buffer.data()), resource.size(), resource_buffer.size());
+    param_buffer.resize(new_size);
+
+    serialize(Data, resource_buffer, param_buffer);
 
     return Size;
 }
@@ -100,10 +115,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf_object root;
     ddwaf_object tmp;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.io.net.url",
-            ddwaf_object_string(&tmp, resource.c_str()));
-    ddwaf_object_map_add(&root, "server.request.query", 
-            ddwaf_object_string(&tmp, param.c_str()));
+    ddwaf_object_map_add(
+        &root, "server.io.net.url", ddwaf_object_stringl(&tmp, resource.data(), resource.size()));
+    ddwaf_object_map_add(
+        &root, "server.request.query", ddwaf_object_stringl(&tmp, param.data(), param.size()));
 
     object_store store;
     store.insert(root);

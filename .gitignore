@@ -27,8 +27,8 @@ perf/test_files/breakdown.numbers
 /fuzzer/global/fuzz-*.log
 /fuzzer/global/results/crash-*
 
-/fuzzer/uri_parse/corpus/*
-!/fuzzer/uri_parse/corpus/corpus-*
+/fuzzer/*/corpus/*
+!/fuzzer/*/corpus/corpus-*
 
 /src/version.hpp
 
