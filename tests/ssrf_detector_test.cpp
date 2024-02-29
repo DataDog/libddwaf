@@ -201,14 +201,9 @@ TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
             {"tax.internal.patreon.com/services/tax/1.0/quote/batch",
                 {.yaml = R"({query: {utm_campaign: ["patreon"]}})"}},
             {"http://bla.patreon.com/batch", {.yaml = R"({query: {param: "patreon.com/"}})"}},
-            {"file/blabla/metadata", {.yaml = R"({query: {param: "blabla"}})"}}
-
-            // {"http://127.0.0.1:4000/batch",
-            // {.yaml = R"({headers: {host: "127.0.0.1"}})"}},
-
-            // TODO: fix this case? The concatenated URL isn't even valid...
-            //{"http://scrapper-proxy.awsregion.bla.iohttps//images.bla.com/whatever", {.yaml =
-            // R"({url: "https//images.bla.com/whatever"})"}},
+            {"file/blabla/metadata", {.yaml = R"({query: {param: "blabla"}})"}},
+            {"http://scrapper-proxy.awsregion.bla.iohttps://images.bla.com/whatever",
+                {.yaml = R"({url: "https://images.bla.com/whatever"})"}},
         },
         false);
 }

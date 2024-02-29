@@ -156,14 +156,19 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
 
         // Identify the (optional) port
         // https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.3
-        auto port_begin = ++i; // Skip ':'
-        for (; i < uri.size(); ++i) {
-            if (!ddwaf::isdigit(uri[i])) {
+        if (uri[i] == ':') {
+            auto port_begin = ++i; // Skip ':'
+            for (; i < uri.size(); ++i) {
+                if (!ddwaf::isdigit(uri[i])) {
+                    return std::nullopt;
+                }
+            }
+            if (port_begin < uri.size()) {
+                decomposed.authority.port = uri.substr(port_begin);
+            } else {
+                // Empty port?
                 return std::nullopt;
             }
-        }
-        if (port_begin < uri.size()) {
-            decomposed.authority.port = uri.substr(port_begin);
         }
     }
 
