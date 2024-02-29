@@ -8,6 +8,6 @@ rm -rf build && mkdir build && cd build
 
 cmake -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 
-make -j $(nproc) fuzzer
+make -j $(nproc) global_fuzzer
 
-cp fuzzing/fuzzer ../fuzzing/
+cp fuzzer/global_fuzzer ../fuzzer/global/

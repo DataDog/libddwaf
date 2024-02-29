@@ -12,8 +12,8 @@ import struct
 printable_chars='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\x0b\x0c'
 
 class data():
-    re2_regexs_with_metadata = json.load(open("fuzzing/data/regex.json", "r"))
-    blns = json.load(open("fuzzing/data/blns.json", "r"))
+    re2_regexs_with_metadata = json.load(open("fuzzer/global/data/regex.json", "r"))
+    blns = json.load(open("fuzzer/global/data/blns.json", "r"))
 
 
 class cached_property(object):
@@ -484,9 +484,9 @@ def main():
         return "".join("\\x{:02x}".format(i) for i in c.encode("utf-8"))
 
     payload = generator.get_payload()
-    yaml.dump(payload["init_payload"], open("fuzzing/sample_rules.yml", "w"), default_flow_style=False)
+    yaml.dump(payload["init_payload"], open("fuzzer/global/sample_rules.yml", "w"), default_flow_style=False)
 
-    with open("fuzzing/sample_dict.txt", "w") as f:
+    with open("fuzzer/global/sample_dict.txt", "w") as f:
         libfuzz_magics = [
             "\x06\x06\x06",
         ]
@@ -498,7 +498,7 @@ def main():
                 f.write("\n")
 
     try:
-        os.mkdir('fuzzing/corpus')
+        os.mkdir('fuzzer/global/corpus')
     except FileExistsError:
         pass
 
@@ -548,7 +548,7 @@ def build_payload_corpus(data):
 def write_corpus_file(filename, data, log_byte=0, reload_rules=False):
     reload_rules = 66 if reload_rules else 0
 
-    with open(f"fuzzing/corpus/{filename}", "wb") as f:
+    with open(f"fuzzer/global/corpus/{filename}", "wb") as f:
         f.write(bytearray([log_byte, 0, reload_rules]))
         f.write(bytearray(build_payload_corpus(data)))
 

@@ -112,7 +112,7 @@ if (LIBDDWAF_TESTING)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
     add_subdirectory(validator EXCLUDE_FROM_ALL)
     add_subdirectory(benchmark EXCLUDE_FROM_ALL)
-    add_subdirectory(fuzzing EXCLUDE_FROM_ALL)
+    add_subdirectory(fuzzer EXCLUDE_FROM_ALL)
     add_subdirectory(tools EXCLUDE_FROM_ALL)
 
     include(cmake/clang-tidy.cmake)

@@ -21,7 +21,7 @@ def to_fuzz_dict(c):
 
 
 def load_values():
-    data = yaml.safe_load(open("fuzzing/sample_rules.yml", "r"))
+    data = yaml.safe_load(open("fuzzer/global/sample_rules.yml", "r"))
 
     results = set()
     for rule in data["rules"]:
@@ -49,7 +49,7 @@ def load_values():
 def write_values(values):
     values.add("\x06\x06\x06")  # fuzzer magics
 
-    with open("fuzzing/sample_dict.txt", "w") as f:
+    with open("fuzzer/global/sample_dict.txt", "w") as f:
 
         for value in values:
             f.write("# " + repr(value) + "\n")

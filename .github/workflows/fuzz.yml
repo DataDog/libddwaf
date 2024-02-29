@@ -17,7 +17,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
-  fuzzing:
+  # TODO: build all fuzzers first, then run independently
+  global-fuzzer:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,3 +54,30 @@ jobs:
         with:
           name: fuzzing-data
           path: fuzzing.tar.gz
+  uri-parse-fuzzer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install deps
+        run: |
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y remove python3-lldb-14
+          sudo .github/workflows/scripts/llvm.sh 17
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install libfuzzer-17-dev
+
+      - name: Build
+        env:
+          CC: clang-17
+          CXX: clang++-17
+        run: |
+          mkdir build ; cd build
+          cmake -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+          make -j $(nproc) uri_parse_fuzzer
+          cp fuzzer/uri_parse_fuzzer ../fuzzer/uri_parse/
+
+      - name: Run fuzzer
+        run: |
+          cd fuzzer/uri_parse
+          ./uri_parse_fuzzer -max_total_time=${{ github.event.inputs.duration }} corpus/
