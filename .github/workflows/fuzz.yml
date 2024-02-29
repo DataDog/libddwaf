@@ -32,21 +32,21 @@ jobs:
           DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install libfuzzer-17-dev
 
       - name: Build
-        run: ./fuzzing/build.sh
+        run: ./fuzzer/global/build.sh
 
       - name: Run fuzzer
-        run: ./fuzzing/run.sh ${{ github.event.inputs.duration }}
+        run: ./fuzzer/global/run.sh ${{ github.event.inputs.duration }}
 
       - name: Log
         if: ${{ always() }}
-        run: grep -v -f fuzzing/scripts/report-negative-patterns.txt fuzzing/fuzz-*.log
+        run: grep -v -f fuzzer/global/scripts/report-negative-patterns.txt fuzzer/global/fuzz-*.log
 
       - name: Show coverage
-        run: ./fuzzing/scripts/show_coverage.sh 40
+        run: ./fuzzer/global/scripts/show_coverage.sh 40
 
       - name: Compress artifact
         if: ${{ always() }}
-        run: tar -czvf fuzzing.tar.gz fuzzing/
+        run: tar -czvf fuzzing.tar.gz fuzzer/global/
 
       - name: Artifact
         uses: actions/upload-artifact@v4
