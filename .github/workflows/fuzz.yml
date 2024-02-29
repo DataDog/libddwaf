@@ -80,7 +80,7 @@ jobs:
         run: |
           mkdir build ; cd build
           cmake -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-          make -j $(nproc) ${{ matrix.variant }}
+          make -j $(nproc) ${{ matrix.variant }}_fuzzer
           cp fuzzer/${{ matrix.variant }}_fuzzer ../fuzzer/${{ matrix.variant }}
 
       - name: Run fuzzer
