@@ -5,12 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cstdint>
-#include <iostream>
-#include <yaml-cpp/emitter.h>
-#include <yaml-cpp/emittermanip.h>
-#include <yaml-cpp/node/node.h>
-#include <yaml-cpp/node/parse.h>
-#include <yaml-cpp/yaml.h>
 
 #include "condition/ssrf_detector.hpp"
 
@@ -78,29 +72,19 @@ void serialize(uint8_t *Data, const std::string &resource, const std::string &pa
 
 // NOLINTNEXTLINE
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
-                                          size_t MaxSize, [[maybe_unused]] unsigned int Seed) 
+    [[maybe_unused]] size_t MaxSize, [[maybe_unused]] unsigned int Seed) 
 {
     auto [resource, param] = deserialize(Data, Size);
 
-    // MaxSize => '[' + strlen(resource) + ',' + strlen(param) + ']'
-    /*auto remaining = MaxSize - (3 + resource.size() + param.size());*/
-    /*if (remaining > 2) {*/
-        /*resource.resize(resource.size() + remaining / 2);*/
-        /*param.resize(param.size() + remaining / 2);*/
-    /*}*/
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    auto new_size = LLVMFuzzerMutate(reinterpret_cast<uint8_t *>(resource.data()),
+            resource.size(), resource.size());
+    resource.resize(new_size);
 
-    {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        auto new_size = LLVMFuzzerMutate(reinterpret_cast<uint8_t *>(resource.data()),
-                resource.size(), resource.size());
-        resource.resize(new_size);
-    }
-    {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        auto new_size = LLVMFuzzerMutate(reinterpret_cast<uint8_t *>(param.data()),
-                param.size(), param.size());
-        param.resize(new_size);
-    }
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    new_size = LLVMFuzzerMutate(reinterpret_cast<uint8_t *>(param.data()),
+            param.size(), param.size());
+    param.resize(new_size);
 
     serialize(Data, resource, param);
 
@@ -109,13 +93,9 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
-
     ssrf_detector cond{{gen_param_def("server.io.net.url", "server.request.query")}};
 
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     auto [resource, param] = deserialize(bytes, size);
-
-    std::cout << "Resource: " << resource << " Param: " << param << std::endl;
 
     ddwaf_object root;
     ddwaf_object tmp;
