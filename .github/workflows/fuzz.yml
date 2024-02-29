@@ -54,8 +54,14 @@ jobs:
         with:
           name: fuzzing-data
           path: fuzzing.tar.gz
-  uri-parse-fuzzer:
+  local-fuzzer:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - uri_parse
+          - ssrf_detector
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,10 +80,10 @@ jobs:
         run: |
           mkdir build ; cd build
           cmake -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-          make -j $(nproc) uri_parse_fuzzer
-          cp fuzzer/uri_parse_fuzzer ../fuzzer/uri_parse/
+          make -j $(nproc) ${{ matrix.variant }}
+          cp fuzzer/${{ matrix.variant }}_fuzzer ../fuzzer/${{ matrix.variant }}
 
       - name: Run fuzzer
         run: |
-          cd fuzzer/uri_parse
-          ./uri_parse_fuzzer -max_total_time=${{ github.event.inputs.duration || 60 }} corpus/
+          cd fuzzer/${{ matrix.variant }}
+          ./${{ matrix.variant }}_fuzzer -max_total_time=${{ github.event.inputs.duration || 60 }} corpus/

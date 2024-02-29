@@ -9,6 +9,7 @@
 #include "iterator.hpp"
 #include "uri_utils.hpp"
 #include "utils.hpp"
+#include <iostream>
 
 using namespace std::literals;
 
@@ -98,12 +99,9 @@ bool detect_parameter_injection(
     }
 
     // We compute the substring of the parameter that come after the ?
-    auto query_param = uri.query_index <= index ? param : param.substr(uri.query_index - index);
-    if (query_param.find('&') != npos) {
-        return true;
-    }
 
-    return false;
+    auto query_param = uri.query_index <= index ? param : param.substr(uri.query_index - index);
+    return query_param.find('&') != npos;
 }
 
 ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
@@ -129,7 +127,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
         }
 
         const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING && param.nbEntries < min_str_len) {
+        if (param.type != DDWAF_OBJ_STRING || param.nbEntries < min_str_len) {
             continue;
         }
 
