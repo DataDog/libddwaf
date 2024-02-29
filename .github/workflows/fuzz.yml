@@ -80,4 +80,4 @@ jobs:
       - name: Run fuzzer
         run: |
           cd fuzzer/uri_parse
-          ./uri_parse_fuzzer -max_total_time=${{ github.event.inputs.duration }} corpus/
+          ./uri_parse_fuzzer -max_total_time=${{ github.event.inputs.duration || 60 }} corpus/
