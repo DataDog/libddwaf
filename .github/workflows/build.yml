@@ -292,7 +292,7 @@ jobs:
             packages/*.sha256
 
   package-nuget:
-    needs: [ windows-builds, macos-universal-package, linux-musl-build-amd64 linux-musl-build-arm64]
+    needs: [ windows-builds, macos-universal-package, linux-musl-build-amd64, linux-musl-build-arm64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
