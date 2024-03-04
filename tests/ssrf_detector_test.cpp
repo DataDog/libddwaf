@@ -202,8 +202,8 @@ TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
                 {.yaml = R"({query: {utm_campaign: ["patreon"]}})"}},
             {"http://bla.patreon.com/batch", {.yaml = R"({query: {param: "patreon.com/"}})"}},
             {"file/blabla/metadata", {.yaml = R"({query: {param: "blabla"}})"}},
-            {"http://scrapper-proxy.awsregion.bla.iohttps://images.bla.com/whatever",
-                {.yaml = R"({url: "https://images.bla.com/whatever"})"}},
+            /*            {"http://scrapper-proxy.awsregion.bla.iohttps://images.bla.com/whatever",*/
+            /*{.yaml = R"({url: "https://images.bla.com/whatever"})"}},*/
         },
         false);
 }

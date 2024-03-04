@@ -42,6 +42,32 @@ ip_match::ip_match(const std::vector<std::pair<std::string_view, uint64_t>> &ip_
     }
 }
 
+[[nodiscard]] bool ip_match::match_ip(const ipaddr &ip) const
+{
+    // Initialize the radix structure to check if the IP exist
+    prefix_t radix_ip;
+    // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+    // cppcoreguidelines-pro-type-const-cast)
+    radix_prefix_init(FAMILY_IPv6, const_cast<uint8_t *>(ip.data), radix_tree_bits, &radix_ip);
+
+    // Run the check
+    auto *node = radix_matching_do(rtree_.get(), &radix_ip);
+    if (node == nullptr) {
+        return false;
+    }
+
+    if (node->expiration > 0) {
+        const uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch())
+                                 .count();
+        if (node->expiration < now) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 std::pair<bool, std::string> ip_match::match_impl(std::string_view str) const
 {
     if (!rtree_ || str.empty() || str.data() == nullptr) {
@@ -52,28 +78,11 @@ std::pair<bool, std::string> ip_match::match_impl(std::string_view str) const
     if (!ddwaf::parse_ip(str, ip)) {
         return {false, {}};
     }
-
     // Convert the IPv4 to IPv6
     ddwaf::ipv4_to_ipv6(ip);
 
-    // Initialize the radix structure to check if the IP exist
-    prefix_t radix_ip;
-    // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
-    radix_prefix_init(FAMILY_IPv6, ip.data, radix_tree_bits, &radix_ip);
-
-    // Run the check
-    auto *node = radix_matching_do(rtree_.get(), &radix_ip);
-    if (node == nullptr) {
+    if (!match_ip(ip)) {
         return {false, {}};
-    }
-
-    if (node->expiration > 0) {
-        const uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::system_clock::now().time_since_epoch())
-                                 .count();
-        if (node->expiration < now) {
-            return {false, {}};
-        }
     }
 
     return {true, std::string{str}};

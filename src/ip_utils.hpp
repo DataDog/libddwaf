@@ -26,6 +26,8 @@ struct ipaddr {
 };
 
 bool parse_ip(std::string_view ip, ipaddr &out);
+bool parse_ipv4(std::string_view ip, ipaddr &out);
+bool parse_ipv6(std::string_view ip, ipaddr &out);
 void ipv4_to_ipv6(ipaddr &out);
 bool parse_cidr(std::string_view str, ipaddr &out);
 

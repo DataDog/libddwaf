@@ -33,21 +33,21 @@ constexpr const auto &npos = std::string_view::npos;
 using ssrf_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
 
 bool detect_parameter_injection(
-    const uri_decomposed &uri, std::string_view param, std::size_t index)
+    const uri_decomposed &uri, std::string_view param, std::size_t param_index)
 {
     const auto path_end = uri.path_index + uri.path.size();
 
     // REST parameter injection will involve introducing a / to the URL, however, such
     // slashes are allowed after the ? or the #. Check if the slash is within the parameters.
     if (auto slash_index = param.find('/'); slash_index != npos) {
-        slash_index += index;
+        slash_index += param_index;
         if (slash_index < path_end) {
             // The path is partially under control of the user, this might be intentional
             // so lets check for a possible LFI
 
             auto relative_dir_index = param.find("..");
             while (relative_dir_index != npos) {
-                auto dir_index = relative_dir_index + index;
+                auto dir_index = relative_dir_index + param_index;
                 if (dir_index < path_end && (dir_index + 2) < uri.raw.size() &&
                     uri.raw[dir_index - 1] == '/' && uri.raw[dir_index + 2] == '/') {
                     return true;
@@ -60,16 +60,16 @@ bool detect_parameter_injection(
     // The application giving total control to the user after a given point.
     // At this point, if it starts in the path, assume it's intentional
     if ((uri.query.empty() && uri.fragment.empty()) ||
-        (index < path_end && (index + param.size()) == uri.raw.size())) {
+        (param_index < path_end && (param_index + param.size()) == uri.raw.size())) {
         return false;
     }
 
     const auto query_index = param.find('?');
     if (uri.query_index != npos && query_index != npos &&
-        (index + query_index) == uri.query_index) {
+        (param_index + query_index) == uri.query_index) {
         // We had some cases where this was expected behavior
         // We identify them by checking whether the next character is a '&'
-        auto after_param = uri.raw.substr(index + param.length());
+        auto after_param = uri.raw.substr(param_index + param.length());
         if (!after_param.empty() && after_param[0] == '&') {
             return false;
         }
@@ -93,14 +93,16 @@ bool detect_parameter_injection(
 
     // The parameter stop before the ? or start after #, so it can't be interfering with what come
     // after. We can stop processing this heuristic
-    const auto param_end = index + param.size() - 1;
-    if (uri.query_index > param_end || (uri.fragment_index != npos && uri.fragment_index < index)) {
+    const auto param_end = param_index + param.size() - 1;
+    if (uri.query_index > param_end ||
+        (uri.fragment_index != npos && uri.fragment_index < param_index)) {
         return false;
     }
 
     // We compute the substring of the parameter that come after the ?
 
-    auto query_param = uri.query_index <= index ? param : param.substr(uri.query_index - index);
+    auto query_param =
+        uri.query_index <= param_index ? param : param.substr(uri.query_index - param_index);
     return query_param.find('&') != npos;
 }
 
@@ -113,7 +115,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
 
     std::string_view dangerous_domain = {};
     for (const auto domain : dangerous_domains) {
-        if (uri.authority.raw.ends_with(domain)) {
+        if (uri.authority.host.ends_with(domain)) {
             dangerous_domain = domain;
         }
     }
@@ -126,49 +128,53 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING || param.nbEntries < min_str_len) {
+        const ddwaf_object &object = *(*it);
+        if (object.type != DDWAF_OBJ_STRING || object.nbEntries < min_str_len) {
             continue;
         }
 
-        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        auto index = uri.raw.find(value);
-        if (index == std::string_view::npos) {
+        std::string_view param{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
+        auto param_index = uri.raw.find(param);
+        if (param_index == npos) {
             // Seemingly no injection
             continue;
         }
 
-        // Verify if the injected value intereferes with the authority
-        if (index < uri.scheme_and_authority.size() &&
-            (index + value.size()) > (uri.scheme.size() + 3)) {
-            // Verify if the host was modified by the injected value
-            if ((index + value.size() - 1) > uri.scheme_and_authority.size()) {
-                return {{std::string(value), it.get_current_path()}};
+        // Verify if the injected param intereferes with the authority
+        // Note that if there is no authority, this condition will never be true
+        // as uri.authority.param_index will be npos (size_t::max)
+        if (param_index >= uri.authority.index && param_index < uri.scheme_and_authority.size()) {
+            // Verify if the host was fully modified by the injected param
+            if ((param_index + param.size() - 1) > uri.scheme_and_authority.size()) {
+                return {{std::string(param), it.get_current_path()}};
             }
 
             // If the IP is injected, we want to make sure it's fully under the attacker's control
             // Otherwise, that's likely a false positive (bla=169.2&... in the URL match the IP
             // 169.254.169.254)
             bool host_fully_injected =
-                index <= uri.authority.host_index &&
-                index + value.size() >= uri.authority.host_index + uri.authority.host.size();
+                param_index <= uri.authority.host_index &&
+                param_index + param.size() >= uri.authority.host_index + uri.authority.host.size();
 
-            auto [res, match] = dangerous_ip_matcher->match(uri.authority.host);
-            if (res && host_fully_injected) {
-                return {{std::string(value), it.get_current_path()}};
+            if (uri.authority.host_ip.has_value()) {
+                auto res = dangerous_ip_matcher->match_ip(uri.authority.host_ip.value());
+                if (res && host_fully_injected) {
+                    return {{std::string(param), it.get_current_path()}};
+                }
             }
 
-            if (!dangerous_domain.empty() && value == dangerous_domain) {
-                return {{std::string(value), it.get_current_path()}};
+            if (!dangerous_domain.empty() && param == dangerous_domain) {
+                return {{std::string(param), it.get_current_path()}};
             }
         }
 
-        if (index == 0 && !authorised_scheme_set.contains(uri.scheme)) {
-            return {{std::string(value), it.get_current_path()}};
+        if (param_index == 0 && !authorised_scheme_set.contains(uri.scheme)) {
+            return {{std::string(param), it.get_current_path()}};
         }
 
-        if (!parameter_injection.has_value() && detect_parameter_injection(uri, value, index)) {
-            parameter_injection = {{std::string(value), it.get_current_path()}};
+        if (!parameter_injection.has_value() &&
+            detect_parameter_injection(uri, param, param_index)) {
+            parameter_injection = {{std::string(param), it.get_current_path()}};
         }
     }
 

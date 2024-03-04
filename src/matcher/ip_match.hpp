@@ -39,6 +39,8 @@ public:
     ip_match &operator=(const ip_match &) = delete;
     ip_match &operator=(ip_match &&) = default;
 
+    [[nodiscard]] bool match_ip(const ipaddr &ip) const;
+
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "ip_match"; }

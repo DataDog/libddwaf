@@ -9,6 +9,8 @@
 #include <optional>
 #include <string_view>
 
+#include "ip_utils.hpp"
+
 namespace ddwaf {
 
 // https://datatracker.ietf.org/doc/html/rfc3986#section-3
@@ -20,6 +22,7 @@ struct uri_decomposed {
         bool ipv6_host{false};
         std::string_view userinfo{};
         std::string_view host{};
+        std::optional<ipaddr> host_ip{};
         std::string_view port{};
         std::string_view raw;
     } authority;
