@@ -325,7 +325,6 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             decomposed.authority.host = host;
             decomposed.authority.host_ip = parsed_ip;
             decomposed.authority.host_index = token_begin + 1;
-            decomposed.authority.ipv6_host = true;
 
             token_begin = ++i;
             if (token_begin == authority_end) {

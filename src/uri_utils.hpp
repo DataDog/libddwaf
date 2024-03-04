@@ -19,7 +19,6 @@ struct uri_decomposed {
     struct {
         std::size_t index{std::string_view::npos};
         std::size_t host_index{std::string_view::npos};
-        bool ipv6_host{false};
         std::string_view userinfo{};
         std::string_view host{};
         std::optional<ipaddr> host_ip{};
