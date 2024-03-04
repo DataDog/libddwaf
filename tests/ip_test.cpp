@@ -11,13 +11,25 @@ namespace {
 
 TEST(TestIP, ParsingIPv4)
 {
-    ddwaf::ipaddr ip{};
-    EXPECT_TRUE(ddwaf::parse_ip("1.2.3.4", ip));
-    EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4);
-    EXPECT_EQ(ip.data[0], 1);
-    EXPECT_EQ(ip.data[1], 2);
-    EXPECT_EQ(ip.data[2], 3);
-    EXPECT_EQ(ip.data[3], 4);
+    {
+        ddwaf::ipaddr ip{};
+        EXPECT_TRUE(ddwaf::parse_ip("1.2.3.4", ip));
+        EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4);
+        EXPECT_EQ(ip.data[0], 1);
+        EXPECT_EQ(ip.data[1], 2);
+        EXPECT_EQ(ip.data[2], 3);
+        EXPECT_EQ(ip.data[3], 4);
+    }
+
+    {
+        ddwaf::ipaddr ip{};
+        EXPECT_TRUE(ddwaf::parse_ipv4("1.2.3.4", ip));
+        EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv4);
+        EXPECT_EQ(ip.data[0], 1);
+        EXPECT_EQ(ip.data[1], 2);
+        EXPECT_EQ(ip.data[2], 3);
+        EXPECT_EQ(ip.data[3], 4);
+    }
 }
 
 TEST(TestIP, ParsingIPv4Class)
@@ -30,16 +42,31 @@ TEST(TestIP, ParsingIPv4Class)
 
 TEST(TestIP, ParsingIPv6)
 {
-    ddwaf::ipaddr ip{};
+    {
+        ddwaf::ipaddr ip{};
 
-    EXPECT_TRUE(ddwaf::parse_ip("abcd::ef01", ip));
-    EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
-    EXPECT_EQ(ip.data[0], 0xab);
-    EXPECT_EQ(ip.data[1], 0xcd);
-    for (int i = 2; i < 14; ++i) { EXPECT_EQ(ip.data[i], 0); }
+        EXPECT_TRUE(ddwaf::parse_ip("abcd::ef01", ip));
+        EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
+        EXPECT_EQ(ip.data[0], 0xab);
+        EXPECT_EQ(ip.data[1], 0xcd);
+        for (int i = 2; i < 14; ++i) { EXPECT_EQ(ip.data[i], 0); }
 
-    EXPECT_EQ(ip.data[14], 0xef);
-    EXPECT_EQ(ip.data[15], 0x01);
+        EXPECT_EQ(ip.data[14], 0xef);
+        EXPECT_EQ(ip.data[15], 0x01);
+    }
+
+    {
+        ddwaf::ipaddr ip{};
+
+        EXPECT_TRUE(ddwaf::parse_ipv6("abcd::ef01", ip));
+        EXPECT_EQ(ip.type, ddwaf::ipaddr::address_family::ipv6);
+        EXPECT_EQ(ip.data[0], 0xab);
+        EXPECT_EQ(ip.data[1], 0xcd);
+        for (int i = 2; i < 14; ++i) { EXPECT_EQ(ip.data[i], 0); }
+
+        EXPECT_EQ(ip.data[14], 0xef);
+        EXPECT_EQ(ip.data[15], 0x01);
+    }
 }
 
 TEST(TestIP, ParsingIPv4MappedIPv6)

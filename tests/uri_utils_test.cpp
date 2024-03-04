@@ -11,39 +11,48 @@ using namespace std::literals;
 
 namespace {
 
-TEST(TestURI, Complete)
+TEST(TestURI, Scheme)
 {
     {
-        auto uri = ddwaf::uri_parse(
-            "http+s.i-a://user@hello.com:1929/path/to/nowhere?query=none#fragment");
-
+        auto uri = ddwaf::uri_parse("http://");
         ASSERT_TRUE(uri);
-        EXPECT_STRV(uri->scheme, "http+s.i-a");
-        EXPECT_STRV(uri->authority.host, "hello.com");
-        EXPECT_STRV(uri->authority.userinfo, "user");
-        EXPECT_STRV(uri->authority.port, "1929");
-        EXPECT_STRV(uri->authority.raw, "user@hello.com:1929");
-        EXPECT_STRV(uri->scheme_and_authority, "http+s.i-a://user@hello.com:1929");
-        EXPECT_STRV(uri->path, "/path/to/nowhere");
-        EXPECT_STRV(
-            uri->raw, "http+s.i-a://user@hello.com:1929/path/to/nowhere?query=none#fragment");
+        EXPECT_STRV(uri->scheme, "http");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_TRUE(uri->authority.raw.empty());
+        EXPECT_TRUE(uri->scheme_and_authority.empty());
+        EXPECT_TRUE(uri->path.empty());
+        EXPECT_TRUE(uri->query.empty());
+        EXPECT_TRUE(uri->fragment.empty());
     }
 
     {
-        auto uri = ddwaf::uri_parse("s://u@h:1/p?q#f");
-
+        auto uri = ddwaf::uri_parse("http:");
         ASSERT_TRUE(uri);
-        EXPECT_STRV(uri->scheme, "s");
-        EXPECT_STRV(uri->authority.host, "h");
-        EXPECT_STRV(uri->authority.userinfo, "u");
-        EXPECT_STRV(uri->authority.port, "1");
-        EXPECT_STRV(uri->scheme_and_authority, "s://u@h:1");
-        EXPECT_STRV(uri->path, "/p");
-        EXPECT_STRV(uri->authority.raw, "u@h:1");
+        EXPECT_STRV(uri->scheme, "http");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_TRUE(uri->authority.raw.empty());
+        EXPECT_TRUE(uri->scheme_and_authority.empty());
+        EXPECT_TRUE(uri->path.empty());
+        EXPECT_TRUE(uri->query.empty());
+        EXPECT_TRUE(uri->fragment.empty());
     }
 }
 
-TEST(TestURI, FileLocation)
+TEST(TestURI, MalformedScheme)
+{
+    EXPECT_FALSE(ddwaf::uri_parse("h@@:path"));
+    EXPECT_FALSE(ddwaf::uri_parse("hhttp,:"));
+    EXPECT_FALSE(ddwaf::uri_parse("http//"));
+    EXPECT_FALSE(ddwaf::uri_parse("url.com"));
+}
+
+TEST(TestURI, SchemeAndPath)
 {
     {
         auto uri = ddwaf::uri_parse("file:///usr/lib/libddwaf.so");
@@ -54,6 +63,7 @@ TEST(TestURI, FileLocation)
         EXPECT_TRUE(uri->authority.userinfo.empty());
         EXPECT_TRUE(uri->authority.port.empty());
         EXPECT_STRV(uri->path, "/usr/lib/libddwaf.so");
+        EXPECT_EQ(uri->path_index, 7);
     }
 
     {
@@ -65,6 +75,7 @@ TEST(TestURI, FileLocation)
         EXPECT_TRUE(uri->authority.userinfo.empty());
         EXPECT_TRUE(uri->authority.port.empty());
         EXPECT_STRV(uri->path, "/usr/lib/libddwaf.so");
+        EXPECT_EQ(uri->path_index, 5);
     }
 
     {
@@ -76,7 +87,26 @@ TEST(TestURI, FileLocation)
         EXPECT_TRUE(uri->authority.userinfo.empty());
         EXPECT_TRUE(uri->authority.port.empty());
         EXPECT_STRV(uri->path, "/../lib/libddwaf.so");
+        EXPECT_EQ(uri->path_index, 5);
     }
+    {
+        auto uri = ddwaf::uri_parse("file:../lib/libddwaf.so");
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "file");
+        EXPECT_FALSE(uri->authority.ipv6_host);
+        EXPECT_TRUE(uri->authority.host.empty());
+        EXPECT_TRUE(uri->authority.userinfo.empty());
+        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_STRV(uri->path, "../lib/libddwaf.so");
+        EXPECT_EQ(uri->path_index, 5);
+    }
+}
+
+TEST(TestURI, SchemeInvalidPath)
+{
+    EXPECT_FALSE(ddwaf::uri_parse("file:[][][]"));
+    EXPECT_FALSE(ddwaf::uri_parse("file:?query"));
+    EXPECT_FALSE(ddwaf::uri_parse("file:#fragment"));
 }
 
 TEST(TestURI, SchemeHost)
@@ -304,13 +334,6 @@ TEST(TestURI, EmptyAuthority)
     }
 }
 
-TEST(TestURI, MalformedScheme)
-{
-    ASSERT_FALSE(ddwaf::uri_parse("h@@:path"));
-    ASSERT_FALSE(ddwaf::uri_parse("hhttp,:"));
-    ASSERT_FALSE(ddwaf::uri_parse("http//"));
-}
-
 TEST(TestURI, MalformedAuthority)
 {
     ASSERT_FALSE(ddwaf::uri_parse("http://host:::asdnsk"));
@@ -323,16 +346,36 @@ TEST(TestURI, MalformedAuthority)
     // ASSERT_FALSE(ddwaf::uri_parse("http://something@:123"));
 }
 
-TEST(TestURI, NoAuthorityOrPath)
+TEST(TestURI, Complete)
 {
-    /*    auto uri = ddwaf::uri_parse("http://");*/
-    /*ASSERT_FALSE(uri);*/
-}
+    {
+        auto uri = ddwaf::uri_parse(
+            "http+s.i-a://user@hello.com:1929/path/to/nowhere?query=none#fragment");
 
-TEST(TestURI, NoScheme)
-{
-    auto uri = ddwaf::uri_parse("url.com");
-    EXPECT_FALSE(uri);
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "http+s.i-a");
+        EXPECT_STRV(uri->authority.host, "hello.com");
+        EXPECT_STRV(uri->authority.userinfo, "user");
+        EXPECT_STRV(uri->authority.port, "1929");
+        EXPECT_STRV(uri->authority.raw, "user@hello.com:1929");
+        EXPECT_STRV(uri->scheme_and_authority, "http+s.i-a://user@hello.com:1929");
+        EXPECT_STRV(uri->path, "/path/to/nowhere");
+        EXPECT_STRV(
+            uri->raw, "http+s.i-a://user@hello.com:1929/path/to/nowhere?query=none#fragment");
+    }
+
+    {
+        auto uri = ddwaf::uri_parse("s://u@h:1/p?q#f");
+
+        ASSERT_TRUE(uri);
+        EXPECT_STRV(uri->scheme, "s");
+        EXPECT_STRV(uri->authority.host, "h");
+        EXPECT_STRV(uri->authority.userinfo, "u");
+        EXPECT_STRV(uri->authority.port, "1");
+        EXPECT_STRV(uri->scheme_and_authority, "s://u@h:1");
+        EXPECT_STRV(uri->path, "/p");
+        EXPECT_STRV(uri->authority.raw, "u@h:1");
+    }
 }
 
 } // namespace

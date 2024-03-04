@@ -73,36 +73,33 @@ enum class token_type {
 };
 constexpr const auto &npos = std::string_view::npos;
 
-inline bool isunreserved(char c)
+inline bool is_unreserved(char c)
 {
     return ddwaf::isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~';
 }
 
-inline bool issubdelim(char c)
+inline bool is_subdelim(char c)
 {
     return c == '!' || c == '$' || c == '&' || c == '\'' || c == '(' || c == ')' || c == '*' ||
            c == '*' || c == '+' || c == ',' || c == ';' || c == '=';
 }
 
-// TODO validate percent-encoding
-// ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+// TODO validate percent-encoding?
 inline bool is_scheme_char(char c) { return ddwaf::isalnum(c) || c == '.' || c == '-' || c == '+'; }
-inline bool is_host_char(char c) { return isunreserved(c) || issubdelim(c) || c == '%'; }
+inline bool is_host_char(char c) { return is_unreserved(c) || is_subdelim(c) || c == '%'; }
 inline bool is_path_char(char c)
 {
-    return isunreserved(c) || issubdelim(c) || c == '%' || c == ':' || c == '@';
+    return is_unreserved(c) || is_subdelim(c) || c == '%' || c == ':' || c == '@';
 }
 inline bool is_query_char(char c) { return is_path_char(c) || c == '/' || c == '?'; }
 inline bool is_frag_char(char c) { return is_path_char(c) || c == '/' || c == '?'; }
 
-// *( unreserved / pct-encoded / sub-delims / ":" )
 inline bool is_userinfo_char(char c)
 {
-    return isunreserved(c) || issubdelim(c) || c == ':' || c == '%';
+    return is_unreserved(c) || is_subdelim(c) || c == ':' || c == '%';
 }
 
-// *( unreserved / pct-encoded / sub-delims )
-inline bool isregname(char c) { return isunreserved(c) || issubdelim(c) || c == '%'; }
+inline bool is_regname_char(char c) { return is_unreserved(c) || is_subdelim(c) || c == '%'; }
 
 } // namespace
 
@@ -112,23 +109,20 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
     decomposed.raw = uri;
 
     auto expected_token = token_type::scheme;
-    token_type lookahead_token;
+    auto lookahead_token = token_type::none;
 
-    std::size_t i = 0;
-    std::size_t token_begin = npos;
+    // Authority helpers
+    std::size_t authority_end = npos;
+    std::string_view authority_substr;
 
-    // Only used for the authority
-    std::size_t token_end = npos;
-    std::string_view token_substr;
-
-    while (i < uri.size()) {
+    for (std::size_t i = 0; i < uri.size();) {
         // Dead man's switch
         auto current_token = expected_token;
         expected_token = token_type::none;
 
         switch (current_token) {
         case token_type::scheme: {
-            token_begin = i;
+            auto token_begin = i;
             if (!isalpha(uri[i++])) {
                 // The URI is malformed as the first character must be alphabetic
                 return std::nullopt;
@@ -166,19 +160,11 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                 // Otherwise we expect a path (path-absolute, path-rootless, path-empty)
                 expected_token = token_type::path_no_authority;
             }
-            token_begin = i;
             break;
         }
         case token_type::path_no_authority: {
+            auto token_begin = i;
             // The path can be empty but we wouldn't be here...
-            if (uri[i] == '/') {
-                // if the path starts with a forward-slash, the next character
-                // can't be another forward-slash, but rather a valid path char
-                if (++i < uri.size() && !is_path_char(uri[i])) {
-                    return std::nullopt;
-                }
-            }
-
             while (i < uri.size()) {
                 const auto c = uri[i++];
                 if (!is_path_char(c) && c != '/') {
@@ -187,20 +173,17 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             }
 
             decomposed.path_index = token_begin;
-            if (token_begin == i) {
-                decomposed.path = ""; // Empty path
-            } else {
-                decomposed.path = uri.substr(token_begin, i - token_begin);
-            }
+            decomposed.path = uri.substr(token_begin, i - token_begin);
 
             // We're done, nothing else to parse
             return decomposed;
         }
         case token_type::authority: {
-            token_end = uri.find_first_of("/?#", i);
-            if (token_end != npos) {
+            auto token_begin = i;
+            authority_end = uri.find_first_of("/?#", i);
+            if (authority_end != npos) {
                 // The authority is empty
-                const auto c = uri[token_end];
+                const auto c = uri[authority_end];
                 if (c == '/') {
                     lookahead_token = token_type::path;
                 } else if (c == '?') {
@@ -209,21 +192,21 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                     lookahead_token = token_type::fragment;
                 }
             } else {
-                token_end = uri.size();
+                authority_end = uri.size();
             }
 
-            if (token_end > i) {
+            if (authority_end > i) {
                 // The substring starts on 0 to ensure that indices are correct
-                token_substr = uri.substr(0, token_end);
-                if (token_substr.find('@', i) != npos) {
+                authority_substr = uri.substr(0, authority_end);
+                if (authority_substr.find('@', i) != npos) {
                     expected_token = token_type::userinfo;
                 } else {
                     expected_token = token_type::host;
                 }
 
                 decomposed.authority.index = token_begin;
-                decomposed.authority.raw = uri.substr(token_begin, token_end - token_begin);
-                decomposed.scheme_and_authority = uri.substr(0, token_end);
+                decomposed.authority.raw = uri.substr(token_begin, authority_end - token_begin);
+                decomposed.scheme_and_authority = uri.substr(0, authority_end);
             } else {
                 expected_token = lookahead_token;
             }
@@ -231,10 +214,9 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             break;
         }
         case token_type::userinfo: {
+            auto token_begin = i;
             // Find any unexpected characters, technically the ':' is valid and the
             // password is deprecated so allow one or more instances of it.
-            // ALPHA / DIGIT / "-" / "." / "_" / "~" / "!" / "$" / "&" / "'" /
-            // "(" / ")" / "*" / "+" / "," / ";" / "=" / "%"
             while (i < uri.size()) {
                 const auto c = uri[i++];
 
@@ -244,7 +226,7 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                     decomposed.authority.userinfo = uri.substr(token_begin, i - token_begin - 1);
 
                     token_begin = i;
-                    if (i == token_end) {
+                    if (i == authority_end) {
                         expected_token = lookahead_token;
                     } else {
                         expected_token = token_type::host;
@@ -265,11 +247,11 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             if (uri[i] == '[') {
                 expected_token = token_type::ipv6address;
             } else if (uri[i] == ':') { // Empty host
-                token_begin = ++i;
+                ++i;
                 expected_token = token_type::port;
             } else if (is_host_char(uri[i])) {
                 expected_token = token_type::regname_or_ipv4address;
-            } else if (token_end != uri.size()) {
+            } else if (authority_end != uri.size()) {
                 expected_token = lookahead_token;
             } else {
                 // Not a valid character, malformed
@@ -278,13 +260,14 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             break;
         }
         case token_type::regname_or_ipv4address: {
+            auto token_begin = i;
             // Reg name or IPv4 host
-            for (; i < token_end; ++i) {
+            for (; i < authority_end; ++i) {
                 const auto c = uri[i];
                 if (c == ':') { /* Port */
                     break;
                 }
-                if (!isregname(c)) {
+                if (!is_regname_char(c)) {
                     // Unexpected character, find the port  and exit
                     return std::nullopt;
                 }
@@ -313,6 +296,7 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             break;
         }
         case token_type::ipv6address: {
+            auto token_begin = i;
             // Validate if this is an IPv6 host
             bool end_found = false;
             for (i += 1; i < uri.size(); ++i) {
@@ -344,7 +328,7 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             decomposed.authority.ipv6_host = true;
 
             token_begin = ++i;
-            if (token_begin == token_end) {
+            if (token_begin == authority_end) {
                 // Keep the next token as it can be the beginning of the
                 // path which has to be kept
                 expected_token = lookahead_token;
@@ -359,15 +343,15 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             break;
         }
         case token_type::port: {
-            token_begin = i;
-            for (; i < token_end; ++i) {
+            auto token_begin = i;
+            for (; i < authority_end; ++i) {
                 if (!ddwaf::isdigit(uri[i])) {
                     return std::nullopt;
                 }
             }
 
             decomposed.authority.port = uri.substr(token_begin, i - token_begin);
-            if (token_end == uri.size()) {
+            if (authority_end == uri.size()) {
                 return decomposed;
             }
 
@@ -377,7 +361,7 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             break;
         }
         case token_type::path: {
-            token_begin = i;
+            auto token_begin = i;
             for (; i < uri.size(); ++i) {
                 const auto c = uri[i];
                 if (c == '?') {
@@ -401,12 +385,12 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                 return decomposed;
             }
 
-            decomposed.path = decomposed.raw.substr(token_begin, i - token_end);
+            decomposed.path = decomposed.raw.substr(token_begin, i - token_begin);
             break;
         }
         case token_type::query: {
             // Skip '?'
-            token_begin = ++i;
+            auto token_begin = ++i;
             for (; i < uri.size(); ++i) {
                 const auto c = uri[i];
                 if (c == '#') {
@@ -419,19 +403,21 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                 }
             }
 
-            // TODO check that i != token_begin?
-            decomposed.query_index = token_begin;
-            if (i >= uri.size()) {
-                decomposed.query = decomposed.raw.substr(token_begin);
-                return decomposed;
-            }
+            // Ignore empty query
+            if (i > token_begin) {
+                decomposed.query_index = token_begin;
+                if (i >= uri.size()) {
+                    decomposed.query = decomposed.raw.substr(token_begin);
+                    return decomposed;
+                }
 
-            decomposed.query = decomposed.raw.substr(token_begin, i - token_begin);
+                decomposed.query = decomposed.raw.substr(token_begin, i - token_begin);
+            }
             break;
         }
         case token_type::fragment: {
             // Skip '#'
-            token_begin = ++i;
+            auto token_begin = ++i;
             for (; i < uri.size(); ++i) {
                 const auto c = uri[i];
                 if (!is_frag_char(c)) {
@@ -439,8 +425,11 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                 }
             }
 
-            decomposed.fragment_index = token_begin;
-            decomposed.fragment = uri.substr(token_begin);
+            // Ignore empty fragment
+            if (i > token_begin) {
+                decomposed.fragment_index = token_begin;
+                decomposed.fragment = uri.substr(token_begin);
+            }
             return decomposed;
         }
         case token_type::none:
