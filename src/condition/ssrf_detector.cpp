@@ -74,6 +74,7 @@ bool detect_parameter_injection(
         }
 
         // We can also find them if it is followed by a parameter (abc=42)
+        // TODO: validate all possible host chars?
         for (std::size_t i = 0; i < after_param.size(); ++i) {
             const auto c = after_param[i];
             if (c == '=' && i > 0) {
@@ -93,15 +94,13 @@ bool detect_parameter_injection(
     // The parameter stop before the ? or start after #, so it can't be interfering with what come
     // after. We can stop processing this heuristic
     const auto param_end = param_index + param.size() - 1;
-    if (uri.query_index > param_end ||
-        (uri.fragment_index != npos && uri.fragment_index < param_index)) {
+    if ((uri.query_index - 1) > param_end ||
+        (uri.fragment_index != npos && uri.fragment_index <= param_index)) {
         return false;
     }
 
     // We compute the substring of the parameter that come after the ?
-    auto query_param =
-        uri.query_index <= param_index ? param : param.substr(uri.query_index - param_index);
-    return query_param.find('&') != npos;
+    return param.find('&') != npos;
 }
 
 ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
