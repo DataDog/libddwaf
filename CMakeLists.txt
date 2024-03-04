@@ -79,7 +79,8 @@ if(LINUX)
     set(LIBDDWAF_INTERFACE_LIBRARIES
         $<$<BOOL:${LIBPTHREAD}>:pthread>
         $<$<BOOL:${LIBRT}>:rt>
-        $<$<BOOL:${LIBDL}>:dl>)
+        $<$<BOOL:${LIBDL}>:dl>
+        $<$<BOOL:${LIBM}>:m>)
 elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
@@ -92,6 +93,8 @@ endif()
 if (LIBDDWAF_ENABLE_LTO)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
 endif()
+
+add_subdirectory(third_party EXCLUDE_FROM_ALL)
 
 include(cmake/objects.cmake)
 
@@ -108,7 +111,6 @@ endif()
 include(cmake/package.cmake)
 
 if (LIBDDWAF_TESTING)
-    add_subdirectory(third_party EXCLUDE_FROM_ALL)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
     add_subdirectory(validator EXCLUDE_FROM_ALL)
     add_subdirectory(benchmark EXCLUDE_FROM_ALL)

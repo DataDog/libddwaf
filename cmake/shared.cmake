@@ -25,6 +25,7 @@ if(LINUX)
         -Wl,--build-id=0x${BUILD_ID}
         ${LIBDDWAF_PRIVATE_LIBRARIES}
         -static-libstdc++
+        tcmalloc
         glibc_compat_time64 glibc_compat_math)
 
     if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
