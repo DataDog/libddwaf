@@ -158,6 +158,7 @@ TEST(TestSSRFDetector, MatchParameterInjection)
         {"https://blabla.com/path?name=param&auth=43", {.yaml = "param&auth"}},
         {"https://blabla.com/random/path?name=name2&value=/legit",
             {.yaml = "path?name=name2&value="}},
+        {"a://b/c/d?e=f&g=h", {.yaml = "d?e=f&g="}},
         //{"http://0:8000/composer/send_email?to=orange@chroot.org&url=http://127.0.0.1:6379/%0D%0ASET",
         //{.yaml="http://127.0.0.1:6379/%0D%0ASET"}},
     });

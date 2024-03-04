@@ -44,7 +44,6 @@ bool detect_parameter_injection(
         if (slash_index < path_end) {
             // The path is partially under control of the user, this might be intentional
             // so lets check for a possible LFI
-
             auto relative_dir_index = param.find("..");
             while (relative_dir_index != npos) {
                 auto dir_index = relative_dir_index + param_index;
@@ -66,7 +65,7 @@ bool detect_parameter_injection(
 
     const auto query_index = param.find('?');
     if (uri.query_index != npos && query_index != npos &&
-        (param_index + query_index) == uri.query_index) {
+        (param_index + query_index + 1) == uri.query_index) {
         // We had some cases where this was expected behavior
         // We identify them by checking whether the next character is a '&'
         auto after_param = uri.raw.substr(param_index + param.length());
@@ -100,7 +99,6 @@ bool detect_parameter_injection(
     }
 
     // We compute the substring of the parameter that come after the ?
-
     auto query_param =
         uri.query_index <= param_index ? param : param.substr(uri.query_index - param_index);
     return query_param.find('&') != npos;
