@@ -202,12 +202,12 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: waf_test_${{ matrix.suffix }}_${{ matrix.arch }}
+          flags: waf_test
           verbose: true
           files: coverage.xml
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage_${{ matrix.suffix }}_${{ matrix.arch }}
+          name: coverage
           path: ${{ github.workspace }}/coverage/
 
   lint:
