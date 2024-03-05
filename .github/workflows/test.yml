@@ -163,11 +163,40 @@ jobs:
         run: |
           source ../.venv/bin/activate
           gcovr --version
-          gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -e ".*src/vendor/.*" -x  -o coverage.xml
-          mkdir -p coverage
-          gcovr --gcov-executable gcov-12 --html-details coverage/coverage.html --exclude-throw-branches -f ".*src.*" -e ".*src/vendor/.*" -d
+          gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -e ".*src/vendor/.*" --json  -o coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
         working-directory: Debug
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage_${{ matrix.suffix }}_${{ matrix.arch }}
+          path: ${{ github.workspace }}/Debug/coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
+
+  upload-coverage:
+    needs: [ coverage ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3 python3-venv python3-pip
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install gcovr==7.2
+
+      - name: Generate coverage
+          source ../.venv/bin/activate
+          gcovr --version
+          gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "/artifacts/*/coverage-*.json" -x coverage.xml
+          mkdir -p coverage
+          gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "/artifacts/*/coverage-*.json" --html-details coverage/coverage.html
       - name: Submit coverage
         uses: codecov/codecov-action@v4
         with:
@@ -178,7 +207,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: coverage_${{ matrix.suffix }}_${{ matrix.arch }}
-          path: ${{ github.workspace }}/Debug/coverage/
+          path: ${{ github.workspace }}/coverage/
 
   lint:
     runs-on: ubuntu-latest
