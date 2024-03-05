@@ -195,9 +195,9 @@ jobs:
         run: |
           source .venv/bin/activate
           gcovr --version
-          gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "/artifacts/*/coverage-*.json" -x coverage.xml
+          gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "artifacts/*/coverage-*.json" -x coverage.xml
           mkdir -p coverage
-          gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "/artifacts/*/coverage-*.json" --html-details coverage/coverage.html
+          gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "artifacts/*/coverage-*.json" --html-details coverage/coverage.html
       - name: Submit coverage
         uses: codecov/codecov-action@v4
         with:
