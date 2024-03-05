@@ -36,9 +36,7 @@ jobs:
 
       - name: Install dependencies
         if: matrix.arch == 'arm64'
-        run: |
-          sudo apt update
-          DEBIAN_FRONTEND="noninteractive" sudo apt install -y cmake gcc-12 g++-12 git make curl
+        run: sudo apt update ; sudo apt install -y cmake gcc-12 g++-12 git make curl
 
       - name: CMake
         env:
@@ -66,20 +64,24 @@ jobs:
         working-directory: Debug
 
   valgrind:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         suffix:
           - none
-          - sse2
+          - vectorized
+        arch:
+          - amd64
+          - arm64
+    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-latest' || 'arm-4core-linux' }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Install dependencies
-        run: sudo apt update ; sudo apt install -y valgrind
+        run: sudo apt update ; sudo apt install -y valgrind cmake gcc-12 g++-12 git make curl
 
       - name: Create directories
         run: mkdir Debug
@@ -107,20 +109,24 @@ jobs:
         working-directory: Debug
 
   coverage:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         suffix:
           - none
-          - sse2
+          - vectorized
+        arch:
+          - amd64
+          - arm64
+    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-latest' || 'arm-4core-linux' }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Install dependencies
-        run: sudo apt update ; sudo apt install -y gcovr gcc-12
+        run: sudo apt update ; sudo apt install -y gcovr cmake gcc-12 g++-12 git make curl
 
       - name: Create directories
         run: mkdir Debug
@@ -159,12 +165,12 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: waf_test_${{ matrix.suffix }}
+          flags: waf_test_${{ matrix.suffix }}_${{ matrix.arch }}
           verbose: true
           files: coverage.xml
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage_${{ matrix.suffix }}
+          name: coverage_${{ matrix.suffix }}_${{ matrix.arch }}
           path: ${{ github.workspace }}/Debug/coverage/
 
   lint:
