@@ -25,10 +25,7 @@ jobs:
         arch:
           - amd64
           - arm64
-    if: matrix.arch == 'amd64'
-    runs-on: ubuntu-latest
-    if: matrix.arch == 'arm64'
-    runs-on: arm-4core-linux
+    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-latest' || 'arm-4core-linux' }}
     steps:
       - uses: actions/checkout@v4
         with:
