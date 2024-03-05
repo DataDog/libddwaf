@@ -202,6 +202,8 @@ TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
             {"tax.internal.patreon.com/services/tax/1.0/quote/batch",
                 {.yaml = R"({query: {utm_campaign: ["patreon"]}})"}},
             {"http://bla.patreon.com/batch", {.yaml = R"({query: {param: "patreon.com/"}})"}},
+            {"http://google.com/batch", {.yaml = R"({query: {param: "batch"}})"}},
+            {"http://google.com/batch", {.yaml = R"({query: {param: "/batch"}})"}},
             {"file/blabla/metadata", {.yaml = R"({query: {param: "blabla"}})"}},
             /*            {"http://scrapper-proxy.awsregion.bla.iohttps://images.bla.com/whatever",*/
             /*{.yaml = R"({url: "https://images.bla.com/whatever"})"}},*/
