@@ -37,8 +37,27 @@ bool detect_parameter_injection(
 {
     const auto path_end = uri.path_index + uri.path.size();
 
+    // Check if the application is giving full control of the path to the user
+    // either fully or after a forward-slash.
+    if (!uri.path.empty()) {
+        //  scheme://userinfo@host:port/path?query#fragment
+        //                             ─────
+        if (uri.path.size() == param.size()) {
+            return false;
+        }
+        //  scheme://userinfo@host:port/path?query#fragment
+        //                              ────
+        if (uri.path[0] == '/' && param_index == uri.path_index + 1 &&
+            param.size() == uri.path.size() - 1) {
+            return false;
+        }
+    }
+
     // REST parameter injection will involve introducing a / to the URL, however, such
-    // slashes are allowed after the ? or the #. Check if the slash is within the parameters.
+    // slashes are allowed after the ? or the #. Check if the slash is within the path
+    //
+    //  scheme://userinfo@host:port/path?query#fragment
+    //                             ─────
     if (auto slash_index = param.find('/'); slash_index != npos) {
         slash_index += param_index;
         if (slash_index < path_end) {
@@ -46,6 +65,8 @@ bool detect_parameter_injection(
             // so lets check for a possible LFI
             auto relative_dir_index = param.find("..");
             while (relative_dir_index != npos) {
+
+                // We found '..', check if it's enclosed by '/'
                 auto dir_index = relative_dir_index + param_index;
                 if (dir_index < path_end && (dir_index + 2) < uri.raw.size() &&
                     uri.raw[dir_index - 1] == '/' && uri.raw[dir_index + 2] == '/') {
@@ -57,30 +78,38 @@ bool detect_parameter_injection(
     }
 
     // The application giving total control to the user after a given point.
-    // At this point, if it starts in the path, assume it's intentional
+    // If it starts in the path, assume it's intentional
+    //
+    //  scheme://userinfo@host:port/path?query#fragment
+    //                             ────────────────────
     if ((uri.query.empty() && uri.fragment.empty()) ||
         (param_index < path_end && (param_index + param.size()) == uri.raw.size())) {
         return false;
     }
 
+    // Check if the entire query string was injected
+    //
+    //  scheme://userinfo@host:port/path?query#fragment
+    //                                 <─────
     const auto query_index = param.find('?');
     if (uri.query_index != npos && query_index != npos &&
         (param_index + query_index + 1) == uri.query_index) {
-        // We had some cases where this was expected behavior
-        // We identify them by checking whether the next character is a '&'
+        // We had some cases where this was expected behavior, to make sure
+        // we check whether the next character is a '&'
         auto after_param = uri.raw.substr(param_index + param.length());
         if (!after_param.empty() && after_param[0] == '&') {
             return false;
         }
 
-        // We can also find them if it is followed by a parameter (abc=42)
-        // TODO: validate all possible host chars?
+        // We can also check if the there's a valid parameter in key=value form
         for (std::size_t i = 0; i < after_param.size(); ++i) {
             const auto c = after_param[i];
             if (c == '=' && i > 0) {
                 return false;
             }
 
+            // Note that we're not checking for the full character set
+            // allowed in the query, this is intentional
             if (!ddwaf::isalnum(c) && c != '_') {
                 break;
             }
@@ -90,16 +119,19 @@ bool detect_parameter_injection(
     }
 
     // Check if the parameter interfered with what comes after the ?
-
-    // The parameter stop before the ? or start after #, so it can't be interfering with what come
-    // after. We can stop processing this heuristic
+    //
+    //  scheme://userinfo@host:port/path?query#fragment
+    //                                   ─────
+    //
+    // The parameter ends before the ? or starts after #, so it can't be
+    // interfering with the query parameters, we can stop here.
     const auto param_end = param_index + param.size() - 1;
     if ((uri.query_index - 1) > param_end ||
         (uri.fragment_index != npos && uri.fragment_index <= param_index)) {
         return false;
     }
 
-    // We compute the substring of the parameter that come after the ?
+    // Check if more than one parameter was injected
     return param.find('&') != npos;
 }
 
@@ -137,44 +169,70 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
             continue;
         }
 
-        // Verify if the injected param intereferes with the authority
+        // Verify if the injected param intereferes with the authority:
+        //
+        //  scheme://userinfo@host:port/path?query#fragment
+        //           ──────────────────────────────────────
+        //
         // Note that if there is no authority, this condition will never be true
         // as uri.authority.param_index will be npos (size_t::max)
         if (param_index >= uri.authority.index && param_index < uri.scheme_and_authority.size()) {
             // Verify if the host was fully modified by the injected param
+            //
+            //  scheme://userinfo@host:port/path?query#fragment
+            //           ───────────────────>
+            //
+            // Note that we require the injection to extend beyond the authority
+            // to avoid false positives caused by the introduction of a single '/'
             if ((param_index + param.size() - 1) > uri.scheme_and_authority.size()) {
                 return {{std::string(param), it.get_current_path()}};
             }
 
-            // If the IP is injected, we want to make sure it's fully under the attacker's control
-            // Otherwise, that's likely a false positive (bla=169.2&... in the URL match the IP
-            // 169.254.169.254)
+            // If the entire host has been injected, and it's an IP, check if its
+            // present in the list of known dangeorus IPs
+            //
+            //  scheme://userinfo@host:port/path?query#fragment
+            //                   <────>
             bool host_fully_injected =
                 param_index <= uri.authority.host_index &&
                 param_index + param.size() >= uri.authority.host_index + uri.authority.host.size();
 
-            if (uri.authority.host_ip.has_value()) {
-                auto res = dangerous_ip_matcher->match_ip(uri.authority.host_ip.value());
-                if (res && host_fully_injected) {
-                    return {{std::string(param), it.get_current_path()}};
-                }
+            if (host_fully_injected && uri.authority.host_ip.has_value() &&
+                dangerous_ip_matcher->match_ip(uri.authority.host_ip.value())) {
+                return {{std::string(param), it.get_current_path()}};
             }
 
-            if (!dangerous_domain.empty() && param == dangerous_domain) {
+            // Otherwise, check if the domain is also a known dangerous one injected
+            // by the parameter itself
+            if (!dangerous_domain.empty() && param.find(dangerous_domain) != npos) {
                 return {{std::string(param), it.get_current_path()}};
             }
         }
 
+        // If the injection includes the scheme check if it's still a valid one
+        //
+        //  scheme://userinfo@host:port/path?query#fragment
+        //  ───────────────────>
         if (param_index == 0 && !authorised_scheme_set.contains(uri.scheme)) {
             return {{std::string(param), it.get_current_path()}};
         }
 
+        // Finally, since we haven't found an injection on the scheme + authority
+        // section of the URL, we verify if the parameter has been injected in the
+        // path or query.
+        //
+        //  scheme://userinfo@host:port/path?query#fragment
+        //                             ───────────
+        //
+        // However we don't report an event yet as there could be a legitimate injection.
         if (!parameter_injection.has_value() &&
             detect_parameter_injection(uri, param, param_index)) {
             parameter_injection = {{std::string(param), it.get_current_path()}};
         }
     }
 
+    // At this stage, no injection has been found on scheme + authority, so we
+    // report the parameter injection if one has been detected
     if (parameter_injection.has_value()) {
         return parameter_injection.value();
     }
