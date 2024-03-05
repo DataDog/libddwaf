@@ -117,7 +117,7 @@ jobs:
           - vectorized
         arch:
           - amd64
-          - arm64
+          #- arm64 # codecov uploader not working yet
     runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-latest' || 'arm-4core-linux' }}
 
     steps:
