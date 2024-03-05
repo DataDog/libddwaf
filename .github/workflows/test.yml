@@ -193,7 +193,7 @@ jobs:
 
       - name: Generate coverage
         run: |
-          source ../.venv/bin/activate
+          source .venv/bin/activate
           gcovr --version
           gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "/artifacts/*/coverage-*.json" -x coverage.xml
           mkdir -p coverage
