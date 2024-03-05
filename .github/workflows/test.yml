@@ -66,7 +66,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install cmake gcc-12 g++-12 git make curl
+          DEBIAN_FRONTEND="noninteractive" sudo apt install -y cmake gcc-12 g++-12 git make curl
 
       - name: Create directories
         run: mkdir Debug
