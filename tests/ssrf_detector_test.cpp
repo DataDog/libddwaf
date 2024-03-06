@@ -133,7 +133,6 @@ TEST(TestSSRFDetector, NoMatch)
             {"https://metadata.google/private_keys/", {.yaml = "{trap: metadata}"}},
             {"https://254.254.169.254/path", {.yaml = "{form: {bla: '254.254.169.254'}}"}},
             {"https://[::ffff:fea9:a9fe]/path", {.yaml = "{form: {bla: '[::ffff:fea9:a9fe]'}}"}},
-            {"https://internal-website/path/to/stuffs?bla=42", {.yaml = "/path/to/stuffs?"}},
             {"https://blabla.com/random/path?name=/name2", {.yaml = "{form: {bla: '/name2'}}"}},
             {"https://blabla.com/random/path?name=name2#bla/name2",
                 {.yaml = "{form: {bla: '/name2'}}"}},
@@ -151,6 +150,8 @@ TEST(TestSSRFDetector, MatchParameterInjection)
 {
     match_path_and_input({
         {"https://blabla.com/random/../with?param=value", {.yaml = "../with"}},
+        {"https://blabla.com/random/with%2fdodgy/characters?param=value", {.yaml = "with%2fdodgy"}},
+        {"https://blabla.com/random/with%2Fdodgy/characters?param=value", {.yaml = "with%2Fdodgy"}},
         {"https://blabla.com/random/..falsestart.something/../with?param=value",
             {.yaml = "..falsestart.something/../with"}},
         {"https://blabla.com/path?name=param&name2=param2", {.yaml = "param&name2=param2"}},
@@ -159,6 +160,9 @@ TEST(TestSSRFDetector, MatchParameterInjection)
         {"https://blabla.com/random/path?name=name2&value=/legit",
             {.yaml = "path?name=name2&value="}},
         {"a://b/c/d?e=f&g=h", {.yaml = "d?e=f&g="}},
+        {"http://core-goals/v1/projects/42/goals?projectId=42&",
+            {.yaml = R"(/v1/projects/42/goals?)"}},
+        {"https://internal-website/path/to/stuffs?bla=42", {.yaml = "/path/to/stuffs?"}},
         //{"http://0:8000/composer/send_email?to=orange@chroot.org&url=http://127.0.0.1:6379/%0D%0ASET",
         //{.yaml="http://127.0.0.1:6379/%0D%0ASET"}},
     });
@@ -190,8 +194,6 @@ TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
             {"http://cn-cache.ryzerobotics.com/support/"
              "service-policies?cache=update&cache-gateway=1",
                 {.yaml = R"({path: "/support/service-policies?cache=update"})"}},
-            {"http://core-goals/v1/projects/42/goals?projectId=42&",
-                {.yaml = R"({path: "/v1/projects/42/goals?"})"}},
             {"http://s3.eu-central-1.amazonaws.com/bla/production/p/bla/blablabla.../"
              "BLABLABLA.html",
                 {.yaml = R"({path: "/p/bla/blablabla.../BLABLABLA"})"}},

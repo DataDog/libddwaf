@@ -34,11 +34,13 @@ using ssrf_result = std::optional<std::pair<std::string, std::vector<std::string
 bool detect_parameter_injection(
     const uri_decomposed &uri, std::string_view param, std::size_t param_index)
 {
-    const auto path_end = uri.path_index + uri.path.size();
+    const auto param_end = param_index + param.size();
 
     // Check if the application is giving full control of the path to the user
     // either fully or after a forward-slash.
     if (!uri.path.empty()) {
+        const auto path_end = uri.path_index + uri.path.size();
+
         //  scheme://userinfo@host:port/path?query#fragment
         //                             ─────
         if (uri.path.size() == param.size()) {
@@ -50,88 +52,84 @@ bool detect_parameter_injection(
             param.size() == uri.path.size() - 1) {
             return false;
         }
-    }
 
-    // REST parameter injection will involve introducing a / to the URL, however, such
-    // slashes are allowed after the ? or the #. Check if the slash is within the path
-    //
-    //  scheme://userinfo@host:port/path?query#fragment
-    //                             ─────
-    if (auto slash_index = param.find('/'); slash_index != npos) {
-        slash_index += param_index;
-        if (slash_index < path_end) {
-            // The path is partially under control of the user, this might be intentional
-            // so lets check for a possible LFI
-            auto relative_dir_index = param.find("..");
-            while (relative_dir_index != npos) {
+        // If part of the path has been injected and said injection contains a
+        // %2f, flag it as suspicious
+        //
+        //  scheme://userinfo@host:port/path?query#fragment
+        //                            <─────>
+        if (param_index < path_end && param_end > uri.path_index &&
+            (param.find("%2f") != npos || param.find("%2F") != npos)) {
+            return true;
+        }
 
-                // We found '..', check if it's enclosed by '/'
-                auto dir_index = relative_dir_index + param_index;
-                if (dir_index < path_end && (dir_index + 2) < uri.raw.size() &&
-                    uri.raw[dir_index - 1] == '/' && uri.raw[dir_index + 2] == '/') {
-                    return true;
+        // REST parameter injection will involve introducing a / to the URL, however, such
+        // slashes are allowed after the ? or the #. Check if the slash is within the path
+        //
+        //  scheme://userinfo@host:port/path?query#fragment
+        //                             ─────
+        if (auto slash_index = param.find('/'); slash_index != npos) {
+            slash_index += param_index;
+            if (slash_index < path_end) {
+                // The path is partially under control of the user, this might be intentional
+                // so lets check for a possible LFI
+                auto relative_dir_index = param.find("..");
+                while (relative_dir_index != npos) {
+
+                    // We found '..', check if it's enclosed by '/'
+                    auto dir_index = relative_dir_index + param_index;
+                    if (dir_index < path_end && (dir_index + 2) < uri.raw.size() &&
+                        uri.raw[dir_index - 1] == '/' && uri.raw[dir_index + 2] == '/') {
+                        return true;
+                    }
+                    relative_dir_index = param.find("..", relative_dir_index + 2);
                 }
-                relative_dir_index = param.find("..", relative_dir_index + 2);
             }
+        }
+
+        // If everything after a certain point before the end of the path has been
+        // injected, assume it's intentional
+        //
+        //  scheme://userinfo@host:port/path?query#fragment
+        //                             <───────────────────
+        if (param_index < path_end && param_end == uri.raw.size()) {
+            return false;
         }
     }
 
-    // If everything after a certain point before the end of the path has been
-    // injected, assume it's intentional
-    //
-    //  scheme://userinfo@host:port/path?query#fragment
-    //                             <───────────────────
-    if ((uri.query.empty() && uri.fragment.empty()) ||
-        (param_index < path_end && (param_index + param.size()) == uri.raw.size())) {
-        return false;
-    }
+    if (!uri.query.empty()) {
+        // Check if the query string was injected
+        //
+        //  scheme://userinfo@host:port/path?query#fragment
+        //                                 <─────
+        const auto param_query_index = param.find('?');
+        if (uri.query_index != npos && param_query_index != npos &&
+            (param_index + param_query_index + 1) == uri.query_index) {
+            // We had some cases where this was expected behavior, to make sure
+            // we check whether the next character is a '&'
+            auto after_param = uri.raw.substr(param_index + param.length());
+            return after_param.empty() || after_param[0] != '&';
+        }
 
-    // Check if the query string was injected
-    //
-    //  scheme://userinfo@host:port/path?query#fragment
-    //                                 <─────
-    const auto query_index = param.find('?');
-    if (uri.query_index != npos && query_index != npos &&
-        (param_index + query_index + 1) == uri.query_index) {
-        // We had some cases where this was expected behavior, to make sure
-        // we check whether the next character is a '&'
-        auto after_param = uri.raw.substr(param_index + param.length());
-        if (!after_param.empty() && after_param[0] == '&') {
+        // Check if the parameter interfered with what comes after the ?
+        //
+        //  scheme://userinfo@host:port/path?query#fragment
+        //                                   ─────
+        //
+        // The parameter ends before the ? or starts after #, so it can't be
+        // interfering with the query parameters, we can stop here.
+        const auto query_end = uri.query_index + uri.query.size();
+        if ((param_end <= uri.query_index - 1) || param_index >= query_end) {
             return false;
         }
 
-        // We can also check if the there's a valid parameter in key=value form
-        for (std::size_t i = 0; i < after_param.size(); ++i) {
-            const auto c = after_param[i];
-            if (c == '=' && i > 0) {
-                return false;
-            }
-
-            // Note that we're not checking for the full character set
-            // allowed in the query, this is intentional
-            if (!ddwaf::isalnum(c) && c != '_') {
-                break;
-            }
-        }
-
-        return true;
+        // Check if more than one parameter was injected
+        return param.find('&') != npos;
     }
 
-    // Check if the parameter interfered with what comes after the ?
-    //
-    //  scheme://userinfo@host:port/path?query#fragment
-    //                                   ─────
-    //
-    // The parameter ends before the ? or starts after #, so it can't be
-    // interfering with the query parameters, we can stop here.
-    const auto param_end = param_index + param.size() - 1;
-    if ((uri.query_index - 1) > param_end ||
-        (uri.fragment_index != npos && uri.fragment_index <= param_index)) {
-        return false;
-    }
-
-    // Check if more than one parameter was injected
-    return param.find('&') != npos;
+    // We only need to check for parameter injections in either the path
+    // or the query string, so if these are empty we can skip the checks
+    return false;
 }
 
 ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
