@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <array>
 #include <ddwaf.h>
 #include <deque>
 #include <vector>
@@ -34,6 +35,14 @@ void generate_string_object(ddwaf_object &o, std::size_t length)
 {
     char *str = generate_random_string(length);
     ddwaf_object_stringl_nc(&o, str, length);
+}
+
+void generate_ip_object(ddwaf_object &o)
+{
+    std::stringstream ss;
+    auto b = random::get_n<uint8_t, 4>();
+    ss << b[0] << "." << b[1] << "." << b[2] << "." << b[3];
+    ddwaf_object_string(&o, ss.str().c_str());
 }
 
 void generate_container(ddwaf_object &o)
@@ -149,6 +158,34 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
     }
 }
 
+enum class object_type : uint8_t { none, string, ip, boolean, any };
+
+object_type address_to_object_type(std::string_view addr)
+{
+    static std::unordered_map<std::string_view, object_type> address_types{
+        {"graphql.server.all_resolvers", object_type::any},
+        {"graphql.server.resolver", object_type::any},
+        {"grpc.server.request.message", object_type::any},
+        {"grpc.server.request.metadata", object_type::any},
+        {"http.client_ip", object_type::ip},
+        {"server.request.body", object_type::any},
+        {"server.request.cookies", object_type::any},
+        {"server.request.headers.no_cookies", object_type::any},
+        {"server.request.headers.no_cookies", object_type::any},
+        {"server.request.path_params", object_type::any},
+        {"server.request.query", object_type::any},
+        {"server.request.uri.raw", object_type::string},
+        {"server.response.body", object_type::any},
+        {"server.response.headers.no_cookies", object_type::any},
+        {"server.response.status", object_type::string},
+        {"usr.id", object_type::string},
+        {"waf.context.processor", object_type::boolean},
+        {"server.io.fs.file", object_type::string},
+    };
+    auto it = address_types.find(addr);
+    return it == address_types.end() ? object_type::none : it->second;
+}
+
 } // namespace
 
 std::vector<ddwaf_object> object_generator::operator()(unsigned n, object_specification spec) const
@@ -159,11 +196,30 @@ std::vector<ddwaf_object> object_generator::operator()(unsigned n, object_specif
         ddwaf_object_map(&root);
 
         for (const auto addr : addresses_) {
+            auto type = address_to_object_type(addr);
+
             ddwaf_object value;
-            if (spec.depth == 0) {
+            switch (type) {
+            case object_type::string:
                 generate_string_object(value, spec.string_length);
-            } else {
-                generate_objects(value, spec);
+                break;
+            case object_type::ip:
+                generate_ip_object(value);
+                break;
+            case object_type::boolean:
+                ddwaf_object_bool(&value, random::get_bool());
+                break;
+            case object_type::none:
+                ddwaf_object_null(&value);
+                break;
+            case object_type::any:
+            default:
+                if (spec.depth == 0) {
+                    generate_string_object(value, spec.string_length);
+                } else {
+                    generate_objects(value, spec);
+                }
+                break;
             }
 
             ddwaf_object_map_add(&root, addr.data(), &value);

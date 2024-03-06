@@ -39,6 +39,18 @@ public:
         return (*rng_)() % mod;
     }
 
+    template <typename T, std::size_t N>
+    static std::array<T, N> get_n()
+        requires std::is_integral_v<T>
+    {
+        if (!rng_) {
+            rng_ = std::make_unique<std::mt19937>();
+        }
+        std::array<T, N> values;
+        for (auto &v : values) { v = (*rng_)() % std::numeric_limits<T>::max(); }
+        return values;
+    }
+
     static bool get_bool()
     {
         if (!rng_) {
