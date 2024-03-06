@@ -76,17 +76,17 @@ bool detect_parameter_injection(
         }
     }
 
-    // The application giving total control to the user after a given point.
-    // If it starts in the path, assume it's intentional
+    // If everything after a certain point before the end of the path has been
+    // injected, assume it's intentional
     //
     //  scheme://userinfo@host:port/path?query#fragment
-    //                             ────────────────────
+    //                             <───────────────────
     if ((uri.query.empty() && uri.fragment.empty()) ||
         (param_index < path_end && (param_index + param.size()) == uri.raw.size())) {
         return false;
     }
 
-    // Check if the entire query string was injected
+    // Check if the query string was injected
     //
     //  scheme://userinfo@host:port/path?query#fragment
     //                                 <─────
@@ -145,6 +145,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
     for (const auto domain : dangerous_domains) {
         if (uri.authority.host.ends_with(domain)) {
             dangerous_domain = domain;
+            break;
         }
     }
 
