@@ -59,7 +59,8 @@ bool detect_parameter_injection(
         //  scheme://userinfo@host:port/path?query#fragment
         //                            <─────>
         if (param_index < path_end && param_end > uri.path_index &&
-            (param.find("%2f") != npos || param.find("%2F") != npos)) {
+            (param.find("%2f") != npos || param.find("%2F") != npos || param.find("%5c") != npos ||
+                param.find("%5C") != npos)) {
             return true;
         }
 

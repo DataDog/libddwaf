@@ -152,6 +152,8 @@ TEST(TestSSRFDetector, MatchParameterInjection)
         {"https://blabla.com/random/../with?param=value", {.yaml = "../with"}},
         {"https://blabla.com/random/with%2fdodgy/characters?param=value", {.yaml = "with%2fdodgy"}},
         {"https://blabla.com/random/with%2Fdodgy/characters?param=value", {.yaml = "with%2Fdodgy"}},
+        {"https://blabla.com/random/with%5cdodgy/characters?param=value", {.yaml = "with%5cdodgy"}},
+        {"https://blabla.com/random/with%5Cdodgy/characters?param=value", {.yaml = "with%5Cdodgy"}},
         {"https://blabla.com/random/..falsestart.something/../with?param=value",
             {.yaml = "..falsestart.something/../with"}},
         {"https://blabla.com/path?name=param&name2=param2", {.yaml = "param&name2=param2"}},
