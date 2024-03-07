@@ -171,7 +171,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
         // Verify if the injected param intereferes with the authority:
         //
         //  scheme://userinfo@host:port/path?query#fragment
-        //           ──────────────────────────────────────
+        //           ──────────────────
         //
         // Note that if there is no authority, this condition will never be true
         // as uri.authority.param_index will be npos (size_t::max)
