@@ -39,7 +39,7 @@ if(NOT MSVC)
         set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
     endif()
 
-    add_compile_options(-Wall -Wextra -Wno-narrowing)
+    add_compile_options(-Wall -Wextra -Wno-narrowing -ftls-model=global-dynamic)
     if (CMAKE_BUILD_TYPE MATCHES Debug OR CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
         add_compile_options(-ggdb)
     endif()
