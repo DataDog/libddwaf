@@ -12,20 +12,23 @@ tests/default.profraw
 perf/test_files/parsed_*
 perf/test_files/breakdown.numbers
 
-/fuzzing/build
-/fuzzing/venv
-/fuzzing/corpus
+/fuzzer/global/build
+/fuzzer/global/venv
+/fuzzer/global/corpus
 
-/fuzzing/sample_rules.yml
-/fuzzing/sample_dict.txt
-/fuzzing/fuzzer
-/fuzzing/libddwaf.a
-/fuzzing/fuzzer.dSYM
-/fuzzing/default.profdata
-/fuzzing/default.profraw
-/fuzzing/coverage.html
-/fuzzing/fuzz-*.log
-/fuzzing/results/crash-*
+/fuzzer/global/sample_rules.yml
+/fuzzer/global/sample_dict.txt
+/fuzzer/global/fuzzer
+/fuzzer/global/libddwaf.a
+/fuzzer/global/fuzzer.dSYM
+/fuzzer/global/default.profdata
+/fuzzer/global/default.profraw
+/fuzzer/global/coverage.html
+/fuzzer/global/fuzz-*.log
+/fuzzer/global/results/crash-*
+
+/fuzzer/*/corpus/*
+!/fuzzer/*/corpus/corpus-*
 
 /src/version.hpp
 

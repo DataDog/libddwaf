@@ -12,6 +12,7 @@
 
 #include "condition/lfi_detector.hpp"
 #include "condition/scalar_condition.hpp"
+#include "condition/ssrf_detector.hpp"
 #include "exception.hpp"
 #include "exclusion/object_filter.hpp"
 #include "generator/extract_schema.hpp"
@@ -225,8 +226,11 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
 
         if (operator_name == "lfi_detector") {
             auto arguments = parse_arguments<lfi_detector>(params, source, transformers, addresses);
-
             conditions.emplace_back(std::make_unique<lfi_detector>(std::move(arguments), limits));
+        } else if (operator_name == "ssrf_detector") {
+            auto arguments =
+                parse_arguments<ssrf_detector>(params, source, transformers, addresses);
+            conditions.emplace_back(std::make_unique<ssrf_detector>(std::move(arguments), limits));
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 

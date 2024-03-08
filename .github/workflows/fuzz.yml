@@ -17,7 +17,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
-  fuzzing:
+  # TODO: build all fuzzers first, then run independently
+  global-fuzzer:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,21 +32,21 @@ jobs:
           DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install libfuzzer-17-dev
 
       - name: Build
-        run: ./fuzzing/build.sh
+        run: ./fuzzer/global/build.sh
 
       - name: Run fuzzer
-        run: ./fuzzing/run.sh ${{ github.event.inputs.duration }}
+        run: ./fuzzer/global/run.sh ${{ github.event.inputs.duration }}
 
       - name: Log
         if: ${{ always() }}
-        run: grep -v -f fuzzing/scripts/report-negative-patterns.txt fuzzing/fuzz-*.log
+        run: grep -v -f fuzzer/global/scripts/report-negative-patterns.txt fuzzer/global/fuzz-*.log
 
       - name: Show coverage
-        run: ./fuzzing/scripts/show_coverage.sh 40
+        run: ./fuzzer/global/scripts/show_coverage.sh 40
 
       - name: Compress artifact
         if: ${{ always() }}
-        run: tar -czvf fuzzing.tar.gz fuzzing/
+        run: tar -czvf fuzzing.tar.gz fuzzer/global/
 
       - name: Artifact
         uses: actions/upload-artifact@v4
@@ -53,3 +54,36 @@ jobs:
         with:
           name: fuzzing-data
           path: fuzzing.tar.gz
+  local-fuzzer:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - uri_parse
+          - ssrf_detector
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install deps
+        run: |
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y remove python3-lldb-14
+          sudo .github/workflows/scripts/llvm.sh 17
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install libfuzzer-17-dev
+
+      - name: Build
+        env:
+          CC: clang-17
+          CXX: clang++-17
+        run: |
+          mkdir build ; cd build
+          cmake -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+          make -j $(nproc) ${{ matrix.variant }}_fuzzer
+          cp fuzzer/${{ matrix.variant }}_fuzzer ../fuzzer/${{ matrix.variant }}
+
+      - name: Run fuzzer
+        run: |
+          cd fuzzer/${{ matrix.variant }}
+          ./${{ matrix.variant }}_fuzzer -max_total_time=${{ github.event.inputs.duration || 60 }} corpus/
