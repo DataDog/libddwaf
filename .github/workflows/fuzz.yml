@@ -87,4 +87,4 @@ jobs:
       - name: Run fuzzer
         run: |
           cd fuzzer/${{ matrix.variant }}
-          ./${{ matrix.variant }}_fuzzer -max_total_time=${{ github.event.inputs.duration || 60 }} corpus/
+          ./${{ matrix.variant }}_fuzzer -max_total_time=${{ github.event.inputs.duration || 300 }} corpus/
