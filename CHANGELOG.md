@@ -1,4 +1,13 @@
 # libddwaf release
+
+### v1.17.0-alpha2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Server-side request forgery (SSRF) detection operator ([#268](https://github.com/DataDog/libddwaf/pull/268))
+
+#### Miscellaneous
+- Attempt to build libddwaf on arm64 runner ([#270](https://github.com/DataDog/libddwaf/pull/270))
+- Run tests on arm64 ([#271](https://github.com/DataDog/libddwaf/pull/271))
+
 ### v1.17.0-alpha1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
 - Fix parsing of variadic arguments ([#267](https://github.com/DataDog/libddwaf/pull/267))
