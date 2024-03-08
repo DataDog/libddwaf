@@ -81,10 +81,9 @@ inline bool is_unreserved(char c)
 inline bool is_subdelim(char c)
 {
     return c == '!' || c == '$' || c == '&' || c == '\'' || c == '(' || c == ')' || c == '*' ||
-           c == '*' || c == '+' || c == ',' || c == ';' || c == '=';
+           c == '+' || c == ',' || c == ';' || c == '=';
 }
 
-// TODO validate percent-encoding?
 inline bool is_scheme_char(char c) { return ddwaf::isalnum(c) || c == '.' || c == '-' || c == '+'; }
 inline bool is_host_char(char c) { return is_unreserved(c) || is_subdelim(c) || c == '%'; }
 inline bool is_path_char(char c)
@@ -182,7 +181,6 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             auto token_begin = i;
             authority_end = uri.find_first_of("/?#", i);
             if (authority_end != npos) {
-                // The authority is empty
                 const auto c = uri[authority_end];
                 if (c == '/') {
                     lookahead_token = token_type::path;
@@ -287,10 +285,9 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             }
 
             if (uri[i] == ':') {
-                token_begin = ++i;
+                ++i;
                 expected_token = token_type::port;
             } else {
-                token_begin = i;
                 expected_token = lookahead_token;
             }
             break;
@@ -320,7 +317,6 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
             if (!parse_ipv6(host, parsed_ip)) {
                 return std::nullopt;
             }
-            ipv4_to_ipv6(parsed_ip);
 
             decomposed.authority.host = host;
             decomposed.authority.host_ip = parsed_ip;
@@ -349,13 +345,19 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                 }
             }
 
-            decomposed.authority.port = uri.substr(token_begin, i - token_begin);
+            auto port_substr = uri.substr(token_begin, i - token_begin);
+            if (!port_substr.empty()) {
+                if (auto [res, value] = from_string<uint16_t>(port_substr); !res) {
+                    return std::nullopt;
+                }
+                decomposed.authority.port = port_substr;
+            }
+
             if (authority_end == uri.size()) {
                 return decomposed;
             }
 
             expected_token = lookahead_token;
-            token_begin = i;
 
             break;
         }

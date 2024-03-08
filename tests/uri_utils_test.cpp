@@ -293,6 +293,19 @@ TEST(TestURI, SchemeHostPort)
         EXPECT_TRUE(uri->authority.userinfo.empty());
         EXPECT_STRV(uri->authority.port, "19283");
     }
+
+    {
+        // Empty host
+        ASSERT_FALSE(ddwaf::uri_parse("h://:65536"));
+        ASSERT_FALSE(ddwaf::uri_parse("h://:-1"));
+    }
+}
+
+TEST(TestURI, MalformedPort)
+{
+    ASSERT_FALSE(ddwaf::uri_parse("h://:65536"));
+    ASSERT_FALSE(ddwaf::uri_parse("h://:123123123"));
+    ASSERT_FALSE(ddwaf::uri_parse("h://:-1"));
 }
 
 TEST(TestURI, SchemeHostQuery)
