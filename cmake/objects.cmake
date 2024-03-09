@@ -1,3 +1,5 @@
+reflex_target(sql_tokenizer ${libddwaf_SOURCE_DIR}/src/sql_tokenizer.l sql_tokenizer.cpp)
+
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/ruleset_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
@@ -87,6 +89,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/unicode_groups.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/rune.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/strutil.cc
+    ${REFLEX_sql_tokenizer_OUTPUT}
 )
 
 set(LIBDDWAF_PUBLIC_INCLUDES ${libddwaf_SOURCE_DIR}/include)
@@ -103,19 +106,14 @@ set(LIBDDWAF_PRIVATE_INCLUDES
 )
 
 function(gen_objects target_name)
-    reflex_target(${target_name}_sql_tokenizer
-        ${libddwaf_SOURCE_DIR}/src/sql_tokenizer.l sql_tokenizer.cpp)
-
-    add_library(${target_name} OBJECT ${LIBDDWAF_SOURCE} 
-        ${REFLEX_${target_name}_sql_tokenizer_OUTPUT}
-    )
+    add_library(${target_name} OBJECT ${LIBDDWAF_SOURCE} )
 
     # we need PIC even on the static lib,as it's expected to be linked in a shared lib
     set_target_properties(${target_name} PROPERTIES
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
         POSITION_INDEPENDENT_CODE 1)
-    add_dependencies(${target_name} reflex_gen_${target_name}_sql_tokenizer)
+    add_dependencies(${target_name} reflex_gen_sql_tokenizer)
 
     if(NOT STDLIB_MAP_RECURSIVE)
         target_compile_definitions(${target_name} PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)

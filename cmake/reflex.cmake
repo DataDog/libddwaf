@@ -60,8 +60,8 @@ macro(reflex_target target input output)
         VERBATIM
         DEPENDS ${_REFLEX_INPUT} ${REFLEX_EXECUTABLE}
         COMMENT "Generating ${_REFLEX_OUTPUT}"
-        WORKING_DIRECTORY ${_REFLEX_WORKING_DIR}
-        BYPRODUCTS ${_REFLEX_OUTPUT})
+        WORKING_DIRECTORY ${_REFLEX_WORKING_DIR})
+        #BYPRODUCTS ${_REFLEX_OUTPUT})
     add_custom_target(reflex_gen_${target} DEPENDS "${_REFLEX_OUTPUT}")
     add_dependencies(reflex_gen_${target} proj_reflex)
 
