@@ -8,4 +8,4 @@
 
 namespace ddwaf {
 void sql_tokenize();
-}
+} // namespace ddwaf
