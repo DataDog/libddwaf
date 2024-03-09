@@ -98,16 +98,24 @@ set(LIBDDWAF_PRIVATE_INCLUDES
     ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/
     ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/
-    ${libddwaf_SOURCE_DIR}/src/vendor/re2/)
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/
+    ${REFLEX_INCLUDE_DIR}
+)
 
 function(gen_objects target_name)
-    add_library(${target_name} OBJECT ${LIBDDWAF_SOURCE})
+    reflex_target(${target_name}_sql_tokenizer
+        ${libddwaf_SOURCE_DIR}/src/sql_tokenizer.l sql_tokenizer.cpp)
 
-# we need PIC even on the static lib,as it's expected to be linked in a shared lib
+    add_library(${target_name} OBJECT ${LIBDDWAF_SOURCE} 
+        ${REFLEX_${target_name}_sql_tokenizer_OUTPUT}
+    )
+
+    # we need PIC even on the static lib,as it's expected to be linked in a shared lib
     set_target_properties(${target_name} PROPERTIES
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
         POSITION_INDEPENDENT_CODE 1)
+    add_dependencies(${target_name} reflex_gen_${target_name}_sql_tokenizer)
 
     if(NOT STDLIB_MAP_RECURSIVE)
         target_compile_definitions(${target_name} PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
