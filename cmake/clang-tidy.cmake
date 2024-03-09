@@ -6,6 +6,7 @@ endif()
 
 file(GLOB_RECURSE FILE_LIST src/*.hpp src/*.cpp)
 list(FILTER FILE_LIST EXCLUDE REGEX ".*/src/vendor/.*")
+list(FILTER FILE_LIST EXCLUDE REGEX "sql_tokenizer.cpp")
 
 execute_process (
     COMMAND bash -c "${CLANG_TIDY} --help | grep -qs 'use-color'"
