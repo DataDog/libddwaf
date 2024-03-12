@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <limits>
 #include <optional>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -283,6 +284,22 @@ inline std::vector<std::string_view> split(std::string_view str, char sep)
     }
 
     return components;
+}
+
+// NOLINTNEXTLINE(fuchsia-multiple-inheritance)
+class null_ostream : public std::ostream {
+public:
+    null_ostream() = default;
+    ~null_ostream() override = default;
+    null_ostream(const null_ostream & /*unused*/) = delete;
+    null_ostream(null_ostream && /*unused*/) = delete;
+    null_ostream &operator=(const null_ostream & /*unused*/) = delete;
+    null_ostream &operator=(null_ostream && /*unused*/) = delete;
+};
+
+template <class T> const null_ostream &operator<<(null_ostream &os, const T & /*unused*/)
+{
+    return os;
 }
 
 } // namespace ddwaf

@@ -12,6 +12,7 @@
 
 #include "condition/lfi_detector.hpp"
 #include "condition/scalar_condition.hpp"
+#include "condition/sqli_detector.hpp"
 #include "condition/ssrf_detector.hpp"
 #include "exception.hpp"
 #include "exclusion/object_filter.hpp"
@@ -231,6 +232,10 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
             auto arguments =
                 parse_arguments<ssrf_detector>(params, source, transformers, addresses);
             conditions.emplace_back(std::make_unique<ssrf_detector>(std::move(arguments), limits));
+        } else if (operator_name == "sqli_detector") {
+            auto arguments =
+                parse_arguments<sqli_detector>(params, source, transformers, addresses);
+            conditions.emplace_back(std::make_unique<sqli_detector>(std::move(arguments), limits));
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 

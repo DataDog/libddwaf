@@ -38,3 +38,23 @@ rules:
             - address: graphql.server.all_resolvers
             - address: graphql.server.resolver
         operator: ssrf_detector
+  - id: rsp-930-003
+    name: SQLi Exploit detection
+    tags:
+      type: sqli
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.db.statement
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+          db_type:
+            - address: server.db.system
+        operator: sqli_detector
