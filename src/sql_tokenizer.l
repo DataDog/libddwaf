@@ -30,7 +30,7 @@
 }
 
 command                     [a-zA-Z_][a-zA-Z_0-9]*
-utf8command                 [\x0080-\xFFFFa-zA-Z_][\x0080-\xFFFFa-zA-Z_0-9$]*
+utf8command                 [\u{0080}-\u{FFFF}a-zA-Z_][\u{0080}-\u{FFFF}a-zA-Z_0-9$]*
 hex                         0x[0-9a-fA-F]+
 number                      [-+]*(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?\b
 par_open                    \(
@@ -69,7 +69,7 @@ eol_comment                 --.*
 {inline_comment}       { set_token(sql_token_type::inline_comment); }
 {semicolon}            { set_token(sql_token_type::query_end); }
 {eol_comment}          { set_token(sql_token_type::eol_comment); }
-/*{utf8command}          { set_token(sql_token_type::command); }*/
+{utf8command}          { set_token(sql_token_type::command); }
 %%
 
 namespace ddwaf {
