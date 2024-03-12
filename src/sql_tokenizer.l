@@ -20,7 +20,6 @@
             std::size_t offset = matcher().first();
             std::string_view str{in_.cstring() + offset, size()};
 
-            /*std::cout << "Token[" << offset << "]: " << str << std::endl;*/
             tokens_.emplace_back(type, str, offset);
         }
         std::vector<sql_token> &&get_tokens() {
@@ -30,7 +29,7 @@
         std::vector<sql_token> tokens_;
 }
 
-command                     [a-zA-Z_][a-zA-Z_0-9$]*
+command                     [a-zA-Z_][a-zA-Z_0-9]*
 utf8command                 [\x0080-\xFFFFa-zA-Z_][\x0080-\xFFFFa-zA-Z_0-9$]*
 hex                         0x[0-9a-fA-F]+
 number                      [-+]*(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?\b
@@ -52,6 +51,9 @@ bitwise_operator            \||&|<<|>>|\+|-|\*|\/|DIV|MOD|%|\^
 eol_comment                 --.*
 %%
 {whitespace}           { /* Ignore Whitespaces */ }
+{binary_operator}      { set_token(sql_token_type::binary_operator); }
+{number}               { set_token(sql_token_type::number); }
+{bitwise_operator}     { set_token(sql_token_type::bitwise_operator); }
 {command}              { set_token(sql_token_type::command); }
 {hex}                  { set_token(sql_token_type::hex); }
 {single_quoted_string} { set_token(sql_token_type::single_quoted_string); }
@@ -66,11 +68,8 @@ eol_comment                 --.*
 {dot}                  { set_token(sql_token_type::dot); }
 {inline_comment}       { set_token(sql_token_type::inline_comment); }
 {semicolon}            { set_token(sql_token_type::query_end); }
-{number}               { set_token(sql_token_type::number); }
-{binary_operator}      { set_token(sql_token_type::binary_operator); }
-{bitwise_operator}     { set_token(sql_token_type::bitwise_operator); }
 {eol_comment}          { set_token(sql_token_type::eol_comment); }
-{utf8command}          { set_token(sql_token_type::command); }
+/*{utf8command}          { set_token(sql_token_type::command); }*/
 %%
 
 namespace ddwaf {
