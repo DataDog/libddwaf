@@ -1,8 +1,8 @@
 # libddwaf release
 ### v1.16.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 ### Fixes
-- Add support for old glibc (e.g. RHEL 6) (#262)
-- Add weak ceilf symbol and definition (#263)
+- Add support for old glibc (e.g. RHEL 6) ([#262](https://github.com/DataDog/libddwaf/pull/262))
+- Add weak ceilf symbol and definition ([#263](https://github.com/DataDog/libddwaf/pull/263))
 
 ### v1.16.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
