@@ -69,8 +69,19 @@ bool test_runner::run_test(const YAML::Node &runs)
                 code = DDWAF_MATCH;
             }
 
-            auto object = run["input"].as<ddwaf_object>();
-            auto retval = ddwaf_run(ctx.get(), &object, res.get(), timeout);
+            ddwaf_object *persistent_ptr = nullptr;
+            auto persistent = run["persistent-input"].as<ddwaf_object>();
+            if (ddwaf_object_type(&persistent) != DDWAF_OBJ_INVALID) {
+                persistent_ptr = &persistent;
+            }
+
+            ddwaf_object *ephemeral_ptr = nullptr;
+            auto ephemeral = run["ephemeral-input"].as<ddwaf_object>();
+            if (ddwaf_object_type(&ephemeral) != DDWAF_OBJ_INVALID) {
+                ephemeral_ptr = &ephemeral;
+            }
+
+            auto retval = ddwaf_run(ctx.get(), persistent_ptr, ephemeral_ptr, res.get(), timeout);
 
             expect(retval, code);
             if (code == DDWAF_MATCH) {
@@ -212,18 +223,42 @@ void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node 
 {
     expect(expected.size(), obtained.size());
 
+    static std::set<std::string_view, std::less<>> scalar_operators{
+        "match_regex", "phrase_match", "exact_match", "ip_match", "equals", "is_sqli", "is_xss"};
+
     // Iterate through matches, assume they are in the same order as rule
     // conditions for now.
     for (std::size_t i = 0; i < expected.size(); i++) {
         auto expected_match = expected[i];
         auto obtained_match = obtained[i]["parameters"][0];
-        if (expected_match["address"].IsDefined()) {
-            expect(expected_match["address"], obtained_match["address"]);
+
+        auto op = obtained[i]["operator"].as<std::string>();
+        if (scalar_operators.contains(op)) {
+            if (expected_match["address"].IsDefined()) {
+                expect(expected_match["address"], obtained_match["address"]);
+            }
+            if (expected_match["key_path"].IsDefined()) {
+                expect(expected_match["key_path"], obtained_match["key_path"]);
+            }
+            expect(expected_match["value"], obtained_match["value"]);
+        } else {
+            for (YAML::const_iterator it = expected_match.begin(); it != expected_match.end();
+                 ++it) {
+                auto key = it->first.as<std::string>();
+                auto expected_param = it->second;
+                auto obtained_param = obtained_match[key];
+
+                if (expected_param.IsMap()) {
+                    if (expected_param["address"].IsDefined()) {
+                        expect(expected_param["address"], obtained_param["address"]);
+                    }
+                    if (expected_param["key_path"].IsDefined()) {
+                        expect(expected_param["key_path"], obtained_param["key_path"]);
+                    }
+                    expect(expected_param["value"], obtained_param["value"]);
+                }
+            }
         }
-        if (expected_match["key_path"].IsDefined()) {
-            expect(expected_match["key_path"], obtained_match["key_path"]);
-        }
-        expect(expected_match["value"], obtained_match["value"]);
     }
 }
 

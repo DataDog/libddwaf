@@ -70,7 +70,7 @@ bool call_transformer(transformer_id id, cow_string &str)
 }
 
 bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
-    const std::vector<transformer_id> &transformers)
+    const std::span<const transformer_id> &transformers)
 {
     if (source.type != DDWAF_OBJ_STRING || source.stringValue == nullptr) {
         return false;
@@ -92,6 +92,10 @@ bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
     auto [buffer, length] = str.move();
     ddwaf_object_stringl_nc(&destination, buffer, length);
 
+    // The memory returned by str.move() is now owned by destination, however
+    // clang-tidy believes it has been leaked as it can't track the fact that
+    // it has changed ownership.
+    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return true;
 }
 

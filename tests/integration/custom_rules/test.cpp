@@ -35,7 +35,7 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "custom_rule1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_object_free(&parameter);
     }
@@ -44,7 +44,7 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "custom_rule2"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_object_free(&parameter);
     }
@@ -75,7 +75,7 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_object_free(&parameter);
     }
@@ -84,7 +84,7 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "custom_rule2"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_object_free(&parameter);
     }
@@ -116,16 +116,15 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
         ddwaf_object_map_add(&parameter, "value3", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule3",
                                .name = "custom_rule3",
                                .tags = {{"type", "flow34"}, {"category", "category3"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value3",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value3"}}}}});
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
     }
@@ -157,7 +156,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
         ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -165,9 +164,8 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value4",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value4"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -201,7 +199,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -209,9 +207,8 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -256,7 +253,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -264,9 +261,8 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "rule"}}});
+                                   .highlight = "rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -278,7 +274,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context2, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -286,9 +282,8 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -336,7 +331,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -344,9 +339,8 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -358,16 +352,15 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context2, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule5",
                                .name = "custom_rule5",
                                .tags = {{"type", "flow5"}, {"category", "category5"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -435,7 +428,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -443,9 +436,8 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -457,7 +449,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context2, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -465,9 +457,8 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "rule"}}});
+                                   .highlight = "rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -514,7 +505,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -522,9 +513,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -536,7 +526,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context2, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -544,9 +534,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -604,7 +593,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -612,9 +601,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .address = "value4",
-                                   .value = "custom_rule",
-                                   .highlight = "rule"}}});
+                                   .highlight = "rule",
+                                   .args = {{.value = "custom_rule", .address = "value4"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -625,7 +613,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_free(&parameter);
     }
@@ -635,7 +623,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context3, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -643,9 +631,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value4",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value4"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -693,7 +680,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -701,9 +688,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -715,7 +701,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context2, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -723,9 +709,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "rule"}}});
+                                   .highlight = "rule",
+                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -783,7 +768,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -791,9 +776,11 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "rule"}}});
+                                   .highlight = "rule",
+                                   .args = {{
+                                       .value = "custom_rule",
+                                       .address = "value34",
+                                   }}}}});
         EXPECT_THAT(res.actions, WithActions({"block"}));
 
         ddwaf_result_free(&res);
@@ -805,16 +792,18 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context2, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule3",
                                .name = "rule3",
                                .tags = {{"type", "flow34"}, {"category", "category3"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "rule"}}});
+                                   .highlight = "rule",
+                                   .args = {{
+                                       .value = "custom_rule",
+                                       .address = "value34",
+                                   }}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -825,16 +814,18 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
         ddwaf_result res;
-        EXPECT_EQ(ddwaf_run(context3, &parameter, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule3",
                                .name = "custom_rule3",
                                .tags = {{"type", "flow34"}, {"category", "category3"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .address = "value34",
-                                   .value = "custom_rule",
-                                   .highlight = "custom_rule"}}});
+                                   .highlight = "custom_rule",
+                                   .args = {{
+                                       .value = "custom_rule",
+                                       .address = "value34",
+                                   }}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);

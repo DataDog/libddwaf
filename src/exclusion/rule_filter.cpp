@@ -9,8 +9,10 @@
 
 namespace ddwaf::exclusion {
 
-rule_filter::rule_filter(
-    std::string id, expression::ptr expr, std::set<rule *> rule_targets, filter_mode mode)
+using excluded_set = rule_filter::excluded_set;
+
+rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
+    std::set<rule *> rule_targets, filter_mode mode)
     : id_(std::move(id)), expr_(std::move(expr)), mode_(mode)
 {
     if (!expr_) {
@@ -23,21 +25,22 @@ rule_filter::rule_filter(
     }
 }
 
-optional_ref<const std::unordered_set<rule *>> rule_filter::match(
+std::optional<excluded_set> rule_filter::match(
     const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
-    // Note that conditions in a filter are optional
-    if (!expr_->empty()) {
-        if (expression::get_result(cache)) {
-            return std::nullopt;
-        }
+    DDWAF_DEBUG("Evaluating rule filter '{}'", id_);
 
-        if (!expr_->eval(cache, store, {}, {}, deadline)) {
-            return std::nullopt;
-        }
+    // Don't return a match again if we already did
+    if (expression::get_result(cache)) {
+        return std::nullopt;
     }
 
-    return {rule_targets_};
+    auto res = expr_->eval(cache, store, {}, {}, deadline);
+    if (!res.outcome) {
+        return std::nullopt;
+    }
+
+    return {{rule_targets_, res.ephemeral, mode_}};
 }
 
 } // namespace ddwaf::exclusion

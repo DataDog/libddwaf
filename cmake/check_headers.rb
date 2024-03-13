@@ -7,7 +7,8 @@ EXCLUSIONS = %w{
 }
 
 base_dir = File.realdirpath('..', __dir__)
-files = Dir.glob('{tests,src}/**/*.{cpp,c,hpp,h}', 0, base: base_dir)
+files = Dir.glob('{tests,src,validator,fuzzing,perf}/**/*.{cpp,c,hpp,h}', 0, base: base_dir)
+           .reject { |f| f.start_with?(File.join('src', 'vendor')) }
            .map { |f| File.realpath(f, base_dir) }
 
 

@@ -5,12 +5,13 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <libinjection.h>
-#include <matcher/is_xss.hpp>
-#include <utils.hpp>
+
+#include "matcher/is_xss.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::matcher {
 
-std::pair<bool, memory::string> is_xss::match_impl(std::string_view pattern)
+std::pair<bool, std::string> is_xss::match_impl(std::string_view pattern)
 {
     if (pattern.empty() || pattern.data() == nullptr ||
         libinjection_xss(pattern.data(), pattern.size()) == 0) {

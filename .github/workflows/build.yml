@@ -24,7 +24,7 @@ jobs:
           - Win32
           - x64
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: ilammy/msvc-dev-cmd@v1
@@ -34,10 +34,10 @@ jobs:
         run: cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIBDDWAF_PACKAGE_PROCESSOR=${{ matrix.arch }} -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }} -A ${{ matrix.arch }}
         working-directory: ${{ github.workspace }}/build
       - name: Build
-        run: cmake --build . --target package --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target tests/testPowerWAF -j
+        run: cmake --build . --target package --config RelWithDebInfo --verbose --target libddwaf_shared --target libddwaf_static --target tests/waf_test -j
         working-directory: ${{ github.workspace }}/build
       - name: Test
-        run: ${{ github.workspace }}/build/tests/testPowerWAF
+        run: ${{ github.workspace }}/build/tests/waf_test
         working-directory: ${{ github.workspace }}/tests
       - name: Remove Temporary Files
         run: cmake -E remove_directory _CPack_Packages
@@ -46,7 +46,7 @@ jobs:
         working-directory: ${{ github.workspace }}/packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
         shell: bash
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: libddwaf-windows-${{ matrix.arch }}
           path: |
@@ -56,7 +56,7 @@ jobs:
   macos-build:
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Create Build Directory
@@ -65,10 +65,10 @@ jobs:
         run: cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMACOSX_DEPLOYMENT_TARGET=10.9 -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
         working-directory: ${{ github.workspace }}/build
       - name: Build Binaries
-        run: cmake --build . --config RelWithDebInfo --verbose --target all --target testPowerWAF -j
+        run: cmake --build . --config RelWithDebInfo --verbose --target all --target waf_test -j
         working-directory: ${{ github.workspace }}/build
       - name: Test
-        run: ${{ github.workspace }}/build/tests/testPowerWAF
+        run: ${{ github.workspace }}/build/tests/waf_test
         working-directory: ${{ github.workspace }}/tests
       - name: Build Packages
         run: cmake --build . --target package --config RelWithDebInfo --verbose
@@ -79,7 +79,7 @@ jobs:
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
         run: for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: libddwaf-macos-x86_64
           path: |
@@ -89,7 +89,7 @@ jobs:
   macos-cross-build:
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Create Build Directory
@@ -109,7 +109,7 @@ jobs:
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
         run: for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: libddwaf-macos-arm64
           path: |
@@ -120,8 +120,8 @@ jobs:
     runs-on: macos-11
     needs: [macos-build, macos-cross-build]
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
 
@@ -129,6 +129,8 @@ jobs:
         run: |
           # Create temporal folders
           mkdir -p ./pack-temp/{osx-x64,osx-arm64,osx}
+
+          ls ./artifacts
 
           # Extract x86_64 and arm64 artifacts
           tar -zxf ./artifacts/libddwaf-macos-x86_64/libddwaf-*-darwin-x86_64*.tar.gz -C ./pack-temp/osx-x64
@@ -170,7 +172,7 @@ jobs:
           brew install coreutils
           for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: libddwaf-macos-universal
           path: |
@@ -186,28 +188,10 @@ jobs:
           - name: mingw64
             dockerfile: docker/libddwaf/gcc/mingw64/Dockerfile
             package: libddwaf-linux-mingw64
-          - name: aarch64
-            qemu_action_arch: arm64
-            dockerfile: docker/libddwaf/aarch64/Dockerfile
-            check_script: docker/libddwaf/aarch64/check
-            package: libddwaf-linux-aarch64
-          - name: x86_64
-            qemu_action_arch: amd64
-            dockerfile: docker/libddwaf/x86_64/Dockerfile
-            check_script: docker/libddwaf/x86_64/check
-            package: libddwaf-linux-x86_64
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: docker/setup-buildx-action@v2
-        id: buildx
-        with:
-          install: true
-      - uses: docker/setup-qemu-action@v2
-        if: matrix.target.qemu_action_arch == 'arm64'
-        with:
-          platforms: ${{ matrix.target.qemu_action_arch }}
       - run: docker build -f ${{ matrix.target.dockerfile }} -o /tmp/packages .
       - run: ${{ matrix.target.check_script }}
         if: matrix.target.check_script
@@ -215,7 +199,7 @@ jobs:
       - name: Generate Package sha256
         working-directory: /tmp/packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target.package }}
           path: |
@@ -223,54 +207,63 @@ jobs:
             /tmp/packages/*.sha256
 
   linux-musl-build:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         target:
-          - name: aarch64
-            arch: aarch64
-            qemu_action_arch: arm64
-            platform: linux/arm64
-            package: libddwaf-aarch64-linux-musl
           - name: x86_64
             arch: x86_64
             qemu_action_arch: amd64
             platform: linux/amd64
             package: libddwaf-x86_64-linux-musl
+            runner: ubuntu-latest
           - name: i386
             arch: i386
             qemu_action_arch: i386
             platform: linux/386
             package: libddwaf-i386-linux-musl
+            runner: ubuntu-latest
+          - name: aarch64
+            arch: aarch64
+            qemu_action_arch: arm64
+            platform: linux/arm64
+            package: libddwaf-aarch64-linux-musl
+            runner: arm-4core-linux
           - name: armv7
             arch: armv7
             qemu_action_arch: arm
             platform: linux/arm/v7
             package: libddwaf-armv7-linux-musl
+            runner: arm-4core-linux
+    runs-on: ${{ matrix.target.runner }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: docker/setup-buildx-action@v2
+      - uses: docker/setup-buildx-action@v3
+        if: matrix.target.runner == 'ubuntu-latest'
         id: buildx
         with:
           install: true
-      - uses: docker/setup-qemu-action@v2
-        if: matrix.target.qemu_action_arch == 'arm64'
-        with:
-          platforms: ${{ matrix.target.qemu_action_arch }}
-      - run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build/Dockerfile -o packages .
+      - name: Install docker
+        if: matrix.target.runner == 'arm-4core-linux'
+        run: |
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
+      - run: sudo docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build/Dockerfile -o packages .
       - name: Smoketest musl (gcc)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl/Dockerfile  .
+        run: sudo docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl/Dockerfile  .
       - name: Smoketest musl (clang)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_llvm/Dockerfile  .
+        run: sudo docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_llvm/Dockerfile  .
       - name: Smoketest gnu (gcc)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
+        run: sudo docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
+      - name: Smoketest gnu rhel 6 (gcc)
+        if: matrix.target.qemu_action_arch == 'amd64'
+        run: sudo docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
       - name: Generate Package sha256
         working-directory: packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target.package }}
           path: |
@@ -278,16 +271,16 @@ jobs:
             packages/*.sha256
 
   package-nuget:
-    needs: [ windows-builds, macos-build, macos-cross-build, macos-universal-package, docker-builds]
+    needs: [ windows-builds, macos-universal-package, linux-musl-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: nuget/setup-nuget@v1
+      - uses: nuget/setup-nuget@v2
         with:
           nuget-version: '5.x'
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
 
@@ -305,9 +298,9 @@ jobs:
 
           mkdir -p ./packages/nuget/runtimes/{linux-x64,linux-arm64,osx,win-x86,win-x64}/native
 
-          extract_file ./artifacts/libddwaf-linux-x86_64/libddwaf-*-linux-x86_64*.tar.gz \
+          extract_file ./artifacts/libddwaf-x86_64-linux-musl/libddwaf-*-x86_64-linux-musl*.tar.gz \
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-x64/native
-          extract_file ./artifacts/libddwaf-linux-aarch64/libddwaf-*-linux-aarch64*.tar.gz \
+          extract_file ./artifacts/libddwaf-aarch64-linux-musl/libddwaf-*-aarch64-linux-musl*.tar.gz \
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-arm64/native
           extract_file ./artifacts/libddwaf-windows-Win32/libddwaf-*-windows-win32*.tar.gz \
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x86/native
@@ -328,7 +321,7 @@ jobs:
         working-directory: ${{ github.workspace }}/output-packages
         run: for file in *.nupkg; do sha256sum "$file" > "$file.sha256"; done
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: nuget
           path: ${{ github.workspace }}/output-packages
@@ -338,8 +331,8 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Display structure of downloaded files

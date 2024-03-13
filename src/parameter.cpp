@@ -4,13 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ddwaf.h"
 #include <charconv>
 #include <cinttypes>
-#include <exception.hpp>
-#include <parameter.hpp>
+#include <limits>
 #include <sstream>
 
+#include "ddwaf.h"
+#include "exception.hpp"
+#include "parameter.hpp"
 #include "utils.hpp"
 
 namespace {
@@ -77,7 +78,7 @@ parameter::operator parameter::vector() const
     if (array == nullptr || nbEntries == 0) {
         return {};
     }
-    return std::vector<parameter>(array, array + nbEntries);
+    return {array, array + nbEntries};
 }
 
 parameter::operator parameter::string_set() const
@@ -127,6 +128,19 @@ parameter::operator uint64_t() const
         return uintValue;
     }
 
+    if (type == DDWAF_OBJ_SIGNED && intValue >= 0) {
+        return intValue;
+    }
+
+    // NOLINTBEGIN(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
+    // Closest 64-bit floating-point value to UINT64_MAX
+    static constexpr double uint64_max = 0xFFFFFFFFFFFFF800ULL;
+    if (type == DDWAF_OBJ_FLOAT && (f64 >= 0.0) && (f64 <= uint64_max) &&
+        static_cast<uint64_t>(f64) == f64) {
+        return static_cast<uint64_t>(f64);
+    }
+    // NOLINTEND(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
+
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
         auto [res, result] = from_string<uint64_t>({stringValue, static_cast<size_t>(nbEntries)});
         if (res) {
@@ -142,6 +156,20 @@ parameter::operator int64_t() const
     if (type == DDWAF_OBJ_SIGNED) {
         return intValue;
     }
+
+    if (type == DDWAF_OBJ_UNSIGNED && uintValue <= std::numeric_limits<int64_t>::max()) {
+        return static_cast<int64_t>(uintValue);
+    }
+
+    // NOLINTBEGIN(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
+    // Closest 64-bit floating-point value to INT64_MAX
+    static constexpr double int64_max = 0x7FFFFFFFFFFFFC00LL;
+    static constexpr double int64_min = std::numeric_limits<int64_t>::min();
+    if (type == DDWAF_OBJ_FLOAT && f64 >= int64_min && f64 <= int64_max &&
+        static_cast<int64_t>(f64) == f64) {
+        return static_cast<int64_t>(f64);
+    }
+    // NOLINTEND(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
         auto [res, result] = from_string<int64_t>({stringValue, static_cast<size_t>(nbEntries)});
@@ -176,7 +204,7 @@ parameter::operator bool() const
     }
 
     if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        std::string_view str_bool{stringValue, static_cast<size_t>(nbEntries)};
+        const std::string_view str_bool{stringValue, static_cast<size_t>(nbEntries)};
         if (str_bool.size() == (sizeof("true") - 1) && (str_bool[0] == 'T' || str_bool[0] == 't') &&
             (str_bool[1] == 'R' || str_bool[1] == 'r') &&
             (str_bool[2] == 'U' || str_bool[2] == 'u') &&

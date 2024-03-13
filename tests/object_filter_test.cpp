@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "exception.hpp"
 #include "exclusion/object_filter.hpp"
 #include "test_utils.hpp"
 
@@ -32,10 +33,87 @@ TEST(TestObjectFilter, RootTarget)
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, deadline);
+    auto objects_filtered = filter.match(store, cache, false, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_NE(objects_filtered.find(&root.array[0]), objects_filtered.end());
+    EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
+}
+
+TEST(TestObjectFilter, DuplicateTarget)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    object_filter filter;
+    filter.insert(query, "query", {});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    {
+        ddwaf_object root, child, tmp;
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, false, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
+    }
+
+    {
+        ddwaf_object root, child, tmp;
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, false, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
+    }
+}
+
+TEST(TestObjectFilter, DuplicateCachedTarget)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    object_filter filter;
+    filter.insert(query, "query", {});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    ddwaf_object root;
+    ddwaf_object child;
+    ddwaf_object tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+    store.insert(root);
+
+    {
+        auto objects_filtered = filter.match(store, cache, false, deadline);
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
+    }
+
+    {
+        auto objects_filtered = filter.match(store, cache, false, deadline);
+        ASSERT_EQ(objects_filtered.size(), 0);
+    }
 }
 
 TEST(TestObjectFilter, SingleTarget)
@@ -58,10 +136,53 @@ TEST(TestObjectFilter, SingleTarget)
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, deadline);
+    auto objects_filtered = filter.match(store, cache, false, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+    EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+}
+
+TEST(TestObjectFilter, DuplicateSingleTarget)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    object_filter filter;
+    filter.insert(query, "query", {"params"});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    {
+        ddwaf_object root, child, tmp;
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, false, deadline);
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+    }
+
+    {
+        ddwaf_object root, child, tmp;
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, false, deadline);
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+    }
 }
 
 TEST(TestObjectFilter, MultipleTargets)
@@ -100,11 +221,86 @@ TEST(TestObjectFilter, MultipleTargets)
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, deadline);
+    auto objects_filtered = filter.match(store, cache, false, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 2);
-    EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
-    EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
+    EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+    EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
+}
+
+TEST(TestObjectFilter, DuplicateMultipleTargets)
+{
+    auto query = get_target_index("query");
+    auto path_params = get_target_index("path_params");
+
+    object_store store;
+
+    ddwaf_object root, child, sibling, object, tmp;
+
+    object_filter filter;
+    filter.insert(query, "query", {"uri"});
+    filter.insert(path_params, "path_params", {"token", "value"});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    {
+        // Query
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+
+        // Path Params
+        ddwaf_object_map(&object);
+        ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
+        ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
+
+        ddwaf_object_map(&sibling);
+        ddwaf_object_map_add(&sibling, "token", &object);
+        ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+        ddwaf_object_map_add(&root, "path_params", &sibling);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, false, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 2);
+        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
+    }
+
+    {
+        // Query
+        ddwaf_object_map(&child);
+        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+
+        // Path Params
+        ddwaf_object_map(&object);
+        ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
+        ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
+
+        ddwaf_object_map(&sibling);
+        ddwaf_object_map_add(&sibling, "token", &object);
+        ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
+
+        // Root object
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "query", &child);
+        ddwaf_object_map_add(&root, "path_params", &sibling);
+
+        store.insert(root);
+
+        auto objects_filtered = filter.match(store, cache, false, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 2);
+        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
+    }
 }
 
 TEST(TestObjectFilter, MissingTarget)
@@ -143,7 +339,7 @@ TEST(TestObjectFilter, MissingTarget)
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, deadline);
+    auto objects_filtered = filter.match(store, cache, false, deadline);
     ASSERT_EQ(objects_filtered.size(), 0);
 }
 
@@ -168,13 +364,13 @@ TEST(TestObjectFilter, SingleTargetCache)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
     {
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
     }
 
     {
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         EXPECT_TRUE(objects_filtered.empty());
     }
 }
@@ -205,9 +401,9 @@ TEST(TestObjectFilter, MultipleTargetsCache)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
     }
 
     {
@@ -228,13 +424,13 @@ TEST(TestObjectFilter, MultipleTargetsCache)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_NE(objects_filtered.find(&object.array[0]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
     }
 
     {
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         EXPECT_TRUE(objects_filtered.empty());
     }
 }
@@ -262,10 +458,10 @@ TEST(TestObjectFilter, SingleGlobTarget)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
-        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
     }
 
     {
@@ -286,10 +482,10 @@ TEST(TestObjectFilter, SingleGlobTarget)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
-        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
     }
 
     {
@@ -302,7 +498,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 }
@@ -331,10 +527,10 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
-        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
     }
 
     {
@@ -355,10 +551,10 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_NE(objects_filtered.find(&child.array[0]), objects_filtered.end());
-        EXPECT_NE(objects_filtered.find(&child.array[1]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
     }
 
     {
@@ -371,7 +567,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 }
@@ -407,9 +603,9 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_NE(objects_filtered.find(&grandnephew.array[0]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&grandnephew.array[0]));
     }
 
     {
@@ -433,10 +629,10 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_NE(objects_filtered.find(&grandnephew.array[0]), objects_filtered.end());
-        EXPECT_NE(objects_filtered.find(&grandchild.array[0]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&grandnephew.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(&grandchild.array[0]));
     }
 
     {
@@ -460,7 +656,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 
@@ -478,7 +674,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 }
@@ -523,12 +719,12 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 4);
-        EXPECT_NE(objects_filtered.find(&greatgrandchild.array[0]), objects_filtered.end());
-        EXPECT_NE(objects_filtered.find(&greatgrandchild.array[1]), objects_filtered.end());
-        EXPECT_NE(objects_filtered.find(&greatgrandnephew.array[0]), objects_filtered.end());
-        EXPECT_NE(objects_filtered.find(&greatgrandnephew.array[1]), objects_filtered.end());
+        EXPECT_TRUE(objects_filtered.contains(&greatgrandchild.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(&greatgrandchild.array[1]));
+        EXPECT_TRUE(objects_filtered.contains(&greatgrandnephew.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(&greatgrandnephew.array[1]));
     }
 
     {
@@ -552,7 +748,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 
@@ -571,7 +767,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
 
         store.insert(root);
 
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 }
@@ -608,9 +804,9 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
             store.insert(root);
 
             ddwaf::timer deadline{2s};
-            auto objects_filtered = filter.match(store, cache, deadline);
+            auto objects_filtered = filter.match(store, cache, false, deadline);
             ASSERT_EQ(objects_filtered.size(), 1);
-            EXPECT_STREQ((*objects_filtered.begin())->parameterName, result.c_str());
+            EXPECT_STREQ((*objects_filtered.persistent.begin())->parameterName, result.c_str());
         }
     }
 
@@ -634,7 +830,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
             store.insert(root);
 
             ddwaf::timer deadline{2s};
-            auto objects_filtered = filter.match(store, cache, deadline);
+            auto objects_filtered = filter.match(store, cache, false, deadline);
             ASSERT_EQ(objects_filtered.size(), 0);
         }
     }
@@ -671,8 +867,34 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto objects_filtered = filter.match(store, cache, deadline);
+        auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
     }
 }
+
+TEST(TestObjectFilter, Timeout)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    ddwaf_object root;
+    ddwaf_object child;
+    ddwaf_object tmp;
+    ddwaf_object_map(&child);
+    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
+    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "query", &child);
+
+    store.insert(root);
+
+    object_filter filter;
+    filter.insert(query, "query", {});
+
+    ddwaf::timer deadline{0s};
+    object_filter::cache_type cache;
+    EXPECT_THROW(filter.match(store, cache, false, deadline), ddwaf::timeout_exception);
+}
+
 } // namespace

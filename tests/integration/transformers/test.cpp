@@ -28,15 +28,14 @@ TEST(TestTransformers, Base64Decode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "is_sqli",
-                               .address = "value1",
-                               .value = "'OR 1=1/*",
-                               .highlight = "s&1c"}}});
+                               .highlight = "s&1c",
+                               .args = {{.value = "'OR 1=1/*", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -60,15 +59,14 @@ TEST(TestTransformers, Base64DecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "is_sqli",
-                               .address = "value2",
-                               .value = "'OR 1=1/*",
-                               .highlight = "s&1c"}}});
+                               .highlight = "s&1c",
+                               .args = {{.value = "'OR 1=1/*", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -92,16 +90,15 @@ TEST(TestTransformers, Base64Encode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "J09SIDE9MS8q",
-                               .address = "value1",
-                               .value = "J09SIDE9MS8q",
-                               .highlight = "J09SIDE9MS8q"}}});
+                               .highlight = "J09SIDE9MS8q",
+                               .args = {{.value = "J09SIDE9MS8q", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -125,16 +122,15 @@ TEST(TestTransformers, Base64EncodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "J09SIDE9MS8q",
-                               .address = "value2",
-                               .value = "J09SIDE9MS8q",
-                               .highlight = "J09SIDE9MS8q"}}});
+                               .highlight = "J09SIDE9MS8q",
+                               .args = {{.value = "J09SIDE9MS8q", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -158,16 +154,15 @@ TEST(TestTransformers, CompressWhitespace)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "attack value",
-                               .address = "value1",
-                               .value = "attack value",
-                               .highlight = "attack value"}}});
+                               .highlight = "attack value",
+                               .args = {{.value = "attack value", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -191,16 +186,15 @@ TEST(TestTransformers, CompressWhitespaceAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "attack value",
-                               .address = "value2",
-                               .value = "attack value",
-                               .highlight = "attack value"}}});
+                               .highlight = "attack value",
+                               .args = {{.value = "attack value", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -224,16 +218,15 @@ TEST(TestTransformers, CssDecode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "CSS transformations",
-                               .address = "value1",
-                               .value = "CSS transformations",
-                               .highlight = "CSS transformations"}}});
+                               .highlight = "CSS transformations",
+                               .args = {{.value = "CSS transformations", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -257,16 +250,15 @@ TEST(TestTransformers, CssDecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "CSS transformations",
-                               .address = "value2",
-                               .value = "CSS transformations",
-                               .highlight = "CSS transformations"}}});
+                               .highlight = "CSS transformations",
+                               .args = {{.value = "CSS transformations", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -290,16 +282,16 @@ TEST(TestTransformers, HtmlEntityDecode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
-    EXPECT_EVENTS(out, {.id = "1",
-                           .name = "rule1",
-                           .tags = {{"type", "flow1"}, {"category", "category1"}},
-                           .matches = {{.op = "match_regex",
-                               .op_value = "HTML A A transformation",
-                               .address = "value1",
-                               .value = "HTML A A transformation",
-                               .highlight = "HTML A A transformation"}}});
+    EXPECT_EVENTS(
+        out, {.id = "1",
+                 .name = "rule1",
+                 .tags = {{"type", "flow1"}, {"category", "category1"}},
+                 .matches = {{.op = "match_regex",
+                     .op_value = "HTML A A transformation",
+                     .highlight = "HTML A A transformation",
+                     .args = {{.value = "HTML A A transformation", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -323,16 +315,16 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
-    EXPECT_EVENTS(out, {.id = "2",
-                           .name = "rule2",
-                           .tags = {{"type", "flow1"}, {"category", "category1"}},
-                           .matches = {{.op = "match_regex",
-                               .op_value = "HTML A A transformation",
-                               .address = "value2",
-                               .value = "HTML A A transformation",
-                               .highlight = "HTML A A transformation"}}});
+    EXPECT_EVENTS(
+        out, {.id = "2",
+                 .name = "rule2",
+                 .tags = {{"type", "flow1"}, {"category", "category1"}},
+                 .matches = {{.op = "match_regex",
+                     .op_value = "HTML A A transformation",
+                     .highlight = "HTML A A transformation",
+                     .args = {{.value = "HTML A A transformation", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -356,16 +348,15 @@ TEST(TestTransformers, JsDecode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "A JS transformation",
-                               .address = "value1",
-                               .value = "A JS transformation",
-                               .highlight = "A JS transformation"}}});
+                               .highlight = "A JS transformation",
+                               .args = {{.value = "A JS transformation", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -389,16 +380,15 @@ TEST(TestTransformers, JsDecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "A JS transformation",
-                               .address = "value2",
-                               .value = "A JS transformation",
-                               .highlight = "A JS transformation"}}});
+                               .highlight = "A JS transformation",
+                               .args = {{.value = "A JS transformation", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -422,16 +412,15 @@ TEST(TestTransformers, Lowercase)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "arachni",
-                               .address = "value1",
-                               .value = "arachni",
-                               .highlight = "arachni"}}});
+                               .highlight = "arachni",
+                               .args = {{.value = "arachni", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -455,16 +444,15 @@ TEST(TestTransformers, NormalizePath)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -488,16 +476,15 @@ TEST(TestTransformers, NormalizePathAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value2",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -521,16 +508,15 @@ TEST(TestTransformers, NormalizePathWin)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -554,16 +540,15 @@ TEST(TestTransformers, NormalizePathAliasWin)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value2",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -587,16 +572,15 @@ TEST(TestTransformers, RemoveComments)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "passwd",
-                               .address = "value1",
-                               .value = "passwd",
-                               .highlight = "passwd"}}});
+                               .highlight = "passwd",
+                               .args = {{.value = "passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -620,16 +604,15 @@ TEST(TestTransformers, RemoveCommentsAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "passwd",
-                               .address = "value2",
-                               .value = "passwd",
-                               .highlight = "passwd"}}});
+                               .highlight = "passwd",
+                               .args = {{.value = "passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -653,16 +636,15 @@ TEST(TestTransformers, RemoveNulls)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -686,16 +668,15 @@ TEST(TestTransformers, RemoveNullsAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value2",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -719,16 +700,15 @@ TEST(TestTransformers, ShellUnescape)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -752,16 +732,15 @@ TEST(TestTransformers, ShellUnescapeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value2",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -785,16 +764,15 @@ TEST(TestTransformers, UnicodeNormalize)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/etc/passwd",
-                               .address = "value1",
-                               .value = "/etc/passwd",
-                               .highlight = "/etc/passwd"}}});
+                               .highlight = "/etc/passwd",
+                               .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -818,16 +796,15 @@ TEST(TestTransformers, UrlBasename)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "index.php",
-                               .address = "value1",
-                               .value = "index.php",
-                               .highlight = "index.php"}}});
+                               .highlight = "index.php",
+                               .args = {{.value = "index.php", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -851,16 +828,15 @@ TEST(TestTransformers, UrlBasenameAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "index.php",
-                               .address = "value2",
-                               .value = "index.php",
-                               .highlight = "index.php"}}});
+                               .highlight = "index.php",
+                               .args = {{.value = "index.php", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -884,16 +860,15 @@ TEST(TestTransformers, UrlDecode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "an attack value",
-                               .address = "value1",
-                               .value = "an attack value",
-                               .highlight = "an attack value"}}});
+                               .highlight = "an attack value",
+                               .args = {{.value = "an attack value", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -917,16 +892,15 @@ TEST(TestTransformers, UrlDecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "an attack value",
-                               .address = "value2",
-                               .value = "an attack value",
-                               .highlight = "an attack value"}}});
+                               .highlight = "an attack value",
+                               .args = {{.value = "an attack value", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -950,16 +924,15 @@ TEST(TestTransformers, UrlDecodeIis)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "an attack value",
-                               .address = "value1",
-                               .value = "an attack value",
-                               .highlight = "an attack value"}}});
+                               .highlight = "an attack value",
+                               .args = {{.value = "an attack value", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -983,16 +956,15 @@ TEST(TestTransformers, UrlDecodeIisAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "an attack value",
-                               .address = "value2",
-                               .value = "an attack value",
-                               .highlight = "an attack value"}}});
+                               .highlight = "an attack value",
+                               .args = {{.value = "an attack value", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1016,16 +988,15 @@ TEST(TestTransformers, UrlPath)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/path/to/index.php",
-                               .address = "value1",
-                               .value = "/path/to/index.php",
-                               .highlight = "/path/to/index.php"}}});
+                               .highlight = "/path/to/index.php",
+                               .args = {{.value = "/path/to/index.php", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1049,16 +1020,15 @@ TEST(TestTransformers, UrlPathAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "/path/to/index.php",
-                               .address = "value2",
-                               .value = "/path/to/index.php",
-                               .highlight = "/path/to/index.php"}}});
+                               .highlight = "/path/to/index.php",
+                               .args = {{.value = "/path/to/index.php", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1082,16 +1052,15 @@ TEST(TestTransformers, UrlQuerystring)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "a=b",
-                               .address = "value1",
-                               .value = "a=b",
-                               .highlight = "a=b"}}});
+                               .highlight = "a=b",
+                               .args = {{.value = "a=b", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1115,16 +1084,15 @@ TEST(TestTransformers, UrlQuerystringAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                .op_value = "a=b",
-                               .address = "value2",
-                               .value = "a=b",
-                               .highlight = "a=b"}}});
+                               .highlight = "a=b",
+                               .args = {{.value = "a=b", .address = "value2"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -1148,16 +1116,16 @@ TEST(TestTransformers, Mixed)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
-    EXPECT_EVENTS(out, {.id = "1",
-                           .name = "rule1",
-                           .tags = {{"type", "flow1"}, {"category", "category1"}},
-                           .matches = {{.op = "match_regex",
-                               .op_value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
-                               .address = "value1",
-                               .value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
-                               .highlight = "L3AgYSB0aC90IG8vZmlsZS5waHA="}}});
+    EXPECT_EVENTS(
+        out, {.id = "1",
+                 .name = "rule1",
+                 .tags = {{"type", "flow1"}, {"category", "category1"}},
+                 .matches = {{.op = "match_regex",
+                     .op_value = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
+                     .highlight = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
+                     .args = {{.value = "L3AgYSB0aC90IG8vZmlsZS5waHA=", .address = "value1"}}}}});
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);

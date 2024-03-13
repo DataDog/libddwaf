@@ -1,6 +1,6 @@
 version: '2.1'
 rules:
-  - id: 1
+  - id: "1"
     name: rule1-basic-single-input
     tags:
       type: flow1
@@ -11,7 +11,7 @@ rules:
           inputs:
             - address: rule1-input
           regex: rule1
-  - id: 2
+  - id: "2"
     name: rule2-basic-multiple-inputs
     tags:
       type: flow2
@@ -23,7 +23,7 @@ rules:
             - address: rule2-input1
             - address: rule2-input2
           regex: rule2
-  - id: 3
+  - id: "3"
     name: rule3-basic-single-input-single-keypath
     tags:
       type: flow3
@@ -36,7 +36,7 @@ rules:
               key_path:
                 - keypath
           regex: rule3
-  - id: 4
+  - id: "4"
     name: rule4-basic-multiple-inputs-single-keypath
     tags:
       type: flow4
@@ -52,7 +52,7 @@ rules:
               key_path:
                 - keypath
           regex: rule4
-  - id: 5
+  - id: "5"
     name: rule5-basic-single-input-multiple-keypath
     tags:
       type: flow5
@@ -68,7 +68,7 @@ rules:
               key_path:
                 - keypath2
           regex: rule5
-  - id: 6
+  - id: "6"
     name: rule6-multicondition-single-input
     tags:
       type: flow6
@@ -85,7 +85,7 @@ rules:
             - address: rule6-input2
           list:
             - rule6
-  - id: 7
+  - id: "7"
     name: rule7-multicondition-multiple-input
     tags:
       type: flow7
@@ -104,7 +104,7 @@ rules:
             - address: rule7-input2
           list:
             - rule7_2
-  - id: 8
+  - id: "8"
     name: rule3-basic-single-input-single-multi-keypath
     tags:
       type: flow8

@@ -19,7 +19,7 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         try {
             version = parser::parse_schema_version(input_map);
         } catch (const std::exception &e) {
-            DDWAF_DEBUG("Failed to parse version (defaulting to 2): %s", e.what());
+            DDWAF_DEBUG("Failed to parse version (defaulting to 2): {}", e.what());
         }
     }
 
@@ -44,7 +44,7 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         return;
     }
 
-    DDWAF_ERROR("incompatible ruleset schema version %u.x", version);
+    DDWAF_ERROR("incompatible ruleset schema version {}.x", version);
 
     throw unsupported_version();
 }

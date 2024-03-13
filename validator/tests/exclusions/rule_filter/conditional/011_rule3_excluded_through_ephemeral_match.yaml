@@ -1,0 +1,27 @@
+{
+  name: "Exclude a rule using an ephemeral condition match",
+  runs: [
+    {
+      ephemeral-input: {
+        exclusion-filter-3-input: "exclusion-filter-3",
+      },
+      code: ok
+    },
+    {
+      persistent-input: {
+        rule3-input: "rule3",
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              value: rule3
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

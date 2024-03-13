@@ -27,16 +27,32 @@ TEST(TestIsSQLi, TestBasic)
     ddwaf_object_free(&param);
 }
 
+TEST(TestIsSQLi, TestMatch)
+{
+    is_sqli matcher;
+
+    auto match = {"1, -sin(1)) UNION SELECT 1"};
+
+    for (auto pattern : match) {
+        ddwaf_object param;
+        ddwaf_object_string(&param, pattern);
+        EXPECT_TRUE(matcher.match(param).first);
+        ddwaf_object_free(&param);
+    }
+}
+
 TEST(TestIsSQLi, TestNoMatch)
 {
     is_sqli matcher;
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "*");
+    auto no_match = {"*", "00119007249934829312950000808000953OR-240128165430155"};
 
-    EXPECT_FALSE(matcher.match(param).first);
-
-    ddwaf_object_free(&param);
+    for (auto pattern : no_match) {
+        ddwaf_object param;
+        ddwaf_object_string(&param, pattern);
+        EXPECT_FALSE(matcher.match(param).first);
+        ddwaf_object_free(&param);
+    }
 }
 
 TEST(TestIsSQLi, TestInvalidInput)
@@ -50,7 +66,7 @@ TEST(TestIsSQLi, TestInvalidInput)
 
 TEST(TestIsSQLi, TestRuleset)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_sqli, parameters: {inputs: [{address: arg1}]}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -69,15 +85,18 @@ TEST(TestIsSQLi, TestRuleset)
 
     ddwaf_result ret;
 
-    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
-    EXPECT_EVENTS(ret,
-        {.id = "1",
-            .name = "rule1",
-            .tags = {{"type", "flow1"}, {"category", "category1"}},
-            .matches = {
-                {.op = "is_sqli", .address = "arg1", .value = "'OR 1=1/*", .highlight = "s&1c"}}});
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "is_sqli",
+                               .highlight = "s&1c",
+                               .args = {{
+                                   .value = "'OR 1=1/*",
+                                   .address = "arg1",
+                               }}}}});
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

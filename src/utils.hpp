@@ -9,16 +9,18 @@
 #include <array>
 #include <charconv>
 #include <cstdint>
-#include <ddwaf.h>
 #include <functional>
 #include <iomanip>
-#include <iterator>
+#include <limits>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <type_traits>
-#include <unordered_map>
+#include <vector>
+
+#include "ddwaf.h"
 
 // Convert numbers to strings
 #define STR_HELPER(x) #x
@@ -35,7 +37,16 @@ template <typename T> using optional_ref = std::optional<std::reference_wrapper<
 
 namespace ddwaf {
 
+struct eval_result {
+    bool outcome;
+    bool ephemeral;
+};
+
 struct object_limits {
+    static constexpr uint32_t default_max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
+    static constexpr uint32_t default_max_container_size{DDWAF_MAX_CONTAINER_SIZE};
+    static constexpr uint32_t default_max_string_length{DDWAF_MAX_STRING_LENGTH};
+
     uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
     uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
     uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
@@ -111,6 +122,7 @@ inline bool isspace(char c)
 inline bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
 inline bool islower(char c) { return static_cast<unsigned>(c) - 'a' < 26; }
 inline bool isalnum(char c) { return isalpha(c) || isdigit(c); }
+inline bool isboundary(char c) { return !isalnum(c) && c != '_'; }
 inline char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
 inline uint8_t from_hex(char c)
 {
@@ -219,6 +231,58 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
     }
 
     return {false, {}};
+}
+
+inline std::string object_to_string(const ddwaf_object &object)
+{
+    if (object.type == DDWAF_OBJ_STRING) {
+        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
+    }
+
+    if (object.type == DDWAF_OBJ_BOOL) {
+        return to_string<std::string>(object.boolean);
+    }
+
+    if (object.type == DDWAF_OBJ_SIGNED) {
+        return to_string<std::string>(object.intValue);
+    }
+
+    if (object.type == DDWAF_OBJ_UNSIGNED) {
+        return to_string<std::string>(object.uintValue);
+    }
+
+    if (object.type == DDWAF_OBJ_FLOAT) {
+        return to_string<std::string>(object.f64);
+    }
+
+    return {};
+}
+
+inline std::vector<std::string_view> split(std::string_view str, char sep)
+{
+    std::vector<std::string_view> components;
+
+    std::size_t start = 0;
+    while (start < str.size()) {
+        const std::size_t end = str.find(sep, start);
+
+        if (end == start) {
+            // Ignore zero-sized strings
+            start = end + 1;
+            continue;
+        }
+
+        if (end == std::string_view::npos) {
+            // Last element
+            components.emplace_back(str.substr(start));
+            start = str.size();
+        } else {
+            components.emplace_back(str.substr(start, end - start));
+            start = end + 1;
+        }
+    }
+
+    return components;
 }
 
 } // namespace ddwaf

@@ -4,41 +4,42 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <exception.hpp>
-#include <log.hpp>
-#include <matcher/is_sqli.hpp>
-#include <matcher/is_xss.hpp>
-#include <matcher/phrase_match.hpp>
-#include <matcher/regex_match.hpp>
-#include <parameter.hpp>
-#include <parser/common.hpp>
-#include <parser/parser.hpp>
-#include <rule.hpp>
-#include <ruleset.hpp>
-#include <ruleset_info.hpp>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "condition/scalar_condition.hpp"
+#include "exception.hpp"
+#include "log.hpp"
+#include "matcher/is_sqli.hpp"
+#include "matcher/is_xss.hpp"
+#include "matcher/phrase_match.hpp"
+#include "matcher/regex_match.hpp"
+#include "parameter.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "rule.hpp"
+#include "ruleset.hpp"
+#include "ruleset_info.hpp"
+
 namespace ddwaf::parser::v1 {
 
 namespace {
 
-expression::ptr parse_expression(parameter::vector &conditions_array,
+std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array,
     const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
 {
-    expression_builder builder(conditions_array.size(), limits);
+    std::vector<std::unique_ptr<base_condition>> conditions;
+
     for (const auto &cond_param : conditions_array) {
         auto cond = static_cast<parameter::map>(cond_param);
-
-        builder.start_condition();
 
         auto matcher_name = at<std::string_view>(cond, "operation");
         auto params = at<parameter::map>(cond, "parameters");
 
         parameter::map options;
-        matcher::base::unique_ptr matcher;
+        std::unique_ptr<matcher::base> matcher;
         if (matcher_name == "phrase_match") {
             auto list = at<parameter::vector>(params, "list");
 
@@ -76,7 +77,10 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
         } else {
             throw ddwaf::parsing_error("unknown matcher: " + std::string(matcher_name));
         }
-        builder.set_matcher(std::move(matcher));
+
+        std::vector<parameter_definition> definitions;
+        definitions.emplace_back();
+        parameter_definition &def = definitions.back();
 
         auto inputs = at<parameter::vector>(params, "inputs");
         for (const auto &input_param : inputs) {
@@ -95,11 +99,15 @@ expression::ptr parse_expression(parameter::vector &conditions_array,
                 key_path.emplace_back(input.substr(pos + 1, input.size()));
             }
 
-            builder.add_target(std::move(root), std::move(key_path), transformers);
+            def.targets.emplace_back(target_definition{root, get_target_index(root),
+                std::move(key_path), transformers, data_source::values});
         }
+
+        conditions.emplace_back(std::make_unique<scalar_condition>(
+            std::move(matcher), std::string{}, std::move(definitions), limits));
     }
 
-    return builder.build();
+    return std::make_shared<expression>(std::move(conditions));
 }
 
 void parseRule(parameter::map &rule, base_section_info &info,
@@ -107,7 +115,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
 {
     auto id = at<std::string>(rule, "id");
     if (rule_ids.find(id) != rule_ids.end()) {
-        DDWAF_WARN("duplicate rule %s", id.c_str());
+        DDWAF_WARN("duplicate rule {}", id);
         info.add_failed(id, "duplicate rule");
         return;
     }
@@ -147,7 +155,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
         rs.insert_rule(rule_ptr);
         info.add_loaded(rule_ptr->get_id());
     } catch (const std::exception &e) {
-        DDWAF_WARN("failed to parse rule '%s': %s", id.c_str(), e.what());
+        DDWAF_WARN("failed to parse rule '{}': {}", id, e.what());
         info.add_failed(id, e.what());
     }
 }
@@ -169,7 +177,7 @@ void parse(
             auto rule = static_cast<parameter::map>(rule_param);
             parseRule(rule, section, rule_ids, rs, limits);
         } catch (const std::exception &e) {
-            DDWAF_WARN("%s", e.what());
+            DDWAF_WARN("{}", e.what());
             section.add_failed("index:" + to_string<std::string>(i), e.what());
         }
     }

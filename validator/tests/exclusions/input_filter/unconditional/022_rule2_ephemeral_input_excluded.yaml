@@ -1,0 +1,11 @@
+{
+  name: "Exclude ephemeral input",
+  runs: [
+    {
+      ephemeral-input: {
+        rule2-input2: "rule2",
+      },
+      code: ok
+    }
+  ]
+}

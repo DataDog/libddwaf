@@ -2,7 +2,7 @@
   name: "Array with match",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule1-input: [
           rule1
         ]

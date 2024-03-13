@@ -33,7 +33,7 @@ TEST(TestRegressionsIntegration, TruncatedUTF8)
     ddwaf_object_map_add(&map, "value", &string);
 
     ddwaf_result out;
-    ASSERT_EQ(ddwaf_run(context, &map, &out, 2000), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_FALSE(out.timeout);
 
     // The emoji should be trimmed out of the result
@@ -63,7 +63,7 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
     ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp, "Duplicate"));
 
     ddwaf_result ret;
-    EXPECT_EQ(ddwaf_run(context, &parameter, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "2",
@@ -71,14 +71,18 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
                            .tags = {{"type", "flow1"}, {"category", "category2"}},
                            .matches = {{.op = "match_regex",
                                            .op_value = "Sqreen",
-                                           .address = "param1",
-                                           .value = "Sqreen",
-                                           .highlight = "Sqreen"},
+                                           .highlight = "Sqreen",
+                                           .args = {{
+                                               .value = "Sqreen",
+                                               .address = "param1",
+                                           }}},
                                {.op = "match_regex",
                                    .op_value = "Duplicate",
-                                   .address = "param2",
-                                   .value = "Duplicate",
-                                   .highlight = "Duplicate"}}});
+                                   .highlight = "Duplicate",
+                                   .args = {{
+                                       .value = "Duplicate",
+                                       .address = "param2",
+                                   }}}}});
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);

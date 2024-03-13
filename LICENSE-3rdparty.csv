@@ -2,10 +2,11 @@ Component,Origin,License,Copyright
 core,https://github.com/libinjection/libinjection,BSD-3-Clause,Copyright (c) 2012-2016 Nick Galbreath
 core,https://github.com/cloudflare/lua-aho-corasick,BSD-3-Clause,"Copyright (c) 2014 CloudFlare, Inc"
 core,https://github.com/google/re2,BSD-3-Clause,Copyright (c) 2009 The RE2 Authors
-core,https://github.com/Tencent/rapidjson,MIT,"Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip"
 core,radixlib,BSD-4-Clause,"Copyright (c) 1999-2000 The Regents of the University of Michigan and Merit Network, Inc"
 core,https://github.com/llvm/llvm-project/libcxx,Apache-2.0,"Copyright (c) 2009-2019 by the contributors listed in CREDITS.TXT"
 core,https://github.com/llvm/llvm-project/libcxxabi,Apache-2.0,"Copyright (c) 2009-2019 by the contributors listed in CREDITS.TXT"
 core,https://github.com/llvm/llvm-project/libunwind,Apache-2.0,"Copyright (c) 2009-2019 by the contributors listed in CREDITS.TXT"
 core,https://github.com/JuliaStrings/utf8proc,MIT,"Copyright (c) 2014-2021 by Steven G. Johnson, Jiahao Chen, Tony Kelman, Jonas Fonseca, and other contributors listed in the git history"
+core,https://github.com/fmtlib/fmt,MIT,"Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors"
 dev,https://github.com/jbeder/yaml-cpp,MIT,Copyright (c) 2008-2015 Jesse Beder
+dev,https://github.com/Tencent/rapidjson,MIT,"Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip"

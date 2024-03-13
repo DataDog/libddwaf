@@ -2,7 +2,7 @@
   name: "No match on first input",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input1: garbage
       },
       code: ok

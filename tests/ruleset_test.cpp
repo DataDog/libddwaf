@@ -10,7 +10,7 @@
 using namespace ddwaf;
 
 namespace {
-rule::ptr make_rule(std::string id, std::string name,
+std::shared_ptr<rule> make_rule(std::string id, std::string name,
     std::unordered_map<std::string, std::string> tags, std::vector<std::string> actions,
     rule::source_type source = rule::source_type::base)
 {
@@ -20,7 +20,7 @@ rule::ptr make_rule(std::string id, std::string name,
 
 TEST(TestRuleset, InsertSingleRegularBaseRules)
 {
-    std::vector<ddwaf::rule::ptr> rules{
+    std::vector<std::shared_ptr<rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
@@ -42,9 +42,7 @@ TEST(TestRuleset, InsertSingleRegularBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 3);
@@ -56,7 +54,7 @@ TEST(TestRuleset, InsertSingleRegularBaseRules)
 
 TEST(TestRuleset, InsertSinglePriorityBaseRules)
 {
-    std::vector<ddwaf::rule::ptr> rules{
+    std::vector<std::shared_ptr<rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"}),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
@@ -78,9 +76,7 @@ TEST(TestRuleset, InsertSinglePriorityBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -92,7 +88,7 @@ TEST(TestRuleset, InsertSinglePriorityBaseRules)
 
 TEST(TestRuleset, InsertSingleMixedBaseRules)
 {
-    std::vector<ddwaf::rule::ptr> rules{
+    std::vector<std::shared_ptr<rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
@@ -114,9 +110,7 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 3);
@@ -128,7 +122,7 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
 
 TEST(TestRuleset, InsertSingleRegularUserRules)
 {
-    std::vector<ddwaf::rule::ptr> rules{
+    std::vector<std::shared_ptr<rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
             rule::source_type::user),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
@@ -157,9 +151,7 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
     {
         ddwaf::ruleset ruleset;
 
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -171,7 +163,7 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
 
 TEST(TestRuleset, InsertSinglePriorityUserRules)
 {
-    std::vector<ddwaf::rule::ptr> rules{
+    std::vector<std::shared_ptr<rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"},
             rule::source_type::user),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
@@ -198,9 +190,7 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -212,7 +202,7 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
 
 TEST(TestRuleset, InsertSingleMixedUserRules)
 {
-    std::vector<ddwaf::rule::ptr> rules{
+    std::vector<std::shared_ptr<rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
             rule::source_type::user),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
@@ -240,9 +230,7 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -254,7 +242,7 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
 
 TEST(TestRuleset, InsertSingleRegularMixedRules)
 {
-    std::vector<ddwaf::rule::ptr> rules{
+    std::vector<std::shared_ptr<rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
             rule::source_type::base),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
@@ -282,9 +270,7 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 3);
@@ -296,7 +282,7 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
 
 TEST(TestRuleset, InsertSinglePriorityMixedRules)
 {
-    std::vector<ddwaf::rule::ptr> rules{
+    std::vector<std::shared_ptr<rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"},
             rule::source_type::base),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
@@ -323,9 +309,7 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 6);
         EXPECT_EQ(ruleset.base_collections.size(), 0);
@@ -337,7 +321,7 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
 
 TEST(TestRuleset, InsertSingleMixedMixedRules)
 {
-    std::vector<ddwaf::rule::ptr> rules{
+    std::vector<std::shared_ptr<rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
             rule::source_type::user),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
@@ -371,9 +355,7 @@ TEST(TestRuleset, InsertSingleMixedMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        std::unordered_map<std::string_view, rule::ptr> final_rules;
-        for (const auto &rule : rules) { final_rules.emplace(rule->get_id(), rule); }
-        ruleset.insert_rules(final_rules);
+        ruleset.insert_rules(rules);
 
         EXPECT_EQ(ruleset.rules.size(), 12);
         EXPECT_EQ(ruleset.base_collections.size(), 3);

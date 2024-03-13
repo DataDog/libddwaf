@@ -4,16 +4,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <exception.hpp>
-#include <exclusion/object_filter.hpp>
-#include <log.hpp>
-#include <utils.hpp>
+#include "exclusion/object_filter.hpp"
+#include "exception.hpp"
+#include "log.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::exclusion {
 
 namespace {
+// Add requires
 void iterate_object(const path_trie::traverser &filter, const ddwaf_object *object,
-    memory::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
+    std::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
 {
     using state = path_trie::traverser::state;
     if (object == nullptr) {
@@ -36,7 +37,7 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
     }
 
     std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie::traverser>> path_stack;
-    path_stack.push({object, 0, filter});
+    path_stack.emplace(object, 0, filter);
 
     while (!path_stack.empty()) {
         auto &[current_object, current_index, current_trie] = path_stack.top();
@@ -75,7 +76,7 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
             if (object::is_container(child) && path_stack.size() < limits.max_container_depth) {
                 ++current_index;
                 found_node = true;
-                path_stack.push({child, 0, child_traverser});
+                path_stack.emplace(child, 0, child_traverser);
                 break;
             }
         }
@@ -91,26 +92,26 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
 
 } // namespace
 
-memory::unordered_set<const ddwaf_object *> object_filter::match(
-    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
+object_set object_filter::match(
+    const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const
 {
-    memory::unordered_set<const ddwaf_object *> objects_to_exclude;
+    object_set objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (cache.find(target) != cache.end()) {
+        auto [object, attr] = store.get_target(target);
+        if (object == nullptr || cache.contains(object)) {
             continue;
         }
 
-        auto *object = store.get_target(target);
-        if (object == nullptr) {
-            continue;
+        if (!ephemeral && attr != object_store::attribute::ephemeral) {
+            cache.emplace(object);
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.persistent, limits_);
+        } else {
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.ephemeral, limits_);
         }
-        iterate_object(filter.get_traverser(), object, objects_to_exclude, limits_);
-
-        cache.emplace(target);
     }
 
     return objects_to_exclude;

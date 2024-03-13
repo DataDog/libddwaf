@@ -76,7 +76,7 @@ TEST(TestRegexMatch, TestInvalidInput)
 
 TEST(TestRegexMatch, TestRulesetCaseSensitive)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {case_sensitive: true}}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -97,19 +97,19 @@ TEST(TestRegexMatch, TestRulesetCaseSensitive)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
-                               .matches = {{
-                                   .op = "match_regex",
+                               .matches = {{.op = "match_regex",
                                    .op_value = "alert",
-                                   .address = "arg1",
-                                   .value = "<script>alert(1);</script>",
                                    .highlight = "alert",
-                               }}});
+                                   .args = {{
+                                       .value = "<script>alert(1);</script>",
+                                       .address = "arg1",
+                                   }}}}});
         ddwaf_result_free(&ret);
 
         ddwaf_context_destroy(context);
@@ -127,7 +127,7 @@ TEST(TestRegexMatch, TestRulesetCaseSensitive)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
         EXPECT_FALSE(ret.timeout);
         ddwaf_result_free(&ret);
@@ -139,7 +139,7 @@ TEST(TestRegexMatch, TestRulesetCaseSensitive)
 
 TEST(TestRegexMatch, TestRulesetCaseInsensitive)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {case_sensitive: false}}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -160,19 +160,19 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_FALSE(ret.timeout);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
-                               .matches = {{
-                                   .op = "match_regex",
+                               .matches = {{.op = "match_regex",
                                    .op_value = "alert",
-                                   .address = "arg1",
-                                   .value = "<script>alert(1);</script>",
                                    .highlight = "alert",
-                               }}});
+                                   .args = {{
+                                       .value = "<script>alert(1);</script>",
+                                       .address = "arg1",
+                                   }}}}});
         ddwaf_result_free(&ret);
 
         ddwaf_context_destroy(context);
@@ -190,18 +190,18 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
-                               .matches = {{
-                                   .op = "match_regex",
+                               .matches = {{.op = "match_regex",
                                    .op_value = "alert",
-                                   .address = "arg1",
-                                   .value = "<script>AlErT(1);</script>",
                                    .highlight = "AlErT",
-                               }}});
+                                   .args = {{
+                                       .value = "<script>AlErT(1);</script>",
+                                       .address = "arg1",
+                                   }}}}});
 
         EXPECT_FALSE(ret.timeout);
         ddwaf_result_free(&ret);
@@ -213,7 +213,7 @@ TEST(TestRegexMatch, TestRulesetCaseInsensitive)
 
 TEST(TestRegexMatch, TestRulesetMinLength)
 {
-    // Initialize a PowerWAF rule
+    // Initialize a WAF rule
     auto rule = yaml_to_object(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {min_length: 10}}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -233,7 +233,7 @@ TEST(TestRegexMatch, TestRulesetMinLength)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
         ddwaf_result_free(&ret);
 
@@ -252,18 +252,18 @@ TEST(TestRegexMatch, TestRulesetMinLength)
 
         ddwaf_result ret;
 
-        auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
-                               .matches = {{
-                                   .op = "match_regex",
+                               .matches = {{.op = "match_regex",
                                    .op_value = "alert",
-                                   .address = "arg1",
-                                   .value = "<script>AlErT(1);</script>",
                                    .highlight = "AlErT",
-                               }}});
+                                   .args = {{
+                                       .value = "<script>AlErT(1);</script>",
+                                       .address = "arg1",
+                                   }}}}});
 
         EXPECT_FALSE(ret.timeout);
         ddwaf_result_free(&ret);

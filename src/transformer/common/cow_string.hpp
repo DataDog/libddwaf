@@ -64,7 +64,12 @@ public:
     constexpr explicit operator std::string_view() { return {buffer_, length_}; }
 
     [[nodiscard]] constexpr std::size_t length() const { return length_; }
-    [[nodiscard]] constexpr const char *data() { return buffer_; }
+    [[nodiscard]] constexpr const char *data() const { return buffer_; }
+    [[nodiscard]] char *modifiable_data()
+    {
+        force_copy(length_);
+        return buffer_;
+    }
     // Used for testing purposes
     [[nodiscard]] constexpr bool modified() const { return modified_; }
 

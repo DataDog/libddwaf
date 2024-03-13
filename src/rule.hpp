@@ -12,26 +12,25 @@
 #include <unordered_map>
 #include <vector>
 
-#include <clock.hpp>
-#include <event.hpp>
-#include <expression.hpp>
-#include <iterator.hpp>
-#include <matcher/base.hpp>
-#include <object_store.hpp>
+#include "clock.hpp"
+#include "event.hpp"
+#include "exclusion/common.hpp"
+#include "expression.hpp"
+#include "iterator.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
 
 namespace ddwaf {
 
 class rule {
 public:
-    using ptr = std::shared_ptr<rule>;
-
     enum class source_type : uint8_t { base = 1, user = 2 };
 
     using cache_type = expression::cache_type;
 
     rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
-        expression::ptr expr, std::vector<std::string> actions = {}, bool enabled = true,
-        source_type source = source_type::base)
+        std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
+        bool enabled = true, source_type source = source_type::base)
         : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
           tags_(std::move(tags)), expr_(std::move(expr)), actions_(std::move(actions))
     {
@@ -61,12 +60,25 @@ public:
         return *this;
     }
 
-    ~rule() = default;
+    virtual ~rule() = default;
 
-    std::optional<event> match(const object_store &store, cache_type &cache,
-        const std::unordered_set<const ddwaf_object *> &objects_excluded,
-        const std::unordered_map<std::string, matcher::base::shared_ptr> &dynamic_matchers,
-        ddwaf::timer &deadline) const;
+    virtual std::optional<event> match(const object_store &store, cache_type &cache,
+        const exclusion::object_set_ref &objects_excluded,
+        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+        ddwaf::timer &deadline) const
+    {
+        if (expression::get_result(cache)) {
+            // An event was already produced, so we skip the rule
+            return std::nullopt;
+        }
+
+        auto res = expr_->eval(cache, store, objects_excluded, dynamic_matchers, deadline);
+        if (!res.outcome) {
+            return std::nullopt;
+        }
+
+        return {ddwaf::event{this, expression::get_matches(cache), res.ephemeral}};
+    }
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
     void toggle(bool value) { enabled_ = value; }
@@ -85,7 +97,7 @@ public:
 
     const std::vector<std::string> &get_actions() const { return actions_; }
 
-    void get_addresses(std::unordered_set<std::string> &addresses) const
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         return expr_->get_addresses(addresses);
     }
@@ -98,7 +110,7 @@ protected:
     std::string id_;
     std::string name_;
     std::unordered_map<std::string, std::string> tags_;
-    expression::ptr expr_;
+    std::shared_ptr<expression> expr_;
     std::vector<std::string> actions_;
 };
 

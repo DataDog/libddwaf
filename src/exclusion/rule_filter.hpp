@@ -10,36 +10,44 @@
 #include <stack>
 #include <vector>
 
-#include <clock.hpp>
-#include <object_store.hpp>
-#include <rule.hpp>
+#include "clock.hpp"
+#include "exclusion/common.hpp"
+#include "object_store.hpp"
+#include "rule.hpp"
 
 namespace ddwaf::exclusion {
 
-enum class filter_mode { bypass, monitor };
-
 class rule_filter {
 public:
-    using ptr = std::shared_ptr<rule_filter>;
+    struct excluded_set {
+        const std::unordered_set<rule *> &rules;
+        bool ephemeral{false};
+        filter_mode mode{filter_mode::none};
+    };
+
     using cache_type = expression::cache_type;
 
-    rule_filter(std::string id, expression::ptr expr, std::set<rule *> rule_targets,
+    rule_filter(std::string id, std::shared_ptr<expression> expr, std::set<rule *> rule_targets,
         filter_mode mode = filter_mode::bypass);
+    rule_filter(const rule_filter &) = delete;
+    rule_filter &operator=(const rule_filter &) = delete;
+    rule_filter(rule_filter &&) = default;
+    rule_filter &operator=(rule_filter &&) = default;
+    virtual ~rule_filter() = default;
 
-    optional_ref<const std::unordered_set<rule *>> match(
+    virtual std::optional<excluded_set> match(
         const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
 
     std::string_view get_id() const { return id_; }
-    filter_mode get_mode() const { return mode_; }
 
-    void get_addresses(std::unordered_set<std::string> &addresses) const
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
     }
 
 protected:
     std::string id_;
-    expression::ptr expr_;
+    std::shared_ptr<expression> expr_;
     std::unordered_set<rule *> rule_targets_;
     filter_mode mode_;
 };

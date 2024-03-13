@@ -6,15 +6,16 @@
 
 #pragma once
 
-#include "exclusion/rule_filter.hpp"
-#include <exception.hpp>
-#include <exclusion/object_filter.hpp>
-#include <expression.hpp>
-#include <parameter.hpp>
-#include <preprocessor.hpp>
-#include <rule.hpp>
-
 #include <string>
+
+#include "exception.hpp"
+#include "exclusion/object_filter.hpp"
+#include "exclusion/rule_filter.hpp"
+#include "expression.hpp"
+#include "parameter.hpp"
+#include "processor.hpp"
+#include "rule.hpp"
+#include "scanner.hpp"
 
 namespace ddwaf::parser {
 
@@ -23,40 +24,62 @@ struct rule_spec {
     rule::source_type source;
     std::string name;
     std::unordered_map<std::string, std::string> tags;
-    expression::ptr expr;
+    std::shared_ptr<expression> expr;
     std::vector<std::string> actions;
 };
 
-enum class target_type { none, id, tags };
+enum class reference_type { none, id, tags };
 
-struct rule_target_spec {
-    target_type type;
-    std::string rule_id;
+struct reference_spec {
+    reference_type type;
+    std::string ref_id;
     std::unordered_map<std::string, std::string> tags;
 };
 
 struct override_spec {
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
-    std::vector<rule_target_spec> targets;
+    std::vector<reference_spec> targets;
 };
 
 struct rule_filter_spec {
-    expression::ptr expr;
-    std::vector<rule_target_spec> targets;
+    std::shared_ptr<expression> expr;
+    std::vector<reference_spec> targets;
     exclusion::filter_mode on_match;
 };
 
 struct input_filter_spec {
-    expression::ptr expr;
+    std::shared_ptr<expression> expr;
     std::shared_ptr<exclusion::object_filter> filter;
-    std::vector<rule_target_spec> targets;
+    std::vector<reference_spec> targets;
+};
+
+struct processor_spec {
+    std::shared_ptr<generator::base> generator;
+    std::shared_ptr<expression> expr;
+    std::vector<processor::target_mapping> mappings;
+    std::vector<reference_spec> scanners;
+    bool evaluate{false};
+    bool output{true};
 };
 
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
-using rule_data_container = std::unordered_map<std::string, matcher::base::shared_ptr>;
-using preprocessor_container = std::unordered_map<std::string_view, preprocessor::ptr>;
+using rule_data_container = std::unordered_map<std::string, std::shared_ptr<matcher::base>>;
+using scanner_container = std::unordered_map<std::string_view, std::shared_ptr<scanner>>;
+
+struct processor_container {
+    [[nodiscard]] bool empty() const { return pre.empty() && post.empty(); }
+    [[nodiscard]] std::size_t size() const { return pre.size() + post.size(); }
+    void clear()
+    {
+        pre.clear();
+        post.clear();
+    }
+
+    std::unordered_map<std::string, processor_spec> pre;
+    std::unordered_map<std::string, processor_spec> post;
+};
 
 struct override_spec_container {
     [[nodiscard]] bool empty() const { return by_ids.empty() && by_tags.empty(); }

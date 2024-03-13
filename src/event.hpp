@@ -6,36 +6,24 @@
 
 #pragma once
 
-#include <context_allocator.hpp>
-#include <ddwaf.h>
-#include <obfuscator.hpp>
-
 #include <optional>
-#include <string>
-#include <string_view>
-#include <unordered_set>
+
+#include "condition/base.hpp"
+#include "ddwaf.h"
+#include "obfuscator.hpp"
 
 namespace ddwaf {
 
 class rule;
 
 struct event {
-    struct match {
-        memory::string resolved;
-        memory::string matched;
-        std::string_view operator_name;
-        std::string_view operator_value;
-        std::string_view address;
-        memory::vector<memory::string> key_path;
-    };
-
     const ddwaf::rule *rule{nullptr};
-    memory::vector<match> matches;
+    std::vector<condition_match> matches;
+    bool ephemeral{false};
     bool skip_actions{false};
 };
 
 using optional_event = std::optional<event>;
-using optional_match = std::optional<event::match>;
 
 class event_serializer {
 public:
@@ -43,7 +31,7 @@ public:
         : obfuscator_(event_obfuscator)
     {}
 
-    void serialize(const memory::vector<event> &events, ddwaf_result &output) const;
+    void serialize(const std::vector<event> &events, ddwaf_result &output) const;
 
 protected:
     const ddwaf::obfuscator &obfuscator_;

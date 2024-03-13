@@ -1,6 +1,6 @@
 version: '2.1'
 rules:
-  - id: 1
+  - id: "1"
     name: rule1-ip-match-dynamic
     tags:
       type: flow1
@@ -12,7 +12,7 @@ rules:
             - address: rule1-input
           data: rule_1_data
 rules_data:
-  - id: rule_1_data
+  - id: "rule_1_data"
     type: ip_with_expiration
     data:
       - value: 192.168.1.1

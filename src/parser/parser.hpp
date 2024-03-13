@@ -6,14 +6,16 @@
 
 #pragma once
 
-#include "parser/specification.hpp"
-#include <parameter.hpp>
-#include <rule.hpp>
-#include <ruleset.hpp>
-#include <ruleset_info.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "indexer.hpp"
+#include "parameter.hpp"
+#include "parser/specification.hpp"
+#include "rule.hpp"
+#include "ruleset.hpp"
+#include "ruleset_info.hpp"
 
 using base_section_info = ddwaf::base_ruleset_info::base_section_info;
 
@@ -27,6 +29,7 @@ void parse(
 } // namespace v1
 
 namespace v2 {
+
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source = rule::source_type::base);
@@ -39,7 +42,10 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
 filter_spec_container parse_filters(
     parameter::vector &filter_array, base_section_info &info, const object_limits &limits);
 
-preprocessor_container parse_preprocessors(
-    parameter::vector &preprocessor_array, base_section_info &info, const object_limits &limits);
+processor_container parse_processors(
+    parameter::vector &processor_array, base_section_info &info, const object_limits &limits);
+
+indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_section_info &info);
+
 } // namespace v2
 } // namespace ddwaf::parser

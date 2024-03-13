@@ -2,7 +2,7 @@
   name: "Rule monitored by rags",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule10-input: "rule10"
       },
       rules: [

@@ -2,7 +2,7 @@
   name: "Rule not excluded due to category",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule5-input: rule5
       },
       rules: [

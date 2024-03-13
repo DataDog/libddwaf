@@ -1,0 +1,37 @@
+{
+  "scenario": "signed_equals_matcher",
+  "max_cycles": 100,
+  "ruleset": {
+    "rules": [
+      {
+        "id": "signed-equals",
+        "name": "signed-equals",
+        "tags": {
+          "type": "flow",
+          "category": "category"
+        },
+        "conditions": [
+          {
+            "operator": "equals",
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "waf.context.events.length"
+                }
+              ],
+              "type": "signed",
+              "value": -2123
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "fixtures": {
+    "eval.valid": {
+      "waf.context.events.length": [
+        -2123
+      ]
+    }
+  }
+}

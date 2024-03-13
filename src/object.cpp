@@ -4,14 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ddwaf.h"
 #include <cinttypes>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <log.hpp>
-#include <utils.hpp>
+
+#include "ddwaf.h"
+#include "log.hpp"
+#include "utils.hpp"
 
 extern "C" {
 namespace {
@@ -46,7 +47,7 @@ static ddwaf_object *ddwaf_object_string_helper(
     ddwaf_object *object, const char *string, size_t length)
 {
     if (length == SIZE_MAX) {
-        DDWAF_DEBUG("invalid string length: %zu", length);
+        DDWAF_DEBUG("invalid string length: {}", length);
         return nullptr;
     }
 
@@ -70,7 +71,7 @@ ddwaf_object *ddwaf_object_string(ddwaf_object *object, const char *string)
     }
 
     if (string == nullptr) {
-        DDWAF_DEBUG("tried to create a string from an nullptr pointer");
+        DDWAF_DEBUG("tried to create a string from a nullptr pointer");
         return nullptr;
     }
     return ddwaf_object_string_helper(object, string, strlen(string));
@@ -83,7 +84,7 @@ ddwaf_object *ddwaf_object_stringl(ddwaf_object *object, const char *string, siz
     }
 
     if (string == nullptr) {
-        DDWAF_DEBUG("Tried to create a string from an nullptr pointer");
+        DDWAF_DEBUG("Tried to create a string from a nullptr pointer");
         return nullptr;
     }
 
@@ -249,7 +250,7 @@ bool ddwaf_object_map_add_helper(
     ddwaf_object *map, const char *key, size_t length, ddwaf_object object)
 {
     if (length == SIZE_MAX) {
-        DDWAF_DEBUG("invalid key length: %zu", length);
+        DDWAF_DEBUG("invalid key length: {}", length);
         return false;
     }
 

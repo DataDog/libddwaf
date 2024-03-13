@@ -1,0 +1,40 @@
+version: "2.2"
+metadata:
+  rules_version: 1.8.0
+rules:
+  - id: rsp-930-001
+    name: LFI Exploit detection
+    tags:
+      type: lfi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.io.fs.file
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+        operator: lfi_detector
+  - id: rsp-930-002
+    name: SSRF Exploit detection
+    tags:
+      type: ssrf
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.io.net.url
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+        operator: ssrf_detector

@@ -2,7 +2,7 @@
   name: "Both map inputs, match on second",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule2-input1: {
           first: garbage
         },

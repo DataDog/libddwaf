@@ -4,10 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstddef>
-#include <log.hpp>
-#include <obfuscator.hpp>
-#include <utils.hpp>
+#include "obfuscator.hpp"
+#include "log.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -34,8 +33,7 @@ obfuscator::obfuscator(std::string_view key_regex_str, std::string_view value_re
         key_regex = std::make_unique<re2::RE2>(sp, options);
 
         if (!key_regex->ok()) {
-            DDWAF_ERROR(
-                "invalid obfuscator key regex: %s - using default", key_regex->error_arg().c_str());
+            DDWAF_ERROR("invalid obfuscator key regex: {} - using default", key_regex->error_arg());
 
             sp = re2::StringPiece(default_key_regex_str.data(), default_key_regex_str.size());
             key_regex = std::make_unique<re2::RE2>(sp, options);
@@ -52,7 +50,7 @@ obfuscator::obfuscator(std::string_view key_regex_str, std::string_view value_re
         value_regex = std::make_unique<re2::RE2>(sp, options);
 
         if (!value_regex->ok()) {
-            DDWAF_ERROR("invalid obfuscator value regex: %s", value_regex->error_arg().c_str());
+            DDWAF_ERROR("invalid obfuscator value regex: {}", value_regex->error_arg());
         }
     }
 }

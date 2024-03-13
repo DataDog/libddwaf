@@ -6,10 +6,11 @@
 
 #pragma once
 
-#include <ddwaf.h>
 #include <memory>
 #include <re2/re2.h>
 #include <string_view>
+
+#include "ddwaf.h"
 
 namespace ddwaf {
 

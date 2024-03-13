@@ -21,7 +21,7 @@ bool unicode_normalize::needs_transform(std::string_view str)
         }
 
         int32_t decomposed_codepoint = 0;
-        size_t const decomposed_length =
+        const size_t decomposed_length =
             ddwaf::utf8::normalize_codepoint(codepoint, &decomposed_codepoint, 1);
 
         // If the glyph needed decomposition, we flag the string

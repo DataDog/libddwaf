@@ -12,22 +12,19 @@
 #include <unordered_map>
 #include <vector>
 
-#include <collection.hpp>
-#include <exclusion/input_filter.hpp>
-#include <exclusion/rule_filter.hpp>
-#include <mkmap.hpp>
-#include <obfuscator.hpp>
-#include <preprocessor.hpp>
-#include <rule.hpp>
+#include "collection.hpp"
+#include "exclusion/input_filter.hpp"
+#include "exclusion/rule_filter.hpp"
+#include "mkmap.hpp"
+#include "obfuscator.hpp"
+#include "processor.hpp"
+#include "rule.hpp"
+#include "scanner.hpp"
 
 namespace ddwaf {
 
-using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
-
 struct ruleset {
-    using ptr = std::shared_ptr<ruleset>;
-
-    void insert_rule(rule::ptr rule)
+    void insert_rule(const std::shared_ptr<rule> &rule)
     {
         rules.emplace_back(rule);
         std::string_view type = rule->get_tag("type");
@@ -45,44 +42,102 @@ struct ruleset {
                 base_priority_collections[type].insert(rule);
             }
         }
+        rule->get_addresses(rule_addresses);
     }
 
-    void insert_rules(const std::unordered_map<std::string_view, rule::ptr> &rules_)
+    void insert_rules(const std::vector<std::shared_ptr<rule>> &rules_)
     {
-        for (const auto &[id, rule] : rules_) { insert_rule(rule); }
+        for (const auto &rule : rules_) { insert_rule(rule); }
+    }
+
+    template <typename T>
+    void insert_filters(const std::unordered_map<std::string_view, std::shared_ptr<T>> &filters)
+        requires std::is_same_v<T, exclusion::rule_filter> or
+                 std::is_same_v<T, exclusion::input_filter>
+    {
+        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
+            rule_filters = filters;
+        } else if constexpr (std::is_same_v<T, exclusion::input_filter>) {
+            input_filters = filters;
+        }
+
+        for (const auto &[key, filter] : filters) { filter->get_addresses(filter_addresses); }
+    }
+
+    template <typename T>
+    void insert_filter(const std::shared_ptr<T> &filter)
+        requires std::is_same_v<T, exclusion::rule_filter> or
+                 std::is_same_v<T, exclusion::input_filter>
+    {
+        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
+            rule_filters.emplace(filter->get_id(), filter);
+        } else if constexpr (std::is_same_v<T, exclusion::input_filter>) {
+            input_filters.emplace(filter->get_id(), filter);
+        }
+        filter->get_addresses(filter_addresses);
+    }
+
+    void insert_preprocessors(const auto &processors)
+    {
+        preprocessors = processors;
+        for (const auto &[key, proc] : preprocessors) {
+            proc->get_addresses(preprocessor_addresses);
+        }
+    }
+
+    void insert_postprocessors(const auto &processors)
+    {
+        postprocessors = processors;
+        for (const auto &[key, proc] : postprocessors) {
+            proc->get_addresses(postprocessor_addresses);
+        }
     }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
     {
         if (root_addresses.empty()) {
-            for (const auto &rule : rules) { rule->get_addresses(unique_root_addresses); }
-
-            for (const auto &[id, filter] : rule_filters) {
-                filter->get_addresses(unique_root_addresses);
+            std::unordered_set<target_index> known_targets;
+            for (const auto &[index, str] : rule_addresses) {
+                const auto &[it, res] = known_targets.emplace(index);
+                if (res) {
+                    root_addresses.emplace_back(str.c_str());
+                }
             }
-
-            for (const auto &[id, filter] : input_filters) {
-                filter->get_addresses(unique_root_addresses);
+            for (const auto &[index, str] : filter_addresses) {
+                const auto &[it, res] = known_targets.emplace(index);
+                if (res) {
+                    root_addresses.emplace_back(str.c_str());
+                }
             }
-
-            for (const auto &str : unique_root_addresses) {
-                root_addresses.emplace_back(str.c_str());
+            for (const auto &[index, str] : preprocessor_addresses) {
+                const auto &[it, res] = known_targets.emplace(index);
+                if (res) {
+                    root_addresses.emplace_back(str.c_str());
+                }
+            }
+            for (const auto &[index, str] : postprocessor_addresses) {
+                const auto &[it, res] = known_targets.emplace(index);
+                if (res) {
+                    root_addresses.emplace_back(str.c_str());
+                }
             }
         }
-
         return root_addresses;
     }
 
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
-    std::unordered_map<std::string_view, preprocessor::ptr> preprocessors;
+    std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors;
+    std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors;
 
-    std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters;
-    std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters;
+    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters;
+    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
 
-    std::vector<rule::ptr> rules;
-    std::unordered_map<std::string, matcher::base::shared_ptr> dynamic_matchers;
+    std::vector<std::shared_ptr<rule>> rules;
+    std::unordered_map<std::string, std::shared_ptr<matcher::base>> dynamic_matchers;
+
+    std::vector<std::shared_ptr<const scanner>> scanners;
 
     // The key used to organise collections is rule.type
     std::unordered_set<std::string_view> collection_types;
@@ -91,9 +146,12 @@ struct ruleset {
     std::unordered_map<std::string_view, collection> user_collections;
     std::unordered_map<std::string_view, collection> base_collections;
 
+    std::unordered_map<target_index, std::string> rule_addresses;
+    std::unordered_map<target_index, std::string> filter_addresses;
+    std::unordered_map<target_index, std::string> preprocessor_addresses;
+    std::unordered_map<target_index, std::string> postprocessor_addresses;
+
     // Root addresses, lazily computed
-    std::unordered_set<std::string> unique_root_addresses;
-    // Root address memory to be returned to the API caller
     std::vector<const char *> root_addresses;
 };
 

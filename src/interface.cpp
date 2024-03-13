@@ -4,20 +4,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <context.hpp>
-#include <context_allocator.hpp>
-#include <exception.hpp>
 #include <memory>
 #include <mutex>
-#include <obfuscator.hpp>
-#include <ruleset_info.hpp>
-#include <shared_mutex>
 #include <string>
-#include <unordered_map>
-#include <utils.hpp>
-#include <waf.hpp>
 
-#include <log.hpp>
+#include "context.hpp"
+#include "context_allocator.hpp"
+#include "exception.hpp"
+#include "log.hpp"
+#include "obfuscator.hpp"
+#include "ruleset_info.hpp"
+#include "unordered_map"
+#include "utils.hpp"
+#include "waf.hpp"
 
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_INFO
 namespace {
@@ -106,7 +105,7 @@ ddwaf::waf *ddwaf_init(
                 input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
         }
     } catch (const std::exception &e) {
-        DDWAF_ERROR("%s", e.what());
+        DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
     }
@@ -130,7 +129,7 @@ ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_
             return handle->update(input, ri);
         }
     } catch (const std::exception &e) {
-        DDWAF_ERROR("%s", e.what());
+        DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
     }
@@ -146,13 +145,13 @@ void ddwaf_destroy(ddwaf::waf *handle)
     try {
         delete handle;
     } catch (const std::exception &e) {
-        DDWAF_ERROR("%s", e.what());
+        DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
     }
 }
 
-const char *const *ddwaf_required_addresses(ddwaf::waf *handle, uint32_t *size)
+const char *const *ddwaf_known_addresses(ddwaf::waf *handle, uint32_t *size)
 {
     if (handle == nullptr) {
         *size = 0;
@@ -176,21 +175,22 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
             return handle->create_context();
         }
     } catch (const std::exception &e) {
-        DDWAF_ERROR("%s", e.what());
+        DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
     }
     return nullptr;
 }
 
-DDWAF_RET_CODE ddwaf_run(
-    ddwaf_context context, ddwaf_object *data, ddwaf_result *result, uint64_t timeout)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
+    ddwaf_object *ephemeral_data, ddwaf_result *result, uint64_t timeout)
 {
     if (result != nullptr) {
         *result = DDWAF_RESULT_INITIALISER;
     }
 
-    if (context == nullptr || data == nullptr) {
+    if (context == nullptr || (persistent_data == nullptr && ephemeral_data == nullptr)) {
         DDWAF_WARN("Illegal WAF call: context or data was null");
         return DDWAF_ERR_INVALID_ARGUMENT;
     }
@@ -200,10 +200,20 @@ DDWAF_RET_CODE ddwaf_run(
             res = *result;
         }
 
-        return context->run(*data, res, timeout);
+        optional_ref<ddwaf_object> persistent{std::nullopt};
+        if (persistent_data != nullptr) {
+            persistent = *persistent_data;
+        }
+
+        optional_ref<ddwaf_object> ephemeral{std::nullopt};
+        if (ephemeral_data != nullptr) {
+            ephemeral = *ephemeral_data;
+        }
+
+        return context->run(persistent, ephemeral, res, timeout);
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
-        DDWAF_ERROR("%s", e.what());
+        DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
     }
@@ -221,7 +231,7 @@ void ddwaf_context_destroy(ddwaf_context context)
         delete context;
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
-        DDWAF_ERROR("%s", e.what());
+        DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
     }
@@ -232,7 +242,7 @@ const char *ddwaf_get_version() { return LIBDDWAF_VERSION; }
 bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 {
     ddwaf::logger::init(cb, min_level);
-    DDWAF_INFO("Sending log messages to binding, min level %s", log_level_to_str(min_level));
+    DDWAF_INFO("Sending log messages to binding, min level {}", log_level_to_str(min_level));
     return true;
 }
 

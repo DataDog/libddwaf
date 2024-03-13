@@ -6,22 +6,15 @@
 
 #pragma once
 
-#include <optional>
 #include <string>
 #include <string_view>
-#include <vector>
 
-#include <ddwaf.h>
-#include <event.hpp>
-#include <utils.hpp>
+#include "ddwaf.h"
 
 namespace ddwaf::matcher {
 
 class base {
 public:
-    using shared_ptr = std::shared_ptr<base>;
-    using unique_ptr = std::unique_ptr<base>;
-
     base() = default;
     virtual ~base() = default;
     base(const base &) = default;
@@ -29,22 +22,24 @@ public:
     base &operator=(const base &) = default;
     base &operator=(base &&) noexcept = default;
 
-    [[nodiscard]] virtual DDWAF_OBJ_TYPE supported_type() const = 0;
-    // Returns a string representing this particular instance of the operator, for example,
-    // an operator matching regexes could provide the regex as its string representation.
-    [[nodiscard]] virtual std::string_view to_string() const = 0;
+    // Generic matcher methods
+
     // The return value of this function should outlive the function scope,
     // for example, through a constexpr class static string_view initialised
     // with a literal.
     [[nodiscard]] virtual std::string_view name() const = 0;
+    // Returns a string representing this particular instance of the operator, for example,
+    // an operator matching regexes could provide the regex as its string representation.
+    [[nodiscard]] virtual std::string_view to_string() const = 0;
 
-    [[nodiscard]] virtual std::pair<bool, memory::string> match(const ddwaf_object &obj) const = 0;
+    // Scalar matcher methods
+    [[nodiscard]] virtual DDWAF_OBJ_TYPE supported_type() const = 0;
+
+    [[nodiscard]] virtual std::pair<bool, std::string> match(const ddwaf_object &obj) const = 0;
 };
 
 template <typename T> class base_impl : public base {
 public:
-    using ptr = std::shared_ptr<base>;
-
     base_impl() = default;
     ~base_impl() override = default;
     base_impl(const base_impl &) = default;
@@ -52,12 +47,12 @@ public:
     base_impl &operator=(const base_impl &) = default;
     base_impl &operator=(base_impl &&) noexcept = default;
 
+    [[nodiscard]] std::string_view name() const override { return T::name_impl(); }
+
     [[nodiscard]] std::string_view to_string() const override
     {
         return static_cast<const T *>(this)->to_string_impl();
     }
-
-    [[nodiscard]] std::string_view name() const override { return T::name_impl(); }
 
     [[nodiscard]] DDWAF_OBJ_TYPE supported_type() const override
     {
@@ -65,12 +60,12 @@ public:
     }
 
     // Helper used for testing purposes
-    template <typename U> [[nodiscard]] std::pair<bool, memory::string> match(const U &data) const
+    template <typename U> [[nodiscard]] std::pair<bool, std::string> match(const U &data) const
     {
         return static_cast<const T *>(this)->match_impl(data);
     }
 
-    [[nodiscard]] std::pair<bool, memory::string> match(const ddwaf_object &obj) const override
+    [[nodiscard]] std::pair<bool, std::string> match(const ddwaf_object &obj) const override
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::supported_type_impl() == DDWAF_OBJ_STRING) {

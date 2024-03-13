@@ -218,8 +218,8 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetID)
     EXPECT_TRUE(filter.filter);
 
     const auto &target = filter.targets[0];
-    EXPECT_EQ(target.type, parser::target_type::id);
-    EXPECT_STR(target.rule_id, "2939");
+    EXPECT_EQ(target.type, parser::reference_type::id);
+    EXPECT_STR(target.ref_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
 }
 
@@ -266,8 +266,8 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetTags)
     EXPECT_TRUE(filter.filter);
 
     const auto &target = filter.targets[0];
-    EXPECT_EQ(target.type, parser::target_type::tags);
-    EXPECT_TRUE(target.rule_id.empty());
+    EXPECT_EQ(target.type, parser::reference_type::tags);
+    EXPECT_TRUE(target.ref_id.empty());
     EXPECT_EQ(target.tags.size(), 2);
     EXPECT_STR(target.tags.find("type")->second, "rule");
     EXPECT_STR(target.tags.find("category")->second, "unknown");
@@ -316,8 +316,8 @@ TEST(TestParserV2InputFilters, ParseUnconditionalTargetPriority)
     EXPECT_TRUE(filter.filter);
 
     const auto &target = filter.targets[0];
-    EXPECT_EQ(target.type, parser::target_type::id);
-    EXPECT_STR(target.rule_id, "2939");
+    EXPECT_EQ(target.type, parser::reference_type::id);
+    EXPECT_STR(target.ref_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
 }
 
@@ -365,15 +365,15 @@ TEST(TestParserV2InputFilters, ParseUnconditionalMultipleTargets)
 
     {
         const auto &target = filter.targets[0];
-        EXPECT_EQ(target.type, parser::target_type::id);
-        EXPECT_STR(target.rule_id, "2939");
+        EXPECT_EQ(target.type, parser::reference_type::id);
+        EXPECT_STR(target.ref_id, "2939");
         EXPECT_EQ(target.tags.size(), 0);
     }
 
     {
         const auto &target = filter.targets[1];
-        EXPECT_EQ(target.type, parser::target_type::tags);
-        EXPECT_TRUE(target.rule_id.empty());
+        EXPECT_EQ(target.type, parser::reference_type::tags);
+        EXPECT_TRUE(target.ref_id.empty());
         EXPECT_EQ(target.tags.size(), 2);
         EXPECT_STR(target.tags.find("type")->second, "rule");
         EXPECT_STR(target.tags.find("category")->second, "unknown");
@@ -425,8 +425,8 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
         EXPECT_TRUE(filter.filter);
 
         const auto &target = filter.targets[0];
-        EXPECT_EQ(target.type, parser::target_type::id);
-        EXPECT_STR(target.rule_id, "2939");
+        EXPECT_EQ(target.type, parser::reference_type::id);
+        EXPECT_STR(target.ref_id, "2939");
         EXPECT_EQ(target.tags.size(), 0);
     }
 
@@ -440,8 +440,8 @@ TEST(TestParserV2InputFilters, ParseMultipleUnconditional)
         EXPECT_TRUE(filter.filter);
 
         const auto &target = filter.targets[0];
-        EXPECT_EQ(target.type, parser::target_type::tags);
-        EXPECT_TRUE(target.rule_id.empty());
+        EXPECT_EQ(target.type, parser::reference_type::tags);
+        EXPECT_TRUE(target.ref_id.empty());
         EXPECT_EQ(target.tags.size(), 2);
         EXPECT_STR(target.tags.find("type")->second, "rule");
         EXPECT_STR(target.tags.find("category")->second, "unknown");
@@ -491,8 +491,8 @@ TEST(TestParserV2InputFilters, ParseConditionalSingleCondition)
     EXPECT_TRUE(filter.filter);
 
     const auto &target = filter.targets[0];
-    EXPECT_EQ(target.type, parser::target_type::id);
-    EXPECT_STR(target.rule_id, "2939");
+    EXPECT_EQ(target.type, parser::reference_type::id);
+    EXPECT_STR(target.ref_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
 }
 
@@ -538,8 +538,8 @@ TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
     EXPECT_TRUE(filter.filter);
 
     const auto &target = filter.targets[0];
-    EXPECT_EQ(target.type, parser::target_type::id);
-    EXPECT_STR(target.rule_id, "2939");
+    EXPECT_EQ(target.type, parser::reference_type::id);
+    EXPECT_STR(target.ref_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
 }
 

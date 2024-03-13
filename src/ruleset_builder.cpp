@@ -3,15 +3,16 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "parser/specification.hpp"
+//
 #include <charconv>
-#include <exception.hpp>
-#include <log.hpp>
-#include <parser/common.hpp>
-#include <parser/parser.hpp>
-#include <ruleset_builder.hpp>
 #include <string_view>
+
+#include "exception.hpp"
+#include "log.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "parser/specification.hpp"
+#include "ruleset_builder.hpp"
 
 namespace ddwaf {
 
@@ -19,42 +20,61 @@ constexpr ruleset_builder::change_state operator|(
     ruleset_builder::change_state lhs, ruleset_builder::change_state rhs)
 {
     return static_cast<ruleset_builder::change_state>(
-        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(lhs) |
-        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(rhs));
+        static_cast<std::underlying_type_t<ruleset_builder::change_state>>(lhs) |
+        static_cast<std::underlying_type_t<ruleset_builder::change_state>>(rhs));
 }
 
 constexpr ruleset_builder::change_state operator&(
     ruleset_builder::change_state lhs, ruleset_builder::change_state rhs)
 {
     return static_cast<ruleset_builder::change_state>(
-        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(lhs) &
-        static_cast<std::underlying_type<ruleset_builder::change_state>::type>(rhs));
+        static_cast<std::underlying_type_t<ruleset_builder::change_state>>(lhs) &
+        static_cast<std::underlying_type_t<ruleset_builder::change_state>>(rhs));
 }
 
 namespace {
 
-std::set<rule *> target_to_rules(const std::vector<parser::rule_target_spec> &targets,
-    const std::unordered_map<std::string_view, rule::ptr> &rules, const rule_tag_map &rules_by_tags)
+std::set<rule *> references_to_rules(
+    const std::vector<parser::reference_spec> &references, const indexer<rule> &rules)
 {
-    std::set<rule *> rule_targets;
-    if (!targets.empty()) {
-        for (const auto &target : targets) {
-            if (target.type == parser::target_type::id) {
-                auto rule_it = rules.find(target.rule_id);
-                if (rule_it == rules.end()) {
+    std::set<rule *> rule_refs;
+    if (!references.empty()) {
+        for (const auto &ref : references) {
+            if (ref.type == parser::reference_type::id) {
+                auto *rule = rules.find_by_id(ref.ref_id);
+                if (rule == nullptr) {
                     continue;
                 }
-                rule_targets.emplace(rule_it->second.get());
-            } else if (target.type == parser::target_type::tags) {
-                auto current_targets = rules_by_tags.multifind(target.tags);
-                rule_targets.merge(current_targets);
+                rule_refs.emplace(rule);
+            } else if (ref.type == parser::reference_type::tags) {
+                auto current_refs = rules.find_by_tags(ref.tags);
+                rule_refs.merge(current_refs);
             }
         }
     } else {
-        // An empty rules target applies to all rules
-        for (const auto &[id, rule] : rules) { rule_targets.emplace(rule.get()); }
+        // An empty rules reference applies to all rules
+        for (const auto &rule : rules) { rule_refs.emplace(rule.get()); }
     }
-    return rule_targets;
+    return rule_refs;
+}
+
+std::set<const scanner *> references_to_scanners(
+    const std::vector<parser::reference_spec> &references, const indexer<const scanner> &scanners)
+{
+    std::set<const scanner *> scanner_refs;
+    for (const auto &ref : references) {
+        if (ref.type == parser::reference_type::id) {
+            const auto *scanner = scanners.find_by_id(ref.ref_id);
+            if (scanner == nullptr) {
+                continue;
+            }
+            scanner_refs.emplace(scanner);
+        } else if (ref.type == parser::reference_type::tags) {
+            auto current_refs = scanners.find_by_tags(ref.tags);
+            scanner_refs.merge(current_refs);
+        }
+    }
+    return scanner_refs;
 }
 
 } // namespace
@@ -71,27 +91,24 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     constexpr static change_state base_rule_update = change_state::rules | change_state::overrides;
     constexpr static change_state filters_update =
         base_rule_update | change_state::custom_rules | change_state::filters;
-
+    constexpr static change_state processors_update =
+        change_state::processors | change_state::scanners;
     // When a configuration with 'rules' or 'rules_override' is received, we
     // need to regenerate the ruleset from the base rules as we want to ensure
     // that there are no side-effects on running contexts.
     if ((state & base_rule_update) != change_state::none) {
         final_base_rules_.clear();
-        base_rules_by_tags_.clear();
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : base_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
-
-            // The string_view should be owned by the rule_ptr
-            final_base_rules_.emplace(rule_ptr->get_id(), rule_ptr);
-            base_rules_by_tags_.insert(rule_ptr->get_tags(), rule_ptr.get());
+            final_base_rules_.emplace(rule_ptr);
         }
 
+        // Overrides only impact base rules since user rules can already be modified by the user
         for (const auto &ovrd : overrides_.by_tags) {
-            auto rule_targets =
-                target_to_rules(ovrd.targets, final_base_rules_, base_rules_by_tags_);
+            auto rule_targets = references_to_rules(ovrd.targets, final_base_rules_);
             for (const auto &rule_ptr : rule_targets) {
                 if (ovrd.enabled.has_value()) {
                     rule_ptr->toggle(*ovrd.enabled);
@@ -104,8 +121,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         }
 
         for (const auto &ovrd : overrides_.by_ids) {
-            auto rule_targets =
-                target_to_rules(ovrd.targets, final_base_rules_, base_rules_by_tags_);
+            auto rule_targets = references_to_rules(ovrd.targets, final_base_rules_);
             for (const auto &rule_ptr : rule_targets) {
                 if (ovrd.enabled.has_value()) {
                     rule_ptr->toggle(*ovrd.enabled);
@@ -120,16 +136,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
     if ((state & change_state::custom_rules) != change_state::none) {
         final_user_rules_.clear();
-        user_rules_by_tags_.clear();
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : user_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
-
-            // The string_view should be owned by the rule_ptr
-            final_user_rules_.emplace(rule_ptr->get_id(), rule_ptr);
-            user_rules_by_tags_.insert(rule_ptr->get_tags(), rule_ptr.get());
+            final_user_rules_.emplace(rule_ptr);
         }
     }
 
@@ -140,10 +152,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
         // First generate rule filters
         for (const auto &[id, filter] : exclusions_.rule_filters) {
-            auto rule_targets =
-                target_to_rules(filter.targets, final_base_rules_, base_rules_by_tags_);
-            rule_targets.merge(
-                target_to_rules(filter.targets, final_user_rules_, user_rules_by_tags_));
+            auto rule_targets = references_to_rules(filter.targets, final_base_rules_);
+            rule_targets.merge(references_to_rules(filter.targets, final_user_rules_));
 
             auto filter_ptr = std::make_shared<exclusion::rule_filter>(
                 id, filter.expr, std::move(rule_targets), filter.on_match);
@@ -152,10 +162,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
         // Finally input filters
         for (auto &[id, filter] : exclusions_.input_filters) {
-            auto rule_targets =
-                target_to_rules(filter.targets, final_base_rules_, base_rules_by_tags_);
-            rule_targets.merge(
-                target_to_rules(filter.targets, final_user_rules_, user_rules_by_tags_));
+            auto rule_targets = references_to_rules(filter.targets, final_base_rules_);
+            rule_targets.merge(references_to_rules(filter.targets, final_user_rules_));
 
             auto filter_ptr = std::make_shared<exclusion::input_filter>(
                 id, filter.expr, std::move(rule_targets), filter.filter);
@@ -163,13 +171,35 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         }
     }
 
+    // Generate new processors
+    if ((state & processors_update) != change_state::none) {
+        preprocessors_.clear();
+        postprocessors_.clear();
+
+        for (auto &[id, spec] : processors_.pre) {
+            auto scanners = references_to_scanners(spec.scanners, scanners_);
+            auto proc = std::make_shared<processor>(id, spec.generator, spec.expr, spec.mappings,
+                std::move(scanners), spec.evaluate, spec.output);
+            preprocessors_.emplace(proc->get_id(), std::move(proc));
+        }
+
+        for (auto &[id, spec] : processors_.post) {
+            auto scanners = references_to_scanners(spec.scanners, scanners_);
+            auto proc = std::make_shared<processor>(id, spec.generator, spec.expr, spec.mappings,
+                std::move(scanners), spec.evaluate, spec.output);
+            postprocessors_.emplace(proc->get_id(), std::move(proc));
+        }
+    }
+
     auto rs = std::make_shared<ddwaf::ruleset>();
-    rs->insert_rules(final_base_rules_);
-    rs->insert_rules(final_user_rules_);
+    rs->insert_rules(final_base_rules_.items());
+    rs->insert_rules(final_user_rules_.items());
+    rs->insert_filters(rule_filters_);
+    rs->insert_filters(input_filters_);
+    rs->insert_preprocessors(preprocessors_);
+    rs->insert_postprocessors(postprocessors_);
     rs->dynamic_matchers = dynamic_matchers_;
-    rs->rule_filters = rule_filters_;
-    rs->input_filters = input_filters_;
-    rs->preprocessors = preprocessors_;
+    rs->scanners = scanners_.items();
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
@@ -202,7 +232,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::rules;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse rules: %s", e.what());
+            DDWAF_WARN("Failed to parse rules: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -227,7 +257,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::custom_rules;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse custom rules: %s", e.what());
+            DDWAF_WARN("Failed to parse custom rules: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -261,7 +291,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::data;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse rule data: %s", e.what());
+            DDWAF_WARN("Failed to parse rule data: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -280,7 +310,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::overrides;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse overrides: %s", e.what());
+            DDWAF_WARN("Failed to parse overrides: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -299,26 +329,45 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             }
             state = state | change_state::filters;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse exclusions: %s", e.what());
+            DDWAF_WARN("Failed to parse exclusions: {}", e.what());
             section.set_error(e.what());
         }
     }
 
-    it = root.find("preprocessors");
+    it = root.find("processors");
     if (it != root.end()) {
-        DDWAF_DEBUG("Parsing preprocessors");
-        auto &section = info.add_section("");
+        DDWAF_DEBUG("Parsing processors");
+        auto &section = info.add_section("processors");
         try {
-            auto preprocessors = static_cast<parameter::vector>(it->second);
-            if (!preprocessors.empty()) {
-                preprocessors_ = parser::v2::parse_preprocessors(preprocessors, section, limits_);
+            auto processors = static_cast<parameter::vector>(it->second);
+            if (!processors.empty()) {
+                processors_ = parser::v2::parse_processors(processors, section, limits_);
             } else {
-                DDWAF_DEBUG("Clearing all preprocessors");
-                preprocessors_.clear();
+                DDWAF_DEBUG("Clearing all processors");
+                processors_.clear();
             }
-            state = state | change_state::preprocessors;
+            state = state | change_state::processors;
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse preprocessors: %s", e.what());
+            DDWAF_WARN("Failed to parse processors: {}", e.what());
+            section.set_error(e.what());
+        }
+    }
+
+    it = root.find("scanners");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing scanners");
+        auto &section = info.add_section("scanners");
+        try {
+            auto scanners = static_cast<parameter::vector>(it->second);
+            if (!scanners.empty()) {
+                scanners_ = parser::v2::parse_scanners(scanners, section);
+            } else {
+                DDWAF_DEBUG("Clearing all scanners");
+                scanners_.clear();
+            }
+            state = state | change_state::scanners;
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse scanners: {}", e.what());
             section.set_error(e.what());
         }
     }

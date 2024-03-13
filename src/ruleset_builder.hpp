@@ -6,22 +6,22 @@
 
 #pragma once
 
-#include "parser/specification.hpp"
 #include <memory>
-#include <parameter.hpp>
-#include <rule.hpp>
-#include <ruleset.hpp>
-#include <ruleset_info.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "indexer.hpp"
+#include "parameter.hpp"
+#include "parser/specification.hpp"
+#include "rule.hpp"
+#include "ruleset.hpp"
+#include "ruleset_info.hpp"
 
 namespace ddwaf {
 
 class ruleset_builder {
 public:
-    using ptr = std::shared_ptr<ruleset_builder>;
-
     ruleset_builder(object_limits limits, ddwaf_object_free_fn free_fn,
         std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
         : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
@@ -49,7 +49,8 @@ protected:
         overrides = 4,
         filters = 8,
         data = 16,
-        preprocessors = 32,
+        processors = 32,
+        scanners = 64,
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
@@ -84,23 +85,24 @@ protected:
     parser::override_spec_container overrides_;
     // Obtained from 'exclusions'
     parser::filter_spec_container exclusions_;
-    // Obtained from 'preprocessors'
-    parser::preprocessor_container preprocessors_;
-
+    // Obtained from 'processors'
+    parser::processor_container processors_;
     // These are the contents of the latest generated ruleset
 
     // Rules
-    std::unordered_map<std::string_view, rule::ptr> final_base_rules_;
-    std::unordered_map<std::string_view, rule::ptr> final_user_rules_;
-
-    // An mkmap organising rules by their tags, used for overrides and exclusion filters
-    rule_tag_map base_rules_by_tags_;
-    rule_tag_map user_rules_by_tags_;
+    indexer<rule> final_base_rules_;
+    indexer<rule> final_user_rules_;
 
     // Filters
-    std::unordered_map<std::string_view, exclusion::rule_filter::ptr> rule_filters_;
-    std::unordered_map<std::string_view, exclusion::input_filter::ptr> input_filters_;
-    // The list of targets used by rule_filters_, input_filters_ and their internal
+    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters_;
+    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters_;
+
+    // Processors
+    std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors_;
+    std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors_;
+
+    // Scanners
+    indexer<const scanner> scanners_;
 };
 
 } // namespace ddwaf

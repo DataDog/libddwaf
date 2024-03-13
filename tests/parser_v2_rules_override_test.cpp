@@ -124,8 +124,8 @@ TEST(TestParserV2RulesOverride, ParseRuleOverride)
     EXPECT_EQ(ovrd.targets.size(), 1);
 
     auto &target = ovrd.targets[0];
-    EXPECT_EQ(target.type, parser::target_type::tags);
-    EXPECT_TRUE(target.rule_id.empty());
+    EXPECT_EQ(target.type, parser::reference_type::tags);
+    EXPECT_TRUE(target.ref_id.empty());
     EXPECT_EQ(target.tags.size(), 1);
     EXPECT_STR(target.tags["confidence"], "1");
 }
@@ -172,8 +172,8 @@ TEST(TestParserV2RulesOverride, ParseMultipleRuleOverrides)
         EXPECT_EQ(ovrd.targets.size(), 1);
 
         auto &target = ovrd.targets[0];
-        EXPECT_EQ(target.type, parser::target_type::tags);
-        EXPECT_TRUE(target.rule_id.empty());
+        EXPECT_EQ(target.type, parser::reference_type::tags);
+        EXPECT_TRUE(target.ref_id.empty());
         EXPECT_EQ(target.tags.size(), 1);
         EXPECT_STR(target.tags["confidence"], "1");
     }
@@ -186,8 +186,8 @@ TEST(TestParserV2RulesOverride, ParseMultipleRuleOverrides)
         EXPECT_EQ(ovrd.targets.size(), 1);
 
         auto &target = ovrd.targets[0];
-        EXPECT_EQ(target.type, parser::target_type::id);
-        EXPECT_STR(target.rule_id, "1");
+        EXPECT_EQ(target.type, parser::reference_type::id);
+        EXPECT_STR(target.ref_id, "1");
         EXPECT_EQ(target.tags.size(), 0);
     }
 }

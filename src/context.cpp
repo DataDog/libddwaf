@@ -4,25 +4,39 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <log.hpp>
-
-#include <context.hpp>
-#include <exception.hpp>
-#include <tuple>
 #include <unordered_set>
-#include <utils.hpp>
-#include <waf.hpp>
+
+#include "context.hpp"
+#include "exception.hpp"
+#include "log.hpp"
+#include "utils.hpp"
+#include "waf.hpp"
 
 namespace ddwaf {
 
-DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res, uint64_t timeout)
+using attribute = object_store::attribute;
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
+    optional_ref<ddwaf_object> ephemeral, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
+    // This scope ensures that all ephemeral and cached objects are removed
+    // from the store at the end of the evaluation
+    auto store_cleanup_scope = store_.get_eval_scope();
+    auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
+
     if (res.has_value()) {
         ddwaf_result &output = *res;
         output = DDWAF_RESULT_INITIALISER;
     }
 
-    if (!store_.insert(input, ruleset_->free_fn)) {
+    auto *free_fn = ruleset_->free_fn;
+    if (persistent.has_value() && !store_.insert(*persistent, attribute::none, free_fn)) {
+        DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+        return DDWAF_ERR_INVALID_OBJECT;
+    }
+
+    if (ephemeral.has_value() && !store_.insert(*ephemeral, attribute::ephemeral, free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }
@@ -54,13 +68,26 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
         derived.emplace(output.derivatives);
     }
 
-    memory::vector<ddwaf::event> events;
+    std::vector<ddwaf::event> events;
     try {
         eval_preprocessors(derived, deadline);
 
-        const auto &rules_to_exclude = filter_rules(deadline);
-        const auto &objects_to_exclude = filter_inputs(rules_to_exclude, deadline);
-        events = match(rules_to_exclude, objects_to_exclude, deadline);
+        // If no rule targets are available, there is no point in evaluating them
+        const bool should_eval_rules = check_new_rule_targets();
+        const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
+
+        if (should_eval_filters) {
+            // Filters need to be evaluated even if rules don't, otherwise it'll
+            // break the current condition cache mechanism which requires knowing
+            // if an address is new to this run.
+            const auto &policy = eval_filters(deadline);
+
+            if (should_eval_rules) {
+                events = eval_rules(policy, deadline);
+            }
+        }
+
+        eval_postprocessors(derived, deadline);
     } catch (const ddwaf::timeout_exception &) {}
 
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
@@ -74,8 +101,50 @@ DDWAF_RET_CODE context::run(ddwaf_object &input, optional_ref<ddwaf_result> res,
     return code;
 }
 
-const memory::unordered_map<rule *, filter_mode> &context::filter_rules(ddwaf::timer &deadline)
+void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
 {
+    DDWAF_DEBUG("Evaluating preprocessors");
+
+    for (const auto &[id, preproc] : ruleset_->preprocessors) {
+        if (deadline.expired()) {
+            DDWAF_INFO("Ran out of time while evaluating preprocessors");
+            throw timeout_exception();
+        }
+
+        auto it = processor_cache_.find(preproc.get());
+        if (it == processor_cache_.end()) {
+            auto [new_it, res] = processor_cache_.emplace(preproc.get(), processor::cache_type{});
+            it = new_it;
+        }
+
+        preproc->eval(store_, derived, it->second, deadline);
+    }
+}
+
+void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
+{
+    DDWAF_DEBUG("Evaluating postprocessors");
+
+    for (const auto &[id, postproc] : ruleset_->postprocessors) {
+        if (deadline.expired()) {
+            DDWAF_INFO("Ran out of time while evaluating postprocessors");
+            throw timeout_exception();
+        }
+
+        auto it = processor_cache_.find(postproc.get());
+        if (it == processor_cache_.end()) {
+            auto [new_it, res] = processor_cache_.emplace(postproc.get(), processor::cache_type{});
+            it = new_it;
+        }
+
+        postproc->eval(store_, derived, it->second, deadline);
+    }
+}
+
+exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
+{
+    DDWAF_DEBUG("Evaluating rule filters");
+
     for (const auto &[id, filter] : ruleset_->rule_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating rule filters");
@@ -92,40 +161,14 @@ const memory::unordered_map<rule *, filter_mode> &context::filter_rules(ddwaf::t
         rule_filter::cache_type &cache = it->second;
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
-            for (auto &&rule : exclusion->get()) {
-                auto [it, res] = rules_to_exclude_.emplace(rule, filter->get_mode());
-                // Bypass has precedence over monitor
-                if (!res && it != rules_to_exclude_.end() && it->second != filter_mode::bypass) {
-                    it->second = filter->get_mode();
-                }
+            for (const auto &rule : exclusion->rules) {
+                exclusion_policy_.add_rule_exclusion(rule, exclusion->mode, exclusion->ephemeral);
             }
         }
     }
-    return rules_to_exclude_;
-}
 
-void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
-{
-    for (const auto &[id, preproc] : ruleset_->preprocessors) {
-        if (deadline.expired()) {
-            DDWAF_INFO("Ran out of time while evaluating preprocessors");
-            throw timeout_exception();
-        }
+    DDWAF_DEBUG("Evaluating input filters");
 
-        auto it = preprocessor_cache_.find(preproc.get());
-        if (it == preprocessor_cache_.end()) {
-            auto [new_it, res] =
-                preprocessor_cache_.emplace(preproc.get(), preprocessor::cache_type{});
-            it = new_it;
-        }
-
-        preproc->eval(store_, derived, it->second, deadline);
-    }
-}
-
-const memory::unordered_map<rule *, context::object_set> &context::filter_inputs(
-    const memory::unordered_map<rule *, filter_mode> &rules_to_exclude, ddwaf::timer &deadline)
-{
     for (const auto &[id, filter] : ruleset_->input_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating input filters");
@@ -143,26 +186,18 @@ const memory::unordered_map<rule *, context::object_set> &context::filter_inputs
         auto exclusion = filter->match(store_, cache, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                auto exclude_it = rules_to_exclude.find(rule);
-                if (exclude_it != rules_to_exclude.end() &&
-                    exclude_it->second == filter_mode::bypass) {
-                    continue;
-                }
-
-                auto &common_exclusion = objects_to_exclude_[rule];
-                common_exclusion.insert(exclusion->objects.begin(), exclusion->objects.end());
+                exclusion_policy_.add_input_exclusion(rule, exclusion->objects);
             }
         }
     }
 
-    return objects_to_exclude_;
+    return exclusion_policy_;
 }
 
-memory::vector<event> context::match(
-    const memory::unordered_map<rule *, filter_mode> &rules_to_exclude,
-    const memory::unordered_map<rule *, object_set> &objects_to_exclude, ddwaf::timer &deadline)
+std::vector<event> context::eval_rules(
+    const exclusion::context_policy &policy, ddwaf::timer &deadline)
 {
-    memory::vector<ddwaf::event> events;
+    std::vector<ddwaf::event> events;
 
     auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);
@@ -170,35 +205,30 @@ memory::vector<event> context::match(
             auto [new_it, res] = collection_cache_.emplace(type, collection_cache{});
             it = new_it;
         }
-        collection.match(events, store_, it->second, rules_to_exclude, objects_to_exclude,
-            ruleset_->dynamic_matchers, deadline);
+        collection.match(events, store_, it->second, policy, ruleset_->dynamic_matchers, deadline);
     };
 
     // Evaluate user priority collections first
     for (auto &[type, collection] : ruleset_->user_priority_collections) {
-        DDWAF_DEBUG("Evaluating user priority collection %.*s", static_cast<int>(type.length()),
-            type.data());
+        DDWAF_DEBUG("Evaluating user priority collection '{}'", type);
         eval_collection(type, collection);
     }
 
     // Evaluate priority collections first
     for (auto &[type, collection] : ruleset_->base_priority_collections) {
-        DDWAF_DEBUG(
-            "Evaluating priority collection %.*s", static_cast<int>(type.length()), type.data());
+        DDWAF_DEBUG("Evaluating priority collection '{}'", type);
         eval_collection(type, collection);
     }
 
     // Evaluate regular collection after
     for (auto &[type, collection] : ruleset_->user_collections) {
-        DDWAF_DEBUG(
-            "Evaluating user collection %.*s", static_cast<int>(type.length()), type.data());
+        DDWAF_DEBUG("Evaluating user collection '{}'", type);
         eval_collection(type, collection);
     }
 
     // Evaluate regular collection after
     for (auto &[type, collection] : ruleset_->base_collections) {
-        DDWAF_DEBUG(
-            "Evaluating base collection %.*s", static_cast<int>(type.length()), type.data());
+        DDWAF_DEBUG("Evaluating base collection '{}'", type);
         eval_collection(type, collection);
     }
 

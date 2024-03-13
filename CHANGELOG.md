@@ -1,5 +1,116 @@
 # libddwaf release
 
+### v1.17.0-alpha2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Server-side request forgery (SSRF) detection operator ([#268](https://github.com/DataDog/libddwaf/pull/268))
+
+#### Miscellaneous
+- Attempt to build libddwaf on arm64 runner ([#270](https://github.com/DataDog/libddwaf/pull/270))
+- Run tests on arm64 ([#271](https://github.com/DataDog/libddwaf/pull/271))
+
+### v1.17.0-alpha1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Fixes
+- Fix parsing of variadic arguments ([#267](https://github.com/DataDog/libddwaf/pull/267))
+
+#### Miscellaneous
+- Update node-16 actions to node-20 ones ([#266](https://github.com/DataDog/libddwaf/pull/266))
+
+### v1.17.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Fixes
+- Add support for old glibc (e.g. RHEL 6) ([#262](https://github.com/DataDog/libddwaf/pull/262))
+- Add weak ceilf symbol and definition ([#263](https://github.com/DataDog/libddwaf/pull/263))
+
+#### Changes
+- Multivariate operator support ([#241](https://github.com/DataDog/libddwaf/pull/241))
+- Local file inclusion (LFI) operator ([#258](https://github.com/DataDog/libddwaf/pull/258))
+
+#### Miscellaneous
+- Reduce benchmark noise ([#257](https://github.com/DataDog/libddwaf/pull/257), [#259](https://github.com/DataDog/libddwaf/pull/259), [#260](https://github.com/DataDog/libddwaf/pull/260))
+
+### v1.16.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### Fixes
+- Add support for old glibc (e.g. RHEL 6) ([#262](https://github.com/DataDog/libddwaf/pull/262))
+- Add weak ceilf symbol and definition ([#263](https://github.com/DataDog/libddwaf/pull/263))
+
+### v1.16.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Fixes
+- Address a libinjection false positive ([#251](https://github.com/DataDog/libddwaf/pull/251))
+- Remove a few fingerprints causing false positives ([#252](https://github.com/DataDog/libddwaf/pull/252))
+- Fix SSE2 lowercase transformer ([#253](https://github.com/DataDog/libddwaf/pull/253))
+
+#### Changes
+- Support ephemeral addresses on processors ([#240](https://github.com/DataDog/libddwaf/pull/240))
+- Phrase match: enforce word boundary option ([#256](https://github.com/DataDog/libddwaf/pull/256))
+
+#### Miscellaneous
+- Build tools on CI to avoid breaking tool users ([#229](https://github.com/DataDog/libddwaf/pull/229))
+- Remove legacy linux builds ([#230](https://github.com/DataDog/libddwaf/pull/230))
+- Vendorize re2 and utf8proc ([#231](https://github.com/DataDog/libddwaf/pull/231))
+- Refactor cmake scripts and support LTO ([#232](https://github.com/DataDog/libddwaf/pull/232))
+- Microbenchmarks ([#242](https://github.com/DataDog/libddwaf/pull/242), [#243](https://github.com/DataDog/libddwaf/pull/243), [#244](https://github.com/DataDog/libddwaf/pull/244), [#245](https://github.com/DataDog/libddwaf/pull/245), [#246](https://github.com/DataDog/libddwaf/pull/246), [#247](https://github.com/DataDog/libddwaf/pull/247), [#248](https://github.com/DataDog/libddwaf/pull/248), [#250](https://github.com/DataDog/libddwaf/pull/250))
+
+### v1.15.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+#### Fixes
+- Fix duplicate processor check ([#234](https://github.com/DataDog/libddwaf/pull/234))
+
+### v1.15.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+This new version of the WAF includes the following new features:
+- Ephemeral addresses for composite requests
+- Naive duplicate address support on input filters
+- Required / Optional address diagnostics
+
+The [upgrading guide](UPGRADING.md) has also been updated to cover the new changes.
+
+#### API & Breaking Changes
+- Support ephemeral addresses on `ddwaf_run` ([#219](https://github.com/DataDog/libddwaf/pull/219))
+- Rename `ddwaf_required_addresses` to `ddwaf_known_addresses` ([#221](https://github.com/DataDog/libddwaf/pull/221))
+
+#### Fixes
+- Schema extraction scanners: reduce false positives on arrays ([#220](https://github.com/DataDog/libddwaf/pull/220))
+
+#### Changes
+- Ephemeral addresses for rules & exclusion filters ([#219](https://github.com/DataDog/libddwaf/pull/219))([#224](https://github.com/DataDog/libddwaf/pull/224))
+- Address diagnostics ([#221](https://github.com/DataDog/libddwaf/pull/221))
+- Naive duplicate address support on input/object filters ([#222](https://github.com/DataDog/libddwaf/pull/222))
+
+#### Miscellaneous
+- Update nuget packaging to use new musl linux binaries ([#217](https://github.com/DataDog/libddwaf/pull/217))
+- Validator improvements  ([#225](https://github.com/DataDog/libddwaf/pull/225))
+- Use `fmt::format` for logging and vendorize some dependencies within `src/` ([#226](https://github.com/DataDog/libddwaf/pull/226))
+- Reduce linux binary size and fix some flaky tests ([#227](https://github.com/DataDog/libddwaf/pull/227))
+
+### v1.14.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+This release of the WAF includes the following new features:
+- Schema data classification through the use of scanners.
+- A vectorized version of the `lowercase` transformer using SSE2.
+- Generalized processors which are evaluated before or after filters and rules based on their outcome.
+- Optimizations to avoid unnecessary rule and filter evaluation.
+- Many other quality of life, correctness and performance improvements
+
+#### API & Breaking Changes
+- Rename `preprocessor` top-level key to `processor` ([#209](https://github.com/DataDog/libddwaf/pull/209))
+
+#### Fixes
+- Fix missing top-level key for processor diagnostics ([#209](https://github.com/DataDog/libddwaf/pull/209))
+
+#### Changes
+- SSE2 lowercase transformer ([#195](https://github.com/DataDog/libddwaf/pull/195))
+- Reduce schema extraction limits ([#208](https://github.com/DataDog/libddwaf/pull/208))
+- Skip rule and filter evaluation when no new rule targets exist ([#207](https://github.com/DataDog/libddwaf/pull/207))
+- Refactor preprocessors into preprocessors and postprocessors ([#209](https://github.com/DataDog/libddwaf/pull/209))
+- Convert float to (un)signed within the parsing stage ([#210](https://github.com/DataDog/libddwaf/pull/210))
+- Scanners for schema scalar classification ([#211](https://github.com/DataDog/libddwaf/pull/211))
+- Remove ptr typedefs ([#212](https://github.com/DataDog/libddwaf/pull/212))
+- Indexer abstraction to encapsulate rule and scanner search and storage ([#213](https://github.com/DataDog/libddwaf/pull/213))
+
+### v1.13.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+#### Changes
+- Allow conversions between signed/unsigned types during parsing ([#205](https://github.com/DataDog/libddwaf/pull/205))
+
 ### v1.13.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 This new version of the WAF includes the following new features:
@@ -9,7 +120,7 @@ This new version of the WAF includes the following new features:
 - Equals operator for arbitrary type equality comparison within conditions
 - Many other quality of life, correctness and performance improvements
 
-The [upgrading guide](UGRADING.md) has also been updated to cover the new changes.
+The [upgrading guide](UPGRADING.md) has also been updated to cover the new changes.
 
 #### API & Breaking Changes
 - Add object types `DDWAF_OBJ_FLOAT` and `DDWAF_OBJ_NULL` ([#197](https://github.com/DataDog/libddwaf/pull/197))

@@ -2,7 +2,7 @@
   name: "Monitor all rules through condition-based exclusion filter",
   runs: [
     {
-      input: {
+      persistent-input: {
         rule1-input: "rule1"
       },
       rules: [

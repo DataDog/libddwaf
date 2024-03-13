@@ -13,7 +13,9 @@
 #include <unordered_set>
 #include <variant>
 
+#include "exception.hpp"
 #include "generator/extract_schema.hpp"
+#include "log.hpp"
 
 namespace ddwaf::generator {
 namespace schema {
@@ -28,8 +30,8 @@ enum class scalar_type : uint8_t { null = 1, boolean = 2, integer = 4, string = 
 
 struct node_scalar {
     scalar_type type{scalar_type::null};
+    std::unordered_map<std::string, std::string> tags{};
     mutable std::size_t hash{0};
-    std::unordered_map<std::string_view, std::string_view> tags{};
 };
 
 using base_node = std::variant<std::monostate, node_scalar, node_array_ptr, node_record_ptr>;
@@ -65,14 +67,14 @@ struct node_equal {
 struct node_record {
     std::size_t hash{0};
     bool truncated{false};
-    std::unordered_map<std::string_view, base_node> children{};
+    std::unordered_map<std::string_view, base_node> children;
 };
 
 struct node_array {
     std::size_t hash{0};
     bool truncated{false};
     std::size_t length{0};
-    std::unordered_set<base_node, node_hash, node_equal> children{};
+    std::unordered_set<base_node, node_hash, node_equal> children;
 };
 
 std::size_t node_hash::operator()(const base_node &node) const noexcept
@@ -84,7 +86,7 @@ std::size_t node_hash::operator()(const node_scalar &node) const noexcept
 {
     // Accept the risk of collision with the hash value 0
     if (node.hash == 0) {
-        using underlying_type = typename std::underlying_type<scalar_type>::type;
+        using underlying_type = std::underlying_type_t<scalar_type>;
         auto value = std::hash<underlying_type>{}(static_cast<underlying_type>(node.type));
         for (const auto &[k, v] : node.tags) {
             value ^= std::hash<std::string_view>{}(k) ^ std::hash<std::string_view>{}(v);
@@ -186,9 +188,8 @@ ddwaf_object node_serialize::operator()(const node_scalar &node) const noexcept
     ddwaf_object array;
     ddwaf_object_array(&array);
 
-    ddwaf_object_array_add(
-        &array, ddwaf_object_unsigned(
-                    &tmp, static_cast<std::underlying_type<scalar_type>::type>(node.type)));
+    ddwaf_object_array_add(&array,
+        ddwaf_object_unsigned(&tmp, static_cast<std::underlying_type_t<scalar_type>>(node.type)));
 
     if (!node.tags.empty()) {
         ddwaf_object meta;
@@ -260,8 +261,13 @@ ddwaf_object node_serialize::operator()(const node_record_ptr &node) const noexc
 ddwaf_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-base_node generate_helper(const ddwaf_object *object, std::size_t depth)
+base_node generate_helper(const ddwaf_object *object, std::string_view key,
+    const std::set<const scanner *> &scanners, std::size_t depth, ddwaf::timer &deadline)
 {
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
     switch (object->type) {
     case DDWAF_OBJ_NULL:
         return node_scalar{scalar_type::null};
@@ -270,6 +276,11 @@ base_node generate_helper(const ddwaf_object *object, std::size_t depth)
     case DDWAF_OBJ_BOOL:
         return node_scalar{scalar_type::boolean};
     case DDWAF_OBJ_STRING:
+        for (const auto *scanner : scanners) {
+            if (scanner->eval(key, *object)) {
+                return node_scalar{scalar_type::string, scanner->get_tags()};
+            }
+        }
         return node_scalar{scalar_type::string};
     case DDWAF_OBJ_SIGNED:
     case DDWAF_OBJ_UNSIGNED:
@@ -288,9 +299,10 @@ base_node generate_helper(const ddwaf_object *object, std::size_t depth)
                 continue;
             }
 
-            auto schema = generate_helper(child, depth - 1);
-            std::string_view key{
+            const std::string_view key{
                 child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
+
+            auto schema = generate_helper(child, key, scanners, depth - 1, deadline);
             record->children.emplace(key, std::move(schema));
         }
         return record;
@@ -306,7 +318,7 @@ base_node generate_helper(const ddwaf_object *object, std::size_t depth)
         array->children.reserve(length);
         for (std::size_t i = 0; i < length && depth > 1; i++) {
             const auto *child = &object->array[i];
-            auto schema = generate_helper(child, depth - 1);
+            auto schema = generate_helper(child, key, scanners, depth - 1, deadline);
             array->children.emplace(std::move(schema));
         }
         return array;
@@ -317,20 +329,23 @@ base_node generate_helper(const ddwaf_object *object, std::size_t depth)
     return {};
 }
 
-ddwaf_object generate(const ddwaf_object *object)
+ddwaf_object generate(
+    const ddwaf_object *object, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
 {
-    return serialize(generate_helper(object, extract_schema::max_container_depth));
+    return serialize(
+        generate_helper(object, {}, scanners, extract_schema::max_container_depth, deadline));
 }
 
 } // namespace schema
 
-ddwaf_object extract_schema::generate(const ddwaf_object *input)
+ddwaf_object extract_schema::generate(
+    const ddwaf_object *input, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
 {
     if (input == nullptr) {
         return {};
     }
 
-    return schema::generate(input);
+    return schema::generate(input, scanners, deadline);
 }
 
 } // namespace ddwaf::generator

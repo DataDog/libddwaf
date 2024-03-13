@@ -1,0 +1,37 @@
+{
+  "scenario": "string_equals_matcher",
+  "max_cycles": 100,
+  "ruleset": {
+    "rules": [
+      {
+        "id": "string-equals",
+        "name": "string-equals",
+        "tags": {
+          "type": "flow",
+          "category": "category"
+        },
+        "conditions": [
+          {
+            "operator": "equals",
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "server.request.headers.user-agent"
+                }
+              ],
+              "type": "string",
+              "value": "thisisarachni"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "fixtures": {
+    "eval.valid": {
+      "server.request.headers.user-agent": [
+        "thisisarachni"
+      ]
+    }
+  }
+}

@@ -4,25 +4,37 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <ddwaf.h>
-#include <event.hpp>
-#include <rule.hpp>
 #include <unordered_set>
+
+#include "ddwaf.h"
+#include "event.hpp"
+#include "rule.hpp"
 
 namespace ddwaf {
 
 namespace {
 
-bool redact_match(const ddwaf::obfuscator &obfuscator, const event::match &match)
+bool redact_match(const ddwaf::obfuscator &obfuscator, const condition_match &match)
 {
-    for (const auto &key : match.key_path) {
-        if (obfuscator.is_sensitive_key(key)) {
+    for (auto arg : match.args) {
+        for (const auto &key : arg.key_path) {
+            if (obfuscator.is_sensitive_key(key)) {
+                return true;
+            }
+        }
+
+        if (obfuscator.is_sensitive_value(arg.resolved)) {
             return true;
         }
     }
 
-    return obfuscator.is_sensitive_value(match.resolved) ||
-           obfuscator.is_sensitive_value(match.matched);
+    for (const auto &highlight : match.highlights) {
+        if (obfuscator.is_sensitive_value(highlight)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str, bool redact = false)
@@ -34,27 +46,53 @@ ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str, bool redact = f
     return ddwaf_object_stringl(&tmp, str.data(), str.size());
 }
 
-void serialize_match(ddwaf_object &match_map, const event::match &match, bool redact)
+void serialize_match(const condition_match &match, ddwaf_object &match_map, auto &obfuscator)
 {
     ddwaf_object tmp;
-    ddwaf_object key_path;
-    ddwaf_object_array(&key_path);
-    for (const auto &key : match.key_path) {
-        ddwaf_object_array_add(&key_path, to_object(tmp, key));
-    }
-
-    ddwaf_object highlight;
-    ddwaf_object_array(&highlight);
-    if (!match.matched.empty()) {
-        ddwaf_object_array_add(&highlight, to_object(tmp, match.matched, redact));
-    }
-
     ddwaf_object param;
     ddwaf_object_map(&param);
-    ddwaf_object_map_add(&param, "address", to_object(tmp, match.address));
-    ddwaf_object_map_add(&param, "key_path", &key_path);
-    ddwaf_object_map_add(&param, "value", to_object(tmp, match.resolved, redact));
-    ddwaf_object_map_add(&param, "highlight", &highlight);
+
+    bool redact = redact_match(obfuscator, match);
+
+    ddwaf_object highlight_arr;
+    ddwaf_object_array(&highlight_arr);
+    for (auto highlight : match.highlights) {
+        ddwaf_object_array_add(&highlight_arr, to_object(tmp, highlight, redact));
+    }
+
+    // Scalar case
+    if (match.args.size() == 1 || match.args[0].name == "input") {
+        const auto &arg = match.args[0];
+
+        ddwaf_object key_path;
+        ddwaf_object_array(&key_path);
+        for (const auto &key : arg.key_path) {
+            ddwaf_object_array_add(&key_path, to_object(tmp, key));
+        }
+
+        ddwaf_object_map_add(&param, "address", to_object(tmp, arg.address));
+        ddwaf_object_map_add(&param, "key_path", &key_path);
+        ddwaf_object_map_add(&param, "value", to_object(tmp, arg.resolved, redact));
+    } else {
+        for (const auto &arg : match.args) {
+            ddwaf_object argument;
+            ddwaf_object_map(&argument);
+
+            ddwaf_object key_path;
+            ddwaf_object_array(&key_path);
+            for (const auto &key : arg.key_path) {
+                ddwaf_object_array_add(&key_path, to_object(tmp, key));
+            }
+
+            ddwaf_object_map_add(&argument, "address", to_object(tmp, arg.address));
+            ddwaf_object_map_add(&argument, "key_path", &key_path);
+            ddwaf_object_map_add(&argument, "value", to_object(tmp, arg.resolved, redact));
+
+            ddwaf_object_map_addl(&param, arg.name.data(), arg.name.size(), &argument);
+        }
+    }
+
+    ddwaf_object_map_add(&param, "highlight", &highlight_arr);
 
     ddwaf_object parameters;
     ddwaf_object_array(&parameters);
@@ -64,9 +102,10 @@ void serialize_match(ddwaf_object &match_map, const event::match &match, bool re
     ddwaf_object_map_add(&match_map, "operator_value", to_object(tmp, match.operator_value));
     ddwaf_object_map_add(&match_map, "parameters", &parameters);
 }
+
 } // namespace
 
-void event_serializer::serialize(const memory::vector<event> &events, ddwaf_result &output) const
+void event_serializer::serialize(const std::vector<event> &events, ddwaf_result &output) const
 {
     ddwaf_object tmp;
 
@@ -121,12 +160,9 @@ void event_serializer::serialize(const memory::vector<event> &events, ddwaf_resu
         ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 
         for (const auto &match : event.matches) {
-            const bool redact = redact_match(obfuscator_, match);
-
             ddwaf_object match_map;
             ddwaf_object_map(&match_map);
-            serialize_match(match_map, match, redact);
-
+            serialize_match(match, match_map, obfuscator_);
             ddwaf_object_array_add(&match_array, &match_map);
         }
 

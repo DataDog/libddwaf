@@ -6,9 +6,11 @@
 
 #pragma once
 
-#include "transformer/base.hpp"
-#include <ddwaf.h>
+#include <span>
 #include <vector>
+
+#include "ddwaf.h"
+#include "transformer/base.hpp"
 
 namespace ddwaf::transformer {
 
@@ -18,7 +20,7 @@ namespace ddwaf::transformer {
 class manager {
 public:
     static bool transform(const ddwaf_object &source, ddwaf_object &destination,
-        const std::vector<transformer_id> &transformers);
+        const std::span<const transformer_id> &transformers);
 };
 
 } // namespace ddwaf::transformer

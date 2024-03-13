@@ -29,7 +29,7 @@ void run_test(ddwaf_handle handle)
     ddwaf_result ret;
 
     // Run with just arg1
-    auto code = ddwaf_run(context, &param, &ret, LONG_TIME);
+    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     EXPECT_FALSE(ret.timeout);
     EXPECT_EVENTS(ret, {.id = "1",
@@ -37,22 +37,28 @@ void run_test(ddwaf_handle handle)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                            .op_value = ".*",
-                                           .address = "arg1",
-                                           .path = {},
-                                           .value = "string 1",
-                                           .highlight = "string 1"},
+                                           .highlight = "string 1",
+                                           .args = {{
+                                               .value = "string 1",
+                                               .address = "arg1",
+                                               .path = {},
+                                           }}},
                                {.op = "match_regex",
                                    .op_value = ".*",
-                                   .address = "arg2",
-                                   .path = {"x"},
-                                   .value = "string 2",
-                                   .highlight = "string 2"},
+                                   .highlight = "string 2",
+                                   .args = {{
+                                       .value = "string 2",
+                                       .address = "arg2",
+                                       .path = {"x"},
+                                   }}},
                                {.op = "match_regex",
                                    .op_value = ".*",
-                                   .address = "arg2",
-                                   .path = {"y"},
-                                   .value = "string 3",
-                                   .highlight = "string 3"}}});
+                                   .highlight = "string 3",
+                                   .args = {{
+                                       .value = "string 3",
+                                       .address = "arg2",
+                                       .path = {"y"},
+                                   }}}}});
     ddwaf_result_free(&ret);
 
     ddwaf_context_destroy(context);

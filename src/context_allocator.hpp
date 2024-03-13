@@ -6,12 +6,13 @@
 
 #pragma once
 
-#include "memory_resource.hpp"
 #include <list>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#include "memory_resource.hpp"
 
 namespace ddwaf::memory {
 extern thread_local std::pmr::memory_resource *local_memory_resource;

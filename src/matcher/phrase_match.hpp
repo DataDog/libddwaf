@@ -7,14 +7,16 @@
 #pragma once
 
 #include <ac.h>
-#include <matcher/base.hpp>
 #include <memory>
+
+#include "matcher/base.hpp"
 
 namespace ddwaf::matcher {
 
 class phrase_match : public base_impl<phrase_match> {
 public:
-    phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths);
+    phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths,
+        bool enforce_word_boundary = false);
     ~phrase_match() override = default;
     phrase_match(const phrase_match &) = delete;
     phrase_match(phrase_match &&) noexcept = default;
@@ -26,8 +28,9 @@ protected:
     static constexpr std::string_view name_impl() { return "phrase_match"; }
     static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
 
-    [[nodiscard]] std::pair<bool, memory::string> match_impl(std::string_view pattern) const;
+    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view pattern) const;
 
+    bool enforce_word_boundary_{false};
     std::unique_ptr<ac_t, void (*)(void *)> ac{nullptr, nullptr};
 
     friend class base_impl<phrase_match>;

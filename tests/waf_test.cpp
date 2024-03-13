@@ -43,7 +43,7 @@ TEST(TestWaf, BasicContextRun)
     ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
 
     auto *ctx = instance.create_context();
-    EXPECT_EQ(ctx->run(root, std::nullopt, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ctx->run(root, std::nullopt, std::nullopt, LONG_TIME), DDWAF_MATCH);
     delete ctx;
 }
 
@@ -64,7 +64,7 @@ TEST(TestWaf, RuleDisabledInRuleset)
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
 
         auto *ctx = instance.create_context();
-        EXPECT_EQ(ctx->run(root, std::nullopt, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ctx->run(root, std::nullopt, std::nullopt, LONG_TIME), DDWAF_OK);
         delete ctx;
     }
 }

@@ -7,8 +7,9 @@
 #include <array>
 #include <cctype>
 #include <cstring>
-#include <ip_utils.hpp>
 #include <string>
+
+#include "ip_utils.hpp"
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 #if defined(_WIN32) || defined(__MINGW32__)
@@ -28,6 +29,39 @@
 
 namespace ddwaf {
 
+namespace {
+template <int af, std::size_t N> bool parse_ip_internal(std::array<char, N> ip, ipaddr &out)
+{
+    int ret = inet_pton(af, ip.data(), &out.data);
+    if (ret != 1) {
+        return false;
+    }
+
+    if constexpr (af == AF_INET) {
+        out.type = ipaddr::address_family::ipv4;
+        out.mask = 32;
+    } else if constexpr (af == AF_INET6) {
+        out.type = ipaddr::address_family::ipv6;
+        out.mask = 128;
+    }
+
+    return true;
+}
+
+template <std::size_t N> bool parse_ipv6_internal(std::array<char, N> ip, ipaddr &out)
+{
+    static_assert(N >= INET6_ADDRSTRLEN);
+    return parse_ip_internal<AF_INET6, N>(ip, out);
+}
+
+template <std::size_t N> bool parse_ipv4_internal(std::array<char, N> ip, ipaddr &out)
+{
+    static_assert(N >= INET_ADDRSTRLEN);
+    return parse_ip_internal<AF_INET, N>(ip, out);
+}
+
+} // namespace
+
 bool parse_ip(std::string_view ip, ipaddr &out)
 {
     if (ip.size() >= INET6_ADDRSTRLEN) {
@@ -37,22 +71,41 @@ bool parse_ip(std::string_view ip, ipaddr &out)
     // Assume the string has no '\0'
     // char ip_cstr[INET6_ADDRSTRLEN] = {0};
     std::array<char, INET6_ADDRSTRLEN> ip_cstr{0};
-
     memcpy(ip_cstr.data(), ip.data(), ip.size());
 
-    int ret = inet_pton(AF_INET, ip_cstr.data(), &out.data);
-    if (ret != 1) {
-        ret = inet_pton(AF_INET6, ip_cstr.data(), &out.data);
-        if (ret != 1) {
-            return false;
-        }
-        out.type = ipaddr::address_family::ipv6;
-        out.mask = 128;
-    } else {
-        out.type = ipaddr::address_family::ipv4;
-        out.mask = 32;
+    if (ip.size() > INET_ADDRSTRLEN || !parse_ipv4_internal(ip_cstr, out)) {
+        return parse_ipv6_internal(ip_cstr, out);
     }
+
     return true;
+}
+
+bool parse_ipv4(std::string_view ip, ipaddr &out)
+{
+    if (ip.size() >= INET_ADDRSTRLEN) {
+        return false;
+    }
+
+    // Assume the string has no '\0'
+    // char ip_cstr[INET_ADDRSTRLEN] = {0};
+    std::array<char, INET_ADDRSTRLEN> ip_cstr{0};
+    memcpy(ip_cstr.data(), ip.data(), ip.size());
+
+    return parse_ipv4_internal(ip_cstr, out);
+}
+
+bool parse_ipv6(std::string_view ip, ipaddr &out)
+{
+    if (ip.size() >= INET6_ADDRSTRLEN) {
+        return false;
+    }
+
+    // Assume the string has no '\0'
+    // char ip_cstr[INET6_ADDRSTRLEN] = {0};
+    std::array<char, INET6_ADDRSTRLEN> ip_cstr{0};
+    memcpy(ip_cstr.data(), ip.data(), ip.size());
+
+    return parse_ipv6_internal(ip_cstr, out);
 }
 
 void ipv4_to_ipv6(ipaddr &out)

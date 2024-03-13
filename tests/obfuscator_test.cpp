@@ -74,15 +74,17 @@ TEST(TestObfuscator, TestConfigKeyValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -96,16 +98,18 @@ TEST(TestObfuscator, TestConfigKeyValue)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -118,15 +122,17 @@ TEST(TestObfuscator, TestConfigKeyValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -140,16 +146,18 @@ TEST(TestObfuscator, TestConfigKeyValue)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -176,15 +184,17 @@ TEST(TestObfuscator, TestConfigKey)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -198,16 +208,18 @@ TEST(TestObfuscator, TestConfigKey)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -220,15 +232,17 @@ TEST(TestObfuscator, TestConfigKey)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1_obf",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1_obf",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -255,15 +269,17 @@ TEST(TestObfuscator, TestConfigValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -277,16 +293,18 @@ TEST(TestObfuscator, TestConfigValue)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -299,15 +317,17 @@ TEST(TestObfuscator, TestConfigValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -334,14 +354,16 @@ TEST(TestObfuscator, TestConfigHighlight)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "badvalue_something"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
                                .matches = {{.op = "phrase_match",
-                                   .address = "value",
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -354,14 +376,16 @@ TEST(TestObfuscator, TestConfigHighlight)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "othervalue_badvalue"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
                                .matches = {{.op = "phrase_match",
-                                   .address = "value",
-                                   .value = "othervalue_badvalue",
-                                   .highlight = "othervalue"}}});
+                                   .highlight = "othervalue",
+                                   .args = {{
+                                       .value = "othervalue_badvalue",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -388,15 +412,17 @@ TEST(TestObfuscator, TestConfigEmpty)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -410,16 +436,18 @@ TEST(TestObfuscator, TestConfigEmpty)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -432,15 +460,17 @@ TEST(TestObfuscator, TestConfigEmpty)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1_obf",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1_obf",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -467,15 +497,17 @@ TEST(TestObfuscator, TestInvalidConfigKey)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -489,16 +521,18 @@ TEST(TestObfuscator, TestInvalidConfigKey)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "<Redacted>",
-                                   .highlight = "<Redacted>"}}});
+                                   .highlight = "<Redacted>",
+                                   .args = {{
+                                       .value = "<Redacted>",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -511,15 +545,17 @@ TEST(TestObfuscator, TestInvalidConfigKey)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1_obf",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1_obf",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -546,15 +582,17 @@ TEST(TestObfuscator, TestInvalidConfigValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -568,16 +606,18 @@ TEST(TestObfuscator, TestInvalidConfigValue)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .path = {"passwordle"},
-                                   .value = "rule1",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1",
+                                       .address = "value",
+                                       .path = {"passwordle"},
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -590,15 +630,17 @@ TEST(TestObfuscator, TestInvalidConfigValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_result out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .address = "value",
-                                   .value = "rule1_obf",
-                                   .highlight = "rule1"}}});
+                                   .highlight = "rule1",
+                                   .args = {{
+                                       .value = "rule1_obf",
+                                       .address = "value",
+                                   }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
