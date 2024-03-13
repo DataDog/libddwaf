@@ -475,8 +475,6 @@ std::unique_ptr<matcher::base> parse_scanner_matcher(const parameter::map &root)
     return std::move(matcher);
 }
 
-std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
-
 void add_addresses_to_info(const address_container &addresses, base_section_info &info)
 {
     for (const auto &address : addresses.required) { info.add_required_address(address); }

@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "action_mapper.hpp"
 #include "collection.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
@@ -138,6 +139,7 @@ struct ruleset {
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> dynamic_matchers;
 
     std::vector<std::shared_ptr<const scanner>> scanners;
+    std::shared_ptr<action_mapper> actions;
 
     // The key used to organise collections is rule.type
     std::unordered_set<std::string_view> collection_types;

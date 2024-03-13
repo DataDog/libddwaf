@@ -271,4 +271,30 @@ parameter::operator std::vector<std::string_view>() const
     return data;
 }
 
+parameter::operator std::unordered_map<std::string, std::string>() const
+{
+    if (type != DDWAF_OBJ_MAP) {
+        throw bad_cast("map", strtype(type));
+    }
+
+    if (array == nullptr || nbEntries == 0) {
+        return {};
+    }
+
+    std::unordered_map<std::string, std::string> data;
+    data.reserve(nbEntries);
+    for (unsigned i = 0; i < nbEntries; i++) {
+        if (array[i].type != DDWAF_OBJ_STRING) {
+            throw malformed_object("item in map not a string, can't cast to string map");
+        }
+
+        std::string key{array[i].parameterName, array[i].parameterNameLength};
+        std::string value{array[i].stringValue, array[i].nbEntries};
+
+        data.emplace(std::move(key), std::move(value));
+    }
+
+    return data;
+}
+
 } // namespace ddwaf
