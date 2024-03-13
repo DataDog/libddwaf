@@ -235,6 +235,10 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         }
     }
 
+    if (!actions_) {
+        actions_ = std::make_shared<action_mapper>();
+    }
+
     it = root.find("rules");
     if (it != root.end()) {
         DDWAF_DEBUG("Parsing base rules");

@@ -4,9 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "parser/actions_parser.hpp"
 #include "log.hpp"
 #include "parser/common.hpp"
+#include "parser/parser.hpp"
 
 namespace ddwaf::parser::v2 {
 

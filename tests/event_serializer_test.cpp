@@ -17,8 +17,9 @@ namespace {
 
 TEST(TestEventSerializer, SerializeNothing)
 {
+    ddwaf::action_mapper actions;
     ddwaf::obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator);
+    ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({}, output);
@@ -28,8 +29,9 @@ TEST(TestEventSerializer, SerializeNothing)
 
 TEST(TestEventSerializer, SerializeEmptyEvent)
 {
+    ddwaf::action_mapper actions;
     ddwaf::obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator);
+    ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({ddwaf::event{}}, output);
@@ -47,8 +49,9 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     event.rule = &rule;
     event.matches = {{{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"}};
 
+    ddwaf::action_mapper actions;
     ddwaf::obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator);
+    ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({event}, output);
@@ -82,8 +85,9 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
         {{{"input", "192.168.0.1", "client.ip"}}, {"192.168.0.1"}, "ip_match", ""},
         {{{"input", "<script>", "path_params", {"key"}}}, {}, "is_xss", ""}};
 
+    ddwaf::action_mapper actions;
     ddwaf::obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator);
+    ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({event}, output);
@@ -133,8 +137,9 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 
 TEST(TestEventSerializer, SerializeMultipleEvents)
 {
+    ddwaf::action_mapper actions;
     ddwaf::obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator);
+    ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf::rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"block", "monitor"}};
@@ -217,8 +222,9 @@ TEST(TestEventSerializer, SerializeEventNoActions)
         {{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
     };
 
+    ddwaf::action_mapper actions;
     ddwaf::obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator);
+    ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({event}, output);
@@ -256,8 +262,9 @@ TEST(TestEventSerializer, SerializeAllTags)
         {{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
     };
 
+    ddwaf::action_mapper actions;
     ddwaf::obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator);
+    ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({event}, output);

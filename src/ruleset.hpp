@@ -6,9 +6,7 @@
 
 #pragma once
 
-#include <algorithm>
 #include <memory>
-#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -16,7 +14,6 @@
 #include "collection.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
-#include "mkmap.hpp"
 #include "obfuscator.hpp"
 #include "processor.hpp"
 #include "rule.hpp"

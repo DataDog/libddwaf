@@ -8,6 +8,7 @@
 
 #include <optional>
 
+#include "action_mapper.hpp"
 #include "condition/base.hpp"
 #include "ddwaf.h"
 #include "obfuscator.hpp"
@@ -27,14 +28,16 @@ using optional_event = std::optional<event>;
 
 class event_serializer {
 public:
-    explicit event_serializer(const ddwaf::obfuscator &event_obfuscator)
-        : obfuscator_(event_obfuscator)
+    explicit event_serializer(
+        const ddwaf::obfuscator &event_obfuscator, const action_mapper &actions)
+        : obfuscator_(event_obfuscator), actions_(actions)
     {}
 
     void serialize(const std::vector<event> &events, ddwaf_result &output) const;
 
 protected:
     const ddwaf::obfuscator &obfuscator_;
+    const action_mapper actions_;
 };
 
 } // namespace ddwaf

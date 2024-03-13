@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <stdexcept>
+
 #include "action_mapper.hpp"
 #include "uuid.hpp"
 
@@ -12,6 +14,7 @@ action_mapper::action_mapper()
 {
     set_action("block", action_type::block_request,
         {{"status_code", "403"}, {"type", "auto"}, {"grpc_status_code", "10"}});
+    set_action("stack_trace", action_type::generate_stack, {});
 }
 
 void action_mapper::set_action(
@@ -23,19 +26,14 @@ void action_mapper::set_action(
     action_by_id_.emplace(std::move(id), action_spec{type, std::move(parameters)});
 }
 
-action_spec_ref action_mapper::get_action(const std::string &id) const
+optional_ref<const action_spec> action_mapper::get_action(const std::string &id) const
 {
     auto it = action_by_id_.find(id);
     if (it == action_by_id_.end()) {
-        return {};
+        return std::nullopt;
     }
 
-    const auto &action = it->second;
-    if (action.type == action_type::generate_stack) {
-        return action_spec{action_type::generate_stack, {{"stack_id", uuidv4_generate_pseudo()}}};
-    }
-
-    return std::reference_wrapper<const action_spec>{it->second};
+    return {it->second};
 }
 
 } // namespace ddwaf

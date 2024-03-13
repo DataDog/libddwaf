@@ -14,9 +14,4 @@
 
 using base_section_info = ddwaf::base_ruleset_info::base_section_info;
 
-namespace ddwaf::parser::v2 {
-
-std::shared_ptr<action_mapper> parse_actions(
-    parameter::vector &actions_array, base_section_info &info);
-
-} // namespace ddwaf::parser::v2
+namespace ddwaf::parser::v2 {} // namespace ddwaf::parser::v2

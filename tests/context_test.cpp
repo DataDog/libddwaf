@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "action_mapper.hpp"
 #include "context.hpp"
 #include "exception.hpp"
 #include "exclusion/input_filter.hpp"
@@ -126,6 +127,7 @@ TEST(TestContext, PreprocessorEval)
     ruleset->insert_rule(rule);
     ruleset->preprocessors.emplace("id", proc);
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     ddwaf::context ctx(ruleset);
 
@@ -159,6 +161,7 @@ TEST(TestContext, PostprocessorEval)
     ruleset->insert_rule(rule);
     ruleset->postprocessors.emplace("id", proc);
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     ddwaf::context ctx(ruleset);
 
@@ -185,6 +188,7 @@ TEST(TestContext, SkipRuleNoTargets)
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->insert_rule(rule);
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
 
@@ -1019,6 +1023,7 @@ TEST(TestContext, SkipRuleFilterNoTargets)
         ruleset->insert_filter<exclusion::rule_filter>(filter);
     }
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
     EXPECT_CALL(*filter, match(_, _, _)).Times(0);
@@ -1069,6 +1074,7 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
         ruleset->insert_filter<exclusion::rule_filter>(filter);
     }
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
     EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
@@ -1086,6 +1092,8 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
 TEST(TestContext, RuleFilterWithCondition)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     // Generate rule
     std::shared_ptr<rule> rule;
@@ -1138,6 +1146,8 @@ TEST(TestContext, RuleFilterWithCondition)
 TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     // Generate rule
     std::shared_ptr<rule> rule;
@@ -1199,6 +1209,8 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
 TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     // Generate rule
     std::shared_ptr<rule> rule;
@@ -1243,6 +1255,7 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
     }
 
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     ddwaf::test::context ctx(ruleset);
 
@@ -1322,6 +1335,7 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
     }
 
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     ddwaf::test::context ctx(ruleset);
 
@@ -1841,6 +1855,7 @@ TEST(TestContext, SkipInputFilterNoTargets)
         ruleset->insert_filter<exclusion::input_filter>(filter);
     }
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
     EXPECT_CALL(*filter, match(_, _, _)).Times(0);
@@ -1888,6 +1903,7 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
         ruleset->insert_filter<exclusion::input_filter>(filter);
     }
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
     EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
@@ -1965,6 +1981,7 @@ TEST(TestContext, InputFilterExcludeEphemeral)
     ruleset->insert_rule(rule);
     ruleset->insert_filter(filter);
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     ddwaf::test::context ctx(ruleset);
 
@@ -2017,6 +2034,7 @@ TEST(TestContext, InputFilterExcludeEphemeralReuseObject)
     ruleset->insert_rule(rule);
     ruleset->insert_filter(filter);
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
     ruleset->free_fn = nullptr;
 
     ddwaf::test::context ctx(ruleset);
@@ -2417,6 +2435,7 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
 {
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
     {
         test::expression_builder builder(1);
         builder.start_condition();

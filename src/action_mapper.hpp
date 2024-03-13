@@ -6,11 +6,8 @@
 
 #pragma once
 
-#include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
-#include <variant>
 
 #include "utils.hpp"
 
@@ -23,9 +20,6 @@ struct action_spec {
     std::unordered_map<std::string, std::string> parameters;
 };
 
-using action_spec_ref =
-    std::variant<action_spec, std::reference_wrapper<const action_spec>, std::monostate>;
-
 class action_mapper {
 public:
     action_mapper();
@@ -37,7 +31,7 @@ public:
 
     void set_action(
         std::string id, action_type type, std::unordered_map<std::string, std::string> parameters);
-    action_spec_ref get_action(const std::string &id) const;
+    optional_ref<const action_spec> get_action(const std::string &id) const;
     bool contains(const std::string &id) const { return action_by_id_.contains(id); }
 
 protected:
