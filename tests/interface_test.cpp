@@ -562,11 +562,10 @@ TEST(TestInterface, UpdateActionsByID)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
+        EXPECT_ACTIONS(result1, {});
+        EXPECT_ACTIONS(
+            result2, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -594,8 +593,8 @@ TEST(TestInterface, UpdateActionsByID)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result2.actions), 0);
+        EXPECT_ACTIONS(result1, {});
+        EXPECT_ACTIONS(result2, {});
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -608,7 +607,7 @@ TEST(TestInterface, UpdateActionsByID)
     ddwaf_handle handle3;
     {
         auto overrides = yaml_to_object(
-            R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [redirect]}], actions: [{id: redirect, type: redirect_request, parameters: {}}]})");
+            R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [redirect]}], actions: [{id: redirect, type: redirect_request, parameters: {}}], actions: [{id: redirect, type: redirect_request, parameters: {}}]})");
         handle3 = ddwaf_update(handle2, &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
@@ -632,14 +631,10 @@ TEST(TestInterface, UpdateActionsByID)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
-        EXPECT_EQ(ddwaf_object_size(&result3.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result3.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(ddwaf_object_get_string(ddwaf_object_get_index(&result3.actions, 0), nullptr),
-            "redirect");
+        EXPECT_ACTIONS(
+            result2, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(result3, {{"redirect_request", {}}});
 
         ddwaf_result_free(&result2);
         ddwaf_result_free(&result3);
@@ -690,11 +685,10 @@ TEST(TestInterface, UpdateActionsByTags)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
+        EXPECT_ACTIONS(result1, {});
+        EXPECT_ACTIONS(
+            result2, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -722,8 +716,8 @@ TEST(TestInterface, UpdateActionsByTags)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result2.actions), 0);
+        EXPECT_ACTIONS(result1, {});
+        EXPECT_ACTIONS(result2, {});
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -772,11 +766,10 @@ TEST(TestInterface, UpdateOverrideByIDAndTag)
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_size(&result1.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
+        EXPECT_ACTIONS(result1, {});
+        EXPECT_ACTIONS(
+            result2, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
         ddwaf_result_free(&result1);
         ddwaf_result_free(&result2);
@@ -812,11 +805,10 @@ TEST(TestInterface, UpdateOverrideByIDAndTag)
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_size(&result2.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result2.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result2.actions, 0), nullptr), "block");
-        EXPECT_EQ(ddwaf_object_size(&result3.actions), 0);
+        EXPECT_ACTIONS(
+            result2, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(result3, {});
 
         ddwaf_result_free(&result2);
         ddwaf_result_free(&result3);
@@ -1339,11 +1331,10 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result2.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result3.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result3.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result3.actions, 0), nullptr), "block");
+        EXPECT_ACTIONS(result2, {});
+        EXPECT_ACTIONS(
+            result3, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
         ddwaf_result_free(&result2);
         ddwaf_result_free(&result3);
@@ -1407,11 +1398,10 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result3.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result4.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result4.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result4.actions, 0), nullptr), "block");
+        EXPECT_ACTIONS(result3, {});
+        EXPECT_ACTIONS(
+            result4, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
         ddwaf_result_free(&result3);
         ddwaf_result_free(&result4);
@@ -1470,14 +1460,12 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result4.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result4.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result4.actions, 0), nullptr), "block");
-        EXPECT_EQ(ddwaf_object_size(&result5.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result5.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result5.actions, 0), nullptr), "block");
+        EXPECT_ACTIONS(
+            result4, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result5, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
         ddwaf_result_free(&result4);
         ddwaf_result_free(&result5);
@@ -1526,11 +1514,10 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result4.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result4.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result4.actions, 0), nullptr), "block");
-        EXPECT_EQ(ddwaf_object_size(&result5.actions), 0);
+        EXPECT_ACTIONS(
+            result4, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(result5, {});
 
         ddwaf_result_free(&result4);
         ddwaf_result_free(&result5);
@@ -1573,11 +1560,10 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result5.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result6.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result6.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result6.actions, 0), nullptr), "block");
+        EXPECT_ACTIONS(result5, {});
+        EXPECT_ACTIONS(
+            result6, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
         ddwaf_result_free(&result5);
         ddwaf_result_free(&result6);
@@ -1606,14 +1592,12 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result5.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result5.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result5.actions, 0), nullptr), "block");
-        EXPECT_EQ(ddwaf_object_size(&result6.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result6.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result6.actions, 0), nullptr), "block");
+        EXPECT_ACTIONS(
+            result5, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result6, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
         ddwaf_result_free(&result5);
         ddwaf_result_free(&result6);
@@ -1670,11 +1654,10 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result6.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result7.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result7.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result7.actions, 0), nullptr), "block");
+        EXPECT_ACTIONS(result6, {});
+        EXPECT_ACTIONS(
+            result7, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
         ddwaf_result_free(&result6);
         ddwaf_result_free(&result7);
@@ -1714,11 +1697,10 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result7.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result7.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result7.actions, 0), nullptr), "block");
-        EXPECT_EQ(ddwaf_object_size(&result8.actions), 0);
+        EXPECT_ACTIONS(
+            result7, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(result8, {});
 
         ddwaf_result_free(&result7);
         ddwaf_result_free(&result8);
@@ -1747,11 +1729,10 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result7.actions), 1);
-        EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&result7.actions, 0)), DDWAF_OBJ_STRING);
-        EXPECT_STREQ(
-            ddwaf_object_get_string(ddwaf_object_get_index(&result7.actions, 0), nullptr), "block");
-        EXPECT_EQ(ddwaf_object_size(&result8.actions), 0);
+        EXPECT_ACTIONS(
+            result7, {{"block_request",
+                         {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(result8, {});
 
         ddwaf_result_free(&result7);
         ddwaf_result_free(&result8);
@@ -1790,8 +1771,8 @@ TEST(TestInterface, UpdateEverything)
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result8.actions), 0);
-        EXPECT_EQ(ddwaf_object_size(&result9.actions), 0);
+        EXPECT_ACTIONS(result8, {});
+        EXPECT_ACTIONS(result9, {});
 
         ddwaf_result_free(&result8);
         ddwaf_result_free(&result9);
