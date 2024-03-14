@@ -16,14 +16,21 @@
 - Update node-16 actions to node-20 ones ([#266](https://github.com/DataDog/libddwaf/pull/266))
 
 ### v1.17.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
-#### Changes
-- Multivariate operator support ([#241](https://github.com/DataDog/libddwaf/pull/241))
-- Local file inclusion (LFI) operator ([#258](https://github.com/DataDog/libddwaf/pull/258))
+#### Fixes
 - Add support for old glibc (e.g. RHEL 6) ([#262](https://github.com/DataDog/libddwaf/pull/262))
 - Add weak ceilf symbol and definition ([#263](https://github.com/DataDog/libddwaf/pull/263))
 
+#### Changes
+- Multivariate operator support ([#241](https://github.com/DataDog/libddwaf/pull/241))
+- Local file inclusion (LFI) operator ([#258](https://github.com/DataDog/libddwaf/pull/258))
+
 #### Miscellaneous
 - Reduce benchmark noise ([#257](https://github.com/DataDog/libddwaf/pull/257), [#259](https://github.com/DataDog/libddwaf/pull/259), [#260](https://github.com/DataDog/libddwaf/pull/260))
+
+### v1.16.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### Fixes
+- Add support for old glibc (e.g. RHEL 6) ([#262](https://github.com/DataDog/libddwaf/pull/262))
+- Add weak ceilf symbol and definition ([#263](https://github.com/DataDog/libddwaf/pull/263))
 
 ### v1.16.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
