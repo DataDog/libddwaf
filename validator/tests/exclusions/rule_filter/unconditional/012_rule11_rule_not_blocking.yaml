@@ -1,0 +1,11 @@
+{
+  name: "Rule doesn't block due to no match",
+  runs: [
+    {
+      persistent-input: {
+        rule11-input: "rule12"
+      },
+      code: ok,
+    }
+  ]
+}

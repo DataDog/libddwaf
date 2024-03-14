@@ -156,7 +156,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
             rule_targets.merge(references_to_rules(filter.targets, final_user_rules_));
 
             auto filter_ptr = std::make_shared<exclusion::rule_filter>(
-                id, filter.expr, std::move(rule_targets), filter.on_match);
+                id, filter.expr, std::move(rule_targets), filter.on_match, filter.action);
             rule_filters_.emplace(filter_ptr->get_id(), filter_ptr);
         }
 
@@ -321,8 +321,10 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         auto &section = info.add_section("exclusions");
         try {
             auto exclusions = static_cast<parameter::vector>(it->second);
+            exclusion_data_ids_.clear();
             if (!exclusions.empty()) {
-                exclusions_ = parser::v2::parse_filters(exclusions, section, limits_);
+                exclusions_ =
+                    parser::v2::parse_filters(exclusions, section, rule_data_ids_, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all exclusions");
                 exclusions_.clear();

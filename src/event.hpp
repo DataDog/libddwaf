@@ -21,6 +21,7 @@ struct event {
     std::vector<condition_match> matches;
     bool ephemeral{false};
     bool skip_actions{false};
+    std::string override_action{};
 };
 
 using optional_event = std::optional<event>;

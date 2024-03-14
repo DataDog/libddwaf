@@ -23,20 +23,22 @@ public:
         const std::unordered_set<rule *> &rules;
         bool ephemeral{false};
         filter_mode mode{filter_mode::none};
+        std::string_view action;
     };
 
     using cache_type = expression::cache_type;
 
     rule_filter(std::string id, std::shared_ptr<expression> expr, std::set<rule *> rule_targets,
-        filter_mode mode = filter_mode::bypass);
+        filter_mode mode = filter_mode::bypass, std::string action = {});
     rule_filter(const rule_filter &) = delete;
     rule_filter &operator=(const rule_filter &) = delete;
     rule_filter(rule_filter &&) = default;
     rule_filter &operator=(rule_filter &&) = default;
     virtual ~rule_filter() = default;
 
-    virtual std::optional<excluded_set> match(
-        const object_store &store, cache_type &cache, ddwaf::timer &deadline) const;
+    virtual std::optional<excluded_set> match(const object_store &store, cache_type &cache,
+        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+        ddwaf::timer &deadline) const;
 
     std::string_view get_id() const { return id_; }
 
@@ -50,6 +52,7 @@ protected:
     std::shared_ptr<expression> expr_;
     std::unordered_set<rule *> rule_targets_;
     filter_mode mode_;
+    std::string action_{};
 };
 
 } // namespace ddwaf::exclusion
