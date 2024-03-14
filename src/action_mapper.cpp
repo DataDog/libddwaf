@@ -22,7 +22,7 @@ action_type action_type_from_string(std::string_view type)
     if (type == "generate_stack") {
         return action_type::generate_stack;
     }
-    if (type == "extract_schema") {
+    if (type == "generate_schema") {
         return action_type::generate_schema;
     }
     // Unknown actions are valid, but provide no semantic value

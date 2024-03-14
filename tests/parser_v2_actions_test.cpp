@@ -12,7 +12,7 @@ using namespace ddwaf;
 
 namespace {
 
-TEST(TestParserV2Actions, ParseEmpty)
+TEST(TestParserV2Actions, SingleAction)
 {
     auto object = yaml_to_object(R"([{id: block_1, type: block_request, parameters: {}}])");
 
@@ -43,6 +43,9 @@ TEST(TestParserV2Actions, ParseEmpty)
     EXPECT_TRUE(actions->contains("block_1"));
     EXPECT_TRUE(actions->contains("block"));
     EXPECT_TRUE(actions->contains("stack_trace"));
+    EXPECT_TRUE(actions->contains("extract_schema"));
 }
+
+
 
 } // namespace
