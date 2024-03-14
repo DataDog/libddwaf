@@ -48,7 +48,10 @@ public:
     void set_action(std::string id, std::string type,
         std::vector<std::pair<std::string, std::string>> parameters);
     [[nodiscard]] optional_ref<const action_spec> get_action(std::string_view id) const;
-    [[nodiscard]] bool contains(std::string_view id) const { return action_by_id_.contains(id); }
+    [[nodiscard]] bool contains(std::string_view id) const
+    {
+        return action_by_id_.find(id) != action_by_id_.end();
+    }
 
 protected:
     std::map<std::string, action_spec, std::less<>> action_by_id_;
