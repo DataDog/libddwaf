@@ -17,9 +17,13 @@ TEST(TestPseudoUUIDv4, Basic)
 
     std::regex uuid_regex("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-1b[a-f0-9]{2}-[a-f0-9]{12}$",
         std::regex_constants::icase);
+
+    std::set<std::string> seen_uuids;
     while (samples-- > 0) {
         auto uuid = ddwaf::uuidv4_generate_pseudo();
         EXPECT_TRUE(std::regex_match(uuid, uuid_regex));
+        EXPECT_FALSE(seen_uuids.contains(uuid));
+        seen_uuids.emplace(std::move(uuid));
     }
 }
 

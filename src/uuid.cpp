@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <chrono>
 #include <iomanip>
 #include <random>
 #include <sstream>
@@ -14,8 +15,7 @@ namespace ddwaf {
 
 std::string uuidv4_generate_pseudo()
 {
-    static std::random_device rdev;
-    static std::mt19937_64 rng{rdev()};
+    static std::mt19937_64 rng{std::chrono::system_clock::now().time_since_epoch().count()};
 
     union {
         // NOLINTNEXTLINE
