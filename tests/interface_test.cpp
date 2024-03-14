@@ -608,7 +608,7 @@ TEST(TestInterface, UpdateActionsByID)
     ddwaf_handle handle3;
     {
         auto overrides = yaml_to_object(
-            R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [redirect]}]})");
+            R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [redirect]}], actions: [{id: redirect, type: redirect_request, parameters: {}}]})");
         handle3 = ddwaf_update(handle2, &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }

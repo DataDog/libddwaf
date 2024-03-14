@@ -6,18 +6,34 @@
 
 #pragma once
 
+#include <map>
 #include <string>
-#include <unordered_map>
+#include <string_view>
 
 #include "utils.hpp"
 
 namespace ddwaf {
 
-enum class action_type { block_request, redirect_request, generate_stack, unknown };
+enum class action_type : uint8_t {
+    none = 0,
+    unknown = 1,
+    generate_stack = 2,
+    generate_schema = 3,
+    monitor = 4,
+    block_request = 5,
+    redirect_request = 6, // Redirect must always be the last action
+                          // as the value is used to serve as precedence
+};
+
+inline bool is_blocking_action(action_type type)
+{
+    return type == action_type::block_request || type == action_type::redirect_request;
+}
 
 struct action_spec {
     action_type type;
-    std::unordered_map<std::string, std::string> parameters;
+    std::string type_str;
+    std::vector<std::pair<std::string, std::string>> parameters;
 };
 
 class action_mapper {
@@ -29,13 +45,13 @@ public:
     action_mapper &operator=(const action_mapper &) = default;
     action_mapper &operator=(action_mapper &&) = default;
 
-    void set_action(
-        std::string id, action_type type, std::unordered_map<std::string, std::string> parameters);
-    optional_ref<const action_spec> get_action(const std::string &id) const;
-    bool contains(const std::string &id) const { return action_by_id_.contains(id); }
+    void set_action(std::string id, std::string type,
+        std::vector<std::pair<std::string, std::string>> parameters);
+    [[nodiscard]] optional_ref<const action_spec> get_action(std::string_view id) const;
+    [[nodiscard]] bool contains(std::string_view id) const { return action_by_id_.contains(id); }
 
 protected:
-    std::unordered_map<std::string, action_spec> action_by_id_;
+    std::map<std::string, action_spec, std::less<>> action_by_id_;
 };
 
 } // namespace ddwaf

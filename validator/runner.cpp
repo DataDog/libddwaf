@@ -264,9 +264,16 @@ void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node 
 
 void test_runner::validate_actions(const YAML::Node &expected, const YAML::Node &obtained)
 {
-    using strset = std::set<std::string>;
-    if (expected.IsDefined()) {
-        expect(expected.size(), obtained.size());
-        expect(expected.as<strset>(), obtained.as<strset>());
+    if (!expected.IsDefined()) {
+        return;
+    }
+
+    expect(expected.size(), obtained.size());
+    for (YAML::const_iterator it = expected.begin(); it != expected.end(); ++it) {
+        auto key = it->first.as<std::string>();
+        auto expected_action = it->second;
+        auto obtained_action = obtained[key];
+
+        expect(expected_action, obtained_action);
     }
 }

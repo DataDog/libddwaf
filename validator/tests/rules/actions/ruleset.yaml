@@ -16,3 +16,11 @@ rules:
     on_match:
         - block_request
         - match
+actions:
+  - id: match
+    type: match_request
+    parameters: {}
+  - id: block_request
+    type: block_request
+    parameters:
+      status_code: "200"

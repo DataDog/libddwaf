@@ -21,7 +21,7 @@ struct event {
     const ddwaf::rule *rule{nullptr};
     std::vector<condition_match> matches;
     bool ephemeral{false};
-    bool skip_actions{false};
+    action_type action_override{action_type::none};
 };
 
 using optional_event = std::optional<event>;
@@ -37,7 +37,7 @@ public:
 
 protected:
     const ddwaf::obfuscator &obfuscator_;
-    const action_mapper actions_;
+    const action_mapper &actions_;
 };
 
 } // namespace ddwaf

@@ -16,7 +16,12 @@
         }
       ],
       code: match,
-      actions: [block_request, match]
+      actions: {
+        block_request: {
+          status_code: 200
+        },
+        match_request: {}
+      }
     }
   ]
 }

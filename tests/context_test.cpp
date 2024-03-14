@@ -123,11 +123,9 @@ TEST(TestContext, PreprocessorEval)
     EXPECT_CALL(*proc, eval(_, _, _, _)).InSequence(seq);
     EXPECT_CALL(*rule, match(_, _, _, _, _)).InSequence(seq).WillOnce(Return(std::nullopt));
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
     ruleset->preprocessors.emplace("id", proc);
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     ddwaf::context ctx(ruleset);
 
@@ -157,11 +155,9 @@ TEST(TestContext, PostprocessorEval)
     EXPECT_CALL(*rule, match(_, _, _, _, _)).InSequence(seq).WillOnce(Return(std::nullopt));
     EXPECT_CALL(*proc, eval(_, _, _, _)).InSequence(seq);
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
     ruleset->postprocessors.emplace("id", proc);
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     ddwaf::context ctx(ruleset);
 
@@ -185,10 +181,8 @@ TEST(TestContext, SkipRuleNoTargets)
 
     auto rule = std::make_shared<mock::rule>("id", "name", std::move(tags), builder.build());
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
 
@@ -214,7 +208,7 @@ TEST(TestContext, MatchTimeout)
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
 
     ddwaf::timer deadline{0s};
@@ -241,7 +235,7 @@ TEST(TestContext, NoMatch)
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
 
     ddwaf::timer deadline{2s};
@@ -269,7 +263,7 @@ TEST(TestContext, Match)
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
 
     ddwaf::timer deadline{2s};
@@ -287,7 +281,7 @@ TEST(TestContext, Match)
 
 TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -351,7 +345,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
 
 TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -426,7 +420,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
 
 TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -502,7 +496,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
 
 TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -599,7 +593,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 
 TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -678,7 +672,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 
 TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -773,7 +767,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityUntilAllActionsMet)
 
 TEST(TestContext, MatchMultipleCollectionsSingleRun)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -820,7 +814,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
 
 TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -869,7 +863,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
 
 TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -928,7 +922,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 
 TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -989,7 +983,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
 
 TEST(TestContext, SkipRuleFilterNoTargets)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<mock::rule> rule;
@@ -1022,8 +1016,6 @@ TEST(TestContext, SkipRuleFilterNoTargets)
 
         ruleset->insert_filter<exclusion::rule_filter>(filter);
     }
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
     EXPECT_CALL(*filter, match(_, _, _)).Times(0);
@@ -1040,7 +1032,7 @@ TEST(TestContext, SkipRuleFilterNoTargets)
 
 TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<mock::rule> rule;
@@ -1073,8 +1065,6 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
 
         ruleset->insert_filter<exclusion::rule_filter>(filter);
     }
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
     EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
@@ -1091,9 +1081,7 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
 
 TEST(TestContext, RuleFilterWithCondition)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<rule> rule;
@@ -1145,9 +1133,7 @@ TEST(TestContext, RuleFilterWithCondition)
 
 TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<rule> rule;
@@ -1208,9 +1194,7 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
 
 TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<rule> rule;
@@ -1254,9 +1238,6 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         ruleset->insert_filter(filter);
     }
 
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
-
     ddwaf::test::context ctx(ruleset);
 
     {
@@ -1290,7 +1271,7 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
 
 TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<rule> rule;
@@ -1334,9 +1315,6 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         ruleset->insert_filter(filter);
     }
 
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
-
     ddwaf::test::context ctx(ruleset);
 
     {
@@ -1367,7 +1345,7 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
 
 TEST(TestContext, RuleFilterTimeout)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<rule> rule;
@@ -1414,7 +1392,7 @@ TEST(TestContext, RuleFilterTimeout)
 
 TEST(TestContext, NoRuleFilterWithCondition)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<rule> rule;
@@ -1465,7 +1443,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
 
 TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     constexpr unsigned num_rules = 9;
@@ -1538,7 +1516,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
 
 TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     constexpr unsigned num_rules = 9;
@@ -1648,7 +1626,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
 TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     constexpr unsigned num_rules = 10;
@@ -1735,7 +1713,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 
 TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     constexpr unsigned num_rules = 10;
@@ -1824,7 +1802,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 
 TEST(TestContext, SkipInputFilterNoTargets)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<mock::rule> rule;
@@ -1854,8 +1832,6 @@ TEST(TestContext, SkipInputFilterNoTargets)
             "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
         ruleset->insert_filter<exclusion::input_filter>(filter);
     }
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
     EXPECT_CALL(*filter, match(_, _, _)).Times(0);
@@ -1872,7 +1848,7 @@ TEST(TestContext, SkipInputFilterNoTargets)
 
 TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     // Generate rule
     std::shared_ptr<mock::rule> rule;
@@ -1902,8 +1878,6 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
             "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
         ruleset->insert_filter<exclusion::input_filter>(filter);
     }
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
     EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
@@ -1937,7 +1911,7 @@ TEST(TestContext, InputFilterExclude)
     auto filter = std::make_shared<input_filter>(
         "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
     ruleset->insert_filter(filter);
 
@@ -1977,11 +1951,9 @@ TEST(TestContext, InputFilterExcludeEphemeral)
     auto filter = std::make_shared<input_filter>(
         "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
     ruleset->insert_filter(filter);
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
 
     ddwaf::test::context ctx(ruleset);
 
@@ -2030,11 +2002,9 @@ TEST(TestContext, InputFilterExcludeEphemeralReuseObject)
     auto filter = std::make_shared<input_filter>(
         "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter));
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
     ruleset->insert_filter(filter);
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
     ruleset->free_fn = nullptr;
 
     ddwaf::test::context ctx(ruleset);
@@ -2065,7 +2035,7 @@ TEST(TestContext, InputFilterExcludeRule)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
     ruleset->insert_rule(rule);
@@ -2120,7 +2090,7 @@ TEST(TestContext, InputFilterExcludeRuleEphemeral)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
     ruleset->insert_rule(rule);
@@ -2170,7 +2140,7 @@ TEST(TestContext, InputFilterMonitorRuleEphemeral)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
     ruleset->insert_rule(rule);
@@ -2225,7 +2195,7 @@ TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
     ruleset->insert_rule(rule);
@@ -2286,7 +2256,7 @@ TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
     ruleset->insert_rule(rule);
@@ -2344,7 +2314,7 @@ TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
 
 TEST(TestContext, InputFilterWithCondition)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -2433,9 +2403,7 @@ TEST(TestContext, InputFilterWithCondition)
 
 TEST(TestContext, InputFilterWithEphemeralCondition)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -2495,7 +2463,7 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
 
 TEST(TestContext, InputFilterMultipleRules)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -2608,7 +2576,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
 TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -2734,7 +2702,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
 TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 {
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    auto ruleset = test::get_default_ruleset();
     {
         test::expression_builder builder(1);
         builder.start_condition();

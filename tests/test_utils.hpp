@@ -20,6 +20,7 @@
 #include "event.hpp"
 #include "expression.hpp"
 #include "matcher/base.hpp"
+#include "ruleset.hpp"
 #include "test.hpp"
 #include "utils.hpp"
 
@@ -104,6 +105,14 @@ protected:
     std::vector<parameter_definition> arguments_{};
     std::vector<std::unique_ptr<base_condition>> conditions_{};
 };
+
+inline std::shared_ptr<ddwaf::ruleset> get_default_ruleset()
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
+    return ruleset;
+}
 
 } // namespace ddwaf::test
 

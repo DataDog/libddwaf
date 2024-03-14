@@ -10,24 +10,6 @@
 
 namespace ddwaf::parser::v2 {
 
-action_type action_type_from_string(std::string_view type)
-{
-    if (type == "block_request") {
-        return action_type::block_request;
-    }
-
-    if (type == "redirect_request") {
-        return action_type::redirect_request;
-    }
-
-    if (type == "generate_stack") {
-        return action_type::generate_stack;
-    }
-
-    // Unknown actions are valid, but provide no semantic value
-    return action_type::unknown;
-}
-
 std::shared_ptr<action_mapper> parse_actions(
     parameter::vector &actions_array, base_section_info &info)
 {
@@ -40,12 +22,12 @@ std::shared_ptr<action_mapper> parse_actions(
         std::string_view id;
         try {
             id = at<std::string_view>(node, "id");
-            auto type = at<std::string_view>(node, "type");
-            auto parameters = at<std::unordered_map<std::string, std::string>>(node, "parameters");
+            auto type = at<std::string>(node, "type");
+            auto parameters =
+                at<std::vector<std::pair<std::string, std::string>>>(node, "parameters");
 
             DDWAF_DEBUG("Parsed action {} of type {}", id, type);
-            actions.set_action(
-                std::string{id}, action_type_from_string(type), std::move(parameters));
+            actions.set_action(std::string{id}, std::move(type), std::move(parameters));
             info.add_loaded(id);
         } catch (const std::exception &e) {
             if (id.empty()) {

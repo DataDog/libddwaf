@@ -50,12 +50,13 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     event.matches = {{{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"}};
 
     ddwaf::action_mapper actions;
+    actions.set_action("monitor", "monitor", {});
+
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({event}, output);
-
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
                               .tags = {{"type", "test"}, {"category", "none"}},
@@ -86,6 +87,8 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
         {{{"input", "<script>", "path_params", {"key"}}}, {}, "is_xss", ""}};
 
     ddwaf::action_mapper actions;
+    actions.set_action("monitor", "monitor", {});
+
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
@@ -138,6 +141,9 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 TEST(TestEventSerializer, SerializeMultipleEvents)
 {
     ddwaf::action_mapper actions;
+    actions.set_action("monitor", "monitor", {});
+    actions.set_action("unblock", "unknown", {});
+
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
@@ -263,6 +269,7 @@ TEST(TestEventSerializer, SerializeAllTags)
     };
 
     ddwaf::action_mapper actions;
+    actions.set_action("unblock", "unknown", {});
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 

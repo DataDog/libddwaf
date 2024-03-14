@@ -233,9 +233,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             DDWAF_WARN("Failed to parse actions: {}", e.what());
             section.set_error(e.what());
         }
-    }
-
-    if (!actions_) {
+    } else if (!actions_) {
         actions_ = std::make_shared<action_mapper>();
     }
 
