@@ -288,8 +288,9 @@ parameter::operator std::vector<std::pair<std::string, std::string>>() const
             throw malformed_object("item in map not a string, can't cast to string map");
         }
 
-        std::string key{array[i].parameterName, array[i].parameterNameLength};
-        std::string value{array[i].stringValue, array[i].nbEntries};
+        std::string key{
+            array[i].parameterName, static_cast<std::size_t>(array[i].parameterNameLength)};
+        std::string value{array[i].stringValue, static_cast<std::size_t>(array[i].nbEntries)};
 
         data.emplace_back(std::move(key), std::move(value));
     }
