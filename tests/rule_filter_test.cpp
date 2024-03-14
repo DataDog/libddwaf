@@ -986,7 +986,8 @@ TEST(TestRuleFilter, MonitorSingleRule)
                                    .value = "192.168.0.1",
                                    .address = "http.client_ip",
                                }}}}});
-    EXPECT_THAT(out.actions, WithActions({}));
+    EXPECT_ACTIONS(out, {});
+
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -1021,7 +1022,8 @@ TEST(TestRuleFilter, AvoidHavingTwoMonitorOnActions)
                                    .value = "192.168.0.1",
                                    .address = "http.client_ip",
                                }}}}});
-    EXPECT_THAT(out.actions, WithActions({}));
+    EXPECT_ACTIONS(out, {});
+
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

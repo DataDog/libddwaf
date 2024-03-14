@@ -69,7 +69,9 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
                                       .address = "query",
                                       .path = {"root", "key"}}}}}});
 
-    EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
+    EXPECT_ACTIONS(output,
+        {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
+            {"monitor", {}}});
 
     ddwaf_result_free(&output);
 }
@@ -133,7 +135,9 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
                                           .path = {"key"},
                                       }}}}});
 
-    EXPECT_THAT(output.actions, WithActions({"block", "monitor"}));
+    EXPECT_ACTIONS(output,
+        {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
+            {"monitor", {}}});
 
     ddwaf_result_free(&output);
 }
@@ -212,7 +216,9 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
                 }}}}},
         {});
 
-    EXPECT_THAT(output.actions, WithActions({"block", "monitor", "unblock"}));
+    EXPECT_ACTIONS(output,
+        {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
+            {"monitor", {}}, {"unknown", {}}});
 
     ddwaf_result_free(&output);
 }
@@ -247,7 +253,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
                                       .path = {"root", "key"},
                                   }}}}});
 
-    EXPECT_THAT(output.actions, WithActions({}));
+    EXPECT_ACTIONS(output, {});
 
     EXPECT_EQ(output.actions.array, nullptr);
     EXPECT_EQ(ddwaf_object_size(&output.actions), 0);
@@ -290,7 +296,7 @@ TEST(TestEventSerializer, SerializeAllTags)
                                       .path = {"root", "key"},
                                   }}}}});
 
-    EXPECT_THAT(output.actions, WithActions({"unblock"}));
+    EXPECT_ACTIONS(output, {{"unknown", {}}});
 
     ddwaf_result_free(&output);
 }
