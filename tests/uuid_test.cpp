@@ -9,14 +9,14 @@
 #include "test.hpp"
 #include "uuid.hpp"
 
-
 namespace {
 
 TEST(TestPseudoUUIDv4, Basic)
 {
     unsigned samples = 35;
 
-    std::regex uuid_regex("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-1b[a-f0-9]{2}-[a-f0-9]{12}$", std::regex_constants::icase);
+    std::regex uuid_regex("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-1b[a-f0-9]{2}-[a-f0-9]{12}$",
+        std::regex_constants::icase);
     while (samples-- > 0) {
         auto uuid = ddwaf::uuidv4_generate_pseudo();
         EXPECT_TRUE(std::regex_match(uuid, uuid_regex));

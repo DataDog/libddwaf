@@ -46,6 +46,4 @@ TEST(TestParserV2Actions, SingleAction)
     EXPECT_TRUE(actions->contains("extract_schema"));
 }
 
-
-
 } // namespace
