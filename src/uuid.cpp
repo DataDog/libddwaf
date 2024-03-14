@@ -13,9 +13,19 @@
 
 namespace ddwaf {
 
+namespace {
+
+auto init_rng()
+{
+    auto seed = static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count());
+    return std::mt19937_64{seed};
+}
+
+} // namespace
+
 std::string uuidv4_generate_pseudo()
 {
-    static std::mt19937_64 rng{std::chrono::system_clock::now().time_since_epoch().count()};
+    static auto rng = init_rng();
 
     union {
         // NOLINTNEXTLINE
