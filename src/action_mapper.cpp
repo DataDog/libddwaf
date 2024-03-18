@@ -30,22 +30,29 @@ action_type action_type_from_string(std::string_view type)
 }
 } // namespace
 
-action_mapper::action_mapper()
+action_mapper::action_mapper() : action_by_id_(default_actions_)
 {
-    set_action("block", "block_request",
-        {{"status_code", "403"}, {"type", "auto"}, {"grpc_status_code", "10"}});
-    set_action("stack_trace", "generate_stack", {});
-    set_action("extract_schema", "generate_schema", {});
+    if (default_actions_.empty()) {
+        throw std::runtime_error("empty default actions");
+    }
 }
 
 void action_mapper::set_action(
     std::string id, std::string type, std::vector<std::pair<std::string, std::string>> parameters)
 {
-    if (action_by_id_.contains(id)) {
-        throw std::runtime_error("duplicate action '" + id + '\'');
+    if (action_by_id_.find(id) != action_by_id_.end()) {
+        // Duplicate actions might happen when a default action is overridden.
+        if (default_actions_.find(id) == default_actions_.end()) {
+            throw std::runtime_error("duplicate action '" + id + '\'');
+        }
+        auto &spec = action_by_id_[id];
+        spec.type = action_type_from_string(type);
+        spec.type_str = std::move(type);
+        spec.parameters = std::move(parameters);
+    } else {
+        action_by_id_.emplace(std::move(id),
+            action_spec{action_type_from_string(type), std::move(type), std::move(parameters)});
     }
-    action_by_id_.emplace(std::move(id),
-        action_spec{action_type_from_string(type), std::move(type), std::move(parameters)});
 }
 
 optional_ref<const action_spec> action_mapper::get_action(std::string_view id) const
@@ -56,5 +63,11 @@ optional_ref<const action_spec> action_mapper::get_action(std::string_view id) c
     }
     return {it->second};
 }
+
+const std::map<std::string, action_spec, std::less<>> action_mapper::default_actions_ = {
+    {"block", {action_type::block_request, "block_request",
+                  {{"status_code", "403"}, {"type", "auto"}, {"grpc_status_code", "10"}}}},
+    {"stack_trace", {action_type::generate_stack, "generate_stack", {}}},
+    {"extract_schema", {action_type::generate_schema, "generate_schema", {}}}};
 
 } // namespace ddwaf

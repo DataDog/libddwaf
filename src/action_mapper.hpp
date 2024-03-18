@@ -52,9 +52,11 @@ public:
     {
         return action_by_id_.find(id) != action_by_id_.end();
     }
+    [[nodiscard]] std::size_t size() const { return action_by_id_.size(); }
 
 protected:
     std::map<std::string, action_spec, std::less<>> action_by_id_;
+    static const std::map<std::string, action_spec, std::less<>> default_actions_;
 };
 
 } // namespace ddwaf

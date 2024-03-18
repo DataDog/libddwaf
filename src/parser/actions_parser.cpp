@@ -19,15 +19,15 @@ std::shared_ptr<action_mapper> parse_actions(
         const auto &node_param = actions_array[i];
         auto node = static_cast<parameter::map>(node_param);
 
-        std::string_view id;
+        std::string id;
         try {
-            id = at<std::string_view>(node, "id");
+            id = at<std::string>(node, "id");
             auto type = at<std::string>(node, "type");
             auto parameters =
                 at<std::vector<std::pair<std::string, std::string>>>(node, "parameters");
 
             DDWAF_DEBUG("Parsed action {} of type {}", id, type);
-            actions.set_action(std::string{id}, std::move(type), std::move(parameters));
+            actions.set_action(id, std::move(type), std::move(parameters));
             info.add_loaded(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
