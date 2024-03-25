@@ -33,7 +33,7 @@ inline bool is_blocking_action(action_type type)
 struct action_spec {
     action_type type;
     std::string type_str;
-    std::vector<std::pair<std::string, std::string>> parameters;
+    std::unordered_map<std::string, std::string> parameters;
 };
 
 class action_mapper {
@@ -45,8 +45,10 @@ public:
     action_mapper &operator=(const action_mapper &) = default;
     action_mapper &operator=(action_mapper &&) = default;
 
-    void set_action(std::string id, std::string type,
-        std::vector<std::pair<std::string, std::string>> parameters);
+    void set_action_alias(std::string_view id, std::string alias);
+
+    void set_action(
+        std::string id, std::string type, std::unordered_map<std::string, std::string> parameters);
     [[nodiscard]] optional_ref<const action_spec> get_action(std::string_view id) const;
     [[nodiscard]] bool contains(std::string_view id) const
     {

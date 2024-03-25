@@ -607,7 +607,7 @@ TEST(TestInterface, UpdateActionsByID)
     ddwaf_handle handle3;
     {
         auto overrides = yaml_to_object(
-            R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [redirect]}], actions: [{id: redirect, type: redirect_request, parameters: {}}], actions: [{id: redirect, type: redirect_request, parameters: {}}]})");
+            R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [redirect]}], actions: [{id: redirect, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
         handle3 = ddwaf_update(handle2, &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
@@ -634,7 +634,8 @@ TEST(TestInterface, UpdateActionsByID)
         EXPECT_ACTIONS(
             result2, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
-        EXPECT_ACTIONS(result3, {{"redirect_request", {}}});
+        EXPECT_ACTIONS(result3,
+            {{"redirect_request", {{"status_code", "303"}, {"location", "http://google.com"}}}});
 
         ddwaf_result_free(&result2);
         ddwaf_result_free(&result3);

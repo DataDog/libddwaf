@@ -37,8 +37,23 @@ action_mapper::action_mapper() : action_by_id_(default_actions_)
     }
 }
 
+// Certain versions of libc++ don't support hetereogeneous lookups using contains
+template <typename T, typename Key> bool contains(T container, const Key &k)
+{
+    return container.find(k) != container.end();
+}
+
+void action_mapper::set_action_alias(std::string_view id, std::string alias)
+{
+    auto it = action_by_id_.find(id);
+    if (it == action_by_id_.end()) {
+        throw std::runtime_error("attempting to add alias to non existent action");
+    }
+    action_by_id_.emplace(std::move(alias), it->second);
+}
+
 void action_mapper::set_action(
-    std::string id, std::string type, std::vector<std::pair<std::string, std::string>> parameters)
+    std::string id, std::string type, std::unordered_map<std::string, std::string> parameters)
 {
     if (action_by_id_.find(id) != action_by_id_.end()) {
         // Duplicate actions might happen when a default action is overridden.

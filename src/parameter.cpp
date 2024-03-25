@@ -271,7 +271,7 @@ parameter::operator std::vector<std::string_view>() const
     return data;
 }
 
-parameter::operator std::vector<std::pair<std::string, std::string>>() const
+parameter::operator std::unordered_map<std::string, std::string>() const
 {
     if (type != DDWAF_OBJ_MAP) {
         throw bad_cast("map", strtype(type));
@@ -281,7 +281,7 @@ parameter::operator std::vector<std::pair<std::string, std::string>>() const
         return {};
     }
 
-    std::vector<std::pair<std::string, std::string>> data;
+    std::unordered_map<std::string, std::string> data;
     data.reserve(nbEntries);
     for (unsigned i = 0; i < nbEntries; i++) {
         if (array[i].type != DDWAF_OBJ_STRING) {
@@ -292,7 +292,7 @@ parameter::operator std::vector<std::pair<std::string, std::string>>() const
             array[i].parameterName, static_cast<std::size_t>(array[i].parameterNameLength)};
         std::string value{array[i].stringValue, static_cast<std::size_t>(array[i].nbEntries)};
 
-        data.emplace_back(std::move(key), std::move(value));
+        data.emplace(std::move(key), std::move(value));
     }
 
     return data;
