@@ -109,7 +109,7 @@ void serialize_match(const condition_match &match, ddwaf_object &match_map, auto
 struct action_tracker {
     // The blocking action refers to either a block_request or redirect_request
     // action, the latter having precedence over the former.
-    std::string_view blocking_action;
+    std::string_view blocking_action{};
     action_type blocking_action_type{action_type::none};
 
     // Stack trace ID

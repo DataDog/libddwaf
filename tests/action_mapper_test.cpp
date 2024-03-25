@@ -110,6 +110,37 @@ TEST(TestActionMapper, SetAction)
     }
 }
 
+TEST(TestActionMapper, SetActionAlias)
+{
+    action_mapper actions;
+
+    EXPECT_TRUE(actions.contains("block"));
+    EXPECT_TRUE(actions.contains("stack_trace"));
+    EXPECT_TRUE(actions.contains("extract_schema"));
+    EXPECT_TRUE(actions.contains("monitor"));
+
+    actions.set_action_alias("block", "redirect");
+
+    EXPECT_TRUE(actions.contains("redirect"));
+
+    {
+        const auto &action = actions.get_action("redirect");
+        EXPECT_EQ(action->get().type, action_type::block_request);
+        EXPECT_STR(action->get().type_str, "block_request");
+
+        EXPECT_EQ(action->get().parameters.size(), 3);
+        EXPECT_STRV(action->get().parameters.at("status_code"), "403");
+        EXPECT_STRV(action->get().parameters.at("type"), "auto");
+        EXPECT_STRV(action->get().parameters.at("grpc_status_code"), "10");
+    }
+}
+
+TEST(TestActionMapper, SetInvalidActionAlias)
+{
+    action_mapper actions;
+    EXPECT_THROW(actions.set_action_alias("blorck", "redirect"), std::runtime_error);
+}
+
 TEST(TestActionMapper, OverrideDefaultAction)
 {
     action_mapper actions;
