@@ -30,7 +30,8 @@ bool operator==(const event::match &lhs, const event::match &rhs)
 bool operator==(const event &lhs, const event &rhs)
 {
     return lhs.id == rhs.id && lhs.name == rhs.name && lhs.tags == rhs.tags &&
-           lhs.actions == rhs.actions && lhs.matches == rhs.matches;
+           lhs.actions == rhs.actions && lhs.matches == rhs.matches &&
+           lhs.has_stack_id == rhs.has_stack_id;
 }
 
 namespace {
@@ -88,6 +89,7 @@ std::ostream &operator<<(std::ostream &os, const event &e)
     os << "{\n"
        << indent(4) << "id: " << e.id << ",\n"
        << indent(4) << "name: " << e.name << ",\n"
+       << indent(4) << "stack_id: " << std::boolalpha << e.has_stack_id << ",\n"
        << indent(4) << "tags: {";
     {
         bool start = true;
@@ -410,6 +412,7 @@ event as_if<event, void>::operator()() const
     e.tags = as<std::map<std::string, std::string>>(rule, "tags");
     e.actions = as<std::vector<std::string>>(rule, "on_match");
     e.matches = as<std::vector<match>>(node, "rule_matches");
+    e.has_stack_id = node["stack_id"].IsDefined();
 
     return e;
 }

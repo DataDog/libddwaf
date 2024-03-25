@@ -113,7 +113,7 @@ struct action_tracker {
     action_type blocking_action_type{action_type::none};
 
     // Stack trace ID
-    std::string stack_id;
+    std::string stack_id{};
 
     std::unordered_set<std::string_view> all;
 
@@ -121,7 +121,7 @@ struct action_tracker {
 };
 
 void serialize_rule(const ddwaf::rule &rule, action_type action_override, ddwaf_object &rule_map,
-    action_tracker &actions)
+    action_tracker &actions, bool &include_stack_id)
 {
     ddwaf_object tmp;
     ddwaf_object tags_map;
@@ -170,6 +170,7 @@ void serialize_rule(const ddwaf::rule &rule, action_type action_override, ddwaf_
                     if (actions.stack_id.empty()) {
                         actions.stack_id = uuidv4_generate_pseudo();
                     }
+                    include_stack_id = true;
                 }
 
                 actions.all.emplace(id);
@@ -248,8 +249,9 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         ddwaf_object_map(&root_map);
         ddwaf_object_array(&match_array);
 
+        bool include_stack_id = false;
         if (event.rule != nullptr) {
-            serialize_rule(*event.rule, event.action_override, rule_map, actions);
+            serialize_rule(*event.rule, event.action_override, rule_map, actions, include_stack_id);
         } else {
             // This will only be used for testing
             serialize_empty_rule(rule_map);
@@ -264,6 +266,11 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
 
         ddwaf_object_map_add(&root_map, "rule", &rule_map);
         ddwaf_object_map_add(&root_map, "rule_matches", &match_array);
+        if (!actions.stack_id.empty() && include_stack_id) {
+            ddwaf_object tmp;
+            ddwaf_object_map_add(&root_map, "stack_id",
+                ddwaf_object_stringl(&tmp, actions.stack_id.c_str(), actions.stack_id.size()));
+        }
 
         ddwaf_object_array_add(&output.events, &root_map);
     }
