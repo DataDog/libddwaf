@@ -14,11 +14,14 @@
 namespace ddwaf {
 
 namespace {
+// System clock is used to provide a more unique seed compared to the
+// monotonic clock, which is backed by a steady clock, in practice it
+// likely doesn't make a difference.
+using clock = std::chrono::system_clock;
 
 auto init_rng()
 {
-    auto seed = static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count());
-    return std::mt19937_64{seed};
+    return std::mt19937_64{static_cast<uint64_t>(clock::now().time_since_epoch().count())};
 }
 
 } // namespace
