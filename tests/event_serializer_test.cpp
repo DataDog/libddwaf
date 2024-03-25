@@ -43,14 +43,14 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
 TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 {
     ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
-        std::make_shared<expression>(), {"block", "monitor"}};
+        std::make_shared<expression>(), {"block", "monitor_request"}};
 
     ddwaf::event event;
     event.rule = &rule;
     event.matches = {{{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"}};
 
     ddwaf::action_mapper actions;
-    actions.set_action("monitor", "monitor", {});
+    actions.set_action("monitor_request", "monitor_request", {});
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
@@ -60,7 +60,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
                               .tags = {{"type", "test"}, {"category", "none"}},
-                              .actions = {"block", "monitor"},
+                              .actions = {"block", "monitor_request"},
                               .matches = {{.op = "random",
                                   .op_value = "val",
                                   .highlight = "val",
@@ -71,7 +71,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 
     EXPECT_ACTIONS(output,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
-            {"monitor", {}}});
+            {"monitor_request", {}}});
 
     ddwaf_result_free(&output);
 }
@@ -79,7 +79,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 {
     ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
-        std::make_shared<expression>(), {"block", "monitor"}};
+        std::make_shared<expression>(), {"block", "monitor_request"}};
 
     ddwaf::event event;
     event.rule = &rule;
@@ -89,7 +89,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
         {{{"input", "<script>", "path_params", {"key"}}}, {}, "is_xss", ""}};
 
     ddwaf::action_mapper actions;
-    actions.set_action("monitor", "monitor", {});
+    actions.set_action("monitor_request", "monitor_request", {});
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
@@ -100,7 +100,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
                               .tags = {{"type", "test"}, {"category", "none"}},
-                              .actions = {"block", "monitor"},
+                              .actions = {"block", "monitor_request"},
                               .matches = {{.op = "random",
                                               .op_value = "val",
                                               .highlight = "val",
@@ -137,7 +137,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 
     EXPECT_ACTIONS(output,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
-            {"monitor", {}}});
+            {"monitor_request", {}}});
 
     ddwaf_result_free(&output);
 }
@@ -145,14 +145,14 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 TEST(TestEventSerializer, SerializeMultipleEvents)
 {
     ddwaf::action_mapper actions;
-    actions.set_action("monitor", "monitor", {});
+    actions.set_action("monitor_request", "monitor_request", {});
     actions.set_action("unblock", "unknown", {});
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf::rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
-        std::make_shared<expression>(), {"block", "monitor"}};
+        std::make_shared<expression>(), {"block", "monitor_request"}};
     ddwaf::rule rule2{"xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"unblock"}};
     std::vector<ddwaf::event> events;
@@ -182,7 +182,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         {.id = "xasd1022",
             .name = "random rule",
             .tags = {{"type", "test"}, {"category", "none"}},
-            .actions = {"block", "monitor"},
+            .actions = {"block", "monitor_request"},
             .matches = {{.op = "random",
                             .op_value = "val",
                             .highlight = "val",
@@ -218,7 +218,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     EXPECT_ACTIONS(output,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
-            {"monitor", {}}, {"unknown", {}}});
+            {"monitor_request", {}}, {"unknown", {}}});
 
     ddwaf_result_free(&output);
 }

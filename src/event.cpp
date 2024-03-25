@@ -145,16 +145,19 @@ void serialize_rule(const ddwaf::rule &rule, action_type action_override, ddwaf_
         for (const auto &id : rule_actions) {
             auto spec = actions.mapper.get_action(id);
             if (!spec) {
+                // If an action is unspecified, add it and move on
+                ddwaf_object_array_add(&actions_array, to_object(tmp, id));
                 continue;
             }
 
             const auto &[type, type_str, parameters] = spec->get();
-            if (is_blocking_action(type)) {
-                if (action_override == action_type::monitor) {
-                    // If the rule was in monitor mode, ignore blocking actions
-                    continue;
-                }
+            if (action_override == action_type::monitor &&
+                (type == action_type::monitor || is_blocking_action(type))) {
+                // If the rule was in monitor mode, ignore blocking and monitor actions
+                continue;
+            }
 
+            if (is_blocking_action(type)) {
                 // Only keep a single blocking action
                 if (type > actions.blocking_action_type) {
                     actions.blocking_action_type = type;
@@ -201,16 +204,18 @@ void serialize_action(std::string_view id, ddwaf_object &action_map, const actio
 {
     auto spec = actions.mapper.get_action(id);
     if (!spec) {
-        // Shouldn't happen
+        // If the action has no spec, we don't report it
         return;
     }
 
     const auto &[type, type_str, parameters] = spec->get();
+    if (type == action_type::monitor) {
+        return;
+    }
 
     ddwaf_object tmp;
     ddwaf_object param_map;
     ddwaf_object_map(&param_map);
-
     if (type != action_type::generate_stack) {
         for (const auto &[k, v] : parameters) {
             ddwaf_object_map_addl(

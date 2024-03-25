@@ -46,11 +46,14 @@ struct event {
     std::vector<match> matches;
 };
 
-using action_map = std::map<std::string, std::map<std::string, std::string>>;
+using action_map = ::std::map<::std::string, ::std::map<::std::string, ::std::string>>;
 
 bool operator==(const event::match::argument &lhs, const event::match::argument &rhs);
 bool operator==(const event::match &lhs, const event::match &rhs);
 bool operator==(const event &lhs, const event &rhs);
+
+::std::ostream &operator<<(::std::ostream &os, const event &e);
+::std::ostream &operator<<(::std::ostream &os, const event::match &m);
 
 std::string object_to_json(const ddwaf_object &obj);
 rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
@@ -113,7 +116,15 @@ inline std::shared_ptr<ddwaf::ruleset> get_default_ruleset()
     return ruleset;
 }
 
+// Required by gtest to pretty print relevant types
+void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
+void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
+void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os);
+
 } // namespace ddwaf::test
+
+::std::ostream &operator<<(::std::ostream &os, const ddwaf::test::action_map &actions);
+void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os);
 
 namespace YAML {
 
@@ -163,21 +174,11 @@ protected:
     std::unique_ptr<rapidjson::SchemaValidator> validator_;
 };
 
-std::ostream &operator<<(std::ostream &os, const ddwaf::test::event &e);
-std::ostream &operator<<(std::ostream &os, const ddwaf::test::event::match &m);
-std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &actions);
-
 // Note that naming conventions (and Pascal case) are kept for functions and
 // classes involved in anything GTest related.
 
 ::testing::AssertionResult ValidateSchema(const std::string &result);
 ::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc);
-
-// Required by gtest to pretty print relevant types
-// void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
-void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
-void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os);
-void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os);
 
 class WafResultActionMatcher {
 public:

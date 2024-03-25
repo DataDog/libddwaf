@@ -25,6 +25,9 @@ action_type action_type_from_string(std::string_view type)
     if (type == "generate_schema") {
         return action_type::generate_schema;
     }
+    if (type == "monitor") {
+        return action_type::monitor;
+    }
     // Unknown actions are valid, but provide no semantic value
     return action_type::unknown;
 }
@@ -83,6 +86,7 @@ const std::map<std::string, action_spec, std::less<>> action_mapper::default_act
     {"block", {action_type::block_request, "block_request",
                   {{"status_code", "403"}, {"type", "auto"}, {"grpc_status_code", "10"}}}},
     {"stack_trace", {action_type::generate_stack, "generate_stack", {}}},
-    {"extract_schema", {action_type::generate_schema, "generate_schema", {}}}};
+    {"extract_schema", {action_type::generate_schema, "generate_schema", {}}},
+    {"monitor", {action_type::monitor, "monitor", {}}}};
 
 } // namespace ddwaf

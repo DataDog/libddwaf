@@ -48,6 +48,105 @@ std::ostream &operator<<(std::ostream &os, const indent &offset)
 
 } // namespace
 
+std::ostream &operator<<(std::ostream &os, const event::match &m)
+{
+    // using indent = ddwaf::test::indent;
+
+    os << indent(4) << "{\n"
+       << indent(8) << "operator: " << m.op << ",\n"
+       << indent(8) << "operator_value: " << m.op_value << ",\n";
+
+    os << indent(8) << "parameters: {\n";
+
+    for (const auto &arg : m.args) {
+        os << indent(12) << arg.name << ": {\n"
+           << indent(16) << "address: " << arg.address << ",\n"
+           << indent(16) << "path: [";
+
+        bool start = true;
+        for (const auto &p : arg.path) {
+            if (!start) {
+                os << ", ";
+            } else {
+                start = false;
+            }
+            os << p;
+        }
+
+        os << "],\n" << indent(16) << "value: " << arg.value << ",\n" << indent(12) << "}\n";
+    }
+
+    os << indent(8) << "highlight: " << m.highlight << "\n" << indent(4) << "}\n";
+
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const event &e)
+{
+    // using indent = ddwaf::test::indent;
+
+    os << "{\n"
+       << indent(4) << "id: " << e.id << ",\n"
+       << indent(4) << "name: " << e.name << ",\n"
+       << indent(4) << "tags: {";
+    {
+        bool start = true;
+        for (const auto &[key, val] : e.tags) {
+            if (!start) {
+                os << ", ";
+            } else {
+                start = false;
+            }
+            os << '\n' << indent(8) << key << ": " << val;
+        }
+    }
+    os << '\n' << indent(4) << "},\n" << indent(4) << "actions: [";
+    {
+        bool start = true;
+        for (const auto &a : e.actions) {
+            if (!start) {
+                os << ", ";
+            } else {
+                start = false;
+            }
+            os << a;
+        }
+    }
+    os << "],\n" << indent(4) << "matches: [\n";
+
+    for (const auto &m : e.matches) {
+        os << indent(8) << "{\n"
+           << indent(12) << "operator: " << m.op << ",\n"
+           << indent(12) << "operator_value: " << m.op_value << ",\n";
+
+        os << indent(12) << "parameters: {\n";
+
+        for (const auto &arg : m.args) {
+            os << indent(16) << arg.name << ": {\n"
+               << indent(20) << "address: " << arg.address << ",\n"
+               << indent(20) << "path: [";
+
+            bool start = true;
+            for (const auto &p : arg.path) {
+                if (!start) {
+                    os << ", ";
+                } else {
+                    start = false;
+                }
+                os << p;
+            }
+
+            os << "],\n" << indent(20) << "value: " << arg.value << ",\n" << indent(16) << "}\n";
+        }
+
+        os << indent(12) << "highlight: " << m.highlight << "\n" << indent(8) << "}\n";
+    }
+
+    os << indent(4) << "]\n}\n";
+
+    return os;
+}
+
 namespace {
 class string_buffer {
 public:
@@ -157,7 +256,68 @@ rapidjson::Document object_to_rapidjson(const ddwaf_object &obj)
     return document;
 }
 
+//} // namespace ddwaf::test
+void PrintTo(const ddwaf_object &actions, ::std::ostream *os)
+{
+    *os << "[";
+    for (unsigned i = 0; i < ddwaf_object_size(&actions); i++) {
+        if (i > 0) {
+            *os << ", ";
+        }
+        const auto *object = ddwaf_object_get_index(actions.array, i);
+        if (ddwaf_object_type(object) == DDWAF_OBJ_STRING) {
+            *os << ddwaf_object_get_string(object, nullptr);
+        }
+    }
+    *os << "]";
+}
+
+void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os)
+{
+    for (const auto &e : events) { *os << e; }
+}
+
+void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os)
+{
+    for (const auto &m : matches) { *os << m; }
+}
+
 } // namespace ddwaf::test
+
+std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &actions)
+{
+    using indent = ddwaf::test::indent;
+    os << "{\n";
+    bool start = true;
+    for (const auto &[action, parameters] : actions) {
+        if (!start) {
+            os << ",\n";
+        } else {
+            start = false;
+        }
+
+        os << indent(4) << action << ": {\n";
+
+        bool param_start = true;
+        for (const auto &[k, v] : parameters) {
+            if (!param_start) {
+                os << ",\n";
+            } else {
+                param_start = false;
+            }
+
+            os << indent(8) << k << ": " << v;
+        }
+
+        os << "\n" << indent(4) << "}";
+    }
+
+    os << "\n}";
+
+    return os;
+}
+
+void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os << actions; }
 
 namespace YAML {
 using event = ddwaf::test::event;
@@ -376,138 +536,6 @@ std::optional<std::string> schema_validator::validate(rapidjson::Document &doc)
     return std::nullopt;
 }
 
-std::ostream &operator<<(std::ostream &os, const ddwaf::test::event::match &m)
-{
-    using indent = ddwaf::test::indent;
-
-    os << indent(4) << "{\n"
-       << indent(8) << "operator: " << m.op << ",\n"
-       << indent(8) << "operator_value: " << m.op_value << ",\n";
-
-    os << indent(8) << "parameters: {\n";
-
-    for (const auto &arg : m.args) {
-        os << indent(12) << arg.name << ": {\n"
-           << indent(16) << "address: " << arg.address << ",\n"
-           << indent(16) << "path: [";
-
-        bool start = true;
-        for (const auto &p : arg.path) {
-            if (!start) {
-                os << ", ";
-            } else {
-                start = false;
-            }
-            os << p;
-        }
-
-        os << "],\n" << indent(16) << "value: " << arg.value << ",\n" << indent(12) << "}\n";
-    }
-
-    os << indent(8) << "highlight: " << m.highlight << "\n" << indent(4) << "}\n";
-
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const ddwaf::test::event &e)
-{
-    using indent = ddwaf::test::indent;
-
-    os << "{\n"
-       << indent(4) << "id: " << e.id << ",\n"
-       << indent(4) << "name: " << e.name << ",\n"
-       << indent(4) << "tags: {";
-    {
-        bool start = true;
-        for (const auto &[key, val] : e.tags) {
-            if (!start) {
-                os << ", ";
-            } else {
-                start = false;
-            }
-            os << '\n' << indent(8) << key << ": " << val;
-        }
-    }
-    os << '\n' << indent(4) << "},\n" << indent(4) << "actions: [";
-    {
-        bool start = true;
-        for (const auto &a : e.actions) {
-            if (!start) {
-                os << ", ";
-            } else {
-                start = false;
-            }
-            os << a;
-        }
-    }
-    os << "],\n" << indent(4) << "matches: [\n";
-
-    for (const auto &m : e.matches) {
-        os << indent(8) << "{\n"
-           << indent(12) << "operator: " << m.op << ",\n"
-           << indent(12) << "operator_value: " << m.op_value << ",\n";
-
-        os << indent(12) << "parameters: {\n";
-
-        for (const auto &arg : m.args) {
-            os << indent(16) << arg.name << ": {\n"
-               << indent(20) << "address: " << arg.address << ",\n"
-               << indent(20) << "path: [";
-
-            bool start = true;
-            for (const auto &p : arg.path) {
-                if (!start) {
-                    os << ", ";
-                } else {
-                    start = false;
-                }
-                os << p;
-            }
-
-            os << "],\n" << indent(20) << "value: " << arg.value << ",\n" << indent(16) << "}\n";
-        }
-
-        os << indent(12) << "highlight: " << m.highlight << "\n" << indent(8) << "}\n";
-    }
-
-    os << indent(4) << "]\n}\n";
-
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &actions)
-{
-    using indent = ddwaf::test::indent;
-    os << "{\n";
-    bool start = true;
-    for (const auto &[action, parameters] : actions) {
-        if (!start) {
-            os << ",\n";
-        } else {
-            start = false;
-        }
-
-        os << indent(4) << action << ": {\n";
-
-        bool param_start = true;
-        for (const auto &[k, v] : parameters) {
-            if (!param_start) {
-                os << ",\n";
-            } else {
-                param_start = false;
-            }
-
-            os << indent(8) << k << ": " << v;
-        }
-
-        os << "\n" << indent(4) << "}";
-    }
-
-    os << "\n}";
-
-    return os;
-}
-
 ::testing::AssertionResult ValidateSchema(const std::string &result)
 {
     static schema_validator schema("../schema/events.json");
@@ -529,33 +557,6 @@ std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &action
 
     return ::testing::AssertionSuccess();
 }
-
-void PrintTo(const ddwaf_object &actions, ::std::ostream *os)
-{
-    *os << "[";
-    for (unsigned i = 0; i < ddwaf_object_size(&actions); i++) {
-        if (i > 0) {
-            *os << ", ";
-        }
-        const auto *object = ddwaf_object_get_index(actions.array, i);
-        if (ddwaf_object_type(object) == DDWAF_OBJ_STRING) {
-            *os << ddwaf_object_get_string(object, nullptr);
-        }
-    }
-    *os << "]";
-}
-
-void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os)
-{
-    for (const auto &e : events) { *os << e; }
-}
-
-void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os)
-{
-    for (const auto &m : matches) { *os << m; }
-}
-
-void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os << actions; }
 
 WafResultActionMatcher::WafResultActionMatcher(
     std::map<std::string, std::map<std::string, std::string>> &&v)

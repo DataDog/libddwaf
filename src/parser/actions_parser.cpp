@@ -14,10 +14,15 @@ void validate_and_add_block(auto &id, auto &type, auto &parameters, action_mappe
 {
     if (!parameters.contains("status_code") || !parameters.contains("grpc_status_code") ||
         !parameters.contains("type")) {
-        actions.set_action_alias("block", id);
-    } else {
-        actions.set_action(id, std::move(type), std::move(parameters));
+        // If any of the parameters are missing, add the relevant default value
+        auto default_params = actions.get_action("block");
+        if (default_params.has_value()) { // This should always be true
+            for (const auto &[k, v] : default_params->get().parameters) {
+                parameters.try_emplace(k, v);
+            }
+        }
     }
+    actions.set_action(id, std::move(type), std::move(parameters));
 }
 
 void validate_and_add_redirect(auto &id, auto &type, auto &parameters, action_mapper &actions)
