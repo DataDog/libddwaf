@@ -301,4 +301,44 @@ TEST(TestEventSerializer, SerializeAllTags)
     ddwaf_result_free(&output);
 }
 
+TEST(TestEventSerializer, NoMonitorActions)
+{
+    ddwaf::rule rule{"xasd1022", "random rule",
+        {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
+            {"confidence", "none"}},
+        std::make_shared<expression>(), {"monitor"}};
+
+    ddwaf::event event;
+    event.rule = &rule;
+    event.matches = {
+        {{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
+    };
+
+    ddwaf::action_mapper actions;
+    ddwaf::obfuscator obfuscator;
+    ddwaf::event_serializer serializer(obfuscator, actions);
+
+    ddwaf_result output = DDWAF_RESULT_INITIALISER;
+    serializer.serialize({event}, output);
+
+    EXPECT_EVENTS(output, {.id = "xasd1022",
+                              .name = "random rule",
+                              .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
+                                  {"tag1", "value1"}, {"confidence", "none"}},
+                              .actions = {"monitor"},
+                              .matches = {{.op = "random",
+                                  .op_value = "val",
+                                  .highlight = "val",
+                                  .args = {{
+                                      .value = "value",
+                                      .address = "query",
+                                      .path = {"root", "key"},
+                                  }}}}});
+
+    // Monitor action should not be reported here
+    EXPECT_ACTIONS(output, {});
+
+    ddwaf_result_free(&output);
+}
+
 } // namespace
