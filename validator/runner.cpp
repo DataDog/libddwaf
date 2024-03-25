@@ -274,6 +274,22 @@ void test_runner::validate_actions(const YAML::Node &expected, const YAML::Node 
         auto expected_action = it->second;
         auto obtained_action = obtained[key];
 
-        expect(expected_action, obtained_action);
+        validate_action_params(expected_action, obtained_action);
+    }
+}
+
+void test_runner::validate_action_params(const YAML::Node &expected, const YAML::Node &obtained)
+{
+    if (!expected.IsDefined()) {
+        return;
+    }
+
+    expect(expected.size(), obtained.size());
+    for (YAML::const_iterator it = expected.begin(); it != expected.end(); ++it) {
+        auto key = it->first.as<std::string>();
+        auto expected_param = it->second.as<std::string>();
+        auto obtained_param = obtained[key].as<std::string>();
+
+        expect(expected_param, obtained_param);
     }
 }

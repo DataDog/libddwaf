@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <iostream>
 #include <unordered_set>
 
 #include "action_mapper.hpp"
@@ -115,7 +114,7 @@ struct action_tracker {
     // Stack trace ID
     std::string stack_id{};
 
-    std::unordered_set<std::string_view> all;
+    std::unordered_set<std::string_view> all{};
 
     const action_mapper &mapper;
 };

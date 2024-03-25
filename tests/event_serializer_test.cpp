@@ -403,7 +403,7 @@ TEST(TestEventSerializer, StackTraceAction)
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
-                              .has_stack_id = true,
+                              .stack_id = "*",
                               .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
                                   {"tag1", "value1"}, {"confidence", "none"}},
                               .actions = {"stack_trace"},
@@ -416,6 +416,16 @@ TEST(TestEventSerializer, StackTraceAction)
                                       .path = {"root", "key"},
                                   }}}}});
 
+    std::string stack_id;
+
+    {
+        auto data = ddwaf::test::object_to_json(output.events);
+        YAML::Node doc = YAML::Load(data.c_str());
+        auto events = doc.as<std::list<ddwaf::test::event>>();
+        ASSERT_EQ(events.size(), 1);
+        stack_id = events.begin()->stack_id;
+    }
+
     {
         auto data = ddwaf::test::object_to_json(output.actions);
         YAML::Node doc = YAML::Load(data.c_str());
@@ -424,6 +434,7 @@ TEST(TestEventSerializer, StackTraceAction)
 
         auto it = obtained.find("generate_stack");
         EXPECT_TRUE(it->second.contains("stack_id"));
+        EXPECT_EQ(it->second.at("stack_id"), stack_id);
     }
 
     ddwaf_result_free(&output);

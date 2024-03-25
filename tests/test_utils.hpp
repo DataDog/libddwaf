@@ -41,7 +41,7 @@ struct event {
 
     std::string id;
     std::string name;
-    bool has_stack_id{false};
+    std::string stack_id{};
     std::map<std::string, std::string> tags{{"type", ""}, {"category", ""}};
     std::vector<std::string> actions{};
     std::vector<match> matches;

@@ -4,12 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 //
-#include <charconv>
 #include <string_view>
 
 #include "exception.hpp"
 #include "log.hpp"
-#include "parser/actions_parser.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
@@ -246,7 +244,6 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             rule_data_ids_.clear();
 
             if (!rules.empty()) {
-                // TODO pass action mapper
                 base_rules_ = parser::v2::parse_rules(rules, section, rule_data_ids_, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all base rules");
