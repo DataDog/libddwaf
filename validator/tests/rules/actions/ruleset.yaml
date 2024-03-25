@@ -24,3 +24,5 @@ actions:
     type: block_request
     parameters:
       status_code: "200"
+      grpc_status_code: "10"
+      type: auto

@@ -18,7 +18,9 @@
       code: match,
       actions: {
         block_request: {
-          status_code: 200
+          grpc_status_code: 10,
+          status_code: 200,
+          type: auto
         },
         match_request: {}
       }

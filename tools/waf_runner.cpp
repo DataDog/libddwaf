@@ -92,11 +92,33 @@ int main(int argc, char *argv[])
         for (const auto &json_str : inputs) {
 
             std::cout << "---- Run with " << json_str << '\n';
-            auto input = YAML::Load(json_str).as<ddwaf_object>();
+            auto input = YAML::Load(json_str);
+
+            ddwaf_object persistent;
+            ddwaf_object ephemeral;
+
+            auto persistent_input = input["persistent"];
+            auto ephemeral_input = input["ephemeral"];
+            if (!persistent_input.IsDefined() && !ephemeral_input.IsDefined()) {
+                persistent = input.as<ddwaf_object>();
+                ddwaf_object_map(&ephemeral);
+            } else {
+                if (input["persistent"].IsDefined()) {
+                    persistent = input["persistent"].as<ddwaf_object>();
+                } else {
+                    ddwaf_object_map(&persistent);
+                }
+
+                if (input["ephemeral"].IsDefined()) {
+                    ephemeral = input["ephemeral"].as<ddwaf_object>();
+                } else {
+                    ddwaf_object_map(&ephemeral);
+                }
+            }
 
             ddwaf_result ret;
             auto code =
-                ddwaf_run(context, &input, nullptr, &ret, std::numeric_limits<uint32_t>::max());
+                ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint32_t>::max());
             if (code == DDWAF_MATCH && ddwaf_object_size(&ret.events) > 0) {
                 std::stringstream ss;
                 YAML::Emitter out(ss);
