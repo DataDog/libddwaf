@@ -15,12 +15,9 @@ void validate_and_add_block(auto &id, auto &type, auto &parameters, action_mappe
     if (!parameters.contains("status_code") || !parameters.contains("grpc_status_code") ||
         !parameters.contains("type")) {
         // If any of the parameters are missing, add the relevant default value
-        auto default_params = actions.get_action("block");
-        if (default_params.has_value()) { // This should always be true
-            for (const auto &[k, v] : default_params->get().parameters) {
-                parameters.try_emplace(k, v);
-            }
-        }
+        // We could also avoid the above check ...
+        auto default_params = actions.get_action_ref("block");
+        for (const auto &[k, v] : default_params.parameters) { parameters.try_emplace(k, v); }
     }
     actions.set_action(id, std::move(type), std::move(parameters));
 }

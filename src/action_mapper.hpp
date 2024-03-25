@@ -26,6 +26,8 @@ enum class action_type : uint8_t {
                           // as the value is used to serve as precedence
 };
 
+action_type action_type_from_string(std::string_view type);
+
 inline bool is_blocking_action(action_type type)
 {
     return type == action_type::block_request || type == action_type::redirect_request;
@@ -51,6 +53,8 @@ public:
     void set_action(
         std::string id, std::string type, std::unordered_map<std::string, std::string> parameters);
     [[nodiscard]] optional_ref<const action_spec> get_action(std::string_view id) const;
+    [[nodiscard]] action_spec &get_action_ref(std::string_view id);
+
     [[nodiscard]] bool contains(std::string_view id) const
     {
         return action_by_id_.find(id) != action_by_id_.end();

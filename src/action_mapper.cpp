@@ -10,7 +10,6 @@
 #include "uuid.hpp"
 
 namespace ddwaf {
-namespace {
 action_type action_type_from_string(std::string_view type)
 {
     if (type == "block_request") {
@@ -31,7 +30,6 @@ action_type action_type_from_string(std::string_view type)
     // Unknown actions are valid, but provide no semantic value
     return action_type::unknown;
 }
-} // namespace
 
 action_mapper::action_mapper() : action_by_id_(default_actions_)
 {
@@ -78,6 +76,15 @@ optional_ref<const action_spec> action_mapper::get_action(std::string_view id) c
     auto it = action_by_id_.find(id);
     if (it == action_by_id_.end()) {
         return std::nullopt;
+    }
+    return {it->second};
+}
+
+[[nodiscard]] action_spec &action_mapper::get_action_ref(std::string_view id)
+{
+    auto it = action_by_id_.find(id);
+    if (it == action_by_id_.end()) {
+        throw std::out_of_range("unknown action " + std::string(id));
     }
     return {it->second};
 }
