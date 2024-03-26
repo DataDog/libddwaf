@@ -655,7 +655,7 @@ ddwaf_object read_file(std::string_view filename, std::string_view base)
 
     auto file_path = base_dir + "yaml/" + std::string{filename};
 
-    DDWAF_DEBUG("Opening %s", file_path.c_str());
+    DDWAF_DEBUG("Opening {}", file_path.c_str());
 
     std::ifstream file(file_path.c_str(), std::ios::in);
     if (!file) {
