@@ -29,9 +29,8 @@ TEST(TestEventSerializer, SerializeNothing)
 
 TEST(TestEventSerializer, SerializeEmptyEvent)
 {
-    ddwaf::action_mapper actions;
     ddwaf::obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    ddwaf::event_serializer serializer(obfuscator, action_mapper_builder().build());
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({ddwaf::event{}}, output);
@@ -49,8 +48,9 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     event.rule = &rule;
     event.matches = {{{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"}};
 
-    ddwaf::action_mapper actions;
-    actions.set_action("monitor_request", "monitor_request", {});
+    ddwaf::action_mapper_builder builder;
+    builder.set_action("monitor_request", "monitor_request", {});
+    auto actions = builder.build();
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
@@ -88,8 +88,9 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
         {{{"input", "192.168.0.1", "client.ip"}}, {"192.168.0.1"}, "ip_match", ""},
         {{{"input", "<script>", "path_params", {"key"}}}, {}, "is_xss", ""}};
 
-    ddwaf::action_mapper actions;
-    actions.set_action("monitor_request", "monitor_request", {});
+    ddwaf::action_mapper_builder builder;
+    builder.set_action("monitor_request", "monitor_request", {});
+    auto actions = builder.build();
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
@@ -144,9 +145,10 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 
 TEST(TestEventSerializer, SerializeMultipleEvents)
 {
-    ddwaf::action_mapper actions;
-    actions.set_action("monitor_request", "monitor_request", {});
-    actions.set_action("unblock", "unknown", {});
+    ddwaf::action_mapper_builder builder;
+    builder.set_action("monitor_request", "monitor_request", {});
+    builder.set_action("unblock", "unknown", {});
+    auto actions = builder.build();
 
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
@@ -274,8 +276,10 @@ TEST(TestEventSerializer, SerializeAllTags)
         {{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
     };
 
-    ddwaf::action_mapper actions;
-    actions.set_action("unblock", "unknown", {});
+    ddwaf::action_mapper_builder builder;
+    builder.set_action("unblock", "unknown", {});
+    auto actions = builder.build();
+
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
@@ -314,7 +318,7 @@ TEST(TestEventSerializer, NoMonitorActions)
         {{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
     };
 
-    ddwaf::action_mapper actions;
+    auto actions = action_mapper_builder().build();
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
@@ -354,7 +358,7 @@ TEST(TestEventSerializer, UndefinedActions)
         {{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
     };
 
-    ddwaf::action_mapper actions;
+    auto actions = action_mapper_builder().build();
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
@@ -394,7 +398,7 @@ TEST(TestEventSerializer, StackTraceAction)
         {{{"input", "value", "query", {"root", "key"}}}, {"val"}, "random", "val"},
     };
 
-    ddwaf::action_mapper actions;
+    auto actions = action_mapper_builder().build();
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 

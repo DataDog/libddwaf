@@ -7,6 +7,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -39,27 +40,28 @@ struct action_spec {
     std::unordered_map<std::string, std::string> parameters;
 };
 
-class action_mapper {
-public:
-    action_mapper();
-    ~action_mapper() = default;
-    action_mapper(const action_mapper &) = default;
-    action_mapper(action_mapper &&) = default;
-    action_mapper &operator=(const action_mapper &) = default;
-    action_mapper &operator=(action_mapper &&) = default;
+using action_mapper = std::map<std::string, action_spec, std::less<>>;
 
-    void set_action_alias(std::string_view id, std::string alias);
+class action_mapper_builder {
+public:
+    action_mapper_builder() = default;
+    ~action_mapper_builder() = default;
+    action_mapper_builder(const action_mapper_builder &) = delete;
+    action_mapper_builder(action_mapper_builder &&) = delete;
+    action_mapper_builder &operator=(const action_mapper_builder &) = delete;
+    action_mapper_builder &operator=(action_mapper_builder &&) = delete;
+
+    void alias_default_action_to(std::string_view default_id, std::string alias);
 
     void set_action(
         std::string id, std::string type, std::unordered_map<std::string, std::string> parameters);
-    [[nodiscard]] optional_ref<const action_spec> get_action(std::string_view id) const;
-    [[nodiscard]] action_spec &get_action_ref(std::string_view id);
 
-    [[nodiscard]] bool contains(std::string_view id) const
-    {
-        return action_by_id_.find(id) != action_by_id_.end();
-    }
-    [[nodiscard]] std::size_t size() const { return action_by_id_.size(); }
+    [[nodiscard]] static const action_spec &get_default_action(std::string_view id);
+
+    std::shared_ptr<action_mapper> build_shared();
+
+    // Used for testing
+    action_mapper build();
 
 protected:
     std::map<std::string, action_spec, std::less<>> action_by_id_;

@@ -10,23 +10,24 @@
 
 namespace ddwaf::parser::v2 {
 
-void validate_and_add_block(auto &id, auto &type, auto &parameters, action_mapper &actions)
+void validate_and_add_block(auto &id, auto &type, auto &parameters, action_mapper_builder &builder)
 {
     if (!parameters.contains("status_code") || !parameters.contains("grpc_status_code") ||
         !parameters.contains("type")) {
         // If any of the parameters are missing, add the relevant default value
         // We could also avoid the above check ...
-        auto default_params = actions.get_action_ref("block");
+        auto default_params = action_mapper_builder::get_default_action("block");
         for (const auto &[k, v] : default_params.parameters) { parameters.try_emplace(k, v); }
     }
-    actions.set_action(id, std::move(type), std::move(parameters));
+    builder.set_action(id, std::move(type), std::move(parameters));
 }
 
-void validate_and_add_redirect(auto &id, auto &type, auto &parameters, action_mapper &actions)
+void validate_and_add_redirect(
+    auto &id, auto &type, auto &parameters, action_mapper_builder &builder)
 {
     auto it = parameters.find("location");
     if (it == parameters.end() || it->second.empty()) {
-        actions.set_action_alias("block", id);
+        builder.alias_default_action_to("block", id);
         return;
     }
 
@@ -40,13 +41,13 @@ void validate_and_add_redirect(auto &id, auto &type, auto &parameters, action_ma
         parameters.emplace("status_code", "303");
     }
 
-    actions.set_action(id, std::move(type), std::move(parameters));
+    builder.set_action(id, std::move(type), std::move(parameters));
 }
 
 std::shared_ptr<action_mapper> parse_actions(
     parameter::vector &actions_array, base_section_info &info)
 {
-    action_mapper actions;
+    action_mapper_builder builder;
 
     for (unsigned i = 0; i < actions_array.size(); i++) {
         const auto &node_param = actions_array[i];
@@ -60,11 +61,11 @@ std::shared_ptr<action_mapper> parse_actions(
 
             // Block and redirect actions should be validated and aliased
             if (type == "redirect_request") {
-                validate_and_add_redirect(id, type, parameters, actions);
+                validate_and_add_redirect(id, type, parameters, builder);
             } else if (type == "block_request") {
-                validate_and_add_block(id, type, parameters, actions);
+                validate_and_add_block(id, type, parameters, builder);
             } else {
-                actions.set_action(id, std::move(type), std::move(parameters));
+                builder.set_action(id, std::move(type), std::move(parameters));
             }
 
             DDWAF_DEBUG("Parsed action {} of type {}", id, type);
@@ -78,7 +79,7 @@ std::shared_ptr<action_mapper> parse_actions(
         }
     }
 
-    return std::make_shared<action_mapper>(std::move(actions));
+    return builder.build_shared();
 }
 
 } // namespace ddwaf::parser::v2

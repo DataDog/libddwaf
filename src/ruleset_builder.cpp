@@ -232,7 +232,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             section.set_error(e.what());
         }
     } else if (!actions_) {
-        actions_ = std::make_shared<action_mapper>();
+        actions_ = action_mapper_builder().build_shared();
     }
 
     it = root.find("rules");

@@ -27,29 +27,29 @@ TEST(TestParserV2Actions, EmptyActions)
     EXPECT_TRUE(actions->contains("extract_schema"));
 
     {
-        const auto &spec = actions->get_action("block");
-        EXPECT_EQ(spec->get().type, action_type::block_request);
-        EXPECT_EQ(spec->get().type_str, "block_request");
-        EXPECT_EQ(spec->get().parameters.size(), 3);
+        const auto &spec = actions->at("block");
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "403");
         EXPECT_STR(parameters.at("grpc_status_code"), "10");
         EXPECT_STR(parameters.at("type"), "auto");
     }
 
     {
-        const auto &spec = actions->get_action("stack_trace");
-        EXPECT_EQ(spec->get().type, action_type::generate_stack);
-        EXPECT_EQ(spec->get().type_str, "generate_stack");
-        EXPECT_EQ(spec->get().parameters.size(), 0);
+        const auto &spec = actions->at("stack_trace");
+        EXPECT_EQ(spec.type, action_type::generate_stack);
+        EXPECT_EQ(spec.type_str, "generate_stack");
+        EXPECT_EQ(spec.parameters.size(), 0);
     }
 
     {
-        const auto &spec = actions->get_action("extract_schema");
-        EXPECT_EQ(spec->get().type, action_type::generate_schema);
-        EXPECT_EQ(spec->get().type_str, "generate_schema");
-        EXPECT_EQ(spec->get().parameters.size(), 0);
+        const auto &spec = actions->at("extract_schema");
+        EXPECT_EQ(spec.type, action_type::generate_schema);
+        EXPECT_EQ(spec.type_str, "generate_schema");
+        EXPECT_EQ(spec.parameters.size(), 0);
     }
 }
 
@@ -125,12 +125,12 @@ TEST(TestParserV2Actions, RedirectAction)
     EXPECT_TRUE(actions->contains("monitor"));
 
     {
-        const auto &spec = actions->get_action("redirect");
-        EXPECT_EQ(spec->get().type, action_type::redirect_request);
-        EXPECT_EQ(spec->get().type_str, "redirect_request");
-        EXPECT_EQ(spec->get().parameters.size(), 2);
+        const auto &spec = actions->at("redirect");
+        EXPECT_EQ(spec.type, action_type::redirect_request);
+        EXPECT_EQ(spec.type_str, "redirect_request");
+        EXPECT_EQ(spec.parameters.size(), 2);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "302");
         EXPECT_STR(parameters.at("location"), "http://www.google.com");
     }
@@ -173,12 +173,12 @@ TEST(TestParserV2Actions, RedirectActionInvalidStatusCode)
     EXPECT_TRUE(actions->contains("monitor"));
 
     {
-        const auto &spec = actions->get_action("redirect");
-        EXPECT_EQ(spec->get().type, action_type::redirect_request);
-        EXPECT_EQ(spec->get().type_str, "redirect_request");
-        EXPECT_EQ(spec->get().parameters.size(), 2);
+        const auto &spec = actions->at("redirect");
+        EXPECT_EQ(spec.type, action_type::redirect_request);
+        EXPECT_EQ(spec.type_str, "redirect_request");
+        EXPECT_EQ(spec.parameters.size(), 2);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "303");
         EXPECT_STR(parameters.at("location"), "http://www.google.com");
     }
@@ -221,12 +221,12 @@ TEST(TestParserV2Actions, RedirectActionMissingStatusCode)
     EXPECT_TRUE(actions->contains("monitor"));
 
     {
-        const auto &spec = actions->get_action("redirect");
-        EXPECT_EQ(spec->get().type, action_type::redirect_request);
-        EXPECT_EQ(spec->get().type_str, "redirect_request");
-        EXPECT_EQ(spec->get().parameters.size(), 2);
+        const auto &spec = actions->at("redirect");
+        EXPECT_EQ(spec.type, action_type::redirect_request);
+        EXPECT_EQ(spec.type_str, "redirect_request");
+        EXPECT_EQ(spec.parameters.size(), 2);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "303");
         EXPECT_STR(parameters.at("location"), "http://www.google.com");
     }
@@ -269,12 +269,12 @@ TEST(TestParserV2Actions, RedirectActionMissingLocation)
     EXPECT_TRUE(actions->contains("monitor"));
 
     {
-        const auto &spec = actions->get_action("redirect");
-        EXPECT_EQ(spec->get().type, action_type::block_request);
-        EXPECT_EQ(spec->get().type_str, "block_request");
-        EXPECT_EQ(spec->get().parameters.size(), 3);
+        const auto &spec = actions->at("redirect");
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "403");
         EXPECT_STR(parameters.at("grpc_status_code"), "10");
         EXPECT_STR(parameters.at("type"), "auto");
@@ -317,12 +317,12 @@ TEST(TestParserV2Actions, OverrideDefaultBlockAction)
     EXPECT_TRUE(actions->contains("monitor"));
 
     {
-        const auto &spec = actions->get_action("block");
-        EXPECT_EQ(spec->get().type, action_type::redirect_request);
-        EXPECT_EQ(spec->get().type_str, "redirect_request");
-        EXPECT_EQ(spec->get().parameters.size(), 2);
+        const auto &spec = actions->at("block");
+        EXPECT_EQ(spec.type, action_type::redirect_request);
+        EXPECT_EQ(spec.type_str, "redirect_request");
+        EXPECT_EQ(spec.parameters.size(), 2);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "302");
         EXPECT_STR(parameters.at("location"), "http://www.google.com");
     }
@@ -364,12 +364,12 @@ TEST(TestParserV2Actions, BlockActionMissingStatusCode)
     EXPECT_TRUE(actions->contains("monitor"));
 
     {
-        const auto &spec = actions->get_action("block");
-        EXPECT_EQ(spec->get().type, action_type::block_request);
-        EXPECT_EQ(spec->get().type_str, "block_request");
-        EXPECT_EQ(spec->get().parameters.size(), 3);
+        const auto &spec = actions->at("block");
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "403");
         EXPECT_STR(parameters.at("grpc_status_code"), "302");
         EXPECT_STR(parameters.at("type"), "auto");
@@ -449,12 +449,12 @@ TEST(TestParserV2Actions, BlockActionMissingGrpcStatusCode)
     EXPECT_TRUE(actions->contains("monitor"));
 
     {
-        const auto &spec = actions->get_action("block");
-        EXPECT_EQ(spec->get().type, action_type::block_request);
-        EXPECT_EQ(spec->get().type_str, "block_request");
-        EXPECT_EQ(spec->get().parameters.size(), 3);
+        const auto &spec = actions->at("block");
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "302");
         EXPECT_STR(parameters.at("grpc_status_code"), "10");
         EXPECT_STR(parameters.at("type"), "auto");
@@ -497,12 +497,12 @@ TEST(TestParserV2Actions, BlockActionMissingType)
     EXPECT_TRUE(actions->contains("monitor"));
 
     {
-        const auto &spec = actions->get_action("block");
-        EXPECT_EQ(spec->get().type, action_type::block_request);
-        EXPECT_EQ(spec->get().type_str, "block_request");
-        EXPECT_EQ(spec->get().parameters.size(), 3);
+        const auto &spec = actions->at("block");
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "302");
         EXPECT_STR(parameters.at("grpc_status_code"), "11");
         EXPECT_STR(parameters.at("type"), "auto");
@@ -544,12 +544,12 @@ TEST(TestParserV2Actions, BlockActionMissingParameters)
     EXPECT_TRUE(actions->contains("monitor"));
 
     {
-        const auto &spec = actions->get_action("block");
-        EXPECT_EQ(spec->get().type, action_type::block_request);
-        EXPECT_EQ(spec->get().type_str, "block_request");
-        EXPECT_EQ(spec->get().parameters.size(), 3);
+        const auto &spec = actions->at("block");
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
 
-        const auto &parameters = spec->get().parameters;
+        const auto &parameters = spec.parameters;
         EXPECT_STR(parameters.at("status_code"), "403");
         EXPECT_STR(parameters.at("grpc_status_code"), "10");
         EXPECT_STR(parameters.at("type"), "auto");
