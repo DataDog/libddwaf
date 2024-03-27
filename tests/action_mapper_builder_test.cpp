@@ -170,4 +170,28 @@ TEST(TestActionMapperBuilder, DuplicateAction)
     EXPECT_THROW(builder.set_action("redirect", "redirect_request", {}), std::runtime_error);
 }
 
+TEST(TestActionMapperBuilder, DuplicateDefaultAction)
+{
+    action_mapper_builder builder;
+    builder.set_action(
+        "block", "redirect_request", {{"status_code", "33"}, {"location", "datadoghq"}});
+    EXPECT_THROW(builder.set_action("block", "redirect_request", {}), std::runtime_error);
+    auto actions = builder.build();
+
+    EXPECT_TRUE(actions.contains("block"));
+    EXPECT_TRUE(actions.contains("stack_trace"));
+    EXPECT_TRUE(actions.contains("extract_schema"));
+    EXPECT_TRUE(actions.contains("monitor"));
+
+    {
+        const auto &action = actions.at("block");
+        EXPECT_EQ(action.type, action_type::redirect_request);
+        EXPECT_STR(action.type_str, "redirect_request");
+
+        EXPECT_EQ(action.parameters.size(), 2);
+        EXPECT_STRV(action.parameters.at("status_code"), "33");
+        EXPECT_STRV(action.parameters.at("location"), "datadoghq");
+    }
+}
+
 } // namespace
