@@ -173,7 +173,8 @@ void serialize_empty_rule(ddwaf_object &rule_map)
     ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 }
 
-void serialize_and_consolidate_rule_actions(const ddwaf::rule &rule, ddwaf_object &rule_map, action_type action_override, action_tracker &actions, ddwaf_object &stack_id)
+void serialize_and_consolidate_rule_actions(const ddwaf::rule &rule, ddwaf_object &rule_map,
+    action_type action_override, action_tracker &actions, ddwaf_object &stack_id)
 {
     const auto &rule_actions = rule.get_actions();
     if (rule_actions.empty()) {
@@ -277,7 +278,8 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         ddwaf_object_invalid(&stack_id);
         if (event.rule != nullptr) {
             serialize_rule(*event.rule, rule_map);
-            serialize_and_consolidate_rule_actions(*event.rule, rule_map,event.action_override, actions, stack_id);
+            serialize_and_consolidate_rule_actions(
+                *event.rule, rule_map, event.action_override, actions, stack_id);
         } else {
             // This will only be used for testing
             serialize_empty_rule(rule_map);
