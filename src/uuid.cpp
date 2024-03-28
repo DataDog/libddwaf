@@ -4,12 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <array>
 #include <chrono>
 #include <iomanip>
 #include <random>
 #include <sstream>
 
-#include "fmt/core.h"
 #include "uuid.hpp"
 
 namespace ddwaf {
@@ -25,14 +25,11 @@ auto init_rng()
     return std::mt19937_64{static_cast<uint64_t>(clock::now().time_since_epoch().count())};
 }
 
-constexpr std::string_view uuid_fmt_str = "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:"
-                                          "02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}";
-
 } // namespace
 
 std::string uuidv4_generate_pseudo()
 {
-    static auto rng = init_rng();
+    static thread_local auto rng = init_rng();
 
     union {
         // NOLINTNEXTLINE
@@ -47,11 +44,19 @@ std::string uuidv4_generate_pseudo()
     uuid_bytes.byte[6] = 0x4F & (0x40 | uuid_bytes.byte[4]);
     uuid_bytes.byte[8] = 0x1b;
 
-    return ddwaf::fmt::format(uuid_fmt_str, uuid_bytes.byte[0], uuid_bytes.byte[1],
-        uuid_bytes.byte[2], uuid_bytes.byte[3], uuid_bytes.byte[4], uuid_bytes.byte[5],
-        uuid_bytes.byte[6], uuid_bytes.byte[7], uuid_bytes.byte[8], uuid_bytes.byte[9],
-        uuid_bytes.byte[10], uuid_bytes.byte[11], uuid_bytes.byte[12], uuid_bytes.byte[13],
-        uuid_bytes.byte[14], uuid_bytes.byte[15]);
+    std::string result;
+    result.resize(36);
+    char *buffer = result.data();
+    static constexpr auto hex_chars = std::array<char, 17>{"0123456789abcdef"};
+
+    for (int i = 0, j = 0; i < 16; ++i) {
+        if (i == 4 || i == 6 || i == 8 || i == 10) {
+            buffer[j++] = '-';
+        }
+        buffer[j++] = hex_chars[(uuid_bytes.byte[i] >> 4) & 0x0F];
+        buffer[j++] = hex_chars[uuid_bytes.byte[i] & 0x0F];
+    }
+    return result;
 }
 
 } // namespace ddwaf
