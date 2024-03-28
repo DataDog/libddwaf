@@ -44,4 +44,6 @@ T at(const parameter::map &map, const Key &key, const T &default_)
 
 std::optional<transformer_id> transformer_from_string(std::string_view str);
 
+inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
+
 } // namespace ddwaf::parser

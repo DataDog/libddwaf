@@ -6,9 +6,11 @@
 
 #include <unordered_set>
 
+#include "action_mapper.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
 #include "rule.hpp"
+#include "uuid.hpp"
 
 namespace ddwaf {
 
@@ -16,7 +18,7 @@ namespace {
 
 bool redact_match(const ddwaf::obfuscator &obfuscator, const condition_match &match)
 {
-    for (auto arg : match.args) {
+    for (const auto &arg : match.args) {
         for (const auto &key : arg.key_path) {
             if (obfuscator.is_sensitive_key(key)) {
                 return true;
@@ -56,7 +58,7 @@ void serialize_match(const condition_match &match, ddwaf_object &match_map, auto
 
     ddwaf_object highlight_arr;
     ddwaf_object_array(&highlight_arr);
-    for (auto highlight : match.highlights) {
+    for (const auto &highlight : match.highlights) {
         ddwaf_object_array_add(&highlight_arr, to_object(tmp, highlight, redact));
     }
 
@@ -103,61 +105,185 @@ void serialize_match(const condition_match &match, ddwaf_object &match_map, auto
     ddwaf_object_map_add(&match_map, "parameters", &parameters);
 }
 
+// This structure is used to collect and deduplicate all actions, keep track of the
+// blocking action with the highest precedence and of the relevant stack trace ID
+struct action_tracker {
+    // The blocking action refers to either a block_request or redirect_request
+    // action, the latter having precedence over the former.
+    std::string_view blocking_action{};
+    action_type blocking_action_type{action_type::none};
+
+    // Stack trace ID
+    std::string stack_id{};
+
+    // This set contains all remaining actions other than the blocking action
+    std::unordered_set<std::string_view> non_blocking_actions{};
+
+    const action_mapper &mapper;
+};
+
+void add_action_to_tracker(action_tracker &actions, std::string_view id, action_type type)
+{
+    if (is_blocking_action(type)) {
+        if (type > actions.blocking_action_type) {
+            // Only keep a single blocking action
+            actions.blocking_action_type = type;
+            actions.blocking_action = id;
+        }
+    } else {
+        if (type == action_type::generate_stack && actions.stack_id.empty()) {
+            // Stack trace actions require a dynamic stack ID, however we
+            // only provide a single stack ID per run
+            actions.stack_id = uuidv4_generate_pseudo();
+        }
+
+        actions.non_blocking_actions.emplace(id);
+    }
+}
+
+void serialize_rule(const ddwaf::rule &rule, ddwaf_object &rule_map)
+{
+    ddwaf_object tmp;
+    ddwaf_object tags_map;
+
+    ddwaf_object_map(&rule_map);
+    ddwaf_object_map(&tags_map);
+
+    ddwaf_object_map_add(&rule_map, "id", to_object(tmp, rule.get_id()));
+    ddwaf_object_map_add(&rule_map, "name", to_object(tmp, rule.get_name()));
+
+    for (const auto &[key, value] : rule.get_tags()) {
+        ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
+    }
+    ddwaf_object_map_add(&rule_map, "tags", &tags_map);
+}
+
+void serialize_empty_rule(ddwaf_object &rule_map)
+{
+    ddwaf_object tmp;
+    ddwaf_object tags_map;
+
+    ddwaf_object_map(&tags_map);
+    ddwaf_object_map_add(&tags_map, "type", to_object(tmp, ""));
+    ddwaf_object_map_add(&tags_map, "category", to_object(tmp, ""));
+
+    ddwaf_object_map(&rule_map);
+    ddwaf_object_map_add(&rule_map, "id", to_object(tmp, ""));
+    ddwaf_object_map_add(&rule_map, "name", to_object(tmp, ""));
+    ddwaf_object_map_add(&rule_map, "tags", &tags_map);
+}
+
+void serialize_and_consolidate_rule_actions(const ddwaf::rule &rule, ddwaf_object &rule_map,
+    action_type action_override, action_tracker &actions, ddwaf_object &stack_id)
+{
+    const auto &rule_actions = rule.get_actions();
+    if (rule_actions.empty()) {
+        return;
+    }
+
+    ddwaf_object tmp;
+    ddwaf_object actions_array;
+    ddwaf_object_array(&actions_array);
+
+    if (action_override == action_type::monitor) {
+        ddwaf_object_array_add(&actions_array, to_object(tmp, "monitor"));
+    }
+
+    for (const auto &action_id : rule_actions) {
+        auto action_it = actions.mapper.find(action_id);
+        if (action_it != actions.mapper.end()) {
+            const auto &[type, type_str, parameters] = action_it->second;
+            if (action_override == action_type::monitor &&
+                (type == action_type::monitor || is_blocking_action(type))) {
+                // If the rule was in monitor mode, ignore blocking and monitor actions
+                continue;
+            }
+
+            add_action_to_tracker(actions, action_id, type);
+
+            // The stack ID will be generated when adding the action to the tracker
+            if (type == action_type::generate_stack && stack_id.type == DDWAF_OBJ_INVALID) {
+                to_object(stack_id, actions.stack_id);
+            }
+        }
+        // If an action is unspecified, add it and move on
+        ddwaf_object_array_add(&actions_array, to_object(tmp, action_id));
+    }
+
+    ddwaf_object_map_add(&rule_map, "on_match", &actions_array);
+}
+
+void serialize_action(std::string_view id, ddwaf_object &action_map, const action_tracker &actions)
+{
+    auto action_it = actions.mapper.find(id);
+    if (action_it == actions.mapper.end()) {
+        // If the action has no spec, we don't report it
+        return;
+    }
+
+    const auto &[type, type_str, parameters] = action_it->second;
+    if (type == action_type::monitor) {
+        return;
+    }
+
+    ddwaf_object tmp;
+    ddwaf_object param_map;
+    ddwaf_object_map(&param_map);
+    if (type != action_type::generate_stack) {
+        for (const auto &[k, v] : parameters) {
+            ddwaf_object_map_addl(
+                &param_map, k.c_str(), k.size(), ddwaf_object_stringl(&tmp, v.c_str(), v.size()));
+        }
+    } else {
+        ddwaf_object_map_addl(
+            &param_map, "stack_id", sizeof("stack_id") - 1, to_object(tmp, actions.stack_id));
+    }
+
+    ddwaf_object_map_addl(&action_map, type_str.data(), type_str.size(), &param_map);
+}
+
+void serialize_actions(ddwaf_object &action_map, const action_tracker &actions)
+{
+    ddwaf_object_map(&action_map);
+
+    if (actions.blocking_action_type != action_type::none) {
+        serialize_action(actions.blocking_action, action_map, actions);
+    }
+
+    for (const auto &id : actions.non_blocking_actions) {
+        serialize_action(id, action_map, actions);
+    }
+}
+
 } // namespace
 
 void event_serializer::serialize(const std::vector<event> &events, ddwaf_result &output) const
 {
-    ddwaf_object tmp;
-
     if (events.empty()) {
         return;
     }
 
-    ddwaf_object_array(&output.events);
-    ddwaf_object_array(&output.actions);
+    action_tracker actions{.mapper = actions_};
 
-    std::unordered_set<std::string_view> all_actions;
+    ddwaf_object_array(&output.events);
     for (const auto &event : events) {
         ddwaf_object root_map;
         ddwaf_object rule_map;
-        ddwaf_object tags_map;
         ddwaf_object match_array;
 
         ddwaf_object_map(&root_map);
-        ddwaf_object_map(&rule_map);
-        ddwaf_object_map(&tags_map);
         ddwaf_object_array(&match_array);
 
+        ddwaf_object stack_id;
+        ddwaf_object_invalid(&stack_id);
         if (event.rule != nullptr) {
-            for (const auto &[key, value] : event.rule->get_tags()) {
-                ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
-            }
-
-            ddwaf_object_map_add(&rule_map, "id", to_object(tmp, event.rule->get_id()));
-            ddwaf_object_map_add(&rule_map, "name", to_object(tmp, event.rule->get_name()));
-
-            const auto &actions = event.rule->get_actions();
-            if (!actions.empty()) {
-                ddwaf_object actions_array;
-                ddwaf_object_array(&actions_array);
-                if (!event.skip_actions) {
-                    for (const auto &action : actions) {
-                        all_actions.emplace(action);
-                        ddwaf_object_array_add(&actions_array, to_object(tmp, action));
-                    }
-                } else {
-                    ddwaf_object_array_add(&actions_array, to_object(tmp, "monitor"));
-                }
-                ddwaf_object_map_add(&rule_map, "on_match", &actions_array);
-            }
+            serialize_rule(*event.rule, rule_map);
+            serialize_and_consolidate_rule_actions(
+                *event.rule, rule_map, event.action_override, actions, stack_id);
         } else {
             // This will only be used for testing
-            ddwaf_object_map_add(&rule_map, "id", to_object(tmp, ""));
-            ddwaf_object_map_add(&rule_map, "name", to_object(tmp, ""));
-            ddwaf_object_map_add(&tags_map, "type", to_object(tmp, ""));
-            ddwaf_object_map_add(&tags_map, "category", to_object(tmp, ""));
+            serialize_empty_rule(rule_map);
         }
-        ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 
         for (const auto &match : event.matches) {
             ddwaf_object match_map;
@@ -168,17 +294,14 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
 
         ddwaf_object_map_add(&root_map, "rule", &rule_map);
         ddwaf_object_map_add(&root_map, "rule_matches", &match_array);
+        if (stack_id.type == DDWAF_OBJ_STRING) {
+            ddwaf_object_map_add(&root_map, "stack_id", &stack_id);
+        }
 
         ddwaf_object_array_add(&output.events, &root_map);
     }
 
-    if (!all_actions.empty()) {
-        for (const auto &action : all_actions) {
-            ddwaf_object string_action;
-            ddwaf_object_stringl(&string_action, action.data(), action.size());
-            ddwaf_object_array_add(&output.actions, &string_action);
-        }
-    }
+    serialize_actions(output.actions, actions);
 }
 
 } // namespace ddwaf

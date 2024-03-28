@@ -7,8 +7,8 @@
 #pragma once
 
 #include <iostream>
+#include <regex>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -47,6 +47,19 @@ protected:
 template <typename T> inline void assert(const T &lhs, const T &rhs, int loc, std::string_view fn)
 {
     if (lhs != rhs) {
+        throw assert_exception(lhs, rhs, loc, fn);
+    }
+}
+
+template <>
+inline void assert(const std::string &lhs, const std::string &rhs, int loc, std::string_view fn)
+{
+    if (lhs.starts_with("regex:")) {
+        std::regex regex(lhs.substr(sizeof("regex:") - 1), std::regex_constants::icase);
+        if (!std::regex_match(rhs, regex)) {
+            throw assert_exception(lhs, rhs, loc, fn);
+        }
+    } else if (lhs != rhs) {
         throw assert_exception(lhs, rhs, loc, fn);
     }
 }

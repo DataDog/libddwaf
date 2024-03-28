@@ -28,6 +28,7 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         ddwaf::ruleset rs;
         rs.free_fn = free_fn;
         rs.event_obfuscator = event_obfuscator;
+        rs.actions = std::make_shared<action_mapper>();
         DDWAF_DEBUG("Parsing ruleset with schema version 1.x");
         parser::v1::parse(input_map, info, rs, limits);
         ruleset_ = std::make_shared<ddwaf::ruleset>(std::move(rs));

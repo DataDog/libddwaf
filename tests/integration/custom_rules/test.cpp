@@ -166,7 +166,9 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value4"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -209,7 +211,8 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -263,7 +266,8 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                    .op_value = "rule",
                                    .highlight = "rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -284,7 +288,8 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -341,7 +346,8 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -438,7 +444,8 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -459,7 +466,8 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                    .op_value = "rule",
                                    .highlight = "rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -515,7 +523,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -536,7 +545,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -603,7 +613,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                    .op_value = "rule",
                                    .highlight = "rule",
                                    .args = {{.value = "custom_rule", .address = "value4"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -633,7 +644,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value4"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -690,7 +702,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -711,7 +724,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                    .op_value = "rule",
                                    .highlight = "rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);
@@ -781,7 +795,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                        .value = "custom_rule",
                                        .address = "value34",
                                    }}}}});
-        EXPECT_THAT(res.actions, WithActions({"block"}));
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
 
         ddwaf_result_free(&res);
         ddwaf_object_free(&parameter);

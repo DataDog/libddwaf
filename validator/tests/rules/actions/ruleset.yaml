@@ -16,3 +16,44 @@ rules:
     on_match:
         - block_request
         - match
+  - id: "2"
+    name: rule2-undefined-action
+    tags:
+      type: flow2
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: rule2-input
+          list:
+            - "192.188.0.0/16"
+            - "abcd::1234:0:0:0/96"
+    on_match:
+        - destroy
+  - id: "3"
+    name: rule3-stack-trace
+    tags:
+      type: flow3
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: rule3-input
+          list:
+            - "192.188.0.0/16"
+            - "abcd::1234:0:0:0/96"
+    on_match:
+        - stack_trace
+
+actions:
+  - id: match
+    type: match_request
+    parameters: {}
+  - id: block_request
+    type: block_request
+    parameters:
+      status_code: "200"
+      grpc_status_code: "10"
+      type: auto

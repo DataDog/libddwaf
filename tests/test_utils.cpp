@@ -30,7 +30,8 @@ bool operator==(const event::match &lhs, const event::match &rhs)
 bool operator==(const event &lhs, const event &rhs)
 {
     return lhs.id == rhs.id && lhs.name == rhs.name && lhs.tags == rhs.tags &&
-           lhs.actions == rhs.actions && lhs.matches == rhs.matches;
+           lhs.actions == rhs.actions && lhs.matches == rhs.matches &&
+           lhs.stack_id.empty() == rhs.stack_id.empty();
 }
 
 namespace {
@@ -50,6 +51,8 @@ std::ostream &operator<<(std::ostream &os, const indent &offset)
 
 std::ostream &operator<<(std::ostream &os, const event::match &m)
 {
+    // using indent = ddwaf::test::indent;
+
     os << indent(4) << "{\n"
        << indent(8) << "operator: " << m.op << ",\n"
        << indent(8) << "operator_value: " << m.op_value << ",\n";
@@ -81,9 +84,12 @@ std::ostream &operator<<(std::ostream &os, const event::match &m)
 
 std::ostream &operator<<(std::ostream &os, const event &e)
 {
+    // using indent = ddwaf::test::indent;
+
     os << "{\n"
        << indent(4) << "id: " << e.id << ",\n"
        << indent(4) << "name: " << e.name << ",\n"
+       << indent(4) << "stack_id: " << e.stack_id << ",\n"
        << indent(4) << "tags: {";
     {
         bool start = true;
@@ -252,11 +258,73 @@ rapidjson::Document object_to_rapidjson(const ddwaf_object &obj)
     return document;
 }
 
+//} // namespace ddwaf::test
+void PrintTo(const ddwaf_object &actions, ::std::ostream *os)
+{
+    *os << "[";
+    for (unsigned i = 0; i < ddwaf_object_size(&actions); i++) {
+        if (i > 0) {
+            *os << ", ";
+        }
+        const auto *object = ddwaf_object_get_index(actions.array, i);
+        if (ddwaf_object_type(object) == DDWAF_OBJ_STRING) {
+            *os << ddwaf_object_get_string(object, nullptr);
+        }
+    }
+    *os << "]";
+}
+
+void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os)
+{
+    for (const auto &e : events) { *os << e; }
+}
+
+void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os)
+{
+    for (const auto &m : matches) { *os << m; }
+}
+
 } // namespace ddwaf::test
+
+std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &actions)
+{
+    using indent = ddwaf::test::indent;
+    os << "{\n";
+    bool start = true;
+    for (const auto &[action, parameters] : actions) {
+        if (!start) {
+            os << ",\n";
+        } else {
+            start = false;
+        }
+
+        os << indent(4) << action << ": {\n";
+
+        bool param_start = true;
+        for (const auto &[k, v] : parameters) {
+            if (!param_start) {
+                os << ",\n";
+            } else {
+                param_start = false;
+            }
+
+            os << indent(8) << k << ": " << v;
+        }
+
+        os << "\n" << indent(4) << "}";
+    }
+
+    os << "\n}";
+
+    return os;
+}
+
+void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os << actions; }
 
 namespace YAML {
 using event = ddwaf::test::event;
 using match = ddwaf::test::event::match;
+using action_map = ddwaf::test::action_map;
 
 template <class T> T as(const YAML::Node &node, const std::string &key)
 {
@@ -344,6 +412,7 @@ event as_if<event, void>::operator()() const
     e.tags = as<std::map<std::string, std::string>>(rule, "tags");
     e.actions = as<std::vector<std::string>>(rule, "on_match");
     e.matches = as<std::vector<match>>(node, "rule_matches");
+    e.stack_id = as<std::string>(node, "stack_id");
 
     return e;
 }
@@ -383,10 +452,28 @@ ddwaf_object node_to_arg(const Node &node)
 
     throw parsing_error("Invalid YAML node type");
 }
+
 } // namespace
 
 as_if<ddwaf_object, void>::as_if(const Node &node_) : node(node_) {}
 ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(node); }
+
+action_map as_if<action_map, void>::operator()() const
+{
+    if (node.Type() != YAML::NodeType::Map) {
+        throw parsing_error("action map should be a map");
+    }
+
+    action_map actions;
+    for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
+        auto key = it->first.as<std::string>();
+        auto parameters = it->second.as<std::map<std::string, std::string>>();
+
+        actions.emplace(key, parameters);
+    }
+
+    return actions;
+}
 
 } // namespace YAML
 
@@ -474,65 +561,14 @@ std::optional<std::string> schema_validator::validate(rapidjson::Document &doc)
     return ::testing::AssertionSuccess();
 }
 
-void PrintTo(const ddwaf_object &actions, ::std::ostream *os)
-{
-    *os << "[";
-    for (unsigned i = 0; i < ddwaf_object_size(&actions); i++) {
-        if (i > 0) {
-            *os << ", ";
-        }
-        const auto *object = ddwaf_object_get_index(actions.array, i);
-        if (ddwaf_object_type(object) == DDWAF_OBJ_STRING) {
-            *os << ddwaf_object_get_string(object, nullptr);
-        }
-    }
-    *os << "]";
-}
-
-void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os)
-{
-    for (const auto &e : events) { *os << e; }
-}
-
-void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os)
-{
-    for (const auto &m : matches) { *os << m; }
-}
-
-WafResultActionMatcher::WafResultActionMatcher(std::vector<std::string_view> &&values)
-    : expected_(std::move(values))
-{
-    std::sort(expected_.begin(), expected_.end());
-    expected_as_string_ = "[";
-    for (auto &value : expected_) {
-        if (expected_as_string_.size() > 1) {
-            expected_as_string_ += ", ";
-        }
-
-        expected_as_string_ += value;
-    }
-
-    expected_as_string_ += "]";
-}
+WafResultActionMatcher::WafResultActionMatcher(
+    std::map<std::string, std::map<std::string, std::string>> &&v)
+    : expected_(std::move(v))
+{}
 
 bool WafResultActionMatcher::MatchAndExplain(
-    const ddwaf_object &actions, ::testing::MatchResultListener *) const
+    const ddwaf::test::action_map &obtained, ::testing::MatchResultListener * /*unused*/) const
 {
-    size_t actions_size = ddwaf_object_size(&actions);
-    if (actions_size != expected_.size()) {
-        return false;
-    }
-
-    std::vector<std::string_view> obtained;
-    obtained.reserve(actions_size);
-    for (unsigned i = 0; i < actions_size; i++) {
-        const auto *object = ddwaf_object_get_index(&actions, i);
-        if (ddwaf_object_type(object) == DDWAF_OBJ_STRING) {
-            obtained.emplace_back(ddwaf_object_get_string(object, nullptr));
-        }
-    }
-    std::sort(obtained.begin(), obtained.end());
-
     return obtained == expected_;
 }
 
@@ -619,7 +655,7 @@ ddwaf_object read_file(std::string_view filename, std::string_view base)
 
     auto file_path = base_dir + "yaml/" + std::string{filename};
 
-    DDWAF_DEBUG("Opening %s", file_path.c_str());
+    DDWAF_DEBUG("Opening {}", file_path.c_str());
 
     std::ifstream file(file_path.c_str(), std::ios::in);
     if (!file) {

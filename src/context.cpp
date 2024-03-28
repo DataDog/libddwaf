@@ -4,13 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <unordered_set>
-
 #include "context.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "utils.hpp"
-#include "waf.hpp"
 
 namespace ddwaf {
 
@@ -59,7 +56,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         return DDWAF_OK;
     }
 
-    const event_serializer serializer(*ruleset_->event_obfuscator);
+    const event_serializer serializer(*ruleset_->event_obfuscator, *ruleset_->actions);
 
     optional_ref<ddwaf_object> derived;
     if (res.has_value()) {

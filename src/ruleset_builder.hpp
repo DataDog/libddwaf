@@ -51,6 +51,7 @@ protected:
         data = 16,
         processors = 32,
         scanners = 64,
+        actions = 128,
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
@@ -103,6 +104,9 @@ protected:
 
     // Scanners
     indexer<const scanner> scanners_;
+
+    // Actions
+    std::shared_ptr<action_mapper> actions_;
 };
 
 } // namespace ddwaf

@@ -36,12 +36,17 @@ jobs:
 
       - name: Install dependencies
         if: matrix.arch == 'arm64'
-        run: sudo apt update ; sudo apt install -y cmake gcc-12 g++-12 git make curl
+        run: sudo apt update ; sudo apt install -y cmake git make curl
+
+      - name: Install clang-{tidy,format}
+        run: |
+          sudo .github/workflows/scripts/llvm.sh 17
+          sudo apt-get install -y clang-17 clang++-17
 
       - name: CMake
         env:
-          CC: gcc-12
-          CXX: g++-12
+          CC: clang-17
+          CXX: clang++-17
         run: |
           cmake .. -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \

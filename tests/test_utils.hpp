@@ -20,6 +20,7 @@
 #include "event.hpp"
 #include "expression.hpp"
 #include "matcher/base.hpp"
+#include "ruleset.hpp"
 #include "test.hpp"
 #include "utils.hpp"
 
@@ -40,17 +41,20 @@ struct event {
 
     std::string id;
     std::string name;
+    std::string stack_id{};
     std::map<std::string, std::string> tags{{"type", ""}, {"category", ""}};
     std::vector<std::string> actions{};
     std::vector<match> matches;
 };
 
+using action_map = ::std::map<::std::string, ::std::map<::std::string, ::std::string>>;
+
 bool operator==(const event::match::argument &lhs, const event::match::argument &rhs);
 bool operator==(const event::match &lhs, const event::match &rhs);
 bool operator==(const event &lhs, const event &rhs);
 
-std::ostream &operator<<(std::ostream &os, const event &e);
-std::ostream &operator<<(std::ostream &os, const event::match &m);
+::std::ostream &operator<<(::std::ostream &os, const event &e);
+::std::ostream &operator<<(::std::ostream &os, const event::match &m);
 
 std::string object_to_json(const ddwaf_object &obj);
 rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
@@ -105,7 +109,23 @@ protected:
     std::vector<std::unique_ptr<base_condition>> conditions_{};
 };
 
+inline std::shared_ptr<ddwaf::ruleset> get_default_ruleset()
+{
+    auto ruleset = std::make_shared<ddwaf::ruleset>();
+    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
+    return ruleset;
+}
+
+// Required by gtest to pretty print relevant types
+void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
+void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
+void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os);
+
 } // namespace ddwaf::test
+
+::std::ostream &operator<<(::std::ostream &os, const ddwaf::test::action_map &actions);
+void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os);
 
 namespace YAML {
 
@@ -136,6 +156,11 @@ template <> struct as_if<ddwaf::test::event, void> {
     const Node &node;
 };
 
+template <> struct as_if<ddwaf::test::action_map, void> {
+    explicit as_if(const Node &node_) : node(node_) {}
+    ddwaf::test::action_map operator()() const;
+    const Node &node;
+};
 } // namespace YAML
 
 class schema_validator {
@@ -156,23 +181,16 @@ protected:
 ::testing::AssertionResult ValidateSchema(const std::string &result);
 ::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc);
 
-// Required by gtest to pretty print relevant types
-void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
-void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
-void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os);
-
 class WafResultActionMatcher {
 public:
-    explicit WafResultActionMatcher(std::vector<std::string_view> &&values);
-    bool MatchAndExplain(const ddwaf_object &actions, ::testing::MatchResultListener *) const;
+    explicit WafResultActionMatcher(ddwaf::test::action_map &&v);
+    bool MatchAndExplain(const ddwaf::test::action_map &, ::testing::MatchResultListener *) const;
 
-    void DescribeTo(::std::ostream *os) const { *os << expected_as_string_; }
-
-    void DescribeNegationTo(::std::ostream *os) const { *os << expected_as_string_; }
+    void DescribeTo(::std::ostream *os) const { *os << expected_; }
+    void DescribeNegationTo(::std::ostream *os) const { *os << expected_; }
 
 private:
-    std::string expected_as_string_{};
-    std::vector<std::string_view> expected_;
+    ddwaf::test::action_map expected_;
 };
 
 class WafResultDataMatcher {
@@ -221,7 +239,7 @@ protected:
 };
 
 inline ::testing::PolymorphicMatcher<WafResultActionMatcher> WithActions(
-    std::vector<std::string_view> &&values)
+    ddwaf::test::action_map &&values)
 {
     return ::testing::MakePolymorphicMatcher(WafResultActionMatcher(std::move(values)));
 }
@@ -261,6 +279,14 @@ std::list<ddwaf::test::event::match> from_matches(
         expected_doc.Parse(expected);                                                              \
         EXPECT_FALSE(expected_doc.HasParseError());                                                \
         EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);    \
+    }
+
+#define EXPECT_ACTIONS(result, ...)                                                                \
+    {                                                                                              \
+        auto data = ddwaf::test::object_to_json(result.actions);                                   \
+        YAML::Node doc = YAML::Load(data.c_str());                                                 \
+        auto obtained = doc.as<ddwaf::test::action_map>();                                         \
+        EXPECT_THAT(obtained, WithActions(__VA_ARGS__));                                           \
     }
 // NOLINTEND(cppcoreguidelines-macro-usage)
 

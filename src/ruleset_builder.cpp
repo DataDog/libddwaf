@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 //
-#include <charconv>
 #include <string_view>
 
 #include "exception.hpp"
@@ -200,6 +199,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->insert_postprocessors(postprocessors_);
     rs->dynamic_matchers = dynamic_matchers_;
     rs->scanners = scanners_.items();
+    rs->actions = actions_;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
@@ -216,7 +216,26 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         info.set_ruleset_version(rules_version);
     }
 
-    auto it = root.find("rules");
+    auto it = root.find("actions");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing actions");
+        auto &section = info.add_section("actions");
+        try {
+            // If the actions array is empty, an empty action mapper will be
+            // generated. Note that this mapper will still contain the default
+            // actions.
+            auto actions = static_cast<parameter::vector>(it->second);
+            actions_ = parser::v2::parse_actions(actions, section);
+            state = state | change_state::actions;
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse actions: {}", e.what());
+            section.set_error(e.what());
+        }
+    } else if (!actions_) {
+        actions_ = action_mapper_builder().build_shared();
+    }
+
+    it = root.find("rules");
     if (it != root.end()) {
         DDWAF_DEBUG("Parsing base rules");
         auto &section = info.add_section("rules");

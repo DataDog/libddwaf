@@ -27,7 +27,7 @@
         }
       ],
       code: match,
-      actions: []
+      actions: {}
     }
   ]
 }

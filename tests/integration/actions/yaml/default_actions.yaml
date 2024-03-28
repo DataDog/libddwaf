@@ -1,0 +1,62 @@
+version: '2.1'
+rules:
+  - id: block-rule
+    name: block-rule
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value
+          regex: ^block
+          options:
+            case_sensitive: true
+    on_match: [ block ]
+
+  - id: stack-trace-rule
+    name: stack-trace-rule
+    tags:
+      type: flow2
+      category: category2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value
+          regex: stack_trace
+          options:
+            case_sensitive: true
+    on_match: [ stack_trace ]
+
+  - id: extract-schema-rule
+    name: extract-schema-rule
+    tags:
+      type: flow3
+      category: category3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value
+          regex: extract_schema
+          options:
+            case_sensitive: true
+    on_match: [ extract_schema ]
+
+  - id: unblock-rule
+    name: unblock-rule
+    tags:
+      type: flow4
+      category: category4
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value
+          regex: unblock
+          options:
+            case_sensitive: true
+    on_match: [ unblock ]
+

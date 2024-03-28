@@ -32,7 +32,7 @@ template <std::size_t N> constexpr std::array<char, N - 1> literal_to_array(cons
         EXPECT_TRUE(ValidateSchema(data));                                                         \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
-        EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                            \
+        EXPECT_ACTIONS(result, __VA_ARGS__)                                                        \
     }
 
 #define EXPECT_TRANSFORM(name, source, expected)                                                   \

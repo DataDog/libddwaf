@@ -16,7 +16,14 @@
         }
       ],
       code: match,
-      actions: [block_request, match]
+      actions: {
+        block_request: {
+          grpc_status_code: 10,
+          status_code: 200,
+          type: auto
+        },
+        match_request: {}
+      }
     }
   ]
 }

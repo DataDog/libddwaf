@@ -47,5 +47,8 @@ processor_container parse_processors(
 
 indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_section_info &info);
 
+std::shared_ptr<action_mapper> parse_actions(
+    parameter::vector &actions_array, base_section_info &info);
+
 } // namespace v2
 } // namespace ddwaf::parser

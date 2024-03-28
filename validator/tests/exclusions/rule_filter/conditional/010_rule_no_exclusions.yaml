@@ -16,7 +16,13 @@
         }
       ],
       code: match,
-      actions: [ block ]
+      actions: {
+        block_request: {
+          status_code: 403,
+          type: auto,
+          grpc_status_code: 10
+        }
+      }
     }
   ]
 }
