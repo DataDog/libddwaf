@@ -4,13 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstddef>
-#include <iostream>
 #include <list>
 
 #include "utils.hpp"
 
-namespace ddwaf::object {
+namespace ddwaf {
 
 void clone_helper(const ddwaf_object &source, ddwaf_object &destination)
 {
@@ -83,4 +81,4 @@ ddwaf_object clone(ddwaf_object *input)
     return copy;
 }
 
-} // namespace ddwaf::object
+} // namespace ddwaf

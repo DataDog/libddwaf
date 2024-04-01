@@ -8,9 +8,7 @@
 
 #include <unordered_set>
 
-#include "context_allocator.hpp"
-#include "ddwaf.h"
-#include "log.hpp"
+#include "object.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -22,12 +20,12 @@ namespace exclusion {
 enum class filter_mode : uint8_t { none = 0, monitor = 1, bypass = 2 };
 
 struct object_set {
-    std::unordered_set<const ddwaf_object *> persistent;
-    std::unordered_set<const ddwaf_object *> ephemeral;
+    std::unordered_set<const object_view *> persistent;
+    std::unordered_set<const object_view *> ephemeral;
     bool empty() const { return persistent.empty() && ephemeral.empty(); }
     [[nodiscard]] std::size_t size() const { return persistent.size() + ephemeral.size(); }
 
-    bool contains(const ddwaf_object *obj) const
+    bool contains(const object_view *obj) const
     {
         return persistent.contains(obj) || ephemeral.contains(obj);
     }
@@ -35,12 +33,12 @@ struct object_set {
 
 struct rule_policy {
     filter_mode mode{filter_mode::none};
-    std::unordered_set<const ddwaf_object *> objects{};
+    std::unordered_set<const object_view *> objects{};
 };
 
 struct object_set_ref {
-    optional_ref<const std::unordered_set<const ddwaf_object *>> persistent{std::nullopt};
-    optional_ref<const std::unordered_set<const ddwaf_object *>> ephemeral{std::nullopt};
+    optional_ref<const std::unordered_set<const object_view *>> persistent{std::nullopt};
+    optional_ref<const std::unordered_set<const object_view *>> ephemeral{std::nullopt};
 
     [[nodiscard]] bool empty() const
     {
@@ -54,7 +52,7 @@ struct object_set_ref {
                (ephemeral.has_value() ? ephemeral->get().size() : 0);
     }
 
-    bool contains(const ddwaf_object *obj) const
+    bool contains(const object_view *obj) const
     {
         return (persistent.has_value() && persistent->get().contains(obj)) ||
                (ephemeral.has_value() && ephemeral->get().contains(obj));

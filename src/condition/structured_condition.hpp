@@ -47,54 +47,18 @@ struct default_argument_retriever {
     static constexpr bool is_optional = false;
 };
 
-template <typename T> std::optional<T> convert(const ddwaf_object *obj)
-{
-    if constexpr (std::is_same_v<T, decltype(obj)>) {
-        return obj;
-    }
-
-    if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {
-        if (obj->type == DDWAF_OBJ_STRING) {
-            return T{obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
-        }
-    }
-
-    if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, unsigned>) {
-        using limits = std::numeric_limits<T>;
-        if (obj->type == DDWAF_OBJ_UNSIGNED && obj->uintValue <= limits::max()) {
-            return static_cast<T>(obj->uintValue);
-        }
-    }
-
-    if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, int>) {
-        using limits = std::numeric_limits<T>;
-        if (obj->type == DDWAF_OBJ_SIGNED && obj->intValue >= limits::min() &&
-            obj->intValue <= limits::max()) {
-            return static_cast<T>(obj->intValue);
-        }
-    }
-
-    if constexpr (std::is_same_v<T, bool>) {
-        if (obj->type == DDWAF_OBJ_BOOL) {
-            return static_cast<T>(obj->boolean);
-        }
-    }
-
-    return {};
-}
-
 template <typename T> struct argument_retriever : default_argument_retriever {};
 
 template <typename T> struct argument_retriever<unary_argument<T>> : default_argument_retriever {
     static std::optional<unary_argument<T>> retrieve(const object_store &store,
         const exclusion::object_set_ref &objects_excluded, const target_definition &target)
     {
-        auto [object, attr] = store.get_target(target.root);
+        auto [object, attr] = store.get_target_view(target.root);
         if (object == nullptr || objects_excluded.contains(object)) {
             return std::nullopt;
         }
 
-        auto converted = convert<T>(object);
+        auto converted = object->as_optional<T>();
         if (!converted.has_value()) {
             return std::nullopt;
         }

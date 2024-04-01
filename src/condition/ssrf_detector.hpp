@@ -20,7 +20,7 @@ public:
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &uri,
-        const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+        const variadic_argument<const object_view *> &params, condition_cache &cache,
         const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
 
     std::unique_ptr<matcher::ip_match> dangerous_ip_matcher_;

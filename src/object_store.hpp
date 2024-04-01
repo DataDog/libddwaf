@@ -6,13 +6,9 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
-
 #include "context_allocator.hpp"
 #include "ddwaf.h"
+#include "object.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -68,6 +64,15 @@ public:
         auto it = objects_.find(target);
         if (it != objects_.end()) {
             return {it->second.first, it->second.second};
+        }
+        return {nullptr, attribute::none};
+    }
+
+    std::pair<object_view *, attribute> get_target_view(target_index target) const
+    {
+        auto it = objects_.find(target);
+        if (it != objects_.end()) {
+            return {object_view::from_native(it->second.first), it->second.second};
         }
         return {nullptr, attribute::none};
     }

@@ -6,21 +6,17 @@
 
 #pragma once
 
-#include <algorithm>
 #include <functional>
 #include <map>
 #include <ostream>
 #include <set>
-#include <stack>
 #include <tuple>
 #include <type_traits>
-#include <unordered_set>
 #include <vector>
 
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "exclusion/common.hpp"
-#include "log.hpp"
 #include "object_store.hpp"
 
 namespace ddwaf::exclusion {
@@ -237,7 +233,7 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = memory::unordered_set<ddwaf_object *>;
+    using cache_type = memory::unordered_set<object_view *>;
 
     explicit object_filter(const ddwaf::object_limits &limits = {}) : limits_(limits) {}
 

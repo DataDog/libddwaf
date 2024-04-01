@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "ddwaf.h"
+#include "object.hpp"
 
 // Convert numbers to strings
 #define STR_HELPER(x) #x
@@ -88,12 +89,11 @@ inline size_t find_string_cutoff(const char *str, size_t length, object_limits l
     return pos;
 }
 
-namespace object {
-
 inline bool is_container(const ddwaf_object *obj)
 {
     return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
 }
+inline bool is_container(const object_view *obj) { return obj != nullptr && obj->is_container(); }
 
 inline bool is_map(const ddwaf_object *obj)
 {
@@ -104,6 +104,7 @@ inline bool is_scalar(const ddwaf_object *obj)
 {
     return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
 }
+inline bool is_scalar(const object_view *obj) { return obj != nullptr && obj->is_scalar(); }
 
 inline bool is_invalid_or_null(const ddwaf_object *obj)
 {
@@ -111,7 +112,6 @@ inline bool is_invalid_or_null(const ddwaf_object *obj)
 }
 
 ddwaf_object clone(ddwaf_object *input);
-} // namespace object
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 inline bool isalpha(char c) { return (static_cast<unsigned>(c) | 32) - 'a' < 26; }

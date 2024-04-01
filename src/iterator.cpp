@@ -4,15 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <iostream>
 #include <vector>
 
 #include "ddwaf.h"
 #include "iterator.hpp"
-#include "log.hpp"
-#include "utils.hpp"
 
-namespace ddwaf::object {
+namespace ddwaf {
 
 template <typename T>
 iterator_base<T>::iterator_base(
@@ -52,9 +49,9 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     auto [parent, parent_index] = stack_.front();
     for (unsigned i = 1; i < stack_.size(); i++) {
         auto [child, child_index] = stack_[i];
-        if (parent->type == DDWAF_OBJ_MAP && child->parameterName != nullptr) {
-            keys.emplace_back(child->parameterName, child->parameterNameLength);
-        } else if (parent->type == DDWAF_OBJ_ARRAY) {
+        if (parent->type() == object_type::map && child->has_key()) {
+            keys.emplace_back(std::string(child->key()));
+        } else if (parent->type() == object_type::array) {
             keys.emplace_back(to_string<std::string>(parent_index - 1));
         }
 
@@ -62,16 +59,16 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
         parent_index = child_index;
     }
 
-    if (parent->type == DDWAF_OBJ_MAP && current_->parameterName != nullptr) {
-        keys.emplace_back(current_->parameterName, current_->parameterNameLength);
-    } else if (parent->type == DDWAF_OBJ_ARRAY) {
+    if (parent->type() == object_type::map && current_->has_key()) {
+        keys.emplace_back(std::string(current_->key()));
+    } else if (parent->type() == object_type::array) {
         keys.emplace_back(to_string<std::string>(parent_index - 1));
     }
 
     return keys;
 }
 
-value_iterator::value_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
+value_iterator::value_iterator(const object_view *obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
@@ -79,7 +76,7 @@ value_iterator::value_iterator(const ddwaf_object *obj, const std::span<const st
 }
 
 void value_iterator::initialise_cursor(
-    const ddwaf_object *obj, const std::span<const std::string> &path)
+    const object_view *obj, const std::span<const std::string> &path)
 {
     if (excluded_.contains(obj)) {
         return;
@@ -107,7 +104,7 @@ void value_iterator::initialise_cursor(
 }
 
 void value_iterator::initialise_cursor_with_path(
-    const ddwaf_object *obj, const std::span<const std::string> &path)
+    const object_view *obj, const std::span<const std::string> &path)
 {
     // An object with a path should always start with a container
     if (!is_container(obj)) {
@@ -125,13 +122,13 @@ void value_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
-        ddwaf_object *child = nullptr;
-        if (is_map(parent)) {
-            auto size = parent->nbEntries > limits_.max_container_size ? limits_.max_container_size
-                                                                       : parent->nbEntries;
+        const object_view *child = nullptr;
+        if (parent->type() == object_type::map) {
+            auto size = parent->size() > limits_.max_container_size ? limits_.max_container_size
+                                                                    : parent->size();
             for (std::size_t j = 0; j < size; j++) {
-                auto *possible_child = &parent->array[j];
-                if (possible_child->parameterName == nullptr) {
+                auto *possible_child = (*parent)[j];
+                if (!possible_child->has_key()) {
                     continue;
                 }
 
@@ -139,9 +136,7 @@ void value_iterator::initialise_cursor_with_path(
                     continue;
                 }
 
-                const std::string_view child_key(
-                    possible_child->parameterName, possible_child->parameterNameLength);
-
+                auto child_key = possible_child->key();
                 if (child_key == key) {
                     child = possible_child;
                     index = j + 1;
@@ -191,35 +186,35 @@ void value_iterator::set_cursor_to_next_object()
     while (!stack_.empty() && current_ == nullptr) {
         auto &[parent, index] = stack_.back();
 
-        if (index >= parent->nbEntries || index >= limits_.max_container_size) {
+        if (index >= parent->size() || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
             continue;
         }
 
-        if (excluded_.contains(&parent->array[index])) {
+        if (excluded_.contains((*parent)[index])) {
             ++index;
             continue;
         }
 
-        if (is_container(&parent->array[index])) {
+        if (is_container((*parent)[index])) {
             if (depth() < limits_.max_container_depth) {
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                stack_.emplace_back(&parent->array[index++], 0);
+                stack_.emplace_back((*parent)[index++], 0);
                 continue;
             }
-        } else if (is_scalar(&parent->array[index])) {
-            current_ = &parent->array[index];
+        } else if (is_scalar((*parent)[index])) {
+            current_ = (*parent)[index];
         }
 
         ++index;
     }
 }
 
-key_iterator::key_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
+key_iterator::key_iterator(const object_view *obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
@@ -227,7 +222,7 @@ key_iterator::key_iterator(const ddwaf_object *obj, const std::span<const std::s
 }
 
 void key_iterator::initialise_cursor(
-    const ddwaf_object *obj, const std::span<const std::string> &path)
+    const object_view *obj, const std::span<const std::string> &path)
 {
     if (excluded_.contains(obj)) {
         return;
@@ -249,7 +244,7 @@ void key_iterator::initialise_cursor(
 }
 
 void key_iterator::initialise_cursor_with_path(
-    const ddwaf_object *obj, const std::span<const std::string> &path)
+    const object_view *obj, const std::span<const std::string> &path)
 {
     if (path.size() >= limits_.max_container_depth) {
         return;
@@ -262,13 +257,13 @@ void key_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
-        ddwaf_object *child = nullptr;
-        if (parent->type == DDWAF_OBJ_MAP) {
-            auto size = parent->nbEntries > limits_.max_container_size ? limits_.max_container_size
-                                                                       : parent->nbEntries;
+        const object_view *child = nullptr;
+        if (parent->type() == object_type::map) {
+            auto size = parent->size() > limits_.max_container_size ? limits_.max_container_size
+                                                                    : parent->size();
             for (std::size_t j = 0; j < size; j++) {
-                auto *possible_child = &parent->array[j];
-                if (possible_child->parameterName == nullptr) {
+                auto *possible_child = (*parent)[j];
+                if (!possible_child->has_key()) {
                     continue;
                 }
 
@@ -276,9 +271,7 @@ void key_iterator::initialise_cursor_with_path(
                     continue;
                 }
 
-                const std::string_view child_key(
-                    possible_child->parameterName, possible_child->parameterNameLength);
-
+                auto child_key = possible_child->key();
                 if (child_key == key) {
                     child = possible_child;
                     index = j;
@@ -308,20 +301,20 @@ void key_iterator::initialise_cursor_with_path(
 
 void key_iterator::set_cursor_to_next_object()
 {
-    const ddwaf_object *previous = current_;
+    const object_view *previous = current_;
     current_ = nullptr;
 
     while (!stack_.empty() && current_ == nullptr) {
         auto &[parent, index] = stack_.back();
 
-        if (index >= parent->nbEntries || index >= limits_.max_container_size) {
+        if (index >= parent->size() || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
             continue;
         }
 
-        ddwaf_object *child = &parent->array[index];
+        const object_view *child = (*parent)[index];
 
         if (excluded_.contains(child)) {
             ++index;
@@ -329,7 +322,7 @@ void key_iterator::set_cursor_to_next_object()
         }
 
         if (is_container(child)) {
-            if (previous != child && child->parameterName != nullptr) {
+            if (previous != child && child->has_key()) {
                 current_ = child;
                 // Break to ensure the index isn't increased and this container
                 // is fully iterated.
@@ -344,7 +337,7 @@ void key_iterator::set_cursor_to_next_object()
                 stack_.emplace_back(child, 0);
                 continue;
             }
-        } else if (child->parameterName != nullptr) {
+        } else if (child->has_key()) {
             current_ = child;
         }
 
@@ -352,7 +345,7 @@ void key_iterator::set_cursor_to_next_object()
     }
 }
 
-kv_iterator::kv_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
+kv_iterator::kv_iterator(const object_view *obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
@@ -360,7 +353,7 @@ kv_iterator::kv_iterator(const ddwaf_object *obj, const std::span<const std::str
 }
 
 void kv_iterator::initialise_cursor(
-    const ddwaf_object *obj, const std::span<const std::string> &path)
+    const object_view *obj, const std::span<const std::string> &path)
 {
     if (excluded_.contains(obj)) {
         return;
@@ -389,7 +382,7 @@ void kv_iterator::initialise_cursor(
 }
 
 void kv_iterator::initialise_cursor_with_path(
-    const ddwaf_object *obj, const std::span<const std::string> &path)
+    const object_view *obj, const std::span<const std::string> &path)
 {
     if (path.size() >= limits_.max_container_depth) {
         return;
@@ -402,13 +395,13 @@ void kv_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
-        ddwaf_object *child = nullptr;
-        if (parent->type == DDWAF_OBJ_MAP) {
-            auto size = parent->nbEntries > limits_.max_container_size ? limits_.max_container_size
-                                                                       : parent->nbEntries;
+        const object_view *child = nullptr;
+        if (parent->type() == object_type::map) {
+            auto size = parent->size() > limits_.max_container_size ? limits_.max_container_size
+                                                                    : parent->size();
             for (std::size_t j = 0; j < size; j++) {
-                auto *possible_child = &parent->array[j];
-                if (possible_child->parameterName == nullptr) {
+                auto *possible_child = (*parent)[j];
+                if (!possible_child->has_key()) {
                     continue;
                 }
 
@@ -416,9 +409,7 @@ void kv_iterator::initialise_cursor_with_path(
                     continue;
                 }
 
-                const std::string_view child_key(
-                    possible_child->parameterName, possible_child->parameterNameLength);
-
+                auto child_key = possible_child->key();
                 if (child_key == key) {
                     child = possible_child;
                     index = j;
@@ -463,20 +454,20 @@ void kv_iterator::initialise_cursor_with_path(
 
 void kv_iterator::set_cursor_to_next_object()
 {
-    const ddwaf_object *previous = current_;
+    const object_view *previous = current_;
     current_ = nullptr;
 
     while (!stack_.empty() && current_ == nullptr) {
         auto &[parent, index] = stack_.back();
 
-        if (index >= parent->nbEntries || index >= limits_.max_container_size) {
+        if (index >= parent->size() || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
             continue;
         }
 
-        ddwaf_object *child = &parent->array[index];
+        const object_view *child = (*parent)[index];
 
         if (excluded_.contains(child)) {
             ++index;
@@ -484,7 +475,7 @@ void kv_iterator::set_cursor_to_next_object()
         }
 
         if (is_container(child)) {
-            if (previous != child && child->parameterName != nullptr) {
+            if (previous != child && child->has_key()) {
                 current_ = child;
                 scalar_value_ = false;
                 // Break to ensure the index isn't increased and this container
@@ -503,7 +494,7 @@ void kv_iterator::set_cursor_to_next_object()
         } else if (is_scalar(child)) {
             if (previous != child) {
                 current_ = child;
-                if (current_->parameterName == nullptr) {
+                if (!current_->has_key()) {
                     ++index;
                     scalar_value_ = true;
                 } else {
@@ -517,7 +508,7 @@ void kv_iterator::set_cursor_to_next_object()
                 scalar_value_ = true;
                 break;
             }
-        } else if (child->parameterName != nullptr) {
+        } else if (child->has_key()) {
             current_ = child;
             scalar_value_ = false;
         }
@@ -529,4 +520,4 @@ template class iterator_base<value_iterator>;
 template class iterator_base<key_iterator>;
 template class iterator_base<kv_iterator>;
 
-} // namespace ddwaf::object
+} // namespace ddwaf

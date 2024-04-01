@@ -133,7 +133,7 @@ bool detect_parameter_injection(
     return false;
 }
 
-ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
+ssrf_result ssrf_impl(const uri_decomposed &uri, const object_view &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     const std::unique_ptr<matcher::ip_match> &dangerous_ip_matcher,
     const std::unordered_set<std::string_view> &authorised_scheme_set, ddwaf::timer &deadline)
@@ -150,18 +150,19 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
 
     std::optional<ssrf_result> parameter_injection;
 
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &object = *(*it);
-        if (object.type != DDWAF_OBJ_STRING || object.nbEntries < min_str_len) {
+        const object_view &obj = *(*it);
+        auto opt_param = obj.as_optional<std::string_view>();
+        if (!opt_param.has_value() || opt_param->size() < min_str_len) {
             continue;
         }
 
-        std::string_view param{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
+        auto param = opt_param.value();
         auto param_index = uri.raw.find(param);
         if (param_index == npos) {
             // Seemingly no injection
@@ -248,7 +249,7 @@ ssrf_detector::ssrf_detector(std::vector<parameter_definition> args, const objec
 {}
 
 eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
-    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+    const variadic_argument<const object_view *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     auto decomposed = uri_parse(uri.value);

@@ -7,6 +7,7 @@
 #include "scalar_condition.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
+#include "log.hpp"
 #include "transformer/manager.hpp"
 
 using namespace std::literals;
@@ -22,7 +23,7 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
-    ddwaf_object src = *(*it);
+    ddwaf_object src = *(*it)->to_native();
 
     if (src.type == DDWAF_OBJ_STRING) {
         if (src.stringValue == nullptr) {
@@ -122,7 +123,7 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         }
 
         const auto &target = targets_[i];
-        auto [object, attr] = store.get_target(target.root);
+        auto [object, attr] = store.get_target_view(target.root);
         if (object == nullptr || object == cache.targets[i]) {
             continue;
         }
@@ -135,11 +136,11 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
-            object::key_iterator it(object, target.key_path, objects_excluded, limits_);
+            key_iterator it(object, target.key_path, objects_excluded, limits_);
             match = eval_target(
                 it, target.name, ephemeral, *matcher, target.transformers, limits_, deadline);
         } else {
-            object::value_iterator it(object, target.key_path, objects_excluded, limits_);
+            value_iterator it(object, target.key_path, objects_excluded, limits_);
             match = eval_target(
                 it, target.name, ephemeral, *matcher, target.transformers, limits_, deadline);
         }

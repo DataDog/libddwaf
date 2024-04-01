@@ -80,7 +80,7 @@ bool lfi_impl_unix(std::string_view path, std::string_view param)
     return (param[0] == '/' && param == path) || find_directory_escape(param, "/");
 }
 
-lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
+lfi_result lfi_impl(std::string_view path, const object_view &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
@@ -89,20 +89,16 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
         lfi_fn = &lfi_impl_windows;
     }
 
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING) {
-            continue;
-        }
-
-        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        if (lfi_fn(path, value)) {
-            return {{std::string(value), it.get_current_path()}};
+        const object_view &param = *(*it);
+        auto value = param.as_optional<std::string_view>();
+        if (value.has_value() && lfi_fn(path, value.value())) {
+            return {{std::string(value.value()), it.get_current_path()}};
         }
     }
 
@@ -111,7 +107,7 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
 } // namespace
 
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
-    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+    const variadic_argument<const object_view *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {

@@ -7,6 +7,7 @@
 #include "processor.hpp"
 #include "ddwaf.h"
 #include "exception.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -57,7 +58,7 @@ void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, c
         if (output_ && derived.has_value()) {
             ddwaf_object &output = derived.value();
             if (evaluate_) {
-                auto copy = ddwaf::object::clone(&object);
+                auto copy = ddwaf::clone(&object);
                 ddwaf_object_map_add(&output, mapping.output_address.c_str(), &copy);
             } else {
                 ddwaf_object_map_add(&output, mapping.output_address.c_str(), &object);
