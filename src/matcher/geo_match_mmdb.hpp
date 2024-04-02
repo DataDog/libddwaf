@@ -6,19 +6,18 @@
 
 #pragma once
 
-#include <memory>
+#include <stdexcept>
 #include <unordered_set>
-#include <vector>
 
 #include "matcher/base.hpp"
 #include "maxminddb/maxminddb.h"
 
 namespace ddwaf::matcher {
 
-class geo_match : public base_impl<geo_match> {
+class geo_match_mmdb : public base_impl<geo_match_mmdb> {
 public:
-    geo_match() = default;
-    explicit geo_match(
+    geo_match_mmdb() = default;
+    explicit geo_match_mmdb(
         std::unordered_set<std::string> countries, const std::string &path = "ip-metadata.mmdb")
         : countries_(std::move(countries))
     {
@@ -28,16 +27,16 @@ public:
         }
     }
 
-    ~geo_match() override { MMDB_close(&mmdb_); }
+    ~geo_match_mmdb() override { MMDB_close(&mmdb_); }
 
-    geo_match(const geo_match &) = delete;
-    geo_match(geo_match &&) = default;
-    geo_match &operator=(const geo_match &) = delete;
-    geo_match &operator=(geo_match &&) = default;
+    geo_match_mmdb(const geo_match_mmdb &) = delete;
+    geo_match_mmdb(geo_match_mmdb &&) = default;
+    geo_match_mmdb &operator=(const geo_match_mmdb &) = delete;
+    geo_match_mmdb &operator=(geo_match_mmdb &&) = default;
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "geo_match"; }
+    static constexpr std::string_view name_impl() { return "geo_match_mmdb"; }
     static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view str) const;
@@ -45,7 +44,7 @@ protected:
     MMDB_s mmdb_{};
     std::unordered_set<std::string> countries_{};
 
-    friend class base_impl<geo_match>;
+    friend class base_impl<geo_match_mmdb>;
 };
 
 } // namespace ddwaf::matcher

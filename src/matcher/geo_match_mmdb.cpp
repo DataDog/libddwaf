@@ -6,11 +6,9 @@
 
 #include <array>
 #include <cstring>
-#include <stdexcept>
 #include <string_view>
 
-#include "log.hpp"
-#include "matcher/geo_match.hpp"
+#include "matcher/geo_match_mmdb.hpp"
 
 namespace ddwaf::matcher {
 
@@ -64,7 +62,7 @@ std::string get_country_from_entry(MMDB_entry_data_list_s *entry)
 
 } // namespace
 
-std::pair<bool, std::string> geo_match::match_impl(std::string_view str) const
+std::pair<bool, std::string> geo_match_mmdb::match_impl(std::string_view str) const
 {
     std::array<char, INET6_ADDRSTRLEN> ip_cstr{0};
     memcpy(ip_cstr.data(), str.data(), str.size());
