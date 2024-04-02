@@ -271,6 +271,29 @@ parameter::operator std::vector<std::string_view>() const
     return data;
 }
 
+parameter::operator std::unordered_set<std::string>() const
+{
+    if (type != DDWAF_OBJ_ARRAY) {
+        throw bad_cast("array", strtype(type));
+    }
+
+    if (array == nullptr || nbEntries == 0) {
+        return {};
+    }
+
+    std::unordered_set<std::string> set;
+    set.reserve(nbEntries);
+    for (unsigned i = 0; i < nbEntries; i++) {
+        if (array[i].type != DDWAF_OBJ_STRING) {
+            throw malformed_object("item in array not a string, can't cast to string set");
+        }
+
+        set.emplace(array[i].stringValue, array[i].nbEntries);
+    }
+
+    return set;
+}
+
 parameter::operator std::unordered_map<std::string, std::string>() const
 {
     if (type != DDWAF_OBJ_MAP) {

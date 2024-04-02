@@ -46,6 +46,7 @@ public:
     explicit operator bool() const;
     explicit operator std::vector<std::string>() const;
     explicit operator std::vector<std::string_view>() const;
+    explicit operator std::unordered_set<std::string>() const;
     explicit operator std::unordered_map<std::string, std::string>() const;
 
     ~parameter() = default;
@@ -81,6 +82,10 @@ template <> struct parameter_traits<std::vector<std::string>> {
 
 template <> struct parameter_traits<std::vector<std::string_view>> {
     static const char *name() { return "std::vector<std::string_view>"; }
+};
+
+template <> struct parameter_traits<std::unordered_set<std::string>> {
+    static const char *name() { return "std::unordered_set<std::string>"; }
 };
 
 template <> struct parameter_traits<std::unordered_map<std::string, std::string>> {

@@ -20,6 +20,7 @@
 #include "log.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
+#include "matcher/geo_match.hpp"
 #include "matcher/ip_match.hpp"
 #include "matcher/is_sqli.hpp"
 #include "matcher/is_xss.hpp"
@@ -119,6 +120,9 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
         } else {
             throw ddwaf::parsing_error("invalid type for matcher equals " + value_type);
         }
+    } else if (name == "geo_match") {
+        auto list = at<std::unordered_set<std::string>>(params, "list");
+        matcher = std::make_unique<matcher::geo_match>(list);
     } else {
         throw ddwaf::parsing_error("unknown matcher: " + std::string(name));
     }

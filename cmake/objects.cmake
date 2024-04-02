@@ -41,6 +41,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/matcher/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/ip_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/exact_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/geo_match.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/lowercase.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/compress_whitespace.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/normalize_path.cpp
@@ -87,6 +88,8 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/unicode_groups.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/rune.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/strutil.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/maxminddb/data-pool.c
+    ${libddwaf_SOURCE_DIR}/src/vendor/maxminddb/maxminddb.c
 )
 
 set(LIBDDWAF_PUBLIC_INCLUDES ${libddwaf_SOURCE_DIR}/include)
