@@ -124,44 +124,56 @@ protected:
     source_type source_;
 };
 
-class threshold_rule : public base_rule {
+class base_threshold_rule : public base_rule {
+public:
+    using cache_type = expression::cache_type;
+
+    base_threshold_rule(std::string id, std::string name,
+        std::unordered_map<std::string, std::string> tags, std::shared_ptr<expression> expr,
+        std::vector<std::string> actions = {}, bool enabled = true)
+        : base_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
+              std::move(actions), enabled)
+    {}
+    ~base_threshold_rule() override = default;
+    base_threshold_rule(const base_threshold_rule &) = delete;
+    base_threshold_rule &operator=(const base_threshold_rule &) = delete;
+    base_threshold_rule(base_threshold_rule &&rhs) noexcept = default;
+    base_threshold_rule &operator=(base_threshold_rule &&rhs) noexcept = default;
+
+    virtual std::optional<event> eval(const object_store &store, cache_type &cache,
+        monotonic_clock::time_point now, ddwaf::timer &deadline) = 0;
+};
+
+class threshold_rule : public base_threshold_rule {
 public:
     struct evaluation_criteria {
         std::size_t threshold;
         std::chrono::milliseconds period;
     };
 
-    using local_cache_type = expression::cache_type;
-    using global_cache_type = timed_counter_ms;
-
     threshold_rule(std::string id, std::string name,
         std::unordered_map<std::string, std::string> tags, std::shared_ptr<expression> expr,
         evaluation_criteria criteria, std::vector<std::string> actions = {}, bool enabled = true)
-        : base_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
+        : base_threshold_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
               std::move(actions), enabled),
-          criteria_(criteria)
+          criteria_(criteria), counter_(criteria_.period, criteria_.threshold * 2)
     {}
 
     ~threshold_rule() override = default;
     threshold_rule(const threshold_rule &) = delete;
     threshold_rule &operator=(const threshold_rule &) = delete;
-    threshold_rule(threshold_rule &&rhs) noexcept = default;
-    threshold_rule &operator=(threshold_rule &&rhs) noexcept = default;
+    threshold_rule(threshold_rule &&rhs) noexcept = delete;
+    threshold_rule &operator=(threshold_rule &&rhs) noexcept = delete;
 
-    std::optional<event> eval(const object_store &store, global_cache_type &gcache,
-        local_cache_type &lcache, ddwaf::timer &deadline) const;
-
-    global_cache_type init_global_cache() const
-    {
-        auto max_window_size = criteria_.threshold * 2;
-        return timed_counter_ms{criteria_.period, max_window_size};
-    }
+    std::optional<event> eval(const object_store &store, cache_type &cache,
+        monotonic_clock::time_point now, ddwaf::timer &deadline) override;
 
 protected:
     evaluation_criteria criteria_;
+    timed_counter_ts_ms counter_;
 };
 
-class indexed_threshold_rule : public base_rule {
+class indexed_threshold_rule : public base_threshold_rule {
 public:
     struct evaluation_criteria {
         std::string name;
@@ -170,34 +182,26 @@ public:
         std::chrono::milliseconds period;
     };
 
-    using local_cache_type = expression::cache_type;
-    using global_cache_type = indexed_timed_counter_ms;
-
     indexed_threshold_rule(std::string id, std::string name,
         std::unordered_map<std::string, std::string> tags, std::shared_ptr<expression> expr,
         evaluation_criteria criteria, std::vector<std::string> actions = {}, bool enabled = true)
-        : base_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
+        : base_threshold_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
               std::move(actions), enabled),
-          criteria_(std::move(criteria))
+          criteria_(std::move(criteria)), counter_(criteria_.period, 128, criteria_.threshold * 2)
     {}
 
     ~indexed_threshold_rule() override = default;
     indexed_threshold_rule(const indexed_threshold_rule &) = delete;
     indexed_threshold_rule &operator=(const indexed_threshold_rule &) = delete;
-    indexed_threshold_rule(indexed_threshold_rule &&rhs) noexcept = default;
-    indexed_threshold_rule &operator=(indexed_threshold_rule &&rhs) noexcept = default;
+    indexed_threshold_rule(indexed_threshold_rule &&rhs) noexcept = delete;
+    indexed_threshold_rule &operator=(indexed_threshold_rule &&rhs) noexcept = delete;
 
-    std::optional<event> eval(const object_store &store, global_cache_type &gcache,
-        local_cache_type &lcache, ddwaf::timer &deadline) const;
-
-    global_cache_type init_global_cache() const
-    {
-        auto max_window_size = criteria_.threshold * 2;
-        return indexed_timed_counter_ms{criteria_.period, 128, max_window_size};
-    }
+    std::optional<event> eval(const object_store &store, cache_type &cache,
+        monotonic_clock::time_point now, ddwaf::timer &deadline) override;
 
 protected:
     evaluation_criteria criteria_;
+    indexed_timed_counter_ts_ms counter_;
 };
 
 } // namespace ddwaf

@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "global_context.hpp"
 #include "indexer.hpp"
 #include "parameter.hpp"
 #include "parser/specification.hpp"
@@ -107,6 +108,9 @@ protected:
 
     // Actions
     std::shared_ptr<action_mapper> actions_;
+
+    // Global Context
+    std::shared_ptr<global_context> gctx_;
 };
 
 } // namespace ddwaf

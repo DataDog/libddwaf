@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 
 #include "utils.hpp"
@@ -20,10 +21,12 @@ namespace ddwaf {
 template <typename T>
 concept is_duration = std::is_same_v<std::chrono::duration<typename T::rep, typename T::period>, T>;
 
+// Perhaps this should use an std::chrono::time_point<T> instead
 template <typename T>
     requires is_duration<T>
 class timed_counter {
 public:
+    timed_counter() = default;
     explicit timed_counter(T period, std::size_t max_window_size = 100) : period_(period)
     {
         time_points_.resize(max_window_size);
@@ -85,9 +88,12 @@ public:
     void reset() { left = right = count = buckets = 0; }
 
 protected:
-    std::size_t increment(std::size_t value) const { return (value + 1) % time_points_.size(); }
+    [[nodiscard]] std::size_t increment(std::size_t value) const
+    {
+        return (value + 1) % time_points_.size();
+    }
 
-    std::size_t decrement(std::size_t value) const
+    [[nodiscard]] std::size_t decrement(std::size_t value) const
     {
         return (value + time_points_.size() - 1) % time_points_.size();
     }
@@ -97,7 +103,7 @@ protected:
         std::size_t count;
     };
 
-    std::chrono::milliseconds period_;
+    std::chrono::milliseconds period_{};
     std::vector<time_bucket> time_points_;
     std::size_t left{0};
     std::size_t right{0};
@@ -105,20 +111,58 @@ protected:
     std::size_t buckets{0};
 };
 
-template <typename Key, typename Duration>
-    requires is_duration<Duration>
-class indexed_timed_counter {
+template <typename T>
+    requires is_duration<T>
+class timed_counter_ts : protected timed_counter<T> {
 public:
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    explicit indexed_timed_counter(
-        Duration period, std::size_t max_index_size = 32, std::size_t max_window_size = 100)
-        : period_(period), max_index_size_(max_index_size), max_window_size_(max_window_size)
+    timed_counter_ts() = default;
+    explicit timed_counter_ts(T period, std::size_t max_window_size = 100)
+        : timed_counter<T>(period, max_window_size)
+    {}
+    std::size_t add_timepoint_and_count(T point)
     {
-        index_.reserve(max_index_size_);
+        std::lock_guard<std::mutex> lock(mtx_);
+        return timed_counter<T>::add_timepoint_and_count(point);
     }
 
-    std::size_t add_timepoint_and_count(Key key, Duration point)
+    T last_timepoint() const
     {
+        std::lock_guard<std::mutex> lock(mtx_);
+        return timed_counter<T>::last_timepoint();
+    }
+
+    std::size_t update_count(T point)
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        return timed_counter<T>::update_count(point);
+    }
+
+    void reset()
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        timed_counter<T>::reset();
+    }
+
+protected:
+    mutable std::mutex mtx_;
+};
+
+template <typename Key, typename Duration>
+    requires is_duration<Duration>
+class indexed_timed_counter_ts {
+public:
+    indexed_timed_counter_ts() = default;
+    explicit indexed_timed_counter_ts(
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        Duration period, std::size_t max_index_size = 32, std::size_t max_window_size = 100)
+        : period_(period), max_index_size_(max_index_size), max_window_size_(max_window_size)
+    {}
+
+    template <typename T>
+        requires std::is_constructible_v<T, Key>
+    std::size_t add_timepoint_and_count(T key, Duration point)
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
         auto it = index_.find(key);
         if (it == index_.end()) {
             if (index_.size() == max_index_size_) {
@@ -126,7 +170,7 @@ public:
             }
 
             auto [new_it, res] =
-                index_.emplace(key, timed_counter<Duration>{period_, max_window_size_});
+                index_.emplace(Key{key}, timed_counter<Duration>{period_, max_window_size_});
             if (!res) {
                 return 0;
             }
@@ -157,12 +201,14 @@ protected:
     }
 
     Duration period_;
-    std::size_t max_index_size_;
-    std::size_t max_window_size_;
-    std::unordered_map<Key, timed_counter<Duration>> index_;
+    std::size_t max_index_size_{};
+    std::size_t max_window_size_{};
+    std::map<Key, timed_counter<Duration>, std::less<>> index_;
+    mutable std::mutex mtx_;
 };
 
-using timed_counter_ms = timed_counter<std::chrono::milliseconds>;
-using indexed_timed_counter_ms = indexed_timed_counter<std::string, std::chrono::milliseconds>;
+using timed_counter_ts_ms = timed_counter_ts<std::chrono::milliseconds>;
+using indexed_timed_counter_ts_ms =
+    indexed_timed_counter_ts<std::string, std::chrono::milliseconds>;
 
 } // namespace ddwaf

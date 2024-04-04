@@ -14,23 +14,22 @@ namespace ddwaf {
 
 class global_context {
 public:
-    using local_cache_type = std::unordered_map<base_rule*, expression::cache_type>;
+    using cache_type = std::unordered_map<base_threshold_rule *, base_threshold_rule::cache_type>;
 
-    global_context() = default;
+    explicit global_context(std::vector<std::unique_ptr<base_threshold_rule>> rules)
+        : rules_(std::move(rules))
+    {}
     global_context(const global_context &) = delete;
     global_context &operator=(const global_context &) = delete;
     global_context(global_context &&) = default;
     global_context &operator=(global_context &&) = delete;
     ~global_context() = default;
 
-    void eval(std::vector<event> &events, const object_store &store,
-        local_cache_type &lcache, ddwaf::timer &deadline) const;
+    void eval(std::vector<event> &events, const object_store &store, cache_type &lcache,
+        ddwaf::timer &deadline);
 
 protected:
-    using global_cache_variants = std::variant<threshold_rule::global_cache_type, indexed_threshold_rule::global_cache_type>;
-
-    std::vector<std::shared_ptr<base_rule>> rules_;
-    std::unordered_map<base_rule*, global_cache_variants> rule_cache_{};
+    std::vector<std::unique_ptr<base_threshold_rule>> rules_;
 };
 
-}
+} // namespace ddwaf
