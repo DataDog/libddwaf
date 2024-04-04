@@ -148,7 +148,7 @@ class threshold_rule : public base_threshold_rule {
 public:
     struct evaluation_criteria {
         std::size_t threshold;
-        std::chrono::milliseconds period;
+        std::chrono::milliseconds period{};
     };
 
     threshold_rule(std::string id, std::string name,

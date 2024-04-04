@@ -14,6 +14,7 @@
 #include "collection.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "global_context.hpp"
 #include "obfuscator.hpp"
 #include "processor.hpp"
 #include "rule.hpp"
@@ -152,6 +153,8 @@ struct ruleset {
 
     // Root addresses, lazily computed
     std::vector<const char *> root_addresses;
+
+    std::shared_ptr<global_context> gcontext;
 };
 
 } // namespace ddwaf
