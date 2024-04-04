@@ -23,6 +23,7 @@ TEST(TestTimedCounter, BasicMs)
     EXPECT_EQ(window.add_timepoint_and_count(14ms), 4);
     EXPECT_EQ(window.add_timepoint_and_count(15ms), 5);
     EXPECT_EQ(window.add_timepoint_and_count(16ms), 5);
+
     EXPECT_EQ(window.add_timepoint_and_count(17ms), 5);
     EXPECT_EQ(window.add_timepoint_and_count(18ms), 5);
     EXPECT_EQ(window.add_timepoint_and_count(19ms), 5);

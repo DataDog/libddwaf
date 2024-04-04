@@ -7,7 +7,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <utility>
 
 #include "context_allocator.hpp"
@@ -16,8 +15,6 @@
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
-#include "obfuscator.hpp"
-#include "rule.hpp"
 #include "ruleset.hpp"
 #include "utils.hpp"
 

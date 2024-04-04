@@ -32,56 +32,77 @@ public:
     std::size_t add_timepoint_and_count(T point)
     {
         // Discard old elements
-        auto window_begin = point - period_;
-        while (count > 0 && time_points_[left] <= window_begin) {
-            left = (left + 1) % time_points_.size();
-            count -= 1;
+        update_count(point);
+
+        // Check if the latest element is beyond the current one (concurrent writers)
+        auto index = decrement(right);
+        if (buckets > 0 && time_points_[index].point > point) {
+            ++time_points_[index].count;
+            return ++count;
         }
 
-        if (count < time_points_.size()) {
+        if (buckets < time_points_.size()) {
             // Add a new element
-            time_points_[right] = point;
-            right = (right + 1) % time_points_.size();
-            count += 1;
-        } else if (count == time_points_.size()) {
+            time_points_[right].point = point;
+            time_points_[right].count = 1;
+            right = increment(right);
+            ++count;
+            ++buckets;
+        } else if (buckets == time_points_.size()) {
             // Discard the oldest one
-            time_points_[right] = point;
-            right = (right + 1) % time_points_.size();
-            left = (left + 1) % time_points_.size();
+            time_points_[right].point = point;
+            count -= (time_points_[right].count - 1);
+            time_points_[right].count = 1;
+            right = increment(right);
+            left = increment(left);
         }
 
         return count;
     }
 
-    T last_timepoint()
+    T last_timepoint() const
     {
-        if (count == 0) {
+        if (buckets == 0) {
             [[unlikely]] return static_cast<T>(0);
         }
 
-        auto index = (right + time_points_.size() - 1) % time_points_.size();
-        return time_points_[index];
+        auto index = decrement(right);
+        return time_points_[index].point;
     }
 
-    T update_count(T point)
+    std::size_t update_count(T point)
     {
         // Discard old elements
         auto window_begin = point - period_;
-        while (count > 0 && time_points_[left] <= window_begin) {
-            left = (left + 1) % time_points_.size();
-            count -= 1;
+        while (buckets > 0 && time_points_[left].point <= window_begin) {
+            count -= time_points_[left].count;
+            --buckets;
+            left = increment(left);
         }
         return count;
     }
 
-    void reset() { left = right = count = 0; }
+    void reset() { left = right = count = buckets = 0; }
 
 protected:
+    std::size_t increment(std::size_t value) const { return (value + 1) % time_points_.size(); }
+
+    std::size_t decrement(std::size_t value) const
+    {
+        return (value + time_points_.size() - 1) % time_points_.size();
+    }
+
+    struct time_bucket {
+        T point;
+        std::size_t count;
+    };
+
     std::chrono::milliseconds period_;
-    std::vector<T> time_points_;
+    std::vector<time_bucket> time_points_;
     std::size_t left{0};
     std::size_t right{0};
     std::size_t count{0};
+    std::size_t buckets{0};
 };
 
 template <typename Key, typename Duration>
