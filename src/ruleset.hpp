@@ -154,7 +154,7 @@ struct ruleset {
     // Root addresses, lazily computed
     std::vector<const char *> root_addresses;
 
-    std::shared_ptr<global_context> gcontext;
+    std::shared_ptr<global_context> gctx;
 };
 
 } // namespace ddwaf

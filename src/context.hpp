@@ -86,6 +86,8 @@ protected:
 
     // Cache of collections to avoid processing once a result has been obtained
     memory::unordered_map<std::string_view, collection::cache_type> collection_cache_{};
+
+    global_context::cache_type gctx_cache_{};
 };
 
 class context_wrapper {

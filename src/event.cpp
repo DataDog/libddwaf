@@ -63,7 +63,7 @@ void serialize_match(const condition_match &match, ddwaf_object &match_map, auto
     }
 
     // Scalar case
-    if (match.args.size() == 1 || match.args[0].name == "input") {
+    if (match.args.size() == 1 && match.args[0].name == "input") {
         const auto &arg = match.args[0];
 
         ddwaf_object key_path;

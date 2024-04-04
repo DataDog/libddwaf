@@ -53,6 +53,7 @@ protected:
         processors = 32,
         scanners = 64,
         actions = 128,
+        global_rules = 256,
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);

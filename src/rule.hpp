@@ -156,7 +156,8 @@ public:
         evaluation_criteria criteria, std::vector<std::string> actions = {}, bool enabled = true)
         : base_threshold_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
               std::move(actions), enabled),
-          criteria_(criteria), counter_(criteria_.period, criteria_.threshold * 2)
+          criteria_(criteria), counter_(criteria_.period, criteria_.threshold * 2),
+          threshold_str_(to_string<std::string>(criteria_.threshold))
     {}
 
     ~threshold_rule() override = default;
@@ -171,6 +172,7 @@ public:
 protected:
     evaluation_criteria criteria_;
     timed_counter_ts_ms counter_;
+    std::string threshold_str_;
 };
 
 class indexed_threshold_rule : public base_threshold_rule {
@@ -187,7 +189,8 @@ public:
         evaluation_criteria criteria, std::vector<std::string> actions = {}, bool enabled = true)
         : base_threshold_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
               std::move(actions), enabled),
-          criteria_(std::move(criteria)), counter_(criteria_.period, 128, criteria_.threshold * 2)
+          criteria_(std::move(criteria)), counter_(criteria_.period, 128, criteria_.threshold * 2),
+          threshold_str_(to_string<std::string>(criteria_.threshold))
     {}
 
     ~indexed_threshold_rule() override = default;
@@ -202,6 +205,7 @@ public:
 protected:
     evaluation_criteria criteria_;
     indexed_timed_counter_ts_ms counter_;
+    std::string threshold_str_;
 };
 
 } // namespace ddwaf

@@ -13,6 +13,7 @@ void global_context::eval(std::vector<event> &events, const object_store &store,
 {
     auto timepoint = monotonic_clock::now();
 
+    DDWAF_DEBUG("Evaluating global rules");
     for (const auto &rule : rules_) {
         auto cache_it = cache.find(rule.get());
         if (cache_it == cache.end()) {

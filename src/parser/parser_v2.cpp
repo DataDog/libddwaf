@@ -483,7 +483,7 @@ void add_addresses_to_info(const address_container &addresses, base_section_info
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-std::unique_ptr<base_threshold_rule> parse_threshold_rule(
+std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
     std::string id, parameter::map &rule, parameter::map &criteria_map, const object_limits &limits)
 {
     std::vector<transformer_id> rule_transformers;
@@ -491,7 +491,7 @@ std::unique_ptr<base_threshold_rule> parse_threshold_rule(
     auto transformers = at<parameter::vector>(rule, "transformers", {});
     rule_transformers = parse_transformers(transformers, data_source);
 
-    auto conditions_array = at<parameter::vector>(rule, "conditions");
+    auto conditions_array = at<parameter::vector>(rule, "conditions", {});
 
     address_container addresses;
     auto expr = parse_simplified_expression(conditions_array, addresses, limits);
@@ -520,7 +520,7 @@ std::unique_ptr<base_threshold_rule> parse_threshold_rule(
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
+std::unique_ptr<base_threshold_rule> parse_threshold_rule(
     std::string id, parameter::map &rule, parameter::map &criteria_map, const object_limits &limits)
 {
     std::vector<transformer_id> rule_transformers;
@@ -528,7 +528,7 @@ std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
     auto transformers = at<parameter::vector>(rule, "transformers", {});
     rule_transformers = parse_transformers(transformers, data_source);
 
-    auto conditions_array = at<parameter::vector>(rule, "conditions");
+    auto conditions_array = at<parameter::vector>(rule, "conditions", {});
 
     address_container addresses;
     auto expr = parse_simplified_expression(conditions_array, addresses, limits);
