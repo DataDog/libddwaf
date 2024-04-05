@@ -8,6 +8,7 @@
 #include <cstring>
 #include <string_view>
 
+#include "log.hpp"
 #include "matcher/geo_match_mmdb.hpp"
 
 namespace ddwaf::matcher {
@@ -65,6 +66,10 @@ std::string get_country_from_entry(MMDB_entry_data_list_s *entry)
 std::pair<bool, std::string> geo_match_mmdb::match_impl(std::string_view str) const
 {
     std::array<char, INET6_ADDRSTRLEN> ip_cstr{0};
+    if (str.empty() || str.size() > INET6_ADDRSTRLEN) {
+        return {false, {}};
+    }
+
     memcpy(ip_cstr.data(), str.data(), str.size());
 
     int gai_error;
@@ -82,6 +87,7 @@ std::pair<bool, std::string> geo_match_mmdb::match_impl(std::string_view str) co
     }
 
     auto country = get_country_from_entry(entry_data_list);
+    DDWAF_DEBUG("Country found: {}", country);
     MMDB_free_entry_data_list(entry_data_list);
     if (countries_.contains(country)) {
         return {true, std::string{country}};
