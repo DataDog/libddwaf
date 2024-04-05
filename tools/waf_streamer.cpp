@@ -52,6 +52,8 @@ auto parse_args(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+    //ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
+
     auto args = parse_args(argc, argv);
 
     std::string ruleset = args["--ruleset"];
@@ -62,7 +64,7 @@ int main(int argc, char *argv[])
 
     auto rule = YAML::Load(read_file(ruleset)).as<ddwaf_object>();
     const ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
-    auto handle = ddwaf_init(&rule, &config, nullptr);
+    auto *handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
     if (handle == nullptr) {
         std::cout << "Failed to load " << ruleset << '\n';

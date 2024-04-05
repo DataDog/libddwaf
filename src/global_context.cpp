@@ -23,7 +23,7 @@ void global_context::eval(std::vector<event> &events, const object_store &store,
             }
             cache_it = new_it;
         }
-
+        DDWAF_DEBUG("Evaluating rule {}", rule->get_id());
         auto opt_evt = rule->eval(store, cache_it->second, timepoint, deadline);
         if (opt_evt.has_value()) {
             events.emplace_back(std::move(opt_evt.value()));

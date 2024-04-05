@@ -47,7 +47,8 @@ public:
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
-    std::vector<event> eval_rules(const exclusion::context_policy &policy, ddwaf::timer &deadline);
+    void eval_rules(std::vector<event> &events, const exclusion::context_policy &policy,
+        ddwaf::timer &deadline);
 
 protected:
     bool is_first_run() const { return collection_cache_.empty(); }
