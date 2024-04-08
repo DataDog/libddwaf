@@ -6,14 +6,14 @@
 
 In order to support non-blocking actions, and specifically those with dynamic parameters, a number changes have been introduced in this version.
 
-The first change introduced is that users must now provide action definitions during the initialisation or update process. This information is used internally to understand the nature of an action and, more specifically, the nature of the side-effects of a rule. While this version doesn't yet take advantage of this information for scheduling, it does so in order to dynamically generate stack IDs when the `stack_trace` action is produced by a rule. As a reminder, actions definitions have the following rough schema:
+The first change introduced is that users must now provide action definitions during the initialisation or update process. This information is used internally to understand the nature of an action and, more specifically, the nature of the side-effects of a rule. While this version doesn't yet take advantage of this information for rule scheduling, it does so in order to dynamically generate stack IDs when the `stack_trace` action is produced by a rule. As a reminder, action definitions have the following rough schema:
 
 ```json
 {
   "actions": [{
-    "id": <id: string>,
-    "type": <type: string>,
-    "parameters": { <kv map of parameters> }
+    "id": "<id: string>",
+    "type": "<type: string>",
+    "parameters": { "<kv map of parameters>" }
   }]
 }
 ```
@@ -30,21 +30,21 @@ Secondly, since the definition of each action is now available internally, the s
 ```
 
 This means the caller no longer has to translate action IDs to their relevant definition and any blocking action conflicts are resolved internally following a simple set of rules:
-- When multiple actions of the same type are present, the first one seen has precedence.
-- An action of type`redirect_request` has priority over an action of `block_request` type.
+- When multiple actions of the same type are present, the first one produced has precedence.
+- An action of type`redirect_request` has priority over an action of type `block_request`.
 
 In addition, specific action types can now have dynamic parameters, such as the `generate_stack` action type, which requires the inclusion of a stack trace UUID in both the action parameters and the relevant event:
 
 ```json
 {
-  "generate_stack: {
+  "generate_stack": {
     "stack_id": "f96a33a2-f5c1-11ee-99aa-9bdcccee26aa"
   }
 }
 ```
 
 Finally the following set of default actions are included:
-- ``block`: of type block_request`, requires the caller to block the request and provides the following default parameters:
+- `block`: of type `block_request`, requires the caller to block the request and provides the following default parameters:
     - `status_code`: `403`
     - `type`: `auto`
     - `grpc_status_code`: `10`
