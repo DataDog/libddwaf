@@ -162,7 +162,9 @@ struct _ddwaf_result
     bool timeout;
     /** Array of events generated, this is guaranteed to be an array **/
     ddwaf_object events;
-    /** Array of actions generated, this is guaranteed to be an array **/
+    /** Map of actions generated, this is guaranteed to be a map in the format:
+     * {action type: { <parameter map> }, ...}
+     **/
     ddwaf_object actions;
     /** Map containing all derived objects in the format (address, value) **/
     ddwaf_object derivatives;
