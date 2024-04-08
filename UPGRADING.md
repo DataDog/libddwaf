@@ -48,7 +48,7 @@ Finally the following set of default actions are included:
     - `status_code`: `403`
     - `type`: `auto`
     - `grpc_status_code`: `10`
-- `stack_trace`: of type `generate_stack`, requires the user to generate a stack trace with the provided UUID in the `stack_id` parameter.
+- `stack_trace`: of type `generate_stack`, requires the user to generate a stack trace with the UUID provided in the `stack_id` parameter.
 - `extract_schema`: of type `generate_schema`, instructs the user to call the WAF again with the relevant parameters required for schema generation.
 - `monitor`: an internal reserved action.
 
