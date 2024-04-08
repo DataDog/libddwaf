@@ -1,5 +1,11 @@
 # Upgrading libddwaf
 
+## Upgrading from `1.16.x` to `1.17.0`
+
+### Action semantics
+
+#### Default actionns
+
 ## Upgrading from `1.14.0` to `1.15.0`
 
 ### Interface changes

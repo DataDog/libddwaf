@@ -1,6 +1,6 @@
 [![Build](https://github.com/DataDog/libddwaf/actions/workflows/build.yml/badge.svg)](https://github.com/DataDog/libddwaf/actions/workflows/build.yml)
 
-# Datadog's WAF
+# Datadog's WAF & RASP Engine
 
 ``libddwaf`` is Datadog's implementation of a Web Application Firewall (WAF) engine, with a goal of low performance and memory overhead, and embeddability in a wide variety of language runtimes through a C API.
 
@@ -105,7 +105,7 @@ int main()
     }
 
     ddwaf_context context = ddwaf_context_init(handle);
-    if (handle == nullptr) {
+    if (context == nullptr) {
         ddwaf_destroy(handle);
         return EXIT_FAILURE;
     }

@@ -185,7 +185,7 @@ int main()
     }
 
     ddwaf_context context = ddwaf_context_init(handle);
-    if (handle == nullptr) {
+    if (context == nullptr) {
         ddwaf_destroy(handle);
         return EXIT_FAILURE;
     }
