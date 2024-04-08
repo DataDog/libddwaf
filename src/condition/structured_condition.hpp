@@ -76,7 +76,7 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
 
     if constexpr (std::is_same_v<T, bool>) {
         if (obj->type == DDWAF_OBJ_BOOL) {
-            return static_cast<T>(obj->intValue);
+            return static_cast<T>(obj->boolean);
         }
     }
 

@@ -1,4 +1,10 @@
 # libddwaf release
+### v1.17.0-alpha3 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Action semantics and related improvements ([#277](https://github.com/DataDog/libddwaf/pull/277))
+
+#### Miscellaneous
+- LFI detector fuzzer ([#274](https://github.com/DataDog/libddwaf/pull/274))
 
 ### v1.17.0-alpha2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
