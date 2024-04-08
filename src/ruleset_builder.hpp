@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "global_context.hpp"
 #include "indexer.hpp"
 #include "parameter.hpp"
 #include "parser/specification.hpp"
@@ -52,6 +53,7 @@ protected:
         processors = 32,
         scanners = 64,
         actions = 128,
+        global_rules = 256,
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
@@ -107,6 +109,9 @@ protected:
 
     // Actions
     std::shared_ptr<action_mapper> actions_;
+
+    // Global Context
+    std::shared_ptr<global_context> gctx_;
 };
 
 } // namespace ddwaf

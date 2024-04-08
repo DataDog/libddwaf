@@ -50,5 +50,8 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
 std::shared_ptr<action_mapper> parse_actions(
     parameter::vector &actions_array, base_section_info &info);
 
+std::shared_ptr<global_context> parse_global_rules(
+    parameter::vector &rule_array, base_section_info &info, const object_limits &limits);
+
 } // namespace v2
 } // namespace ddwaf::parser

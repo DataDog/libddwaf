@@ -5,7 +5,7 @@ foreach(TOOL ${LIBDDWAF_TOOL_SOURCE})
     get_filename_component(TOOL_NAME ${TOOL} NAME_WLE)
 
     add_executable(${TOOL_NAME} ${TOOL} ${LIBDDWAF_TOOL_COMMON_SOURCE})
-    target_link_libraries(${TOOL_NAME} PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson)
+    target_link_libraries(${TOOL_NAME} PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson readline)
     target_include_directories(${TOOL_NAME} PRIVATE ${LIBDDWAF_PRIVATE_INCLUDES})
 
     set_target_properties(${TOOL_NAME} PROPERTIES
