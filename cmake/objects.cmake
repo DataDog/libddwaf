@@ -1,4 +1,5 @@
 reflex_target(sql_tokenizer ${libddwaf_SOURCE_DIR}/src/sql_tokenizer.l sql_tokenizer.cpp)
+reflex_target(mysql_tokenizer ${libddwaf_SOURCE_DIR}/src/mysql_tokenizer.l mysql_tokenizer.cpp)
 
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/ruleset_builder.cpp
@@ -108,6 +109,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/reflex/unicode.cpp
     ${libddwaf_SOURCE_DIR}/src/vendor/reflex/utf8.cpp
     ${REFLEX_sql_tokenizer_OUTPUT}
+    ${REFLEX_mysql_tokenizer_OUTPUT}
 )
 
 set(LIBDDWAF_PUBLIC_INCLUDES ${libddwaf_SOURCE_DIR}/include)
@@ -130,7 +132,7 @@ function(gen_objects target_name)
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
         POSITION_INDEPENDENT_CODE 1)
-    add_dependencies(${target_name} reflex_gen_sql_tokenizer)
+    add_dependencies(${target_name} reflex_gen_sql_tokenizer reflex_gen_mysql_tokenizer)
 
     if(NOT STDLIB_MAP_RECURSIVE)
         target_compile_definitions(${target_name} PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)

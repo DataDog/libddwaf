@@ -135,4 +135,5 @@ inline std::ostream &operator<<(std::ostream &os, sql_token_type type)
 }
 std::vector<sql_token> sql_tokenize(std::string_view resource, sql_flavour flavour);
 
+std::vector<sql_token> mysql_tokenize(std::string_view resource, sql_flavour /*flavour*/);
 } // namespace ddwaf

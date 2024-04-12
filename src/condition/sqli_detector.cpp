@@ -285,7 +285,12 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         }
 
         if (resource_tokens.empty()) {
-            resource_tokens = sql_tokenize(resource, flavour);
+            if (flavour == sql_flavour::mysql) {
+                resource_tokens = mysql_tokenize(resource, flavour);
+            } else {
+                resource_tokens = sql_tokenize(resource, flavour);
+            }
+
             if (resource_tokens.empty()) {
                 return sqli_error::invalid_sql;
             }

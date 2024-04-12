@@ -11,8 +11,8 @@
 }
 
 %option fast freespace unicode
-%option lexer=sql_tokenizer
-%option namespace=ddwaf::sql
+%option lexer=mysql_tokenizer
+%option namespace=ddwaf::mysql
 
 %class{
     public:
@@ -74,11 +74,11 @@ bitwise_operator            \||&|<<|>>|\+|-|\*|\/|DIV|MOD|%|\^
 
 namespace ddwaf {
 
-std::vector<sql_token> sql_tokenize(std::string_view resource, sql_flavour /*flavour*/)
+std::vector<sql_token> mysql_tokenize(std::string_view resource, sql_flavour /*flavour*/)
 {
     null_ostream nos;
     reflex::Input input(resource.data(), resource.size());
-    sql::sql_tokenizer lexer(input, nos);
+    mysql::mysql_tokenizer lexer(input, nos);
     lexer.lex();
     return lexer.get_tokens();
 }
