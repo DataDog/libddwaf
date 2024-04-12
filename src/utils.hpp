@@ -302,4 +302,11 @@ template <class T> const null_ostream &operator<<(null_ostream &os, const T & /*
     return os;
 }
 
+inline bool string_iequals(std::string_view left, std::string_view right)
+{
+    return left.size() == right.size() &&
+           std::equal(left.begin(), left.end(), right.begin(),
+               [](char l, char r) { return tolower(l) == tolower(r); });
+}
+
 } // namespace ddwaf

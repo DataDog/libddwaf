@@ -90,6 +90,23 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/unicode_groups.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/rune.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/strutil.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/block_scripts.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/composer.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/convert.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/debug.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/error.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/input.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/language_scripts.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/letter_scripts.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/matcher_avx2.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/matcher_avx512bw.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/matcher.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/pattern.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/posix.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/simd_avx2.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/simd_avx512bw.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/unicode.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/reflex/utf8.cpp
     ${REFLEX_sql_tokenizer_OUTPUT}
 )
 
@@ -103,7 +120,6 @@ set(LIBDDWAF_PRIVATE_INCLUDES
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/
     ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/
-    ${REFLEX_INCLUDE_DIR}
 )
 
 function(gen_objects target_name)

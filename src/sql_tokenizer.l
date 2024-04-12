@@ -30,6 +30,7 @@
 }
 
 command                     [a-zA-Z_][a-zA-Z_0-9]*
+eol_comment                 (--|#).*
 utf8command                 [\u{0080}-\u{FFFF}a-zA-Z_][\u{0080}-\u{FFFF}a-zA-Z_0-9$]*
 hex                         0x[0-9a-fA-F]+
 number                      [-+]*(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?\b
@@ -46,11 +47,11 @@ double_quoted_string        \"(\\\"|[^\"])*\"
 single_quoted_string        '(\\'|[^'])*'
 back_quoted_string          `(\\`|[^`])*`
 inline_comment              \/\*.*\*\/
-binary_operator             @@|@>|<@|\+|-|\/|~|<=>|<>|!=|<=|=|>=|<|>|:=|%|!|NOT|OR|XOR|\|\||AND|IS|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL
+binary_operator             (?i)(@@|@>|<@|\+|-|\/|~|<=>|<>|!=|<=|=|>=|<|>|:=|%|!|NOT|OR|XOR|\|\||AND|IS|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL)
 bitwise_operator            \||&|<<|>>|\+|-|\*|\/|DIV|MOD|%|\^
-eol_comment                 --.*
 %%
 {whitespace}           { /* Ignore Whitespaces */ }
+{eol_comment}          { set_token(sql_token_type::eol_comment); }
 {binary_operator}      { set_token(sql_token_type::binary_operator); }
 {number}               { set_token(sql_token_type::number); }
 {bitwise_operator}     { set_token(sql_token_type::bitwise_operator); }
@@ -68,7 +69,6 @@ eol_comment                 --.*
 {dot}                  { set_token(sql_token_type::dot); }
 {inline_comment}       { set_token(sql_token_type::inline_comment); }
 {semicolon}            { set_token(sql_token_type::query_end); }
-{eol_comment}          { set_token(sql_token_type::eol_comment); }
 {utf8command}          { set_token(sql_token_type::command); }
 %%
 

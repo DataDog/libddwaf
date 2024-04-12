@@ -41,10 +41,10 @@ ExternalProject_Add(proj_reflex
                      ${REFLEX_EXECUTABLE}
 )
 
-add_library(libreflex STATIC IMPORTED GLOBAL)
-set_target_properties(libreflex PROPERTIES  IMPORTED_LOCATION ${REFLEX_STATIC_LIB})
-target_include_directories(libreflex INTERFACE ${REFLEX_INCLUDE_DIR})
-add_dependencies(libreflex proj_reflex)
+#add_library(libreflex STATIC IMPORTED GLOBAL)
+#set_target_properties(libreflex PROPERTIES  IMPORTED_LOCATION ${REFLEX_STATIC_LIB})
+#target_include_directories(libreflex INTERFACE ${REFLEX_INCLUDE_DIR})
+#add_dependencies(libreflex proj_reflex)
 
 macro(reflex_target target input output)
     if(NOT IS_ABSOLUTE "${input}")
