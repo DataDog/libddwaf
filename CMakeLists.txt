@@ -31,7 +31,7 @@ option(LIBDDWAF_BUILD_SHARED "Build shared library" ON)
 option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
 option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
-option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" ON)
+option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" OFF)
 option(LIBDDWAF_ENABLE_LTO "Enable link-time optimisation" OFF)
 
 if(NOT MSVC)
