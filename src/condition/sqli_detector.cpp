@@ -74,7 +74,7 @@ public:
             }
 
             current_state = State::Invalid;
-             //std::cout << "Current token: " << current_token->str << std::endl;
+            // std::cout << "Current token: " << current_token->str << std::endl;
             for (const auto &[next_state, metadata] : it->second) {
                 if (next_state == State::End) {
                     if (current_token == tokens.end()) {
@@ -85,7 +85,8 @@ public:
                 }
 
                 if (comp(metadata, *current_token)) {
-                     //std::cout << "State found: " << (int)next_state << " ? " << (int)State::End << std::endl;
+                    // std::cout << "State found: " << (int)next_state << " ? " << (int)State::End
+                    // << std::endl;
                     current_state = next_state;
                     current_token++;
                     break;
@@ -93,7 +94,7 @@ public:
             }
 
             if (current_state == State::Invalid) {
-                //std::cout << "State false!!\n";
+                // std::cout << "State false!!\n";
                 return false;
             }
         }
@@ -139,7 +140,8 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     auto middle_token = param_tokens[1];
     std::cout << "Middle token : " << middle_token.type << std::endl;
     if (middle_token.type != sql_token_type::binary_operator) {
-        static std::unordered_set<std::string_view> or_ops{"or", "||", "xor", "OR", "XOR", "oR", "Or"};
+        static std::unordered_set<std::string_view> or_ops{
+            "or", "||", "xor", "OR", "XOR", "oR", "Or"};
         std::cout << "OP : " << middle_token.str << '\n';
         return or_ops.contains(middle_token.str);
     }
@@ -221,7 +223,7 @@ bool contains_harmful_tokens(const std::span<sql_token> &tokens)
         auto t = token.type;
         if (t != sql_token_type::comma && t != sql_token_type::parenthesis_close &&
             t != sql_token_type::parenthesis_open && t != sql_token_type::number &&
-            t != sql_token_type::hex && t != sql_token_type::single_quoted_string &&
+            t != sql_token_type::single_quoted_string &&
             t != sql_token_type::double_quoted_string) {
             return true;
         }
@@ -265,6 +267,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
+    sql_tokenizer tokenizer(resource);
     static constexpr std::size_t min_str_len = 4;
 
     object::kv_iterator it(&params, {}, objects_excluded, limits);
@@ -274,7 +277,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         }
 
         const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING) {// || param.nbEntries < min_str_len) {
+        if (param.type != DDWAF_OBJ_STRING) { // || param.nbEntries < min_str_len) {
             continue;
         }
 
@@ -285,11 +288,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         }
 
         if (resource_tokens.empty()) {
-            if (flavour == sql_flavour::mysql) {
-                resource_tokens = mysql_tokenize(resource, flavour);
-            } else {
-                resource_tokens = sql_tokenize(resource, flavour);
-            }
+            resource_tokens = tokenizer.tokenize();
 
             if (resource_tokens.empty()) {
                 return sqli_error::invalid_sql;
@@ -303,15 +302,16 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         }
 
         for (auto token : param_tokens) {
-            std::cout << "Token: " << token.type << " - " << token.str <<  '\n';
+            std::cout << "Token: " << token.type << " - " << token.str << '\n';
         }
         bool harmful = contains_harmful_tokens(param_tokens);
         DDWAF_DEBUG("Contains harmful {}", harmful);
-        bool benign_order_by = !is_benign_order_by_clause(resource_tokens, param_tokens, param_tokens_begin);
+        bool benign_order_by =
+            !is_benign_order_by_clause(resource_tokens, param_tokens, param_tokens_begin);
         DDWAF_DEBUG("Is Benign order by {}", benign_order_by);
         bool tautology = is_where_tautology(resource_tokens, param_tokens, param_tokens_begin);
         DDWAF_DEBUG("Is where tautology {}", tautology);
-        bool query_comment =  is_query_comment(param_tokens);
+        bool query_comment = is_query_comment(param_tokens);
         DDWAF_DEBUG("Query comment {}", query_comment);
 
         if ((contains_harmful_tokens(param_tokens) &&

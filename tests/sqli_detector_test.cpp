@@ -20,13 +20,15 @@ template <typename... Args> std::vector<parameter_definition> gen_param_def(Args
 
 TEST(TestSQLIDetector, Injections)
 {
-    sqli_detector cond{{gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
 
     std::vector<std::pair<std::string, std::string>> samples{
         {R"(SELECT * FROM users ORDER BY 1.col, 2, "str")", R"(1.col, 2, "str")"},
         {R"(SELECT * FROM ships WHERE name LIKE '%neb%'")", R"(SELECT * FROM ships WHERE)"},
-        {"\n                SELECT id, author, title, body, created_at\n                FROM posts WHERE id = 1 OR 1 = 1", "1 OR 1 = 1"}
-    };
+        {"\n                SELECT id, author, title, body, created_at\n                FROM posts "
+         "WHERE id = 1 OR 1 = 1",
+            "1 OR 1 = 1"}};
 
     for (const auto &[path, input] : samples) {
         ddwaf_object tmp;
@@ -62,24 +64,25 @@ TEST(TestSQLIDetector, Injections)
 
 TEST(TestSQLIDetector, Tautologies)
 {
-    sqli_detector cond{{gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
 
     std::vector<std::pair<std::string, std::string>> samples{
         {"SELECT x FROM t WHERE id = 1 OR 1", "1 OR 1"},
-    {"SELECT x FROM t WHERE id = 1 OR tbl",     "1 OR tbl"},
-    {"SELECT x FROM t WHERE id = tbl OR tbl",   "tbl OR tbl"},
-    {"SELECT x FROM t WHERE id = tbl OR tbl",   "tbl OR tbl"},
-    {R"(SELECT x FROM t WHERE id = ""OR"")",       R"("OR")"},
-    {"SELECT x FROM t WHERE id = ''OR''", "'OR'"},
-    {"SELECT x FROM t WHERE id = 1||tbl",       "1||tbl"},
-    {"SELECT x FROM t WHERE id = tbl||tbl",     "tbl||tbl"},
-    {R"(SELECT x FROM t WHERE id = ""||"")",       R"("||")"},
-    {"SELECT x FROM t WHERE id = 1 XOR 1",      "1 XOR 1"},
-    {R"(SELECT x FROM t WHERE id = tbl XOR tbl)",  "tbl XOR tbl"},
-    {R"(SELECT x FROM t WHERE id = ""XOR"")",      R"("XOR")"},
-    {"SELECT x FROM t WHERE id = ''Or''",       "'Or'"},
-    {"SELECT x FROM t WHERE id = '1' or 1 = 1",       "1 = 1"},
-    {"SELECT x FROM t WHERE id = '1' or 1 = '1'",       "1 = '1'"}};
+        {"SELECT x FROM t WHERE id = 1 OR tbl", "1 OR tbl"},
+        {"SELECT x FROM t WHERE id = tbl OR tbl", "tbl OR tbl"},
+        {"SELECT x FROM t WHERE id = tbl OR tbl", "tbl OR tbl"},
+        {R"(SELECT x FROM t WHERE id = ""OR"")", R"("OR")"},
+        {"SELECT x FROM t WHERE id = ''OR''", "'OR'"},
+        {"SELECT x FROM t WHERE id = 1||tbl", "1||tbl"},
+        {"SELECT x FROM t WHERE id = tbl||tbl", "tbl||tbl"},
+        {R"(SELECT x FROM t WHERE id = ""||"")", R"("||")"},
+        {"SELECT x FROM t WHERE id = 1 XOR 1", "1 XOR 1"},
+        {R"(SELECT x FROM t WHERE id = tbl XOR tbl)", "tbl XOR tbl"},
+        {R"(SELECT x FROM t WHERE id = ""XOR"")", R"("XOR")"},
+        {"SELECT x FROM t WHERE id = ''Or''", "'Or'"},
+        {"SELECT x FROM t WHERE id = '1' or 1 = 1", "1 = 1"},
+        {"SELECT x FROM t WHERE id = '1' or 1 = '1'", "1 = '1'"}};
 
     for (const auto &[path, input] : samples) {
         ddwaf_object tmp;
@@ -116,7 +119,8 @@ TEST(TestSQLIDetector, Comments)
 {
     std::vector<std::pair<std::string, std::string>> samples{
         {R"(SELECT x FROM t WHERE id='admin'#)", R"(admin'#)"},
-        //{R"(SELECT x FROM t WHERE id=admin')#')", R"(admin')#)"}, // The parser has trouble with the single-quoted-string
+        //{R"(SELECT x FROM t WHERE id=admin')#')", R"(admin')#)"}, // The parser has trouble with
+        // the single-quoted-string
         {R"(SELECT x FROM t WHERE id=1-- )", R"(1-- )"},
         {R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 # )", R"( 1 # )"},
         {R"(SELECT * FROM ships WHERE id= 1 --AND password=HASH('str') 1 --)", R"( 1 --)"},
@@ -124,7 +128,8 @@ TEST(TestSQLIDetector, Comments)
         {R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 # )", R"( 1 # )"},
     };
 
-    sqli_detector cond{{gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[path, input] : samples) {
         ddwaf_object tmp;
         ddwaf_object root;

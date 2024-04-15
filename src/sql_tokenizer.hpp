@@ -6,8 +6,9 @@
 
 #pragma once
 
+#include <memory>
 #include <ostream>
-#include <string>
+#include <re2/re2.h>
 #include <string_view>
 #include <vector>
 
@@ -17,7 +18,7 @@ enum class sql_flavour { generic, mysql, postgresql, oracle, sqlite, hsqldb, doc
 
 enum class sql_token_type {
     command,
-    hex,
+    identifier,
     number,
     string,
     single_quoted_string,
@@ -73,8 +74,8 @@ inline std::ostream &operator<<(std::ostream &os, sql_token_type type)
     case sql_token_type::command:
         os << "command";
         break;
-    case sql_token_type::hex:
-        os << "hex";
+    case sql_token_type::identifier:
+        os << "identifier";
         break;
     case sql_token_type::number:
         os << "number";
@@ -133,7 +134,69 @@ inline std::ostream &operator<<(std::ostream &os, sql_token_type type)
     }
     return os;
 }
-std::vector<sql_token> sql_tokenize(std::string_view resource, sql_flavour flavour);
 
-std::vector<sql_token> mysql_tokenize(std::string_view resource, sql_flavour /*flavour*/);
+class sql_tokenizer {
+public:
+    explicit sql_tokenizer(std::string_view str);
+
+    std::vector<sql_token> tokenize();
+
+    void tokenize_command_operator_or_identifier();
+    void tokenize_string(char quote);
+    void tokenize_inline_comment_or_operator();
+    void tokenize_eol_comment();
+    void tokenize_eol_comment_operator_or_number();
+    void tokenize_operator_or_number();
+    bool tokenize_number();
+
+protected:
+    char peek() const
+    {
+        if (idx_ >= buffer_.size()) {
+            [[unlikely]] return '\0';
+        }
+        return buffer_[idx_];
+    }
+    char prev() const
+    {
+        if (idx_ == 0) {
+            [[unlikely]] return '\0';
+        }
+        return buffer_[idx_ - 1];
+    }
+
+    bool advance(std::size_t offset = 1) { return (idx_ += offset) < buffer_.size(); }
+
+    char next(std::size_t offset = 1)
+    {
+        if ((idx_ + offset) >= buffer_.size()) {
+            [[unlikely]] return '\0';
+        }
+        return buffer_[idx_ + offset];
+    }
+
+    bool eof() { return idx_ >= buffer_.size(); }
+
+    std::size_t index() { return idx_; }
+
+    std::string_view substr(std::size_t start, std::size_t size = std::string_view::npos)
+    {
+        return buffer_.substr(start, size);
+    }
+
+    void add_token(sql_token_type type, std::size_t size = 1)
+    {
+        sql_token token;
+        token.index = index();
+        token.type = type;
+        token.str = substr(token.index, size);
+        tokens_.emplace_back(token);
+        advance(size);
+    }
+
+    std::string_view buffer_;
+    std::size_t idx_{0};
+    std::vector<sql_token> tokens_{};
+};
+
 } // namespace ddwaf
