@@ -45,111 +45,24 @@ struct sql_token {
     std::size_t index;
 };
 
-inline sql_flavour sql_flavour_from_type(std::string_view type)
-{
-    if (type == "mysql" || type == "mysql2") {
-        return sql_flavour::mysql;
-    }
-    if (type == "postgresql") {
-        return sql_flavour::postgresql;
-    }
-    if (type == "sqlite") {
-        return sql_flavour::sqlite;
-    }
-    if (type == "oracle") {
-        return sql_flavour::oracle;
-    }
-    if (type == "doctrine") {
-        return sql_flavour::doctrine;
-    }
-    if (type == "hsqldb") {
-        return sql_flavour::hsqldb;
-    }
-    return sql_flavour::generic;
-}
-
-inline std::ostream &operator<<(std::ostream &os, sql_token_type type)
-{
-    switch (type) {
-    case sql_token_type::command:
-        os << "command";
-        break;
-    case sql_token_type::identifier:
-        os << "identifier";
-        break;
-    case sql_token_type::number:
-        os << "number";
-        break;
-    case sql_token_type::string:
-        os << "string";
-        break;
-    case sql_token_type::single_quoted_string:
-        os << "single_quoted_string";
-        break;
-    case sql_token_type::double_quoted_string:
-        os << "double_quoted_string";
-        break;
-    case sql_token_type::back_quoted_string:
-        os << "back_quoted_string";
-        break;
-    case sql_token_type::whitespace:
-        os << "whitespace";
-        break;
-    case sql_token_type::asterisk:
-        os << "asterisk";
-        break;
-    case sql_token_type::eol_comment:
-        os << "eol_comment";
-        break;
-    case sql_token_type::parenthesis_open:
-        os << "parenthesis_open";
-        break;
-    case sql_token_type::parenthesis_close:
-        os << "parenthesis_close";
-        break;
-    case sql_token_type::comma:
-        os << "comma";
-        break;
-    case sql_token_type::questionmark:
-        os << "questionmark";
-        break;
-    case sql_token_type::label:
-        os << "label";
-        break;
-    case sql_token_type::dot:
-        os << "dot";
-        break;
-    case sql_token_type::query_end:
-        os << "query_end";
-        break;
-    case sql_token_type::binary_operator:
-        os << "binary_operator";
-        break;
-    case sql_token_type::bitwise_operator:
-        os << "bitwise_operator";
-        break;
-    case sql_token_type::inline_comment:
-        os << "inline_comment";
-        break;
-    }
-    return os;
-}
+sql_flavour sql_flavour_from_type(std::string_view type);
+std::ostream &operator<<(std::ostream &os, sql_token_type type);
 
 class sql_tokenizer {
 public:
-    explicit sql_tokenizer(std::string_view str);
+    explicit sql_tokenizer(std::string_view str) : buffer_(str) {}
 
     std::vector<sql_token> tokenize();
 
+protected:
     void tokenize_command_operator_or_identifier();
-    void tokenize_string(char quote);
+    void tokenize_string(char quote, sql_token_type type);
     void tokenize_inline_comment_or_operator();
     void tokenize_eol_comment();
     void tokenize_eol_comment_operator_or_number();
     void tokenize_operator_or_number();
-    bool tokenize_number();
+    void tokenize_number();
 
-protected:
     char peek() const
     {
         if (idx_ >= buffer_.size()) {
@@ -191,7 +104,7 @@ protected:
         token.type = type;
         token.str = substr(token.index, size);
         tokens_.emplace_back(token);
-        advance(size);
+        advance(size - 1);
     }
 
     std::string_view buffer_;

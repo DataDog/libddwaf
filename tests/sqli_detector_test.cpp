@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "condition/sqli_detector.hpp"
-#include "platform.hpp"
 #include "test_utils.hpp"
 
 using namespace ddwaf;
