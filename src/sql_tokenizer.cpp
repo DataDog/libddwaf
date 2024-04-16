@@ -10,8 +10,8 @@
 
 namespace ddwaf {
 namespace {
-constexpr std::string_view identifier_regex_str = R"((?i)(?P<command>SELECT|FROM|WHERE|ORDER BY)|(?P<binary_operator>NOT|OR|XOR|AND|IS|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL)|(?P<bitwise_operator>DIV|MOD)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$\.]*))";
-constexpr std::string_view number_regex_str = R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?))";
+constexpr std::string_view identifier_regex_str = R"((?i)(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY)|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$\.]*))";
+constexpr std::string_view number_regex_str = R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?))";
 
 std::unique_ptr<re2::RE2> initialise_regex(std::string_view regex_str) {
     re2::RE2::Options options;
@@ -50,20 +50,15 @@ void sql_tokenizer::tokenize_command_operator_or_identifier()
     auto remaining_str = substr(index());
 
     re2::StringPiece binary_op;
-    re2::StringPiece bitwise_op;
     re2::StringPiece command;
     re2::StringPiece ident;
 
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, *identifier_regex, &command, &bitwise_op, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, *identifier_regex, &command, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;
             token.str = substr(token.index, binary_op.size());
-            advance(token.str.size() - 1);
-        } else if (!bitwise_op.empty()) {
-            token.type = sql_token_type::bitwise_operator;
-            token.str = substr(token.index, bitwise_op.size());
             advance(token.str.size() - 1);
         } else if (!command.empty()) {
             token.type = sql_token_type::command;
@@ -123,6 +118,7 @@ void sql_tokenizer::tokenize_number()
     if (!token.str.empty()) {
         tokens_.emplace_back(token);
     }
+    advance(token.str.size() - 1);
 }
 
 void sql_tokenizer::tokenize_eol_comment()
@@ -223,21 +219,32 @@ std::vector<sql_token> sql_tokenizer::tokenize()
             if (n == '@' || n == '>') {
                 add_token(sql_token_type::binary_operator, 2);
             }
-        } else if (c == '!' || c == '>') {
+        } else if (c == '!') {
             add_token(sql_token_type::binary_operator, next() == '=' ? 2 : 1);
+        } else if (c == '>') {
+            auto n = next();
+            if  (n == '>' || n == '=' ) {
+                add_token(sql_token_type::binary_operator, 2);
+            } else {
+                add_token(sql_token_type::binary_operator);
+            }
         } else if (c == '<') {
             auto n = next();
             if (n == '=' || n == '@') {
                 add_token(sql_token_type::binary_operator, next(2) == '>' ? 3 : 2);
             } else if (n == '<' || n == '>') {
-                add_token(sql_token_type::bitwise_operator, 2);
+                add_token(sql_token_type::binary_operator, 2);
             } else {
                 add_token(sql_token_type::binary_operator);
             }
         } else if (c == '=' || c == '%') {
             add_token(sql_token_type::binary_operator);
         } else if (c == '|') {
-            add_token(sql_token_type::binary_operator, next() == '|' ? 2 : 1);
+            if (next() == '|') {
+                add_token(sql_token_type::binary_operator, 2);
+            } else {
+                add_token(sql_token_type::bitwise_operator);
+            }
         } else if (c == '&' || c == '^' || c == '~') {
             add_token(sql_token_type::bitwise_operator);
         } else if (c == ':') {
