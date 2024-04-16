@@ -10,10 +10,13 @@
 
 namespace ddwaf {
 namespace {
-constexpr std::string_view identifier_regex_str = R"((?i)(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY)|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$\.]*))";
-constexpr std::string_view number_regex_str = R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?))";
+constexpr std::string_view identifier_regex_str =
+    R"((?i)(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY)|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$\.]*))";
+constexpr std::string_view number_regex_str =
+    R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?))";
 
-std::unique_ptr<re2::RE2> initialise_regex(std::string_view regex_str) {
+std::unique_ptr<re2::RE2> initialise_regex(std::string_view regex_str)
+{
     re2::RE2::Options options;
     options.set_log_errors(false);
 
@@ -28,8 +31,8 @@ std::unique_ptr<re2::RE2> initialise_regex(std::string_view regex_str) {
 auto identifier_regex = initialise_regex(identifier_regex_str);
 auto number_regex = initialise_regex(number_regex_str);
 
-
-std::string_view extract_number(std::string_view str) {
+std::string_view extract_number(std::string_view str)
+{
     re2::StringPiece number;
     const re2::StringPiece ref(str.data(), str.size());
     if (re2::RE2::PartialMatch(ref, *number_regex, &number)) {
@@ -127,7 +130,7 @@ void sql_tokenizer::tokenize_eol_comment()
     sql_token token;
     token.index = index();
 
-    while (advance() && peek() != '\n' ) {}
+    while (advance() && peek() != '\n') {}
 
     token.str = substr(token.index, index() - token.index);
     token.type = sql_token_type::eol_comment;
@@ -182,7 +185,8 @@ std::vector<sql_token> sql_tokenizer::tokenize()
     for (; !eof(); advance()) {
         auto c = peek();
         // TODO use an array of characters or a giant switch?
-        if (ddwaf::isalpha(c) || c == '_' || static_cast<unsigned char>(c) > 0x7f) { // Command or identifier
+        if (ddwaf::isalpha(c) || c == '_' ||
+            static_cast<unsigned char>(c) > 0x7f) { // Command or identifier
             tokenize_command_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number();
@@ -223,7 +227,7 @@ std::vector<sql_token> sql_tokenizer::tokenize()
             add_token(sql_token_type::binary_operator, next() == '=' ? 2 : 1);
         } else if (c == '>') {
             auto n = next();
-            if  (n == '>' || n == '=' ) {
+            if (n == '>' || n == '=') {
                 add_token(sql_token_type::binary_operator, 2);
             } else {
                 add_token(sql_token_type::binary_operator);

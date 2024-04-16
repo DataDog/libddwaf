@@ -10,7 +10,6 @@ foreach(DIR IN ITEMS src tests validator benchmark fuzzer)
     list(APPEND FILE_LIST ${SOURCE_FILES})
 endforeach()
 list(FILTER FILE_LIST EXCLUDE REGEX ".*/src/vendor/.*")
-list(FILTER FILE_LIST EXCLUDE REGEX "sql_tokenizer.cpp")
 
 add_custom_target(format
     COMMAND ${CLANG_FORMAT} -n -Werror ${FILE_LIST}
