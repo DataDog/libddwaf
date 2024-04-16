@@ -17,15 +17,16 @@ std::unique_ptr<re2::RE2> initialise_regex(std::string_view regex_str) {
     re2::RE2::Options options;
     options.set_log_errors(false);
 
-    auto regex = std::make_unique<re2::RE2>(regex_str, options);
+    const re2::StringPiece regex_str_ref(regex_str.data(), regex_str.size());
+    auto regex = std::make_unique<re2::RE2>(regex_str_ref, options);
     if (regex == nullptr || !regex->ok()) {
         throw std::runtime_error("invalid regular expression: " + regex->error_arg());
     }
     return regex;
 }
 
-thread_local auto identifier_regex = initialise_regex(identifier_regex_str);
-thread_local auto number_regex = initialise_regex(number_regex_str);
+auto identifier_regex = initialise_regex(identifier_regex_str);
+auto number_regex = initialise_regex(number_regex_str);
 
 
 std::string_view extract_number(std::string_view str) {
@@ -39,7 +40,7 @@ std::string_view extract_number(std::string_view str) {
     return {};
 }
 
-}
+} // namespace
 
 void sql_tokenizer::tokenize_command_operator_or_identifier()
 {
@@ -48,7 +49,11 @@ void sql_tokenizer::tokenize_command_operator_or_identifier()
 
     auto remaining_str = substr(index());
 
-    re2::StringPiece binary_op, bitwise_op, command, ident;
+    re2::StringPiece binary_op;
+    re2::StringPiece bitwise_op;
+    re2::StringPiece command;
+    re2::StringPiece ident;
+
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
     if (re2::RE2::PartialMatch(ref, *identifier_regex, &command, &bitwise_op, &binary_op, &ident)) {
         // At least one of the strings will contain a match
@@ -180,7 +185,8 @@ std::vector<sql_token> sql_tokenizer::tokenize()
 {
     for (; !eof(); advance()) {
         auto c = peek();
-        if (ddwaf::isalpha(c) || c == '_') { // Command or identifier
+        // TODO use an array of characters or a giant switch?
+        if (ddwaf::isalpha(c) || c == '_' || static_cast<unsigned char>(c) > 0x7f) { // Command or identifier
             tokenize_command_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number();
@@ -206,8 +212,6 @@ std::vector<sql_token> sql_tokenizer::tokenize()
             add_token(sql_token_type::query_end);
         } else if (c == '/') {
             tokenize_inline_comment_or_operator();
-        } else if (ddwaf::isdigit(c)) {
-            tokenize_number();
         } else if (c == '-') {
             tokenize_eol_comment_operator_or_number();
         } else if (c == '#') {
@@ -219,7 +223,7 @@ std::vector<sql_token> sql_tokenizer::tokenize()
             if (n == '@' || n == '>') {
                 add_token(sql_token_type::binary_operator, 2);
             }
-        } else if (c == '!') {
+        } else if (c == '!' || c == '>') {
             add_token(sql_token_type::binary_operator, next() == '=' ? 2 : 1);
         } else if (c == '<') {
             auto n = next();
@@ -230,8 +234,6 @@ std::vector<sql_token> sql_tokenizer::tokenize()
             } else {
                 add_token(sql_token_type::binary_operator);
             }
-        } else if (c == '>') {
-            add_token(sql_token_type::binary_operator, next() == '=' ? 2 : 1);
         } else if (c == '=' || c == '%') {
             add_token(sql_token_type::binary_operator);
         } else if (c == '|') {
@@ -244,9 +246,6 @@ std::vector<sql_token> sql_tokenizer::tokenize()
             } else {
                 add_token(sql_token_type::label);
             }
-        } else if (c > 0x7F) {
-            // TODO tokenize identifier only
-            tokenize_command_operator_or_identifier();
         }
     }
     return tokens_;
@@ -342,5 +341,4 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
     return os;
 }
 
-
-}
+} // namespace ddwaf
