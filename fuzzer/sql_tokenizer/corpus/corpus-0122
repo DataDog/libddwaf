@@ -1,0 +1,1 @@
+select (((@version))),(2),3 from bar where

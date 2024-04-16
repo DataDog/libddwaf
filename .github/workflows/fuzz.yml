@@ -63,6 +63,7 @@ jobs:
           - uri_parse
           - ssrf_detector
           - lfi_detector
+          - sql_tokenizer
     steps:
       - uses: actions/checkout@v4
         with:
