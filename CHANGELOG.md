@@ -26,6 +26,7 @@ The [upgrading guide](UPGRADING.md#upgrading-from-116x-to-1170) has also been up
 - Attempt to build libddwaf on arm64 runner ([#270](https://github.com/DataDog/libddwaf/pull/270))
 - Run tests on arm64 ([#271](https://github.com/DataDog/libddwaf/pull/271))
 - LFI detector fuzzer ([#274](https://github.com/DataDog/libddwaf/pull/274))
+- Remove rpath from linux-musl binary ([#282](https://github.com/DataDog/libddwaf/pull/282))
 
 ### v1.17.0-alpha3 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes

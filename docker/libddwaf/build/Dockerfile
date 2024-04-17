@@ -11,7 +11,7 @@ RUN cd build && cmake \
     -DCMAKE_TOOLCHAIN_FILE=/libddwaf/docker/libddwaf/sysroot/Toolchain.cmake.${ARCH} \
     -DLIBDDWAF_ENABLE_LTO=ON \
     ../libddwaf && ninja
-RUN patchelf --remove-needed $(basename /sysroot/${ARCH}-none-linux-musl/lib/libc.musl-*.so.1) /build/libddwaf.so
+RUN patchelf --remove-needed $(basename /sysroot/${ARCH}-none-linux-musl/lib/libc.musl-*.so.1) /build/libddwaf.so --remove-rpath
 
 RUN ninja -v -C build waf_test waf_validator
 RUN cd libddwaf/tests && qemu-$ARCH-static /build/tests/waf_test
@@ -28,7 +28,7 @@ RUN cd /build && \
 RUN cd /build && stripcmd=$(egrep -o "/usr/bin/[a-z0-9\_-]*-strip" /libddwaf/docker/libddwaf/sysroot/Toolchain.cmake.${ARCH}) ; $stripcmd -x -S libddwaf.a -o libddwaf.a.stripped
 
 RUN cd /build && ninja -v package && \
-    new_name=$(ls libddwaf-*.tar.gz | head -n1 | sed -e "s/\(libddwaf-[\.0-9]*\(-\(alpha\|beta\)[0-9]\)?*\)-linux-\([_a-zA-Z0-9]*\)\(-\?[a-zA-Z0-9]*.tar.gz\)/\1-\4-linux-musl\5/g"); \
+    new_name=$(ls libddwaf-*.tar.gz | head -n1 | sed -e "s/\(libddwaf-[\.0-9]*\(-\(alpha\|beta\|rc\)[0-9]\)\?\)-linux-\([_a-zA-Z0-9]*\)\(-[a-zA-Z0-9]*\)\?\.tar.gz/\1-\4-linux-musl\5.tar.gz/g"
     mv libddwaf-*.tar.gz "$new_name"
 
 FROM scratch
