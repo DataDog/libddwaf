@@ -118,8 +118,7 @@ TEST(TestSQLIDetector, Comments)
 {
     std::vector<std::pair<std::string, std::string>> samples{
         {R"(SELECT x FROM t WHERE id='admin'#)", R"(admin'#)"},
-        //{R"(SELECT x FROM t WHERE id=admin')#')", R"(admin')#)"}, // The parser has trouble with
-        // the single-quoted-string
+        {R"(SELECT x FROM t WHERE id='admin')#)", R"(admin')#)"},
         {R"(SELECT x FROM t WHERE id=1-- )", R"(1-- )"},
         {R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 # )", R"( 1 # )"},
         {R"(SELECT * FROM ships WHERE id= 1 --AND password=HASH('str') 1 --)", R"( 1 --)"},

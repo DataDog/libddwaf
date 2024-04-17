@@ -7,7 +7,7 @@
 #include "condition/sqli_detector.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
-#include "platform.hpp"
+#include "regex_utils.hpp"
 #include "sql_tokenizer.hpp"
 #include "utils.hpp"
 
@@ -23,6 +23,11 @@ namespace {
 
 constexpr auto &npos = std::string_view::npos;
 constexpr std::size_t min_token_count = 4;
+
+// Relevant regexes
+auto or_operator_regex = regex_init(R"((?i)(?:OR|XOR|\|\|))");
+auto order_sequence_regex = regex_init(R"((?i)(?:ASC|DESC))");
+auto limit_offset_regex = regex_init(R"((?i)(?:LIMIT|OFFSET))");
 
 enum class sqli_error {
     none,
@@ -109,21 +114,61 @@ protected:
 
 bool is_query_comment(const std::span<sql_token> &tokens)
 {
+    /* We want to consider as malicious user-injected comments, even if they
+     * are below our 3 tokens limit.
+     *
+     * Some examples of comments:
+     *
+     *     SELECT * FROM t WHERE id =123 # AND pwd = HASH(pwd)
+     *                               \----/
+     *                           injected string
+     *     SELECT * FROM t WHERE id =1-- AND pwd = HASH(pwd)
+     *                              \---/
+     *                            injected string
+     */
     for (std::size_t i = 1; i < tokens.size(); ++i) {
         if (tokens[i].type == sql_token_type::eol_comment) {
             return true;
         }
     }
+
+    // TODO: the slash star comment that could be injected from 2 distinct
+    // places:
+    //
+    //     SELECT * FROM t WHERE id =X AND pwd = HASH(pwd) AND country=Y
+    //
+    // Could be injected in:
+    //
+    //   SELECT * FROM t WHERE id =1 /* AND pwd = HASH(pwd) AND country=*/
+    //
+    // So a part of the query is escaped.
+
     return false;
 }
 
 bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     const std::span<sql_token> &param_tokens, std::size_t param_tokens_begin)
 {
+    /* We want to consider as malicious the injections of 3 tokens (4 tokens
+     * are already considered malicious) such as:
+     *
+     * SELECT * FROM table WHERE id=1 OR 1 AND password = HASH(password)
+     *                              \----/
+     *                          injected string
+     *
+     * https://dev.mysql.com/doc/refman/5.7/en/expressions.html
+     *
+     * Look if user parameters are defining a tautology or pseudo-tautology. A
+     * pseudo tautology is a tautology likely to be true, e.g. `OR id` that is
+     * only false if id = 0.
+     */
     if (param_tokens.size() != 3 || param_tokens_begin == 0) {
         return false;
     }
 
+    // Ensure we are in a where clause
+    // This heuristic isn't perfect, and would trigger if there is any `where`
+    // before the suspected tautology.
     bool where_found = false;
     for (std::size_t i = 0; i < param_tokens_begin; ++i) {
         const auto &token = resource_tokens[i];
@@ -137,17 +182,32 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
         return false;
     }
 
+    /* We can have two kinds of tautologies:
+     *
+     * The first is the usual one where `OR 1` is added to make the condition always correct.
+     * The second one is where multi-parameter injection added a whole `' OR '1' = '1'`.
+     * We may not be able to detect `OR` but we still want to look for `'1' = '1' where the middle
+     * token is `=`. This specific case is exploited in the tutorial of webgoat.
+     */
+
+    // We do the cheaper test first
+
+    // Is the operator in the middle a command (OR) or an operator (=, ||...)
     auto middle_token = param_tokens[1];
-    std::cout << "Middle token : " << middle_token.type << std::endl;
     if (middle_token.type != sql_token_type::binary_operator) {
-        static std::unordered_set<std::string_view> or_ops{
-            "or", "||", "xor", "OR", "XOR", "oR", "Or"};
-        std::cout << "OP : " << middle_token.str << '\n';
-        return or_ops.contains(middle_token.str);
+        return regex_match(*or_operator_regex, middle_token.str);
     }
 
+    // Okay, if we have a `X = Y` pattern, let's make sure X and Y are similar
+    //  * The test is done the wrong way around because checking the kind is cheaper
+    //  * The equality check need to be broad enough to match =/!=
     if (param_tokens[0].type != param_tokens[2].type && middle_token.str.find('=') != npos) {
+        // There is *one* edge case where this still may be a tautology: when both are compatible
+        // data types ('1' = 1)
+        //   * Basically, if neither are a command or identifier, it's likely a tautology
         return param_tokens[0].type != sql_token_type::command &&
+               param_tokens[0].type != sql_token_type::identifier &&
+               param_tokens[2].type != sql_token_type::identifier &&
                param_tokens[2].type != sql_token_type::command;
     }
 
@@ -199,14 +259,13 @@ bool has_order_by_structure(const std::span<sql_token> &tokens)
 bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
     const std::span<sql_token> &param_tokens, std::size_t param_tokens_begin)
 {
-    if (param_tokens_begin < 2) {
+    if (param_tokens_begin < 1) {
         return false;
     }
 
-    std::string_view order = resource_tokens[param_tokens_begin - 2].str;
-    std::string_view by = resource_tokens[param_tokens_begin - 1].str;
+    std::string_view order_by = resource_tokens[param_tokens_begin - 1].str;
 
-    if (!string_iequals(order, "order") || !string_iequals(by, "by")) {
+    if (!string_iequals(order_by, "order by")) {
         return false;
     }
 
@@ -231,7 +290,7 @@ bool contains_harmful_tokens(const std::span<sql_token> &tokens)
     return false;
 }
 
-std::tuple<std::span<sql_token>, std::size_t, std::size_t> get_consecutive_tokens(
+std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
     std::vector<sql_token> &resource_tokens, std::size_t begin, std::size_t end)
 {
     std::size_t index_begin = std::numeric_limits<std::size_t>::max();
@@ -259,16 +318,16 @@ std::tuple<std::span<sql_token>, std::size_t, std::size_t> get_consecutive_token
     }
 
     return {std::span<sql_token>{&resource_tokens[index_begin], index_end - index_begin + 1},
-        index_begin, index_end};
+        index_begin};
 }
 
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
-    const ddwaf_object &params, sql_flavour flavour,
+    const ddwaf_object &params, sql_flavour /*flavour*/,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
     sql_tokenizer tokenizer(resource);
-    static constexpr std::size_t min_str_len = 4;
+    static constexpr std::size_t min_str_len = 3;
 
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
@@ -277,7 +336,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         }
 
         const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING) { // || param.nbEntries < min_str_len) {
+        if (param.type != DDWAF_OBJ_STRING || param.nbEntries < min_str_len) {
             continue;
         }
 
@@ -295,7 +354,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             }
         }
 
-        auto [param_tokens, param_tokens_begin, param_tokens_end] =
+        auto [param_tokens, param_tokens_begin] =
             get_consecutive_tokens(resource_tokens, param_index, param_index + value.size());
         if (param_tokens.empty()) {
             continue;
@@ -336,7 +395,6 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
     auto flavour = sql_flavour_from_type(db_type.value);
 
     std::vector<sql_token> resource_tokens;
-    /* // TODO only tokenize if there's a potential injection*/
 
     for (const auto &param : params) {
         auto res = sqli_impl(
@@ -345,6 +403,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             bool ephemeral = sql.ephemeral || param.ephemeral;
 
+            // TODO remove literals from resource
             auto &[highlight, param_kp] = std::get<matched_param>(res);
             cache.match =
                 condition_match{{{"resource"sv, std::string{sql.value}, sql.address, sql_kp},

@@ -23,6 +23,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
     ${libddwaf_SOURCE_DIR}/src/sql_tokenizer.cpp
+    ${libddwaf_SOURCE_DIR}/src/regex_utils.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp

@@ -5,7 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "sql_tokenizer.hpp"
+#include "regex_utils.hpp"
 #include "utils.hpp"
+
 #include <iostream>
 
 namespace ddwaf {
@@ -15,21 +17,8 @@ constexpr std::string_view identifier_regex_str =
 constexpr std::string_view number_regex_str =
     R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?))";
 
-std::unique_ptr<re2::RE2> initialise_regex(std::string_view regex_str)
-{
-    re2::RE2::Options options;
-    options.set_log_errors(false);
-
-    const re2::StringPiece regex_str_ref(regex_str.data(), regex_str.size());
-    auto regex = std::make_unique<re2::RE2>(regex_str_ref, options);
-    if (regex == nullptr || !regex->ok()) {
-        throw std::runtime_error("invalid regular expression: " + regex->error_arg());
-    }
-    return regex;
-}
-
-auto identifier_regex = initialise_regex(identifier_regex_str);
-auto number_regex = initialise_regex(number_regex_str);
+auto identifier_regex = regex_init(identifier_regex_str);
+auto number_regex = regex_init(number_regex_str);
 
 std::string_view extract_number(std::string_view str)
 {
