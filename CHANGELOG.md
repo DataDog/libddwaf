@@ -1,4 +1,33 @@
 # libddwaf release
+### v1.17.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+This new version introduces RASP rules and supporting features, including:
+- Multivariate operators for the development of complex rules.
+- A new operator `lfi_detector` for the detection of local file inclusion (LFI) / path traversal attacks.
+- A new operator `ssrf_detector` for the detection of server-side request forgery (SSRF) attacks.
+- Better support for rule actions, as well as internal default actions: `block`, `stack_trace` and `extract_schema`.
+
+The [upgrading guide](UPGRADING.md#upgrading-from-116x-to-1170) has also been updated to cover the new breaking changes.
+
+#### Changes
+- Multivariate operator support ([#241](https://github.com/DataDog/libddwaf/pull/241))
+- Local file inclusion (LFI) operator ([#258](https://github.com/DataDog/libddwaf/pull/258))
+- Server-side request forgery (SSRF) detection operator ([#268](https://github.com/DataDog/libddwaf/pull/268))
+- Action semantics and related improvements ([#277](https://github.com/DataDog/libddwaf/pull/277))
+
+#### Fixes
+- Reduce benchmark noise ([#257](https://github.com/DataDog/libddwaf/pull/257), [#259](https://github.com/DataDog/libddwaf/pull/259), [#260](https://github.com/DataDog/libddwaf/pull/260))
+- Add support for old glibc (e.g. RHEL 6) ([#262](https://github.com/DataDog/libddwaf/pull/262))
+- Add weak ceilf symbol and definition ([#263](https://github.com/DataDog/libddwaf/pull/263))
+- Fix parsing of variadic arguments ([#267](https://github.com/DataDog/libddwaf/pull/267))
+
+#### Miscellaneous
+- Update node-16 actions to node-20 ones ([#266](https://github.com/DataDog/libddwaf/pull/266))
+- Attempt to build libddwaf on arm64 runner ([#270](https://github.com/DataDog/libddwaf/pull/270))
+- Run tests on arm64 ([#271](https://github.com/DataDog/libddwaf/pull/271))
+- LFI detector fuzzer ([#274](https://github.com/DataDog/libddwaf/pull/274))
+- Remove rpath from linux-musl binary ([#282](https://github.com/DataDog/libddwaf/pull/282))
+
 ### v1.17.0-alpha3 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Action semantics and related improvements ([#277](https://github.com/DataDog/libddwaf/pull/277))
