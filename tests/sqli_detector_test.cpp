@@ -17,6 +17,42 @@ template <typename... Args> std::vector<parameter_definition> gen_param_def(Args
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
+TEST(TestSqliDetector, Identifiers)
+{
+    std::vector<std::pair<std::string, std::string>> samples{{
+        R"(SELECT scale_grades.weight
+               FROM grades
+               LEFT JOIN markbook_students USING (markbook_student_id)
+               LEFT JOIN markbook_columns ON (grades.task_id = markbook_columns.task_id)
+               LEFT JOIN 4_blabla.scale_grades ON (grades.scale_grade_id = scale_grades.scale_grade_id)
+               WHERE markbook_column_id = '4242'
+               AND markbook_class_id = '4242'
+               AND markbook_students.inactive IS NULL)",
+        "4242"}};
+
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+    for (const auto &[statement, input] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
+        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, "postgresql"));
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_FALSE(res.outcome) << statement;
+    }
+}
+
 TEST(TestSqliDetector, Injections)
 {
     sqli_detector cond{
@@ -30,7 +66,6 @@ TEST(TestSqliDetector, Injections)
         {"\n                SELECT id, author, title, body, created_at\n                FROM posts "
          "WHERE id = 1 OR 1 = 1",
             "1 OR 1 = 1"}};
-    //};
 
     for (const auto &[statement, input] : samples) {
         ddwaf_object tmp;
