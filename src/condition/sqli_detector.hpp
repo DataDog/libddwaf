@@ -7,6 +7,7 @@
 #pragma once
 
 #include "condition/structured_condition.hpp"
+#include "sql_tokenizer.hpp"
 
 namespace ddwaf {
 
@@ -26,5 +27,23 @@ protected:
 
     friend class base_impl<sqli_detector>;
 };
+
+namespace internal {
+// Exposed for testing purposes
+std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
+    std::vector<sql_token> &resource_tokens, std::size_t begin, std::size_t end);
+
+bool contains_harmful_tokens(std::span<sql_token> tokens);
+
+bool has_order_by_structure(std::span<sql_token> tokens);
+bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
+    std::span<sql_token> param_tokens, std::size_t param_tokens_begin);
+
+bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
+    std::span<sql_token> param_tokens, std::size_t param_tokens_begin);
+
+bool is_query_comment(std::span<sql_token> tokens);
+
+} // namespace internal
 
 } // namespace ddwaf

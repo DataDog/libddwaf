@@ -19,6 +19,7 @@ using namespace std::literals;
 
 namespace ddwaf {
 
+namespace internal {
 namespace {
 
 constexpr auto &npos = std::string_view::npos;
@@ -37,82 +38,16 @@ enum class sqli_error {
 using matched_param = std::pair<std::string, std::vector<std::string>>;
 using sqli_result = std::variant<sqli_error, matched_param, std::monostate>;
 
-template <typename State, typename Metadata>
-    requires std::is_enum_v<State>
-class simple_fsm {
-public:
-    using state_table_type = std::unordered_map<State, std::vector<State>>;
-    using graph_node_type = std::pair<State, std::reference_wrapper<Metadata>>;
-    using graph_type = std::unordered_map<State, std::vector<graph_node_type>>;
+bool is_identifier(sql_token_type type)
+{
+    return type == sql_token_type::identifier || type == sql_token_type::back_quoted_string ||
+           type == sql_token_type::double_quoted_string ||
+           type == sql_token_type::single_quoted_string;
+}
 
-    simple_fsm(std::unordered_map<State, Metadata> state_metadata, const state_table_type &table)
-        : state_metadata_(std::move(state_metadata))
-    {
-        graph_.reserve(table.size());
-        for (auto [state, next_set] : table) {
-            std::vector<graph_node_type> state_metadata_vec;
-            state_metadata_vec.reserve(next_set.size());
+} // namespace
 
-            for (auto next_state : next_set) {
-                auto it = state_metadata_.find(next_state);
-                if (it == state_metadata_.end()) {
-                    throw std::invalid_argument("unknown state found in state table");
-                }
-                state_metadata_vec.emplace_back(next_state, it->second);
-            }
-
-            graph_.emplace(state, std::move(state_metadata_vec));
-        }
-    }
-
-    template <typename T, typename Comparator>
-    bool evaluate(const std::span<T> &tokens, const Comparator &comp) const
-    {
-        State current_state = State::Begin;
-        auto current_token = tokens.begin();
-
-        while (current_state != State::End) {
-            auto it = graph_.find(current_state);
-            if (it == graph_.end()) {
-                // Should this ever happen?
-                throw std::runtime_error("unknown state in graph");
-            }
-
-            current_state = State::Invalid;
-            // std::cout << "Current token: " << current_token->str << std::endl;
-            for (const auto &[next_state, metadata] : it->second) {
-                if (next_state == State::End) {
-                    if (current_token == tokens.end()) {
-                        current_state = next_state;
-                    } else {
-                        continue;
-                    }
-                }
-
-                if (comp(metadata, *current_token)) {
-                    // std::cout << "State found: " << (int)next_state << " ? " << (int)State::End
-                    // << std::endl;
-                    current_state = next_state;
-                    current_token++;
-                    break;
-                }
-            }
-
-            if (current_state == State::Invalid) {
-                // std::cout << "State false!!\n";
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-protected:
-    std::unordered_map<State, Metadata> state_metadata_;
-    graph_type graph_;
-};
-
-bool is_query_comment(const std::span<sql_token> &tokens)
+bool is_query_comment(std::span<sql_token> tokens)
 {
     /* We want to consider as malicious user-injected comments, even if they
      * are below our 3 tokens limit.
@@ -147,7 +82,7 @@ bool is_query_comment(const std::span<sql_token> &tokens)
 }
 
 bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
-    const std::span<sql_token> &param_tokens, std::size_t param_tokens_begin)
+    std::span<sql_token> param_tokens, std::size_t param_tokens_begin)
 {
     /* We want to consider as malicious the injections of 3 tokens (4 tokens
      * are already considered malicious) such as:
@@ -204,7 +139,7 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     if (param_tokens[0].type != param_tokens[2].type && middle_token.str.find('=') != npos) {
         // There is *one* edge case where this still may be a tautology: when both are compatible
         // data types ('1' = 1)
-        //   * Basically, if neither are a command or identifier, it's likely a tautology
+        //   * Basically, if neither is a command or identifier, it's likely a tautology
         return param_tokens[0].type != sql_token_type::command &&
                param_tokens[0].type != sql_token_type::identifier &&
                param_tokens[2].type != sql_token_type::identifier &&
@@ -214,50 +149,164 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     return true;
 }
 
-bool has_order_by_structure(const std::span<sql_token> &tokens)
+bool has_order_by_structure(std::span<sql_token> tokens)
 {
-    using type = sql_token_type;
-
-    enum class state { Begin, L1, L2, C1, C2, C3, C4, Dot, Comma, End, Invalid };
-
-    struct token_node {
-        std::unordered_set<sql_token_type> types;
-        std::unordered_set<std::string_view> values;
+    enum class order_by_state {
+        invalid,
+        begin,
+        table_or_column_name,
+        column_name,
+        column_index,
+        limit_or_offset_value,
+        limit_or_offset,
+        asc_or_desc,
+        comma,
+        dot,
+        end,
     };
 
-    static auto comparator = [](const token_node &node, const sql_token &token) -> bool {
-        return (node.types.empty() || node.types.contains(token.type)) &&
-               (node.values.empty() || node.values.contains(token.str));
-    };
+    auto current_state = order_by_state::begin;
+    auto current_token = tokens.begin();
+    while (current_state != order_by_state::end) {
+        auto next_state = order_by_state::invalid;
 
-    static const simple_fsm<state, token_node> fsm{
-        {{state::Begin, {}}, {state::L1, {{type::number}, {}}}, {state::L2, {{type::number}, {}}},
-            {state::C1, {{type::command, type::single_quoted_string, type::double_quoted_string,
-                             type::back_quoted_string},
-                            {}}},
-            {state::C2, {{type::command, type::single_quoted_string, type::double_quoted_string,
-                             type::back_quoted_string},
-                            {}}},
-            {state::C3, {{}, {"asc", "desc", "ASC", "DESC"}}}, // TODO: Mixed casing?
-            {state::C4, {{}, {"limit", "offset", "LIMIT", "OFFSET"}}},
-            {state::Dot, {{type::dot}, {}}}, {state::Comma, {{type::comma}, {}}}, {state::End, {}}},
-        {
-            {state::Begin, {state::L1, state::C1}},
-            {state::L1, {state::C3, state::Comma, state::End}},
-            {state::L2, {state::C4, state::End}},
-            {state::C1, {state::Dot, state::C3, state::Comma, state::End}},
-            {state::C2, {state::C3, state::Comma, state::End}},
-            {state::C3, {state::C4, state::Comma, state::End}},
-            {state::C4, {state::L2}},
-            {state::Dot, {state::C2}},
-            {state::Comma, {state::L1, state::C1}},
-        }};
+        // Find the next state
+        switch (current_state) {
+        case order_by_state::begin:
+        case order_by_state::comma:
+            if (current_token == tokens.end()) {
+                // Not a valid state
+                break;
+            }
 
-    return fsm.evaluate(tokens, comparator);
+            // The first token can either be a column index or a table or column
+            // name, we allow a name to be a quoted string or a non-quoted
+            // non-reserved identifier. We can't distinguish between a table name
+            // or a column name.
+            //
+            // Similarly a comma implies another order, so it can either be a
+            // column index or a table / column name
+            if (current_token->type == sql_token_type::number) {
+                next_state = order_by_state::column_index;
+            } else if (is_identifier(current_token->type)) {
+                next_state = order_by_state::table_or_column_name;
+            }
+            break;
+        case order_by_state::table_or_column_name:
+            if (current_token == tokens.end()) {
+                // The clause can terminate here
+                next_state = order_by_state::end;
+                break;
+            }
+
+            // A table or column name can be followed by a dot, a comma, an
+            // ordinal keyword (ASC, DESC) or LIMIT / OFFSET.
+            if (current_token->type == sql_token_type::dot) {
+                next_state = order_by_state::dot;
+            } else if (current_token->type == sql_token_type::comma) {
+                next_state = order_by_state::comma;
+            } else if (current_token->type == sql_token_type::command) {
+                if (regex_match(*order_sequence_regex, current_token->str)) {
+                    next_state = order_by_state::asc_or_desc;
+                } else if (regex_match(*limit_offset_regex, current_token->str)) {
+                    next_state = order_by_state::limit_or_offset;
+                }
+            }
+            break;
+        case order_by_state::column_index:
+        case order_by_state::column_name:
+            if (current_token == tokens.end()) {
+                // The clause can terminate here
+                next_state = order_by_state::end;
+                break;
+            }
+
+            // A column name or index can only be followed by a comma, an
+            // ordinal keyword (ASC, DESC) or LIMIT / OFFSET
+            if (current_token->type == sql_token_type::comma) {
+                next_state = order_by_state::comma;
+            } else if (current_token->type == sql_token_type::command) {
+                if (regex_match(*order_sequence_regex, current_token->str)) {
+                    next_state = order_by_state::asc_or_desc;
+                } else if (regex_match(*limit_offset_regex, current_token->str)) {
+                    next_state = order_by_state::limit_or_offset;
+                }
+            }
+            break;
+        case order_by_state::limit_or_offset_value:
+            if (current_token == tokens.end()) {
+                // The clause can terminate here
+                next_state = order_by_state::end;
+                break;
+            }
+
+            // An offset value can only be followed by another offset or limit
+            // keyword, otherwise the end state is covered above
+            if (current_token->type == sql_token_type::command &&
+                regex_match(*limit_offset_regex, current_token->str)) {
+                next_state = order_by_state::limit_or_offset;
+            }
+
+            break;
+        case order_by_state::limit_or_offset:
+            if (current_token == tokens.end()) {
+                // Not a valid state
+                break;
+            }
+
+            // The limit or offset must be followed by a numerical value
+            if (current_token->type == sql_token_type::number) {
+                next_state = order_by_state::limit_or_offset_value;
+            }
+
+            break;
+        case order_by_state::asc_or_desc:
+            if (current_token == tokens.end()) {
+                // The clause can terminate here
+                next_state = order_by_state::end;
+                break;
+            }
+
+            // After ASC / DESC we can have another order clause, separated by a
+            // comma, or LIMIT / OFFSET.
+            if (current_token->type == sql_token_type::comma) {
+                next_state = order_by_state::comma;
+            } else if (current_token->type == sql_token_type::command &&
+                       regex_match(*limit_offset_regex, current_token->str)) {
+                next_state = order_by_state::limit_or_offset;
+            }
+
+            break;
+        case order_by_state::dot:
+            if (current_token == tokens.end()) {
+                // Not a valid state
+                break;
+            }
+
+            // A dot is only used as part of the table.column notation, so the
+            // next token must be the column name
+            if (is_identifier(current_token->type)) {
+                next_state = order_by_state::column_name;
+            }
+            break;
+        default:
+            // Unreachable
+            return false;
+        }
+
+        if (next_state == order_by_state::invalid) {
+            return false;
+        }
+
+        current_state = next_state;
+        current_token++;
+    }
+
+    return true;
 }
 
 bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
-    const std::span<sql_token> &param_tokens, std::size_t param_tokens_begin)
+    std::span<sql_token> param_tokens, std::size_t param_tokens_begin)
 {
     if (param_tokens_begin < 1) {
         return false;
@@ -272,7 +321,7 @@ bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
     return has_order_by_structure(param_tokens);
 }
 
-bool contains_harmful_tokens(const std::span<sql_token> &tokens)
+bool contains_harmful_tokens(std::span<sql_token> tokens)
 {
     if (tokens.size() < min_token_count) {
         return false;
@@ -321,12 +370,13 @@ std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
         index_begin};
 }
 
+namespace {
+
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
     const ddwaf_object &params, sql_flavour /*flavour*/,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    sql_tokenizer tokenizer(resource);
     static constexpr std::size_t min_str_len = 3;
 
     object::kv_iterator it(&params, {}, objects_excluded, limits);
@@ -347,8 +397,10 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         }
 
         if (resource_tokens.empty()) {
+            // We found a potential injection, so we tokenize the resource which will
+            // then be used by all remaining calls to this function
+            sql_tokenizer tokenizer(resource);
             resource_tokens = tokenizer.tokenize();
-
             if (resource_tokens.empty()) {
                 return sqli_error::invalid_sql;
             }
@@ -360,18 +412,18 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             continue;
         }
 
-        for (auto token : param_tokens) {
-            std::cout << "Token: " << token.type << " - " << token.str << '\n';
-        }
-        bool harmful = contains_harmful_tokens(param_tokens);
-        DDWAF_DEBUG("Contains harmful {}", harmful);
-        bool benign_order_by =
-            !is_benign_order_by_clause(resource_tokens, param_tokens, param_tokens_begin);
-        DDWAF_DEBUG("Is Benign order by {}", benign_order_by);
-        bool tautology = is_where_tautology(resource_tokens, param_tokens, param_tokens_begin);
-        DDWAF_DEBUG("Is where tautology {}", tautology);
-        bool query_comment = is_query_comment(param_tokens);
-        DDWAF_DEBUG("Query comment {}", query_comment);
+        /*                for (auto token : param_tokens) {*/
+        /*std::cout << "Token: " << token.type << " - " << token.str << '\n';*/
+        /*}*/
+        /*bool harmful = contains_harmful_tokens(param_tokens);*/
+        /*DDWAF_DEBUG("Contains harmful {}", harmful);*/
+        /*bool benign_order_by =*/
+        /*!is_benign_order_by_clause(resource_tokens, param_tokens, param_tokens_begin);*/
+        /*DDWAF_DEBUG("Is Benign order by {}", benign_order_by);*/
+        /*bool tautology = is_where_tautology(resource_tokens, param_tokens, param_tokens_begin);*/
+        /*DDWAF_DEBUG("Is where tautology {}", tautology);*/
+        /*bool query_comment = is_query_comment(param_tokens);*/
+        /*DDWAF_DEBUG("Query comment {}", query_comment);*/
 
         if ((contains_harmful_tokens(param_tokens) &&
                 !is_benign_order_by_clause(resource_tokens, param_tokens, param_tokens_begin)) ||
@@ -387,6 +439,8 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
 } // namespace
 
+} // namespace internal
+
 [[nodiscard]] eval_result sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
     const variadic_argument<const ddwaf_object *> &params,
     const unary_argument<std::string_view> &db_type, condition_cache &cache,
@@ -397,14 +451,14 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
     std::vector<sql_token> resource_tokens;
 
     for (const auto &param : params) {
-        auto res = sqli_impl(
+        auto res = internal::sqli_impl(
             sql.value, resource_tokens, *param.value, flavour, objects_excluded, limits_, deadline);
-        if (std::holds_alternative<matched_param>(res)) {
+        if (std::holds_alternative<internal::matched_param>(res)) {
             std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             bool ephemeral = sql.ephemeral || param.ephemeral;
 
             // TODO remove literals from resource
-            auto &[highlight, param_kp] = std::get<matched_param>(res);
+            auto &[highlight, param_kp] = std::get<internal::matched_param>(res);
             cache.match =
                 condition_match{{{"resource"sv, std::string{sql.value}, sql.address, sql_kp},
                                     {"params"sv, highlight, param.address, param_kp},
@@ -418,7 +472,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             continue;
         }
 
-        if (std::holds_alternative<sqli_error>(res)) {
+        if (std::holds_alternative<internal::sqli_error>(res)) {
             // The only error for now is returned when the resource couldn't be
             // parsed, we don't do anything specific for now other than stopping
             // the evaluation of the parameters

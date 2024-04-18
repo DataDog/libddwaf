@@ -13,7 +13,7 @@
 namespace ddwaf {
 namespace {
 constexpr std::string_view identifier_regex_str =
-    R"((?i)(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY)|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$\.]*))";
+    R"((?i)(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))";
 constexpr std::string_view number_regex_str =
     R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?))";
 
@@ -336,6 +336,10 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
         break;
     case sql_token_type::inline_comment:
         os << "inline_comment";
+        break;
+    case sql_token_type::unknown:
+    default:
+        os << "unknown";
         break;
     }
     return os;

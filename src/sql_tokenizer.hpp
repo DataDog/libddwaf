@@ -17,6 +17,7 @@ namespace ddwaf {
 enum class sql_flavour { generic, mysql, postgresql, oracle, sqlite, hsqldb, doctrine };
 
 enum class sql_token_type {
+    unknown,
     command,
     identifier,
     number,
@@ -40,9 +41,9 @@ enum class sql_token_type {
 };
 
 struct sql_token {
-    sql_token_type type;
+    sql_token_type type{sql_token_type::unknown};
     std::string_view str;
-    std::size_t index;
+    std::size_t index{};
 };
 
 sql_flavour sql_flavour_from_type(std::string_view type);
@@ -63,14 +64,14 @@ protected:
     void tokenize_operator_or_number();
     void tokenize_number();
 
-    char peek() const
+    [[nodiscard]] char peek() const
     {
         if (idx_ >= buffer_.size()) {
             [[unlikely]] return '\0';
         }
         return buffer_[idx_];
     }
-    char prev() const
+    [[nodiscard]] char prev() const
     {
         if (idx_ == 0) {
             [[unlikely]] return '\0';
@@ -80,7 +81,7 @@ protected:
 
     bool advance(std::size_t offset = 1) { return (idx_ += offset) < buffer_.size(); }
 
-    char next(std::size_t offset = 1)
+    [[nodiscard]] char next(std::size_t offset = 1)
     {
         if ((idx_ + offset) >= buffer_.size()) {
             [[unlikely]] return '\0';
@@ -90,7 +91,7 @@ protected:
 
     bool eof() { return idx_ >= buffer_.size(); }
 
-    std::size_t index() { return idx_; }
+    [[nodiscard]] std::size_t index() const { return idx_; }
 
     std::string_view substr(std::size_t start, std::size_t size = std::string_view::npos)
     {
