@@ -135,7 +135,7 @@ TEST(TestSqliDetectorInternals, IsBenignOrderByClauseNotAnOrderBy)
     sql_tokenizer tokenizer(statement);
     auto resource_tokens = tokenizer.tokenize();
 
-    std::span<sql_token> param_tokens{resource_tokens.begin() + 1, resource_tokens.end()};
+    std::span<sql_token> param_tokens{&resource_tokens[1], resource_tokens.size() - 1};
     auto res = internal::is_benign_order_by_clause(resource_tokens, param_tokens, 1);
     EXPECT_FALSE(res);
 }
