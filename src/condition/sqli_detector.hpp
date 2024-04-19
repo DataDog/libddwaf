@@ -7,7 +7,7 @@
 #pragma once
 
 #include "condition/structured_condition.hpp"
-#include "sql_tokenizer.hpp"
+#include "tokenizer/sql_base.hpp"
 
 namespace ddwaf {
 

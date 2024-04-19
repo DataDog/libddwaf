@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "sql_tokenizer.hpp"
+#include "tokenizer/pgsql.hpp"
 #include "regex_utils.hpp"
 #include "utils.hpp"
 
@@ -18,9 +18,11 @@ constexpr std::string_view identifier_regex_str =
     R"((?i)(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)\b|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
 constexpr std::string_view number_regex_str =
     R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
+constexpr std::string_view parameter_regex_str = R"(\$[0-9]+\b)";
 
 auto identifier_regex = regex_init(identifier_regex_str);
 auto number_regex = regex_init(number_regex_str);
+auto parameter_regex = regex_init(parameter_regex_str);
 
 std::string_view extract_number(std::string_view str)
 {
@@ -36,7 +38,7 @@ std::string_view extract_number(std::string_view str)
 
 } // namespace
 
-void sql_tokenizer::tokenize_command_operator_or_identifier()
+void pgsql_tokenizer::tokenize_command_operator_or_identifier()
 {
     sql_token token;
     token.index = index();
@@ -67,7 +69,7 @@ void sql_tokenizer::tokenize_command_operator_or_identifier()
     }
 }
 
-void sql_tokenizer::tokenize_string(char quote, sql_token_type type)
+void pgsql_tokenizer::tokenize_string(char quote, sql_token_type type)
 {
     sql_token token;
     token.index = index();
@@ -81,7 +83,7 @@ void sql_tokenizer::tokenize_string(char quote, sql_token_type type)
     tokens_.emplace_back(token);
 }
 
-void sql_tokenizer::tokenize_inline_comment_or_operator()
+void pgsql_tokenizer::tokenize_inline_comment_or_operator()
 {
     // The first character is / so it can be a comment or a binary operator
     sql_token token;
@@ -103,7 +105,7 @@ void sql_tokenizer::tokenize_inline_comment_or_operator()
     tokens_.emplace_back(token);
 }
 
-void sql_tokenizer::tokenize_number()
+void pgsql_tokenizer::tokenize_number()
 {
     sql_token token;
     token.index = index();
@@ -115,7 +117,7 @@ void sql_tokenizer::tokenize_number()
     advance(token.str.size() - 1);
 }
 
-void sql_tokenizer::tokenize_eol_comment()
+void pgsql_tokenizer::tokenize_eol_comment()
 {
     // Inline comment
     sql_token token;
@@ -128,10 +130,16 @@ void sql_tokenizer::tokenize_eol_comment()
     tokens_.emplace_back(token);
 }
 
-void sql_tokenizer::tokenize_eol_comment_operator_or_number()
+void pgsql_tokenizer::tokenize_eol_comment_operator_or_number()
 {
-    if (next() == '-') {
+    auto n = next();
+    if (n == '-') {
         tokenize_eol_comment();
+        return;
+    }
+
+    if (n == '>') { // Match JSON operators ->> and ->
+        add_token(sql_token_type::binary_operator, next(2) == '>' ? 3 : 2);
         return;
     }
 
@@ -152,7 +160,7 @@ void sql_tokenizer::tokenize_eol_comment_operator_or_number()
     tokens_.emplace_back(token);
 }
 
-void sql_tokenizer::tokenize_operator_or_number()
+void pgsql_tokenizer::tokenize_operator_or_number()
 {
     sql_token token;
     token.index = index();
@@ -171,7 +179,23 @@ void sql_tokenizer::tokenize_operator_or_number()
     tokens_.emplace_back(token);
 }
 
-std::vector<sql_token> sql_tokenizer::tokenize()
+void pgsql_tokenizer::tokenize_dollar_string_or_identifier()
+{
+    // This can be ambiguous as a dollar quoted string could match this pattern
+    auto str = substr();
+
+    re2::StringPiece parameter;
+    const re2::StringPiece ref(str.data(), str.size());
+    if (re2::RE2::PartialMatch(ref, *parameter_regex, &parameter)) {
+        if (!parameter.empty()) {
+            add_token(sql_token_type::identifier, ref.size());
+        }
+    } else {
+        tokenize_string('$', sql_token_type::dollar_quoted_string);
+    }
+}
+
+std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
 {
     for (; !eof(); advance()) {
         auto c = peek();
@@ -187,6 +211,8 @@ std::vector<sql_token> sql_tokenizer::tokenize()
             tokenize_string('\'', sql_token_type::single_quoted_string);
         } else if (c == '`') { // Backtick-quoted string
             tokenize_string('`', sql_token_type::back_quoted_string);
+        } else if (c == '$') { // Dollar-quoted string or identifier
+            tokenize_dollar_string_or_identifier();
         } else if (c == '(') {
             add_token(sql_token_type::parenthesis_open);
         } else if (c == ')') {
@@ -196,7 +222,21 @@ std::vector<sql_token> sql_tokenizer::tokenize()
         } else if (c == ',') {
             add_token(sql_token_type::comma);
         } else if (c == '?') {
-            add_token(sql_token_type::questionmark);
+            // JSON Operators ?| ?& ?
+            auto n = next();
+            if (n == '|' || n == '&') {
+                add_token(sql_token_type::binary_operator, 2);
+            } else {
+                add_token(sql_token_type::binary_operator);
+            }
+        } else if (c == '#') {
+            // JSON Operators #>> #> #-
+            auto n = next();
+            if (n == '>') {
+                add_token(sql_token_type::binary_operator, next(2) == '>' ? 3 : 2);
+            } else if (n == '-') {
+                add_token(sql_token_type::binary_operator, 2);
+            }
         } else if (c == '*') {
             add_token(sql_token_type::asterisk);
         } else if (c == ';') {
@@ -205,8 +245,6 @@ std::vector<sql_token> sql_tokenizer::tokenize()
             tokenize_inline_comment_or_operator();
         } else if (c == '-') {
             tokenize_eol_comment_operator_or_number();
-        } else if (c == '#') {
-            tokenize_eol_comment();
         } else if (c == '+') {
             tokenize_operator_or_number();
         } else if (c == '@') {
@@ -243,108 +281,21 @@ std::vector<sql_token> sql_tokenizer::tokenize()
         } else if (c == '&' || c == '^' || c == '~') {
             add_token(sql_token_type::bitwise_operator);
         } else if (c == ':') {
-            if (next() == '=') {
+            auto n = next();
+            if (n == '=') {
                 add_token(sql_token_type::binary_operator);
+            } else if (n == ':') {
+                add_token(sql_token_type::command);
             } else {
                 add_token(sql_token_type::label);
             }
+        } else if (c == '[') {
+            add_token(sql_token_type::array_open);
+        } else if (c == ']') {
+            add_token(sql_token_type::array_close);
         }
     }
     return tokens_;
-}
-
-sql_dialect sql_dialect_from_type(std::string_view type)
-{
-    if (type == "mysql" || type == "mysql2") {
-        return sql_dialect::mysql;
-    }
-    if (type == "postgresql") {
-        return sql_dialect::postgresql;
-    }
-    if (type == "sqlite") {
-        return sql_dialect::sqlite;
-    }
-    if (type == "oracle") {
-        return sql_dialect::oracle;
-    }
-    if (type == "doctrine") {
-        return sql_dialect::doctrine;
-    }
-    if (type == "hsqldb") {
-        return sql_dialect::hsqldb;
-    }
-    return sql_dialect::generic;
-}
-
-std::ostream &operator<<(std::ostream &os, sql_token_type type)
-{
-    switch (type) {
-    case sql_token_type::command:
-        os << "command";
-        break;
-    case sql_token_type::identifier:
-        os << "identifier";
-        break;
-    case sql_token_type::number:
-        os << "number";
-        break;
-    case sql_token_type::string:
-        os << "string";
-        break;
-    case sql_token_type::single_quoted_string:
-        os << "single_quoted_string";
-        break;
-    case sql_token_type::double_quoted_string:
-        os << "double_quoted_string";
-        break;
-    case sql_token_type::back_quoted_string:
-        os << "back_quoted_string";
-        break;
-    case sql_token_type::whitespace:
-        os << "whitespace";
-        break;
-    case sql_token_type::asterisk:
-        os << "asterisk";
-        break;
-    case sql_token_type::eol_comment:
-        os << "eol_comment";
-        break;
-    case sql_token_type::parenthesis_open:
-        os << "parenthesis_open";
-        break;
-    case sql_token_type::parenthesis_close:
-        os << "parenthesis_close";
-        break;
-    case sql_token_type::comma:
-        os << "comma";
-        break;
-    case sql_token_type::questionmark:
-        os << "questionmark";
-        break;
-    case sql_token_type::label:
-        os << "label";
-        break;
-    case sql_token_type::dot:
-        os << "dot";
-        break;
-    case sql_token_type::query_end:
-        os << "query_end";
-        break;
-    case sql_token_type::binary_operator:
-        os << "binary_operator";
-        break;
-    case sql_token_type::bitwise_operator:
-        os << "bitwise_operator";
-        break;
-    case sql_token_type::inline_comment:
-        os << "inline_comment";
-        break;
-    case sql_token_type::unknown:
-    default:
-        os << "unknown";
-        break;
-    }
-    return os;
 }
 
 } // namespace ddwaf

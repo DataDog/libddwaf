@@ -8,7 +8,10 @@
 #include "exception.hpp"
 #include "iterator.hpp"
 #include "regex_utils.hpp"
-#include "sql_tokenizer.hpp"
+#include "tokenizer/mysql.hpp"
+#include "tokenizer/oracle.hpp"
+#include "tokenizer/pgsql.hpp"
+#include "tokenizer/sqlite.hpp"
 #include "utils.hpp"
 
 #include <iostream>
@@ -42,6 +45,7 @@ bool is_identifier(sql_token_type type)
 {
     return type == sql_token_type::identifier || type == sql_token_type::back_quoted_string ||
            type == sql_token_type::double_quoted_string ||
+           type == sql_token_type::dollar_quoted_string ||
            type == sql_token_type::single_quoted_string;
 }
 
@@ -332,7 +336,8 @@ bool contains_harmful_tokens(std::span<sql_token> tokens)
         if (t != sql_token_type::comma && t != sql_token_type::parenthesis_close &&
             t != sql_token_type::parenthesis_open && t != sql_token_type::number &&
             t != sql_token_type::single_quoted_string &&
-            t != sql_token_type::double_quoted_string) {
+            t != sql_token_type::double_quoted_string &&
+            t != sql_token_type::dollar_quoted_string) {
             return true;
         }
     }
@@ -372,8 +377,32 @@ std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
 
 namespace {
 
+template <typename T> std::vector<sql_token> tokenize_helper(std::string_view statement)
+{
+    T tokenizer(statement);
+    return tokenizer.tokenize();
+}
+
+std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
+{
+    switch (dialect) {
+    case sql_dialect::postgresql:
+        return tokenize_helper<pgsql_tokenizer>(statement);
+    case sql_dialect::mysql:
+        return tokenize_helper<mysql_tokenizer>(statement);
+    case sql_dialect::oracle:
+        return tokenize_helper<oracle_tokenizer>(statement);
+    case sql_dialect::sqlite:
+        return tokenize_helper<sqlite_tokenizer>(statement);
+    default:
+        break;
+    }
+    // TODO figure out what to do here...?
+    return tokenize_helper<mysql_tokenizer>(statement);
+}
+
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
-    const ddwaf_object &params, sql_flavour /*flavour*/,
+    const ddwaf_object &params, sql_dialect dialect,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
@@ -399,8 +428,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         if (resource_tokens.empty()) {
             // We found a potential injection, so we tokenize the resource which will
             // then be used by all remaining calls to this function
-            sql_tokenizer tokenizer(resource);
-            resource_tokens = tokenizer.tokenize();
+            resource_tokens = tokenize(resource, dialect);
             if (resource_tokens.empty()) {
                 return sqli_error::invalid_sql;
             }
@@ -425,6 +453,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         /*bool query_comment = is_query_comment(param_tokens);*/
         /*DDWAF_DEBUG("Query comment {}", query_comment);*/
 
+        // TODO: Strip parenthesis before evaluation
         if ((contains_harmful_tokens(param_tokens) &&
                 !is_benign_order_by_clause(resource_tokens, param_tokens, param_tokens_begin)) ||
             (param_tokens.size() < min_token_count &&
@@ -446,13 +475,13 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
     const unary_argument<std::string_view> &db_type, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
-    auto flavour = sql_flavour_from_type(db_type.value);
+    auto dialect = sql_dialect_from_type(db_type.value);
 
     std::vector<sql_token> resource_tokens;
 
     for (const auto &param : params) {
         auto res = internal::sqli_impl(
-            sql.value, resource_tokens, *param.value, flavour, objects_excluded, limits_, deadline);
+            sql.value, resource_tokens, *param.value, dialect, objects_excluded, limits_, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             bool ephemeral = sql.ephemeral || param.ephemeral;

@@ -6,6 +6,7 @@
 
 #include "condition/sqli_detector.hpp"
 #include "test_utils.hpp"
+#include "tokenizer/pgsql.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -57,7 +58,7 @@ TEST(TestSqliDetectorInternals, HasOrderByStructureSuccess)
     };
 
     for (const auto &sample : samples) {
-        sql_tokenizer tokenizer(sample);
+        pgsql_tokenizer tokenizer(sample);
         auto tokens = tokenizer.tokenize();
 
         EXPECT_TRUE(internal::has_order_by_structure(tokens)) << sample;
@@ -73,7 +74,7 @@ TEST(TestSqliDetectorInternals, HasOrderByStructureFailure)
     };
 
     for (const auto &sample : samples) {
-        sql_tokenizer tokenizer(sample);
+        pgsql_tokenizer tokenizer(sample);
         auto tokens = tokenizer.tokenize();
 
         EXPECT_FALSE(internal::has_order_by_structure(tokens)) << sample;
@@ -118,7 +119,7 @@ TEST(TestSqliDetectorInternals, IsBenignOrderByClauseSuccess)
 
     for (const auto &sample : samples) {
         auto statement = "ORDER BY " + sample;
-        sql_tokenizer tokenizer(statement);
+        pgsql_tokenizer tokenizer(statement);
         auto resource_tokens = tokenizer.tokenize();
 
         EXPECT_STRV(resource_tokens[0].str, "ORDER BY");
@@ -132,7 +133,7 @@ TEST(TestSqliDetectorInternals, IsBenignOrderByClauseSuccess)
 TEST(TestSqliDetectorInternals, IsBenignOrderByClauseNotAnOrderBy)
 {
     std::string statement = "SELECT table desc";
-    sql_tokenizer tokenizer(statement);
+    pgsql_tokenizer tokenizer(statement);
     auto resource_tokens = tokenizer.tokenize();
 
     std::span<sql_token> param_tokens{&resource_tokens[1], resource_tokens.size() - 1};
@@ -143,7 +144,7 @@ TEST(TestSqliDetectorInternals, IsBenignOrderByClauseNotAnOrderBy)
 TEST(TestSqliDetectorInternals, IsBenignOrderByClauseNotEnoughTokens)
 {
     std::string statement = "table desc";
-    sql_tokenizer tokenizer(statement);
+    pgsql_tokenizer tokenizer(statement);
     auto resource_tokens = tokenizer.tokenize();
 
     auto res = internal::is_benign_order_by_clause(resource_tokens, resource_tokens, 0);
@@ -170,7 +171,7 @@ TEST(TestSqliDetectorInternals, IsWhereTautologySuccess)
         {"SELECT x FROM t WHERE id = '1' or 1 = '1'", "1 = '1'"}};
 
     for (const auto &[statement, param] : samples) {
-        sql_tokenizer tokenizer(statement);
+        pgsql_tokenizer tokenizer(statement);
         auto resource_tokens = tokenizer.tokenize();
 
         auto param_begin = statement.find(param);
@@ -197,7 +198,7 @@ TEST(TestSqliDetectorInternals, IsWhereTautologyFailure)
     };
 
     for (const auto &[statement, param] : samples) {
-        sql_tokenizer tokenizer(statement);
+        pgsql_tokenizer tokenizer(statement);
         auto resource_tokens = tokenizer.tokenize();
 
         auto param_begin = statement.find(param);
@@ -225,7 +226,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
     };
 
     for (const auto &[statement, param] : samples) {
-        sql_tokenizer tokenizer(statement);
+        pgsql_tokenizer tokenizer(statement);
         auto resource_tokens = tokenizer.tokenize();
 
         auto param_begin = statement.find(param);

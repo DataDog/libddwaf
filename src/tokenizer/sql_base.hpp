@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "utils.hpp"
 #include <memory>
 #include <ostream>
 #include <re2/re2.h>
@@ -25,6 +26,7 @@ enum class sql_token_type {
     single_quoted_string,
     double_quoted_string,
     back_quoted_string,
+    dollar_quoted_string,
     whitespace,
     asterisk,
     eol_comment,
@@ -38,6 +40,8 @@ enum class sql_token_type {
     binary_operator,
     bitwise_operator,
     inline_comment,
+    array_open,
+    array_close,
 };
 
 struct sql_token {
@@ -49,21 +53,13 @@ struct sql_token {
 sql_dialect sql_dialect_from_type(std::string_view type);
 std::ostream &operator<<(std::ostream &os, sql_token_type type);
 
-class sql_tokenizer {
+template <typename T> class sql_tokenizer {
 public:
     explicit sql_tokenizer(std::string_view str) : buffer_(str) {}
 
-    std::vector<sql_token> tokenize();
+    std::vector<sql_token> tokenize() { return static_cast<T *>(this)->tokenize_impl(); }
 
 protected:
-    void tokenize_command_operator_or_identifier();
-    void tokenize_string(char quote, sql_token_type type);
-    void tokenize_inline_comment_or_operator();
-    void tokenize_eol_comment();
-    void tokenize_eol_comment_operator_or_number();
-    void tokenize_operator_or_number();
-    void tokenize_number();
-
     [[nodiscard]] char peek() const
     {
         if (idx_ >= buffer_.size()) {
@@ -98,6 +94,8 @@ protected:
         return buffer_.substr(start, size);
     }
 
+    std::string_view substr() { return buffer_.substr(idx_); }
+
     void add_token(sql_token_type type, std::size_t size = 1)
     {
         sql_token token;
@@ -106,6 +104,14 @@ protected:
         token.str = substr(token.index, size);
         tokens_.emplace_back(token);
         advance(size - 1);
+    }
+
+    optional_ref<sql_token> last_token()
+    {
+        if (tokens_.empty()) {
+            return {};
+        }
+        return tokens_.back();
     }
 
     std::string_view buffer_;
