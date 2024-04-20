@@ -16,9 +16,9 @@
 
 namespace ddwaf {
 
-class oracle_tokenizer : public sql_tokenizer<oracle_tokenizer> {
+class sql_standard_tokenizer : public sql_tokenizer<sql_standard_tokenizer> {
 public:
-    explicit oracle_tokenizer(std::string_view str) : sql_tokenizer(str) {}
+    explicit sql_standard_tokenizer(std::string_view str) : sql_tokenizer(str) {}
 
 protected:
     std::vector<sql_token> tokenize_impl();
@@ -31,7 +31,7 @@ protected:
     void tokenize_operator_or_number();
     void tokenize_number();
 
-    friend class sql_tokenizer<oracle_tokenizer>;
+    friend class sql_tokenizer<sql_standard_tokenizer>;
 };
 
 } // namespace ddwaf

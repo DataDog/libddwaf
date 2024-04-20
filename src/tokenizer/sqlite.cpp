@@ -8,14 +8,11 @@
 #include "regex_utils.hpp"
 #include "utils.hpp"
 
-#include <iostream>
-
-// TODO: Split the tokenizer into different dialects
-
 namespace ddwaf {
 namespace {
+// https://www.sqlite.org/lang_select.html
 constexpr std::string_view identifier_regex_str =
-    R"((?i)(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)\b|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
+    R"((?i)(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP BY|HAVING|WINDOW|AS|VALUES|OFFSET|LIMIT|ORDER BY|ASC|DESC)\b|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|IS DISTINCT FROM|IS NOT DISTINCT FROM|MATCH|NOTNULL|NOT NULL|ISNULL|IS NOT NULL|IS NOT|NOT|IS)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b|\$[0-9]+\b))";
 constexpr std::string_view number_regex_str =
     R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
 
@@ -130,8 +127,14 @@ void sqlite_tokenizer::tokenize_eol_comment()
 
 void sqlite_tokenizer::tokenize_eol_comment_operator_or_number()
 {
-    if (next() == '-') {
+    auto n = next();
+    if (n == '-') {
         tokenize_eol_comment();
+        return;
+    }
+
+    if (n == '>') { // Match JSON operators ->> and ->
+        add_token(sql_token_type::binary_operator, next(2) == '>' ? 3 : 2);
         return;
     }
 
@@ -176,7 +179,7 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
     for (; !eof(); advance()) {
         auto c = peek();
         // TODO use an array of characters or a giant switch?
-        if (ddwaf::isalpha(c) || c == '_' ||
+        if (ddwaf::isalpha(c) || c == '$'||
             static_cast<unsigned char>(c) > 0x7f) { // Command or identifier
             tokenize_command_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
@@ -205,17 +208,10 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
             tokenize_inline_comment_or_operator();
         } else if (c == '-') {
             tokenize_eol_comment_operator_or_number();
-        } else if (c == '#') {
-            tokenize_eol_comment();
         } else if (c == '+') {
             tokenize_operator_or_number();
-        } else if (c == '@') {
-            auto n = next();
-            if (n == '@' || n == '>') {
-                add_token(sql_token_type::binary_operator, 2);
-            }
-        } else if (c == '!') {
-            add_token(sql_token_type::binary_operator, next() == '=' ? 2 : 1);
+        } else if (c == '!' && next() == '=') {
+            add_token(sql_token_type::binary_operator, 2);
         } else if (c == '>') {
             auto n = next();
             if (n == '>' || n == '=') {
@@ -225,7 +221,7 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
             }
         } else if (c == '<') {
             auto n = next();
-            if (n == '=' || n == '@') {
+            if (n == '=') {
                 add_token(sql_token_type::binary_operator, next(2) == '>' ? 3 : 2);
             } else if (n == '<' || n == '>') {
                 add_token(sql_token_type::binary_operator, 2);
@@ -240,14 +236,10 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
             } else {
                 add_token(sql_token_type::bitwise_operator);
             }
-        } else if (c == '&' || c == '^' || c == '~') {
+        } else if (c == '&' || c == '~') {
             add_token(sql_token_type::bitwise_operator);
         } else if (c == ':') {
-            if (next() == '=') {
-                add_token(sql_token_type::binary_operator);
-            } else {
-                add_token(sql_token_type::label);
-            }
+            add_token(sql_token_type::label);
         }
     }
     return tokens_;

@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "tokenizer/oracle.hpp"
+#include "tokenizer/sql_standard.hpp"
 #include "regex_utils.hpp"
 #include "utils.hpp"
 
@@ -36,7 +36,7 @@ std::string_view extract_number(std::string_view str)
 
 } // namespace
 
-void oracle_tokenizer::tokenize_command_operator_or_identifier()
+void sql_standard_tokenizer::tokenize_command_operator_or_identifier()
 {
     sql_token token;
     token.index = index();
@@ -67,7 +67,7 @@ void oracle_tokenizer::tokenize_command_operator_or_identifier()
     }
 }
 
-void oracle_tokenizer::tokenize_string(char quote, sql_token_type type)
+void sql_standard_tokenizer::tokenize_string(char quote, sql_token_type type)
 {
     sql_token token;
     token.index = index();
@@ -81,7 +81,7 @@ void oracle_tokenizer::tokenize_string(char quote, sql_token_type type)
     tokens_.emplace_back(token);
 }
 
-void oracle_tokenizer::tokenize_inline_comment_or_operator()
+void sql_standard_tokenizer::tokenize_inline_comment_or_operator()
 {
     // The first character is / so it can be a comment or a binary operator
     sql_token token;
@@ -103,7 +103,7 @@ void oracle_tokenizer::tokenize_inline_comment_or_operator()
     tokens_.emplace_back(token);
 }
 
-void oracle_tokenizer::tokenize_number()
+void sql_standard_tokenizer::tokenize_number()
 {
     sql_token token;
     token.index = index();
@@ -115,7 +115,7 @@ void oracle_tokenizer::tokenize_number()
     advance(token.str.size() - 1);
 }
 
-void oracle_tokenizer::tokenize_eol_comment()
+void sql_standard_tokenizer::tokenize_eol_comment()
 {
     // Inline comment
     sql_token token;
@@ -128,7 +128,7 @@ void oracle_tokenizer::tokenize_eol_comment()
     tokens_.emplace_back(token);
 }
 
-void oracle_tokenizer::tokenize_eol_comment_operator_or_number()
+void sql_standard_tokenizer::tokenize_eol_comment_operator_or_number()
 {
     if (next() == '-') {
         tokenize_eol_comment();
@@ -152,7 +152,7 @@ void oracle_tokenizer::tokenize_eol_comment_operator_or_number()
     tokens_.emplace_back(token);
 }
 
-void oracle_tokenizer::tokenize_operator_or_number()
+void sql_standard_tokenizer::tokenize_operator_or_number()
 {
     sql_token token;
     token.index = index();
@@ -171,7 +171,7 @@ void oracle_tokenizer::tokenize_operator_or_number()
     tokens_.emplace_back(token);
 }
 
-std::vector<sql_token> oracle_tokenizer::tokenize_impl()
+std::vector<sql_token> sql_standard_tokenizer::tokenize_impl()
 {
     for (; !eof(); advance()) {
         auto c = peek();

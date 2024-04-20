@@ -9,13 +9,11 @@
 #include "iterator.hpp"
 #include "regex_utils.hpp"
 #include "tokenizer/mysql.hpp"
-#include "tokenizer/oracle.hpp"
 #include "tokenizer/pgsql.hpp"
 #include "tokenizer/sqlite.hpp"
+#include "tokenizer/sql_standard.hpp"
 #include "utils.hpp"
 
-#include <iostream>
-#include <type_traits>
 #include <variant>
 
 using namespace std::literals;
@@ -43,10 +41,11 @@ using sqli_result = std::variant<sqli_error, matched_param, std::monostate>;
 
 bool is_identifier(sql_token_type type)
 {
-    return type == sql_token_type::identifier || type == sql_token_type::back_quoted_string ||
+    return type == sql_token_type::identifier ||
            type == sql_token_type::double_quoted_string ||
+           type == sql_token_type::single_quoted_string ||
            type == sql_token_type::dollar_quoted_string ||
-           type == sql_token_type::single_quoted_string;
+           type == sql_token_type::back_quoted_string;
 }
 
 } // namespace
@@ -390,15 +389,13 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
         return tokenize_helper<pgsql_tokenizer>(statement);
     case sql_dialect::mysql:
         return tokenize_helper<mysql_tokenizer>(statement);
-    case sql_dialect::oracle:
-        return tokenize_helper<oracle_tokenizer>(statement);
     case sql_dialect::sqlite:
         return tokenize_helper<sqlite_tokenizer>(statement);
     default:
         break;
     }
     // TODO figure out what to do here...?
-    return tokenize_helper<mysql_tokenizer>(statement);
+    return tokenize_helper<sql_standard_tokenizer>(statement);
 }
 
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
