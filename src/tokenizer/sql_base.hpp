@@ -7,6 +7,7 @@
 #pragma once
 
 #include "utils.hpp"
+#include <iostream>
 #include <memory>
 #include <ostream>
 #include <re2/re2.h>
@@ -67,9 +68,9 @@ protected:
         }
         return buffer_[idx_];
     }
-    [[nodiscard]] char prev() const
+    [[nodiscard]] char prev(std::size_t offset = 1) const
     {
-        if (idx_ == 0) {
+        if (idx_ < offset) {
             [[unlikely]] return '\0';
         }
         return buffer_[idx_ - 1];
@@ -112,6 +113,27 @@ protected:
             return {};
         }
         return tokens_.back();
+    }
+
+    void tokenize_string(char quote, sql_token_type type)
+    {
+        sql_token token;
+        token.index = index();
+        token.type = type;
+
+        unsigned slash_count = 0;
+        while (advance()) {
+            if (peek() == '\\') {
+                // Count consecutive backslashes
+                slash_count = (slash_count + 1) % 2;
+            } else if (slash_count > 0) {
+                slash_count = 0;
+            } else if (peek() == quote && slash_count == 0) {
+                break;
+            }
+        }
+        token.str = substr(token.index, index() - token.index + 1);
+        tokens_.emplace_back(token);
     }
 
     std::string_view buffer_;

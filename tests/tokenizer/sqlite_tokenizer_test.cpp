@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "tokenizer/sqlite.hpp"
 #include "../test_utils.hpp"
+#include "tokenizer/sqlite.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -23,7 +23,9 @@ std::string str_to_lower(const std::string &str)
 
 TEST(TestSqliteTokenizer, Commands)
 {
-    std::vector<std::string> samples{"SELECT", "DISTINCT", "ALL", "FROM", "WHERE", "GROUP BY", "HAVING", "WINDOW", "AS", "VALUES", "OFFSET", "LIMIT", "ORDER BY", "ASC", "DESC"};
+    std::vector<std::string> samples{"SELECT", "DISTINCT", "ALL", "FROM", "WHERE", "GROUP BY",
+        "HAVING", "WINDOW", "AS", "VALUES", "OFFSET", "LIMIT", "ORDER BY", "ASC", "DESC", "UNION",
+        "UNION ALL", "INTERSECT", "EXCEPT"};
 
     for (const auto &statement : samples) {
         {
@@ -74,10 +76,9 @@ TEST(TestSqliteTokenizer, BinaryOperators)
 {
     // Asterisk is a special case
     std::vector<std::string> samples{"+", "-", "/", "%", "=", "!=", "<>", "<", ">",
-        ">=", "<=", "<<", ">>", "||",  "OR", "AND", "IN", "BETWEEN", "LIKE", "GLOB",
-        "ESCAPE", "COLLATE", "REGEXP", "IS DISTINCT FROM", "IS NOT DISTINCT FROM",
-        "MATCH", "NOTNULL", "NOT NULL", "ISNULL", "IS NOT NULL", "IS NOT", "NOT", "IS"
-    };
+        ">=", "<=", "<<", ">>", "||", "OR", "AND", "IN", "BETWEEN", "LIKE", "GLOB", "ESCAPE",
+        "COLLATE", "REGEXP", "IS DISTINCT FROM", "IS NOT DISTINCT FROM", "MATCH", "NOTNULL",
+        "NOT NULL", "ISNULL", "IS NOT NULL", "IS NOT", "NOT", "IS"};
     for (const auto &statement : samples) {
         {
             sqlite_tokenizer tokenizer(statement);
@@ -158,6 +159,8 @@ TEST(TestSqliteTokenizer, DoubleQuotedString)
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"("this is a string")", {stt::double_quoted_string}},
         {R"("this is \"quoted\" string")", {stt::double_quoted_string}},
+        {R"("this is \\\\\"quoted\" string")", {stt::double_quoted_string}},
+        {R"("this \n is \\\\\"quoted\\\\\" string")", {stt::double_quoted_string}},
         {R"("this is \"quoted\" string" and "another string")",
             {stt::double_quoted_string, stt::binary_operator, stt::double_quoted_string}},
         {R"("this is an unterminated string)", {stt::double_quoted_string}},
@@ -183,6 +186,8 @@ TEST(TestSqliteTokenizer, SingleQuotedString)
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"('this is a string')", {stt::single_quoted_string}},
         {R"('this is \'quoted\' string')", {stt::single_quoted_string}},
+        {R"('this is \\\\\'quoted\' string')", {stt::single_quoted_string}},
+        {R"('this \n is \\\\\'quoted\\\\\' string')", {stt::single_quoted_string}},
         {R"('this is \'quoted\' string' and 'another string')",
             {stt::single_quoted_string, stt::binary_operator, stt::single_quoted_string}},
         {R"('this is an unterminated string)", {stt::single_quoted_string}},
@@ -208,6 +213,8 @@ TEST(TestSqliteTokenizer, BacktickQuotedString)
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"(`this is a string`)", {stt::back_quoted_string}},
         {R"(`this is \`quoted\` string`)", {stt::back_quoted_string}},
+        {R"(`this is \\\\\`quoted\` string`)", {stt::back_quoted_string}},
+        {R"(`this \n is \\\\\`quoted\\\\\` string`)", {stt::back_quoted_string}},
         {R"(`this is \`quoted\` string` and `another string`)",
             {stt::back_quoted_string, stt::binary_operator, stt::back_quoted_string}},
         {R"(`this is an unterminated string)", {stt::back_quoted_string}},
@@ -256,7 +263,60 @@ TEST(TestSqliteTokenizer, Basic)
                 stt::identifier, stt::command, stt::identifier, stt::query_end}},
         {R"(SELECT * FROM TEST LIMIT 1000;)",
             {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command, stt::number,
-                stt::query_end}}};
+                stt::query_end}},
+        {R"(SELECT * FROM table WHERE title LIKE '%' || ? || '%';)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::single_quoted_string,
+                stt::binary_operator, stt::questionmark, stt::binary_operator,
+                stt::single_quoted_string, stt::query_end}},
+
+        {R"(SELECT name FROM (SELECT * FROM sqlite_master UNION ALL SELECT * FROM sqlite_temp_master) WHERE type='table' ORDER BY name)",
+            {stt::command, stt::identifier, stt::command, stt::parenthesis_open, stt::command,
+                stt::asterisk, stt::command, stt::identifier, stt::command, stt::command,
+                stt::asterisk, stt::command, stt::identifier, stt::parenthesis_close, stt::command,
+                stt::identifier, stt::binary_operator, stt::single_quoted_string, stt::command,
+                stt::identifier}},
+
+        {R"(SELECT x FROM t1 WHERE 'abc' = b ORDER BY x;)",
+            {stt::command, stt::identifier, stt::command, stt::identifier, stt::command,
+                stt::single_quoted_string, stt::binary_operator, stt::identifier, stt::command,
+                stt::identifier, stt::query_end}},
+
+        {R"(SELECT x FROM t1 ORDER BY (c||''), x;)",
+            {stt::command, stt::identifier, stt::command, stt::identifier, stt::command,
+                stt::parenthesis_open, stt::identifier, stt::binary_operator,
+                stt::single_quoted_string, stt::parenthesis_close, stt::comma, stt::identifier,
+                stt::query_end}},
+
+        {R"(SELECT 3 < 4, 3 <> 5, 4 >= 4, 5 != 5;)",
+            {stt::command, stt::number, stt::binary_operator, stt::number, stt::comma, stt::number,
+                stt::binary_operator, stt::number, stt::comma, stt::number, stt::binary_operator,
+                stt::number, stt::comma, stt::number, stt::binary_operator, stt::number,
+                stt::query_end}},
+
+        {R"(SELECT 'wolf' || 'hound';)",
+            {stt::command, stt::single_quoted_string, stt::binary_operator,
+                stt::single_quoted_string, stt::query_end}},
+
+        {R"(SELECT * FROM foo WHERE bar = '" test "';)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::single_quoted_string, stt::query_end}},
+
+        // https://www.sqlite.org/faq.html (14)
+        {R"(SELECT  1 FROM u WHERE mail = 'vega@example.com\\''' LIMIT 1 ;)",
+            {stt::command, stt::number, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::single_quoted_string,
+                stt::single_quoted_string, stt::command, stt::number, stt::query_end}},
+
+        {R"(SELECT /*! simple inline comment */ * FROM dual)",
+            {stt::command, stt::inline_comment, stt::asterisk, stt::command, stt::identifier}},
+
+        {R"(SELECT -- /*! simple inline comment */ * FROM dual)", {stt::command, stt::eol_comment}},
+
+        {R"(SELECT * FROM productLine WHERE model = 'MacPro 2013' /*randomgarbage')",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::single_quoted_string,
+                stt::inline_comment}}};
 
     for (const auto &[statement, expected_tokens] : samples) {
         sqlite_tokenizer tokenizer(statement);

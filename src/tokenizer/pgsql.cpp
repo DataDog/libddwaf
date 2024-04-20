@@ -69,20 +69,6 @@ void pgsql_tokenizer::tokenize_command_operator_or_identifier()
     }
 }
 
-void pgsql_tokenizer::tokenize_string(char quote, sql_token_type type)
-{
-    sql_token token;
-    token.index = index();
-    token.type = type;
-    while (advance()) {
-        if (peek() == quote && prev() != '\\') {
-            break;
-        }
-    }
-    token.str = substr(token.index, index() - token.index + 1);
-    tokens_.emplace_back(token);
-}
-
 void pgsql_tokenizer::tokenize_inline_comment_or_operator()
 {
     // The first character is / so it can be a comment or a binary operator

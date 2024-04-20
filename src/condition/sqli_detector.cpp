@@ -10,8 +10,8 @@
 #include "regex_utils.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
-#include "tokenizer/sqlite.hpp"
 #include "tokenizer/sql_standard.hpp"
+#include "tokenizer/sqlite.hpp"
 #include "utils.hpp"
 
 #include <variant>
@@ -41,8 +41,7 @@ using sqli_result = std::variant<sqli_error, matched_param, std::monostate>;
 
 bool is_identifier(sql_token_type type)
 {
-    return type == sql_token_type::identifier ||
-           type == sql_token_type::double_quoted_string ||
+    return type == sql_token_type::identifier || type == sql_token_type::double_quoted_string ||
            type == sql_token_type::single_quoted_string ||
            type == sql_token_type::dollar_quoted_string ||
            type == sql_token_type::back_quoted_string;

@@ -12,7 +12,7 @@ namespace ddwaf {
 namespace {
 // https://www.sqlite.org/lang_select.html
 constexpr std::string_view identifier_regex_str =
-    R"((?i)(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP BY|HAVING|WINDOW|AS|VALUES|OFFSET|LIMIT|ORDER BY|ASC|DESC)\b|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|IS DISTINCT FROM|IS NOT DISTINCT FROM|MATCH|NOTNULL|NOT NULL|ISNULL|IS NOT NULL|IS NOT|NOT|IS)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b|\$[0-9]+\b))";
+    R"((?i)(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP BY|HAVING|WINDOW|AS|VALUES|OFFSET|LIMIT|ORDER BY|ASC|DESC|UNION ALL|UNION|INTERSECT|EXCEPT)\b|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|IS DISTINCT FROM|IS NOT DISTINCT FROM|MATCH|NOTNULL|NOT NULL|ISNULL|IS NOT NULL|IS NOT|NOT|IS)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b|\$[0-9]+\b))";
 constexpr std::string_view number_regex_str =
     R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
 
@@ -62,20 +62,6 @@ void sqlite_tokenizer::tokenize_command_operator_or_identifier()
         }
         tokens_.emplace_back(token);
     }
-}
-
-void sqlite_tokenizer::tokenize_string(char quote, sql_token_type type)
-{
-    sql_token token;
-    token.index = index();
-    token.type = type;
-    while (advance()) {
-        if (peek() == quote && prev() != '\\') {
-            break;
-        }
-    }
-    token.str = substr(token.index, index() - token.index + 1);
-    tokens_.emplace_back(token);
 }
 
 void sqlite_tokenizer::tokenize_inline_comment_or_operator()
@@ -179,7 +165,7 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
     for (; !eof(); advance()) {
         auto c = peek();
         // TODO use an array of characters or a giant switch?
-        if (ddwaf::isalpha(c) || c == '$'||
+        if (ddwaf::isalpha(c) || c == '$' ||
             static_cast<unsigned char>(c) > 0x7f) { // Command or identifier
             tokenize_command_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
