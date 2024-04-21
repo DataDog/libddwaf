@@ -28,7 +28,8 @@ protected:
     void tokenize_eol_comment();
     void tokenize_eol_comment_operator_or_number();
     void tokenize_operator_or_number();
-    void tokenize_number();
+    void tokenize_number_or_identifier();
+    void tokenize_variable();
 
     friend class sql_tokenizer<mysql_tokenizer>;
 };

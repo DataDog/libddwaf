@@ -43,6 +43,8 @@ enum class sql_token_type {
     inline_comment,
     array_open,
     array_close,
+    curly_brace_open,
+    curly_brace_close,
 };
 
 struct sql_token {
@@ -115,12 +117,9 @@ protected:
         return tokens_.back();
     }
 
-    void tokenize_string(char quote, sql_token_type type)
+    std::string_view extract_string(char quote)
     {
-        sql_token token;
-        token.index = index();
-        token.type = type;
-
+        auto begin = index();
         unsigned slash_count = 0;
         while (advance()) {
             if (peek() == '\\') {
@@ -132,7 +131,15 @@ protected:
                 break;
             }
         }
-        token.str = substr(token.index, index() - token.index + 1);
+        return substr(begin, index() - begin + 1);
+    }
+
+    void tokenize_string(char quote, sql_token_type type)
+    {
+        sql_token token;
+        token.index = index();
+        token.type = type;
+        token.str = extract_string(quote);
         tokens_.emplace_back(token);
     }
 
