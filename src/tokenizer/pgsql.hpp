@@ -29,6 +29,7 @@ protected:
     void tokenize_eol_comment_operator_or_number();
     void tokenize_operator_or_number();
     void tokenize_number();
+    void tokenize_dollar_quoted_string();
     void tokenize_dollar_string_or_identifier();
 
     friend class sql_tokenizer<pgsql_tokenizer>;

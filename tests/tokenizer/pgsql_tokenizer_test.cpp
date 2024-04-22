@@ -237,14 +237,14 @@ TEST(TestPgSqlTokenizer, BacktickQuotedString)
 TEST(TestPgSqlTokenizer, DolllarQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
-        {R"($this is a string$)", {stt::dollar_quoted_string}},
-        {R"($this is \$quoted\$ string$)", {stt::dollar_quoted_string}},
-        {R"($this is \$quoted\$ string$ and $another string$)",
+        {R"($$this is a string$$)", {stt::dollar_quoted_string}},
+        {R"($tag$this is $$inner tag$$ string$tag$)", {stt::dollar_quoted_string}},
+        {R"($_tag11$this is $$inner tag$$ string$_tag11$ and $$another string$$)",
             {stt::dollar_quoted_string, stt::binary_operator, stt::dollar_quoted_string}},
-        {R"($this is an unterminated string)", {stt::dollar_quoted_string}},
-        {R"(SELECT $colname$)", {stt::command, stt::dollar_quoted_string}},
-        {R"($colname$ FROM)", {stt::dollar_quoted_string, stt::command}},
-        {R"(SELECT $colname$ FROM $table$;)",
+        {R"($unterminated$this is an unterminated string)", {stt::dollar_quoted_string}},
+        {R"(SELECT $$colname$$)", {stt::command, stt::dollar_quoted_string}},
+        {R"($tag$colname$tag$ FROM)", {stt::dollar_quoted_string, stt::command}},
+        {R"(SELECT $$colname$$ FROM $$table$$;)",
             {stt::command, stt::dollar_quoted_string, stt::command, stt::dollar_quoted_string,
                 stt::query_end}},
     };

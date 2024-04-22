@@ -10,14 +10,26 @@
 
 #include <iostream>
 
-// TODO: Split the tokenizer into different dialects
-
 namespace ddwaf {
 namespace {
+
+/*
+ * https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
+ * SQL identifiers and key words must begin with a letter (a-z, but also letters with diacritical
+ * marks and non-Latin letters) or an underscore (_). Subsequent characters in an identifier or key
+ * word can be letters, underscores, digits (0-9), or dollar signs ($). Note that dollar signs are
+ * not allowed in identifiers according to the letter of the SQL standard, so their use might render
+ * applications less portable. The SQL standard will not define a key word that contains digits or
+ * starts or ends with an underscore, so identifiers of this form are safe against possible conflict
+ * with future extensions of the standard.
+ */
 constexpr std::string_view identifier_regex_str =
     R"((?i)(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)\b|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
+
+// TODO numbers are common to all implementations
 constexpr std::string_view number_regex_str =
     R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
+
 constexpr std::string_view parameter_regex_str = R"(\$[0-9]+\b)";
 
 auto identifier_regex = regex_init(identifier_regex_str);
@@ -165,19 +177,58 @@ void pgsql_tokenizer::tokenize_operator_or_number()
     tokens_.emplace_back(token);
 }
 
+void pgsql_tokenizer::tokenize_dollar_quoted_string()
+{
+    // https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-DOLLAR-QUOTING
+    sql_token token;
+    token.index = index();
+    token.type = sql_token_type::dollar_quoted_string;
+
+    while (advance()) {
+        auto c = peek();
+        if (!ddwaf::isalnum(c) && c != '_' && c <= 0x7f) {
+            break;
+        }
+    }
+
+    if (peek() != '$') {
+        // Unclear what we've found, ignore it and move on
+        return;
+    }
+
+    // We found a valid tag, we should find the end tag
+    auto tag = substr(token.index, index() - token.index + 1);
+    while (advance()) {
+        // Dollar quoted strings can be nested so we must check the tag
+        if (peek() == '$' && substr().starts_with(tag)) {
+            advance(tag.size() - 1);
+            break;
+        }
+    }
+
+    // At this point we either added a token or we found an unterminated dollar
+    // quoted string constant...
+    token.str = substr(token.index, index() - token.index + 1);
+    tokens_.emplace_back(token);
+}
+
 void pgsql_tokenizer::tokenize_dollar_string_or_identifier()
 {
-    // This can be ambiguous as a dollar quoted string could match this pattern
-    auto str = substr();
-
-    re2::StringPiece parameter;
-    const re2::StringPiece ref(str.data(), str.size());
-    if (re2::RE2::PartialMatch(ref, *parameter_regex, &parameter)) {
-        if (!parameter.empty()) {
-            add_token(sql_token_type::identifier, ref.size());
-        }
+    // Dollar quoted string tags can't start with numeric characters, while
+    // variables can only contain numeric characters.
+    auto n = next();
+    if (ddwaf::isalpha(n) || n == '_' || n == '$' || n > 0x7f) {
+        tokenize_dollar_quoted_string();
     } else {
-        tokenize_string('$', sql_token_type::dollar_quoted_string);
+        auto str = substr();
+
+        re2::StringPiece parameter;
+        const re2::StringPiece ref(str.data(), str.size());
+        if (re2::RE2::PartialMatch(ref, *parameter_regex, &parameter)) {
+            if (!parameter.empty()) {
+                add_token(sql_token_type::identifier, ref.size());
+            }
+        }
     }
 }
 
