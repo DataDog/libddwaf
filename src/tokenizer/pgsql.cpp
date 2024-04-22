@@ -7,6 +7,7 @@
 #include "tokenizer/pgsql.hpp"
 #include "regex_utils.hpp"
 #include "utils.hpp"
+#include <iostream>
 
 namespace ddwaf {
 namespace {
@@ -22,7 +23,7 @@ namespace {
  * with future extensions of the standard.
  */
 constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)\b|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
+    R"((?i)^(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)\b|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)\b|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*)(:?\b|\s|$))";
 
 constexpr std::string_view parameter_regex_str = R"(^\$[0-9]+\b)";
 
@@ -280,9 +281,9 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
             }
         } else if (c == '<') {
             auto n = next();
-            if (n == '=' || n == '@') {
+            if (n == '=') {
                 add_token(sql_token_type::binary_operator, next(2) == '>' ? 3 : 2);
-            } else if (n == '<' || n == '>') {
+            } else if (n == '@' || n == '<' || n == '>') {
                 add_token(sql_token_type::binary_operator, 2);
             } else {
                 add_token(sql_token_type::binary_operator);
@@ -300,9 +301,9 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
         } else if (c == ':') {
             auto n = next();
             if (n == '=') {
-                add_token(sql_token_type::binary_operator);
+                add_token(sql_token_type::binary_operator, 2);
             } else if (n == ':') {
-                add_token(sql_token_type::command);
+                add_token(sql_token_type::command, 2);
             } else {
                 add_token(sql_token_type::label);
             }

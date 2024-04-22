@@ -79,12 +79,27 @@ TEST(TestPgSqlTokenizer, Number)
     }
 }
 
+TEST(TestPgSqlTokenizer, Identifiers)
+{
+    std::vector<std::string> samples{
+        "ran$om", "WoR$d", "a231a234$", "asb12321321", "_a091_", "a23__$__12"};
+
+    for (const auto &statement : samples) {
+        pgsql_tokenizer tokenizer(statement);
+        auto obtained_tokens = tokenizer.tokenize();
+        ASSERT_EQ(obtained_tokens.size(), 1) << statement;
+        EXPECT_EQ(obtained_tokens[0].type, stt::identifier) << statement;
+        EXPECT_TRUE(obtained_tokens[0].str == statement) << statement;
+    }
+}
+
 TEST(TestPgSqlTokenizer, BinaryOperators)
 {
     // Asterisk is a special case
     std::vector<std::string> samples{"+", "-", "/", "%", "=", "!=", "<>", "<", ">",
-        ">=", "<=", "@@", "@>", "<@", "<<", ">>", "||", "NOT", "OR", "XOR", "AND", "IS", "IN",
-        "BETWEEN", "LIKE", "REGEXP", "SOUNDS LIKE", "IS NULL", "IS NOT NULL", "DIV", "MOD"};
+        ">=", "<=", "<=>", ":=", "@@", "@>", "<@", "<<", ">>", "||", "->", "->>", "?|", "?&", "?",
+        "#>", "#>>", "#-", "NOT", "OR", "XOR", "AND", "IS", "IN", "BETWEEN", "LIKE", "REGEXP",
+        "SOUNDS LIKE", "IS NULL", "IS NOT NULL", "DIV", "MOD"};
 
     for (const auto &statement : samples) {
         {
