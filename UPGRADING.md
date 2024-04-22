@@ -52,6 +52,53 @@ Finally the following set of default actions are included:
 - `extract_schema`: of type `generate_schema`, instructs the user to call the WAF again with the relevant parameters required for schema generation.
 - `monitor`: an internal reserved action.
 
+### Action type specification
+The following sections describe the action types supported and their required parameters.
+
+**Note:** If an action provided in the `actions` top-level key is of an unknown and/or unsupported type, it will still be provided to the caller without validation.
+
+#### `block_request` action type
+The `block_request` action type instructs the caller to block the current request by overriding the response. The parameters required by this action type are the following:
+- `status_code`: corresponding to the HTTP response status code which should be used by the caller when overriding the response. The default value is `403`.
+- `type`: this value provides the caller with an indication of the response format, e.g. `json` or `html`. The default value is `auto`, indicating that the caller should use the `Accept` header to determine an appropriate response format.
+- `grpc_status_code`: specifically meant for gRPC requests, this represents the status code which should be used by the caller when overriding the response. The default value is `10`.
+
+If any of these parameters is missing in an action definition, the default value is used, for example:
+
+```json
+
+{
+  "id": "block",
+  "parameters": {
+    "status_code": "404",
+    "type": "auto"
+  },
+  "type": "block_request"
+},
+```
+Is missing the `grpc_status_code`, so the default value of `10` is used instead.
+
+#### `redirect_request` action type
+The `redirect_request` action type instructs the caller to override the response with a redirect response. The parameters required by this action are the following:
+- `status_code`: corresponding to the HTTP status code which should be used by the caller to redirect, this must be a value in the `300-399` range. If the value is outside of range or missing, the default value `303` is used instead.
+- `location`: specifies the URL to redirect to. This value must always be present and there is no predefined default.
+
+**Note:** If the `location` parameter is missing, the action is converted into a `block_request` action with default parameters.
+
+#### `generate_stack` action type
+The `generate_stack` action type instructs the caller to generate a stack trace. This action type requires no parameters; however, when triggered, it provides the `stack_id` that should be included in the stack trace to properly associate it with the relevant event. For example:
+
+```json
+{
+  "generate_stack": {
+    "stack_id": "b4c7aff3-8fb0-4f6a-1bc7-582700c46abe"
+  }
+}
+```
+
+#### `generate_schema` action type
+The `generate_shema` action type instructs the caller to let `libddwaf` know that it should generate the schema for the current request whenever ready. In the future, once some of the current limitations have been resolved, this might result in the automatic generation of the schema. This action type currently requires no parameters.
+
 ## Upgrading from `1.14.0` to `1.15.0`
 
 ### Interface changes
