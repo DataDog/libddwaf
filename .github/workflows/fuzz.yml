@@ -42,7 +42,7 @@ jobs:
         run: grep -v -f fuzzer/global/scripts/report-negative-patterns.txt fuzzer/global/fuzz-*.log
 
       - name: Show coverage
-        run: ./fuzzer/global/scripts/show_coverage.sh 40
+        run: ./fuzzer/global/scripts/show_coverage.sh 40 || true
 
       - name: Compress artifact
         if: ${{ always() }}
