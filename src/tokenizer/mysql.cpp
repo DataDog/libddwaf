@@ -15,7 +15,7 @@ namespace {
 
 // Operators: https://dev.mysql.com/doc/refman/5.7/en/built-in-function-reference.html
 constexpr std::string_view identifier_regex_str =
-    R"((?i)(?P<command>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP BY|WITH ROLLUP|UNION ALL|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER BY|ASC|DESC|LIMIT|OFFSET|AS)\b|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|CASE|DIV|IS NULL|IS NOT NULL|IS NOT|IS|LAST_DAY|NOT BETWEEN|NOT LIKE|NOT REGEXP|NOT|REGEXP|XOR|OR|RLIKE|SOUNDS LIKE|LIKE)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
+    R"((?i)^(?P<command>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP BY|WITH ROLLUP|UNION ALL|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER BY|ASC|DESC|LIMIT|OFFSET|AS)\b|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|CASE|DIV|NOT NULL|IS NULL|IS NOT NULL|IS NOT|IS|LAST_DAY|NOT BETWEEN|NOT LIKE|NOT REGEXP|NOT IN|NOT|REGEXP|XOR|OR|RLIKE|SOUNDS LIKE|LIKE|IN)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
 
 /*
  *  https://dev.mysql.com/doc/refman/8.0/en/user-variables.html
@@ -53,17 +53,17 @@ constexpr std::string_view identifier_regex_str =
  *  parse the variable.
  */
 constexpr std::string_view variable_regex_str =
-    R"((@@?(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]+)(:?\.(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]*))*))";
+    R"(^(@@?(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]+)(:?\.(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]*))*))";
 
 // Hexadecimal, octal, decimal or floating point
 constexpr std::string_view number_regex_str =
-    R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
+    R"((?i)^(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
 
 // Number of identifier starting by a number, note that these identifiers must always have other
 // characters and can't consist only of numbers.
 // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 constexpr std::string_view number_or_identifier_regex_str =
-    R"((?i)(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
+    R"((?i)^(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
 
 auto identifier_regex = regex_init(identifier_regex_str);
 auto variable_regex = regex_init(variable_regex_str);
@@ -131,8 +131,16 @@ void mysql_tokenizer::tokenize_inline_comment_or_operator()
     sql_token token;
     token.index = index();
     if (advance() && peek() == '*') {
-        // Comment
         advance(); // Skip the '*' in prev()
+        if (peek() == '!') {
+            // https://dev.mysql.com/doc/refman/8.0/en/comments.html
+            // These types of comments contain actual SQL code and are primarily
+            // used for MySQL-specific extensions. We can ignore the comment
+            // start token and end token.
+            return;
+        }
+
+        // Comment
         while (advance()) {
             if (prev() == '*' && peek() == '/') {
                 break;
@@ -201,7 +209,10 @@ void mysql_tokenizer::tokenize_eol_comment()
 void mysql_tokenizer::tokenize_eol_comment_operator_or_number()
 {
     auto n = next();
-    if (n == '-') {
+    auto n2 = next(2);
+    if (n == '-' && (ddwaf::isspace(n2) || n2 == '\0')) {
+        // https://dev.mysql.com/doc/refman/8.0/en/ansi-diff-comments.html
+        // EOL Comments in MySQL require a whitespace after --
         tokenize_eol_comment();
         return;
     }
@@ -274,7 +285,14 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
         } else if (c == '?') {
             add_token(sql_token_type::questionmark);
         } else if (c == '*') {
-            add_token(sql_token_type::asterisk);
+            // Since we're intentionally not tokenizing comments containing
+            // MySQL extensions (i.e. /*! ... */), we must skip the end token.
+            if (next() != '/') {
+                add_token(sql_token_type::asterisk);
+            } else {
+                // Skip the whole inline comment end token "*/"
+                advance();
+            }
         } else if (c == ';') {
             add_token(sql_token_type::query_end);
         } else if (c == '/') {

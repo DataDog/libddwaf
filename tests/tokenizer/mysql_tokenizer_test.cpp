@@ -157,6 +157,28 @@ TEST(TestMySqlTokenizer, InlineComment)
     }
 }
 
+TEST(TestMySqlTokenizer, InlineCompatComment)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {R"(/*! STRAIGHT_JOIN */)", {stt::command}},
+        {R"(SELECT /*! * FROM table */;)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::query_end}},
+        {R"(SELECT /*! * */ FROM table;)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::query_end}},
+        {R"(/*! SELECT * */ FROM table;)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::query_end}},
+    };
+
+    for (const auto &[statement, expected_tokens] : samples) {
+        mysql_tokenizer tokenizer(statement);
+        auto obtained_tokens = tokenizer.tokenize();
+        ASSERT_EQ(expected_tokens.size(), obtained_tokens.size()) << statement;
+        for (std::size_t i = 0; i < obtained_tokens.size(); ++i) {
+            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type);
+        }
+    }
+}
+
 TEST(TestMySqlTokenizer, EolComment)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
@@ -172,6 +194,26 @@ TEST(TestMySqlTokenizer, EolComment)
         {R"(# multiline eol comment
         SELECT)",
             {stt::eol_comment, stt::command}},
+    };
+
+    for (const auto &[statement, expected_tokens] : samples) {
+        mysql_tokenizer tokenizer(statement);
+        auto obtained_tokens = tokenizer.tokenize();
+        ASSERT_EQ(expected_tokens.size(), obtained_tokens.size()) << statement;
+        for (std::size_t i = 0; i < obtained_tokens.size(); ++i) {
+            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type);
+        }
+    }
+}
+
+TEST(TestMySqlTokenizer, NonEolComment)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {R"(--eol comment)",
+            {stt::binary_operator, stt::binary_operator, stt::identifier, stt::identifier}},
+        {R"(SELECT * FROM table WHERE x=--1;)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number, stt::query_end}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {
@@ -264,7 +306,7 @@ TEST(TestMySqlTokenizer, BacktickQuotedString)
     }
 }
 
-TEST(TestMySqlTokenizer, Basic)
+TEST(TestMySqlTokenizer, Queries)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"(SELECT x FROM t WHERE id='admin'--)",
@@ -342,15 +384,149 @@ TEST(TestMySqlTokenizer, Basic)
                 stt::identifier, stt::binary_operator, stt::single_quoted_string,
                 stt::single_quoted_string, stt::command, stt::number, stt::query_end}},
 
-        {R"(SELECT /*! simple inline comment */ * FROM dual)",
+        {R"(SELECT /* simple inline comment */ * FROM dual)",
             {stt::command, stt::inline_comment, stt::asterisk, stt::command, stt::identifier}},
 
-        {R"(SELECT -- /*! simple inline comment */ * FROM dual)", {stt::command, stt::eol_comment}},
+        {R"(SELECT -- /* simple inline comment */ * FROM dual)", {stt::command, stt::eol_comment}},
 
         {R"(SELECT * FROM productLine WHERE model = 'MacPro 2013' /*randomgarbage')",
             {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
                 stt::identifier, stt::binary_operator, stt::single_quoted_string,
-                stt::inline_comment}}};
+                stt::inline_comment}},
+
+        {R"(SELECT /*! STRAIGHT_JOIN */ col1 FROM table1,table2 WHERE 1=2 AND b='qweqwe')",
+            {stt::command, stt::command, stt::identifier, stt::command, stt::identifier, stt::comma,
+                stt::identifier, stt::command, stt::number, stt::binary_operator, stt::number,
+                stt::binary_operator, stt::identifier, stt::binary_operator,
+                stt::single_quoted_string}},
+
+        {R"(CREATE TABLE t1 (user varchar(64) NOT NULL default ''))",
+            {stt::identifier, stt::identifier, stt::identifier, stt::parenthesis_open,
+                stt::identifier, stt::identifier, stt::parenthesis_open, stt::number,
+                stt::parenthesis_close, stt::binary_operator, stt::identifier,
+                stt::single_quoted_string, stt::parenthesis_close}},
+
+        {R"(SELECT  `sido`.* FROM `sido`  WHERE `sido`.`do_id` = 1000 AND `sido`.`type` IN ('Yop::Blop') AND `sido`.`do_id` = '666' LIMIT 1)",
+            {stt::command, stt::back_quoted_string, stt::dot, stt::asterisk, stt::command,
+                stt::back_quoted_string, stt::command, stt::back_quoted_string, stt::dot,
+                stt::back_quoted_string, stt::binary_operator, stt::number, stt::binary_operator,
+                stt::back_quoted_string, stt::dot, stt::back_quoted_string, stt::binary_operator,
+                stt::parenthesis_open, stt::single_quoted_string, stt::parenthesis_close,
+                stt::binary_operator, stt::back_quoted_string, stt::dot, stt::back_quoted_string,
+                stt::binary_operator, stt::single_quoted_string, stt::command, stt::number}},
+
+        {R"(SET @v2 = b'1000001'+0, @v3 = CAST(b'1000001' AS UNSIGNED))",
+            {stt::identifier, stt::identifier, stt::binary_operator, stt::identifier,
+                stt::single_quoted_string, stt::number, stt::comma, stt::identifier,
+                stt::binary_operator, stt::identifier, stt::parenthesis_open, stt::identifier,
+                stt::single_quoted_string, stt::command, stt::identifier, stt::parenthesis_close}},
+
+        {R"(SELECT `@v2` FROM t)",
+            {stt::command, stt::back_quoted_string, stt::command, stt::identifier}},
+
+        {R"(ALTER USER 'jeffrey'@'localhost' IDENTIFIED BY 'new_password' PASSWORD EXPIRE;)",
+            {stt::identifier, stt::identifier, stt::single_quoted_string, stt::identifier,
+                stt::identifier, stt::identifier, stt::single_quoted_string, stt::identifier,
+                stt::identifier, stt::query_end}},
+
+        {R"(ALTER USER 'jeffrey'@sqreen.com IDENTIFIED BY 'new_password' PASSWORD EXPIRE;)",
+            {stt::identifier, stt::identifier, stt::single_quoted_string, stt::identifier,
+                stt::identifier, stt::identifier, stt::single_quoted_string, stt::identifier,
+                stt::identifier, stt::query_end}},
+
+        {R"(SELECT * from table WHERE @var2.$lol = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @'var2' = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @var2.`$lol` = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @'var-2'.$lol = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @"var-2".`$lol` = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @`var2.$lol` = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SET @"v2\\" = 42)",
+            {stt::identifier, stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SET @"v2\"" = 42)",
+            {stt::identifier, stt::identifier, stt::binary_operator, stt::number}},
+
+        {R"(SELECT * from table WHERE @@var2.$lol = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @@'var2' = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @@var2.`$lol` = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @@'var-2'.$lol = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @@"var-2".`$lol` = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SELECT * from table WHERE @@`var2.$lol` = 42)",
+            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
+                stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SET @@"v2\\" = 42)",
+            {stt::identifier, stt::identifier, stt::binary_operator, stt::number}},
+        {R"(SET @@"v2\"" = 42)",
+            {stt::identifier, stt::identifier, stt::binary_operator, stt::number}},
+
+        {R"(SELECT COUNT(*) FROM `groups` WHERE ((`groups`.skills_mask & 33) > 0))",
+            {stt::command, stt::identifier, stt::parenthesis_open, stt::asterisk,
+                stt::parenthesis_close, stt::command, stt::back_quoted_string, stt::command,
+                stt::parenthesis_open, stt::parenthesis_open, stt::back_quoted_string, stt::dot,
+                stt::identifier, stt::bitwise_operator, stt::number, stt::parenthesis_close,
+                stt::binary_operator, stt::number, stt::parenthesis_close}},
+
+        {R"(SELECT x FROM `groups` WHERE !toto & titi >> 2 / 3 ^yop + 2%4)",
+            {stt::command, stt::identifier, stt::command, stt::back_quoted_string, stt::command,
+                stt::binary_operator, stt::identifier, stt::bitwise_operator, stt::identifier,
+                stt::bitwise_operator, stt::number, stt::binary_operator, stt::number,
+                stt::bitwise_operator, stt::identifier, stt::binary_operator, stt::number,
+                stt::binary_operator, stt::number}},
+
+        {R"(SELECT COUNT(*) FROM `groups` INNER JOIN `group_translations` ON `group_translations`.`group_id` = `groups`.`id` WHERE (IFNULL(state, '') NOT IN ( '', 'created' )) AND `groups`.`status_id` = 1 AND (groups.start_time < '2016-01-26 22:09:26.534958' and group_translations.active = 1 and group_translations.language_id = 5889) AND `groups`.`access_mode` IN (0, 1) AND `groups`.`is_hidden` = 0 AND (IFNULL(state, '') <> 'closed_old') AND ((`groups`.skills_mask & 33) > 0 ) AND (groups.end_time >= '2016-01-26 22:09:26.535734' ) AND (groups.id != 9391))",
+            {stt::command, stt::identifier, stt::parenthesis_open, stt::asterisk,
+                stt::parenthesis_close, stt::command, stt::back_quoted_string, stt::identifier,
+                stt::identifier, stt::back_quoted_string, stt::identifier, stt::back_quoted_string,
+                stt::dot, stt::back_quoted_string, stt::binary_operator, stt::back_quoted_string,
+                stt::dot, stt::back_quoted_string, stt::command, stt::parenthesis_open,
+                stt::identifier, stt::parenthesis_open, stt::identifier, stt::comma,
+                stt::single_quoted_string, stt::parenthesis_close, stt::binary_operator,
+                stt::parenthesis_open, stt::single_quoted_string, stt::comma,
+                stt::single_quoted_string, stt::parenthesis_close, stt::parenthesis_close,
+                stt::binary_operator, stt::back_quoted_string, stt::dot, stt::back_quoted_string,
+                stt::binary_operator, stt::number, stt::binary_operator, stt::parenthesis_open,
+                stt::identifier, stt::dot, stt::identifier, stt::binary_operator,
+                stt::single_quoted_string, stt::binary_operator, stt::identifier, stt::dot,
+                stt::identifier, stt::binary_operator, stt::number, stt::binary_operator,
+                stt::identifier, stt::dot, stt::identifier, stt::binary_operator, stt::number,
+                stt::parenthesis_close, stt::binary_operator, stt::back_quoted_string, stt::dot,
+                stt::back_quoted_string, stt::binary_operator, stt::parenthesis_open, stt::number,
+                stt::comma, stt::number, stt::parenthesis_close, stt::binary_operator,
+                stt::back_quoted_string, stt::dot, stt::back_quoted_string, stt::binary_operator,
+                stt::number, stt::binary_operator, stt::parenthesis_open, stt::identifier,
+                stt::parenthesis_open, stt::identifier, stt::comma, stt::single_quoted_string,
+                stt::parenthesis_close, stt::binary_operator, stt::single_quoted_string,
+                stt::parenthesis_close, stt::binary_operator, stt::parenthesis_open,
+                stt::parenthesis_open, stt::back_quoted_string, stt::dot, stt::identifier,
+                stt::bitwise_operator, stt::number, stt::parenthesis_close, stt::binary_operator,
+                stt::number, stt::parenthesis_close, stt::binary_operator, stt::parenthesis_open,
+                stt::identifier, stt::dot, stt::identifier, stt::binary_operator,
+                stt::single_quoted_string, stt::parenthesis_close, stt::binary_operator,
+                stt::parenthesis_open, stt::identifier, stt::dot, stt::identifier,
+                stt::binary_operator, stt::number, stt::parenthesis_close}},
+
+    };
 
     for (const auto &[statement, expected_tokens] : samples) {
         mysql_tokenizer tokenizer(statement);
