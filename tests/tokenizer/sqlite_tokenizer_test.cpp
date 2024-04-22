@@ -47,8 +47,7 @@ TEST(TestSqliteTokenizer, Commands)
 
 TEST(TestSqliteTokenizer, Identifiers)
 {
-    std::vector<std::string> samples{
-        "random", "WoRd", "$22", "a231a234", "asb123$21321", "Ω_a091"};
+    std::vector<std::string> samples{"random", "WoRd", "$22", "a231a234", "asb123$21321", "Ω_a091"};
 
     for (const auto &statement : samples) {
         sqlite_tokenizer tokenizer(statement);
