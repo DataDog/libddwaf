@@ -97,8 +97,8 @@ void sql_standard_tokenizer::tokenize_number()
     token.str = extract_number(substr(index()));
     if (!token.str.empty()) {
         tokens_.emplace_back(token);
+        advance(token.str.size() - 1);
     }
-    advance(token.str.size() - 1);
 }
 
 void sql_standard_tokenizer::tokenize_eol_comment()
