@@ -20,7 +20,6 @@ extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
         std::string_view arg = (*argv)[i];
         if (arg.starts_with("--dialect=")) {
             dialect = ddwaf::sql_dialect_from_type(arg.substr(sizeof("--dialect=") - 1));
-            std::cout << "Dialect: " << dialect << '\n';
             break;
         }
     }
