@@ -34,7 +34,36 @@ sql_dialect sql_dialect_from_type(std::string_view type)
     if (type == "hsqldb") {
         return sql_dialect::hsqldb;
     }
-    return sql_dialect::generic;
+    return sql_dialect::standard;
+}
+
+std::ostream &operator<<(std::ostream &os, sql_dialect dialect)
+{
+    switch (dialect) {
+    case sql_dialect::mysql:
+        os << "mysql";
+        break;
+    case sql_dialect::postgresql:
+        os << "pgsql";
+        break;
+    case sql_dialect::sqlite:
+        os << "sqlite";
+        break;
+    case sql_dialect::oracle:
+        os << "oracle";
+        break;
+    case sql_dialect::doctrine:
+        os << "doctrine";
+        break;
+    case sql_dialect::hsqldb:
+        os << "hsqldb";
+        break;
+    case sql_dialect::standard:
+    default:
+        os << "standard";
+        break;
+    }
+    return os;
 }
 
 std::ostream &operator<<(std::ostream &os, sql_token_type type)

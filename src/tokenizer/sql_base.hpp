@@ -16,7 +16,7 @@
 
 namespace ddwaf {
 
-enum class sql_dialect { generic, mysql, postgresql, oracle, sqlite, hsqldb, doctrine };
+enum class sql_dialect { standard, mysql, postgresql, oracle, sqlite, hsqldb, doctrine };
 
 enum class sql_token_type {
     unknown,
@@ -54,6 +54,7 @@ struct sql_token {
 };
 
 sql_dialect sql_dialect_from_type(std::string_view type);
+std::ostream &operator<<(std::ostream &os, sql_dialect dialect);
 std::ostream &operator<<(std::ostream &os, sql_token_type type);
 
 template <typename T> class sql_tokenizer {
