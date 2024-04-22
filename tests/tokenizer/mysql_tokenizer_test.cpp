@@ -72,7 +72,7 @@ TEST(TestMySqlTokenizer, Commands)
 TEST(TestMySqlTokenizer, Identifiers)
 {
     std::vector<std::string> samples{
-        "random", "WoRd", "a231a234", "asb123$21321", "\u0081_a091", "12a2312"};
+        "random", "WoRd", "a231a234", "asb123$21321", "Φ_a091", "12a2312"};
 
     for (const auto &statement : samples) {
         mysql_tokenizer tokenizer(statement);
