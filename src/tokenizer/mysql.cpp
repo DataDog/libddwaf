@@ -8,8 +8,6 @@
 #include "regex_utils.hpp"
 #include "utils.hpp"
 
-#include <iostream>
-
 namespace ddwaf {
 namespace {
 
@@ -55,20 +53,15 @@ constexpr std::string_view identifier_regex_str =
 constexpr std::string_view variable_regex_str =
     R"(^(@@?(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]+)(:?\.(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]*))*))";
 
-// Hexadecimal, octal, decimal or floating point
-constexpr std::string_view number_regex_str =
-    R"((?i)^(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
-
 // Number of identifier starting by a number, note that these identifiers must always have other
 // characters and can't consist only of numbers.
 // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 constexpr std::string_view number_or_identifier_regex_str =
     R"((?i)^(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
 
-auto identifier_regex = regex_init(identifier_regex_str);
-auto variable_regex = regex_init(variable_regex_str);
-auto number_regex = regex_init(number_regex_str);
-auto number_or_identifier_regex = regex_init(number_or_identifier_regex_str);
+auto identifier_regex = regex_init_nothrow(identifier_regex_str);
+auto variable_regex = regex_init_nothrow(variable_regex_str);
+auto number_or_identifier_regex = regex_init_nothrow(number_or_identifier_regex_str);
 
 std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
 {
@@ -82,17 +75,27 @@ std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
     return {};
 }
 
-std::string_view extract_number(std::string_view str)
-{
-    return partial_match_regex(*number_regex, str);
-}
-
 std::string_view extract_variable(std::string_view str)
 {
     return partial_match_regex(*variable_regex, str);
 }
 
 } // namespace
+
+mysql_tokenizer::mysql_tokenizer(std::string_view str) : sql_tokenizer(str)
+{
+    if (!identifier_regex) {
+        throw std::runtime_error("mysql identifier regex not valid");
+    }
+
+    if (!variable_regex) {
+        throw std::runtime_error("mysql variable regex not valid");
+    }
+
+    if (!number_or_identifier_regex) {
+        throw std::runtime_error("mysql number of identifier regex not valid");
+    }
+}
 
 void mysql_tokenizer::tokenize_command_operator_or_identifier()
 {
@@ -225,7 +228,7 @@ void mysql_tokenizer::tokenize_eol_comment_operator_or_number()
     sql_token token;
     token.index = index();
 
-    auto number_str = extract_number(substr(index()));
+    auto number_str = extract_number();
     if (!number_str.empty()) {
         token.type = sql_token_type::number;
         token.str = number_str;
@@ -244,7 +247,7 @@ void mysql_tokenizer::tokenize_operator_or_number()
     sql_token token;
     token.index = index();
 
-    auto number_str = extract_number(substr(index()));
+    auto number_str = extract_number();
     if (!number_str.empty()) {
         token.type = sql_token_type::number;
         token.str = number_str;

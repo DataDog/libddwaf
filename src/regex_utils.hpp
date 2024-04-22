@@ -13,6 +13,7 @@
 namespace ddwaf {
 
 std::unique_ptr<re2::RE2> regex_init(std::string_view pattern, bool case_sensitive = false);
+std::unique_ptr<re2::RE2> regex_init_nothrow(std::string_view pattern, bool case_sensitive = false);
 bool regex_match(
     re2::RE2 &regex, std::string_view subject, re2::RE2::Anchor anchor = re2::RE2::UNANCHORED);
 

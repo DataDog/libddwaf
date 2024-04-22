@@ -7,8 +7,7 @@
 #pragma once
 
 #include "utils.hpp"
-#include <iostream>
-#include <memory>
+#include <fmt/format.h>
 #include <ostream>
 #include <re2/re2.h>
 #include <string_view>
@@ -16,7 +15,7 @@
 
 namespace ddwaf {
 
-enum class sql_dialect { standard, mysql, postgresql, oracle, sqlite, hsqldb, doctrine };
+enum class sql_dialect { standard, mysql, pgsql, oracle, sqlite, hsqldb, doctrine };
 
 enum class sql_token_type {
     unknown,
@@ -54,12 +53,22 @@ struct sql_token {
 };
 
 sql_dialect sql_dialect_from_type(std::string_view type);
+std::string_view sql_dialect_to_string(sql_dialect dialect);
 std::ostream &operator<<(std::ostream &os, sql_dialect dialect);
+
+template <> struct fmt::formatter<sql_dialect> : fmt::formatter<std::string_view> {
+    // Use the parse method from the base class formatter
+    template <typename FormatContext> auto format(sql_dialect d, FormatContext &ctx)
+    {
+        return fmt::formatter<std::string_view>::format(sql_dialect_to_string(d), ctx);
+    }
+};
+
 std::ostream &operator<<(std::ostream &os, sql_token_type type);
 
 template <typename T> class sql_tokenizer {
 public:
-    explicit sql_tokenizer(std::string_view str) : buffer_(str) {}
+    explicit sql_tokenizer(std::string_view str);
 
     std::vector<sql_token> tokenize() { return static_cast<T *>(this)->tokenize_impl(); }
 
@@ -118,31 +127,11 @@ protected:
         return tokens_.back();
     }
 
-    std::string_view extract_string(char quote)
-    {
-        auto begin = index();
-        unsigned slash_count = 0;
-        while (advance()) {
-            if (peek() == '\\') {
-                // Count consecutive backslashes
-                slash_count = (slash_count + 1) % 2;
-            } else if (slash_count > 0) {
-                slash_count = 0;
-            } else if (peek() == quote && slash_count == 0) {
-                break;
-            }
-        }
-        return substr(begin, index() - begin + 1);
-    }
+    std::string_view extract_string(char quote);
+    std::string_view extract_number();
 
-    void tokenize_string(char quote, sql_token_type type)
-    {
-        sql_token token;
-        token.index = index();
-        token.type = type;
-        token.str = extract_string(quote);
-        tokens_.emplace_back(token);
-    }
+    void tokenize_string(char quote, sql_token_type type);
+    void tokenize_number();
 
     std::string_view buffer_;
     std::size_t idx_{0};

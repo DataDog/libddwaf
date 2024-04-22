@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <memory>
-#include <ostream>
 #include <re2/re2.h>
 #include <string_view>
 #include <vector>
@@ -18,7 +16,7 @@ namespace ddwaf {
 
 class pgsql_tokenizer : public sql_tokenizer<pgsql_tokenizer> {
 public:
-    explicit pgsql_tokenizer(std::string_view str) : sql_tokenizer(str) {}
+    explicit pgsql_tokenizer(std::string_view str);
 
 protected:
     std::vector<sql_token> tokenize_impl();
@@ -28,7 +26,6 @@ protected:
     void tokenize_eol_comment();
     void tokenize_eol_comment_operator_or_number();
     void tokenize_operator_or_number();
-    void tokenize_number();
     void tokenize_dollar_quoted_string();
     void tokenize_dollar_string_or_identifier();
 

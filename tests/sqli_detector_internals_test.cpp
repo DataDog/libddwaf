@@ -7,7 +7,7 @@
 #include "condition/sqli_detector.hpp"
 #include "test_utils.hpp"
 #include "tokenizer/pgsql.hpp"
-#include "tokenizer/sql_standard.hpp"
+#include "tokenizer/standard_sql.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -227,7 +227,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
     };
 
     for (const auto &[statement, param] : samples) {
-        sql_standard_tokenizer tokenizer(statement);
+        standard_sql_tokenizer tokenizer(statement);
         auto resource_tokens = tokenizer.tokenize();
 
         auto param_begin = statement.find(param);

@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <memory>
-#include <ostream>
 #include <re2/re2.h>
 #include <string_view>
 #include <vector>
@@ -18,7 +16,7 @@ namespace ddwaf {
 
 class mysql_tokenizer : public sql_tokenizer<mysql_tokenizer> {
 public:
-    explicit mysql_tokenizer(std::string_view str) : sql_tokenizer(str) {}
+    explicit mysql_tokenizer(std::string_view str);
 
 protected:
     std::vector<sql_token> tokenize_impl();

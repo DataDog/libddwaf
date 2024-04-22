@@ -6,21 +6,29 @@
 
 #include "tokenizer/sql_base.hpp"
 #include "regex_utils.hpp"
-#include "utils.hpp"
+#include "tokenizer/mysql.hpp"
+#include "tokenizer/pgsql.hpp"
+#include "tokenizer/sqlite.hpp"
+#include "tokenizer/standard_sql.hpp"
 
 #include <iostream>
 
-// TODO: Split the tokenizer into different dialects
-
 namespace ddwaf {
+namespace {
+// Hexadecimal, octal, decimal or floating point
+constexpr std::string_view number_regex_str =
+    R"((?i)^(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
+
+auto number_regex = regex_init_nothrow(number_regex_str);
+} // namespace
 
 sql_dialect sql_dialect_from_type(std::string_view type)
 {
     if (type == "mysql" || type == "mysql2") {
         return sql_dialect::mysql;
     }
-    if (type == "postgresql") {
-        return sql_dialect::postgresql;
+    if (type == "postgresql" || type == "pgsql") {
+        return sql_dialect::pgsql;
     }
     if (type == "sqlite") {
         return sql_dialect::sqlite;
@@ -37,32 +45,31 @@ sql_dialect sql_dialect_from_type(std::string_view type)
     return sql_dialect::standard;
 }
 
-std::ostream &operator<<(std::ostream &os, sql_dialect dialect)
+std::string_view sql_dialect_to_string(sql_dialect dialect)
 {
     switch (dialect) {
     case sql_dialect::mysql:
-        os << "mysql";
-        break;
-    case sql_dialect::postgresql:
-        os << "pgsql";
-        break;
+        return "mysql";
+    case sql_dialect::pgsql:
+        return "pgsql";
     case sql_dialect::sqlite:
-        os << "sqlite";
-        break;
+        return "sqlite";
     case sql_dialect::oracle:
-        os << "oracle";
-        break;
+        return "oracle";
     case sql_dialect::doctrine:
-        os << "doctrine";
+        return "doctrine";
         break;
     case sql_dialect::hsqldb:
-        os << "hsqldb";
-        break;
+        return "hsqldb";
     case sql_dialect::standard:
     default:
-        os << "standard";
-        break;
+        return "standard";
     }
+}
+
+std::ostream &operator<<(std::ostream &os, sql_dialect dialect)
+{
+    os << sql_dialect_to_string(dialect);
     return os;
 }
 
@@ -145,5 +152,68 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
     }
     return os;
 }
+
+template <typename T> sql_tokenizer<T>::sql_tokenizer(std::string_view str) : buffer_(str)
+{
+    if (!number_regex) {
+        throw std::runtime_error("sql number regex not valid");
+    }
+}
+
+template <typename T> std::string_view sql_tokenizer<T>::extract_string(char quote)
+{
+    auto begin = index();
+    unsigned slash_count = 0;
+    while (advance()) {
+        if (peek() == '\\') {
+            // Count consecutive backslashes
+            slash_count = (slash_count + 1) % 2;
+        } else if (slash_count > 0) {
+            slash_count = 0;
+        } else if (peek() == quote && slash_count == 0) {
+            break;
+        }
+    }
+    return substr(begin, index() - begin + 1);
+}
+
+template <typename T> std::string_view sql_tokenizer<T>::extract_number()
+{
+    auto str = substr();
+    re2::StringPiece number;
+    const re2::StringPiece ref(str.data(), str.size());
+    if (re2::RE2::PartialMatch(ref, *number_regex, &number)) {
+        if (!number.empty()) {
+            return {number.data(), number.size()};
+        }
+    }
+    return {};
+}
+
+template <typename T> void sql_tokenizer<T>::tokenize_string(char quote, sql_token_type type)
+{
+    sql_token token;
+    token.index = index();
+    token.type = type;
+    token.str = extract_string(quote);
+    tokens_.emplace_back(token);
+}
+
+template <typename T> void sql_tokenizer<T>::tokenize_number()
+{
+    sql_token token;
+    token.str = extract_number();
+    if (!token.str.empty()) {
+        token.index = index();
+        token.type = sql_token_type::number;
+        tokens_.emplace_back(token);
+        advance(token.str.size() - 1);
+    }
+}
+
+template class sql_tokenizer<pgsql_tokenizer>;
+template class sql_tokenizer<mysql_tokenizer>;
+template class sql_tokenizer<sqlite_tokenizer>;
+template class sql_tokenizer<standard_sql_tokenizer>;
 
 } // namespace ddwaf

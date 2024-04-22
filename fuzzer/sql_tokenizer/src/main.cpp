@@ -9,8 +9,8 @@
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
 #include "tokenizer/sql_base.hpp"
-#include "tokenizer/sql_standard.hpp"
 #include "tokenizer/sqlite.hpp"
+#include "tokenizer/standard_sql.hpp"
 
 ddwaf::sql_dialect dialect = ddwaf::sql_dialect::standard;
 
@@ -41,14 +41,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     case ddwaf::sql_dialect::mysql:
         tokenize<ddwaf::mysql_tokenizer>(query);
         break;
-    case ddwaf::sql_dialect::postgresql:
+    case ddwaf::sql_dialect::pgsql:
         tokenize<ddwaf::pgsql_tokenizer>(query);
         break;
     case ddwaf::sql_dialect::sqlite:
         tokenize<ddwaf::sqlite_tokenizer>(query);
         break;
     default:
-        tokenize<ddwaf::sql_standard_tokenizer>(query);
+        tokenize<ddwaf::standard_sql_tokenizer>(query);
     }
     return 0;
 }

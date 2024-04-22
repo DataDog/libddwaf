@@ -3,15 +3,14 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
 #include "condition/sqli_detector.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
 #include "regex_utils.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
-#include "tokenizer/sql_standard.hpp"
 #include "tokenizer/sqlite.hpp"
+#include "tokenizer/standard_sql.hpp"
 #include "utils.hpp"
 
 #include <variant>
@@ -383,18 +382,23 @@ template <typename T> std::vector<sql_token> tokenize_helper(std::string_view st
 
 std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
 {
-    switch (dialect) {
-    case sql_dialect::postgresql:
-        return tokenize_helper<pgsql_tokenizer>(statement);
-    case sql_dialect::mysql:
-        return tokenize_helper<mysql_tokenizer>(statement);
-    case sql_dialect::sqlite:
-        return tokenize_helper<sqlite_tokenizer>(statement);
-    default:
-        break;
+    try {
+        switch (dialect) {
+        case sql_dialect::pgsql:
+            return tokenize_helper<pgsql_tokenizer>(statement);
+        case sql_dialect::mysql:
+            return tokenize_helper<mysql_tokenizer>(statement);
+        case sql_dialect::sqlite:
+            return tokenize_helper<sqlite_tokenizer>(statement);
+        default:
+            break;
+        }
+        // TODO figure out what to do here...?
+        return tokenize_helper<standard_sql_tokenizer>(statement);
+    } catch (const std::runtime_error &e) {
+        DDWAF_DEBUG("Failed to load tokenizer for dialect: {}", dialect);
     }
-    // TODO figure out what to do here...?
-    return tokenize_helper<sql_standard_tokenizer>(statement);
+    return {};
 }
 
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,

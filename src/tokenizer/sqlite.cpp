@@ -12,26 +12,18 @@ namespace ddwaf {
 namespace {
 // https://www.sqlite.org/lang_select.html
 constexpr std::string_view identifier_regex_str =
-    R"((?i)(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP BY|HAVING|WINDOW|AS|VALUES|OFFSET|LIMIT|ORDER BY|ASC|DESC|UNION ALL|UNION|INTERSECT|EXCEPT)\b|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|IS DISTINCT FROM|IS NOT DISTINCT FROM|MATCH|NOTNULL|NOT NULL|ISNULL|IS NOT NULL|IS NOT|NOT|IS)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b|\$[0-9]+\b))";
-constexpr std::string_view number_regex_str =
-    R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
+    R"((?i)^(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP BY|HAVING|WINDOW|AS|VALUES|OFFSET|LIMIT|ORDER BY|ASC|DESC|UNION ALL|UNION|INTERSECT|EXCEPT)\b|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|IS DISTINCT FROM|IS NOT DISTINCT FROM|MATCH|NOTNULL|NOT NULL|ISNULL|IS NOT NULL|IS NOT|NOT|IS)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b|\$[0-9]+\b))";
 
-auto identifier_regex = regex_init(identifier_regex_str);
-auto number_regex = regex_init(number_regex_str);
-
-std::string_view extract_number(std::string_view str)
-{
-    re2::StringPiece number;
-    const re2::StringPiece ref(str.data(), str.size());
-    if (re2::RE2::PartialMatch(ref, *number_regex, &number)) {
-        if (!number.empty()) {
-            return {number.data(), number.size()};
-        }
-    }
-    return {};
-}
+auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 
 } // namespace
+
+sqlite_tokenizer::sqlite_tokenizer(std::string_view str) : sql_tokenizer(str)
+{
+    if (!identifier_regex) {
+        throw std::runtime_error("sqlite identifier regex not valid");
+    }
+}
 
 void sqlite_tokenizer::tokenize_command_operator_or_identifier()
 {
@@ -86,18 +78,6 @@ void sqlite_tokenizer::tokenize_inline_comment_or_operator()
     tokens_.emplace_back(token);
 }
 
-void sqlite_tokenizer::tokenize_number()
-{
-    sql_token token;
-    token.index = index();
-    token.type = sql_token_type::number;
-    token.str = extract_number(substr(index()));
-    if (!token.str.empty()) {
-        tokens_.emplace_back(token);
-        advance(token.str.size() - 1);
-    }
-}
-
 void sqlite_tokenizer::tokenize_eol_comment()
 {
     // Inline comment
@@ -127,7 +107,7 @@ void sqlite_tokenizer::tokenize_eol_comment_operator_or_number()
     sql_token token;
     token.index = index();
 
-    auto number_str = extract_number(substr(index()));
+    auto number_str = extract_number();
     if (!number_str.empty()) {
         token.type = sql_token_type::number;
         token.str = number_str;
@@ -146,7 +126,7 @@ void sqlite_tokenizer::tokenize_operator_or_number()
     sql_token token;
     token.index = index();
 
-    auto number_str = extract_number(substr(index()));
+    auto number_str = extract_number();
     if (!number_str.empty()) {
         token.type = sql_token_type::number;
         token.str = number_str;

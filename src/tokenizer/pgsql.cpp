@@ -8,8 +8,6 @@
 #include "regex_utils.hpp"
 #include "utils.hpp"
 
-#include <iostream>
-
 namespace ddwaf {
 namespace {
 
@@ -24,31 +22,25 @@ namespace {
  * with future extensions of the standard.
  */
 constexpr std::string_view identifier_regex_str =
-    R"((?i)(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)\b|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
+    R"((?i)^(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)\b|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
 
-// TODO numbers are common to all implementations
-constexpr std::string_view number_regex_str =
-    R"((?i)(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
+constexpr std::string_view parameter_regex_str = R"(^\$[0-9]+\b)";
 
-constexpr std::string_view parameter_regex_str = R"(\$[0-9]+\b)";
-
-auto identifier_regex = regex_init(identifier_regex_str);
-auto number_regex = regex_init(number_regex_str);
-auto parameter_regex = regex_init(parameter_regex_str);
-
-std::string_view extract_number(std::string_view str)
-{
-    re2::StringPiece number;
-    const re2::StringPiece ref(str.data(), str.size());
-    if (re2::RE2::PartialMatch(ref, *number_regex, &number)) {
-        if (!number.empty()) {
-            return {number.data(), number.size()};
-        }
-    }
-    return {};
-}
+auto identifier_regex = regex_init_nothrow(identifier_regex_str);
+auto parameter_regex = regex_init_nothrow(parameter_regex_str);
 
 } // namespace
+
+pgsql_tokenizer::pgsql_tokenizer(std::string_view str) : sql_tokenizer(str)
+{
+    if (!identifier_regex) {
+        throw std::runtime_error("pgsql identifier regex not valid");
+    }
+
+    if (!parameter_regex) {
+        throw std::runtime_error("pgsql parameter regex not valid");
+    }
+}
 
 void pgsql_tokenizer::tokenize_command_operator_or_identifier()
 {
@@ -103,18 +95,6 @@ void pgsql_tokenizer::tokenize_inline_comment_or_operator()
     tokens_.emplace_back(token);
 }
 
-void pgsql_tokenizer::tokenize_number()
-{
-    sql_token token;
-    token.index = index();
-    token.type = sql_token_type::number;
-    token.str = extract_number(substr(index()));
-    if (!token.str.empty()) {
-        tokens_.emplace_back(token);
-        advance(token.str.size() - 1);
-    }
-}
-
 void pgsql_tokenizer::tokenize_eol_comment()
 {
     // Inline comment
@@ -144,7 +124,7 @@ void pgsql_tokenizer::tokenize_eol_comment_operator_or_number()
     sql_token token;
     token.index = index();
 
-    auto number_str = extract_number(substr(index()));
+    auto number_str = extract_number();
     if (!number_str.empty()) {
         token.type = sql_token_type::number;
         token.str = number_str;
@@ -163,7 +143,7 @@ void pgsql_tokenizer::tokenize_operator_or_number()
     sql_token token;
     token.index = index();
 
-    auto number_str = extract_number(substr(index()));
+    auto number_str = extract_number();
     if (!number_str.empty()) {
         token.type = sql_token_type::number;
         token.str = number_str;
