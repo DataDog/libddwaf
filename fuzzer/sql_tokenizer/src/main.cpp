@@ -6,13 +6,13 @@
 
 #include <cstdint>
 
+#include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
 #include "tokenizer/sql_base.hpp"
 #include "tokenizer/sqlite.hpp"
-#include "tokenizer/standard_sql.hpp"
 
-ddwaf::sql_dialect dialect = ddwaf::sql_dialect::standard;
+ddwaf::sql_dialect dialect = ddwaf::sql_dialect::generic;
 
 extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
 {
@@ -47,7 +47,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
         tokenize<ddwaf::sqlite_tokenizer>(query);
         break;
     default:
-        tokenize<ddwaf::standard_sql_tokenizer>(query);
+        tokenize<ddwaf::generic_sql_tokenizer>(query);
     }
     return 0;
 }

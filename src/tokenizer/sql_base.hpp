@@ -15,7 +15,7 @@
 
 namespace ddwaf {
 
-enum class sql_dialect { standard, mysql, pgsql, oracle, sqlite, hsqldb, doctrine };
+enum class sql_dialect { generic, mysql, pgsql, oracle, sqlite, hsqldb, doctrine };
 
 enum class sql_token_type {
     unknown,

@@ -27,7 +27,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/tokenizer/pgsql.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/mysql.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/sqlite.cpp
-    ${libddwaf_SOURCE_DIR}/src/tokenizer/standard_sql.cpp
+    ${libddwaf_SOURCE_DIR}/src/tokenizer/generic_sql.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp

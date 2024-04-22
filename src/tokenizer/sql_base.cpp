@@ -6,10 +6,10 @@
 
 #include "tokenizer/sql_base.hpp"
 #include "regex_utils.hpp"
+#include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
 #include "tokenizer/sqlite.hpp"
-#include "tokenizer/standard_sql.hpp"
 
 #include <iostream>
 
@@ -42,7 +42,7 @@ sql_dialect sql_dialect_from_type(std::string_view type)
     if (type == "hsqldb") {
         return sql_dialect::hsqldb;
     }
-    return sql_dialect::standard;
+    return sql_dialect::generic;
 }
 
 std::string_view sql_dialect_to_string(sql_dialect dialect)
@@ -61,9 +61,9 @@ std::string_view sql_dialect_to_string(sql_dialect dialect)
         break;
     case sql_dialect::hsqldb:
         return "hsqldb";
-    case sql_dialect::standard:
+    case sql_dialect::generic:
     default:
-        return "standard";
+        return "generic";
     }
 }
 
@@ -214,6 +214,6 @@ template <typename T> void sql_tokenizer<T>::tokenize_number()
 template class sql_tokenizer<pgsql_tokenizer>;
 template class sql_tokenizer<mysql_tokenizer>;
 template class sql_tokenizer<sqlite_tokenizer>;
-template class sql_tokenizer<standard_sql_tokenizer>;
+template class sql_tokenizer<generic_sql_tokenizer>;
 
 } // namespace ddwaf

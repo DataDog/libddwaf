@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "tokenizer/standard_sql.hpp"
+#include "tokenizer/generic_sql.hpp"
 #include "regex_utils.hpp"
 #include "utils.hpp"
 
@@ -21,14 +21,14 @@ auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 
 } // namespace
 
-standard_sql_tokenizer::standard_sql_tokenizer(std::string_view str) : sql_tokenizer(str)
+generic_sql_tokenizer::generic_sql_tokenizer(std::string_view str) : sql_tokenizer(str)
 {
     if (!identifier_regex) {
         throw std::runtime_error("standard sql identifier regex not valid");
     }
 }
 
-void standard_sql_tokenizer::tokenize_command_operator_or_identifier()
+void generic_sql_tokenizer::tokenize_command_operator_or_identifier()
 {
     sql_token token;
     token.index = index();
@@ -59,7 +59,7 @@ void standard_sql_tokenizer::tokenize_command_operator_or_identifier()
     }
 }
 
-void standard_sql_tokenizer::tokenize_inline_comment_or_operator()
+void generic_sql_tokenizer::tokenize_inline_comment_or_operator()
 {
     // The first character is / so it can be a comment or a binary operator
     sql_token token;
@@ -81,7 +81,7 @@ void standard_sql_tokenizer::tokenize_inline_comment_or_operator()
     tokens_.emplace_back(token);
 }
 
-void standard_sql_tokenizer::tokenize_eol_comment()
+void generic_sql_tokenizer::tokenize_eol_comment()
 {
     // Inline comment
     sql_token token;
@@ -94,7 +94,7 @@ void standard_sql_tokenizer::tokenize_eol_comment()
     tokens_.emplace_back(token);
 }
 
-void standard_sql_tokenizer::tokenize_eol_comment_operator_or_number()
+void generic_sql_tokenizer::tokenize_eol_comment_operator_or_number()
 {
     if (next() == '-') {
         tokenize_eol_comment();
@@ -118,7 +118,7 @@ void standard_sql_tokenizer::tokenize_eol_comment_operator_or_number()
     tokens_.emplace_back(token);
 }
 
-void standard_sql_tokenizer::tokenize_operator_or_number()
+void generic_sql_tokenizer::tokenize_operator_or_number()
 {
     sql_token token;
     token.index = index();
@@ -137,7 +137,7 @@ void standard_sql_tokenizer::tokenize_operator_or_number()
     tokens_.emplace_back(token);
 }
 
-std::vector<sql_token> standard_sql_tokenizer::tokenize_impl()
+std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
 {
     for (; !eof(); advance()) {
         auto c = peek();

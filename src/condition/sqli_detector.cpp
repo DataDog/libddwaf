@@ -7,10 +7,10 @@
 #include "exception.hpp"
 #include "iterator.hpp"
 #include "regex_utils.hpp"
+#include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
 #include "tokenizer/sqlite.hpp"
-#include "tokenizer/standard_sql.hpp"
 #include "utils.hpp"
 
 #include <variant>
@@ -394,7 +394,7 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
             break;
         }
         // TODO figure out what to do here...?
-        return tokenize_helper<standard_sql_tokenizer>(statement);
+        return tokenize_helper<generic_sql_tokenizer>(statement);
     } catch (const std::runtime_error &e) {
         DDWAF_DEBUG("Failed to load tokenizer for dialect: {}", dialect);
     }
