@@ -17,7 +17,7 @@ namespace ddwaf {
 namespace {
 // Hexadecimal, octal, decimal or floating point
 constexpr std::string_view number_regex_str =
-    R"((?i)^(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b))";
+    R"((?i)^(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)(?:\b|\s|$))";
 
 auto number_regex = regex_init_nothrow(number_regex_str);
 } // namespace

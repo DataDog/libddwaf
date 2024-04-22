@@ -12,7 +12,7 @@ namespace ddwaf {
 namespace {
 // https://www.sqlite.org/lang_select.html
 constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP BY|HAVING|WINDOW|AS|VALUES|OFFSET|LIMIT|ORDER BY|ASC|DESC|UNION ALL|UNION|INTERSECT|EXCEPT)\b|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|IS DISTINCT FROM|IS NOT DISTINCT FROM|MATCH|NOTNULL|NOT NULL|ISNULL|IS NOT NULL|IS NOT|NOT|IS)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*|\$[0-9]+)(:?\b|\s|$))";
+    R"((?i)^(?:(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP BY|HAVING|WINDOW|AS|VALUES|OFFSET|LIMIT|ORDER BY|ASC|DESC|UNION ALL|UNION|INTERSECT|EXCEPT)|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|IS DISTINCT FROM|IS NOT DISTINCT FROM|MATCH|NOTNULL|NOT NULL|ISNULL|IS NOT NULL|IS NOT|NOT|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*|\$[0-9]+))(?:\b|\s|$))";
 
 auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 

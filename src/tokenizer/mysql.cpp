@@ -13,7 +13,7 @@ namespace {
 
 // Operators: https://dev.mysql.com/doc/refman/5.7/en/built-in-function-reference.html
 constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?P<command>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP BY|WITH ROLLUP|UNION ALL|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER BY|ASC|DESC|LIMIT|OFFSET|AS)\b|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|CASE|DIV|NOT NULL|IS NULL|IS NOT NULL|IS NOT|IS|LAST_DAY|NOT BETWEEN|NOT LIKE|NOT REGEXP|NOT IN|NOT|REGEXP|XOR|OR|RLIKE|SOUNDS LIKE|LIKE|IN)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*)(:?\b|\s|$))";
+    R"((?i)^(?:(?P<command>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP BY|WITH ROLLUP|UNION ALL|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER BY|ASC|DESC|LIMIT|OFFSET|AS)|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|CASE|DIV|NOT NULL|IS NULL|IS NOT NULL|IS NOT|IS|LAST_DAY|NOT BETWEEN|NOT LIKE|NOT REGEXP|NOT IN|NOT|REGEXP|XOR|OR|RLIKE|SOUNDS LIKE|LIKE|IN)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
 /*
  *  https://dev.mysql.com/doc/refman/8.0/en/user-variables.html
@@ -57,7 +57,7 @@ constexpr std::string_view variable_regex_str =
 // characters and can't consist only of numbers.
 // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 constexpr std::string_view number_or_identifier_regex_str =
-    R"((?i)^(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*\b))";
+    R"((?i)^(?:(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
 auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 auto variable_regex = regex_init_nothrow(variable_regex_str);
