@@ -1,6 +1,6 @@
 version: '2.1'
 rules:
-  - id: 1
+  - id: "1"
     name: rule1
     tags:
       type: security_scanner
@@ -11,7 +11,7 @@ rules:
           inputs:
             - address: value
           regex: rule1
-  - id: 2
+  - id: "2"
     name: rule2
     tags:
       type: security_scanner

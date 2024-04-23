@@ -1,6 +1,6 @@
 version: '2.1'
 rules:
-  - id: 1
+  - id: "1"
     name: rule1
     tags:
       category: category1
@@ -17,7 +17,7 @@ rules:
               key_path:
                 - x
           regex: .*
-  - id: 2
+  - id: "2"
     name: rule2
     tags:
       type: flow1

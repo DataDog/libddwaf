@@ -1,11 +1,11 @@
 version: '2.1'
 exclusions:
-  - id: 1
+  - id: "1"
     rules_target:
       - rule_id: 1
     on_match: monitor
 rules:
-  - id: 1
+  - id: "1"
     name: rule1
     tags:
       type: type1

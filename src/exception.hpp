@@ -34,7 +34,7 @@ public:
 
 class malformed_object : public exception {
 public:
-    explicit malformed_object(const std::string &what) : exception("malformed object," + what) {}
+    explicit malformed_object(const std::string &what) : exception("malformed object, " + what) {}
 };
 
 class bad_cast : public exception {

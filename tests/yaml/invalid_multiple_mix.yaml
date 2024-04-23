@@ -1,6 +1,6 @@
 version: '2.1'
 rules:
-  - id: 1
+  - id: "1"
     name: rule1
     tags:
       category: category1
@@ -17,7 +17,7 @@ rules:
               key_path:
                 - x
           regex: .*
-  - id: 2
+  - id: "2"
     name: rule2
     tags:
       type: flow1
@@ -33,7 +33,7 @@ rules:
           inputs:
             - address: arg2
           regex: .*
-  - id: 3
+  - id: "3"
     name: rule3
     tags:
       category: category1
@@ -50,7 +50,7 @@ rules:
               key_path:
                 - y
           regex: .*
-  - id: 4
+  - id: "4"
     name: rule4
     tags:
       type: flow1
@@ -71,7 +71,7 @@ rules:
       - operator: match_regex
         parameters:
           regex: .*
-  - id: 5
+  - id: "5"
     name: rule5
     tags:
       type: type1

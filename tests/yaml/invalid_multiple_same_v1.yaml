@@ -1,6 +1,6 @@
 version: '1.1'
 events:
-  - id: 1
+  - id: "1"
     name: rule1
     tags:
       category: category1
@@ -20,7 +20,7 @@ events:
           inputs:
             - arg2:y
           regex: .*
-  - id: 2
+  - id: "2"
     name: rule2
     tags:
       category: category1

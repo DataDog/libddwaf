@@ -1,6 +1,6 @@
 version: "2.1"
 rules:
-  - id: 1
+  - id: "1"
     name: rule1
     tags:
       type: flow1

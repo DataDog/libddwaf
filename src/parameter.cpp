@@ -107,7 +107,7 @@ parameter::operator parameter::string_set() const
 parameter::operator std::string_view() const
 {
     if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
-        throw bad_cast("string", strtype(type));
+        throw bad_cast("string_view", strtype(type));
     }
 
     return {stringValue, static_cast<size_t>(nbEntries)};
@@ -115,11 +115,25 @@ parameter::operator std::string_view() const
 
 parameter::operator std::string() const
 {
-    if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
-        throw bad_cast("string", strtype(type));
+    switch (type) {
+    case DDWAF_OBJ_SIGNED:
+        return ddwaf::to_string<std::string>(intValue);
+    case DDWAF_OBJ_UNSIGNED:
+        return ddwaf::to_string<std::string>(uintValue);
+    case DDWAF_OBJ_BOOL:
+        return ddwaf::to_string<std::string>(boolean);
+    case DDWAF_OBJ_FLOAT:
+        return ddwaf::to_string<std::string>(f64);
+    case DDWAF_OBJ_STRING:
+        if (stringValue == nullptr) {
+            break;
+        }
+        return {stringValue, static_cast<size_t>(nbEntries)};
+    default:
+        break;
     }
 
-    return {stringValue, static_cast<size_t>(nbEntries)};
+    throw bad_cast("string", strtype(type));
 }
 
 parameter::operator uint64_t() const
@@ -242,7 +256,7 @@ parameter::operator std::vector<std::string>() const
             throw malformed_object("item in array not a string, can't cast to string vector");
         }
 
-        data.emplace_back(array[i].stringValue, array[i].nbEntries);
+        data.emplace_back(static_cast<std::string>(parameter(array[i])));
     }
 
     return data;
@@ -284,15 +298,9 @@ parameter::operator std::unordered_map<std::string, std::string>() const
     std::unordered_map<std::string, std::string> data;
     data.reserve(nbEntries);
     for (unsigned i = 0; i < nbEntries; i++) {
-        if (array[i].type != DDWAF_OBJ_STRING) {
-            throw malformed_object("item in map not a string, can't cast to string map");
-        }
-
         std::string key{
             array[i].parameterName, static_cast<std::size_t>(array[i].parameterNameLength)};
-        std::string value{array[i].stringValue, static_cast<std::size_t>(array[i].nbEntries)};
-
-        data.emplace(std::move(key), std::move(value));
+        data.emplace(std::move(key), static_cast<std::string>(parameter(array[i])));
     }
 
     return data;

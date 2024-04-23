@@ -1,6 +1,6 @@
 version: '2.1'
 rules:
-  - id: 1
+  - id: "1"
     name: rule1-phrase-match
     tags:
       type: flow
@@ -13,7 +13,7 @@ rules:
           list:
             - string00
             - string01
-  - id: 2
+  - id: "2"
     name: rule2-phrase-match-word-bound
     tags:
       type: flow
