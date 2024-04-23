@@ -31,7 +31,7 @@ const char *level_to_str(DDWAF_LOG_LEVEL level)
 void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line,
     const char *message, [[maybe_unused]] uint64_t len)
 {
-    printf("[%s][%s:%s:%u]: %s\n", level_to_str(level), file, function, line, message);
+    ddwaf::fmt::print("[{}][{}:{}:{}]: {}\n", level_to_str(level), file, function, line, message);
 }
 
 int main(int argc, char *argv[])

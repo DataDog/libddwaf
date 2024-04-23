@@ -59,6 +59,8 @@ std::shared_ptr<action_mapper> parse_actions(
             auto type = at<std::string>(node, "type");
             auto parameters = at<std::unordered_map<std::string, std::string>>(node, "parameters");
 
+            DDWAF_DEBUG("Parsed action {} of type {}", id, type);
+
             // Block and redirect actions should be validated and aliased
             if (type == "redirect_request") {
                 validate_and_add_redirect(id, type, parameters, builder);
@@ -68,7 +70,6 @@ std::shared_ptr<action_mapper> parse_actions(
                 builder.set_action(id, std::move(type), std::move(parameters));
             }
 
-            DDWAF_DEBUG("Parsed action {} of type {}", id, type);
             info.add_loaded(id);
         } catch (const std::exception &e) {
             if (id.empty()) {

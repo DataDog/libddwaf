@@ -392,10 +392,10 @@ TEST(TestParameter, ToStringVector)
         ddwaf_object tmp;
         ddwaf_object_array(&root);
 
-        ddwaf_object_array_add(&root, ddwaf_object_unsigned(&tmp, 50));
+        ddwaf_object_array_add(&root, ddwaf_object_map(&tmp));
 
         ddwaf::parameter param = root;
-        EXPECT_THROW(param.operator std::vector<std::string>(), ddwaf::malformed_object);
+        EXPECT_THROW(param.operator std::vector<std::string>(), ddwaf::bad_cast);
 
         ddwaf_object_free(&root);
     }
