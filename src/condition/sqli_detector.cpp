@@ -46,6 +46,23 @@ bool is_identifier(sql_token_type type)
            type == sql_token_type::back_quoted_string;
 }
 
+void strip_parenthesis(std::vector<sql_token> &tokens)
+{
+    for (std::size_t write = 0, read = 0; read < tokens.size(); ++read) {
+        auto type = tokens[read].type;
+        if (type == sql_token_type::parenthesis_open || type == sql_token_type::parenthesis_close) {
+            // Don't increase the write pointer
+            continue;
+        }
+
+        if (read > write) {
+            tokens[write] = tokens[read];
+        }
+
+        ++write;
+    }
+}
+
 } // namespace
 
 bool is_query_comment(std::span<sql_token> tokens)
@@ -432,6 +449,9 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             if (resource_tokens.empty()) {
                 return sqli_error::invalid_sql;
             }
+            // We don't need the semantical value provided by the parenthesis and
+            // they could also be used to evade the heuristics, so we strip them
+            strip_parenthesis(resource_tokens);
         }
 
         auto [param_tokens, param_tokens_begin] =
@@ -439,19 +459,6 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         if (param_tokens.empty()) {
             continue;
         }
-
-        /*                for (auto token : param_tokens) {*/
-        /*std::cout << "Token: " << token.type << " - " << token.str << '\n';*/
-        /*}*/
-        /*bool harmful = contains_harmful_tokens(param_tokens);*/
-        /*DDWAF_DEBUG("Contains harmful {}", harmful);*/
-        /*bool benign_order_by =*/
-        /*!is_benign_order_by_clause(resource_tokens, param_tokens, param_tokens_begin);*/
-        /*DDWAF_DEBUG("Is Benign order by {}", benign_order_by);*/
-        /*bool tautology = is_where_tautology(resource_tokens, param_tokens, param_tokens_begin);*/
-        /*DDWAF_DEBUG("Is where tautology {}", tautology);*/
-        /*bool query_comment = is_query_comment(param_tokens);*/
-        /*DDWAF_DEBUG("Query comment {}", query_comment);*/
 
         // TODO: Strip parenthesis before evaluation
         if ((contains_harmful_tokens(param_tokens) &&

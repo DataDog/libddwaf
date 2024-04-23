@@ -169,7 +169,9 @@ TEST(TestSqliDetectorInternals, IsWhereTautologySuccess)
         {R"(SELECT x FROM t WHERE id = ""XOR"")", R"("XOR")"},
         {"SELECT x FROM t WHERE id = ''Or''", "'Or'"},
         {"SELECT x FROM t WHERE id = '1' or 1 = 1", "1 = 1"},
-        {"SELECT x FROM t WHERE id = '1' or 1 = '1'", "1 = '1'"}};
+        {"SELECT x FROM t WHERE id = '1' or 1 = '1'", "1 = '1'"},
+        //{"SELECT x FROM t WHERE id = '1' or 1 = (1)", "1 = (1)"}
+    };
 
     for (const auto &[statement, param] : samples) {
         pgsql_tokenizer tokenizer(statement);

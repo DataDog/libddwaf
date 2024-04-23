@@ -23,9 +23,9 @@ namespace {
  * with future extensions of the standard.
  */
 constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
+    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|PARTITION BY|ASC|DESC)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
-constexpr std::string_view parameter_regex_str = R"(^\$[0-9]+(?:\b|\s|$))";
+constexpr std::string_view parameter_regex_str = R"(^(\$[0-9]+)(?:\b|\s|$))";
 
 auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 auto parameter_regex = regex_init_nothrow(parameter_regex_str);
@@ -305,7 +305,7 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
             } else if (n == ':') {
                 add_token(sql_token_type::command, 2);
             } else {
-                add_token(sql_token_type::label);
+                add_token(sql_token_type::colon);
             }
         } else if (c == '[') {
             add_token(sql_token_type::array_open);

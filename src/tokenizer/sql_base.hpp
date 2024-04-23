@@ -34,7 +34,7 @@ enum class sql_token_type {
     parenthesis_close,
     comma,
     questionmark,
-    label,
+    colon,
     dot,
     query_end,
     binary_operator,

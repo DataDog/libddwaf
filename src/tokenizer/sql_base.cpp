@@ -121,8 +121,8 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
     case sql_token_type::questionmark:
         os << "questionmark";
         break;
-    case sql_token_type::label:
-        os << "label";
+    case sql_token_type::colon:
+        os << "colon";
         break;
     case sql_token_type::dot:
         os << "dot";

@@ -100,9 +100,9 @@ TEST(TestMySqlTokenizer, BinaryOperators)
 {
     // Asterisk is a special case
     std::vector<std::string> samples{">", ">=", "<", "<>", "!=", "<=", "<=>", "%", "+", "-", "/",
-        ":=", "=", "&&", "!", "||", "MOD", "AND", "BETWEEN", "BINARY", "CASE", "DIV", "IS NULL",
-        "IS NOT NULL", "IS NOT", "IS", "LAST_DAY", "NOT BETWEEN", "NOT LIKE", "NOT REGEXP", "NOT",
-        "REGEXP", "XOR", "OR", "RLIKE", "SOUNDS LIKE", "LIKE"};
+        ":=", "=", "&&", "!", "||", "->", "->>", "MOD", "AND", "BETWEEN", "BINARY", "CASE", "DIV",
+        "IS NULL", "IS NOT NULL", "IS NOT", "IS", "LAST_DAY", "NOT BETWEEN", "NOT LIKE",
+        "NOT REGEXP", "NOT", "REGEXP", "XOR", "OR", "RLIKE", "SOUNDS LIKE", "LIKE"};
 
     for (const auto &statement : samples) {
         {
@@ -526,6 +526,15 @@ TEST(TestMySqlTokenizer, Queries)
                 stt::parenthesis_open, stt::identifier, stt::dot, stt::identifier,
                 stt::binary_operator, stt::number, stt::parenthesis_close}},
 
+        {R"(label: INSERT INTO XXX (`id`, `aaaID`, `bbbID`) VALUES (NULL, {intval(41)}, {intval(26264)}))",
+            {stt::identifier, stt::colon, stt::identifier, stt::identifier, stt::identifier,
+                stt::parenthesis_open, stt::back_quoted_string, stt::comma, stt::back_quoted_string,
+                stt::comma, stt::back_quoted_string, stt::parenthesis_close, stt::identifier,
+                stt::parenthesis_open, stt::identifier, stt::comma, stt::curly_brace_open,
+                stt::identifier, stt::parenthesis_open, stt::number, stt::parenthesis_close,
+                stt::curly_brace_close, stt::comma, stt::curly_brace_open, stt::identifier,
+                stt::parenthesis_open, stt::number, stt::parenthesis_close, stt::curly_brace_close,
+                stt::parenthesis_close}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {

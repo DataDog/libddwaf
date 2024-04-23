@@ -205,7 +205,7 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
         } else if (c == '&' || c == '~') {
             add_token(sql_token_type::bitwise_operator);
         } else if (c == ':') {
-            add_token(sql_token_type::label);
+            add_token(sql_token_type::colon);
         }
     }
     return tokens_;

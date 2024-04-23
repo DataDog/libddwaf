@@ -212,7 +212,7 @@ std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
             if (next() == '=') {
                 add_token(sql_token_type::binary_operator);
             } else {
-                add_token(sql_token_type::label);
+                add_token(sql_token_type::colon);
             }
         }
     }

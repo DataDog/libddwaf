@@ -348,7 +348,7 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
             if (next() == '=') {
                 add_token(sql_token_type::binary_operator, 2);
             } else {
-                add_token(sql_token_type::label);
+                add_token(sql_token_type::colon);
             }
         } else if (c == '{') {
             add_token(sql_token_type::curly_brace_open);
