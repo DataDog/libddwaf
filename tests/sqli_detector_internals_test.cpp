@@ -7,12 +7,17 @@
 #include "condition/sqli_detector.hpp"
 #include "test_utils.hpp"
 #include "tokenizer/generic_sql.hpp"
-#include "tokenizer/pgsql.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
 
 namespace {
+auto tokenize(std::string_view statement)
+{
+    generic_sql_tokenizer tokenizer(
+        statement, {sql_token_type::parenthesis_open, sql_token_type::parenthesis_close});
+    return tokenizer.tokenize();
+}
 
 TEST(TestSqliDetectorInternals, HasOrderByStructureSuccess)
 {
@@ -59,9 +64,7 @@ TEST(TestSqliDetectorInternals, HasOrderByStructureSuccess)
     };
 
     for (const auto &sample : samples) {
-        pgsql_tokenizer tokenizer(sample);
-        auto tokens = tokenizer.tokenize();
-
+        auto tokens = tokenize(sample);
         EXPECT_TRUE(internal::has_order_by_structure(tokens)) << sample;
     }
 }
@@ -75,9 +78,7 @@ TEST(TestSqliDetectorInternals, HasOrderByStructureFailure)
     };
 
     for (const auto &sample : samples) {
-        pgsql_tokenizer tokenizer(sample);
-        auto tokens = tokenizer.tokenize();
-
+        auto tokens = tokenize(sample);
         EXPECT_FALSE(internal::has_order_by_structure(tokens)) << sample;
     }
 }
@@ -120,9 +121,7 @@ TEST(TestSqliDetectorInternals, IsBenignOrderByClauseSuccess)
 
     for (const auto &sample : samples) {
         auto statement = "ORDER BY " + sample;
-        pgsql_tokenizer tokenizer(statement);
-        auto resource_tokens = tokenizer.tokenize();
-
+        auto resource_tokens = tokenize(statement);
         EXPECT_STRV(resource_tokens[0].str, "ORDER BY");
 
         std::span<sql_token> param_tokens{&resource_tokens[1], resource_tokens.size() - 1};
@@ -134,8 +133,7 @@ TEST(TestSqliDetectorInternals, IsBenignOrderByClauseSuccess)
 TEST(TestSqliDetectorInternals, IsBenignOrderByClauseNotAnOrderBy)
 {
     std::string statement = "SELECT table desc";
-    pgsql_tokenizer tokenizer(statement);
-    auto resource_tokens = tokenizer.tokenize();
+    auto resource_tokens = tokenize(statement);
 
     std::span<sql_token> param_tokens{&resource_tokens[1], resource_tokens.size() - 1};
     auto res = internal::is_benign_order_by_clause(resource_tokens, param_tokens, 1);
@@ -145,8 +143,7 @@ TEST(TestSqliDetectorInternals, IsBenignOrderByClauseNotAnOrderBy)
 TEST(TestSqliDetectorInternals, IsBenignOrderByClauseNotEnoughTokens)
 {
     std::string statement = "table desc";
-    pgsql_tokenizer tokenizer(statement);
-    auto resource_tokens = tokenizer.tokenize();
+    auto resource_tokens = tokenize(statement);
 
     auto res = internal::is_benign_order_by_clause(resource_tokens, resource_tokens, 0);
     EXPECT_FALSE(res);
@@ -170,12 +167,10 @@ TEST(TestSqliDetectorInternals, IsWhereTautologySuccess)
         {"SELECT x FROM t WHERE id = ''Or''", "'Or'"},
         {"SELECT x FROM t WHERE id = '1' or 1 = 1", "1 = 1"},
         {"SELECT x FROM t WHERE id = '1' or 1 = '1'", "1 = '1'"},
-        //{"SELECT x FROM t WHERE id = '1' or 1 = (1)", "1 = (1)"}
-    };
+        {"SELECT x FROM t WHERE id = '1' or 1 = (1)", "1 = (1)"}};
 
     for (const auto &[statement, param] : samples) {
-        pgsql_tokenizer tokenizer(statement);
-        auto resource_tokens = tokenizer.tokenize();
+        auto resource_tokens = tokenize(statement);
 
         auto param_begin = statement.find(param);
         ASSERT_NE(param_begin, std::string::npos);
@@ -201,8 +196,7 @@ TEST(TestSqliDetectorInternals, IsWhereTautologyFailure)
     };
 
     for (const auto &[statement, param] : samples) {
-        pgsql_tokenizer tokenizer(statement);
-        auto resource_tokens = tokenizer.tokenize();
+        auto resource_tokens = tokenize(statement);
 
         auto param_begin = statement.find(param);
         ASSERT_NE(param_begin, std::string::npos);
@@ -229,8 +223,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
     };
 
     for (const auto &[statement, param] : samples) {
-        generic_sql_tokenizer tokenizer(statement);
-        auto resource_tokens = tokenizer.tokenize();
+        auto resource_tokens = tokenize(statement);
 
         auto param_begin = statement.find(param);
         ASSERT_NE(param_begin, std::string::npos);

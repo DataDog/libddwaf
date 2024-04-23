@@ -21,7 +21,9 @@ auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 
 } // namespace
 
-generic_sql_tokenizer::generic_sql_tokenizer(std::string_view str) : sql_tokenizer(str)
+generic_sql_tokenizer::generic_sql_tokenizer(
+    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+    : sql_tokenizer(str, std::move(skip_tokens))
 {
     if (!identifier_regex) {
         throw std::runtime_error("standard sql identifier regex not valid");
@@ -55,7 +57,7 @@ void generic_sql_tokenizer::tokenize_command_operator_or_identifier()
             token.str = substr(token.index, ident.size());
             advance(token.str.size() - 1);
         }
-        tokens_.emplace_back(token);
+        emplace_token(token);
     }
 }
 
@@ -78,7 +80,7 @@ void generic_sql_tokenizer::tokenize_inline_comment_or_operator()
         token.str = substr(token.index, 1);
         token.type = sql_token_type::binary_operator;
     }
-    tokens_.emplace_back(token);
+    emplace_token(token);
 }
 
 void generic_sql_tokenizer::tokenize_eol_comment()
@@ -91,7 +93,7 @@ void generic_sql_tokenizer::tokenize_eol_comment()
 
     token.str = substr(token.index, index() - token.index);
     token.type = sql_token_type::eol_comment;
-    tokens_.emplace_back(token);
+    emplace_token(token);
 }
 
 void generic_sql_tokenizer::tokenize_eol_comment_operator_or_number()
@@ -115,7 +117,7 @@ void generic_sql_tokenizer::tokenize_eol_comment_operator_or_number()
         token.type = sql_token_type::binary_operator;
     }
 
-    tokens_.emplace_back(token);
+    emplace_token(token);
 }
 
 void generic_sql_tokenizer::tokenize_operator_or_number()
@@ -134,7 +136,7 @@ void generic_sql_tokenizer::tokenize_operator_or_number()
         token.type = sql_token_type::binary_operator;
     }
 
-    tokens_.emplace_back(token);
+    emplace_token(token);
 }
 
 std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()

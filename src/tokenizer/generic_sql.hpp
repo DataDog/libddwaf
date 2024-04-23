@@ -18,7 +18,8 @@ namespace ddwaf {
 
 class generic_sql_tokenizer : public sql_tokenizer<generic_sql_tokenizer> {
 public:
-    explicit generic_sql_tokenizer(std::string_view str);
+    explicit generic_sql_tokenizer(
+        std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
 
 protected:
     std::vector<sql_token> tokenize_impl();

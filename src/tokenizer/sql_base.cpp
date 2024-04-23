@@ -153,7 +153,10 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
     return os;
 }
 
-template <typename T> sql_tokenizer<T>::sql_tokenizer(std::string_view str) : buffer_(str)
+template <typename T>
+sql_tokenizer<T>::sql_tokenizer(
+    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+    : buffer_(str), skip_tokens_(std::move(skip_tokens))
 {
     if (!number_regex) {
         throw std::runtime_error("sql number regex not valid");
@@ -196,7 +199,7 @@ template <typename T> void sql_tokenizer<T>::tokenize_string(char quote, sql_tok
     token.index = index();
     token.type = type;
     token.str = extract_string(quote);
-    tokens_.emplace_back(token);
+    emplace_token(token);
 }
 
 template <typename T> void sql_tokenizer<T>::tokenize_number()
@@ -206,7 +209,7 @@ template <typename T> void sql_tokenizer<T>::tokenize_number()
     if (!token.str.empty()) {
         token.index = index();
         token.type = sql_token_type::number;
-        tokens_.emplace_back(token);
+        emplace_token(token);
         advance(token.str.size() - 1);
     }
 }

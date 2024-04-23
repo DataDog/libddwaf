@@ -16,7 +16,8 @@ namespace ddwaf {
 
 class sqlite_tokenizer : public sql_tokenizer<sqlite_tokenizer> {
 public:
-    explicit sqlite_tokenizer(std::string_view str);
+    explicit sqlite_tokenizer(
+        std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
 
 protected:
     std::vector<sql_token> tokenize_impl();

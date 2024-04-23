@@ -11,6 +11,7 @@
 #include <ostream>
 #include <re2/re2.h>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 namespace ddwaf {
@@ -68,7 +69,8 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type);
 
 template <typename T> class sql_tokenizer {
 public:
-    explicit sql_tokenizer(std::string_view str);
+    explicit sql_tokenizer(
+        std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
 
     std::vector<sql_token> tokenize() { return static_cast<T *>(this)->tokenize_impl(); }
 
@@ -115,8 +117,15 @@ protected:
         token.index = index();
         token.type = type;
         token.str = substr(token.index, size);
-        tokens_.emplace_back(token);
+        emplace_token(token);
         advance(size - 1);
+    }
+
+    void emplace_token(const sql_token &token)
+    {
+        if (!skip_tokens_.contains(token.type)) {
+            tokens_.emplace_back(token);
+        }
     }
 
     optional_ref<sql_token> last_token()
@@ -135,6 +144,7 @@ protected:
 
     std::string_view buffer_;
     std::size_t idx_{0};
+    std::unordered_set<sql_token_type> skip_tokens_{};
     std::vector<sql_token> tokens_{};
 };
 

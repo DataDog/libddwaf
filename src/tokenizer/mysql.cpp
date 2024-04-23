@@ -82,7 +82,9 @@ std::string_view extract_variable(std::string_view str)
 
 } // namespace
 
-mysql_tokenizer::mysql_tokenizer(std::string_view str) : sql_tokenizer(str)
+mysql_tokenizer::mysql_tokenizer(
+    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+    : sql_tokenizer(str, std::move(skip_tokens))
 {
     if (!identifier_regex) {
         throw std::runtime_error("mysql identifier regex not valid");
@@ -124,7 +126,7 @@ void mysql_tokenizer::tokenize_command_operator_or_identifier()
             token.str = substr(token.index, ident.size());
             advance(token.str.size() - 1);
         }
-        tokens_.emplace_back(token);
+        emplace_token(token);
     }
 }
 
@@ -155,7 +157,7 @@ void mysql_tokenizer::tokenize_inline_comment_or_operator()
         token.str = substr(token.index, 1);
         token.type = sql_token_type::binary_operator;
     }
-    tokens_.emplace_back(token);
+    emplace_token(token);
 }
 
 void mysql_tokenizer::tokenize_number_or_identifier()
@@ -180,7 +182,7 @@ void mysql_tokenizer::tokenize_number_or_identifier()
             token.str = substr(token.index, ident.size());
             advance(token.str.size() - 1);
         }
-        tokens_.emplace_back(token);
+        emplace_token(token);
     }
 }
 
@@ -191,7 +193,7 @@ void mysql_tokenizer::tokenize_variable()
     token.type = sql_token_type::identifier;
     token.str = extract_variable(substr());
     if (!token.str.empty()) {
-        tokens_.emplace_back(token);
+        emplace_token(token);
         advance(token.str.size() - 1);
     }
 }
@@ -206,7 +208,7 @@ void mysql_tokenizer::tokenize_eol_comment()
 
     token.str = substr(token.index, index() - token.index);
     token.type = sql_token_type::eol_comment;
-    tokens_.emplace_back(token);
+    emplace_token(token);
 }
 
 void mysql_tokenizer::tokenize_eol_comment_operator_or_number()
@@ -239,7 +241,7 @@ void mysql_tokenizer::tokenize_eol_comment_operator_or_number()
         token.type = sql_token_type::binary_operator;
     }
 
-    tokens_.emplace_back(token);
+    emplace_token(token);
 }
 
 void mysql_tokenizer::tokenize_operator_or_number()
@@ -258,7 +260,7 @@ void mysql_tokenizer::tokenize_operator_or_number()
         token.type = sql_token_type::binary_operator;
     }
 
-    tokens_.emplace_back(token);
+    emplace_token(token);
 }
 
 std::vector<sql_token> mysql_tokenizer::tokenize_impl()
@@ -266,8 +268,8 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
     for (; !eof(); advance()) {
         auto c = peek();
         // TODO use an array of characters or a giant switch?
-        if (ddwaf::isalpha(c) || c == '_' ||
-            static_cast<unsigned char>(c) > 0x7f) { // Command or identifier
+        if (ddwaf::isalpha(c) || c == '_' || static_cast<uint8_t>(c) > 0x7f) {
+            // Command or identifier
             tokenize_command_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number_or_identifier();
