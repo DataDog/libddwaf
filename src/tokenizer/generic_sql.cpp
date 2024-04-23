@@ -8,14 +8,10 @@
 #include "regex_utils.hpp"
 #include "utils.hpp"
 
-#include <iostream>
-
-// TODO: Split the tokenizer into different dialects
-
 namespace ddwaf {
 namespace {
 constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|HAVING|ORDER BY|ASC|DESC)\b|(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS LIKE|IS NULL|IS NOT NULL|NOT|IS|MOD|DIV)\b|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9]*\b))";
+    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP BY|OFFSET|LIMIT|DISTINCT|HAVING|ORDER BY|ASC|DESC|UNION ALL|UNION|AS)|(?P<binary_operator>ALL|OR|AND|ANY|BETWEEN|LIKE|IN|MOD|IS NULL|IS NOT NULL|NOT)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
 auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 
@@ -177,11 +173,6 @@ std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
             tokenize_eol_comment();
         } else if (c == '+') {
             tokenize_operator_or_number();
-        } else if (c == '@') {
-            auto n = next();
-            if (n == '@' || n == '>') {
-                add_token(sql_token_type::binary_operator, 2);
-            }
         } else if (c == '!') {
             add_token(sql_token_type::binary_operator, next() == '=' ? 2 : 1);
         } else if (c == '>') {
@@ -193,9 +184,7 @@ std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
             }
         } else if (c == '<') {
             auto n = next();
-            if (n == '=' || n == '@') {
-                add_token(sql_token_type::binary_operator, next(2) == '>' ? 3 : 2);
-            } else if (n == '<' || n == '>') {
+            if (n == '=' || n == '>') {
                 add_token(sql_token_type::binary_operator, 2);
             } else {
                 add_token(sql_token_type::binary_operator);
@@ -211,11 +200,7 @@ std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
         } else if (c == '&' || c == '^' || c == '~') {
             add_token(sql_token_type::bitwise_operator);
         } else if (c == ':') {
-            if (next() == '=') {
-                add_token(sql_token_type::binary_operator);
-            } else {
-                add_token(sql_token_type::colon);
-            }
+            add_token(sql_token_type::colon);
         }
     }
     return tokens_;

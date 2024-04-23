@@ -7,7 +7,6 @@
 #include "tokenizer/pgsql.hpp"
 #include "regex_utils.hpp"
 #include "utils.hpp"
-#include <iostream>
 
 namespace ddwaf {
 namespace {
