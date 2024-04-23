@@ -1,0 +1,33 @@
+{
+  name: "Basic run with match, using the generic tokenizer",
+  runs: [
+    {
+      persistent-input: {
+        server.db.statement: "SELECT * FROM users WHERE id ='' OR 1=1; --';",
+        server.request.query: [ "' OR 1=1; --" ],
+        server.db.system: "generic"
+      },
+      rules: [
+        {
+          "rsp-930-003": [
+            {
+              resource: {
+                address: "server.db.statement",
+                value: "SELECT * FROM users WHERE id ='' OR 1=1; --';"
+              },
+              params: {
+                address: "server.request.query",
+                value: "' OR 1=1; --"
+              },
+              db_type: {
+                address: "server.db.system",
+                value: "generic"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

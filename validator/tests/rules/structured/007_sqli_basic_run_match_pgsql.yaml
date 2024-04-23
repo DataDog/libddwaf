@@ -1,11 +1,11 @@
 {
-  name: "Basic run with match",
+  name: "Basic run with match, using pgsql dialect",
   runs: [
     {
       persistent-input: {
         server.db.statement: "SELECT * FROM users WHERE id ='' OR 1=1; --';",
         server.request.query: [ "' OR 1=1; --" ],
-        server.db.system: "mysql"
+        server.db.system: "pgsql"
       },
       rules: [
         {
@@ -21,7 +21,7 @@
               },
               db_type: {
                 address: "server.db.system",
-                value: "mysql"
+                value: "pgsql"
               }
             }
           ]
