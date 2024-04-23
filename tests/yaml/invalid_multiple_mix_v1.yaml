@@ -1,6 +1,6 @@
 version: '1.1'
 events:
-  - id: "1"
+  - id: 1
     name: rule1
     tags:
       category: category1
@@ -15,7 +15,7 @@ events:
           inputs:
             - arg2:x
           regex: .*
-  - id: "2"
+  - id: 2
     name: rule2
     tags:
       type: flow1
@@ -31,7 +31,7 @@ events:
           inputs:
             - arg2
           regex: .*
-  - id: "3"
+  - id: 3
     name: rule3
     tags:
       category: category1
@@ -46,7 +46,7 @@ events:
           inputs:
             - arg2:y
           regex: .*
-  - id: "4"
+  - id: 4
     name: rule4
     tags:
       type: flow1
@@ -65,7 +65,7 @@ events:
       - operation: match_regex
         parameters:
           regex: .*
-  - id: "5"
+  - id: 5
     name: rule5
     tags:
       type: type1

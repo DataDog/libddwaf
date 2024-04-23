@@ -1,6 +1,6 @@
 version: '2.1'
 rules:
-  - id: "1"
+  - id: 1
     name: rule1
     tags:
       type: flow1
@@ -12,7 +12,7 @@ rules:
           inputs:
               - address: http.client_ip
           data: ip_data
-  - id: "3"
+  - id: 3
     name: rule3
     tags:
       type: flow3
@@ -24,7 +24,7 @@ rules:
           inputs:
             - address: server.request.query
           regex: rule3
-  - id: "4"
+  - id: 4
     name: rule4
     tags:
       type: flow4
@@ -35,7 +35,7 @@ rules:
           inputs:
             - address: server.request.params
           regex: rule4
-  - id: "5"
+  - id: 5
     name: rule5
     tags:
       type: flow5

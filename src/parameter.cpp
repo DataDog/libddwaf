@@ -252,10 +252,6 @@ parameter::operator std::vector<std::string>() const
     std::vector<std::string> data;
     data.reserve(nbEntries);
     for (unsigned i = 0; i < nbEntries; i++) {
-        if (array[i].type != DDWAF_OBJ_STRING) {
-            throw malformed_object("item in array not a string, can't cast to string vector");
-        }
-
         data.emplace_back(static_cast<std::string>(parameter(array[i])));
     }
 

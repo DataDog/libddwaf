@@ -189,6 +189,7 @@ std::vector<parameter_definition> parse_arguments(const parameter::map &params, 
 
             auto kp = at<std::vector<std::string>>(input, "key_path", {});
             for (const auto &path : kp) {
+                DDWAF_DEBUG("FOUND KEY PATH: {}", path);
                 if (path.empty()) {
                     throw ddwaf::parsing_error("empty key_path");
                 }

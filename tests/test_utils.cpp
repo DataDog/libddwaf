@@ -440,6 +440,8 @@ ddwaf_object node_to_arg(const Node &node)
     }
     case NodeType::Scalar: {
         ddwaf_object arg;
+        const std::string &value = node.Scalar();
+
         if (node.Tag() == "?") {
             try {
                 ddwaf_object_unsigned(&arg, node.as<uint64_t>());
@@ -457,12 +459,15 @@ ddwaf_object node_to_arg(const Node &node)
             } catch (...) {}
 
             try {
-                ddwaf_object_bool(&arg, node.as<bool>());
-                return arg;
+                if (!value.empty() && value[0] != 'Y' && value[0] != 'y' && value[0] != 'n' &&
+                    value[0] != 'N') {
+                    // Skip the yes / no variants of boolean
+                    ddwaf_object_bool(&arg, node.as<bool>());
+                    return arg;
+                }
             } catch (...) {}
         }
 
-        const std::string &value = node.Scalar();
         ddwaf_object_stringl(&arg, value.c_str(), value.size());
         return arg;
     }

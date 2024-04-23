@@ -1,11 +1,11 @@
 version: '2.1'
 exclusions:
-  - id: "1"
+  - id: 1
     rules_target:
       - tags:
           type: type2
 rules:
-  - id: "1"
+  - id: 1
     name: rule1
     tags:
       type: type1
@@ -17,7 +17,7 @@ rules:
             - address: http.client_ip
           list:
             - 192.168.0.1
-  - id: "2"
+  - id: 2
     name: rule2
     tags:
       type: type2
