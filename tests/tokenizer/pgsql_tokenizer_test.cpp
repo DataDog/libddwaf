@@ -178,16 +178,15 @@ TEST(TestPgSqlTokenizer, EolComment)
 TEST(TestPgSqlTokenizer, DoubleQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
-        {R"("this is a string")", {stt::double_quoted_string}},
-        {R"("this is \"quoted\" string")", {stt::double_quoted_string}},
+        {R"("this is a string")", {stt::identifier}},
+        {R"("this is \"quoted\" string")", {stt::identifier}},
         {R"("this is \"quoted\" string" and "another string")",
-            {stt::double_quoted_string, stt::binary_operator, stt::double_quoted_string}},
-        {R"("this is an unterminated string)", {stt::double_quoted_string}},
-        {R"(SELECT "colname")", {stt::command, stt::double_quoted_string}},
-        {R"("colname" FROM)", {stt::double_quoted_string, stt::command}},
+            {stt::identifier, stt::binary_operator, stt::identifier}},
+        {R"("this is an unterminated string)", {stt::identifier}},
+        {R"(SELECT "colname")", {stt::command, stt::identifier}},
+        {R"("colname" FROM)", {stt::identifier, stt::command}},
         {R"(SELECT "colname" FROM "table";)",
-            {stt::command, stt::double_quoted_string, stt::command, stt::double_quoted_string,
-                stt::query_end}},
+            {stt::command, stt::identifier, stt::command, stt::identifier, stt::query_end}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {
@@ -314,14 +313,14 @@ TEST(TestPgSqlTokenizer, Queries)
 
         {R"(SELECT COUNT(*) FROM "referrers" WHERE (phones @> ARRAY['33626869936']))",
             {stt::command, stt::identifier, stt::parenthesis_open, stt::asterisk,
-                stt::parenthesis_close, stt::command, stt::double_quoted_string, stt::command,
+                stt::parenthesis_close, stt::command, stt::identifier, stt::command,
                 stt::parenthesis_open, stt::identifier, stt::binary_operator, stt::identifier,
                 stt::array_open, stt::single_quoted_string, stt::array_close,
                 stt::parenthesis_close}},
 
         {R"(SELECT COUNT(*) FROM "referrers" WHERE (phones <@ ARRAY['33626869936']))",
             {stt::command, stt::identifier, stt::parenthesis_open, stt::asterisk,
-                stt::parenthesis_close, stt::command, stt::double_quoted_string, stt::command,
+                stt::parenthesis_close, stt::command, stt::identifier, stt::command,
                 stt::parenthesis_open, stt::identifier, stt::binary_operator, stt::identifier,
                 stt::array_open, stt::single_quoted_string, stt::array_close,
                 stt::parenthesis_close}},

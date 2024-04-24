@@ -145,8 +145,10 @@ std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
             tokenize_command_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number();
-        } else if (c == '"') { // Double-quoted string
-            tokenize_string('"', sql_token_type::double_quoted_string);
+        } else if (c == '"') {
+            // For compatibility, double-quoted strings are always considered
+            // identifiers.
+            tokenize_string('"', sql_token_type::identifier);
         } else if (c == '\'') { // Single-quoted string
             tokenize_string('\'', sql_token_type::single_quoted_string);
         } else if (c == '`') { // Backtick-quoted string

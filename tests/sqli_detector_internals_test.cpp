@@ -7,14 +7,17 @@
 #include "condition/sqli_detector.hpp"
 #include "test_utils.hpp"
 #include "tokenizer/generic_sql.hpp"
+#include "tokenizer/mysql.hpp"
+#include "tokenizer/pgsql.hpp"
+#include "tokenizer/sqlite.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
 
 namespace {
-auto tokenize(std::string_view statement)
+template <typename Tokenizer = generic_sql_tokenizer> auto tokenize(std::string_view statement)
 {
-    generic_sql_tokenizer tokenizer(
+    Tokenizer tokenizer(
         statement, {sql_token_type::parenthesis_open, sql_token_type::parenthesis_close});
     return tokenizer.tokenize();
 }
@@ -27,10 +30,6 @@ TEST(TestSqliDetectorInternals, HasOrderByStructureSuccess)
         "table.col",
         R"("table")",
         R"("table"."col")",
-        "'table'",
-        "'table'.'col'",
-        "`table`",
-        "`table`.`col`",
         "1, 2",
         "1, 2, 3, 4",
         "1, table",
@@ -233,6 +232,27 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
             internal::get_consecutive_tokens(resource_tokens, param_begin, param_end);
 
         EXPECT_TRUE(internal::is_query_comment(param_tokens));
+    }
+}
+
+TEST(TestSqliDetectorInternals, StripLiterals)
+{
+    std::vector<std::pair<std::string, std::string>> samples{
+        {R"(SELECT x FROM t WHERE id='admin'#)", R"(SELECT x FROM t WHERE id=?#)"},
+        {R"(SELECT * FROM ships WHERE id= 1 --AND password=HASH('str') 1 --)",
+            R"(SELECT * FROM ships WHERE id= ? --AND password=HASH('str') 1 --)"},
+        {R"(SELECT x FROM t WHILE id = 1 OR 1)", R"(SELECT x FROM t WHILE id = ? OR ?)"},
+        {R"(SELECT x FROM t WHILE id = (1) OR (1))", R"(SELECT x FROM t WHILE id = (?) OR (?))"},
+        {R"(SELECT x FROM t WHILE username = 'paco' AND id = 55;)",
+            R"(SELECT x FROM t WHILE username = ? AND id = ?;)"},
+        {R"(SELECT x FROM t WHILE username = `paco` AND id = 09;)",
+            R"(SELECT x FROM t WHILE username = ? AND id = ?;)"},
+    };
+
+    for (const auto &[statement, expected_stripped] : samples) {
+        auto tokens = tokenize(statement);
+        auto obtained_stripped = internal::strip_literals(statement, tokens);
+        EXPECT_STREQ(obtained_stripped.c_str(), expected_stripped.c_str());
     }
 }
 

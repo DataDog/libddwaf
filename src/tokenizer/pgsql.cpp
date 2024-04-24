@@ -55,6 +55,7 @@ void pgsql_tokenizer::tokenize_command_operator_or_identifier()
     re2::StringPiece command;
     re2::StringPiece ident;
 
+    // TODO recognize escape and bit string constants
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
     if (re2::RE2::PartialMatch(ref, *identifier_regex, &command, &binary_op, &ident)) {
         // At least one of the strings will contain a match
@@ -224,11 +225,16 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
             tokenize_command_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number();
-        } else if (c == '"') { // Double-quoted string
-            tokenize_string('"', sql_token_type::double_quoted_string);
-        } else if (c == '\'') { // Single-quoted string
+        } else if (c == '"') {
+            // Double quoted strings in pgsql are considered identifiers:
+            // https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
+            tokenize_string('"', sql_token_type::identifier);
+        } else if (c == '\'') {
+            // Single-quoted string constants
             tokenize_string('\'', sql_token_type::single_quoted_string);
-        } else if (c == '`') { // Backtick-quoted string
+        } else if (c == '`') {
+            // Backtick-quoted string, in theory this aren't supported although
+            // supporting them doesn't hurt
             tokenize_string('`', sql_token_type::back_quoted_string);
         } else if (c == '$') { // Dollar-quoted string or identifier
             tokenize_dollar_string_or_identifier();

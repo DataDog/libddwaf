@@ -30,6 +30,9 @@ protected:
 
 namespace internal {
 // Exposed for testing purposes
+
+std::string strip_literals(std::string_view statement, std::span<sql_token> tokens);
+
 std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
     std::vector<sql_token> &resource_tokens, std::size_t begin, std::size_t end);
 

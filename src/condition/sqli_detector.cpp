@@ -6,7 +6,6 @@
 #include "condition/sqli_detector.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
-#include "regex_utils.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
@@ -25,11 +24,6 @@ namespace {
 constexpr auto &npos = std::string_view::npos;
 constexpr std::size_t min_token_count = 4;
 
-// Relevant regexes
-auto or_operator_regex = regex_init(R"((?i)(?:OR|XOR|\|\|))");
-auto order_sequence_regex = regex_init(R"((?i)(?:ASC|DESC))");
-auto limit_offset_regex = regex_init(R"((?i)(?:LIMIT|OFFSET))");
-
 enum class sqli_error {
     none,
     invalid_sql,
@@ -38,15 +32,76 @@ enum class sqli_error {
 using matched_param = std::pair<std::string, std::vector<std::string>>;
 using sqli_result = std::variant<sqli_error, matched_param, std::monostate>;
 
-bool is_identifier(sql_token_type type)
+bool is_literal(sql_token_type type)
 {
-    return type == sql_token_type::identifier || type == sql_token_type::double_quoted_string ||
+    return type == sql_token_type::number || type == sql_token_type::double_quoted_string ||
            type == sql_token_type::single_quoted_string ||
            type == sql_token_type::dollar_quoted_string ||
            type == sql_token_type::back_quoted_string;
 }
 
+bool is_asc_or_desc(std::string_view str)
+{
+    return string_iequals(str, "ASC") || string_iequals(str, "DESC");
+}
+
+bool is_limit_or_offset(std::string_view str)
+{
+    return string_iequals(str, "LIMIT") || string_iequals(str, "OFFSET");
+}
+
 } // namespace
+
+std::string strip_literals(std::string_view statement, std::span<sql_token> tokens)
+{
+    std::string stripped;
+    stripped.reserve(statement.size());
+
+    auto current_token = tokens.begin();
+    if (current_token == tokens.end()) {
+        // Shouldn't happen
+        return {};
+    }
+
+    for (std::size_t i = 0; i < statement.size();) {
+        auto token_begin = current_token->index;
+        if (i < token_begin) {
+            // Characters unrelated to the current token
+            stripped += statement.substr(i, token_begin - i);
+            i = token_begin;
+            continue;
+        }
+
+        auto token_end = token_begin + current_token->str.size();
+        if (i >= token_begin && i < token_end) {
+            // We're within the current token, so let's process it
+            if (is_literal(current_token->type)) {
+                // Since this is a literal, we replace it and skip to the next
+                // character and token
+                stripped += "?";
+
+            } else {
+                // Not a literal, copy the whole thing and move on
+                stripped += statement.substr(token_begin, current_token->str.size());
+            }
+
+            i = token_end;
+        }
+
+        // At this stage we could be past the current token or we have just
+        // copied it, in either case we move forward and reevaluate
+        if (++current_token == tokens.end()) {
+            // Since there are no more tokens, we copy any remaining characters
+            if (token_end < statement.size()) {
+                stripped += statement.substr(i);
+            }
+
+            break;
+        }
+    }
+
+    return stripped;
+}
 
 bool is_query_comment(std::span<sql_token> tokens)
 {
@@ -131,7 +186,8 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     // Is the operator in the middle a command (OR) or an operator (=, ||...)
     auto middle_token = param_tokens[1];
     if (middle_token.type != sql_token_type::binary_operator) {
-        return regex_match(*or_operator_regex, middle_token.str);
+        return string_iequals(middle_token.str, "OR") || string_iequals(middle_token.str, "XOR") ||
+               middle_token.str == "||";
     }
 
     // Okay, if we have a `X = Y` pattern, let's make sure X and Y are similar
@@ -189,7 +245,7 @@ bool has_order_by_structure(std::span<sql_token> tokens)
             // column index or a table / column name
             if (current_token->type == sql_token_type::number) {
                 next_state = order_by_state::column_index;
-            } else if (is_identifier(current_token->type)) {
+            } else if (current_token->type == sql_token_type::identifier) {
                 next_state = order_by_state::table_or_column_name;
             }
             break;
@@ -207,9 +263,9 @@ bool has_order_by_structure(std::span<sql_token> tokens)
             } else if (current_token->type == sql_token_type::comma) {
                 next_state = order_by_state::comma;
             } else if (current_token->type == sql_token_type::command) {
-                if (regex_match(*order_sequence_regex, current_token->str)) {
+                if (is_asc_or_desc(current_token->str)) {
                     next_state = order_by_state::asc_or_desc;
-                } else if (regex_match(*limit_offset_regex, current_token->str)) {
+                } else if (is_limit_or_offset(current_token->str)) {
                     next_state = order_by_state::limit_or_offset;
                 }
             }
@@ -227,9 +283,9 @@ bool has_order_by_structure(std::span<sql_token> tokens)
             if (current_token->type == sql_token_type::comma) {
                 next_state = order_by_state::comma;
             } else if (current_token->type == sql_token_type::command) {
-                if (regex_match(*order_sequence_regex, current_token->str)) {
+                if (is_asc_or_desc(current_token->str)) {
                     next_state = order_by_state::asc_or_desc;
-                } else if (regex_match(*limit_offset_regex, current_token->str)) {
+                } else if (is_limit_or_offset(current_token->str)) {
                     next_state = order_by_state::limit_or_offset;
                 }
             }
@@ -244,7 +300,7 @@ bool has_order_by_structure(std::span<sql_token> tokens)
             // An offset value can only be followed by another offset or limit
             // keyword, otherwise the end state is covered above
             if (current_token->type == sql_token_type::command &&
-                regex_match(*limit_offset_regex, current_token->str)) {
+                is_limit_or_offset(current_token->str)) {
                 next_state = order_by_state::limit_or_offset;
             }
 
@@ -273,7 +329,7 @@ bool has_order_by_structure(std::span<sql_token> tokens)
             if (current_token->type == sql_token_type::comma) {
                 next_state = order_by_state::comma;
             } else if (current_token->type == sql_token_type::command &&
-                       regex_match(*limit_offset_regex, current_token->str)) {
+                       is_limit_or_offset(current_token->str)) {
                 next_state = order_by_state::limit_or_offset;
             }
 
@@ -286,7 +342,7 @@ bool has_order_by_structure(std::span<sql_token> tokens)
 
             // A dot is only used as part of the table.column notation, so the
             // next token must be the column name
-            if (is_identifier(current_token->type)) {
+            if (current_token->type == sql_token_type::identifier) {
                 next_state = order_by_state::column_name;
             }
             break;
@@ -474,10 +530,12 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             bool ephemeral = sql.ephemeral || param.ephemeral;
 
+            auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
+
             // TODO remove literals from resource
             auto &[highlight, param_kp] = std::get<internal::matched_param>(res);
             cache.match =
-                condition_match{{{"resource"sv, std::string{sql.value}, sql.address, sql_kp},
+                condition_match{{{"resource"sv, std::string{stripped_stmt}, sql.address, sql_kp},
                                     {"params"sv, highlight, param.address, param_kp},
                                     {"db_type"sv, std::string{db_type.value}, db_type.address, {}}},
                     {std::move(highlight)}, "sqli_detector", {}, ephemeral};

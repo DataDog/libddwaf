@@ -118,7 +118,7 @@ protected:
         token.type = type;
         token.str = substr(token.index, size);
         emplace_token(token);
-        advance(size - 1);
+        advance(token.str.size() - 1);
     }
 
     void emplace_token(const sql_token &token)

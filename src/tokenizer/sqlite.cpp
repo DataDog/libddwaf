@@ -11,6 +11,7 @@
 namespace ddwaf {
 namespace {
 // https://www.sqlite.org/lang_select.html
+// Identifiers: https://sqlite.org/lang_keywords.html
 constexpr std::string_view identifier_regex_str =
     R"((?i)^(?:(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP BY|HAVING|WINDOW|AS|VALUES|OFFSET|LIMIT|ORDER BY|ASC|DESC|UNION ALL|UNION|INTERSECT|EXCEPT)|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|IS DISTINCT FROM|IS NOT DISTINCT FROM|MATCH|NOTNULL|NOT NULL|ISNULL|IS NOT NULL|IS NOT|NOT|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*|\$[0-9]+))(?:\b|\s|$))";
 
@@ -152,12 +153,19 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
             tokenize_command_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number();
-        } else if (c == '"') { // Double-quoted string
-            tokenize_string('"', sql_token_type::double_quoted_string);
-        } else if (c == '\'') { // Single-quoted string
+        } else if (c == '"') {
+            // Double-quoted string, considered an identifier
+            tokenize_string('"', sql_token_type::identifier);
+        } else if (c == '\'') {
+            // Single-quoted string
             tokenize_string('\'', sql_token_type::single_quoted_string);
-        } else if (c == '`') { // Backtick-quoted string
-            tokenize_string('`', sql_token_type::back_quoted_string);
+        } else if (c == '`') {
+            // Backtick-quoted string, considered an identifier
+            tokenize_string('`', sql_token_type::identifier);
+        } else if (c == '[') {
+            // If the end square bracket isn't found, all of the remaining
+            // string will be considered part of the identifier
+            add_token(sql_token_type::identifier, substr().find(']'));
         } else if (c == '(') {
             add_token(sql_token_type::parenthesis_open);
         } else if (c == ')') {

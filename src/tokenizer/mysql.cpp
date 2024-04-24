@@ -12,6 +12,7 @@ namespace ddwaf {
 namespace {
 
 // Operators: https://dev.mysql.com/doc/refman/5.7/en/built-in-function-reference.html
+// Identifiers: https://dev.mysql.com/doc/refman/8.0/en/identifiers.html
 constexpr std::string_view identifier_regex_str =
     R"((?i)^(?:(?P<command>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP BY|WITH ROLLUP|UNION ALL|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER BY|ASC|DESC|LIMIT|OFFSET|AS)|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|CASE|DIV|NOT NULL|IS NULL|IS NOT NULL|IS NOT|IS|LAST_DAY|NOT BETWEEN|NOT LIKE|NOT REGEXP|NOT IN|NOT|REGEXP|XOR|OR|RLIKE|SOUNDS LIKE|LIKE|IN)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
@@ -273,12 +274,16 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
             tokenize_command_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number_or_identifier();
-        } else if (c == '"') { // Double-quoted string
+        } else if (c == '"') {
+            // Double-quoted string, this can also be considered an identifier
+            // if the ANSI_QUOTE mode is enabled, however we have no way of
+            // knowing
             tokenize_string('"', sql_token_type::double_quoted_string);
         } else if (c == '\'') { // Single-quoted string
             tokenize_string('\'', sql_token_type::single_quoted_string);
-        } else if (c == '`') { // Backtick-quoted string
-            tokenize_string('`', sql_token_type::back_quoted_string);
+        } else if (c == '`') {
+            // Backtick-quoted strings are considered identifiers
+            tokenize_string('`', sql_token_type::identifier);
         } else if (c == '(') {
             add_token(sql_token_type::parenthesis_open);
         } else if (c == ')') {

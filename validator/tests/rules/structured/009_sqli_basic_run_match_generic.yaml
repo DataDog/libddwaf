@@ -13,7 +13,7 @@
             {
               resource: {
                 address: "server.db.statement",
-                value: "SELECT * FROM users WHERE id ='' OR 1=1; --';"
+                value: "SELECT * FROM users WHERE id =? OR ?=?; --';"
               },
               params: {
                 address: "server.request.query",

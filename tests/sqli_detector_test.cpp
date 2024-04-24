@@ -67,16 +67,22 @@ TEST_P(DialectTestFixture, Injections)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
 
-    std::vector<std::pair<std::string, std::string>> samples{
-        {R"(SELECT * FROM users ORDER BY db.table notAsc)", R"(db.table notAsc)"},
-        {R"(SELECT * FROM users ORDER BY 1.col, 2, "str")", R"(1.col, 2, "str")"},
-        {R"(SELECT * FROM users ORDER BY table.col OFFSET 0")", R"(table.col OFFSET 0)"},
-        {R"(SELECT * FROM ships WHERE name LIKE '%neb%'")", R"(SELECT * FROM ships WHERE)"},
+    std::vector<std::tuple<std::string, std::string, std::string>> samples{
+        {R"(SELECT * FROM users ORDER BY db.table notAsc)",
+            R"(SELECT * FROM users ORDER BY db.table notAsc)", R"(db.table notAsc)"},
+        {R"(SELECT * FROM users ORDER BY 1.col, 2, 'str')",
+            R"(SELECT * FROM users ORDER BY ?.col, ?, ?)", R"(1.col, 2, 'str')"},
+        {R"(SELECT * FROM users ORDER BY table.col OFFSET 0'')",
+            R"(SELECT * FROM users ORDER BY table.col OFFSET ??)", R"(table.col OFFSET 0)"},
+        {R"(SELECT * FROM ships WHERE name LIKE '%neb%')",
+            R"(SELECT * FROM ships WHERE name LIKE ?)", R"(SELECT * FROM ships WHERE)"},
         {"\n                SELECT id, author, title, body, created_at\n                FROM posts "
-         "WHERE id = 1 OR 1 = 1",
+         "\nWHERE id = 1 OR 1 = 1",
+            "\n                SELECT id, author, title, body, created_at\n                FROM "
+            "posts \nWHERE id = ? OR ? = ?",
             "1 OR 1 = 1"}};
 
-    for (const auto &[statement, input] : samples) {
+    for (const auto &[statement, obfuscated, input] : samples) {
         ddwaf_object tmp;
         ddwaf_object root;
 
@@ -98,7 +104,7 @@ TEST_P(DialectTestFixture, Injections)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, statement.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
@@ -116,24 +122,29 @@ TEST_P(DialectTestFixture, Tautologies)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
 
-    std::vector<std::pair<std::string, std::string>> samples{
-        {"SELECT x FROM t WHERE id = 1 OR 1", "1 OR 1"},
-        {"SELECT x FROM t WHERE id = 1 OR tbl", "1 OR tbl"},
-        {"SELECT x FROM t WHERE id = tbl OR tbl", "tbl OR tbl"},
-        {"SELECT x FROM t WHERE id = tbl OR tbl", "tbl OR tbl"},
-        {R"(SELECT x FROM t WHERE id = ""OR"")", R"("OR")"},
-        {"SELECT x FROM t WHERE id = ''OR''", "'OR'"},
-        {"SELECT x FROM t WHERE id = 1||tbl", "1||tbl"},
-        {"SELECT x FROM t WHERE id = tbl||tbl", "tbl||tbl"},
-        {R"(SELECT x FROM t WHERE id = ""||"")", R"("||")"},
-        {"SELECT x FROM t WHERE id = 1 XOR 1", "1 XOR 1"},
-        {R"(SELECT x FROM t WHERE id = tbl XOR tbl)", "tbl XOR tbl"},
-        {R"(SELECT x FROM t WHERE id = ""XOR"")", R"("XOR")"},
-        {"SELECT x FROM t WHERE id = ''Or''", "'Or'"},
-        {"SELECT x FROM t WHERE id = '1' or 1 = 1", "1 = 1"},
-        {"SELECT x FROM t WHERE id = '1' or 1 = '1'", "1 = '1'"}};
+    std::vector<std::tuple<std::string, std::string, std::string>> samples{
+        {"SELECT x FROM t WHERE id = 1 OR 1", "SELECT x FROM t WHERE id = ? OR ?", "1 OR 1"},
+        {"SELECT x FROM t WHERE id = 1 OR tbl", "SELECT x FROM t WHERE id = ? OR tbl", "1 OR tbl"},
+        {"SELECT x FROM t WHERE id = tbl OR tbl", "SELECT x FROM t WHERE id = tbl OR tbl",
+            "tbl OR tbl"},
+        {"SELECT x FROM t WHERE id = tbl OR tbl", "SELECT x FROM t WHERE id = tbl OR tbl",
+            "tbl OR tbl"},
+        {"SELECT x FROM t WHERE id = ''OR''", "SELECT x FROM t WHERE id = ?OR?", "'OR'"},
+        {"SELECT x FROM t WHERE id = 1||tbl", "SELECT x FROM t WHERE id = ?||tbl", "1||tbl"},
+        {"SELECT x FROM t WHERE id = tbl||tbl", "SELECT x FROM t WHERE id = tbl||tbl", "tbl||tbl"},
+        {R"(SELECT x FROM t WHERE id = ''||'')", R"(SELECT x FROM t WHERE id = ?||?)", R"('||')"},
+        {"SELECT x FROM t WHERE id = 1 XOR 1", "SELECT x FROM t WHERE id = ? XOR ?", "1 XOR 1"},
+        {R"(SELECT x FROM t WHERE id = tbl XOR tbl)", R"(SELECT x FROM t WHERE id = tbl XOR tbl)",
+            "tbl XOR tbl"},
+        {R"(SELECT x FROM t WHERE id = ''XOR'')", R"(SELECT x FROM t WHERE id = ?XOR?)",
+            R"('XOR')"},
+        {"SELECT x FROM t WHERE id = ''Or''", "SELECT x FROM t WHERE id = ?Or?", "'Or'"},
+        {"SELECT x FROM t WHERE id = '1' or 1 = 1", "SELECT x FROM t WHERE id = ? or ? = ?",
+            "1 = 1"},
+        {"SELECT x FROM t WHERE id = '1' or 1 = '1'", "SELECT x FROM t WHERE id = ? or ? = ?",
+            "1 = '1'"}};
 
-    for (const auto &[statement, input] : samples) {
+    for (const auto &[statement, obfuscated, input] : samples) {
         ddwaf_object tmp;
         ddwaf_object root;
 
@@ -155,7 +166,7 @@ TEST_P(DialectTestFixture, Tautologies)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, statement.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
@@ -170,20 +181,20 @@ TEST_P(DialectTestFixture, Comments)
 {
     auto dialect = GetParam();
 
-    std::vector<std::pair<std::string, std::string>> samples{
-        {R"(SELECT x FROM t WHERE id='admin'--)", R"(admin'--)"},
-        {R"(SELECT x FROM t WHERE id='admin')--)", R"(admin')--)"},
-        {R"(SELECT x FROM t WHERE id=1-- )", R"(1-- )"},
-        {R"(SELECT x FROM t WHERE id=''-- AND pwd='pwd'''--)", R"('--)"},
-        {R"(SELECT * FROM ships WHERE id= 1 --AND password=HASH('str') 1 --)", R"( 1 --)"},
-        //{R"(SELECT x FROM t WHERE id='admin'#)", R"(admin'#)"},
-        //{R"(SELECT x FROM t WHERE id='admin')#)", R"(admin')#)"},
-        //{R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 # )", R"( 1 # )"},
+    std::vector<std::tuple<std::string, std::string, std::string>> samples{
+        {R"(SELECT x FROM t WHERE id='admin'--)", R"(SELECT x FROM t WHERE id=?--)", R"(admin'--)"},
+        {R"(SELECT x FROM t WHERE id='admin')--)", R"(SELECT x FROM t WHERE id=?)--)",
+            R"(admin')--)"},
+        {R"(SELECT x FROM t WHERE id=1-- )", R"(SELECT x FROM t WHERE id=?-- )", R"(1-- )"},
+        {R"(SELECT x FROM t WHERE id=''-- AND pwd='pwd'''--)",
+            R"(SELECT x FROM t WHERE id=?-- AND pwd='pwd'''--)", R"('--)"},
+        {R"(SELECT * FROM ships WHERE id= 1 -- AND password=HASH('str') 1 --)",
+            R"(SELECT * FROM ships WHERE id= ? -- AND password=HASH('str') 1 --)", R"( 1 --)"},
     };
 
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
-    for (const auto &[statement, input] : samples) {
+    for (const auto &[statement, obfuscated, input] : samples) {
         ddwaf_object tmp;
         ddwaf_object root;
 
@@ -205,7 +216,7 @@ TEST_P(DialectTestFixture, Comments)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, statement.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");

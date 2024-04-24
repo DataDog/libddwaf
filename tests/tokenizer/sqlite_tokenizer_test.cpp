@@ -157,18 +157,17 @@ TEST(TestSqliteTokenizer, EolComment)
 TEST(TestSqliteTokenizer, DoubleQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
-        {R"("this is a string")", {stt::double_quoted_string}},
-        {R"("this is \"quoted\" string")", {stt::double_quoted_string}},
-        {R"("this is \\\\\"quoted\" string")", {stt::double_quoted_string}},
-        {R"("this \n is \\\\\"quoted\\\\\" string")", {stt::double_quoted_string}},
+        {R"("this is a string")", {stt::identifier}},
+        {R"("this is \"quoted\" string")", {stt::identifier}},
+        {R"("this is \\\\\"quoted\" string")", {stt::identifier}},
+        {R"("this \n is \\\\\"quoted\\\\\" string")", {stt::identifier}},
         {R"("this is \"quoted\" string" and "another string")",
-            {stt::double_quoted_string, stt::binary_operator, stt::double_quoted_string}},
-        {R"("this is an unterminated string)", {stt::double_quoted_string}},
-        {R"(SELECT "colname")", {stt::command, stt::double_quoted_string}},
-        {R"("colname" FROM)", {stt::double_quoted_string, stt::command}},
+            {stt::identifier, stt::binary_operator, stt::identifier}},
+        {R"("this is an unterminated string)", {stt::identifier}},
+        {R"(SELECT "colname")", {stt::command, stt::identifier}},
+        {R"("colname" FROM)", {stt::identifier, stt::command}},
         {R"(SELECT "colname" FROM "table";)",
-            {stt::command, stt::double_quoted_string, stt::command, stt::double_quoted_string,
-                stt::query_end}},
+            {stt::command, stt::identifier, stt::command, stt::identifier, stt::query_end}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {
@@ -211,17 +210,17 @@ TEST(TestSqliteTokenizer, SingleQuotedString)
 TEST(TestSqliteTokenizer, BacktickQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
-        {R"(`this is a string`)", {stt::back_quoted_string}},
-        {R"(`this is \`quoted\` string`)", {stt::back_quoted_string}},
-        {R"(`this is \\\\\`quoted\` string`)", {stt::back_quoted_string}},
-        {R"(`this \n is \\\\\`quoted\\\\\` string`)", {stt::back_quoted_string}},
+        {R"(`this is a string`)", {stt::identifier}},
+        {R"(`this is \`quoted\` string`)", {stt::identifier}},
+        {R"(`this is \\\\\`quoted\` string`)", {stt::identifier}},
+        {R"(`this \n is \\\\\`quoted\\\\\` string`)", {stt::identifier}},
         {R"(`this is \`quoted\` string` and `another string`)",
-            {stt::back_quoted_string, stt::binary_operator, stt::back_quoted_string}},
-        {R"(`this is an unterminated string)", {stt::back_quoted_string}},
-        {R"(SELECT `colname`)", {stt::command, stt::back_quoted_string}},
-        {R"(`colname` FROM)", {stt::back_quoted_string, stt::command}},
-        {R"(SELECT `colname` FROM `table`;)", {stt::command, stt::back_quoted_string, stt::command,
-                                                  stt::back_quoted_string, stt::query_end}},
+            {stt::identifier, stt::binary_operator, stt::identifier}},
+        {R"(`this is an unterminated string)", {stt::identifier}},
+        {R"(SELECT `colname`)", {stt::command, stt::identifier}},
+        {R"(`colname` FROM)", {stt::identifier, stt::command}},
+        {R"(SELECT `colname` FROM `table`;)",
+            {stt::command, stt::identifier, stt::command, stt::identifier, stt::query_end}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {
