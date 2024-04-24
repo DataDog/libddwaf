@@ -11,7 +11,7 @@
 namespace ddwaf {
 namespace {
 constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP\s+BY|OFFSET|LIMIT|DISTINCT|HAVING|ORDER\s+BY|ASC|DESC|UNION\s+ALL|UNION|AS)|(?P<binary_operator>ALL|OR|AND|ANY|BETWEEN|LIKE|IN|MOD|IS\s+NULL|IS\s+NOT\s+NULL|NOT)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
+    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|DISTINCT|HAVING|ORDER|ASC|DESC|UNION|NULL|ALL|ANY|BY|AS)|(?P<binary_operator>OR|AND|BETWEEN|LIKE|IN|MOD|IS|NOT)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
 auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 

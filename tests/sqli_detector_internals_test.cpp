@@ -121,10 +121,11 @@ TEST(TestSqliDetectorInternals, IsBenignOrderByClauseSuccess)
     for (const auto &sample : samples) {
         auto statement = "ORDER BY " + sample;
         auto resource_tokens = tokenize(statement);
-        EXPECT_STRV(resource_tokens[0].str, "ORDER BY");
+        EXPECT_STRV(resource_tokens[0].str, "ORDER");
+        EXPECT_STRV(resource_tokens[1].str, "BY");
 
-        std::span<sql_token> param_tokens{&resource_tokens[1], resource_tokens.size() - 1};
-        auto res = internal::is_benign_order_by_clause(resource_tokens, param_tokens, 1);
+        std::span<sql_token> param_tokens{&resource_tokens[2], resource_tokens.size() - 2};
+        auto res = internal::is_benign_order_by_clause(resource_tokens, param_tokens, 2);
         EXPECT_TRUE(res) << sample;
     }
 }

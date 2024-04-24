@@ -22,7 +22,7 @@ namespace {
  * with future extensions of the standard.
  */
 constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP\s+BY|OFFSET|LIMIT|HAVING|ORDER\s+BY|PARTITION\s+BY|ASC|DESC)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS\s+LIKE|IS\s+NULL|IS\s+NOT\s+NULL|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
+    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|HAVING|ORDER|PARTITION|BY|ASC|DESC|NULL)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS|LIKE|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
 constexpr std::string_view parameter_regex_str = R"(^(\$[0-9]+)(?:\b|\s|$))";
 

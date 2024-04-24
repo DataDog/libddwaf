@@ -13,7 +13,7 @@ namespace {
 // https://www.sqlite.org/lang_select.html
 // Identifiers: https://sqlite.org/lang_keywords.html
 constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?:(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP\s+BY|HAVING|WINDOW|AS|VALUES|OFFSET|LIMIT|ORDER\s+BY|ASC|DESC|UNION\s+ALL|UNION|INTERSECT|EXCEPT)|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|IS\s+DISTINCT\s+FROM|IS\s+NOT\s+DISTINCT\s+FROM|MATCH|NOTNULL|NOT\s+NULL|ISNULL|IS\s+NOT\s+NULL|IS\s+NOT|NOT|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*|\$[0-9]+))(?:\b|\s|$))";
+    R"((?i)^(?:(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP|HAVING|WINDOW|VALUES|OFFSET|LIMIT|ORDER|BY|ASC|DESC|UNION|INTERSECT|EXCEPT|NULL|AS)|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|MATCH|NOTNULL|ISNULL|NOT|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*|\$[0-9]+))(?:\b|\s|$))";
 
 auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 

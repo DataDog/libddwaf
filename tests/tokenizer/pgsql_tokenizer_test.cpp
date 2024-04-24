@@ -45,8 +45,8 @@ TEST(TestPgSqlTokenizer, EnforceWordBoundaries)
 
 TEST(TestPgSqlTokenizer, Commands)
 {
-    std::vector<std::string> samples{"SELECT", "FROM", "WHERE", "GROUP BY", "OFFSET", "LIMIT",
-        "HAVING", "ORDER BY", "PARTITION BY", "ASC", "DESC", "::"};
+    std::vector<std::string> samples{"SELECT", "FROM", "WHERE", "GROUP", "OFFSET", "LIMIT",
+        "HAVING", "ORDER", "PARTITION", "BY", "ASC", "DESC", "NULL", "::"};
 
     for (const auto &statement : samples) {
         {
@@ -98,8 +98,8 @@ TEST(TestPgSqlTokenizer, BinaryOperators)
     // Asterisk is a special case
     std::vector<std::string> samples{"+", "-", "/", "%", "=", "!=", "<>", "<", ">",
         ">=", "<=", "<=>", ":=", "@@", "@>", "<@", "<<", ">>", "||", "->", "->>", "?|", "?&", "?",
-        "#>", "#>>", "#-", "NOT", "OR", "XOR", "AND", "IS", "IN", "BETWEEN", "LIKE", "REGEXP",
-        "SOUNDS LIKE", "IS NULL", "IS NOT NULL", "DIV", "MOD"};
+        "#>", "#>>", "#-", "OR", "XOR", "AND", "IN", "BETWEEN", "LIKE", "REGEXP", "SOUNDS", "LIKE",
+        "NOT", "IS", "MOD", "DIV"};
 
     for (const auto &statement : samples) {
         {
@@ -289,13 +289,13 @@ TEST(TestPgSqlTokenizer, Queries)
         {R"(SELECT ID, COUNT(1) FROM TEST GROUP BY ID;)",
             {stt::command, stt::identifier, stt::comma, stt::identifier, stt::parenthesis_open,
                 stt::number, stt::parenthesis_close, stt::command, stt::identifier, stt::command,
-                stt::identifier, stt::query_end}},
+                stt::command, stt::identifier, stt::query_end}},
         {R"(SELECT NAME, SUM(VAL) FROM TEST GROUP BY NAME HAVING COUNT(1) > 2;)",
             {stt::command, stt::identifier, stt::comma, stt::identifier, stt::parenthesis_open,
                 stt::identifier, stt::parenthesis_close, stt::command, stt::identifier,
-                stt::command, stt::identifier, stt::command, stt::identifier, stt::parenthesis_open,
-                stt::number, stt::parenthesis_close, stt::binary_operator, stt::number,
-                stt::query_end}},
+                stt::command, stt::command, stt::identifier, stt::command, stt::identifier,
+                stt::parenthesis_open, stt::number, stt::parenthesis_close, stt::binary_operator,
+                stt::number, stt::query_end}},
         {R"(SELECT 'ID' COL, MAX(ID) AS MAX FROM TEST;)",
             {stt::command, stt::single_quoted_string, stt::identifier, stt::comma, stt::identifier,
                 stt::parenthesis_open, stt::identifier, stt::parenthesis_close, stt::identifier,
@@ -328,7 +328,7 @@ TEST(TestPgSqlTokenizer, Queries)
         {R"(   SELECT i,AVG(v::bigint) OVER (ORDER BY i ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING):tabed    )",
             {stt::command, stt::identifier, stt::comma, stt::identifier, stt::parenthesis_open,
                 stt::identifier, stt::command, stt::identifier, stt::parenthesis_close,
-                stt::identifier, stt::parenthesis_open, stt::command, stt::identifier,
+                stt::identifier, stt::parenthesis_open, stt::command, stt::command, stt::identifier,
                 stt::identifier, stt::binary_operator, stt::identifier, stt::identifier,
                 stt::binary_operator, stt::identifier, stt::identifier, stt::parenthesis_close,
                 stt::colon, stt::identifier}},
@@ -337,19 +337,20 @@ TEST(TestPgSqlTokenizer, Queries)
             {stt::command, stt::identifier, stt::comma, stt::identifier, stt::comma,
                 stt::identifier, stt::comma, stt::identifier, stt::parenthesis_open,
                 stt::parenthesis_close, stt::identifier, stt::parenthesis_open, stt::command,
-                stt::identifier, stt::command, stt::identifier, stt::parenthesis_close,
-                stt::command, stt::identifier, stt::query_end}},
+                stt::command, stt::identifier, stt::command, stt::command, stt::identifier,
+                stt::parenthesis_close, stt::command, stt::identifier, stt::query_end}},
 
         {R"(SELECT four, ten, SUM(SUM(four)) OVER (PARTITION BY four), AVG(ten) FROM tenk1
 GROUP BY four, ten ORDER BY four, ten;)",
             {stt::command, stt::identifier, stt::comma, stt::identifier, stt::comma,
                 stt::identifier, stt::parenthesis_open, stt::identifier, stt::parenthesis_open,
                 stt::identifier, stt::parenthesis_close, stt::parenthesis_close, stt::identifier,
-                stt::parenthesis_open, stt::command, stt::identifier, stt::parenthesis_close,
-                stt::comma, stt::identifier, stt::parenthesis_open, stt::identifier,
-                stt::parenthesis_close, stt::command, stt::identifier, stt::command,
-                stt::identifier, stt::comma, stt::identifier, stt::command, stt::identifier,
-                stt::comma, stt::identifier, stt::query_end}},
+                stt::parenthesis_open, stt::command, stt::command, stt::identifier,
+                stt::parenthesis_close, stt::comma, stt::identifier, stt::parenthesis_open,
+                stt::identifier, stt::parenthesis_close, stt::command, stt::identifier,
+                stt::command, stt::command, stt::identifier, stt::comma, stt::identifier,
+                stt::command, stt::command, stt::identifier, stt::comma, stt::identifier,
+                stt::query_end}},
         {R"(SELECT COUNT(*) OVER w FROM tenk1 WHERE unique2 < 10 WINDOW w AS ();)",
             {stt::command, stt::identifier, stt::parenthesis_open, stt::asterisk,
                 stt::parenthesis_close, stt::identifier, stt::identifier, stt::command,
@@ -363,7 +364,7 @@ GROUP BY four, ten ORDER BY four, ten;)",
         auto obtained_tokens = tokenizer.tokenize();
         ASSERT_EQ(expected_tokens.size(), obtained_tokens.size()) << statement;
         for (std::size_t i = 0; i < obtained_tokens.size(); ++i) {
-            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type);
+            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type) << statement;
         }
     }
 }

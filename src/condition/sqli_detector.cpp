@@ -365,13 +365,14 @@ bool has_order_by_structure(std::span<sql_token> tokens)
 bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
     std::span<sql_token> param_tokens, std::size_t param_tokens_begin)
 {
-    if (param_tokens_begin < 1) {
+    if (param_tokens_begin < 2) {
         return false;
     }
 
-    std::string_view order_by = resource_tokens[param_tokens_begin - 1].str;
+    std::string_view order = resource_tokens[param_tokens_begin - 2].str;
+    std::string_view by = resource_tokens[param_tokens_begin - 1].str;
 
-    if (!string_iequals(order_by, "order by")) {
+    if (!string_iequals(order, "order") || !string_iequals(by, "by")) {
         return false;
     }
 

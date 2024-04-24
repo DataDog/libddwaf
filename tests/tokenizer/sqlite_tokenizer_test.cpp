@@ -23,9 +23,9 @@ std::string str_to_lower(const std::string &str)
 
 TEST(TestSqliteTokenizer, Commands)
 {
-    std::vector<std::string> samples{"SELECT", "DISTINCT", "ALL", "FROM", "WHERE", "GROUP BY",
-        "HAVING", "WINDOW", "AS", "VALUES", "OFFSET", "LIMIT", "ORDER BY", "ASC", "DESC", "UNION",
-        "UNION ALL", "INTERSECT", "EXCEPT"};
+    std::vector<std::string> samples{"SELECT", "DISTINCT", "ALL", "FROM", "WHERE", "GROUP",
+        "HAVING", "WINDOW", "VALUES", "OFFSET", "LIMIT", "ORDER", "BY", "ASC", "DESC", "UNION",
+        "INTERSECT", "EXCEPT", "NULL", "AS"};
 
     for (const auto &statement : samples) {
         {
@@ -77,22 +77,22 @@ TEST(TestSqliteTokenizer, BinaryOperators)
     // Asterisk is a special case
     std::vector<std::string> samples{"+", "-", "/", "%", "=", "!=", "<>", "<", ">",
         ">=", "<=", "<<", ">>", "||", "OR", "AND", "IN", "BETWEEN", "LIKE", "GLOB", "ESCAPE",
-        "COLLATE", "REGEXP", "IS DISTINCT FROM", "IS NOT DISTINCT FROM", "MATCH", "NOTNULL",
-        "NOT NULL", "ISNULL", "IS NOT NULL", "IS NOT", "NOT", "IS"};
+        "COLLATE", "REGEXP", "MATCH", "NOTNULL", "ISNULL", "NOT", "IS"};
+
     for (const auto &statement : samples) {
         {
             sqlite_tokenizer tokenizer(statement);
             auto obtained_tokens = tokenizer.tokenize();
             ASSERT_EQ(obtained_tokens.size(), 1) << statement;
-            EXPECT_EQ(obtained_tokens[0].type, stt::binary_operator);
+            EXPECT_EQ(obtained_tokens[0].type, stt::binary_operator) << statement;
         }
 
         {
             auto lc_statement = str_to_lower(statement);
             sqlite_tokenizer tokenizer(lc_statement);
             auto obtained_tokens = tokenizer.tokenize();
-            ASSERT_EQ(obtained_tokens.size(), 1) << statement;
-            EXPECT_EQ(obtained_tokens[0].type, stt::binary_operator);
+            ASSERT_EQ(obtained_tokens.size(), 1) << lc_statement;
+            EXPECT_EQ(obtained_tokens[0].type, stt::binary_operator) << lc_statement;
         }
     }
 }
@@ -249,13 +249,13 @@ TEST(TestSqliteTokenizer, Basic)
         {R"(SELECT ID, COUNT(1) FROM TEST GROUP BY ID;)",
             {stt::command, stt::identifier, stt::comma, stt::identifier, stt::parenthesis_open,
                 stt::number, stt::parenthesis_close, stt::command, stt::identifier, stt::command,
-                stt::identifier, stt::query_end}},
+                stt::command, stt::identifier, stt::query_end}},
         {R"(SELECT NAME, SUM(VAL) FROM TEST GROUP BY NAME HAVING COUNT(1) > 2;)",
             {stt::command, stt::identifier, stt::comma, stt::identifier, stt::parenthesis_open,
                 stt::identifier, stt::parenthesis_close, stt::command, stt::identifier,
-                stt::command, stt::identifier, stt::command, stt::identifier, stt::parenthesis_open,
-                stt::number, stt::parenthesis_close, stt::binary_operator, stt::number,
-                stt::query_end}},
+                stt::command, stt::command, stt::identifier, stt::command, stt::identifier,
+                stt::parenthesis_open, stt::number, stt::parenthesis_close, stt::binary_operator,
+                stt::number, stt::query_end}},
         {R"(SELECT 'ID' COL, MAX(ID) AS MAX FROM TEST;)",
             {stt::command, stt::single_quoted_string, stt::identifier, stt::comma, stt::identifier,
                 stt::parenthesis_open, stt::identifier, stt::parenthesis_close, stt::command,
@@ -272,18 +272,18 @@ TEST(TestSqliteTokenizer, Basic)
         {R"(SELECT name FROM (SELECT * FROM sqlite_master UNION ALL SELECT * FROM sqlite_temp_master) WHERE type='table' ORDER BY name)",
             {stt::command, stt::identifier, stt::command, stt::parenthesis_open, stt::command,
                 stt::asterisk, stt::command, stt::identifier, stt::command, stt::command,
-                stt::asterisk, stt::command, stt::identifier, stt::parenthesis_close, stt::command,
-                stt::identifier, stt::binary_operator, stt::single_quoted_string, stt::command,
-                stt::identifier}},
+                stt::command, stt::asterisk, stt::command, stt::identifier, stt::parenthesis_close,
+                stt::command, stt::identifier, stt::binary_operator, stt::single_quoted_string,
+                stt::command, stt::command, stt::identifier}},
 
         {R"(SELECT x FROM t1 WHERE 'abc' = b ORDER BY x;)",
             {stt::command, stt::identifier, stt::command, stt::identifier, stt::command,
                 stt::single_quoted_string, stt::binary_operator, stt::identifier, stt::command,
-                stt::identifier, stt::query_end}},
+                stt::command, stt::identifier, stt::query_end}},
 
         {R"(SELECT x FROM t1 ORDER BY (c||''), x;)",
             {stt::command, stt::identifier, stt::command, stt::identifier, stt::command,
-                stt::parenthesis_open, stt::identifier, stt::binary_operator,
+                stt::command, stt::parenthesis_open, stt::identifier, stt::binary_operator,
                 stt::single_quoted_string, stt::parenthesis_close, stt::comma, stt::identifier,
                 stt::query_end}},
 

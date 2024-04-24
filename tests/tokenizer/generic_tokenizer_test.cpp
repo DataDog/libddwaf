@@ -24,7 +24,7 @@ std::string str_to_lower(const std::string &str)
 TEST(TestgenericTokenizer, Commands)
 {
     std::vector<std::string> samples{
-        "SELECT", "FROM", "WHERE", "GROUP BY", "OFFSET", "LIMIT", "ORDER BY", "ASC", "DESC"};
+        "SELECT", "FROM", "WHERE", "GROUP", "BY", "OFFSET", "LIMIT", "ORDER", "BY", "ASC", "DESC"};
 
     for (const auto &statement : samples) {
         {
@@ -75,8 +75,7 @@ TEST(TestgenericTokenizer, BinaryOperators)
 {
     // Asterisk is a special case
     std::vector<std::string> samples{"+", "-", "/", "%", "=", "!=", "<>", "<", ">",
-        ">=", "<=", "||", "ALL", "OR", "AND", "ANY", "BETWEEN", "LIKE", "IN", "MOD", "IS NULL",
-        "IS NOT NULL", "NOT"};
+        ">=", "<=", "||", "OR", "AND", "BETWEEN", "LIKE", "IN", "MOD", "IS", "NOT"};
 
     for (const auto &statement : samples) {
         {
@@ -232,7 +231,7 @@ TEST(TestgenericTokenizer, BacktickQuotedString)
     }
 }
 
-TEST(TestgenericTokenizer, Basic)
+TEST(TestgenericTokenizer, Queries)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"(SELECT x FROM t WHERE id='admin'--)",
@@ -248,13 +247,13 @@ TEST(TestgenericTokenizer, Basic)
         {R"(SELECT ID, COUNT(1) FROM TEST GROUP BY ID;)",
             {stt::command, stt::identifier, stt::comma, stt::identifier, stt::parenthesis_open,
                 stt::number, stt::parenthesis_close, stt::command, stt::identifier, stt::command,
-                stt::identifier, stt::query_end}},
+                stt::command, stt::identifier, stt::query_end}},
         {R"(SELECT NAME, SUM(VAL) FROM TEST GROUP BY NAME HAVING COUNT(1) > 2;)",
             {stt::command, stt::identifier, stt::comma, stt::identifier, stt::parenthesis_open,
                 stt::identifier, stt::parenthesis_close, stt::command, stt::identifier,
-                stt::command, stt::identifier, stt::command, stt::identifier, stt::parenthesis_open,
-                stt::number, stt::parenthesis_close, stt::binary_operator, stt::number,
-                stt::query_end}},
+                stt::command, stt::command, stt::identifier, stt::command, stt::identifier,
+                stt::parenthesis_open, stt::number, stt::parenthesis_close, stt::binary_operator,
+                stt::number, stt::query_end}},
         {R"(SELECT 'ID' COL, MAX(ID) AS MAX FROM TEST;)",
             {stt::command, stt::single_quoted_string, stt::identifier, stt::comma, stt::identifier,
                 stt::parenthesis_open, stt::identifier, stt::parenthesis_close, stt::command,
@@ -271,18 +270,18 @@ TEST(TestgenericTokenizer, Basic)
         {R"(SELECT name FROM (SELECT * FROM generic_master UNION ALL SELECT * FROM generic_temp_master) WHERE type='table' ORDER BY name)",
             {stt::command, stt::identifier, stt::command, stt::parenthesis_open, stt::command,
                 stt::asterisk, stt::command, stt::identifier, stt::command, stt::command,
-                stt::asterisk, stt::command, stt::identifier, stt::parenthesis_close, stt::command,
-                stt::identifier, stt::binary_operator, stt::single_quoted_string, stt::command,
-                stt::identifier}},
+                stt::command, stt::asterisk, stt::command, stt::identifier, stt::parenthesis_close,
+                stt::command, stt::identifier, stt::binary_operator, stt::single_quoted_string,
+                stt::command, stt::command, stt::identifier}},
 
         {R"(SELECT x FROM t1 WHERE 'abc' = b ORDER BY x;)",
             {stt::command, stt::identifier, stt::command, stt::identifier, stt::command,
                 stt::single_quoted_string, stt::binary_operator, stt::identifier, stt::command,
-                stt::identifier, stt::query_end}},
+                stt::command, stt::identifier, stt::query_end}},
 
         {R"(SELECT x FROM t1 ORDER BY (c||''), x;)",
             {stt::command, stt::identifier, stt::command, stt::identifier, stt::command,
-                stt::parenthesis_open, stt::identifier, stt::binary_operator,
+                stt::command, stt::parenthesis_open, stt::identifier, stt::binary_operator,
                 stt::single_quoted_string, stt::parenthesis_close, stt::comma, stt::identifier,
                 stt::query_end}},
 
