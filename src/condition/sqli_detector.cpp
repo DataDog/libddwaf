@@ -533,7 +533,6 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
 
-            // TODO remove literals from resource
             auto &[highlight, param_kp] = std::get<internal::matched_param>(res);
             cache.match =
                 condition_match{{{"resource"sv, std::string{stripped_stmt}, sql.address, sql_kp},

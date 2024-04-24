@@ -7,17 +7,15 @@
 #include "condition/sqli_detector.hpp"
 #include "test_utils.hpp"
 #include "tokenizer/generic_sql.hpp"
-#include "tokenizer/mysql.hpp"
-#include "tokenizer/pgsql.hpp"
-#include "tokenizer/sqlite.hpp"
+#include "utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
 
 namespace {
-template <typename Tokenizer = generic_sql_tokenizer> auto tokenize(std::string_view statement)
+auto tokenize(std::string_view statement)
 {
-    Tokenizer tokenizer(
+    generic_sql_tokenizer tokenizer(
         statement, {sql_token_type::parenthesis_open, sql_token_type::parenthesis_close});
     return tokenizer.tokenize();
 }
@@ -118,15 +116,21 @@ TEST(TestSqliDetectorInternals, IsBenignOrderByClauseSuccess)
         "table.col DESC LIMIT 20 OFFSET 50",
     };
 
-    for (const auto &sample : samples) {
-        auto statement = "ORDER BY " + sample;
-        auto resource_tokens = tokenize(statement);
-        EXPECT_STRV(resource_tokens[0].str, "ORDER");
-        EXPECT_STRV(resource_tokens[1].str, "BY");
+    std::vector<std::string> order_by_variants{"ORDER BY", "ORDER\tBY", "ORDER\nBY", "ORDER\rBY",
+        "ORDER     BY", "ORDER\t\n\r   BY", "order by", "order\tby", "order\nby", "order\rby",
+        "order     by", "order\t\n\r   by"};
 
-        std::span<sql_token> param_tokens{&resource_tokens[2], resource_tokens.size() - 2};
-        auto res = internal::is_benign_order_by_clause(resource_tokens, param_tokens, 2);
-        EXPECT_TRUE(res) << sample;
+    for (const auto &sample : samples) {
+        for (const auto &order_by : order_by_variants) {
+            auto statement = order_by + " " + sample;
+            auto resource_tokens = tokenize(statement);
+            EXPECT_TRUE(ddwaf::string_iequals(resource_tokens[0].str, "order"));
+            EXPECT_TRUE(ddwaf::string_iequals(resource_tokens[1].str, "by"));
+
+            std::span<sql_token> param_tokens{&resource_tokens[2], resource_tokens.size() - 2};
+            auto res = internal::is_benign_order_by_clause(resource_tokens, param_tokens, 2);
+            EXPECT_TRUE(res) << statement;
+        }
     }
 }
 

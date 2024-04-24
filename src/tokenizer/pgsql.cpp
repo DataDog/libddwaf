@@ -24,7 +24,7 @@ namespace {
 constexpr std::string_view identifier_regex_str =
     R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|HAVING|ORDER|PARTITION|BY|ASC|DESC|NULL)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS|LIKE|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
-constexpr std::string_view parameter_regex_str = R"(^(\$[0-9]+)(?:\b|\s|$))";
+constexpr std::string_view parameter_regex_str = R"(^(?P<parameter>\$[0-9]+)(?:\b|\s|$))";
 
 auto identifier_regex = regex_init_nothrow(identifier_regex_str);
 auto parameter_regex = regex_init_nothrow(parameter_regex_str);
@@ -49,7 +49,7 @@ void pgsql_tokenizer::tokenize_command_operator_or_identifier()
     sql_token token;
     token.index = index();
 
-    auto remaining_str = substr(index());
+    auto remaining_str = substr();
 
     re2::StringPiece binary_op;
     re2::StringPiece command;
@@ -209,7 +209,7 @@ void pgsql_tokenizer::tokenize_dollar_string_or_identifier()
         const re2::StringPiece ref(str.data(), str.size());
         if (re2::RE2::PartialMatch(ref, *parameter_regex, &parameter)) {
             if (!parameter.empty()) {
-                add_token(sql_token_type::identifier, ref.size());
+                add_token(sql_token_type::identifier, parameter.size());
             }
         }
     }

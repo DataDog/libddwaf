@@ -369,7 +369,57 @@ GROUP BY four, ten ORDER BY four, ten;)",
     }
 }
 
-TEST(TestPgSqlTokenizer, ComplexQueries) {}
+TEST(TestPgSqlTokenizer, ComplexQueries)
+{
+    std::vector<std::pair<std::string, std::size_t>> samples{
+        {
+            R"(BEGIN
+                 y := x / 0;
+             EXCEPTION
+                 WHEN division_by_zero THEN
+                     NULL;  -- ignore the error'
+                 END;
+        )",
+            16},
+        {R"(SELECT "XXX"."YYY" FROM "XXX" WHERE "XXX"."ZZZ" = $1 AND "XXX"."DDD" IN (68) AND (to_tsvector(concat(name, ',', search_terms) ) @@ to_tsquery('$$chronic$$:*'));)",
+            40},
+    };
+
+    for (const auto &[statement, count] : samples) {
+        pgsql_tokenizer tokenizer(statement);
+        auto tokens = tokenizer.tokenize();
+        EXPECT_EQ(tokens.size(), count) << statement;
+    }
+}
+
+TEST(TestPgSqlTokenizer, JsonQueries)
+{
+    std::vector<std::pair<std::string, std::size_t>> samples{
+
+        {R"(SELECT '{"a":[1,2,3],"b":[4,5,6]}'::json#>>'{a,2}';)", 7},
+        {R"(SELECT * FROM json_test WHERE data #>> '{b,c}' = 'd';)", 11},
+        {R"(SELECT '[1,2,3]'::json->2;)", 7},
+        {R"(SELECT * FROM json_test WHERE data -> 'a' > '1';)", 11},
+        {R"(SELECT '{"a":1,"b":2}'::json->'b';)", 7},
+        {R"(SELECT * FROM json_test WHERE data -> 'b' > '1';)", 11},
+        {R"(SELECT '[1,2,3]'::json->>2;)", 7},
+        {R"(SELECT * FROM json_test WHERE data ->> 'a' > '1';)", 11},
+        {R"(SELECT '{"a":[1,2,3],"b":[4,5,6]}'::json#>'{a,2}';)", 7},
+        {R"(SELECT * FROM json_test WHERE data #>'{a,2}';)", 9},
+        {R"(SELECT * FROM json_test WHERE data @> '{"a":1}';)", 9},
+        {R"(SELECT * FROM json_test WHERE data <@ '{"a":1}';)", 9},
+        {R"(SELECT * FROM json_test WHERE data ? 'a';)", 9},
+        {R"(select * from json_populate_recordset(null::json, '[{"a":1,"b":2},{"a":3,"b":4}]');)",
+            12},
+        {R"(select * from json_array_elements('[1,true, [2,false]]');)", 8},
+    };
+
+    for (const auto &[statement, count] : samples) {
+        pgsql_tokenizer tokenizer(statement);
+        auto tokens = tokenizer.tokenize();
+        EXPECT_EQ(tokens.size(), count) << statement;
+    }
+}
 
 TEST(TestPgSqlTokenizer, TextSearchOperator)
 {
