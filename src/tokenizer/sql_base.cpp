@@ -24,22 +24,22 @@ auto number_regex = regex_init_nothrow(number_regex_str);
 
 sql_dialect sql_dialect_from_type(std::string_view type)
 {
-    if (type == "mysql" || type == "mysql2") {
+    if (string_iequals(type, "mysql") || string_iequals(type, "mysql2")) {
         return sql_dialect::mysql;
     }
-    if (type == "postgresql" || type == "pgsql") {
+    if (string_iequals(type, "postgresql") || string_iequals(type, "pgsql")) {
         return sql_dialect::pgsql;
     }
-    if (type == "sqlite") {
+    if (string_iequals(type, "sqlite")) {
         return sql_dialect::sqlite;
     }
-    if (type == "oracle") {
+    if (string_iequals(type, "oracle")) {
         return sql_dialect::oracle;
     }
-    if (type == "doctrine") {
+    if (string_iequals(type, "doctrine")) {
         return sql_dialect::doctrine;
     }
-    if (type == "hsqldb") {
+    if (string_iequals(type, "hsqldb")) {
         return sql_dialect::hsqldb;
     }
     return sql_dialect::generic;
@@ -58,7 +58,6 @@ std::string_view sql_dialect_to_string(sql_dialect dialect)
         return "oracle";
     case sql_dialect::doctrine:
         return "doctrine";
-        break;
     case sql_dialect::hsqldb:
         return "hsqldb";
     case sql_dialect::generic:
@@ -144,6 +143,12 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
         break;
     case sql_token_type::array_close:
         os << "array_close";
+        break;
+    case sql_token_type::curly_brace_open:
+        os << "curly_brace_open";
+        break;
+    case sql_token_type::curly_brace_close:
+        os << "curly_brace_close";
         break;
     case sql_token_type::unknown:
     default:

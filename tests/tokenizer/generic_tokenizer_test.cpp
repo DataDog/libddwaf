@@ -21,7 +21,101 @@ std::string str_to_lower(const std::string &str)
     return lower;
 }
 
-TEST(TestgenericTokenizer, Commands)
+TEST(TestGenericTokenizer, DialectFromString)
+{
+    EXPECT_EQ(sql_dialect_from_type("mysql"), sql_dialect::mysql);
+    EXPECT_EQ(sql_dialect_from_type("mysql2"), sql_dialect::mysql);
+    EXPECT_EQ(sql_dialect_from_type("MYSQL"), sql_dialect::mysql);
+    EXPECT_EQ(sql_dialect_from_type("MYSQL2"), sql_dialect::mysql);
+
+    EXPECT_EQ(sql_dialect_from_type("pgsql"), sql_dialect::pgsql);
+    EXPECT_EQ(sql_dialect_from_type("PGSQL"), sql_dialect::pgsql);
+    EXPECT_EQ(sql_dialect_from_type("postgresql"), sql_dialect::pgsql);
+    EXPECT_EQ(sql_dialect_from_type("POSTGRESQL"), sql_dialect::pgsql);
+
+    EXPECT_EQ(sql_dialect_from_type("sqlite"), sql_dialect::sqlite);
+    EXPECT_EQ(sql_dialect_from_type("SQLITE"), sql_dialect::sqlite);
+
+    EXPECT_EQ(sql_dialect_from_type("oracle"), sql_dialect::oracle);
+    EXPECT_EQ(sql_dialect_from_type("ORACLE"), sql_dialect::oracle);
+
+    EXPECT_EQ(sql_dialect_from_type("doctrine"), sql_dialect::doctrine);
+    EXPECT_EQ(sql_dialect_from_type("DOCTRINE"), sql_dialect::doctrine);
+
+    EXPECT_EQ(sql_dialect_from_type("hsqldb"), sql_dialect::hsqldb);
+    EXPECT_EQ(sql_dialect_from_type("HSQLDB"), sql_dialect::hsqldb);
+
+    EXPECT_EQ(sql_dialect_from_type("generic"), sql_dialect::generic);
+    EXPECT_EQ(sql_dialect_from_type("GENERIC"), sql_dialect::generic);
+    EXPECT_EQ(sql_dialect_from_type("garbage"), sql_dialect::generic);
+    EXPECT_EQ(sql_dialect_from_type("unknown"), sql_dialect::generic);
+}
+
+TEST(TestGenericTokenizer, DialectToString)
+{
+    EXPECT_STRV(sql_dialect_to_string(sql_dialect::mysql), "mysql");
+    EXPECT_STRV(sql_dialect_to_string(sql_dialect::pgsql), "pgsql");
+    EXPECT_STRV(sql_dialect_to_string(sql_dialect::sqlite), "sqlite");
+    EXPECT_STRV(sql_dialect_to_string(sql_dialect::oracle), "oracle");
+    EXPECT_STRV(sql_dialect_to_string(sql_dialect::doctrine), "doctrine");
+    EXPECT_STRV(sql_dialect_to_string(sql_dialect::hsqldb), "hsqldb");
+    EXPECT_STRV(sql_dialect_to_string(sql_dialect::generic), "generic");
+}
+
+TEST(TestGenericTokenizer, DialectOstream)
+{
+    auto stream_dialect = [](auto dialect) {
+        std::stringstream ss;
+        ss << dialect;
+        return ss.str();
+    };
+
+    EXPECT_STR(stream_dialect(sql_dialect::mysql), "mysql");
+    EXPECT_STR(stream_dialect(sql_dialect::pgsql), "pgsql");
+    EXPECT_STR(stream_dialect(sql_dialect::sqlite), "sqlite");
+    EXPECT_STR(stream_dialect(sql_dialect::oracle), "oracle");
+    EXPECT_STR(stream_dialect(sql_dialect::doctrine), "doctrine");
+    EXPECT_STR(stream_dialect(sql_dialect::hsqldb), "hsqldb");
+    EXPECT_STR(stream_dialect(sql_dialect::generic), "generic");
+}
+
+TEST(TestGenericTokenizer, TokenTypeOstream)
+{
+    auto stream_token = [](auto token) {
+        std::stringstream ss;
+        ss << token;
+        return ss.str();
+    };
+
+    EXPECT_STR(stream_token(sql_token_type::unknown), "unknown");
+    EXPECT_STR(stream_token(sql_token_type::command), "command");
+    EXPECT_STR(stream_token(sql_token_type::identifier), "identifier");
+    EXPECT_STR(stream_token(sql_token_type::number), "number");
+    EXPECT_STR(stream_token(sql_token_type::string), "string");
+    EXPECT_STR(stream_token(sql_token_type::single_quoted_string), "single_quoted_string");
+    EXPECT_STR(stream_token(sql_token_type::double_quoted_string), "double_quoted_string");
+    EXPECT_STR(stream_token(sql_token_type::back_quoted_string), "back_quoted_string");
+    EXPECT_STR(stream_token(sql_token_type::dollar_quoted_string), "dollar_quoted_string");
+    EXPECT_STR(stream_token(sql_token_type::whitespace), "whitespace");
+    EXPECT_STR(stream_token(sql_token_type::asterisk), "asterisk");
+    EXPECT_STR(stream_token(sql_token_type::eol_comment), "eol_comment");
+    EXPECT_STR(stream_token(sql_token_type::parenthesis_open), "parenthesis_open");
+    EXPECT_STR(stream_token(sql_token_type::parenthesis_close), "parenthesis_close");
+    EXPECT_STR(stream_token(sql_token_type::comma), "comma");
+    EXPECT_STR(stream_token(sql_token_type::questionmark), "questionmark");
+    EXPECT_STR(stream_token(sql_token_type::colon), "colon");
+    EXPECT_STR(stream_token(sql_token_type::dot), "dot");
+    EXPECT_STR(stream_token(sql_token_type::query_end), "query_end");
+    EXPECT_STR(stream_token(sql_token_type::binary_operator), "binary_operator");
+    EXPECT_STR(stream_token(sql_token_type::bitwise_operator), "bitwise_operator");
+    EXPECT_STR(stream_token(sql_token_type::inline_comment), "inline_comment");
+    EXPECT_STR(stream_token(sql_token_type::array_open), "array_open");
+    EXPECT_STR(stream_token(sql_token_type::array_close), "array_close");
+    EXPECT_STR(stream_token(sql_token_type::curly_brace_open), "curly_brace_open");
+    EXPECT_STR(stream_token(sql_token_type::curly_brace_close), "curly_brace_close");
+}
+
+TEST(TestGenericTokenizer, Commands)
 {
     std::vector<std::string> samples{
         "SELECT", "FROM", "WHERE", "GROUP", "BY", "OFFSET", "LIMIT", "ORDER", "BY", "ASC", "DESC"};
@@ -44,7 +138,7 @@ TEST(TestgenericTokenizer, Commands)
     }
 }
 
-TEST(TestgenericTokenizer, Identifiers)
+TEST(TestGenericTokenizer, Identifiers)
 {
     std::vector<std::string> samples{"random", "WoRd", "a231a234", "asb123$21321", "Ω_a091",
         "ran$om", "WoR$d", "a231a234$", "asb12321321", "_a091_", "a23__$__12"};
@@ -58,7 +152,7 @@ TEST(TestgenericTokenizer, Identifiers)
     }
 }
 
-TEST(TestgenericTokenizer, Number)
+TEST(TestGenericTokenizer, Number)
 {
     std::vector<std::string> samples{
         "0", "1.1", "+1", "-1", "1e17", "-1.0101e+17", "0x22", "0xFF", "0122", "00"};
@@ -71,7 +165,7 @@ TEST(TestgenericTokenizer, Number)
     }
 }
 
-TEST(TestgenericTokenizer, BinaryOperators)
+TEST(TestGenericTokenizer, BinaryOperators)
 {
     // Asterisk is a special case
     std::vector<std::string> samples{"+", "-", "/", "%", "=", "!=", "<>", "<", ">",
@@ -95,7 +189,7 @@ TEST(TestgenericTokenizer, BinaryOperators)
     }
 }
 
-TEST(TestgenericTokenizer, BitwiseOperators)
+TEST(TestGenericTokenizer, BitwiseOperators)
 {
     std::vector<std::string> samples{"&", "|", "~"};
 
@@ -108,7 +202,7 @@ TEST(TestgenericTokenizer, BitwiseOperators)
     }
 }
 
-TEST(TestgenericTokenizer, InlineComment)
+TEST(TestGenericTokenizer, InlineComment)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"(/* inline comment */)", {stt::inline_comment}},
@@ -130,7 +224,7 @@ TEST(TestgenericTokenizer, InlineComment)
     }
 }
 
-TEST(TestgenericTokenizer, EolComment)
+TEST(TestGenericTokenizer, EolComment)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"(-- eol comment)", {stt::eol_comment}},
@@ -152,7 +246,7 @@ TEST(TestgenericTokenizer, EolComment)
     }
 }
 
-TEST(TestgenericTokenizer, DoubleQuotedString)
+TEST(TestGenericTokenizer, DoubleQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"("this is a string")", {stt::identifier}},
@@ -178,7 +272,7 @@ TEST(TestgenericTokenizer, DoubleQuotedString)
     }
 }
 
-TEST(TestgenericTokenizer, SingleQuotedString)
+TEST(TestGenericTokenizer, SingleQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"('this is a string')", {stt::single_quoted_string}},
@@ -205,7 +299,7 @@ TEST(TestgenericTokenizer, SingleQuotedString)
     }
 }
 
-TEST(TestgenericTokenizer, BacktickQuotedString)
+TEST(TestGenericTokenizer, BacktickQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"(`this is a string`)", {stt::back_quoted_string}},
@@ -231,7 +325,7 @@ TEST(TestgenericTokenizer, BacktickQuotedString)
     }
 }
 
-TEST(TestgenericTokenizer, Queries)
+TEST(TestGenericTokenizer, Queries)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"(SELECT x FROM t WHERE id='admin'--)",
@@ -305,10 +399,10 @@ TEST(TestgenericTokenizer, Queries)
                 stt::identifier, stt::binary_operator, stt::single_quoted_string,
                 stt::single_quoted_string, stt::command, stt::number, stt::query_end}},
 
-        {R"(SELECT * FROM productLine WHERE model = 'MacPro 2013' /*randomgarbage')",
-            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
-                stt::identifier, stt::binary_operator, stt::single_quoted_string,
-                stt::inline_comment}}};
+        {R"(label: SELECT * FROM productLine WHERE model = 'MacPro 2013' /*randomgarbage')",
+            {stt::identifier, stt::colon, stt::command, stt::asterisk, stt::command,
+                stt::identifier, stt::command, stt::identifier, stt::binary_operator,
+                stt::single_quoted_string, stt::inline_comment}}};
 
     for (const auto &[statement, expected_tokens] : samples) {
         generic_sql_tokenizer tokenizer(statement);

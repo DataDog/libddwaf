@@ -175,15 +175,8 @@ std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
             tokenize_eol_comment();
         } else if (c == '+') {
             tokenize_operator_or_number();
-        } else if (c == '!') {
+        } else if (c == '!' || c == '>') {
             add_token(sql_token_type::binary_operator, next() == '=' ? 2 : 1);
-        } else if (c == '>') {
-            auto n = next();
-            if (n == '>' || n == '=') {
-                add_token(sql_token_type::binary_operator, 2);
-            } else {
-                add_token(sql_token_type::binary_operator);
-            }
         } else if (c == '<') {
             auto n = next();
             if (n == '=' || n == '>') {

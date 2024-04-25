@@ -312,10 +312,10 @@ TEST(TestSqliteTokenizer, Basic)
 
         {R"(SELECT -- /*! simple inline comment */ * FROM dual)", {stt::command, stt::eol_comment}},
 
-        {R"(SELECT * FROM productLine WHERE model = 'MacPro 2013' /*randomgarbage')",
-            {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
-                stt::identifier, stt::binary_operator, stt::single_quoted_string,
-                stt::inline_comment}}};
+        {R"(label: SELECT * FROM productLine WHERE model = 'MacPro 2013' /*randomgarbage')",
+            {stt::identifier, stt::colon, stt::command, stt::asterisk, stt::command,
+                stt::identifier, stt::command, stt::identifier, stt::binary_operator,
+                stt::single_quoted_string, stt::inline_comment}}};
 
     for (const auto &[statement, expected_tokens] : samples) {
         sqlite_tokenizer tokenizer(statement);

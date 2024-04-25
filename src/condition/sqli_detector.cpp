@@ -452,7 +452,6 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
         default:
             break;
         }
-        // TODO figure out what to do here...?
         return tokenize_helper<generic_sql_tokenizer>(statement);
     } catch (const std::runtime_error &e) {
         DDWAF_DEBUG("Failed to load tokenizer for dialect: {}", dialect);
@@ -489,6 +488,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             // then be used by all remaining calls to this function
             resource_tokens = tokenize(resource, dialect);
             if (resource_tokens.empty()) {
+                // The SQL might be valid but we are unable to tokenize it
                 return sqli_error::invalid_sql;
             }
         }
