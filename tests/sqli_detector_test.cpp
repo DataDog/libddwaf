@@ -148,6 +148,10 @@ TEST_P(DialectTestFixture, Tautologies)
             "1 = '1'"},
         {"SELECT x FROM t WHERE id = '1' or (1) = (1)", "SELECT x FROM t WHERE id = ? or (?) = (?)",
             "(1) = (1)"},
+        {"SELECT x FROM t WHERE id = '1' or (0x22) = (1)",
+            "SELECT x FROM t WHERE id = ? or (?) = (?)", "(0x22) = (1)"},
+        {"SELECT x FROM t WHERE id = '1' or (1) = ('1')",
+            "SELECT x FROM t WHERE id = ? or (?) = (?)", "(1) = ('1')"},
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
@@ -233,4 +237,157 @@ TEST_P(DialectTestFixture, Comments)
     }
 }
 
+TEST(TestSQLiDetectorMySql, Comments)
+{
+    std::vector<std::tuple<std::string, std::string, std::string>> samples{
+        {R"(SELECT x FROM t WHERE id='admin'#)", R"(SELECT x FROM t WHERE id=?#)", R"(admin'#)"},
+        {R"(SELECT x FROM t WHERE id='admin')#)", R"(SELECT x FROM t WHERE id=?)#)", R"(admin')#)"},
+        {R"(SELECT x FROM t WHERE id=1# )", R"(SELECT x FROM t WHERE id=?# )", R"(1# )"},
+        {R"(SELECT x FROM t WHERE id=''# AND pwd='pwd'''# )",
+            R"(SELECT x FROM t WHERE id=?# AND pwd='pwd'''# )", R"('# )"},
+        {R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 #)",
+            R"(SELECT * FROM ships WHERE id= ? # AND password=HASH('str') 1 #)", R"( 1 #)"},
+    };
+
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+    for (const auto &[statement, obfuscated, input] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
+        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, "mysql"));
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome) << statement;
+        EXPECT_FALSE(res.ephemeral);
+
+        EXPECT_TRUE(cache.match);
+        EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
+        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+        EXPECT_STR(cache.match->highlights[0], input.c_str());
+    }
+}
+
+TEST(TestSQLiDetectorMySql, Tautologies)
+{
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+
+    std::vector<std::tuple<std::string, std::string, std::string>> samples{
+        {R"(SELECT x FROM t WHERE id = ""OR"")", R"(SELECT x FROM t WHERE id = ?OR?)", R"("OR")"},
+        {R"(SELECT x FROM t WHERE id = ""||"")", R"(SELECT x FROM t WHERE id = ?||?)", R"("||")"},
+        {R"(SELECT x FROM t WHERE id = ""XOR"")", R"(SELECT x FROM t WHERE id = ?XOR?)",
+            R"("XOR")"},
+        {R"(SELECT x FROM t WHERE id = ""Or"")", R"(SELECT x FROM t WHERE id = ?Or?)", R"("Or")"},
+        {R"(SELECT x FROM t WHERE id = "1" or 1 = "1")", R"(SELECT x FROM t WHERE id = ? or ? = ?)",
+            R"(1 = "1")"},
+        {R"(SELECT x FROM t WHERE id = "1" or '1' = "1")",
+            R"(SELECT x FROM t WHERE id = ? or ? = ?)", R"('1' = "1")"},
+        {R"(SELECT x FROM t WHERE id = "1" or ("1") = ('1'))",
+            R"(SELECT x FROM t WHERE id = ? or (?) = (?))", R"(("1") = ('1'))"},
+    };
+
+    for (const auto &[statement, obfuscated, input] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
+        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, "mysql"));
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome) << statement;
+        EXPECT_FALSE(res.ephemeral);
+
+        EXPECT_TRUE(cache.match);
+        EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
+        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+        EXPECT_STR(cache.match->highlights[0], input.c_str());
+    }
+}
+
+TEST(TestSQLiDetectorPgSql, Tautologies)
+{
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+
+    std::vector<std::tuple<std::string, std::string, std::string>> samples{
+        {R"(SELECT x FROM t WHERE id = $$$$OR$$$$)", R"(SELECT x FROM t WHERE id = ?OR?)",
+            R"($$OR$$)"},
+        {R"(SELECT x FROM t WHERE id = $$$$||$$$$)", R"(SELECT x FROM t WHERE id = ?||?)",
+            R"($$||$$)"},
+        {R"(SELECT x FROM t WHERE id = $$$$XOR$$$$)", R"(SELECT x FROM t WHERE id = ?XOR?)",
+            R"($$XOR$$)"},
+        {R"(SELECT x FROM t WHERE id = '1' or 1 = $tag$1$tag$)",
+            R"(SELECT x FROM t WHERE id = ? or ? = ?)", R"(1 = $tag$1$tag$)"},
+        {R"(SELECT x FROM t WHERE id = '1' or 0x1 = $tag$1$tag$)",
+            R"(SELECT x FROM t WHERE id = ? or ? = ?)", R"(0x1 = $tag$1$tag$)"},
+        {R"(SELECT x FROM t WHERE id = '1' or '1' = $$1$$)",
+            R"(SELECT x FROM t WHERE id = ? or ? = ?)", R"('1' = $$1$$)"},
+        {R"(SELECT x FROM t WHERE id = '1' or ($value$1$value$) = ($$1$$))",
+            R"(SELECT x FROM t WHERE id = ? or (?) = (?))", R"(($value$1$value$) = ($$1$$))"},
+    };
+
+    for (const auto &[statement, obfuscated, input] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
+        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, "pgsql"));
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome) << statement;
+        EXPECT_FALSE(res.ephemeral);
+
+        EXPECT_TRUE(cache.match);
+        EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
+        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+        EXPECT_STR(cache.match->highlights[0], input.c_str());
+    }
+}
 } // namespace
