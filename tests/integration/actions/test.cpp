@@ -307,4 +307,43 @@ TEST(TestActionsIntegration, AddNewAction)
     ddwaf_destroy(handle);
 }
 
+TEST(TestActionsIntegration, EmptyOrInvalidActions)
+{
+    auto rule = read_file("invalid_actions.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_result res;
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+
+        EXPECT_EVENTS(res, {.id = "block-rule",
+                               .name = "block-rule",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .actions = {"block"},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "^block",
+                                   .highlight = "block",
+                                   .args = {{
+                                       .value = "block",
+                                       .address = "value",
+                                   }}}}});
+
+        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}});
+        ddwaf_result_free(&res);
+
+        ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 } // namespace

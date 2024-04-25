@@ -1,6 +1,6 @@
 # Upgrading libddwaf
 
-## Upgrading from `1.16.x` to `1.17.0`
+## Upgrading from `1.16.x` to `1.17.x
 
 ### Action semantics
 
@@ -18,12 +18,12 @@ The first change introduced is that users must now provide action definitions du
 }
 ```
 
-Secondly, since the definition of each action is now available internally, the schema of `ddwaf_result.actions` has been updated from an array of IDs to a map of action types, each containing its own set of parameters:
+Secondly, since the definition of each action is now available internally, the schema of `ddwaf_result.actions` has been updated from an array of IDs to a map of action types, each containing its own set of parameters in string format:
 
 ```json
 {
   "block_request": {
-   "status_code": 403,
+   "status_code": "403",
    "type":  "auto"
   }
 }
