@@ -508,7 +508,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         }
     }
 
-    return {};
+    return std::monostate{};
 }
 
 } // namespace
@@ -543,16 +543,14 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             return {true, sql.ephemeral || param.ephemeral};
         }
 
-        if (std::holds_alternative<std::monostate>(res)) {
-            continue;
-        }
-
         if (std::holds_alternative<internal::sqli_error>(res)) {
             // The only error for now is returned when the resource couldn't be
             // parsed, we don't do anything specific for now other than stopping
             // the evaluation of the parameters
             break;
         }
+
+        // If the alternative is monostate, we'll just continue
     }
 
     return {};
