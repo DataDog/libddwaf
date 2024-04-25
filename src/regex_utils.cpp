@@ -10,8 +10,17 @@ namespace ddwaf {
 
 std::unique_ptr<re2::RE2> regex_init(std::string_view pattern, bool case_sensitive)
 {
-    auto regex = regex_init_nothrow(pattern, case_sensitive);
+    re2::RE2::Options options;
+    options.set_log_errors(false);
+    options.set_case_sensitive(case_sensitive);
+
+    const re2::StringPiece pattern_ref(pattern.data(), pattern.size());
+    auto regex = std::make_unique<re2::RE2>(pattern_ref, options);
     if (regex == nullptr) {
+        throw std::runtime_error("invalid regular expression (" + std::string(pattern) + ")");
+    }
+
+    if (!regex->ok()) {
         throw std::runtime_error(
             "invalid regular expression (" + std::string(pattern) + "): " + regex->error_arg());
     }
