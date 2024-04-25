@@ -22,6 +22,70 @@ template <typename... Args> std::vector<parameter_definition> gen_param_def(Args
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
+TEST_P(DialectTestFixture, InvalidSql)
+{
+    auto dialect = GetParam();
+
+    std::vector<std::pair<std::string, std::string>> samples{
+        {R"(]   [)", "["},
+        {R"(&&&&&[)", "&["},
+    };
+
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+    for (const auto &[statement, input] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
+        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, dialect.c_str()));
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_FALSE(res.outcome) << statement;
+    }
+}
+
+TEST_P(DialectTestFixture, InjectionWithoutTokens)
+{
+    auto dialect = GetParam();
+
+    std::vector<std::pair<std::string, std::string>> samples{
+        {R"(SELECT ][ FROM table;)", "]["},
+        {R"(SELECT && FROM table;)", "&&"},
+    };
+
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+    for (const auto &[statement, input] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
+        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, dialect.c_str()));
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_FALSE(res.outcome) << statement;
+    }
+}
+
 TEST_P(DialectTestFixture, BenignInjections)
 {
     auto dialect = GetParam();
