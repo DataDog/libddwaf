@@ -1,0 +1,18 @@
+version: '2.1'
+rules:
+  - id: block-rule
+    name: block-rule
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value
+          regex: ^block
+          options:
+            case_sensitive: true
+    on_match: [ block ]
+
+actions: {}
