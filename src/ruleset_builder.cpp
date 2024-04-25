@@ -234,6 +234,8 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
     }
 
     if (!actions_) {
+        // Ensure that the actions mapper is never invalid
+        state = state | change_state::actions;
         actions_ = action_mapper_builder().build_shared();
     }
 
