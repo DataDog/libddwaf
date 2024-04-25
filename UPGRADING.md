@@ -1,6 +1,6 @@
 # Upgrading libddwaf
 
-## Upgrading from `1.16.x` to `1.17.x
+## Upgrading from `1.16.x` to `1.17.x`
 
 ### Action semantics
 
