@@ -128,14 +128,6 @@ protected:
         }
     }
 
-    optional_ref<sql_token> last_token()
-    {
-        if (tokens_.empty()) {
-            return {};
-        }
-        return tokens_.back();
-    }
-
     std::string_view extract_string(char quote);
     std::string_view extract_number();
 

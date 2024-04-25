@@ -407,7 +407,7 @@ std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
         const auto &rtoken = resource_tokens[i];
         auto rtoken_end = rtoken.index + rtoken.str.size();
         if (rtoken_end > begin) {
-            if (rtoken.index <= end) {
+            if (rtoken.index < end) {
                 if (i < index_begin) {
                     index_begin = i;
                 }

@@ -22,12 +22,13 @@ template <typename... Args> std::vector<parameter_definition> gen_param_def(Args
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
-TEST_P(DialectTestFixture, Identifiers)
+TEST_P(DialectTestFixture, BenignInjections)
 {
     auto dialect = GetParam();
 
-    std::vector<std::pair<std::string, std::string>> samples{{
-        R"(SELECT scale_grades.weight
+    std::vector<std::pair<std::string, std::string>> samples{
+        {
+            R"(SELECT scale_grades.weight
                FROM grades
                LEFT JOIN markbook_students USING (markbook_student_id)
                LEFT JOIN markbook_columns ON (grades.task_id = markbook_columns.task_id)
@@ -35,7 +36,9 @@ TEST_P(DialectTestFixture, Identifiers)
                WHERE markbook_column_id = '4242'
                AND markbook_class_id = '4242'
                AND markbook_students.inactive IS NULL)",
-        "4242"}};
+            "4242"},
+        {R"(SELECT values FROM table WHERE column IN (1, 2, 3, 4, 5);)", "(1, 2, 3, 4, 5)"},
+    };
 
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
@@ -60,7 +63,7 @@ TEST_P(DialectTestFixture, Identifiers)
     }
 }
 
-TEST_P(DialectTestFixture, Injections)
+TEST_P(DialectTestFixture, MaliciousInjections)
 {
     auto dialect = GetParam();
 
@@ -73,7 +76,7 @@ TEST_P(DialectTestFixture, Injections)
         {R"(SELECT * FROM users ORDER BY 1.col, 2, 'str')",
             R"(SELECT * FROM users ORDER BY ?.col, ?, ?)", R"(1.col, 2, 'str')"},
         {R"(SELECT * FROM users ORDER BY table.col OFFSET 0'')",
-            R"(SELECT * FROM users ORDER BY table.col OFFSET ??)", R"(table.col OFFSET 0)"},
+            R"(SELECT * FROM users ORDER BY table.col OFFSET ??)", R"(table.col OFFSET 0')"},
         {R"(SELECT * FROM ships WHERE name LIKE '%neb%')",
             R"(SELECT * FROM ships WHERE name LIKE ?)", R"(SELECT * FROM ships WHERE)"},
         {"\n                SELECT id, author, title, body, created_at\n                FROM posts "
