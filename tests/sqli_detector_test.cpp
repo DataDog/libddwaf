@@ -27,8 +27,8 @@ TEST_P(DialectTestFixture, InvalidSql)
     auto dialect = GetParam();
 
     std::vector<std::pair<std::string, std::string>> samples{
-        {R"(]   [)", "["},
-        {R"(&&&&&[)", "&["},
+        {R"(]    [)", "   ["},
+        {R"(&   &[)", "  &["},
     };
 
     sqli_detector cond{
@@ -141,6 +141,11 @@ TEST_P(DialectTestFixture, MaliciousInjections)
             R"(SELECT * FROM users ORDER BY ?.col, ?, ?)", R"(1.col, 2, 'str')"},
         {R"(SELECT * FROM users ORDER BY table.col OFFSET 0'')",
             R"(SELECT * FROM users ORDER BY table.col OFFSET ??)", R"(table.col OFFSET 0')"},
+        {R"(SELECT * FROM users ORDER
+            BY table.col OFFSET 0'')",
+            R"(SELECT * FROM users ORDER
+            BY table.col OFFSET ??)",
+            R"(table.col OFFSET 0')"},
         {R"(SELECT * FROM ships WHERE name LIKE '%neb%')",
             R"(SELECT * FROM ships WHERE name LIKE ?)", R"(SELECT * FROM ships WHERE)"},
         {"\n                SELECT id, author, title, body, created_at\n                FROM posts "
