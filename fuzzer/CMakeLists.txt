@@ -20,6 +20,7 @@ set_target_properties(fuzzer-common PROPERTIES
     COMPILE_FLAGS ${LINK_COMPILE_FLAGS}
     LINK_FLAGS ${LINK_COMPILE_FLAGS})
 target_include_directories(fuzzer-common PRIVATE ${LIBDDWAF_PUBLIC_INCLUDES} ${LIBDDWAF_PRIVATE_INCLUDES})
+    target_link_libraries(fuzzer-common PRIVATE Boost::unordered)
 
 foreach(dir ${subdirs})
     set(FUZZER_NAME "${dir}_fuzzer")
@@ -34,6 +35,6 @@ foreach(dir ${subdirs})
         LINK_FLAGS ${LINK_COMPILE_FLAGS})
 
     target_include_directories(${FUZZER_NAME} PRIVATE ${LIBDDWAF_PUBLIC_INCLUDES} ${LIBDDWAF_PRIVATE_INCLUDES})
-    target_link_libraries(${FUZZER_NAME} PRIVATE fuzzer-common lib_yamlcpp)
+    target_link_libraries(${FUZZER_NAME} PRIVATE fuzzer-common lib_yamlcpp Boost::unordered)
 endforeach()
 
