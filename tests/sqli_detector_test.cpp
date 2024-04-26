@@ -141,6 +141,12 @@ TEST_P(DialectTestFixture, MaliciousInjections)
             R"(SELECT * FROM users ORDER BY ?.col, ?, ?)", R"(1.col, 2, 'str')"},
         {R"(SELECT * FROM users ORDER BY table.col OFFSET 0'')",
             R"(SELECT * FROM users ORDER BY table.col OFFSET ??)", R"(table.col OFFSET 0')"},
+        {R"(SELECT * FROM users ORDER BY table.col ASC LIMIT)",
+            R"(SELECT * FROM users ORDER BY table.col ASC LIMIT)", R"(table.col ASC LIMIT)"},
+        {R"(SELECT * FROM users ORDER table.col ASC)", R"(SELECT * FROM users ORDER table.col ASC)",
+            R"(table.col ASC)"},
+        {R"(SELECT * FROM users ORDER BY UPPER(db.table) ASC)",
+            R"(SELECT * FROM users ORDER BY UPPER(db.table) ASC)", R"(UPPER(db.table) ASC)"},
         {R"(SELECT * FROM users ORDER
             BY table.col OFFSET 0'')",
             R"(SELECT * FROM users ORDER
@@ -152,7 +158,10 @@ TEST_P(DialectTestFixture, MaliciousInjections)
          "\nWHERE id = 1 OR 1 = 1",
             "\n                SELECT id, author, title, body, created_at\n                FROM "
             "posts \nWHERE id = ? OR ? = ?",
-            "1 OR 1 = 1"}};
+            "1 OR 1 = 1"},
+        {"SELECT * FROM neb UNION SELECT 1,'\u0099',3,4,5,6 FROM dual",
+            "SELECT * FROM neb UNION SELECT ?,?,?,?,?,? FROM dual", "SELECT 1,'\u0099',"},
+    };
 
     for (const auto &[statement, obfuscated, input] : samples) {
         ddwaf_object tmp;
@@ -221,6 +230,8 @@ TEST_P(DialectTestFixture, Tautologies)
             "SELECT x FROM t WHERE id = ? or (?) = (?)", "(0x22) = (1)"},
         {"SELECT x FROM t WHERE id = '1' or (1) = ('1')",
             "SELECT x FROM t WHERE id = ? or (?) = (?)", "(1) = ('1')"},
+        {R"(SELECT * FROM ships WHERE name LIKE '%neb%' OR 1=1)",
+            R"(SELECT * FROM ships WHERE name LIKE ? OR ?=?)", R"(neb%' OR 1=1)"},
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {

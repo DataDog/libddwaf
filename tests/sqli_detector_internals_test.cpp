@@ -255,6 +255,9 @@ TEST(TestSqliDetectorInternals, StripLiterals)
             R"(SELECT x FROM t WHILE username = ? AND id = ?;)"},
         {R"(SELECT x FROM t WHILE username = `paco` AND id = 09;)",
             R"(SELECT x FROM t WHILE username = ? AND id = ?;)"},
+        {R"(SELECT ][ x FROM t WHILE username = `paco` AND id = 09;)",
+            R"(SELECT ][ x FROM t WHILE username = ? AND id = ?;)"},
+
     };
 
     for (const auto &[statement, expected_stripped] : samples) {
