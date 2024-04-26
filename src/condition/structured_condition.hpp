@@ -17,6 +17,8 @@
 #include "traits.hpp"
 #include "utils.hpp"
 
+#include <boost/unordered/unordered_flat_map.hpp>
+
 namespace ddwaf {
 
 // A type of argument with a single address (target) mapping
@@ -149,7 +151,7 @@ public:
 
     [[nodiscard]] eval_result eval(condition_cache &cache, const object_store &store,
         const exclusion::object_set_ref &objects_excluded,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> & /*unused*/,
+        const boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>> & /*unused*/,
         ddwaf::timer &deadline) const override
     {
 
@@ -192,7 +194,8 @@ public:
         }};
     }
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
+    void get_addresses(
+        boost::unordered_flat_map<target_index, std::string> &addresses) const override
     {
         for (const auto &arg : arguments_) {
             for (const auto &target : arg.targets) { addresses.emplace(target.root, target.name); }

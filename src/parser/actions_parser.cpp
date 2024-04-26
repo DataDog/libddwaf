@@ -57,7 +57,8 @@ std::shared_ptr<action_mapper> parse_actions(
         try {
             id = at<std::string>(node, "id");
             auto type = at<std::string>(node, "type");
-            auto parameters = at<std::unordered_map<std::string, std::string>>(node, "parameters");
+            auto parameters =
+                at<boost::unordered_flat_map<std::string, std::string>>(node, "parameters");
 
             DDWAF_DEBUG("Parsed action {} of type {}", id, type);
 

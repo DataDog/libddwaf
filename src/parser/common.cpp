@@ -12,7 +12,7 @@ namespace ddwaf::parser {
 
 std::optional<transformer_id> transformer_from_string(std::string_view str)
 {
-    static const std::unordered_map<std::string_view, transformer_id> transformer_mapping{
+    static const boost::unordered_flat_map<std::string_view, transformer_id> transformer_mapping{
         {"lowercase", transformer_id::lowercase},
         {"remove_nulls", transformer_id::remove_nulls},
         {"compress_whitespace", transformer_id::compress_whitespace},

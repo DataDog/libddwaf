@@ -49,7 +49,8 @@ struct ruleset {
     }
 
     template <typename T>
-    void insert_filters(const std::unordered_map<std::string_view, std::shared_ptr<T>> &filters)
+    void insert_filters(
+        const boost::unordered_flat_map<std::string_view, std::shared_ptr<T>> &filters)
         requires std::is_same_v<T, exclusion::rule_filter> or
                  std::is_same_v<T, exclusion::input_filter>
     {
@@ -94,7 +95,7 @@ struct ruleset {
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
     {
         if (root_addresses.empty()) {
-            std::unordered_set<target_index> known_targets;
+            boost::unordered_flat_set<target_index> known_targets;
             for (const auto &[index, str] : rule_addresses) {
                 const auto &[it, res] = known_targets.emplace(index);
                 if (res) {
@@ -126,29 +127,31 @@ struct ruleset {
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
-    std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors;
-    std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors;
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<processor>> preprocessors;
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<processor>> postprocessors;
 
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters;
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<exclusion::rule_filter>>
+        rule_filters;
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<exclusion::input_filter>>
+        input_filters;
 
     std::vector<std::shared_ptr<rule>> rules;
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> dynamic_matchers;
+    boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>> dynamic_matchers;
 
     std::vector<std::shared_ptr<const scanner>> scanners;
     std::shared_ptr<action_mapper> actions;
 
     // The key used to organise collections is rule.type
-    std::unordered_set<std::string_view> collection_types;
-    std::unordered_map<std::string_view, priority_collection> user_priority_collections;
-    std::unordered_map<std::string_view, priority_collection> base_priority_collections;
-    std::unordered_map<std::string_view, collection> user_collections;
-    std::unordered_map<std::string_view, collection> base_collections;
+    boost::unordered_flat_set<std::string_view> collection_types;
+    boost::unordered_flat_map<std::string_view, priority_collection> user_priority_collections;
+    boost::unordered_flat_map<std::string_view, priority_collection> base_priority_collections;
+    boost::unordered_flat_map<std::string_view, collection> user_collections;
+    boost::unordered_flat_map<std::string_view, collection> base_collections;
 
-    std::unordered_map<target_index, std::string> rule_addresses;
-    std::unordered_map<target_index, std::string> filter_addresses;
-    std::unordered_map<target_index, std::string> preprocessor_addresses;
-    std::unordered_map<target_index, std::string> postprocessor_addresses;
+    boost::unordered_flat_map<target_index, std::string> rule_addresses;
+    boost::unordered_flat_map<target_index, std::string> filter_addresses;
+    boost::unordered_flat_map<target_index, std::string> preprocessor_addresses;
+    boost::unordered_flat_map<target_index, std::string> postprocessor_addresses;
 
     // Root addresses, lazily computed
     std::vector<const char *> root_addresses;

@@ -27,7 +27,7 @@ using filter_mode = exclusion::filter_mode;
 
 class context {
 public:
-    using object_set = std::unordered_set<const ddwaf_object *>;
+    using object_set = boost::unordered_flat_set<const ddwaf_object *>;
 
     explicit context(std::shared_ptr<ruleset> ruleset) : ruleset_(std::move(ruleset))
     {

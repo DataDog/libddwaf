@@ -213,7 +213,7 @@ std::vector<parameter_definition> parse_arguments(const parameter::map &params, 
 }
 
 std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
-    std::unordered_map<std::string, std::string> &data_ids, data_source source,
+    boost::unordered_flat_map<std::string, std::string> &data_ids, data_source source,
     const std::vector<transformer_id> &transformers, address_container &addresses,
     const object_limits &limits)
 {
@@ -250,7 +250,7 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
 }
 
 rule_spec parse_rule(parameter::map &rule,
-    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    boost::unordered_flat_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source, address_container &addresses)
 {
     std::vector<transformer_id> rule_transformers;
@@ -266,7 +266,7 @@ rule_spec parse_rule(parameter::map &rule,
         throw ddwaf::parsing_error("rule has no valid conditions");
     }
 
-    std::unordered_map<std::string, std::string> tags;
+    boost::unordered_flat_map<std::string, std::string> tags;
     for (auto &[key, value] : at<parameter::map>(rule, "tags")) {
         try {
             tags.emplace(key, std::string(value));
@@ -297,7 +297,7 @@ reference_spec parse_reference(const parameter::map &target)
 
     auto tag_map = at<parameter::map>(target, "tags", {});
     if (!tag_map.empty()) {
-        std::unordered_map<std::string, std::string> tags;
+        boost::unordered_flat_map<std::string, std::string> tags;
         for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
 
         return {reference_type::tags, {}, std::move(tags)};
@@ -355,7 +355,7 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
 std::shared_ptr<expression> parse_simplified_expression(const parameter::vector &conditions_array,
     address_container &addresses, const object_limits &limits)
 {
-    std::unordered_map<std::string, std::string> data_ids;
+    boost::unordered_flat_map<std::string, std::string> data_ids;
     return parse_expression(conditions_array, data_ids, data_source::values, {}, addresses, limits);
 }
 
@@ -485,7 +485,7 @@ void add_addresses_to_info(const address_container &addresses, base_section_info
 } // namespace
 
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
-    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    boost::unordered_flat_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source)
 {
     rule_spec_container rules;
@@ -522,7 +522,7 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
 }
 
 rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_info &info,
-    std::unordered_map<std::string, std::string> &rule_data_ids)
+    boost::unordered_flat_map<std::string, std::string> &rule_data_ids)
 {
     rule_data_container matchers;
     for (unsigned i = 0; i < rule_data.size(); ++i) {
@@ -662,7 +662,7 @@ processor_container parse_processors(
     parameter::vector &processor_array, base_section_info &info, const object_limits &limits)
 {
     processor_container processors;
-    std::unordered_set<std::string> known_processors;
+    boost::unordered_flat_set<std::string> known_processors;
 
     for (unsigned i = 0; i < processor_array.size(); i++) {
         const auto &node_param = processor_array[i];
@@ -754,7 +754,7 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
                 continue;
             }
 
-            std::unordered_map<std::string, std::string> tags;
+            boost::unordered_flat_map<std::string, std::string> tags;
             for (auto &[key, value] : at<parameter::map>(node, "tags")) {
                 try {
                     tags.emplace(key, std::string(value));

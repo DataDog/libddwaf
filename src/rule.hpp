@@ -28,7 +28,7 @@ public:
 
     using cache_type = expression::cache_type;
 
-    rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
+    rule(std::string id, std::string name, boost::unordered_flat_map<std::string, std::string> tags,
         std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
         bool enabled = true, source_type source = source_type::base)
         : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
@@ -64,7 +64,8 @@ public:
 
     virtual std::optional<event> match(const object_store &store, cache_type &cache,
         const exclusion::object_set_ref &objects_excluded,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+        const boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>>
+            &dynamic_matchers,
         ddwaf::timer &deadline) const
     {
         if (expression::get_result(cache)) {
@@ -93,11 +94,11 @@ public:
         return it == tags_.end() ? std::string_view() : it->second;
     }
 
-    const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
+    const boost::unordered_flat_map<std::string, std::string> &get_tags() const { return tags_; }
 
     const std::vector<std::string> &get_actions() const { return actions_; }
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    void get_addresses(boost::unordered_flat_map<target_index, std::string> &addresses) const
     {
         return expr_->get_addresses(addresses);
     }
@@ -109,7 +110,7 @@ protected:
     source_type source_;
     std::string id_;
     std::string name_;
-    std::unordered_map<std::string, std::string> tags_;
+    boost::unordered_flat_map<std::string, std::string> tags_;
     std::shared_ptr<expression> expr_;
     std::vector<std::string> actions_;
 };

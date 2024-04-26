@@ -42,7 +42,7 @@ public:
 
     std::string_view get_id() { return id_; }
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    void get_addresses(boost::unordered_flat_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
         filter_->get_addresses(addresses);

@@ -4,18 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <algorithm>
-#include <iostream>
-#include <map>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 #include <variant>
+
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_flat_set.hpp>
 
 #include "exception.hpp"
 #include "generator/extract_schema.hpp"
-#include "log.hpp"
 
 namespace ddwaf::generator {
 namespace schema {
@@ -30,7 +28,7 @@ enum class scalar_type : uint8_t { null = 1, boolean = 2, integer = 4, string = 
 
 struct node_scalar {
     scalar_type type{scalar_type::null};
-    std::unordered_map<std::string, std::string> tags{};
+    boost::unordered_flat_map<std::string, std::string> tags{};
     mutable std::size_t hash{0};
 };
 
@@ -67,14 +65,14 @@ struct node_equal {
 struct node_record {
     std::size_t hash{0};
     bool truncated{false};
-    std::unordered_map<std::string_view, base_node> children;
+    boost::unordered_flat_map<std::string_view, base_node> children;
 };
 
 struct node_array {
     std::size_t hash{0};
     bool truncated{false};
     std::size_t length{0};
-    std::unordered_set<base_node, node_hash, node_equal> children;
+    boost::unordered_flat_set<base_node, node_hash, node_equal> children;
 };
 
 std::size_t node_hash::operator()(const base_node &node) const noexcept

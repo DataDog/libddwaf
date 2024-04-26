@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 #include "matcher/base.hpp"
@@ -35,7 +35,7 @@ protected:
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view str) const;
 
     std::vector<std::string> data_;
-    std::unordered_map<std::string_view, uint64_t> values_;
+    boost::unordered_flat_map<std::string_view, uint64_t> values_;
 
     friend class base_impl<exact_match>;
 };

@@ -14,7 +14,8 @@ namespace ddwaf::exclusion {
 namespace {
 // Add requires
 void iterate_object(const path_trie::traverser &filter, const ddwaf_object *object,
-    std::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
+    boost::unordered_flat_set<const ddwaf_object *> &objects_to_exclude,
+    const object_limits &limits)
 {
     using state = path_trie::traverser::state;
     if (object == nullptr) {

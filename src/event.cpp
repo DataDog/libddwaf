@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <unordered_set>
+#include <boost/unordered/unordered_flat_set.hpp>
 
 #include "action_mapper.hpp"
 #include "ddwaf.h"
@@ -117,7 +117,7 @@ struct action_tracker {
     std::string stack_id{};
 
     // This set contains all remaining actions other than the blocking action
-    std::unordered_set<std::string_view> non_blocking_actions{};
+    boost::unordered_flat_set<std::string_view> non_blocking_actions{};
 
     const action_mapper &mapper;
 };

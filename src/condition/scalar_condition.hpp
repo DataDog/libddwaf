@@ -29,10 +29,12 @@ public:
 
     eval_result eval(condition_cache &cache, const object_store &store,
         const exclusion::object_set_ref &objects_excluded,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+        const boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>>
+            &dynamic_matchers,
         ddwaf::timer &deadline) const override;
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
+    void get_addresses(
+        boost::unordered_flat_map<target_index, std::string> &addresses) const override
     {
         for (const auto &target : targets_) { addresses.emplace(target.root, target.name); }
     }
@@ -44,8 +46,8 @@ public:
 
 protected:
     [[nodiscard]] const matcher::base *get_matcher(
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers)
-        const;
+        const boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>>
+            &dynamic_matchers) const;
 
     std::unique_ptr<matcher::base> matcher_;
     std::string data_id_;

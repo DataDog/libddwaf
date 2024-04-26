@@ -31,11 +31,11 @@ void parse(
 namespace v2 {
 
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
-    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    boost::unordered_flat_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source = rule::source_type::base);
 
 rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_info &info,
-    std::unordered_map<std::string, std::string> &rule_data_ids);
+    boost::unordered_flat_map<std::string, std::string> &rule_data_ids);
 
 override_spec_container parse_overrides(parameter::vector &override_array, base_section_info &info);
 

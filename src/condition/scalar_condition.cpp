@@ -88,7 +88,8 @@ std::optional<condition_match> eval_target(Iterator &it, std::string_view addres
 } // namespace
 
 const matcher::base *scalar_condition::get_matcher(
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers) const
+    const boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers)
+    const
 {
     if (matcher_ || data_id_.empty()) {
         return matcher_.get();
@@ -104,7 +105,7 @@ const matcher::base *scalar_condition::get_matcher(
 
 eval_result scalar_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+    const boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     const auto *matcher = get_matcher(dynamic_matchers);

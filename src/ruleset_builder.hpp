@@ -6,10 +6,9 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <memory>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
 #include "indexer.hpp"
 #include "parameter.hpp"
@@ -67,7 +66,7 @@ protected:
 
     // Map representing rule data IDs to matcher type, this is obtained
     // from parsing the ruleset ('rules' key).
-    std::unordered_map<std::string, std::string> rule_data_ids_;
+    boost::unordered_flat_map<std::string, std::string> rule_data_ids_;
 
     // These contain the specification of each main component obtained directly
     // from the parser. These are only modified on update, if the relevant key
@@ -95,12 +94,14 @@ protected:
     indexer<rule> final_user_rules_;
 
     // Filters
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters_;
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters_;
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<exclusion::rule_filter>>
+        rule_filters_;
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<exclusion::input_filter>>
+        input_filters_;
 
     // Processors
-    std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors_;
-    std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors_;
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<processor>> preprocessors_;
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<processor>> postprocessors_;
 
     // Scanners
     indexer<const scanner> scanners_;
