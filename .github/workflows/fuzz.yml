@@ -1,11 +1,15 @@
 name: Fuzz
 
 on:
-  # schedule:
-  #   - cron:  30 0 * * *
   pull_request:
     branches:
       - "**"
+  push:
+    branches: [ master ]
+    tags:
+      - "*"
+  schedule:
+    - cron:  30 0 * * *
   workflow_dispatch:
     inputs:
       duration:
