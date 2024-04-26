@@ -20,7 +20,7 @@ static float ceilf_local(float x)
         __asm__ ("frintp %s0, %s1" : "=w"(x) : "w"(x));
         return x;
 }
-#elif defined(__x86_64__) || defined(__i386__)
+#elif defined(__x86_64__)
 static float ceilf_local(float x)
 {
     float result;
