@@ -7,9 +7,9 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <iterator>
 #include <set>
-#include <unordered_map>
 #include <vector>
 
 #include "type_traits.hpp"

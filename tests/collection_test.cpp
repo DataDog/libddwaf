@@ -31,7 +31,8 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
 
@@ -82,7 +83,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
@@ -98,7 +99,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
@@ -151,7 +152,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
@@ -167,7 +168,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
@@ -222,7 +223,8 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
 
@@ -276,7 +278,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
@@ -292,7 +294,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
@@ -349,7 +351,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
@@ -365,7 +367,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
@@ -422,7 +424,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
@@ -439,7 +441,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
@@ -495,7 +497,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
@@ -512,7 +514,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
@@ -573,7 +575,7 @@ TEST(TestPriorityCollection, EphemeralPriorityMatchNoOtherMatches)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         auto rule = std::make_shared<ddwaf::rule>(
@@ -590,7 +592,7 @@ TEST(TestPriorityCollection, EphemeralPriorityMatchNoOtherMatches)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         auto rule = std::make_shared<ddwaf::rule>(

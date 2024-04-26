@@ -11,7 +11,7 @@ using namespace ddwaf;
 
 namespace {
 std::shared_ptr<rule> make_rule(std::string id, std::string name,
-    std::unordered_map<std::string, std::string> tags, std::vector<std::string> actions,
+    boost::unordered_flat_map<std::string, std::string> tags, std::vector<std::string> actions,
     rule::source_type source = rule::source_type::base)
 {
     return std::make_shared<ddwaf::rule>(std::move(id), std::move(name), std::move(tags),

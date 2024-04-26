@@ -55,7 +55,7 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
     auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
-    std::unordered_map<std::string, std::string> kv{
+    boost::unordered_flat_map<std::string, std::string> kv{
         {"rules", "first"}, {"exclusions", "second"}, {"rules_override", "third"}};
     for (auto &[key, value] : kv) {
         auto section = ddwaf::parser::at<parameter::map>(root_map, key);

@@ -24,7 +24,8 @@ TEST(TestRule, Match)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
     ddwaf::rule rule(
         "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
@@ -85,7 +86,8 @@ TEST(TestRule, EphemeralMatch)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
     ddwaf::rule rule(
         "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
@@ -130,7 +132,8 @@ TEST(TestRule, NoMatch)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
     ddwaf::rule rule("id", "name", std::move(tags), builder.build());
 
     ddwaf_object root;
@@ -161,7 +164,8 @@ TEST(TestRule, ValidateCachedMatch)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), builder.build());
     ddwaf::rule::cache_type cache;
@@ -236,7 +240,8 @@ TEST(TestRule, MatchWithoutCache)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), builder.build());
 
@@ -303,7 +308,8 @@ TEST(TestRule, NoMatchWithoutCache)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), builder.build());
 
@@ -351,7 +357,8 @@ TEST(TestRule, FullCachedMatchSecondRun)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule("id", "name", std::move(tags), builder.build());
 
@@ -396,7 +403,8 @@ TEST(TestRule, ExcludeObject)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     ddwaf::rule rule(
         "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
@@ -410,7 +418,7 @@ TEST(TestRule, ExcludeObject)
 
     ddwaf::timer deadline{2s};
 
-    std::unordered_set<const ddwaf_object *> excluded_set{&root.array[0]};
+    boost::unordered_flat_set<const ddwaf_object *> excluded_set{&root.array[0]};
     rule::cache_type cache;
     auto event = rule.match(store, cache, {excluded_set, {}}, {}, deadline);
     EXPECT_FALSE(event.has_value());

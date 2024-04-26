@@ -23,7 +23,7 @@ TEST(TestMultiKeyMap, Find)
         std::string id;
         std::string type;
         std::string category;
-        std::unordered_map<std::string, std::string> tags;
+        boost::unordered_flat_map<std::string, std::string> tags;
     };
 
     std::vector<rule_spec> specs{{"id0", "type0", "category0", {{"key", "value0"}}},
@@ -37,7 +37,7 @@ TEST(TestMultiKeyMap, Find)
 
     std::vector<std::shared_ptr<rule>> rules;
     for (const auto &spec : specs) {
-        std::unordered_map<std::string, std::string> tags = spec.tags;
+        boost::unordered_flat_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
         tags.emplace("category", spec.category);
 
@@ -88,7 +88,7 @@ TEST(TestMultiKeyMap, Multifind)
         std::string id;
         std::string type;
         std::string category;
-        std::unordered_map<std::string, std::string> tags;
+        boost::unordered_flat_map<std::string, std::string> tags;
     };
 
     std::vector<rule_spec> specs{{"id0", "type0", "category0", {{"key", "value0"}}},
@@ -102,7 +102,7 @@ TEST(TestMultiKeyMap, Multifind)
 
     std::vector<std::shared_ptr<rule>> rules;
     for (const auto &spec : specs) {
-        std::unordered_map<std::string, std::string> tags = spec.tags;
+        boost::unordered_flat_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
         tags.emplace("category", spec.category);
 

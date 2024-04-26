@@ -14,7 +14,7 @@ namespace {
 
 TEST(TestParserV2RuleData, ParseIPData)
 {
-    std::unordered_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
+    boost::unordered_flat_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
 
     auto object = yaml_to_object(
         R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
@@ -49,7 +49,7 @@ TEST(TestParserV2RuleData, ParseIPData)
 
 TEST(TestParserV2RuleData, ParseStringData)
 {
-    std::unordered_map<std::string, std::string> rule_data_ids{{"usr_data", "exact_match"}};
+    boost::unordered_flat_map<std::string, std::string> rule_data_ids{{"usr_data", "exact_match"}};
 
     auto object = yaml_to_object(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
@@ -84,7 +84,7 @@ TEST(TestParserV2RuleData, ParseStringData)
 
 TEST(TestParserV2RuleData, ParseMultipleRuleData)
 {
-    std::unordered_map<std::string, std::string> rule_data_ids{
+    boost::unordered_flat_map<std::string, std::string> rule_data_ids{
         {"ip_data", "ip_match"}, {"usr_data", "exact_match"}};
 
     auto object = yaml_to_object(
@@ -122,7 +122,7 @@ TEST(TestParserV2RuleData, ParseMultipleRuleData)
 
 TEST(TestParserV2RuleData, ParseUnknownRuleData)
 {
-    std::unordered_map<std::string, std::string> rule_data_ids{{"usr_data", "exact_match"}};
+    boost::unordered_flat_map<std::string, std::string> rule_data_ids{{"usr_data", "exact_match"}};
 
     auto object = yaml_to_object(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
@@ -159,7 +159,7 @@ TEST(TestParserV2RuleData, ParseUnknownRuleData)
 
 TEST(TestParserV2RuleData, ParseUnsupportedProcessor)
 {
-    std::unordered_map<std::string, std::string> rule_data_ids{
+    boost::unordered_flat_map<std::string, std::string> rule_data_ids{
         {"usr_data", "match_regex"}, {"ip_data", "phrase_match"}};
 
     auto object = yaml_to_object(
@@ -212,7 +212,7 @@ TEST(TestParserV2RuleData, ParseUnsupportedProcessor)
 
 TEST(TestParserV2RuleData, ParseMissingType)
 {
-    std::unordered_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
+    boost::unordered_flat_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
 
     auto object =
         yaml_to_object(R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
@@ -252,7 +252,7 @@ TEST(TestParserV2RuleData, ParseMissingType)
 
 TEST(TestParserV2RuleData, ParseMissingID)
 {
-    std::unordered_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
+    boost::unordered_flat_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
 
     auto object = yaml_to_object(
         R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
@@ -292,7 +292,7 @@ TEST(TestParserV2RuleData, ParseMissingID)
 
 TEST(TestParserV2RuleData, ParseMissingData)
 {
-    std::unordered_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
+    boost::unordered_flat_map<std::string, std::string> rule_data_ids{{"ip_data", "ip_match"}};
 
     auto object = yaml_to_object(R"([{id: ip_data, type: ip_with_expiration}])");
     auto input = static_cast<parameter::vector>(parameter(object));

@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 #include "log.hpp"
 #include "matcher/base.hpp"
@@ -30,13 +30,13 @@ public:
 
     virtual ~scanner() = default;
 
-    bool eval(const ddwaf_object &key, const ddwaf_object &value) const
+    [[nodiscard]] bool eval(const ddwaf_object &key, const ddwaf_object &value) const
     {
         DDWAF_DEBUG("Evaluating scanner '{}'", id_);
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
-    bool eval(std::string_view key, const ddwaf_object &value) const
+    [[nodiscard]] bool eval(std::string_view key, const ddwaf_object &value) const
     {
         ddwaf_object key_obj;
         if (key.data() != nullptr && !key.empty()) {
@@ -47,8 +47,11 @@ public:
         return eval(key_obj, value);
     }
 
-    const boost::unordered_flat_map<std::string, std::string> &get_tags() const { return tags_; }
-    std::string_view get_id() const { return id_; }
+    [[nodiscard]] const boost::unordered_flat_map<std::string, std::string> &get_tags() const
+    {
+        return tags_;
+    }
+    [[nodiscard]] std::string_view get_id() const { return id_; }
 
 protected:
     static bool eval_matcher(const std::unique_ptr<matcher::base> &matcher, const ddwaf_object &obj)

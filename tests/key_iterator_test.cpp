@@ -980,7 +980,7 @@ TEST(TestKeyIterator, TestExcludeSingleObject)
     ddwaf_object_map(&object);
     ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
 
-    std::unordered_set<const ddwaf_object *> persistent{&object.array[0]};
+    boost::unordered_flat_set<const ddwaf_object *> persistent{&object.array[0]};
 
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::object::key_iterator it(&object, {}, exclude);
@@ -1001,7 +1001,7 @@ TEST(TestKeyIterator, TestExcludeMultipleObjects)
     ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
     ddwaf_object_map_add(&root, "other", &map);
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[0], &map.array[1]};
+    boost::unordered_flat_set<const ddwaf_object *> persistent{&root.array[0], &map.array[1]};
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::object::key_iterator it(&root, {}, exclude);
 
@@ -1036,7 +1036,7 @@ TEST(TestKeyIterator, TestExcludeObjectInKeyPath)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "parent", &child);
 
-    std::unordered_set<const ddwaf_object *> persistent{&child.array[0]};
+    boost::unordered_flat_set<const ddwaf_object *> persistent{&child.array[0]};
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::object::key_iterator it(&root, key_path, exclude);
@@ -1055,7 +1055,7 @@ TEST(TestKeyIterator, TestExcludeRootOfKeyPath)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "parent", &child);
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[0]};
+    boost::unordered_flat_set<const ddwaf_object *> persistent{&root.array[0]};
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::object::key_iterator it(&root, key_path, exclude);
