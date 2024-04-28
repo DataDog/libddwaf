@@ -59,9 +59,9 @@ constexpr std::string_view variable_regex_str =
 constexpr std::string_view number_or_identifier_regex_str =
     R"((?i)^(?:(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
-re2::RE2 identifier_regex{identifier_regex_str};
-re2::RE2 variable_regex{variable_regex_str};
-re2::RE2 number_or_identifier_regex{number_or_identifier_regex_str};
+re2::RE2 identifier_regex(identifier_regex_str);
+re2::RE2 variable_regex(variable_regex_str);
+re2::RE2 number_or_identifier_regex(number_or_identifier_regex_str);
 
 std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
 {

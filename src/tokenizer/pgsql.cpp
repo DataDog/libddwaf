@@ -25,8 +25,8 @@ constexpr std::string_view identifier_regex_str =
 
 constexpr std::string_view parameter_regex_str = R"(^(?P<parameter>\$[0-9]+)(?:\b|\s|$))";
 
-re2::RE2 identifier_regex{identifier_regex_str};
-re2::RE2 parameter_regex{parameter_regex_str};
+re2::RE2 identifier_regex(identifier_regex_str);
+re2::RE2 parameter_regex(parameter_regex_str);
 
 } // namespace
 
