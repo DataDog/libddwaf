@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "tokenizer/pgsql.hpp"
-#include "regex_utils.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -26,8 +25,8 @@ constexpr std::string_view identifier_regex_str =
 
 constexpr std::string_view parameter_regex_str = R"(^(?P<parameter>\$[0-9]+)(?:\b|\s|$))";
 
-auto identifier_regex = regex_init_nothrow(identifier_regex_str);
-auto parameter_regex = regex_init_nothrow(parameter_regex_str);
+re2::RE2 identifier_regex{identifier_regex_str};
+re2::RE2 parameter_regex{parameter_regex_str};
 
 } // namespace
 
@@ -35,12 +34,13 @@ pgsql_tokenizer::pgsql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
-    if (!identifier_regex) {
-        throw std::runtime_error("pgsql identifier regex not valid");
+    if (!identifier_regex.ok()) {
+        throw std::runtime_error(
+            "pgsql identifier regex not valid: " + identifier_regex.error_arg());
     }
 
-    if (!parameter_regex) {
-        throw std::runtime_error("pgsql parameter regex not valid");
+    if (!parameter_regex.ok()) {
+        throw std::runtime_error("pgsql parameter regex not valid: " + parameter_regex.error_arg());
     }
 }
 
@@ -57,7 +57,7 @@ void pgsql_tokenizer::tokenize_command_operator_or_identifier()
 
     // TODO recognize escape and bit string constants
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, *identifier_regex, &command, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, identifier_regex, &command, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;
@@ -207,7 +207,7 @@ void pgsql_tokenizer::tokenize_dollar_string_or_identifier()
 
         re2::StringPiece parameter;
         const re2::StringPiece ref(str.data(), str.size());
-        if (re2::RE2::PartialMatch(ref, *parameter_regex, &parameter)) {
+        if (re2::RE2::PartialMatch(ref, parameter_regex, &parameter)) {
             if (!parameter.empty()) {
                 add_token(sql_token_type::identifier, parameter.size());
             }

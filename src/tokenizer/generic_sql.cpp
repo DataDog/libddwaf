@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "tokenizer/generic_sql.hpp"
-#include "regex_utils.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -13,7 +12,7 @@ namespace {
 constexpr std::string_view identifier_regex_str =
     R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|DISTINCT|HAVING|ORDER|ASC|DESC|UNION|NULL|ALL|ANY|BY|AS)|(?P<binary_operator>OR|AND|BETWEEN|LIKE|IN|MOD|IS|NOT)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
-auto identifier_regex = regex_init_nothrow(identifier_regex_str);
+re2::RE2 identifier_regex{identifier_regex_str};
 
 } // namespace
 
@@ -21,8 +20,8 @@ generic_sql_tokenizer::generic_sql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
-    if (!identifier_regex) {
-        throw std::runtime_error("standard sql identifier regex not valid");
+    if (!identifier_regex.ok()) {
+        throw std::runtime_error("sql identifier regex not valid: " + identifier_regex.error_arg());
     }
 }
 
@@ -38,7 +37,7 @@ void generic_sql_tokenizer::tokenize_command_operator_or_identifier()
     re2::StringPiece ident;
 
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, *identifier_regex, &command, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, identifier_regex, &command, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;

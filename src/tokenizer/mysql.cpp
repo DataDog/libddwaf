@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "tokenizer/mysql.hpp"
-#include "regex_utils.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -60,9 +59,9 @@ constexpr std::string_view variable_regex_str =
 constexpr std::string_view number_or_identifier_regex_str =
     R"((?i)^(?:(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
-auto identifier_regex = regex_init_nothrow(identifier_regex_str);
-auto variable_regex = regex_init_nothrow(variable_regex_str);
-auto number_or_identifier_regex = regex_init_nothrow(number_or_identifier_regex_str);
+re2::RE2 identifier_regex{identifier_regex_str};
+re2::RE2 variable_regex{variable_regex_str};
+re2::RE2 number_or_identifier_regex{number_or_identifier_regex_str};
 
 std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
 {
@@ -78,7 +77,7 @@ std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
 
 std::string_view extract_variable(std::string_view str)
 {
-    return partial_match_regex(*variable_regex, str);
+    return partial_match_regex(variable_regex, str);
 }
 
 } // namespace
@@ -87,16 +86,18 @@ mysql_tokenizer::mysql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
-    if (!identifier_regex) {
-        throw std::runtime_error("mysql identifier regex not valid");
+    if (!identifier_regex.ok()) {
+        throw std::runtime_error(
+            "mysql identifier regex not valid: " + identifier_regex.error_arg());
     }
 
-    if (!variable_regex) {
-        throw std::runtime_error("mysql variable regex not valid");
+    if (!variable_regex.ok()) {
+        throw std::runtime_error("mysql variable regex not valid: " + variable_regex.error_arg());
     }
 
-    if (!number_or_identifier_regex) {
-        throw std::runtime_error("mysql number of identifier regex not valid");
+    if (!number_or_identifier_regex.ok()) {
+        throw std::runtime_error("mysql number of identifier regex not valid: " +
+                                 number_or_identifier_regex.error_arg());
     }
 }
 
@@ -112,7 +113,7 @@ void mysql_tokenizer::tokenize_command_operator_or_identifier()
     re2::StringPiece ident;
 
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, *identifier_regex, &command, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, identifier_regex, &command, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;
@@ -172,7 +173,7 @@ void mysql_tokenizer::tokenize_number_or_identifier()
     re2::StringPiece ident;
 
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, *number_or_identifier_regex, &number, &ident)) {
+    if (re2::RE2::PartialMatch(ref, number_or_identifier_regex, &number, &ident)) {
         // At least one of the strings will contain a match
         if (!number.empty()) {
             token.type = sql_token_type::number;

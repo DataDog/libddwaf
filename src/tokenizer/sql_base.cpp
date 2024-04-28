@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "tokenizer/sql_base.hpp"
-#include "regex_utils.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
@@ -19,7 +18,7 @@ namespace {
 constexpr std::string_view number_regex_str =
     R"((?i)^(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)(?:\b|\s|$))";
 
-auto number_regex = regex_init_nothrow(number_regex_str);
+re2::RE2 number_regex{number_regex_str};
 } // namespace
 
 sql_dialect sql_dialect_from_type(std::string_view type)
@@ -163,8 +162,8 @@ sql_tokenizer<T>::sql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : buffer_(str), skip_tokens_(std::move(skip_tokens))
 {
-    if (!number_regex) {
-        throw std::runtime_error("sql number regex not valid");
+    if (!number_regex.ok()) {
+        throw std::runtime_error("sql number regex not valid: " + number_regex.error_arg());
     }
 }
 
@@ -190,7 +189,7 @@ template <typename T> std::string_view sql_tokenizer<T>::extract_number()
     auto str = substr();
     re2::StringPiece number;
     const re2::StringPiece ref(str.data(), str.size());
-    if (re2::RE2::PartialMatch(ref, *number_regex, &number)) {
+    if (re2::RE2::PartialMatch(ref, number_regex, &number)) {
         if (!number.empty()) {
             return {number.data(), number.size()};
         }
