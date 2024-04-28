@@ -20,13 +20,10 @@ namespace {
  * starts or ends with an underscore, so identifiers of this form are safe against possible conflict
  * with future extensions of the standard.
  */
-constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|HAVING|ORDER|PARTITION|BY|ASC|DESC|NULL)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS|LIKE|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
+re2::RE2 identifier_regex(
+    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|HAVING|ORDER|PARTITION|BY|ASC|DESC|NULL)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS|LIKE|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
 
-constexpr std::string_view parameter_regex_str = R"(^(?P<parameter>\$[0-9]+)(?:\b|\s|$))";
-
-re2::RE2 identifier_regex(identifier_regex_str);
-re2::RE2 parameter_regex(parameter_regex_str);
+re2::RE2 parameter_regex(R"(^(?P<parameter>\$[0-9]+)(?:\b|\s|$))");
 
 } // namespace
 

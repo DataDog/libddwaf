@@ -12,8 +12,8 @@ namespace {
 
 // Operators: https://dev.mysql.com/doc/refman/5.7/en/built-in-function-reference.html
 // Identifiers: https://dev.mysql.com/doc/refman/8.0/en/identifiers.html
-constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?:(?P<command>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP|WITH|ROLLUP|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER|CASE|NULL|BY|ASC|DESC|LIMIT|OFFSET|ALL|AS)|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|DIV|LAST_DAY|REGEXP|XOR|OR|RLIKE|SOUNDS|LIKE|NOT|IN|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
+re2::RE2 identifier_regex(
+    R"((?i)^(?:(?P<command>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP|WITH|ROLLUP|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER|CASE|NULL|BY|ASC|DESC|LIMIT|OFFSET|ALL|AS)|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|DIV|LAST_DAY|REGEXP|XOR|OR|RLIKE|SOUNDS|LIKE|NOT|IN|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
 
 /*
  *  https://dev.mysql.com/doc/refman/8.0/en/user-variables.html
@@ -50,18 +50,14 @@ constexpr std::string_view identifier_regex_str =
  *  By taking the (a) patterns and putting (b) just after, you end up with the regexp we use to
  *  parse the variable.
  */
-constexpr std::string_view variable_regex_str =
-    R"(^(@@?(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]+)(:?\.(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]*))*))";
+re2::RE2 variable_regex(
+    R"(^(@@?(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]+)(:?\.(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]*))*))");
 
 // Number of identifier starting by a number, note that these identifiers must always have other
 // characters and can't consist only of numbers.
 // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-constexpr std::string_view number_or_identifier_regex_str =
-    R"((?i)^(?:(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
-
-re2::RE2 identifier_regex(identifier_regex_str);
-re2::RE2 variable_regex(variable_regex_str);
-re2::RE2 number_or_identifier_regex(number_or_identifier_regex_str);
+re2::RE2 number_or_identifier_regex(
+    R"((?i)^(?:(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
 
 std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
 {

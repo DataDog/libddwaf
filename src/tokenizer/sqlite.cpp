@@ -11,10 +11,8 @@ namespace ddwaf {
 namespace {
 // https://www.sqlite.org/lang_select.html
 // Identifiers: https://sqlite.org/lang_keywords.html
-constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?:(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP|HAVING|WINDOW|VALUES|OFFSET|LIMIT|ORDER|BY|ASC|DESC|UNION|INTERSECT|EXCEPT|NULL|AS)|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|MATCH|NOTNULL|ISNULL|NOT|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*|\$[0-9]+))(?:\b|\s|$))";
-
-re2::RE2 identifier_regex(identifier_regex_str);
+re2::RE2 identifier_regex(
+    R"((?i)^(?:(?P<command>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP|HAVING|WINDOW|VALUES|OFFSET|LIMIT|ORDER|BY|ASC|DESC|UNION|INTERSECT|EXCEPT|NULL|AS)|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|MATCH|NOTNULL|ISNULL|NOT|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*|\$[0-9]+))(?:\b|\s|$))");
 
 } // namespace
 

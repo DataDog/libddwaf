@@ -15,10 +15,9 @@
 namespace ddwaf {
 namespace {
 // Hexadecimal, octal, decimal or floating point
-constexpr std::string_view number_regex_str =
-    R"((?i)^(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)(?:\b|\s|$))";
+re2::RE2 number_regex(
+    R"((?i)^(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)(?:\b|\s|$))");
 
-re2::RE2 number_regex(number_regex_str);
 } // namespace
 
 sql_dialect sql_dialect_from_type(std::string_view type)

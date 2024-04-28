@@ -9,10 +9,8 @@
 
 namespace ddwaf {
 namespace {
-constexpr std::string_view identifier_regex_str =
-    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|DISTINCT|HAVING|ORDER|ASC|DESC|UNION|NULL|ALL|ANY|BY|AS)|(?P<binary_operator>OR|AND|BETWEEN|LIKE|IN|MOD|IS|NOT)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
-
-re2::RE2 identifier_regex(identifier_regex_str);
+re2::RE2 identifier_regex(
+    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|DISTINCT|HAVING|ORDER|ASC|DESC|UNION|NULL|ALL|ANY|BY|AS)|(?P<binary_operator>OR|AND|BETWEEN|LIKE|IN|MOD|IS|NOT)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
 
 } // namespace
 
