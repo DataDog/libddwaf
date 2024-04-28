@@ -68,6 +68,11 @@ public:
     [[nodiscard]] bool empty() const { return conditions_.empty(); }
     [[nodiscard]] std::size_t size() const { return conditions_.size(); }
 
+    [[nodiscard]] cache_type get_cache() const
+    {
+        return {false, {conditions_.size(), condition_cache{}}};
+    }
+
 protected:
     std::vector<std::unique_ptr<base_condition>> conditions_;
 };

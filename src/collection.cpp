@@ -46,7 +46,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     try {
         auto it = cache.find(rule);
         if (it == cache.end()) {
-            auto [new_it, res] = cache.emplace(rule, rule::cache_type{});
+            auto [new_it, res] = cache.emplace(rule, rule->get_cache());
             it = new_it;
         }
 

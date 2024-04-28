@@ -127,8 +127,8 @@ struct ruleset {
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
-    boost::unordered_flat_map<std::string_view, std::shared_ptr<processor>> preprocessors;
-    boost::unordered_flat_map<std::string_view, std::shared_ptr<processor>> postprocessors;
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<processor>> preprocessors{};
+    boost::unordered_flat_map<std::string_view, std::shared_ptr<processor>> postprocessors{};
 
     boost::unordered_flat_map<std::string_view, std::shared_ptr<exclusion::rule_filter>>
         rule_filters;

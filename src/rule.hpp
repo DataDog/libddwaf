@@ -105,6 +105,8 @@ public:
 
     void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
 
+    [[nodiscard]] cache_type get_cache() const { return expr_->get_cache(); }
+
 protected:
     bool enabled_{true};
     source_type source_;

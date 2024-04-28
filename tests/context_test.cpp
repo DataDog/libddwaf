@@ -127,6 +127,7 @@ TEST(TestContext, PreprocessorEval)
     auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
     ruleset->preprocessors.emplace("id", proc);
+    EXPECT_EQ(ruleset->preprocessors.size(), 1);
 
     ddwaf::context ctx(ruleset);
 
