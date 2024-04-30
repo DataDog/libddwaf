@@ -94,7 +94,6 @@ float ceilf(float x)
 #if defined(__x86_64__)
             __builtin_cpu_init();
             if (__builtin_cpu_supports("sse4.1")) {
-#warning "Using SSE4.1"
                 ceilf_global_ = &ceilf_local_sse41;
             } else {
                 ceilf_global_ = &ceilf_local;
