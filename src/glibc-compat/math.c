@@ -20,8 +20,9 @@ static float ceilf_local(float x)
         __asm__ ("frintp %s0, %s1" : "=w"(x) : "w"(x));
         return x;
 }
-#elif defined(__x86_64__)
-static float ceilf_local(float x)
+#else
+#if defined(__x86_64__)
+static float ceilf_local_sse41(float x)
 {
     float result;
     __asm__(
@@ -31,7 +32,7 @@ static float ceilf_local(float x)
     );
     return result;
 }
-#else
+#endif
 /* fp_force_eval ensures that the input value is computed when that's
    otherwise unused.  To prevent the constant folding of the input
    expression, an additional fp_barrier may be needed or a compilation
@@ -90,7 +91,17 @@ float ceilf(float x)
     if (unlikely(ceilf_global_ == NULL)) {
         void *ceilf_sym = dlsym(RTLD_DEFAULT, "ceilf");
         if (ceilf_sym == NULL || ceilf_sym == &ceilf) {
+#if defined(__x86_64__)
+            __builtin_cpu_init();
+            if (__builtin_cpu_supports("sse4.1")) {
+#warning "Using SSE4.1"
+                ceilf_global_ = &ceilf_local_sse41;
+            } else {
+                ceilf_global_ = &ceilf_local;
+            }
+# else
             ceilf_global_ = &ceilf_local;
+#endif
         } else {
             ceilf_global_ = (ceilf_t)ceilf_sym;
         }
