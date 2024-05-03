@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <functional>
 #include <iomanip>
+#include <iostream>
 #include <limits>
 #include <optional>
 #include <ostream>
@@ -120,11 +121,11 @@ inline bool isspace(char c)
 {
     return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
 }
-inline bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
+inline constexpr bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
 inline bool islower(char c) { return static_cast<unsigned>(c) - 'a' < 26; }
 inline bool isalnum(char c) { return isalpha(c) || isdigit(c); }
 inline bool isboundary(char c) { return !isalnum(c) && c != '_'; }
-inline char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
+inline constexpr char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
 inline uint8_t from_hex(char c)
 {
     auto uc = static_cast<uint8_t>(c);
@@ -300,6 +301,19 @@ public:
 template <class T> const null_ostream &operator<<(null_ostream &os, const T & /*unused*/)
 {
     return os;
+}
+template <std::size_t N, std::size_t... I>
+constexpr std::array<char, N> make_array(const char (&str)[N], std::index_sequence<I...>)
+{
+    return std::array<char, N>{tolower(str[I])...};
+}
+
+template <std::size_t N>
+constexpr bool string_iequals_literal(std::string_view left, const char (&right)[N])
+{
+    return left.size() == (N - 1) && std::equal(left.begin(), left.end(),
+                                         make_array(right, std::make_index_sequence<N>()).begin(),
+                                         [](char l, char r) { return tolower(l) == r; });
 }
 
 inline bool string_iequals(std::string_view left, std::string_view right)

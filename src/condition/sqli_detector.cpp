@@ -42,12 +42,12 @@ bool is_literal(sql_token_type type)
 
 bool is_asc_or_desc(std::string_view str)
 {
-    return string_iequals(str, "ASC") || string_iequals(str, "DESC");
+    return string_iequals_literal(str, "ASC") || string_iequals_literal(str, "DESC");
 }
 
 bool is_limit_or_offset(std::string_view str)
 {
-    return string_iequals(str, "LIMIT") || string_iequals(str, "OFFSET");
+    return string_iequals_literal(str, "LIMIT") || string_iequals_literal(str, "OFFSET");
 }
 
 } // namespace
@@ -139,7 +139,7 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     bool where_found = false;
     for (std::size_t i = 0; i < param_tokens_begin; ++i) {
         const auto &token = resource_tokens[i];
-        if (token.type == sql_token_type::keyword && string_iequals(token.str, "where")) {
+        if (token.type == sql_token_type::keyword && string_iequals_literal(token.str, "where")) {
             where_found = true;
             break;
         }
@@ -162,8 +162,8 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     // Is the operator in the middle a keyword (OR) or an operator (=, ||...)
     auto middle_token = param_tokens[1];
     if (middle_token.type != sql_token_type::binary_operator) {
-        return string_iequals(middle_token.str, "OR") || string_iequals(middle_token.str, "XOR") ||
-               middle_token.str == "||";
+        return string_iequals_literal(middle_token.str, "OR") ||
+               string_iequals_literal(middle_token.str, "XOR") || middle_token.str == "||";
     }
 
     // Okay, if we have a `X = Y` pattern, let's make sure X and Y are similar
@@ -348,7 +348,7 @@ bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
     std::string_view order = resource_tokens[param_tokens_begin - 2].str;
     std::string_view by = resource_tokens[param_tokens_begin - 1].str;
 
-    if (!string_iequals(order, "order") || !string_iequals(by, "by")) {
+    if (!string_iequals_literal(order, "order") || !string_iequals_literal(by, "by")) {
         return false;
     }
 

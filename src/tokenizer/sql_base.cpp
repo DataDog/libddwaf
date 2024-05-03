@@ -22,22 +22,22 @@ re2::RE2 number_regex(
 
 sql_dialect sql_dialect_from_type(std::string_view type)
 {
-    if (string_iequals(type, "mysql") || string_iequals(type, "mysql2")) {
+    if (string_iequals_literal(type, "mysql") || string_iequals_literal(type, "mysql2")) {
         return sql_dialect::mysql;
     }
-    if (string_iequals(type, "postgresql") || string_iequals(type, "pgsql")) {
+    if (string_iequals_literal(type, "postgresql") || string_iequals_literal(type, "pgsql")) {
         return sql_dialect::pgsql;
     }
-    if (string_iequals(type, "sqlite")) {
+    if (string_iequals_literal(type, "sqlite")) {
         return sql_dialect::sqlite;
     }
-    if (string_iequals(type, "oracle")) {
+    if (string_iequals_literal(type, "oracle")) {
         return sql_dialect::oracle;
     }
-    if (string_iequals(type, "doctrine")) {
+    if (string_iequals_literal(type, "doctrine")) {
         return sql_dialect::doctrine;
     }
-    if (string_iequals(type, "hsqldb")) {
+    if (string_iequals_literal(type, "hsqldb")) {
         return sql_dialect::hsqldb;
     }
     return sql_dialect::generic;
