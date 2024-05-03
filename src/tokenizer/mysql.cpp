@@ -13,7 +13,7 @@ namespace {
 // Operators: https://dev.mysql.com/doc/refman/5.7/en/built-in-function-reference.html
 // Identifiers: https://dev.mysql.com/doc/refman/8.0/en/identifiers.html
 re2::RE2 identifier_regex(
-    R"((?i)^(?:(?P<command>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP|WITH|ROLLUP|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER|CASE|NULL|BY|ASC|DESC|LIMIT|OFFSET|ALL|AS)|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|DIV|LAST_DAY|REGEXP|XOR|OR|RLIKE|SOUNDS|LIKE|NOT|IN|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
+    R"((?i)^(?:(?P<keyword>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP|WITH|ROLLUP|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER|CASE|NULL|BY|ASC|DESC|LIMIT|OFFSET|ALL|AS)|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|DIV|LAST_DAY|REGEXP|XOR|OR|RLIKE|SOUNDS|LIKE|NOT|IN|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
 
 /*
  *  https://dev.mysql.com/doc/refman/8.0/en/user-variables.html
@@ -97,7 +97,7 @@ mysql_tokenizer::mysql_tokenizer(
     }
 }
 
-void mysql_tokenizer::tokenize_command_operator_or_identifier()
+void mysql_tokenizer::tokenize_keyword_operator_or_identifier()
 {
     sql_token token;
     token.index = index();
@@ -105,19 +105,19 @@ void mysql_tokenizer::tokenize_command_operator_or_identifier()
     auto remaining_str = substr(index());
 
     re2::StringPiece binary_op;
-    re2::StringPiece command;
+    re2::StringPiece keyword;
     re2::StringPiece ident;
 
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, identifier_regex, &command, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;
             token.str = substr(token.index, binary_op.size());
             advance(token.str.size() - 1);
-        } else if (!command.empty()) {
-            token.type = sql_token_type::command;
-            token.str = substr(token.index, command.size());
+        } else if (!keyword.empty()) {
+            token.type = sql_token_type::keyword;
+            token.str = substr(token.index, keyword.size());
             advance(token.str.size() - 1);
         } else if (!ident.empty()) {
             token.type = sql_token_type::identifier;
@@ -235,7 +235,7 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
         // TODO use an array of characters or a giant switch?
         if (ddwaf::isalpha(c) || c == '_' || static_cast<uint8_t>(c) > 0x7f) {
             // Command or identifier
-            tokenize_command_operator_or_identifier();
+            tokenize_keyword_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number_or_identifier();
         } else if (c == '"') {

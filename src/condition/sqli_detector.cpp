@@ -139,7 +139,7 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     bool where_found = false;
     for (std::size_t i = 0; i < param_tokens_begin; ++i) {
         const auto &token = resource_tokens[i];
-        if (token.type == sql_token_type::command && string_iequals(token.str, "where")) {
+        if (token.type == sql_token_type::keyword && string_iequals(token.str, "where")) {
             where_found = true;
             break;
         }
@@ -159,7 +159,7 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
 
     // We do the cheaper test first
 
-    // Is the operator in the middle a command (OR) or an operator (=, ||...)
+    // Is the operator in the middle a keyword (OR) or an operator (=, ||...)
     auto middle_token = param_tokens[1];
     if (middle_token.type != sql_token_type::binary_operator) {
         return string_iequals(middle_token.str, "OR") || string_iequals(middle_token.str, "XOR") ||
@@ -172,11 +172,11 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     if (param_tokens[0].type != param_tokens[2].type && middle_token.str.find('=') != npos) {
         // There is *one* edge case where this still may be a tautology: when both are compatible
         // data types ('1' = 1)
-        //   * Basically, if neither is a command or identifier, it's likely a tautology
-        return param_tokens[0].type != sql_token_type::command &&
+        //   * Basically, if neither is a keyword or identifier, it's likely a tautology
+        return param_tokens[0].type != sql_token_type::keyword &&
                param_tokens[0].type != sql_token_type::identifier &&
                param_tokens[2].type != sql_token_type::identifier &&
-               param_tokens[2].type != sql_token_type::command;
+               param_tokens[2].type != sql_token_type::keyword;
     }
 
     return true;
@@ -238,7 +238,7 @@ bool has_order_by_structure(std::span<sql_token> tokens)
                 next_state = order_by_state::dot;
             } else if (current_token->type == sql_token_type::comma) {
                 next_state = order_by_state::comma;
-            } else if (current_token->type == sql_token_type::command) {
+            } else if (current_token->type == sql_token_type::keyword) {
                 if (is_asc_or_desc(current_token->str)) {
                     next_state = order_by_state::asc_or_desc;
                 } else if (is_limit_or_offset(current_token->str)) {
@@ -258,7 +258,7 @@ bool has_order_by_structure(std::span<sql_token> tokens)
             // ordinal keyword (ASC, DESC) or LIMIT / OFFSET
             if (current_token->type == sql_token_type::comma) {
                 next_state = order_by_state::comma;
-            } else if (current_token->type == sql_token_type::command) {
+            } else if (current_token->type == sql_token_type::keyword) {
                 if (is_asc_or_desc(current_token->str)) {
                     next_state = order_by_state::asc_or_desc;
                 } else if (is_limit_or_offset(current_token->str)) {
@@ -275,7 +275,7 @@ bool has_order_by_structure(std::span<sql_token> tokens)
 
             // An offset value can only be followed by another offset or limit
             // keyword, otherwise the end state is covered above
-            if (current_token->type == sql_token_type::command &&
+            if (current_token->type == sql_token_type::keyword &&
                 is_limit_or_offset(current_token->str)) {
                 next_state = order_by_state::limit_or_offset;
             }
@@ -304,7 +304,7 @@ bool has_order_by_structure(std::span<sql_token> tokens)
             // comma, or LIMIT / OFFSET.
             if (current_token->type == sql_token_type::comma) {
                 next_state = order_by_state::comma;
-            } else if (current_token->type == sql_token_type::command &&
+            } else if (current_token->type == sql_token_type::keyword &&
                        is_limit_or_offset(current_token->str)) {
                 next_state = order_by_state::limit_or_offset;
             }

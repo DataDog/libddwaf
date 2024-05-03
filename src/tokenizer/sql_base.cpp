@@ -73,8 +73,8 @@ std::ostream &operator<<(std::ostream &os, sql_dialect dialect)
 std::ostream &operator<<(std::ostream &os, sql_token_type type)
 {
     switch (type) {
-    case sql_token_type::command:
-        os << "command";
+    case sql_token_type::keyword:
+        os << "keyword";
         break;
     case sql_token_type::identifier:
         os << "identifier";

@@ -21,7 +21,7 @@ namespace {
  * with future extensions of the standard.
  */
 re2::RE2 identifier_regex(
-    R"((?i)^(?:(?P<command>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|HAVING|ORDER|PARTITION|BY|ASC|DESC|NULL)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS|LIKE|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
+    R"((?i)^(?:(?P<keyword>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|HAVING|ORDER|PARTITION|BY|ASC|DESC|NULL)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS|LIKE|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
 
 re2::RE2 parameter_regex(R"(^(?P<parameter>\$[0-9]+)(?:\b|\s|$))");
 
@@ -41,7 +41,7 @@ pgsql_tokenizer::pgsql_tokenizer(
     }
 }
 
-void pgsql_tokenizer::tokenize_command_operator_or_identifier()
+void pgsql_tokenizer::tokenize_keyword_operator_or_identifier()
 {
     sql_token token;
     token.index = index();
@@ -49,20 +49,20 @@ void pgsql_tokenizer::tokenize_command_operator_or_identifier()
     auto remaining_str = substr();
 
     re2::StringPiece binary_op;
-    re2::StringPiece command;
+    re2::StringPiece keyword;
     re2::StringPiece ident;
 
     // TODO recognize escape and bit string constants
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, identifier_regex, &command, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;
             token.str = substr(token.index, binary_op.size());
             advance(token.str.size() - 1);
-        } else if (!command.empty()) {
-            token.type = sql_token_type::command;
-            token.str = substr(token.index, command.size());
+        } else if (!keyword.empty()) {
+            token.type = sql_token_type::keyword;
+            token.str = substr(token.index, keyword.size());
             advance(token.str.size() - 1);
         } else if (!ident.empty()) {
             token.type = sql_token_type::identifier;
@@ -186,7 +186,7 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
         // TODO use an array of characters or a giant switch?
         if (ddwaf::isalpha(c) || c == '_' || static_cast<uint8_t>(c) > 0x7f) {
             // Command or identifier
-            tokenize_command_operator_or_identifier();
+            tokenize_keyword_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number();
         } else if (c == '"') {
@@ -272,7 +272,7 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
             if (n == '=') {
                 add_token(sql_token_type::binary_operator, 2);
             } else if (n == ':') {
-                add_token(sql_token_type::command, 2);
+                add_token(sql_token_type::keyword, 2);
             } else {
                 add_token(sql_token_type::colon);
             }

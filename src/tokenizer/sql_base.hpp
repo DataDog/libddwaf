@@ -20,7 +20,7 @@ enum class sql_dialect { generic, mysql, pgsql, oracle, sqlite, hsqldb, doctrine
 
 enum class sql_token_type {
     unknown,
-    command,
+    keyword,
     identifier,
     number,
     string,
