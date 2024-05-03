@@ -12,7 +12,6 @@
 #include "tokenizer/sqlite.hpp"
 #include "utils.hpp"
 
-#include <ranges>
 #include <variant>
 
 using namespace std::literals;
@@ -58,62 +57,23 @@ std::string strip_literals(std::string_view statement, std::span<sql_token> toke
     std::string stripped;
     stripped.reserve(statement.size());
 
-    /*    auto current_token = tokens.begin();*/
-    /*if (current_token == tokens.end()) {*/
-    /*// Shouldn't happen*/
-    /*return {};*/
-    /*}*/
-
     std::size_t i = 0;
-    for (auto current_token :
-        tokens | std::views::filter([](const sql_token &t) { return is_literal(t.type); })) {
-        if (i < current_token.index) {
-            stripped.append(statement.substr(i, current_token.index - i));
-            i = current_token.index;
+    for (auto token : tokens) {
+        if (!is_literal(token.type)) {
+            continue;
+        }
+
+        if (i < token.index) {
+            stripped.append(statement.substr(i, token.index - i));
+            i = token.index;
         }
         stripped.append(1, '?');
-        i += current_token.str.size();
+        i += token.str.size();
     }
 
     if (i < statement.size()) {
         stripped.append(statement.substr(i));
     }
-    /*for (std::size_t i = 0; i < statement.size();) {*/
-    /*auto token_begin = current_token->index;*/
-    /*if (i < token_begin) {*/
-    /*// Characters unrelated to the current token*/
-    /*stripped += statement.substr(i, token_begin - i);*/
-    /*i = token_begin;*/
-    /*continue;*/
-    /*}*/
-
-    /*auto token_end = token_begin + current_token->str.size();*/
-    /*if (i < token_end) {*/
-    /*// We're within the current token, so let's process it*/
-    /*if (is_literal(current_token->type)) {*/
-    /*// Since this is a literal, we replace it and skip to the next*/
-    /*// character and token*/
-    /*stripped += "?";*/
-
-    /*} else {*/
-    /*// Not a literal, copy the whole thing and move on*/
-    /*stripped += statement.substr(token_begin, current_token->str.size());*/
-    /*}*/
-
-    /*i = token_end;*/
-    /*}*/
-
-    /*// At this stage we could be past the current token or we have just*/
-    /*// copied it, in either case we move forward and reevaluate*/
-    /*if (++current_token == tokens.end()) {*/
-    /*// Since there are no more tokens, we copy any remaining characters*/
-    /*if (token_end < statement.size()) {*/
-    /*stripped += statement.substr(i);*/
-    /*}*/
-
-    /*break;*/
-    /*}*/
-    /*}*/
 
     return stripped;
 }
