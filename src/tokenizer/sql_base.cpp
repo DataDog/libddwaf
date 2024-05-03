@@ -16,7 +16,7 @@ namespace ddwaf {
 namespace {
 // Hexadecimal, octal, decimal or floating point
 re2::RE2 number_regex(
-    R"((?i)^(0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)(?:\b|\s|$))");
+    R"((?i)^(0[Xx][0-9a-fA-F](?:[0-9a-fA-F]*|_[0-9a-fA-F])*|0[Bb][01](?:[01]|_[01])*|0[Oo][0-7](?:[0-7]|_[0-7])*|(?:(?:[0-9](?:[0-9]|_[0-9])*)(?:\.[0-9](?:[0-9]|_[0-9])*)?(?:[eE][+-]?[0-9](?:[0-9]|_[0-9])*)?))(?:\b|\s|$))");
 
 } // namespace
 
@@ -171,14 +171,17 @@ template <typename T> std::string_view sql_tokenizer<T>::extract_string(char quo
     auto begin = index();
     unsigned slash_count = 0;
     while (advance()) {
-        if (peek() == '\\') {
-            // Count consecutive backslashes
-            slash_count = (slash_count + 1) % 2;
-        } else if (slash_count > 0) {
-            slash_count = 0;
-        } else if (peek() == quote && slash_count == 0) {
+        auto c = peek();
+        if (c == quote && slash_count == 0) {
+            if (next() == quote) {
+                // Skip two consecutive quotes
+                advance();
+                continue;
+            }
             break;
         }
+
+        slash_count = (c == '\\' ? (slash_count ^ 1) : 0);
     }
     return substr(begin, index() - begin + 1);
 }

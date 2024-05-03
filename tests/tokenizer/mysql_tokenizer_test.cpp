@@ -86,14 +86,15 @@ TEST(TestMySqlTokenizer, Identifiers)
 
 TEST(TestMySqlTokenizer, Number)
 {
-    std::vector<std::string> samples{
-        "0", "1.1", "+1", "-1", "1e17", "-1.0101e+17", "0x22", "0xFF", "0122", "00"};
+    std::vector<std::string> samples{"0", "1.1", "1", "1", "1e17", "1.0101e+17", "0x22", "0xFF",
+        "0122", "00", "0b101", "0B11_00", "0b110_0", "0X12_3", "0xFA_AA", "0o77", "0O7_7",
+        "012_345", "0.000_00"};
 
     for (const auto &statement : samples) {
         mysql_tokenizer tokenizer(statement);
         auto obtained_tokens = tokenizer.tokenize();
         ASSERT_EQ(obtained_tokens.size(), 1) << statement;
-        EXPECT_EQ(obtained_tokens[0].type, stt::number);
+        EXPECT_EQ(obtained_tokens[0].type, stt::number) << statement;
     }
 }
 
@@ -213,7 +214,8 @@ TEST(TestMySqlTokenizer, NonEolComment)
             {stt::binary_operator, stt::binary_operator, stt::identifier, stt::identifier}},
         {R"(SELECT * FROM table WHERE x=--1;)",
             {stt::command, stt::asterisk, stt::command, stt::identifier, stt::command,
-                stt::identifier, stt::binary_operator, stt::number, stt::query_end}},
+                stt::identifier, stt::binary_operator, stt::binary_operator, stt::binary_operator,
+                stt::number, stt::query_end}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {
@@ -238,6 +240,9 @@ TEST(TestMySqlTokenizer, DoubleQuotedString)
         {R"("this is an unterminated string)", {stt::double_quoted_string}},
         {R"(SELECT "colname")", {stt::command, stt::double_quoted_string}},
         {R"("colname" FROM)", {stt::double_quoted_string, stt::command}},
+        {R"("colname""what" FROM)", {stt::double_quoted_string, stt::command}},
+        {R"("colname\\""what" FROM)", {stt::double_quoted_string, stt::command}},
+        {R"("colname\"what FROM)", {stt::double_quoted_string}},
         {R"(SELECT "colname" FROM "table";)",
             {stt::command, stt::double_quoted_string, stt::command, stt::double_quoted_string,
                 stt::query_end}},
@@ -265,6 +270,9 @@ TEST(TestMySqlTokenizer, SingleQuotedString)
         {R"('this is an unterminated string)", {stt::single_quoted_string}},
         {R"(SELECT 'colname')", {stt::command, stt::single_quoted_string}},
         {R"('colname' FROM)", {stt::single_quoted_string, stt::command}},
+        {R"('colname''what' FROM)", {stt::single_quoted_string, stt::command}},
+        {R"('colname\\''what' FROM)", {stt::single_quoted_string, stt::command}},
+        {R"('colname\'what FROM)", {stt::single_quoted_string}},
         {R"(SELECT 'colname' FROM 'table';)",
             {stt::command, stt::single_quoted_string, stt::command, stt::single_quoted_string,
                 stt::query_end}},
@@ -381,8 +389,8 @@ TEST(TestMySqlTokenizer, Queries)
         // https://www.sqlite.org/faq.html (14)
         {R"(SELECT  1 FROM u WHERE mail = 'vega@example.com\\''' LIMIT 1 ;)",
             {stt::command, stt::number, stt::command, stt::identifier, stt::command,
-                stt::identifier, stt::binary_operator, stt::single_quoted_string,
-                stt::single_quoted_string, stt::command, stt::number, stt::query_end}},
+                stt::identifier, stt::binary_operator, stt::single_quoted_string, stt::command,
+                stt::number, stt::query_end}},
 
         {R"(SELECT /* simple inline comment */ * FROM dual)",
             {stt::command, stt::inline_comment, stt::asterisk, stt::command, stt::identifier}},
@@ -417,9 +425,10 @@ TEST(TestMySqlTokenizer, Queries)
 
         {R"(SET @v2 = b'1000001'+0, @v3 = CAST(b'1000001' AS UNSIGNED))",
             {stt::identifier, stt::identifier, stt::binary_operator, stt::identifier,
-                stt::single_quoted_string, stt::number, stt::comma, stt::identifier,
-                stt::binary_operator, stt::identifier, stt::parenthesis_open, stt::identifier,
-                stt::single_quoted_string, stt::command, stt::identifier, stt::parenthesis_close}},
+                stt::single_quoted_string, stt::binary_operator, stt::number, stt::comma,
+                stt::identifier, stt::binary_operator, stt::identifier, stt::parenthesis_open,
+                stt::identifier, stt::single_quoted_string, stt::command, stt::identifier,
+                stt::parenthesis_close}},
 
         {R"(SELECT `@v2` FROM t)", {stt::command, stt::identifier, stt::command, stt::identifier}},
 

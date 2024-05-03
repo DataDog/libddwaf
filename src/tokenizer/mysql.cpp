@@ -57,7 +57,7 @@ re2::RE2 variable_regex(
 // characters and can't consist only of numbers.
 // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 re2::RE2 number_or_identifier_regex(
-    R"((?i)^(?:(?P<number>0x[0-9a-fA-F]+|[-+]*(?:[0-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b)|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
+    R"((?i)^(?:(?P<number>0[Xx][0-9a-fA-F](?:[0-9a-fA-F]*|_[0-9a-fA-F])*|0[Bb][01](?:[01]|_[01])*|0[Oo][0-7](?:[0-7]|_[0-7])*|(?:(?:[0-9](?:[0-9]|_[0-9])*)(?:\.[0-9](?:[0-9]|_[0-9])*)?(?:[eE][+-]?[0-9](?:[0-9]|_[0-9])*)?))|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
 
 std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
 {
@@ -209,7 +209,7 @@ void mysql_tokenizer::tokenize_eol_comment()
     emplace_token(token);
 }
 
-void mysql_tokenizer::tokenize_eol_comment_operator_or_number()
+void mysql_tokenizer::tokenize_eol_comment_or_operator()
 {
     auto n = next();
     auto n2 = next(2);
@@ -225,40 +225,7 @@ void mysql_tokenizer::tokenize_eol_comment_operator_or_number()
         return;
     }
 
-    sql_token token;
-    token.index = index();
-
-    auto number_str = extract_number();
-    if (!number_str.empty()) {
-        token.type = sql_token_type::number;
-        token.str = number_str;
-        advance(number_str.size() - 1);
-    } else {
-        // If it's not a number, it must be an operator
-        token.str = substr(token.index, 1);
-        token.type = sql_token_type::binary_operator;
-    }
-
-    emplace_token(token);
-}
-
-void mysql_tokenizer::tokenize_operator_or_number()
-{
-    sql_token token;
-    token.index = index();
-
-    auto number_str = extract_number();
-    if (!number_str.empty()) {
-        token.type = sql_token_type::number;
-        token.str = number_str;
-        advance(number_str.size() - 1);
-    } else {
-        // If it's not a number, it must be an operator
-        token.str = substr(token.index, 1);
-        token.type = sql_token_type::binary_operator;
-    }
-
-    emplace_token(token);
+    add_token(sql_token_type::binary_operator);
 }
 
 std::vector<sql_token> mysql_tokenizer::tokenize_impl()
@@ -305,11 +272,9 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
         } else if (c == '/') {
             tokenize_inline_comment_or_operator();
         } else if (c == '-') {
-            tokenize_eol_comment_operator_or_number();
+            tokenize_eol_comment_or_operator();
         } else if (c == '#') {
             tokenize_eol_comment();
-        } else if (c == '+') {
-            tokenize_operator_or_number();
         } else if (c == '@') {
             tokenize_variable();
         } else if (c == '!') {
@@ -334,7 +299,7 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
             } else {
                 add_token(sql_token_type::binary_operator);
             }
-        } else if (c == '=' || c == '%') {
+        } else if (c == '=' || c == '%' || c == '+') {
             add_token(sql_token_type::binary_operator);
         } else if (c == '|') {
             if (next() == '|') {

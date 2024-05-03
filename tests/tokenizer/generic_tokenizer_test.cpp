@@ -154,14 +154,15 @@ TEST(TestGenericTokenizer, Identifiers)
 
 TEST(TestGenericTokenizer, Number)
 {
-    std::vector<std::string> samples{
-        "0", "1.1", "+1", "-1", "1e17", "-1.0101e+17", "0x22", "0xFF", "0122", "00"};
+    std::vector<std::string> samples{"0", "1.1", "1", "1", "1e17", "1.0101e+17", "0x22", "0xFF",
+        "0122", "00", "0b101", "0B11_00", "0b110_0", "0X12_3", "0xFA_AA", "0o77", "0O7_7",
+        "012_345", "0.000_00"};
 
     for (const auto &statement : samples) {
         generic_sql_tokenizer tokenizer(statement);
         auto obtained_tokens = tokenizer.tokenize();
         ASSERT_EQ(obtained_tokens.size(), 1) << statement;
-        EXPECT_EQ(obtained_tokens[0].type, stt::number);
+        EXPECT_EQ(obtained_tokens[0].type, stt::number) << statement;
     }
 }
 
@@ -284,6 +285,9 @@ TEST(TestGenericTokenizer, SingleQuotedString)
         {R"('this is an unterminated string)", {stt::single_quoted_string}},
         {R"(SELECT 'colname')", {stt::command, stt::single_quoted_string}},
         {R"('colname' FROM)", {stt::single_quoted_string, stt::command}},
+        {R"('colname''what' FROM)", {stt::single_quoted_string, stt::command}},
+        {R"('colname\\''what' FROM)", {stt::single_quoted_string, stt::command}},
+        {R"('colname\'what FROM)", {stt::single_quoted_string}},
         {R"(SELECT 'colname' FROM 'table';)",
             {stt::command, stt::single_quoted_string, stt::command, stt::single_quoted_string,
                 stt::query_end}},
@@ -396,8 +400,8 @@ TEST(TestGenericTokenizer, Queries)
         // https://www.generic.org/faq.html (14)
         {R"(SELECT  1 FROM u WHERE mail = 'vega@example.com\\''' LIMIT 1 ;)",
             {stt::command, stt::number, stt::command, stt::identifier, stt::command,
-                stt::identifier, stt::binary_operator, stt::single_quoted_string,
-                stt::single_quoted_string, stt::command, stt::number, stt::query_end}},
+                stt::identifier, stt::binary_operator, stt::single_quoted_string, stt::command,
+                stt::number, stt::query_end}},
 
         {R"(label: SELECT * FROM productLine WHERE model = 'MacPro 2013' /*randomgarbage')",
             {stt::identifier, stt::colon, stt::command, stt::asterisk, stt::command,

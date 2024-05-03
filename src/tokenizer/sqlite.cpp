@@ -26,6 +26,31 @@ sqlite_tokenizer::sqlite_tokenizer(
     }
 }
 
+std::string_view sqlite_tokenizer::extract_conforming_string(char quote)
+{
+    auto begin = index();
+    while (advance()) {
+        if (peek() == quote) {
+            if (next() == quote) {
+                // Skip two consecutive quotes
+                advance();
+                continue;
+            }
+            break;
+        }
+    }
+    return substr(begin, index() - begin + 1);
+}
+
+void sqlite_tokenizer::tokenize_conforming_string(char quote, sql_token_type type)
+{
+    sql_token token;
+    token.index = index();
+    token.type = type;
+    token.str = extract_conforming_string(quote);
+    emplace_token(token);
+}
+
 void sqlite_tokenizer::tokenize_command_operator_or_identifier()
 {
     sql_token token;
@@ -92,7 +117,7 @@ void sqlite_tokenizer::tokenize_eol_comment()
     emplace_token(token);
 }
 
-void sqlite_tokenizer::tokenize_eol_comment_operator_or_number()
+void sqlite_tokenizer::tokenize_eol_comment_or_operator_or_number()
 {
     auto n = next();
     if (n == '-') {
@@ -153,13 +178,13 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
             tokenize_number();
         } else if (c == '"') {
             // Double-quoted string, considered an identifier
-            tokenize_string('"', sql_token_type::identifier);
+            tokenize_conforming_string('"', sql_token_type::identifier);
         } else if (c == '\'') {
             // Single-quoted string
-            tokenize_string('\'', sql_token_type::single_quoted_string);
+            tokenize_conforming_string('\'', sql_token_type::single_quoted_string);
         } else if (c == '`') {
             // Backtick-quoted string, considered an identifier
-            tokenize_string('`', sql_token_type::identifier);
+            tokenize_conforming_string('`', sql_token_type::identifier);
         } else if (c == '[') {
             // If the end square bracket isn't found, all of the remaining
             // string will be considered part of the identifier
@@ -181,7 +206,7 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
         } else if (c == '/') {
             tokenize_inline_comment_or_operator();
         } else if (c == '-') {
-            tokenize_eol_comment_operator_or_number();
+            tokenize_eol_comment_or_operator_or_number();
         } else if (c == '+') {
             tokenize_operator_or_number();
         } else if (c == '!' && next() == '=') {

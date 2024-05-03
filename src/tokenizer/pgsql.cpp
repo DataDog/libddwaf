@@ -108,7 +108,7 @@ void pgsql_tokenizer::tokenize_eol_comment()
     emplace_token(token);
 }
 
-void pgsql_tokenizer::tokenize_eol_comment_operator_or_number()
+void pgsql_tokenizer::tokenize_eol_comment_or_operator()
 {
     auto n = next();
     if (n == '-') {
@@ -121,40 +121,7 @@ void pgsql_tokenizer::tokenize_eol_comment_operator_or_number()
         return;
     }
 
-    sql_token token;
-    token.index = index();
-
-    auto number_str = extract_number();
-    if (!number_str.empty()) {
-        token.type = sql_token_type::number;
-        token.str = number_str;
-        advance(number_str.size() - 1);
-    } else {
-        // If it's not a number, it must be an operator
-        token.str = substr(token.index, 1);
-        token.type = sql_token_type::binary_operator;
-    }
-
-    emplace_token(token);
-}
-
-void pgsql_tokenizer::tokenize_operator_or_number()
-{
-    sql_token token;
-    token.index = index();
-
-    auto number_str = extract_number();
-    if (!number_str.empty()) {
-        token.type = sql_token_type::number;
-        token.str = number_str;
-        advance(number_str.size() - 1);
-    } else {
-        // If it's not a number, it must be an operator
-        token.str = substr(token.index, 1);
-        token.type = sql_token_type::binary_operator;
-    }
-
-    emplace_token(token);
+    add_token(sql_token_type::binary_operator);
 }
 
 void pgsql_tokenizer::tokenize_dollar_quoted_string()
@@ -266,9 +233,7 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
         } else if (c == '/') {
             tokenize_inline_comment_or_operator();
         } else if (c == '-') {
-            tokenize_eol_comment_operator_or_number();
-        } else if (c == '+') {
-            tokenize_operator_or_number();
+            tokenize_eol_comment_or_operator();
         } else if (c == '@') {
             auto n = next();
             if (n == '@' || n == '>') {
@@ -292,7 +257,7 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
             } else {
                 add_token(sql_token_type::binary_operator);
             }
-        } else if (c == '=' || c == '%') {
+        } else if (c == '=' || c == '%' || c == '+') {
             add_token(sql_token_type::binary_operator);
         } else if (c == '|') {
             if (next() == '|') {
