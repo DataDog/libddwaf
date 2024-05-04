@@ -45,7 +45,8 @@ bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
 bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     std::span<sql_token> param_tokens, std::size_t param_tokens_begin);
 
-bool is_query_comment(std::span<sql_token> tokens);
+bool is_query_comment(const std::vector<sql_token> &resource_tokens,
+    std::span<sql_token> param_tokens, std::size_t param_tokens_begin);
 
 } // namespace internal
 

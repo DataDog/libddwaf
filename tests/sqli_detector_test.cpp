@@ -102,6 +102,7 @@ TEST_P(DialectTestFixture, BenignInjections)
                AND markbook_students.inactive IS NULL)",
             "4242"},
         {R"(SELECT values FROM table WHERE column IN (1, 2, 3, 4, 5);)", "(1, 2, 3, 4, 5)"},
+        {R"(SELECT values FROM table WHERE id=-- admin)", "-- admin"},
     };
 
     sqli_detector cond{
@@ -280,6 +281,11 @@ TEST_P(DialectTestFixture, Comments)
             R"(SELECT x FROM t WHERE id=?-- AND pwd='pwd'''--)", R"('--)"},
         {R"(SELECT * FROM ships WHERE id= 1 -- AND password=HASH('str') 1 --)",
             R"(SELECT * FROM ships WHERE id= ? -- AND password=HASH('str') 1 --)", R"( 1 --)"},
+        {R"(SELECT * FROM ships WHERE id=-- AND password=HASH('str')
+        1 OR 1)",
+            R"(SELECT * FROM ships WHERE id=-- AND password=HASH('str')
+        ? OR ?)",
+            R"(-- AND)"},
     };
 
     sqli_detector cond{
@@ -327,6 +333,11 @@ TEST(TestSQLiDetectorMySql, Comments)
             R"(SELECT x FROM t WHERE id=?# AND pwd='pwd'''# )", R"('# )"},
         {R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 #)",
             R"(SELECT * FROM ships WHERE id= ? # AND password=HASH('str') 1 #)", R"( 1 #)"},
+        {R"(SELECT * FROM ships WHERE id=# AND password=HASH('str')
+        1 OR 1)",
+            R"(SELECT * FROM ships WHERE id=# AND password=HASH('str')
+        ? OR ?)",
+            R"(# AND)"},
     };
 
     sqli_detector cond{

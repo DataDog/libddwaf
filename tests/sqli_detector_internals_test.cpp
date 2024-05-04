@@ -227,6 +227,12 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
         {R"(SELECT * FROM ships WHERE id= 1 --AND password=HASH('str') 1 --)", R"( 1 --)"},
         {R"(SELECT x FROM t WHERE id=''-- AND pwd='pwd'''--)", R"('--)"},
         {R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 # )", R"( 1 # )"},
+        {R"(SELECT * FROM ships WHERE id=#  AND password=HASH('str')
+        1 OR 1)",
+            R"(#  )"},
+        {R"(SELECT * FROM ships WHERE id=--  AND password=HASH('str')
+        1 OR 1)",
+            R"(--  )"},
     };
 
     for (const auto &[statement, param] : samples) {
@@ -239,7 +245,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
         auto [param_tokens, param_index] =
             internal::get_consecutive_tokens(resource_tokens, param_begin, param_end);
 
-        EXPECT_TRUE(internal::is_query_comment(param_tokens));
+        EXPECT_TRUE(internal::is_query_comment(resource_tokens, param_tokens, param_index));
     }
 }
 

@@ -78,7 +78,10 @@ std::string strip_literals(std::string_view statement, std::span<sql_token> toke
     return stripped;
 }
 
-bool is_query_comment(std::span<sql_token> tokens)
+bool is_query_comment(const std::vector<sql_token> &resource_tokens,
+    std::span<sql_token> param_tokens,
+    std::size_t param_tokens_begin /* first index of param_tokens in resource_tokens */)
+
 {
     /* We want to consider as malicious user-injected comments, even if they
      * are below our 3 tokens limit.
@@ -92,9 +95,9 @@ bool is_query_comment(std::span<sql_token> tokens)
      *                              \---/
      *                            injected string
      */
-    for (std::size_t i = 1; i < tokens.size(); ++i) {
-        if (tokens[i].type == sql_token_type::eol_comment) {
-            return true;
+    for (std::size_t i = 0; i < param_tokens.size(); ++i) {
+        if (param_tokens[i].type == sql_token_type::eol_comment) {
+            return i > 0 || param_tokens_begin < (resource_tokens.size() - 1);
         }
     }
 
@@ -479,7 +482,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
                 !is_benign_order_by_clause(resource_tokens, param_tokens, param_tokens_begin)) ||
             (param_tokens.size() < min_token_count &&
                 (is_where_tautology(resource_tokens, param_tokens, param_tokens_begin) ||
-                    is_query_comment(param_tokens)))) {
+                    is_query_comment(resource_tokens, param_tokens, param_tokens_begin)))) {
             return matched_param{std::string(value), it.get_current_path()};
         }
     }
