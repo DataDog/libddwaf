@@ -78,7 +78,6 @@ void pgsql_tokenizer::tokenize_string_keyword_operator_or_identifier()
     re2::StringPiece keyword;
     re2::StringPiece ident;
 
-    // TODO recognize escape and bit string constants
     const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
     if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
