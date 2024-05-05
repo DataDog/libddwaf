@@ -128,10 +128,14 @@ protected:
         }
     }
 
-    std::string_view extract_string(char quote);
+    std::string_view extract_unescaped_string(char quote);
+    std::string_view extract_conforming_string(char quote);
+    std::string_view extract_escaped_string(char quote);
     std::string_view extract_number();
 
-    void tokenize_string(char quote, sql_token_type type);
+    void tokenize_unescaped_string(char quote, sql_token_type type);
+    void tokenize_conforming_string(char quote, sql_token_type type);
+    void tokenize_escaped_string(char quote, sql_token_type type);
     void tokenize_number();
 
     std::string_view buffer_;

@@ -26,31 +26,6 @@ sqlite_tokenizer::sqlite_tokenizer(
     }
 }
 
-std::string_view sqlite_tokenizer::extract_conforming_string(char quote)
-{
-    auto begin = index();
-    while (advance()) {
-        if (peek() == quote) {
-            if (next() == quote) {
-                // Skip two consecutive quotes
-                advance();
-                continue;
-            }
-            break;
-        }
-    }
-    return substr(begin, index() - begin + 1);
-}
-
-void sqlite_tokenizer::tokenize_conforming_string(char quote, sql_token_type type)
-{
-    sql_token token;
-    token.index = index();
-    token.type = type;
-    token.str = extract_conforming_string(quote);
-    emplace_token(token);
-}
-
 void sqlite_tokenizer::tokenize_keyword_operator_or_identifier()
 {
     sql_token token;

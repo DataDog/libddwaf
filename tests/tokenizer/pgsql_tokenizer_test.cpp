@@ -180,14 +180,16 @@ TEST(TestPgSqlTokenizer, DoubleQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"("this is a string")", {stt::identifier}},
-        {R"("this is \"quoted\" string")", {stt::identifier}},
-        {R"("this is \"quoted\" string" and "another string")",
+        {R"("this is ""quoted"" string")", {stt::identifier}},
+        {R"("this is ""quoted"" string" and "another string")",
             {stt::identifier, stt::binary_operator, stt::identifier}},
         {R"("this is an unterminated string)", {stt::identifier}},
         {R"(SELECT "colname")", {stt::keyword, stt::identifier}},
         {R"("colname" FROM)", {stt::identifier, stt::keyword}},
         {R"(SELECT "colname" FROM "table";)",
             {stt::keyword, stt::identifier, stt::keyword, stt::identifier, stt::query_end}},
+        {R"(U&"colname")", {stt::identifier}},
+        {R"(U&"col""name")", {stt::identifier}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {
@@ -216,30 +218,14 @@ TEST(TestPgSqlTokenizer, SingleQuotedString)
         {R"(SELECT 'colname' FROM 'table';)",
             {stt::keyword, stt::single_quoted_string, stt::keyword, stt::single_quoted_string,
                 stt::query_end}},
-    };
-
-    for (const auto &[statement, expected_tokens] : samples) {
-        pgsql_tokenizer tokenizer(statement);
-        auto obtained_tokens = tokenizer.tokenize();
-        ASSERT_EQ(expected_tokens.size(), obtained_tokens.size()) << statement;
-        for (std::size_t i = 0; i < obtained_tokens.size(); ++i) {
-            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type);
-        }
-    }
-}
-
-TEST(TestPgSqlTokenizer, BacktickQuotedString)
-{
-    std::vector<std::pair<std::string, std::vector<stt>>> samples{
-        {R"(`this is a string`)", {stt::back_quoted_string}},
-        {R"(`this is \`quoted\` string`)", {stt::back_quoted_string}},
-        {R"(`this is \`quoted\` string` and `another string`)",
-            {stt::back_quoted_string, stt::binary_operator, stt::back_quoted_string}},
-        {R"(`this is an unterminated string)", {stt::back_quoted_string}},
-        {R"(SELECT `colname`)", {stt::keyword, stt::back_quoted_string}},
-        {R"(`colname` FROM)", {stt::back_quoted_string, stt::keyword}},
-        {R"(SELECT `colname` FROM `table`;)", {stt::keyword, stt::back_quoted_string, stt::keyword,
-                                                  stt::back_quoted_string, stt::query_end}},
+        {R"(E'colname')", {stt::single_quoted_string}},
+        {R"(e'colname')", {stt::single_quoted_string}},
+        {R"(B'010101')", {stt::single_quoted_string}},
+        {R"(b'101010')", {stt::single_quoted_string}},
+        {R"(X'AFB001')", {stt::single_quoted_string}},
+        {R"(x'123ABC')", {stt::single_quoted_string}},
+        {R"(U&'\00FF hello')", {stt::single_quoted_string}},
+        {R"(u&'\00FF hello')", {stt::single_quoted_string}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {
@@ -308,9 +294,9 @@ TEST(TestPgSqlTokenizer, Queries)
             {stt::keyword, stt::asterisk, stt::keyword, stt::identifier, stt::keyword, stt::number,
                 stt::query_end}},
 
-        {R"(SELECT COUNT(*) FROM `groups` WHERE to_tsvector('fat cats ate rats') @@ to_tsquery('cat & rat'))",
+        {R"(SELECT COUNT(*) FROM "groups" WHERE to_tsvector('fat cats ate rats') @@ to_tsquery('cat & rat'))",
             {stt::keyword, stt::identifier, stt::parenthesis_open, stt::asterisk,
-                stt::parenthesis_close, stt::keyword, stt::back_quoted_string, stt::keyword,
+                stt::parenthesis_close, stt::keyword, stt::identifier, stt::keyword,
                 stt::identifier, stt::parenthesis_open, stt::single_quoted_string,
                 stt::parenthesis_close, stt::binary_operator, stt::identifier,
                 stt::parenthesis_open, stt::single_quoted_string, stt::parenthesis_close}},
@@ -427,7 +413,7 @@ TEST(TestPgSqlTokenizer, JsonQueries)
 
 TEST(TestPgSqlTokenizer, TextSearchOperator)
 {
-    pgsql_tokenizer tokenizer("SELECT COUNT(*) FROM `groups` WHERE to_tsvector('fat cats ate "
+    pgsql_tokenizer tokenizer(R"(SELECT COUNT(*) FROM "groups" WHERE to_tsvector('fat cats ate )"
                               "rats') @@ to_tsquery('cat & rat')");
     auto tokens = tokenizer.tokenize();
 

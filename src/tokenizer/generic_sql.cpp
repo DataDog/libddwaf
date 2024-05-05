@@ -116,11 +116,11 @@ std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
         } else if (c == '"') {
             // For compatibility, double-quoted strings are always considered
             // identifiers.
-            tokenize_string('"', sql_token_type::identifier);
+            tokenize_escaped_string('"', sql_token_type::identifier);
         } else if (c == '\'') { // Single-quoted string
-            tokenize_string('\'', sql_token_type::single_quoted_string);
+            tokenize_escaped_string('\'', sql_token_type::single_quoted_string);
         } else if (c == '`') { // Backtick-quoted string
-            tokenize_string('`', sql_token_type::back_quoted_string);
+            tokenize_escaped_string('`', sql_token_type::back_quoted_string);
         } else if (c == '(') {
             add_token(sql_token_type::parenthesis_open);
         } else if (c == ')') {

@@ -166,7 +166,30 @@ sql_tokenizer<T>::sql_tokenizer(
     }
 }
 
-template <typename T> std::string_view sql_tokenizer<T>::extract_string(char quote)
+template <typename T> std::string_view sql_tokenizer<T>::extract_unescaped_string(char quote)
+{
+    auto begin = index();
+    while (advance() && peek() != quote) {}
+    return substr(begin, index() - begin + 1);
+}
+
+template <typename T> std::string_view sql_tokenizer<T>::extract_conforming_string(char quote)
+{
+    auto begin = index();
+    while (advance()) {
+        if (peek() == quote) {
+            if (next() == quote) {
+                // Skip two consecutive quotes
+                advance();
+                continue;
+            }
+            break;
+        }
+    }
+    return substr(begin, index() - begin + 1);
+}
+
+template <typename T> std::string_view sql_tokenizer<T>::extract_escaped_string(char quote)
 {
     auto begin = index();
     unsigned slash_count = 0;
@@ -199,12 +222,33 @@ template <typename T> std::string_view sql_tokenizer<T>::extract_number()
     return {};
 }
 
-template <typename T> void sql_tokenizer<T>::tokenize_string(char quote, sql_token_type type)
+template <typename T>
+void sql_tokenizer<T>::tokenize_unescaped_string(char quote, sql_token_type type)
 {
     sql_token token;
     token.index = index();
     token.type = type;
-    token.str = extract_string(quote);
+    token.str = extract_unescaped_string(quote);
+    emplace_token(token);
+}
+
+template <typename T>
+void sql_tokenizer<T>::tokenize_conforming_string(char quote, sql_token_type type)
+{
+    sql_token token;
+    token.index = index();
+    token.type = type;
+    token.str = extract_conforming_string(quote);
+    emplace_token(token);
+}
+
+template <typename T>
+void sql_tokenizer<T>::tokenize_escaped_string(char quote, sql_token_type type)
+{
+    sql_token token;
+    token.index = index();
+    token.type = type;
+    token.str = extract_escaped_string(quote);
     emplace_token(token);
 }
 

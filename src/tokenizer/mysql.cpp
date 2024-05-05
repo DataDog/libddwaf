@@ -242,12 +242,12 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
             // Double-quoted string, this can also be considered an identifier
             // if the ANSI_QUOTE mode is enabled, however we have no way of
             // knowing
-            tokenize_string('"', sql_token_type::double_quoted_string);
+            tokenize_escaped_string('"', sql_token_type::double_quoted_string);
         } else if (c == '\'') { // Single-quoted string
-            tokenize_string('\'', sql_token_type::single_quoted_string);
+            tokenize_escaped_string('\'', sql_token_type::single_quoted_string);
         } else if (c == '`') {
             // Backtick-quoted strings are considered identifiers
-            tokenize_string('`', sql_token_type::identifier);
+            tokenize_escaped_string('`', sql_token_type::identifier);
         } else if (c == '(') {
             add_token(sql_token_type::parenthesis_open);
         } else if (c == ')') {

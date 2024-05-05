@@ -41,10 +41,36 @@ pgsql_tokenizer::pgsql_tokenizer(
     }
 }
 
-void pgsql_tokenizer::tokenize_keyword_operator_or_identifier()
+void pgsql_tokenizer::tokenize_string_keyword_operator_or_identifier()
 {
     sql_token token;
     token.index = index();
+
+    auto c = ddwaf::tolower(peek());
+    auto n = next();
+    auto n2 = next(2);
+
+    // Unicode identifier or unicode escaped string
+    if (c == 'u' && n == '&' && (n2 == '\'' || n2 == '"')) {
+        advance(2);
+        token.str = extract_conforming_string(n2);
+        token.type = n2 == '\'' ? sql_token_type::single_quoted_string : sql_token_type::identifier;
+        emplace_token(token);
+        return;
+    }
+
+    // Escaped string or bit-string
+    if ((c == 'e' || c == 'b' || c == 'x') && n == '\'') {
+        advance();
+        // The substring won't contain the prefix, but it's not required
+        // Also, bit-strings have a reduced character set not taken into
+        // consideration here, however it probably also doesn't make a
+        // difference to us since we're not using the value.
+        token.str = c == 'e' ? extract_escaped_string('\'') : extract_unescaped_string('\'');
+        token.type = sql_token_type::single_quoted_string;
+        emplace_token(token);
+        return;
+    }
 
     auto remaining_str = substr();
 
@@ -186,20 +212,18 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
         // TODO use an array of characters or a giant switch?
         if (ddwaf::isalpha(c) || c == '_' || static_cast<uint8_t>(c) > 0x7f) {
             // Command or identifier
-            tokenize_keyword_operator_or_identifier();
+            tokenize_string_keyword_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number();
         } else if (c == '"') {
             // Double quoted strings in pgsql are considered identifiers:
             // https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
-            tokenize_string('"', sql_token_type::identifier);
+            tokenize_conforming_string('"', sql_token_type::identifier);
         } else if (c == '\'') {
-            // Single-quoted string constants
-            tokenize_string('\'', sql_token_type::single_quoted_string);
-        } else if (c == '`') {
-            // Backtick-quoted string, in theory this aren't supported although
-            // supporting them doesn't hurt
-            tokenize_string('`', sql_token_type::back_quoted_string);
+            // Single-quoted string constants, since we can't know if
+            // standard_conforming_strings == off, assume the string quote
+            // can be escaped using '\'.
+            tokenize_escaped_string('\'', sql_token_type::single_quoted_string);
         } else if (c == '$') { // Dollar-quoted string or identifier
             tokenize_dollar_string_or_identifier();
         } else if (c == '(') {
