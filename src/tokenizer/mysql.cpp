@@ -5,7 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "tokenizer/mysql.hpp"
+#include "log.hpp"
 #include "utils.hpp"
+
+using namespace std::literals;
 
 namespace ddwaf {
 namespace {
@@ -323,6 +326,9 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
             add_token(sql_token_type::curly_brace_open);
         } else if (c == '}') {
             add_token(sql_token_type::curly_brace_close);
+        } else if (!ddwaf::isspace(c)) {
+            DDWAF_DEBUG("Failed to parse sql statement {}, unexpected character {}", buffer_, c);
+            return {};
         }
     }
     return tokens_;

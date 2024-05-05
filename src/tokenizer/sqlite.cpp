@@ -5,7 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "tokenizer/sqlite.hpp"
+#include "log.hpp"
 #include "utils.hpp"
+
+using namespace std::literals;
 
 namespace ddwaf {
 namespace {
@@ -214,6 +217,9 @@ std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
             add_token(sql_token_type::bitwise_operator);
         } else if (c == ':') {
             add_token(sql_token_type::colon);
+        } else if (!ddwaf::isspace(c)) {
+            DDWAF_DEBUG("Failed to parse sql statement {}, unexpected character {}", buffer_, c);
+            return {};
         }
     }
     return tokens_;
