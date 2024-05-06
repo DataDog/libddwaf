@@ -309,7 +309,7 @@ constexpr std::array<char, N> make_array(const char (&str)[N], std::index_sequen
 }
 
 template <std::size_t N>
-constexpr bool string_iequals_literal(std::string_view left, const char (&right)[N])
+constexpr inline bool string_iequals_literal(std::string_view left, const char (&right)[N])
 {
     return left.size() == (N - 1) && std::equal(left.begin(), left.end(),
                                          make_array(right, std::make_index_sequence<N>()).begin(),
