@@ -121,6 +121,9 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
             bool ephemeral = path.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
+
+            DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
+
             cache.match =
                 condition_match{{{"resource"sv, std::string{path.value}, path.address, path_kp},
                                     {"params"sv, highlight, param.address, param_kp}},
