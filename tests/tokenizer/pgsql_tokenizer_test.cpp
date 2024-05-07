@@ -206,15 +206,15 @@ TEST(TestPgSqlTokenizer, SingleQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {R"('this is a string')", {stt::single_quoted_string}},
-        {R"('this is \'quoted\' string')", {stt::single_quoted_string}},
-        {R"('this is \'quoted\' string' and 'another string')",
+        {R"('this is ''quoted'' string')", {stt::single_quoted_string}},
+        {R"('this is ''quoted'' string' and 'another string')",
             {stt::single_quoted_string, stt::binary_operator, stt::single_quoted_string}},
         {R"('this is an unterminated string)", {stt::single_quoted_string}},
         {R"(SELECT 'colname')", {stt::keyword, stt::single_quoted_string}},
         {R"('colname' FROM)", {stt::single_quoted_string, stt::keyword}},
         {R"('colname''what' FROM)", {stt::single_quoted_string, stt::keyword}},
         {R"('colname\\''what' FROM)", {stt::single_quoted_string, stt::keyword}},
-        {R"('colname\'what FROM)", {stt::single_quoted_string}},
+        {R"('colname''what FROM)", {stt::single_quoted_string}},
         {R"(SELECT 'colname' FROM 'table';)",
             {stt::keyword, stt::single_quoted_string, stt::keyword, stt::single_quoted_string,
                 stt::query_end}},

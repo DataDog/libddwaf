@@ -222,10 +222,8 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
             // https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
             tokenize_conforming_string('"', sql_token_type::identifier);
         } else if (c == '\'') {
-            // Single-quoted string constants, since we can't know if
-            // standard_conforming_strings == off, assume the string quote
-            // can be escaped using '\'.
-            tokenize_escaped_string('\'', sql_token_type::single_quoted_string);
+            // Single-quoted string constants, assuming standard_conforming_strings == on
+            tokenize_conforming_string('\'', sql_token_type::single_quoted_string);
         } else if (c == '$') { // Dollar-quoted string or identifier
             tokenize_dollar_string_or_identifier();
         } else if (c == '(') {
