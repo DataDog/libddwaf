@@ -1,7 +1,7 @@
 # libddwaf release
 
 ### v1.18.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
-This version introduces a new RASP operator for detecting SQL injections. In addition, the ruleset parser has been updated to allow non-string parameter values on action definitions.
+This version introduces a new operator `sqli_detector` for the detection of SQL injections. In addition, the ruleset parser has been updated to allow non-string parameter values on action definitions.
 
 #### Changes
 - SQL Injection (SQLi) Detection Operator ([#284](https://github.com/DataDog/libddwaf/pull/284))
