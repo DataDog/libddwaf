@@ -1,0 +1,1 @@
+select @version,sin(((@version)),2 from bar where

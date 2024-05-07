@@ -1,0 +1,3 @@
+                SELECT id, author, title, body, created_at
+                FROM posts
+                WHERE id = 1 OR 1 = 1

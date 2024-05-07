@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
         printf("Processing %s\n", argv[fileIndex]);
 #endif
         YAML::Node rule = YAML::Load(read_file(argv[fileIndex]));
+        rule["enabled"] = true;
         ddwaf_object convertedRule = convertRuleToRuleset(rule);
         ddwaf_handle handle = ddwaf_init(&convertedRule, nullptr, nullptr);
         ddwaf_object_free(&convertedRule);
@@ -104,7 +105,7 @@ int main(int argc, char *argv[])
     }
 
     if (success) {
-        printf("Validated a total of %d rules\n", argc);
+        printf("Validated a total of %d rules\n", argc - 1);
     }
 
     return success ? EXIT_SUCCESS : EXIT_FAILURE;

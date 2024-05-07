@@ -1,0 +1,8 @@
+SELECT scale_grades.weight
+FROM grades
+LEFT JOIN markbook_students USING (markbook_student_id)
+LEFT JOIN markbook_columns ON (grades.task_id = markbook_columns.task_id)
+LEFT JOIN 4_blabla.scale_grades ON (grades.scale_grade_id = scale_grades.scale_grade_id)
+WHERE markbook_column_id = '4242'
+AND markbook_class_id = '4242'
+AND markbook_students.inactive IS NULL

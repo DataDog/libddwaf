@@ -7,8 +7,6 @@
 #pragma once
 
 #include <fmt/core.h>
-#include <string>
-#include <type_traits>
 
 #include "ddwaf.h"
 

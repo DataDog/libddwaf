@@ -41,6 +41,10 @@ bool redact_match(const ddwaf::obfuscator &obfuscator, const condition_match &ma
 
 ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str, bool redact = false)
 {
+    if (str.empty()) {
+        return ddwaf_object_stringl(&tmp, "", 0);
+    }
+
     if (redact) {
         return ddwaf_object_stringl(
             &tmp, ddwaf::obfuscator::redaction_msg.data(), ddwaf::obfuscator::redaction_msg.size());

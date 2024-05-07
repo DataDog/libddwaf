@@ -22,6 +22,11 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/platform.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
+    ${libddwaf_SOURCE_DIR}/src/tokenizer/sql_base.cpp
+    ${libddwaf_SOURCE_DIR}/src/tokenizer/pgsql.cpp
+    ${libddwaf_SOURCE_DIR}/src/tokenizer/mysql.cpp
+    ${libddwaf_SOURCE_DIR}/src/tokenizer/sqlite.cpp
+    ${libddwaf_SOURCE_DIR}/src/tokenizer/generic_sql.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
@@ -33,6 +38,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/sqli_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/ssrf_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/scalar_condition.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/phrase_match.cpp
@@ -98,12 +104,13 @@ set(LIBDDWAF_PRIVATE_INCLUDES
     ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/
     ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/
-    ${libddwaf_SOURCE_DIR}/src/vendor/re2/)
+    ${libddwaf_SOURCE_DIR}/src/vendor/re2/
+)
 
 function(gen_objects target_name)
-    add_library(${target_name} OBJECT ${LIBDDWAF_SOURCE})
+    add_library(${target_name} OBJECT ${LIBDDWAF_SOURCE} )
 
-# we need PIC even on the static lib,as it's expected to be linked in a shared lib
+    # we need PIC even on the static lib,as it's expected to be linked in a shared lib
     set_target_properties(${target_name} PROPERTIES
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
