@@ -513,8 +513,11 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
 
             auto &[highlight, param_kp] = std::get<internal::matched_param>(res);
+
+            DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
+
             cache.match =
-                condition_match{{{"resource"sv, std::string{stripped_stmt}, sql.address, sql_kp},
+                condition_match{{{"resource"sv, stripped_stmt, sql.address, sql_kp},
                                     {"params"sv, highlight, param.address, param_kp},
                                     {"db_type"sv, std::string{db_type.value}, db_type.address, {}}},
                     {std::move(highlight)}, "sqli_detector", {}, ephemeral};
