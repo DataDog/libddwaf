@@ -78,6 +78,15 @@ jobs:
             params: "--dialect=sqlite"
           - fuzzer: sql_tokenizer
             params: "--dialect=standard"
+          - fuzzer: sqli_detector
+            params: "--dialect=mysql"
+          - fuzzer: sqli_detector
+            params: "--dialect=postgresql"
+          - fuzzer: sqli_detector
+            params: "--dialect=sqlite"
+          - fuzzer: sqli_detector
+            params: "--dialect=standard"
+
     steps:
       - uses: actions/checkout@v4
         with:
