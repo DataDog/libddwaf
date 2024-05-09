@@ -91,11 +91,6 @@ struct _ddwaf_config
         /** Regular expression for value-based obfuscation */
         const char *value_regex;
     } obfuscator;
-
-    /** Function to free the ddwaf::object provided to the context during calls
-     *  to ddwaf_run. If the value of this function is NULL, the objects will
-     *  not be freed. The default value should be ddwaf_object_free. */
-    ddwaf_object_free_fn free_fn;
 };
 
 /**

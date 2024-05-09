@@ -21,17 +21,17 @@ iterator_base<T>::iterator_base(
 
 template <typename T> bool iterator_base<T>::operator++()
 {
-    if (current_ != nullptr) {
+    if (current_.is_valid()) {
         T &derived = static_cast<T &>(*this);
         derived.set_cursor_to_next_object();
     }
-    return current_ != nullptr;
+    return current_.is_valid();
 }
 
 // TODO: return string_view as this will be immediately copied after
 template <typename T> std::vector<std::string> iterator_base<T>::get_current_path() const
 {
-    if (current_ == nullptr) {
+    if (current_.is_invalid()) {
         return {};
     }
 
@@ -68,15 +68,14 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     return keys;
 }
 
-value_iterator::value_iterator(const object_view *obj, const std::span<const std::string> &path,
+value_iterator::value_iterator(object_view obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void value_iterator::initialise_cursor(
-    const object_view *obj, const std::span<const std::string> &path)
+void value_iterator::initialise_cursor(object_view obj, const std::span<const std::string> &path)
 {
     if (excluded_.contains(obj)) {
         return;
@@ -104,7 +103,7 @@ void value_iterator::initialise_cursor(
 }
 
 void value_iterator::initialise_cursor_with_path(
-    const object_view *obj, const std::span<const std::string> &path)
+    object_view obj, const std::span<const std::string> &path)
 {
     // An object with a path should always start with a container
     if (!is_container(obj)) {
@@ -122,7 +121,7 @@ void value_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
-        const object_view *child = nullptr;
+        object_view child = nullptr;
         if (parent->type() == object_type::map) {
             auto size = parent->size() > limits_.max_container_size ? limits_.max_container_size
                                                                     : parent->size();
@@ -214,15 +213,14 @@ void value_iterator::set_cursor_to_next_object()
     }
 }
 
-key_iterator::key_iterator(const object_view *obj, const std::span<const std::string> &path,
+key_iterator::key_iterator(object_view obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void key_iterator::initialise_cursor(
-    const object_view *obj, const std::span<const std::string> &path)
+void key_iterator::initialise_cursor(object_view obj, const std::span<const std::string> &path)
 {
     if (excluded_.contains(obj)) {
         return;
@@ -244,7 +242,7 @@ void key_iterator::initialise_cursor(
 }
 
 void key_iterator::initialise_cursor_with_path(
-    const object_view *obj, const std::span<const std::string> &path)
+    object_view obj, const std::span<const std::string> &path)
 {
     if (path.size() >= limits_.max_container_depth) {
         return;
@@ -257,7 +255,7 @@ void key_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
-        const object_view *child = nullptr;
+        object_view child = nullptr;
         if (parent->type() == object_type::map) {
             auto size = parent->size() > limits_.max_container_size ? limits_.max_container_size
                                                                     : parent->size();
@@ -301,7 +299,7 @@ void key_iterator::initialise_cursor_with_path(
 
 void key_iterator::set_cursor_to_next_object()
 {
-    const object_view *previous = current_;
+    object_view previous = current_;
     current_ = nullptr;
 
     while (!stack_.empty() && current_ == nullptr) {
@@ -314,7 +312,7 @@ void key_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        const object_view *child = (*parent)[index];
+        object_view child = (*parent)[index];
 
         if (excluded_.contains(child)) {
             ++index;
@@ -345,15 +343,14 @@ void key_iterator::set_cursor_to_next_object()
     }
 }
 
-kv_iterator::kv_iterator(const object_view *obj, const std::span<const std::string> &path,
+kv_iterator::kv_iterator(object_view obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void kv_iterator::initialise_cursor(
-    const object_view *obj, const std::span<const std::string> &path)
+void kv_iterator::initialise_cursor(object_view obj, const std::span<const std::string> &path)
 {
     if (excluded_.contains(obj)) {
         return;
@@ -382,7 +379,7 @@ void kv_iterator::initialise_cursor(
 }
 
 void kv_iterator::initialise_cursor_with_path(
-    const object_view *obj, const std::span<const std::string> &path)
+    object_view obj, const std::span<const std::string> &path)
 {
     if (path.size() >= limits_.max_container_depth) {
         return;
@@ -395,7 +392,7 @@ void kv_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
-        const object_view *child = nullptr;
+        object_view child = nullptr;
         if (parent->type() == object_type::map) {
             auto size = parent->size() > limits_.max_container_size ? limits_.max_container_size
                                                                     : parent->size();
@@ -454,7 +451,7 @@ void kv_iterator::initialise_cursor_with_path(
 
 void kv_iterator::set_cursor_to_next_object()
 {
-    const object_view *previous = current_;
+    object_view previous = current_;
     current_ = nullptr;
 
     while (!stack_.empty() && current_ == nullptr) {
@@ -467,7 +464,7 @@ void kv_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        const object_view *child = (*parent)[index];
+        object_view child = (*parent)[index];
 
         if (excluded_.contains(child)) {
             ++index;

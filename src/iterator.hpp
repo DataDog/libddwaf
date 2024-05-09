@@ -30,10 +30,10 @@ public:
 
     bool operator++();
 
-    [[nodiscard]] explicit operator bool() const { return current_ != nullptr; }
+    [[nodiscard]] explicit operator bool() const { return current_.is_valid(); }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
-    [[nodiscard]] const object_view *get_underlying_object() { return current_; }
+    [[nodiscard]] object_view get_underlying_object() { return current_; }
 
 protected:
     static constexpr std::size_t initial_stack_size = 32;
@@ -45,7 +45,7 @@ protected:
     // can later provide the accurate full key path.
     std::vector<std::string> path_;
     std::vector<std::pair<const object_view *, std::size_t>> stack_;
-    const object_view *current_{nullptr};
+    const object_view current_;
 
     const exclusion::object_set_ref &excluded_;
 };
@@ -63,16 +63,9 @@ public:
     value_iterator &operator=(const value_iterator &) = delete;
     value_iterator &operator=(value_iterator &&) = delete;
 
-    [[nodiscard]] const object_view *operator*()
-    {
-        return reinterpret_cast<const object_view *>(current_);
-    }
+    [[nodiscard]] object_view operator*() { return current_; }
 
-    [[nodiscard]] DDWAF_OBJ_TYPE type() const
-    {
-        return current_ != nullptr ? static_cast<DDWAF_OBJ_TYPE>(current_->type())
-                                   : DDWAF_OBJ_INVALID;
-    }
+    [[nodiscard]] object_type type() const { return current_.type(); }
 
 protected:
     void initialise_cursor(const object_view *obj, const std::span<const std::string> &path);
@@ -97,12 +90,12 @@ public:
     key_iterator &operator=(const key_iterator &) = delete;
     key_iterator &operator=(key_iterator &&) = delete;
 
-    [[nodiscard]] DDWAF_OBJ_TYPE type() const
+    [[nodiscard]] object_type type() const
     {
         if (current_ != nullptr && current_->has_key()) {
-            return DDWAF_OBJ_STRING;
+            return object_type::string;
         }
-        return DDWAF_OBJ_INVALID;
+        return object_type::invalid;
     }
 
     [[nodiscard]] const object_view *operator*()
@@ -141,18 +134,18 @@ public:
     kv_iterator &operator=(const kv_iterator &) = delete;
     kv_iterator &operator=(kv_iterator &&) = delete;
 
-    [[nodiscard]] DDWAF_OBJ_TYPE type() const
+    [[nodiscard]] object_type type() const
     {
         if (current_ != nullptr) {
             if (scalar_value_) {
-                return static_cast<DDWAF_OBJ_TYPE>(current_->type());
+                return static_cast<object_type>(current_->type());
             }
 
             if (current_->has_key()) {
-                return DDWAF_OBJ_STRING;
+                return object_type::string;
             }
         }
-        return DDWAF_OBJ_INVALID;
+        return object_type::invalid;
     }
 
     [[nodiscard]] const object_view *operator*()

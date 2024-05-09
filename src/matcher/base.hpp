@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-#include "ddwaf.h"
+#include "object.hpp"
 
 namespace ddwaf::matcher {
 
@@ -33,9 +33,9 @@ public:
     [[nodiscard]] virtual std::string_view to_string() const = 0;
 
     // Scalar matcher methods
-    [[nodiscard]] virtual DDWAF_OBJ_TYPE supported_type() const = 0;
+    [[nodiscard]] virtual object_type supported_type() const = 0;
 
-    [[nodiscard]] virtual std::pair<bool, std::string> match(const ddwaf_object &obj) const = 0;
+    [[nodiscard]] virtual std::pair<bool, std::string> match(object_view obj) const = 0;
 };
 
 template <typename T> class base_impl : public base {
@@ -54,10 +54,7 @@ public:
         return static_cast<const T *>(this)->to_string_impl();
     }
 
-    [[nodiscard]] DDWAF_OBJ_TYPE supported_type() const override
-    {
-        return T::supported_type_impl();
-    }
+    [[nodiscard]] object_type supported_type() const override { return T::supported_type_impl(); }
 
     // Helper used for testing purposes
     template <typename U> [[nodiscard]] std::pair<bool, std::string> match(const U &data) const
@@ -65,36 +62,36 @@ public:
         return static_cast<const T *>(this)->match_impl(data);
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match(const ddwaf_object &obj) const override
+    [[nodiscard]] std::pair<bool, std::string> match(object_view obj) const override
     {
         const auto *ptr = static_cast<const T *>(this);
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_STRING) {
-            if (obj.type == DDWAF_OBJ_STRING && obj.stringValue != nullptr) {
-                return ptr->match_impl({obj.stringValue, static_cast<std::size_t>(obj.nbEntries)});
+        if constexpr (T::supported_type_impl() == object_type::string) {
+            if (obj.type() == object_type::string) {
+                return ptr->match_impl(obj.as<std::string_view>());
             }
         }
 
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_SIGNED) {
-            if (obj.type == DDWAF_OBJ_SIGNED) {
-                return ptr->match_impl(obj.intValue);
+        if constexpr (T::supported_type_impl() == object_type::int64) {
+            if (obj.type() == object_type::int64) {
+                return ptr->match_impl(obj.as<int64_t>());
             }
         }
 
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_UNSIGNED) {
-            if (obj.type == DDWAF_OBJ_UNSIGNED) {
-                return ptr->match_impl(obj.uintValue);
+        if constexpr (T::supported_type_impl() == object_type::uint64) {
+            if (obj.type() == object_type::uint64) {
+                return ptr->match_impl(obj.as<uint64_t>());
             }
         }
 
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_BOOL) {
-            if (obj.type == DDWAF_OBJ_BOOL) {
-                return ptr->match_impl(obj.boolean);
+        if constexpr (T::supported_type_impl() == object_type::boolean) {
+            if (obj.type() == object_type::boolean) {
+                return ptr->match_impl(obj.as<bool>());
             }
         }
 
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_FLOAT) {
-            if (obj.type == DDWAF_OBJ_FLOAT) {
-                return ptr->match_impl(obj.f64);
+        if constexpr (T::supported_type_impl() == object_type::float64) {
+            if (obj.type() == object_type::float64) {
+                return ptr->match_impl(obj.as<double>());
             }
         }
 

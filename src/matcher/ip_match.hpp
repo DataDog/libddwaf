@@ -44,7 +44,7 @@ public:
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "ip_match"; }
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
+    static constexpr object_type supported_type_impl() { return object_type::string; }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view str) const;
 

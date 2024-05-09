@@ -10,29 +10,25 @@
 
 namespace ddwaf {
 
-bool object_store::insert(ddwaf_object &input, attribute attr, ddwaf_object_free_fn free_fn)
+bool object_store::insert(owned_object input, attribute attr)
 {
     if (attr == attribute::ephemeral) {
-        ephemeral_objects_.emplace_back(input, free_fn);
+        ephemeral_objects_.emplace_back(input);
     } else {
-        input_objects_.emplace_back(input, free_fn);
+        input_objects_.emplace_back(std::move(input));
     }
 
-    if (input.type != DDWAF_OBJ_MAP) {
+    auto input_view = input_objects_.back().view();
+    if (input_view.type() != object_type::map) {
         return false;
     }
 
-    auto entries = static_cast<std::size_t>(input.nbEntries);
+    auto input_map = input_view.as<map_object_view>();
+
+    auto entries = input_map.size();
     if (entries == 0) {
         // Objects with no addresses are considered valid as they are harmless
         return true;
-    }
-
-    ddwaf_object *array = input.array;
-    if (array == nullptr) {
-        // Since we have established that the size of the map is not 0, a null
-        // array constitutes a malformed map.
-        return false;
     }
 
     objects_.reserve(objects_.size() + entries);
@@ -43,38 +39,35 @@ bool object_store::insert(ddwaf_object &input, attribute attr, ddwaf_object_free
         ephemeral_targets_.reserve(entries);
     }
 
-    for (std::size_t i = 0; i < entries; ++i) {
-        auto length = static_cast<std::size_t>(array[i].parameterNameLength);
-        if (array[i].parameterName == nullptr || length == 0) {
+    for (auto [key, value] : input_map) {
+        if (key.length() == 0) {
             continue;
         }
 
-        const std::string key(array[i].parameterName, length);
         auto target = get_target_index(key);
-
-        insert_target_helper(target, key, &array[i], attr);
+        insert_target_helper(target, key, value, attr);
     }
 
     return true;
 }
 
-bool object_store::insert(target_index target, std::string_view key, ddwaf_object &input,
-    attribute attr, ddwaf_object_free_fn free_fn)
+bool object_store::insert(
+    target_index target, std::string_view key, owned_object input, attribute attr)
 {
-    ddwaf_object *object = nullptr;
+    object_view input_view;
     if (attr == attribute::ephemeral) {
-        ephemeral_objects_.emplace_back(input, free_fn);
-        object = &ephemeral_objects_.back().first;
+        ephemeral_objects_.emplace_back(std::move(input));
+        input_view = ephemeral_objects_.back().view();
     } else {
-        input_objects_.emplace_back(input, free_fn);
-        object = &input_objects_.back().first;
+        input_objects_.emplace_back(std::move(input));
+        input_view = input_objects_.back().view();
     }
 
-    return insert_target_helper(target, key, object, attr);
+    return insert_target_helper(target, key, input_view, attr);
 }
 
 bool object_store::insert_target_helper(
-    target_index target, std::string_view key, ddwaf_object *object, attribute attr)
+    target_index target, std::string_view key, object_view value, attribute attr)
 {
     if (objects_.contains(target)) {
         if (attr == attribute::ephemeral && !ephemeral_targets_.contains(target)) {
@@ -98,7 +91,7 @@ bool object_store::insert_target_helper(
         ephemeral_targets_.emplace(target);
     }
 
-    objects_[target] = {object, attr};
+    objects_[target] = {value, attr};
     latest_batch_.emplace(target);
 
     return true;

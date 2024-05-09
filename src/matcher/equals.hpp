@@ -31,21 +31,21 @@ protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "equals"; }
 
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl()
+    static constexpr object_type supported_type_impl()
     {
         if constexpr (std::is_same_v<T, int64_t>) {
-            return DDWAF_OBJ_SIGNED;
+            return object_type::int64;
         }
         if constexpr (std::is_same_v<T, uint64_t>) {
-            return DDWAF_OBJ_UNSIGNED;
+            return object_type::uint64;
         }
 
         if constexpr (std::is_same_v<T, bool>) {
-            return DDWAF_OBJ_BOOL;
+            return object_type::boolean;
         }
 
         if constexpr (std::is_same_v<T, std::string>) {
-            return DDWAF_OBJ_STRING;
+            return object_type::string;
         }
     }
 
@@ -79,7 +79,7 @@ public:
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "equals"; }
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_FLOAT; }
+    static constexpr object_type supported_type_impl() { return object_type::float64; }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(double obtained) const
     {
