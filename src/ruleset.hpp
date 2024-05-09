@@ -123,7 +123,6 @@ struct ruleset {
         return root_addresses;
     }
 
-    ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
     std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors;

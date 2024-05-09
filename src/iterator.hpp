@@ -30,10 +30,10 @@ public:
 
     bool operator++();
 
-    [[nodiscard]] explicit operator bool() const { return current_.is_valid(); }
+    [[nodiscard]] explicit operator bool() const { return current_.second.is_valid(); }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
-    [[nodiscard]] object_view get_underlying_object() { return current_; }
+    [[nodiscard]] object_view get_underlying_object() { return current_.second; }
 
 protected:
     static constexpr std::size_t initial_stack_size = 32;
@@ -44,15 +44,15 @@ protected:
     // but only the beginning of the key path, we keep this here so that we
     // can later provide the accurate full key path.
     std::vector<std::string> path_;
-    std::vector<std::pair<const object_view *, std::size_t>> stack_;
-    const object_view current_;
+    std::vector<std::tuple<object_view /*key*/, object_view /*val*/, std::size_t>> stack_;
+    std::pair<object_view /*key*/, object_view /*val*/> current_;
 
     const exclusion::object_set_ref &excluded_;
 };
 
 class value_iterator : public iterator_base<value_iterator> {
 public:
-    explicit value_iterator(const object_view *obj, const std::span<const std::string> &path,
+    explicit value_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~value_iterator() = default;
@@ -63,14 +63,13 @@ public:
     value_iterator &operator=(const value_iterator &) = delete;
     value_iterator &operator=(value_iterator &&) = delete;
 
-    [[nodiscard]] object_view operator*() { return current_; }
+    [[nodiscard]] object_view operator*() { return current_.second; }
 
-    [[nodiscard]] object_type type() const { return current_.type(); }
+    [[nodiscard]] object_type type() const { return current_.second.type(); }
 
 protected:
-    void initialise_cursor(const object_view *obj, const std::span<const std::string> &path);
-    void initialise_cursor_with_path(
-        const object_view *obj, const std::span<const std::string> &path);
+    void initialise_cursor(object_view obj, std::span<const std::string> path);
+    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
 
@@ -79,7 +78,7 @@ protected:
 
 class key_iterator : public iterator_base<key_iterator> {
 public:
-    explicit key_iterator(const object_view *obj, const std::span<const std::string> &path,
+    explicit key_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~key_iterator() = default;
@@ -90,29 +89,13 @@ public:
     key_iterator &operator=(const key_iterator &) = delete;
     key_iterator &operator=(key_iterator &&) = delete;
 
-    [[nodiscard]] object_type type() const
-    {
-        if (current_ != nullptr && current_->has_key()) {
-            return object_type::string;
-        }
-        return object_type::invalid;
-    }
+    [[nodiscard]] object_type type() const { return current_.first.type(); }
 
-    [[nodiscard]] const object_view *operator*()
-    {
-        if (current_ == nullptr) {
-            return nullptr;
-        }
-
-        auto key_sv = current_->key();
-        ddwaf_object_stringl_nc(&current_key_, key_sv.data(), key_sv.size());
-        return reinterpret_cast<const object_view *>(&current_key_);
-    }
+    [[nodiscard]] object_view operator*() { return current_.first; }
 
 protected:
-    void initialise_cursor(const object_view *obj, const std::span<const std::string> &path);
-    void initialise_cursor_with_path(
-        const object_view *obj, const std::span<const std::string> &path);
+    void initialise_cursor(object_view obj, std::span<const std::string> path);
+    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
 
@@ -123,7 +106,7 @@ protected:
 
 class kv_iterator : public iterator_base<kv_iterator> {
 public:
-    explicit kv_iterator(const object_view *obj, const std::span<const std::string> &path,
+    explicit kv_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~kv_iterator() = default;
@@ -136,38 +119,30 @@ public:
 
     [[nodiscard]] object_type type() const
     {
-        if (current_ != nullptr) {
+        if (current_.second.is_valid()) {
             if (scalar_value_) {
-                return static_cast<object_type>(current_->type());
+                return current_.second.type();
             }
-
-            if (current_->has_key()) {
-                return object_type::string;
-            }
+            return current_.first.type();
         }
         return object_type::invalid;
     }
 
-    [[nodiscard]] const object_view *operator*()
+    [[nodiscard]] object_view operator*()
     {
-        if (current_ != nullptr) {
+        if (current_.second.is_valid()) {
             if (scalar_value_) {
-                return reinterpret_cast<const object_view *>(current_);
+                return current_.second;
             }
 
-            if (current_->has_key()) {
-                auto key_sv = current_->key();
-                ddwaf_object_stringl_nc(&current_key_, key_sv.data(), key_sv.size());
-                return reinterpret_cast<const object_view *>(&current_key_);
-            }
+            return current_.first;
         }
-        return nullptr;
+        return {};
     }
 
 protected:
-    void initialise_cursor(const object_view *obj, const std::span<const std::string> &path);
-    void initialise_cursor_with_path(
-        const object_view *obj, const std::span<const std::string> &path);
+    void initialise_cursor(object_view obj, std::span<const std::string> path);
+    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
 

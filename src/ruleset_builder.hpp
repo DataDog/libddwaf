@@ -22,9 +22,8 @@ namespace ddwaf {
 
 class ruleset_builder {
 public:
-    ruleset_builder(object_limits limits, ddwaf_object_free_fn free_fn,
-        std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
-        : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
+    ruleset_builder(object_limits limits, std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
+        : limits_(limits), event_obfuscator_(std::move(event_obfuscator))
     {}
 
     ~ruleset_builder() = default;
@@ -62,7 +61,6 @@ protected:
     // These members are obtained through ddwaf_config and are persistent across
     // all updates.
     const object_limits limits_;
-    const ddwaf_object_free_fn free_fn_;
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator_;
 
     // Map representing rule data IDs to matcher type, this is obtained

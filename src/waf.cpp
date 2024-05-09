@@ -8,7 +8,7 @@
 namespace ddwaf {
 
 waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_limits limits,
-    ddwaf_object_free_fn free_fn, std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
+    std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
 {
     auto input_map = static_cast<parameter::map>(input);
 
@@ -26,7 +26,6 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
     // Prevent combining version 1 of the ruleset and the builder
     if (version == 1) {
         ddwaf::ruleset rs;
-        rs.free_fn = free_fn;
         rs.event_obfuscator = event_obfuscator;
         rs.actions = std::make_shared<action_mapper>();
         DDWAF_DEBUG("Parsing ruleset with schema version 1.x");
@@ -37,7 +36,7 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
 
     if (version == 2) {
         DDWAF_DEBUG("Parsing ruleset with schema version 2.x");
-        builder_ = std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
+        builder_ = std::make_shared<ruleset_builder>(limits, std::move(event_obfuscator));
         ruleset_ = builder_->build(input, info);
         if (!ruleset_) {
             throw std::runtime_error("failed to instantiate WAF");

@@ -200,7 +200,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->dynamic_matchers = dynamic_matchers_;
     rs->scanners = scanners_.items();
     rs->actions = actions_;
-    rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
     return rs;

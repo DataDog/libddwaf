@@ -12,6 +12,7 @@
 #include <unordered_set>
 
 #include "ddwaf.h"
+#include "object.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -44,7 +45,7 @@ public:
     virtual base_section_info &add_section(std::string_view section) = 0;
     virtual void set_ruleset_version(std::string_view version) = 0;
 
-    virtual void to_object(ddwaf_object &output) = 0;
+    virtual owned_object to_object() = 0;
 };
 
 class null_ruleset_info : public base_ruleset_info {
@@ -80,7 +81,7 @@ public:
 
     void set_ruleset_version(std::string_view /*version*/) override{};
 
-    void to_object(ddwaf_object & /*output*/) override{};
+    owned_object to_object() override { return {}; };
 };
 
 class ruleset_info : public base_ruleset_info {
@@ -189,7 +190,7 @@ public:
     void set_ruleset_version(std::string_view version) override { ruleset_version_ = version; }
 
     // This matcher effectively moves the contents
-    void to_object(ddwaf_object &output) override
+    owned_object to_object() override
     {
         ddwaf_object_map(&output);
         for (auto &[name, section] : sections_) {

@@ -165,172 +165,139 @@ bool node_equal::operator()(const base_node &lhs, const base_node &rhs) const
 }
 
 struct node_serialize {
-    ddwaf_object operator()(const std::monostate & /*node*/) const noexcept;
-    ddwaf_object operator()(const node_scalar &node) const noexcept;
-    ddwaf_object operator()(const node_array_ptr &node) const noexcept;
-    ddwaf_object operator()(const node_record_ptr &node) const noexcept;
+    owned_object operator()(const std::monostate & /*node*/) const noexcept;
+    owned_object operator()(const node_scalar &node) const noexcept;
+    owned_object operator()(const node_array_ptr &node) const noexcept;
+    owned_object operator()(const node_record_ptr &node) const noexcept;
 };
 
-ddwaf_object node_serialize::operator()(const std::monostate & /*node*/) const noexcept
+owned_object node_serialize::operator()(const std::monostate & /*node*/) const noexcept
 {
     static constexpr unsigned unknown_type = 0;
 
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, unknown_type));
+    owned_object array = owned_object::make_array(1);
+    array.emplace_back(owned_object::make_unsigned(unknown_type));
     return array;
 }
 
-ddwaf_object node_serialize::operator()(const node_scalar &node) const noexcept
+owned_object node_serialize::operator()(const node_scalar &node) const noexcept
 {
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-
-    ddwaf_object_array_add(&array,
-        ddwaf_object_unsigned(&tmp, static_cast<std::underlying_type_t<scalar_type>>(node.type)));
+    auto array = owned_object::make_array(!node.tags.empty() ? 2 : 1);
+    array.emplace_back(
+        owned_object::make_unsigned(static_cast<std::underlying_type_t<scalar_type>>(node.type)));
 
     if (!node.tags.empty()) {
-        ddwaf_object meta;
-        ddwaf_object_map(&meta);
-
-        for (auto [key, value] : node.tags) {
-            ddwaf_object_map_addl(&meta, key.data(), key.size(),
-                ddwaf_object_stringl(&tmp, value.data(), value.size()));
-        }
-
-        ddwaf_object_array_add(&array, &meta);
+        auto meta = array.emplace_back(owned_object::make_map(node.tags.size()));
+        for (auto [key, value] : node.tags) { meta.emplace(key, owned_object::make_string(value)); }
     }
 
     return array;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object node_serialize::operator()(const node_array_ptr &node) const noexcept
+owned_object node_serialize::operator()(const node_array_ptr &node) const noexcept
 {
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-
-    ddwaf_object types;
-    ddwaf_object_array(&types);
-
+    owned_object array = owned_object::make_array(2);
+    auto types = array.emplace_back(owned_object::make_array(node->children.size()));
     for (const auto &child : node->children) {
-        auto res = std::visit(node_serialize{}, child);
-        ddwaf_object_array_add(&types, &res);
+        types.emplace_back(std::visit(node_serialize{}, child));
     }
-    ddwaf_object_array_add(&array, &types);
 
-    ddwaf_object meta;
-    ddwaf_object_map(&meta);
-    ddwaf_object_map_add(&meta, "len", ddwaf_object_unsigned(&tmp, node->length));
+    auto meta = array.emplace_back(owned_object::make_map(node->truncated ? 2 : 1));
+    meta.emplace("len", owned_object::make_unsigned(node->length));
     if (node->truncated) {
-        ddwaf_object_map_add(&meta, "truncated", ddwaf_object_bool(&tmp, true));
+        meta.emplace("truncated", owned_object::make_boolean(true));
     }
-    ddwaf_object_array_add(&array, &meta);
-
     return array;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object node_serialize::operator()(const node_record_ptr &node) const noexcept
+owned_object node_serialize::operator()(const node_record_ptr &node) const noexcept
 {
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
+    owned_object array = owned_object::make_array(node->truncated ? 2 : 1);
+    auto map = array.emplace_back(owned_object::make_map(node->children.size()));
 
-    ddwaf_object map;
-    ddwaf_object_map(&map);
     for (const auto &[key, child] : node->children) {
-        auto res = std::visit(node_serialize{}, child);
-        ddwaf_object_map_addl(&map, key.data(), key.size(), &res);
+        map.emplace(key, std::visit(node_serialize{}, child));
     }
-    ddwaf_object_array_add(&array, &map);
 
     if (node->truncated) {
-        ddwaf_object meta;
-        ddwaf_object_map(&meta);
-        ddwaf_object_map_add(&meta, "truncated", ddwaf_object_bool(&tmp, true));
-        ddwaf_object_array_add(&array, &meta);
+        auto meta = array.emplace_back(owned_object::make_map(1));
+        meta.emplace("truncated", owned_object::make_boolean(true));
     }
 
     return array;
 }
 
-ddwaf_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
+owned_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-base_node generate_helper(const ddwaf_object *object, std::string_view key,
+base_node generate_helper(object_view object, object_view key,
     const std::set<const scanner *> &scanners, std::size_t depth, ddwaf::timer &deadline)
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
     }
 
-    switch (object->type) {
-    case DDWAF_OBJ_NULL:
+    switch (object.type()) {
+    case object_type::null:
         return node_scalar{scalar_type::null};
-    case DDWAF_OBJ_FLOAT:
+    case object_type::float64:
         return node_scalar{scalar_type::real};
-    case DDWAF_OBJ_BOOL:
+    case object_type::boolean:
         return node_scalar{scalar_type::boolean};
-    case DDWAF_OBJ_STRING:
+    case object_type::string:
+    case object_type::const_string:
+    case object_type::small_string:
         for (const auto *scanner : scanners) {
-            if (scanner->eval(key, *object)) {
+            if (scanner->eval(key, object)) {
                 return node_scalar{scalar_type::string, scanner->get_tags()};
             }
         }
         return node_scalar{scalar_type::string};
-    case DDWAF_OBJ_SIGNED:
-    case DDWAF_OBJ_UNSIGNED:
+    case object_type::int64:
+    case object_type::uint64:
         return node_scalar{scalar_type::integer};
-    case DDWAF_OBJ_MAP: {
-        auto length = static_cast<std::size_t>(object->nbEntries);
+    case object_type::map: {
+        auto size = object.size();
         node_record_ptr record = std::make_unique<node_record>();
-        if (length > extract_schema::max_record_nodes) {
+        if (size > extract_schema::max_record_nodes) {
             record->truncated = true;
-            length = extract_schema::max_record_nodes;
+            size = extract_schema::max_record_nodes;
         }
-        record->children.reserve(length);
-        for (std::size_t i = 0; i < length && depth > 1; i++) {
-            const auto *child = &object->array[i];
-            if (child->parameterName == nullptr) {
-                continue;
-            }
-
-            const std::string_view key{
-                child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
-
-            auto schema = generate_helper(child, key, scanners, depth - 1, deadline);
+        record->children.reserve(size);
+        for (std::size_t i = 0; i < size && depth > 1; i++) {
+            auto [child_key, child_value] = object.at_unchecked(i);
+            auto schema = generate_helper(child_value, child_key, scanners, depth - 1, deadline);
             record->children.emplace(key, std::move(schema));
         }
         return record;
     }
-    case DDWAF_OBJ_ARRAY: {
-        auto length = static_cast<std::size_t>(object->nbEntries);
+    case object_type::array: {
+        auto size = object.size();
         node_array_ptr array = std::make_unique<node_array>();
-        array->length = length;
-        if (length > extract_schema::max_array_nodes) {
+        array->length = size;
+        if (size > extract_schema::max_array_nodes) {
             array->truncated = true;
-            length = extract_schema::max_array_nodes;
+            size = extract_schema::max_array_nodes;
         }
-        array->children.reserve(length);
-        for (std::size_t i = 0; i < length && depth > 1; i++) {
-            const auto *child = &object->array[i];
-            auto schema = generate_helper(child, key, scanners, depth - 1, deadline);
+        array->children.reserve(size);
+        for (std::size_t i = 0; i < size && depth > 1; i++) {
+            auto [_, child_value] = object.at_unchecked(i);
+            auto schema = generate_helper(child_value, key, scanners, depth - 1, deadline);
             array->children.emplace(std::move(schema));
         }
         return array;
     }
-    case DDWAF_OBJ_INVALID:
+    case object_type::invalid:
+    default:
         break;
     }
     return {};
 }
 
-ddwaf_object generate(
-    const ddwaf_object *object, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
+owned_object generate(
+    object_view object, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
 {
     return serialize(
         generate_helper(object, {}, scanners, extract_schema::max_container_depth, deadline));
@@ -338,8 +305,8 @@ ddwaf_object generate(
 
 } // namespace schema
 
-ddwaf_object extract_schema::generate(
-    const ddwaf_object *input, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
+owned_object extract_schema::generate(
+    object_view input, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
 {
     if (input == nullptr) {
         return {};

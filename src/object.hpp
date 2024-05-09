@@ -345,8 +345,9 @@ inline borrowed_object borrowed_object::emplace(std::string_view key, owned_obje
 
 class object_view {
 public:
+    object_view() = default;
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    object_view(const detail::object *underlying_object = nullptr) : obj_(underlying_object) {}
+    object_view(const detail::object *underlying_object) : obj_(underlying_object) {}
     ~object_view() = default;
     object_view(const object_view &) = default;
     object_view(object_view &&) = default;
@@ -363,8 +364,40 @@ public:
     [[nodiscard]] bool is_container() const { return (obj_->type & object_type::container) != 0; }
     [[nodiscard]] bool is_scalar() const { return (obj_->type & object_type::container) != 0; }
 
+    bool operator==(const object_view other) const { return ptr() == other.ptr(); }
+
     [[nodiscard]] const detail::object *ptr() const { return obj_; }
 
+    std::optional<std::pair<object_view, object_view>> at(std::size_t index)
+    {
+        // TODO add requires
+        if (index > size()) {
+            return std::nullopt;
+        }
+        if (type() == object_type::map) {
+            auto &slot = obj_->via.map[index];
+            return {{object_view{&slot.key}, object_view{&slot.val}}};
+        }
+
+        if (type() == object_type::array) {
+            auto &slot = obj_->via.array[index];
+            return {{object_view{}, object_view{&slot}}};
+        }
+    }
+
+    std::pair<object_view, object_view> at_unchecked(std::size_t index)
+    {
+        if (type() == object_type::map) {
+            auto &slot = obj_->via.map[index];
+            return {object_view{&slot.key}, object_view{&slot.val}};
+        }
+
+        if (type() == object_type::array) {
+            auto &slot = obj_->via.array[index];
+            return {object_view{}, object_view{&slot}};
+        }
+        return {};
+    }
     template <typename T> std::optional<T> as_optional() const noexcept
     {
         if constexpr (std::is_same_v<T, const object_view *>) {
@@ -525,7 +558,7 @@ protected:
     friend class map_object_view;
     friend class array_object_view;
 
-    const detail::object *obj_;
+    const detail::object *obj_{nullptr};
 };
 
 template <> inline std::string_view object_view::as<std::string_view>()
@@ -572,6 +605,8 @@ public:
         }
         return &obj_->via.array[index];
     }
+
+    object_view at_unchecked(std::size_t index) { return &obj_->via.array[index]; }
 
     class iterator {
     public:
@@ -658,6 +693,12 @@ public:
         return {object_view{&slot.key}.as<KeyType>(), object_view{&slot.val}};
     }
 
+    std::pair<object_view, object_view> at_unchecked(std::size_t index)
+    {
+        auto &slot = obj_->via.map[index];
+        return {object_view{&slot.key}, object_view{&slot.val}};
+    }
+
     class iterator {
     public:
         explicit iterator(map_object_view &ov, size_t index = 0)
@@ -736,3 +777,14 @@ template <> inline map_object_view object_view::as<map_object_view>()
 }
 
 } // namespace ddwaf
+
+namespace std {
+
+template <> struct hash<ddwaf::object_view> {
+    auto operator()(const ddwaf::object_view &obj) const
+    {
+        return std::hash<const void *>{}(static_cast<const void *>(obj.ptr()));
+    }
+};
+
+} // namespace std
