@@ -1,4 +1,9 @@
 [![Build](https://github.com/DataDog/libddwaf/actions/workflows/build.yml/badge.svg)](https://github.com/DataDog/libddwaf/actions/workflows/build.yml)
+[![Test](https://github.com/DataDog/libddwaf/actions/workflows/test.yml/badge.svg)](https://github.com/DataDog/libddwaf/actions/workflows/test.yml)
+[![fuzz](https://github.com/DataDog/libddwaf/actions/workflows/fuzz.yml/badge.svg)](https://github.com/DataDog/libddwaf/actions/workflows/fuzz.yml)
+[![Coverage status](https://codecov.io/github/DataDog/libddwaf/coverage.svg?branch=master)](https://codecov.io/github/DataDog/libddwaf?branch=master)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 # Datadog's WAF & RASP Engine
 

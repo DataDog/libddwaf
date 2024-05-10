@@ -1,4 +1,19 @@
 # libddwaf release
+
+### v1.18.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+This version introduces a new operator `sqli_detector` for the detection of SQL injections. In addition, the ruleset parser has been updated to allow non-string parameter values on action definitions.
+
+#### Changes
+- SQL Injection (SQLi) Detection Operator ([#284](https://github.com/DataDog/libddwaf/pull/284))
+
+#### Fixes
+- Fix mishandling invalid actions key type ([#286](https://github.com/DataDog/libddwaf/pull/286))
+- Convert non-string object types into string during ruleset parsing ([#285](https://github.com/DataDog/libddwaf/pull/285))
+
+#### Miscellaneous
+- Use SSE4.1 ceilf when available and add badges to readme ([#288](https://github.com/DataDog/libddwaf/pull/288))
+- SQLi Detector Fuzzer and improvements ([#291](https://github.com/DataDog/libddwaf/pull/291))
+
 ### v1.17.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 This new version introduces RASP rules and supporting features, including:

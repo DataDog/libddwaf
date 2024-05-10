@@ -265,6 +265,9 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
             bool ephemeral = uri.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
+
+            DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
+
             cache.match =
                 condition_match{{{"resource"sv, std::string{uri.value}, uri.address, uri_kp},
                                     {"params"sv, highlight, param.address, param_kp}},

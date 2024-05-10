@@ -1,0 +1,1 @@
+select id,sin(1),2 from bar where

@@ -599,7 +599,7 @@ class RE2 {
     //   utf8             (true)  text and pattern are UTF-8; otherwise Latin-1
     //   posix_syntax     (false) restrict regexps to POSIX egrep syntax
     //   longest_match    (false) search for longest match, not first match
-    //   log_errors       (true)  log syntax and execution errors to ERROR
+    //   log_errors       (false) log syntax and execution errors to ERROR
     //   max_mem          (see below)  approx. max memory footprint of RE2
     //   literal          (false) interpret string as literal, not regexp
     //   never_nl         (false) never match \n, even if it is in regexp
@@ -656,7 +656,7 @@ class RE2 {
       encoding_(EncodingUTF8),
       posix_syntax_(false),
       longest_match_(false),
-      log_errors_(true),
+      log_errors_(false),
       max_mem_(kDefaultMaxMem),
       literal_(false),
       never_nl_(false),
