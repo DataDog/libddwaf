@@ -358,6 +358,7 @@ public:
     [[nodiscard]] std::size_t size() const { return static_cast<std::size_t>(obj_->size); }
     [[nodiscard]] std::size_t length() const { return static_cast<std::size_t>(obj_->length); }
     [[nodiscard]] std::size_t capacity() const { return static_cast<std::size_t>(obj_->capacity); }
+    [[nodiscard]] bool empty() const { return (is_container() ? size() : length()) > 0; }
 
     [[nodiscard]] bool is_valid() const { return (obj_->type & object_type::valid) != 0; }
     [[nodiscard]] bool is_invalid() const { return (obj_->type & object_type::valid) == 0; }
@@ -593,6 +594,7 @@ public:
 
     [[nodiscard]] std::size_t size() const { return static_cast<std::size_t>(obj_->size); }
     [[nodiscard]] std::size_t capacity() const { return static_cast<std::size_t>(obj_->capacity); }
+    [[nodiscard]] bool empty() const { return size() > 0; }
 
     [[nodiscard]] const detail::object *ptr() const { return obj_; }
 
@@ -668,6 +670,7 @@ public:
 
     [[nodiscard]] std::size_t size() const { return static_cast<std::size_t>(obj_->size); }
     [[nodiscard]] std::size_t capacity() const { return static_cast<std::size_t>(obj_->capacity); }
+    [[nodiscard]] bool empty() const { return size() > 0; }
 
     [[nodiscard]] const detail::object *ptr() const { return obj_; }
 

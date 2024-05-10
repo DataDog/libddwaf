@@ -51,14 +51,14 @@ parameter::operator parameter::map() const
         throw bad_cast("map", strtype(type));
     }
 
-    if (array == nullptr || nbEntries == 0) {
+    if (via.map == nullptr || size == 0) {
         return {};
     }
 
     std::unordered_map<std::string_view, parameter> map;
-    map.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++) {
-        const parameter &kv = array[i];
+    map.reserve(size);
+    for (unsigned i = 0; i < size; i++) {
+        const parameter &kv = via.map[i];
         if (kv.parameterName == nullptr) {
             throw malformed_object("invalid key on map entry");
         }
