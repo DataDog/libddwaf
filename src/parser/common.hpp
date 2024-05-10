@@ -10,6 +10,7 @@
 #include <string>
 
 #include "exception.hpp"
+#include "object.hpp"
 #include "parameter.hpp"
 #include "transformer/base.hpp"
 
@@ -20,10 +21,12 @@ struct address_container {
     std::unordered_set<std::string> optional;
 };
 
-template <typename T, typename Key = std::string> T at(const parameter::map &map, const Key &key)
+template <typename T, typename Key = std::string>
+T at(const std::unordered_map<std::string_view, object_view> &map, const Key &key)
 {
     try {
-        return static_cast<T>(map.at(key));
+        auto view = map.at(key);
+        return view.template as<T>();
     } catch (const std::out_of_range &) {
         throw missing_key(std::string(key));
     } catch (const bad_cast &e) {

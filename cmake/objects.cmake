@@ -34,7 +34,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/actions_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/common.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp

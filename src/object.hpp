@@ -779,6 +779,21 @@ template <> inline map_object_view object_view::as<map_object_view>()
     return {obj_};
 }
 
+template <> 
+inline std::unordered_map<std::string_view, object_view> object_view::as<std::unordered_map<std::string_view, object_view>>()
+{
+    if (type() != object_type::map) {
+        [[unlikely]] throw std::runtime_error("object_view not a map");
+    }
+
+    std::unordered_map<std::string_view, object_view> map;
+    for (std::size_t i = 0; i < size(); ++i) {
+        auto [key, value] = at_unchecked(i);
+        map.emplace(key.as<std::string_view>(), value);
+    }
+    return map;
+}
+
 } // namespace ddwaf
 
 namespace std {

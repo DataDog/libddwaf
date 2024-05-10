@@ -13,7 +13,6 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
     auto input_map = static_cast<parameter::map>(input);
 
     unsigned version = 2;
-
     auto it = input_map.find("version");
     if (it != input_map.end()) {
         try {
@@ -21,17 +20,6 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         } catch (const std::exception &e) {
             DDWAF_DEBUG("Failed to parse version (defaulting to 2): {}", e.what());
         }
-    }
-
-    // Prevent combining version 1 of the ruleset and the builder
-    if (version == 1) {
-        ddwaf::ruleset rs;
-        rs.event_obfuscator = event_obfuscator;
-        rs.actions = std::make_shared<action_mapper>();
-        DDWAF_DEBUG("Parsing ruleset with schema version 1.x");
-        parser::v1::parse(input_map, info, rs, limits);
-        ruleset_ = std::make_shared<ddwaf::ruleset>(std::move(rs));
-        return;
     }
 
     if (version == 2) {
