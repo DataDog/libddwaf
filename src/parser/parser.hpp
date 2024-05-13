@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "indexer.hpp"
-#include "object.hpp"
+#include "object_view.hpp"
 #include "parser/specification.hpp"
 #include "rule.hpp"
 #include "ruleset.hpp"
@@ -25,25 +25,26 @@ unsigned parse_schema_version(const std::unordered_map<std::string_view, object_
 
 namespace v2 {
 
-rule_spec_container parse_rules(array_object_view &rule_array, base_section_info &info,
+rule_spec_container parse_rules(object_view::array &rule_array, base_section_info &info,
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source = rule::source_type::base);
 
-rule_data_container parse_rule_data(array_object_view &rule_data, base_section_info &info,
+rule_data_container parse_rule_data(object_view::array &rule_data, base_section_info &info,
     std::unordered_map<std::string, std::string> &rule_data_ids);
 
-override_spec_container parse_overrides(array_object_view &override_array, base_section_info &info);
+override_spec_container parse_overrides(
+    object_view::array &override_array, base_section_info &info);
 
 filter_spec_container parse_filters(
-    array_object_view &filter_array, base_section_info &info, const object_limits &limits);
+    object_view::array &filter_array, base_section_info &info, const object_limits &limits);
 
 processor_container parse_processors(
-    array_object_view &processor_array, base_section_info &info, const object_limits &limits);
+    object_view::array &processor_array, base_section_info &info, const object_limits &limits);
 
-indexer<const scanner> parse_scanners(array_object_view &scanner_array, base_section_info &info);
+indexer<const scanner> parse_scanners(object_view::array &scanner_array, base_section_info &info);
 
 std::shared_ptr<action_mapper> parse_actions(
-    array_object_view &actions_array, base_section_info &info);
+    object_view::array &actions_array, base_section_info &info);
 
 } // namespace v2
 } // namespace ddwaf::parser

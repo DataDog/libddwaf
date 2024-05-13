@@ -10,7 +10,7 @@
 #include <string>
 
 #include "exception.hpp"
-#include "object.hpp"
+#include "object_view.hpp"
 #include "parameter.hpp"
 #include "transformer/base.hpp"
 
@@ -26,7 +26,7 @@ T at(const std::unordered_map<std::string_view, object_view> &map, const Key &ke
 {
     try {
         auto view = map.at(key);
-        return view.template as<T>();
+        return view.template convert<T>();
     } catch (const std::out_of_range &) {
         throw missing_key(std::string(key));
     } catch (const bad_cast &e) {
