@@ -18,12 +18,12 @@ bool object_store::insert(owned_object input, attribute attr)
         input_objects_.emplace_back(std::move(input));
     }
 
-    auto input_view = input_objects_.back().view();
+    object_view input_view = input_objects_.back();
     if (input_view.type() != object_type::map) {
         return false;
     }
 
-    auto input_map = input_view.as<map_object_view>();
+    auto input_map = input_view.as_unchecked<object_view::map>();
 
     auto entries = input_map.size();
     if (entries == 0) {
@@ -57,10 +57,10 @@ bool object_store::insert(
     object_view input_view;
     if (attr == attribute::ephemeral) {
         ephemeral_objects_.emplace_back(std::move(input));
-        input_view = ephemeral_objects_.back().view();
+        input_view = ephemeral_objects_.back();
     } else {
         input_objects_.emplace_back(std::move(input));
-        input_view = input_objects_.back().view();
+        input_view = input_objects_.back();
     }
 
     return insert_target_helper(target, key, input_view, attr);

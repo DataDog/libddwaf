@@ -14,8 +14,8 @@ namespace ddwaf::exclusion {
 
 namespace {
 // Add requires
-void iterate_object(const path_trie::traverser &filter, const object_view *object,
-    std::unordered_set<const object_view *> &objects_to_exclude, const object_limits &limits)
+void iterate_object(const path_trie::traverser &filter, object_view object,
+    std::unordered_set<object_view> &objects_to_exclude, const object_limits &limits)
 {
     using state = path_trie::traverser::state;
     if (object == nullptr) {
@@ -33,49 +33,48 @@ void iterate_object(const path_trie::traverser &filter, const object_view *objec
         }
     }
 
-    if (!is_container(object)) {
+    if (!object.is_container()) {
         return;
     }
 
-    std::stack<std::tuple<const object_view *, unsigned, path_trie::traverser>> path_stack;
+    std::stack<std::tuple<object_view, unsigned, path_trie::traverser>> path_stack;
     path_stack.emplace(object, 0, filter);
 
     while (!path_stack.empty()) {
         auto &[current_object, current_index, current_trie] = path_stack.top();
-        if (!is_container(current_object)) {
+        if (!current_object.is_container()) {
             DDWAF_DEBUG("This is a bug, the object in the stack is not a container");
             path_stack.pop();
             continue;
         }
 
         bool found_node{false};
-        auto size = current_object->size() > limits.max_container_size ? limits.max_container_size
-                                                                       : current_object->size();
+        auto size = current_object.size() > limits.max_container_size ? limits.max_container_size
+                                                                      : current_object.size();
         for (; current_index < size; ++current_index) {
-            const object_view *child = (*current_object)[current_index];
+            auto [child_key, child_value] = current_object.at_unchecked(current_index);
 
             path_trie::traverser child_traverser{nullptr};
             // Only consider children with keys
-            if (!child->has_key() || child->length() == 0) {
+            if (child_key.is_invalid() || child_key.length() == 0) {
                 child_traverser = current_trie.descend_wildcard();
             } else {
-                auto key = child->key();
-                child_traverser = current_trie.descend(key);
+                child_traverser = current_trie.descend(child_key.as_unchecked<std::string_view>());
             }
             const auto filter_state = child_traverser.get_state();
 
             if (filter_state == state::found) {
-                objects_to_exclude.emplace(child);
+                objects_to_exclude.emplace(child_value);
                 continue;
             }
             if (filter_state == state::not_found) {
                 continue;
             }
 
-            if (is_container(child) && path_stack.size() < limits.max_container_depth) {
+            if (child_value.is_container() && path_stack.size() < limits.max_container_depth) {
                 ++current_index;
                 found_node = true;
-                path_stack.emplace(child, 0, child_traverser);
+                path_stack.emplace(child_value, 0, child_traverser);
                 break;
             }
         }

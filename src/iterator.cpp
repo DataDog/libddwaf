@@ -51,7 +51,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     for (unsigned i = 1; i < stack_.size(); i++) {
         auto [child_key, child_val, child_idx] = stack_[i];
         if (parent_val.type() == object_type::map) {
-            keys.emplace_back(child_key.as<std::string>());
+            keys.emplace_back(child_key.as_unchecked<std::string>());
         } else if (parent_val.type() == object_type::array) {
             // TODO intern these strings
             keys.emplace_back(to_string<std::string>(parent_idx - 1));
@@ -62,7 +62,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     }
 
     if (parent_val.type() == object_type::map && current_.first.is_valid()) {
-        keys.emplace_back(current_.first.as<std::string>());
+        keys.emplace_back(current_.first.as_unchecked<std::string>());
     } else if (parent_val.type() == object_type::array) {
         keys.emplace_back(to_string<std::string>(parent_idx - 1));
     }
@@ -124,16 +124,16 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
 
         std::pair<object_view, object_view> child;
         if (parent.type() == object_type::map) {
-            auto parent_map = parent.as<map_object_view>();
+            auto parent_map = parent.as_unchecked<object_view::map>();
             auto size = parent.size() > limits_.max_container_size ? limits_.max_container_size
                                                                    : parent.size();
             for (std::size_t j = 0; j < size; j++) {
-                auto [child_key, child_value] = parent_map.at_unchecked(j);
+                auto [child_key, child_value] = parent_map.at_unchecked<object_view>(j);
                 if (excluded_.contains(child_value)) {
                     continue;
                 }
 
-                if (child_key.as<std::string_view>() == key) {
+                if (child_key.as_unchecked<std::string_view>() == key) {
                     child = {child_key, child_value};
                     index = j + 1;
                     break;

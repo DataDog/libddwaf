@@ -139,6 +139,7 @@ class borrowed_object;
 
 template <typename Derived> class base_object {
 public:
+    [[nodiscard]] object_type type() const noexcept;
     borrowed_object emplace_back(owned_object &&value);
     borrowed_object emplace(std::string_view key, owned_object &&value);
     borrowed_object emplace(owned_object &&key, owned_object &&value);
@@ -324,6 +325,11 @@ protected:
     friend class base_object<borrowed_object>;
     friend class base_object<owned_object>;
 };
+
+template <typename Derived> [[nodiscard]] object_type base_object<Derived>::type() const noexcept
+{
+    return static_cast<const Derived *>(this)->ptr()->type;
+}
 
 template <typename Derived> borrowed_object base_object<Derived>::emplace_back(owned_object &&value)
 {

@@ -74,7 +74,8 @@ void ddwaf_allocator_destroy(ddwaf_allocator *alloc)
 extern "C" {
 ddwaf_object *ddwaf_object_alloc(ddwaf_allocator *alloc)
 {
-    return reinterpret_cast<ddwaf_object *>(detail::object_alloc(to_memres(alloc)));
+    return reinterpret_cast<ddwaf_object *>(
+        ddwaf::detail::alloc_helper<detail::object>(*to_memres(alloc), 1));
 }
 
 void ddwaf_object_free(ddwaf_object *object, ddwaf_allocator *alloc)

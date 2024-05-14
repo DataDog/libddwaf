@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "processor.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "utils.hpp"
 
@@ -47,22 +46,26 @@ void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, c
         }
 
         auto object = generator_->generate(input, scanners_, deadline);
-        if (object.type == DDWAF_OBJ_INVALID) {
+        if (object.type() == object_type::invalid) {
             continue;
         }
 
-        if (evaluate_) {
-            store.insert(mapping.output, mapping.output_address, object, attr);
-        }
+        // TODO Fix this
+        /*if (evaluate_) {*/
+        /*store.insert(mapping.output, mapping.output_address, std::move(object), attr);*/
+        /*}*/
 
         if (output_ && derived.has_value()) {
-            ddwaf_object &output = derived.value();
-            if (evaluate_) {
-                auto copy = ddwaf::clone(&object);
-                ddwaf_object_map_add(&output, mapping.output_address.c_str(), &copy);
-            } else {
-                ddwaf_object_map_add(&output, mapping.output_address.c_str(), &object);
-            }
+            // TODO Fix this
+            borrowed_object output{reinterpret_cast<detail::object *>(&derived.value())};
+            output.emplace(mapping.output_address, std::move(object));
+            /*            if (evaluate_) {*/
+            /*auto copy = ddwaf::clone(&object);*/
+            /*ddwaf_object_map_add(&output, mapping.output_address.c_str(), &copy);*/
+            /*} else {*/
+            /*              ddwaf_object_map_add(&output, mapping.output_address.c_str(),
+             * &object);*/
+            /*}*/
         }
     }
 }

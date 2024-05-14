@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "clock.hpp"
+#include "object_view.hpp"
 #include "scanner.hpp"
 #include "utils.hpp"
 

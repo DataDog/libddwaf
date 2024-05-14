@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "generator/base.hpp"
+#include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::generator {
