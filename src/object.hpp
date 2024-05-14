@@ -101,7 +101,7 @@ using object_uptr = std::unique_ptr<object, object_deleter>;
 inline bool requires_allocator(object_type type)
 {
     // Container or non-const, non-small, string
-    return (type & 0xE0) != 0 || type == object_type::string;
+    return (type & container_object_type) != 0 || type == object_type::string;
 }
 
 } // namespace detail

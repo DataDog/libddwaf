@@ -7,10 +7,10 @@
 
 namespace ddwaf {
 
-waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_limits limits,
-    std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
+waf::waf(object_view input, base_ruleset_info &info, object_limits limits,
+    std::shared_ptr<obfuscator> event_obfuscator)
 {
-    auto input_map = static_cast<parameter::map>(input);
+    auto input_map = input.convert<std::unordered_map<std::string_view, object_view>>();
 
     unsigned version = 2;
     auto it = input_map.find("version");
@@ -37,7 +37,7 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
     throw unsupported_version();
 }
 
-waf *waf::update(ddwaf::parameter input, ddwaf::base_ruleset_info &info)
+waf *waf::update(object_view input, base_ruleset_info &info)
 {
     if (builder_) {
         auto ruleset = builder_->build(input, info);

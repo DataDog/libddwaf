@@ -11,10 +11,24 @@
 #include <iomanip>
 #include <string>
 
+#include "exception.hpp"
 #include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
+
+template <> struct object_view::converter<std::string_view> {
+    explicit converter(object_view view) : view(view) {}
+    std::string_view operator()() const
+    {
+        if (!view.is_string()) {
+            [[unlikely]] throw bad_cast("string", object_type_to_string<std::string>(view.type()));
+        }
+        return view.as_unchecked<std::string_view>();
+    }
+    object_view view;
+};
+
 
 template <> struct object_view::converter<std::string> {
     explicit converter(object_view view) : view(view) {}
@@ -36,8 +50,31 @@ template <> struct object_view::converter<std::string> {
         default:
             break;
         }
-        // TODO fix this with a proper exception
-        throw std::runtime_error("invalid conversion");
+        [[unlikely]] throw bad_cast("string", object_type_to_string<std::string>(view.type()));
+    }
+    object_view view;
+};
+
+template <> struct object_view::converter<object_view::array> {
+    explicit converter(object_view view) : view(view) {}
+    object_view::array operator()() const
+    {
+        if (view.type() != object_type::array) {
+            [[unlikely]] throw bad_cast("array", object_type_to_string<std::string>(view.type()));
+        }
+        return view.as_unchecked<object_view::array>();
+    }
+    object_view view;
+};
+
+template <> struct object_view::converter<object_view::map> {
+    explicit converter(object_view view) : view(view) {}
+    object_view::map operator()() const
+    {
+        if (view.type() != object_type::map) {
+            [[unlikely]] throw bad_cast("map", object_type_to_string<std::string>(view.type()));
+        }
+        return view.as_unchecked<object_view::map>();
     }
     object_view view;
 };
@@ -47,7 +84,7 @@ template <> struct object_view::converter<std::unordered_map<std::string_view, o
     std::unordered_map<std::string_view, object_view> operator()() const
     {
         if (view.type() != object_type::map) {
-            throw parsing_error("object not a map");
+            throw bad_cast("map", object_type_to_string<std::string>(view.type()));
         }
 
         std::unordered_map<std::string_view, object_view> map;

@@ -9,6 +9,7 @@
 #include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "object.hpp"
+#include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {

@@ -54,9 +54,8 @@ ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str, bool redact = f
 
 void serialize_match(const condition_match &match, ddwaf_object &match_map, auto &obfuscator)
 {
-    ddwaf_object tmp;
     ddwaf_object param;
-    ddwaf_object_map(&param);
+    ddwaf_object_set_map(&param, );
 
     bool redact = redact_match(obfuscator, match);
 

@@ -8,7 +8,7 @@
 
 #include <unordered_set>
 
-#include "object.hpp"
+#include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {

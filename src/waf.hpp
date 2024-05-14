@@ -20,11 +20,11 @@ namespace ddwaf {
 
 class waf {
 public:
-    waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_limits limits,
-        std::shared_ptr<ddwaf::obfuscator> event_obfuscator);
-    waf *update(ddwaf::parameter input, ddwaf::base_ruleset_info &info);
+    waf(object_view input, base_ruleset_info &info, object_limits limits,
+        std::shared_ptr<obfuscator> event_obfuscator);
+    waf *update(object_view input, base_ruleset_info &info);
 
-    ddwaf::context_wrapper *create_context() { return new context_wrapper(ruleset_); }
+    context_wrapper *create_context() { return new context_wrapper(ruleset_); }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses() const
     {

@@ -8,11 +8,11 @@
 
 #include <optional>
 #include <string>
+#include <unordered_set>
 
 #include "exception.hpp"
 #include "object_converter.hpp"
 #include "object_view.hpp"
-#include "parameter.hpp"
 #include "transformer/base.hpp"
 
 namespace ddwaf::parser {
@@ -36,11 +36,11 @@ T at(const std::unordered_map<std::string_view, object_view> &map, const Key &ke
 }
 
 template <typename T, typename Key>
-T at(const parameter::map &map, const Key &key, const T &default_)
+T at(const std::unordered_map<std::string_view, object_view> &map, const Key &key, const T &default_)
 {
     try {
         auto it = map.find(key);
-        return it == map.end() ? default_ : static_cast<T>(it->second);
+        return it == map.end() ? default_ : it->second.template convert<T>();
     } catch (const bad_cast &e) {
         throw invalid_type(std::string(key), e);
     }

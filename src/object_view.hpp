@@ -72,19 +72,19 @@ public:
     }
     [[nodiscard]] bool is_valid() const noexcept
     {
-        return obj_ != nullptr && (obj_->type & 0xFE) != 0;
+        return obj_ != nullptr && obj_->type != object_type::invalid;
     }
     [[nodiscard]] bool is_invalid() const noexcept
     {
-        return obj_ != nullptr && (obj_->type & 0xFE) == 0;
+        return obj_ != nullptr && obj_->type == object_type::invalid;
     }
     [[nodiscard]] bool is_container() const noexcept
     {
-        return obj_ != nullptr && (obj_->type & 0xE0) != 0;
+        return obj_ != nullptr && (obj_->type & container_object_type) != 0;
     }
     [[nodiscard]] bool is_scalar() const noexcept
     {
-        return obj_ != nullptr && (obj_->type & 0x1E) != 0;
+        return obj_ != nullptr && (obj_->type & scalar_object_type) != 0;
     }
     [[nodiscard]] bool is_string() const noexcept
     {

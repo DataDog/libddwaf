@@ -22,20 +22,20 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     auto store_cleanup_scope = store_.get_eval_scope();
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
-        output = DDWAF_RESULT_INITIALISER;
+    if (persistent.has_value()) {
+        owned_object owned{reinterpret_cast<detail::object&>(*persistent)};
+        if (!store_.insert(std::move(owned), attribute::none)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return DDWAF_ERR_INVALID_OBJECT;
+        }
     }
 
-    auto *free_fn = ruleset_->free_fn;
-    if (persistent.has_value() && !store_.insert(*persistent, attribute::none, free_fn)) {
-        DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return DDWAF_ERR_INVALID_OBJECT;
-    }
-
-    if (ephemeral.has_value() && !store_.insert(*ephemeral, attribute::ephemeral, free_fn)) {
-        DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return DDWAF_ERR_INVALID_OBJECT;
+    if (ephemeral.has_value()) {
+        owned_object owned{reinterpret_cast<detail::object&>(*ephemeral)};
+        if (!store_.insert(std::move(owned), attribute::ephemeral)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return DDWAF_ERR_INVALID_OBJECT;
+        }
     }
 
     // If the timeout provided is 0, we need to ensure the parameters are owned
@@ -61,7 +61,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     optional_ref<ddwaf_object> derived;
     if (res.has_value()) {
         ddwaf_result &output = *res;
-        ddwaf_object_map(&output.derivatives);
+        ddwaf_object_set_map(&output.derivatives, 32, nullptr);
         derived.emplace(output.derivatives);
     }
 
