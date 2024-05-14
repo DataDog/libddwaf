@@ -29,7 +29,6 @@ template <> struct object_view::converter<std::string_view> {
     object_view view;
 };
 
-
 template <> struct object_view::converter<std::string> {
     explicit converter(object_view view) : view(view) {}
     std::string operator()() const
@@ -89,13 +88,10 @@ template <> struct object_view::converter<std::unordered_map<std::string_view, o
 
         std::unordered_map<std::string_view, object_view> map;
         auto map_view = view.as_unchecked<object_view::map>();
-        for (auto [key, value] : map_view) {
-            map.emplace(key, value);
-        }
+        for (auto [key, value] : map_view) { map.emplace(key, value); }
         return map;
     }
     object_view view;
 };
-
 
 } // namespace ddwaf

@@ -78,7 +78,8 @@ std::set<const scanner *> references_to_scanners(
 
 } // namespace
 
-std::shared_ptr<ruleset> ruleset_builder::build(const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info)
+std::shared_ptr<ruleset> ruleset_builder::build(
+    const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info)
 {
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
@@ -205,11 +206,13 @@ std::shared_ptr<ruleset> ruleset_builder::build(const std::unordered_map<std::st
     return rs;
 }
 
-ruleset_builder::change_state ruleset_builder::load(const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info)
+ruleset_builder::change_state ruleset_builder::load(
+    const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info)
 {
     change_state state = change_state::none;
 
-    auto metadata = parser::at<std::unordered_map<std::string_view, object_view>>(root, "metadata", {});
+    auto metadata =
+        parser::at<std::unordered_map<std::string_view, object_view>>(root, "metadata", {});
     auto rules_version = parser::at<std::string_view>(metadata, "rules_version", {});
     if (!rules_version.empty()) {
         info.set_ruleset_version(rules_version);

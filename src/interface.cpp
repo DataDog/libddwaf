@@ -91,9 +91,9 @@ ddwaf::waf *ddwaf_init(
 {
     try {
         if (ruleset != nullptr) {
-            ddwaf::object_view input{reinterpret_cast<const ddwaf::detail::object*>(ruleset)};
+            ddwaf::object_view input{reinterpret_cast<const ddwaf::detail::object *>(ruleset)};
 
-            //if (diagnostics == nullptr) {
+            // if (diagnostics == nullptr) {
             ddwaf::null_ruleset_info ri;
             return new ddwaf::waf(
                 input, ri, limits_from_config(config), obfuscator_from_config(config));
@@ -102,8 +102,8 @@ ddwaf::waf *ddwaf_init(
             /*ddwaf::ruleset_info ri;*/
             /*const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });*/
 
-/*            return new ddwaf::waf(*/
-                /*input, ri, limits_from_config(config), obfuscator_from_config(config));*/
+            /*            return new ddwaf::waf(*/
+            /*input, ri, limits_from_config(config), obfuscator_from_config(config));*/
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
@@ -114,14 +114,15 @@ ddwaf::waf *ddwaf_init(
     return nullptr;
 }
 
-ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_object * /*diagnostics*/)
+ddwaf::waf *ddwaf_update(
+    ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_object * /*diagnostics*/)
 {
     try {
         if (handle != nullptr && ruleset != nullptr) {
-            ddwaf::object_view input{reinterpret_cast<const ddwaf::detail::object*>(ruleset)};
-            //if (diagnostics == nullptr) {
-                ddwaf::null_ruleset_info ri;
-                return handle->update(input, ri);
+            ddwaf::object_view input{reinterpret_cast<const ddwaf::detail::object *>(ruleset)};
+            // if (diagnostics == nullptr) {
+            ddwaf::null_ruleset_info ri;
+            return handle->update(input, ri);
             //}
 
             /*ddwaf::ruleset_info ri;*/
@@ -183,8 +184,19 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
     return nullptr;
 }
 
-#define DDWAF_OBJECT_INITIALISER {{0}, DDWAF_OBJ_INVALID, {{0, 0}}}
-#define DDWAF_RESULT_INITIALISER {false, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, 0}
+#define DDWAF_OBJECT_INITIALISER                                                                   \
+    {                                                                                              \
+        {0}, DDWAF_OBJ_INVALID,                                                                    \
+        {                                                                                          \
+            {                                                                                      \
+                0, 0                                                                               \
+            }                                                                                      \
+        }                                                                                          \
+    }
+#define DDWAF_RESULT_INITIALISER                                                                   \
+    {                                                                                              \
+        false, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, 0     \
+    }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,

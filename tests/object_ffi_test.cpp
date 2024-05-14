@@ -10,8 +10,7 @@
 
 #include "ddwaf.h"
 
-#define EXPECT_SVEQ(obtained, expected) \
-    EXPECT_TRUE(obtained == std::string_view{expected})
+#define EXPECT_SVEQ(obtained, expected) EXPECT_TRUE(obtained == std::string_view{expected})
 
 #define LSTRARG(str) (str), sizeof((str)) - 1
 using namespace std::literals;
@@ -23,9 +22,9 @@ struct counting_allocator {
     std::pmr::memory_resource *memres{std::pmr::new_delete_resource()};
 };
 
-void* counting_alloc(void *udata, size_t size, size_t alignment)
+void *counting_alloc(void *udata, size_t size, size_t alignment)
 {
-    counting_allocator &allocator = *reinterpret_cast<counting_allocator*>(udata);
+    counting_allocator &allocator = *reinterpret_cast<counting_allocator *>(udata);
     allocator.alloc++;
     return allocator.memres->allocate(size, alignment);
 }
@@ -33,7 +32,7 @@ void* counting_alloc(void *udata, size_t size, size_t alignment)
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void counting_free(void *udata, void *ptr, size_t size, size_t alignment)
 {
-    counting_allocator &allocator = *reinterpret_cast<counting_allocator*>(udata);
+    counting_allocator &allocator = *reinterpret_cast<counting_allocator *>(udata);
     allocator.free++;
     allocator.memres->deallocate(ptr, size, alignment);
 }
@@ -139,7 +138,8 @@ TEST(ObjectFfi, StringConstructorUserAllocator)
     constexpr auto value = "hello world!"sv;
 
     counting_allocator underlying_alloc;
-    auto *alloc = ddwaf_allocator_init(reinterpret_cast<void*>(&underlying_alloc), counting_alloc, counting_free);
+    auto *alloc = ddwaf_allocator_init(
+        reinterpret_cast<void *>(&underlying_alloc), counting_alloc, counting_free);
     ASSERT_NE(alloc, nullptr);
 
     ddwaf_object obj;
@@ -170,7 +170,8 @@ TEST(ObjectFfi, ArrayConstructor)
 TEST(ObjectFfi, ArrayConstructorUserAllocator)
 {
     counting_allocator underlying_alloc;
-    auto *alloc = ddwaf_allocator_init(reinterpret_cast<void*>(&underlying_alloc), counting_alloc, counting_free);
+    auto *alloc = ddwaf_allocator_init(
+        reinterpret_cast<void *>(&underlying_alloc), counting_alloc, counting_free);
     ASSERT_NE(alloc, nullptr);
 
     ddwaf_object obj;
@@ -198,7 +199,8 @@ TEST(ObjectFfi, MapConstructor)
 TEST(ObjectFfi, MapConstructorUserAllocator)
 {
     counting_allocator underlying_alloc;
-    auto *alloc = ddwaf_allocator_init(reinterpret_cast<void*>(&underlying_alloc), counting_alloc, counting_free);
+    auto *alloc = ddwaf_allocator_init(
+        reinterpret_cast<void *>(&underlying_alloc), counting_alloc, counting_free);
     ASSERT_NE(alloc, nullptr);
 
     ddwaf_object obj;
@@ -223,7 +225,7 @@ TEST(ObjectFfi, ArrayInsert)
     EXPECT_EQ(ddwaf_object_get_size(&obj), 0);
     EXPECT_EQ(ddwaf_object_get_capacity(&obj), count);
 
-    for (unsigned i = 0; i < count; ++i ) {
+    for (unsigned i = 0; i < count; ++i) {
         auto *slot = ddwaf_object_insert(&obj);
         ddwaf_object_set_invalid(slot);
         EXPECT_EQ(ddwaf_object_get_size(&obj), i + 1);
@@ -251,7 +253,8 @@ TEST(ObjectFfi, ArrayInsertUserAllocator)
     constexpr unsigned count = 8;
 
     counting_allocator underlying_alloc;
-    auto *alloc = ddwaf_allocator_init(reinterpret_cast<void*>(&underlying_alloc), counting_alloc, counting_free);
+    auto *alloc = ddwaf_allocator_init(
+        reinterpret_cast<void *>(&underlying_alloc), counting_alloc, counting_free);
     ASSERT_NE(alloc, nullptr);
 
     ddwaf_object obj;
@@ -261,7 +264,7 @@ TEST(ObjectFfi, ArrayInsertUserAllocator)
     EXPECT_EQ(ddwaf_object_get_capacity(&obj), count);
     EXPECT_EQ(underlying_alloc.alloc, 1);
 
-    for (unsigned i = 0; i < count; ++i ) {
+    for (unsigned i = 0; i < count; ++i) {
         auto *slot = ddwaf_object_insert(&obj);
         ddwaf_object_set_string(slot, LSTRARG("long string..."), alloc);
         EXPECT_EQ(ddwaf_object_get_size(&obj), i + 1);
@@ -339,8 +342,9 @@ TEST(ObjectFfi, ArrayInsertHeterogenous)
 
     EXPECT_EQ(ddwaf_object_get_size(&obj), ddwaf_object_get_capacity(&obj));
 
-    std::array<ddwaf_object_type, 11> types {
-        DDWAF_OBJ_INVALID, DDWAF_OBJ_NULL, DDWAF_OBJ_BOOL, DDWAF_OBJ_SIGNED, DDWAF_OBJ_UNSIGNED, DDWAF_OBJ_FLOAT, DDWAF_OBJ_CONST_STRING, DDWAF_OBJ_SMALL_STRING, DDWAF_OBJ_STRING, DDWAF_OBJ_ARRAY, DDWAF_OBJ_MAP};
+    std::array<ddwaf_object_type, 11> types{DDWAF_OBJ_INVALID, DDWAF_OBJ_NULL, DDWAF_OBJ_BOOL,
+        DDWAF_OBJ_SIGNED, DDWAF_OBJ_UNSIGNED, DDWAF_OBJ_FLOAT, DDWAF_OBJ_CONST_STRING,
+        DDWAF_OBJ_SMALL_STRING, DDWAF_OBJ_STRING, DDWAF_OBJ_ARRAY, DDWAF_OBJ_MAP};
     for (unsigned i = 0; i < ddwaf_object_get_size(&obj); ++i) {
         const auto *value = ddwaf_object_get_index(&obj, i, nullptr);
         ASSERT_NE(value, nullptr);
@@ -376,7 +380,8 @@ TEST(ObjectFfi, ArrayInsertHeterogenous)
         EXPECT_EQ(ddwaf_object_get_type(child_key), DDWAF_OBJ_SMALL_STRING);
 
         std::string_view result{ddwaf_object_get_string(child), ddwaf_object_get_length(child)};
-        std::string_view key{ddwaf_object_get_string(child_key), ddwaf_object_get_length(child_key)};
+        std::string_view key{
+            ddwaf_object_get_string(child_key), ddwaf_object_get_length(child_key)};
         EXPECT_SVEQ(result, "hello world!");
         EXPECT_SVEQ(key, "key");
 
@@ -401,7 +406,7 @@ TEST(ObjectFfi, MapInsertKey)
     EXPECT_EQ(ddwaf_object_get_capacity(&obj), count);
 
     std::string_view exp_key = "key_larger_than_11_bytes";
-    for (unsigned i = 0; i < count; ++i ) {
+    for (unsigned i = 0; i < count; ++i) {
         auto *slot = ddwaf_object_insert_key(&obj, exp_key.data(), exp_key.size(), nullptr);
         ddwaf_object_set_invalid(slot);
         EXPECT_EQ(ddwaf_object_get_size(&obj), i + 1);
@@ -435,7 +440,8 @@ TEST(ObjectFfi, MapInsertKeyUserAllocator)
     constexpr unsigned count = 8;
 
     counting_allocator underlying_alloc;
-    auto *alloc = ddwaf_allocator_init(reinterpret_cast<void*>(&underlying_alloc), counting_alloc, counting_free);
+    auto *alloc = ddwaf_allocator_init(
+        reinterpret_cast<void *>(&underlying_alloc), counting_alloc, counting_free);
     ASSERT_NE(alloc, nullptr);
 
     ddwaf_object obj;
@@ -446,7 +452,7 @@ TEST(ObjectFfi, MapInsertKeyUserAllocator)
     EXPECT_EQ(underlying_alloc.alloc, 1);
 
     std::string_view exp_key = "key_larger_than_11_bytes";
-    for (unsigned i = 0; i < count; ++i ) {
+    for (unsigned i = 0; i < count; ++i) {
         auto *slot = ddwaf_object_insert_key(&obj, exp_key.data(), exp_key.size(), alloc);
         ddwaf_object_set_string(slot, LSTRARG("long string..."), alloc);
         EXPECT_EQ(ddwaf_object_get_size(&obj), i + 1);
@@ -461,8 +467,6 @@ TEST(ObjectFfi, MapInsertKeyUserAllocator)
     ddwaf_allocator_destroy(alloc);
 }
 
-
-
 TEST(ObjectFfi, MapInsertSmallKey)
 {
     unsigned count = 8;
@@ -473,7 +477,7 @@ TEST(ObjectFfi, MapInsertSmallKey)
     EXPECT_EQ(ddwaf_object_get_capacity(&obj), count);
 
     std::string_view exp_key = "key";
-    for (unsigned i = 0; i < count; ++i ) {
+    for (unsigned i = 0; i < count; ++i) {
         auto *slot = ddwaf_object_insert_key(&obj, exp_key.data(), exp_key.size(), nullptr);
         ddwaf_object_set_invalid(slot);
         EXPECT_EQ(ddwaf_object_get_size(&obj), i + 1);
@@ -512,7 +516,7 @@ TEST(ObjectFfi, MapInsertConstKey)
     EXPECT_EQ(ddwaf_object_get_capacity(&obj), count);
 
     std::string_view exp_key = "key";
-    for (unsigned i = 0; i < count; ++i ) {
+    for (unsigned i = 0; i < count; ++i) {
         auto *slot = ddwaf_object_insert_const_key(&obj, exp_key.data(), exp_key.size());
         ddwaf_object_set_invalid(slot);
         EXPECT_EQ(ddwaf_object_get_size(&obj), i + 1);
@@ -606,7 +610,7 @@ TEST(ObjectFfi, MapInsertHeterogenous)
 
     EXPECT_EQ(ddwaf_object_get_size(&obj), ddwaf_object_get_capacity(&obj));
 
-    std::array<ddwaf_object_type, 11> types {DDWAF_OBJ_INVALID, DDWAF_OBJ_NULL, DDWAF_OBJ_BOOL,
+    std::array<ddwaf_object_type, 11> types{DDWAF_OBJ_INVALID, DDWAF_OBJ_NULL, DDWAF_OBJ_BOOL,
         DDWAF_OBJ_SIGNED, DDWAF_OBJ_UNSIGNED, DDWAF_OBJ_FLOAT, DDWAF_OBJ_CONST_STRING,
         DDWAF_OBJ_SMALL_STRING, DDWAF_OBJ_STRING, DDWAF_OBJ_ARRAY, DDWAF_OBJ_MAP};
     for (unsigned i = 0; i < ddwaf_object_get_size(&obj); ++i) {
@@ -616,7 +620,8 @@ TEST(ObjectFfi, MapInsertHeterogenous)
         ASSERT_NE(child_key, nullptr);
 
         EXPECT_EQ(ddwaf_object_get_type(value), types.at(i));
-        std::string_view key{ddwaf_object_get_string(child_key), ddwaf_object_get_length(child_key)};
+        std::string_view key{
+            ddwaf_object_get_string(child_key), ddwaf_object_get_length(child_key)};
         EXPECT_EQ(std::to_string(i), key);
     }
 
@@ -649,7 +654,8 @@ TEST(ObjectFfi, MapInsertHeterogenous)
         EXPECT_EQ(ddwaf_object_get_type(child_key), DDWAF_OBJ_SMALL_STRING);
 
         std::string_view result{ddwaf_object_get_string(child), ddwaf_object_get_length(child)};
-        std::string_view key{ddwaf_object_get_string(child_key), ddwaf_object_get_length(child_key)};
+        std::string_view key{
+            ddwaf_object_get_string(child_key), ddwaf_object_get_length(child_key)};
         EXPECT_SVEQ(result, "hello world!");
         EXPECT_SVEQ(key, "key");
 

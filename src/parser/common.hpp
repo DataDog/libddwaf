@@ -36,7 +36,8 @@ T at(const std::unordered_map<std::string_view, object_view> &map, const Key &ke
 }
 
 template <typename T, typename Key>
-T at(const std::unordered_map<std::string_view, object_view> &map, const Key &key, const T &default_)
+T at(
+    const std::unordered_map<std::string_view, object_view> &map, const Key &key, const T &default_)
 {
     try {
         auto it = map.find(key);

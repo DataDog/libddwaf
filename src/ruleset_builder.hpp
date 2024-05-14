@@ -38,7 +38,8 @@ public:
         return build(root, info);
     }
 
-    std::shared_ptr<ruleset> build(const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info);
+    std::shared_ptr<ruleset> build(
+        const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info);
 
 protected:
     enum class change_state : uint32_t {
@@ -56,7 +57,8 @@ protected:
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
     friend constexpr change_state operator&(change_state lhs, change_state rhs);
 
-    change_state load(const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info);
+    change_state load(
+        const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info);
 
     // These members are obtained through ddwaf_config and are persistent across
     // all updates.

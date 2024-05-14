@@ -10,8 +10,7 @@
 #include "object.hpp"
 #include "object_view.hpp"
 
-#define EXPECT_SVEQ(obtained, expected) \
-    EXPECT_TRUE(obtained == std::string_view{expected})
+#define EXPECT_SVEQ(obtained, expected) EXPECT_TRUE(obtained == std::string_view{expected})
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -227,9 +226,7 @@ TEST(Object, ArrayEmplaceBack)
     auto array_view = view.as_unchecked<object_view::array>();
     EXPECT_EQ(array_view.size(), 8);
     EXPECT_EQ(array_view.capacity(), 8);
-    for (auto value : array_view) {
-        EXPECT_EQ(value.type(), object_type::invalid);
-    }
+    for (auto value : array_view) { EXPECT_EQ(value.type(), object_type::invalid); }
 }
 
 TEST(Object, MapEmplaceStringViewKey)

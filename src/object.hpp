@@ -58,10 +58,40 @@ static_assert(std::numeric_limits<std::size_t>::max() / sizeof(detail::object) >
 static_assert(std::numeric_limits<std::size_t>::max() / sizeof(detail::object_kv) >=
               std::numeric_limits<uint16_t>::max());
 
-inline object *object_alloc(std::pmr::memory_resource *alloc)
+// These helper work under some assumptions:
+// - Static asserts above ensure that sizeof(T) * count never overflows, since these
+//   are only meant to be used with sizeof(char), sizeof(object), sizeof(object_kv)
+//   and count is limited.
+// - The callers of these helper are enforcing said limits.
+template <typename T> T *alloc_helper(auto &alloc, std::size_t count)
 {
-    auto *obj = static_cast<object *>(alloc->allocate(sizeof(object), alignof(object)));
-    return new (obj) object{};
+    if (count == 0) {
+        [[unlikely]] return nullptr;
+    }
+    return static_cast<T *>(alloc.allocate(sizeof(T) * count, alignof(T)));
+}
+
+template <typename T> void dealloc_helper(auto &alloc, T *ptr, std::size_t count)
+{
+    if (ptr == nullptr) {
+        [[unlikely]] return;
+    }
+    alloc.deallocate(static_cast<void *>(ptr), sizeof(T) * count, alignof(T));
+}
+
+template <typename T>
+std::pair<T *, std::size_t> realloc_helper(auto &alloc, T *buffer, std::size_t count)
+{
+    if (count == 0) {
+        return {alloc_helper<T>(alloc, 4), 4};
+    }
+
+    auto new_count = count * 2;
+    T *new_buffer = alloc_helper<T>(alloc, new_count);
+    std::memcpy(new_buffer, buffer, count * sizeof(T));
+    dealloc_helper(alloc, buffer, count);
+
+    return {new_buffer, new_count};
 }
 
 // TODO implement iterative
@@ -70,24 +100,22 @@ inline void object_destroy(detail::object &obj, std::pmr::memory_resource *alloc
 {
     if (obj.type == object_type::array) {
         for (std::size_t i = 0; i < obj.size; ++i) { object_destroy(obj.via.array[i], alloc); }
-        alloc->deallocate(
-            obj.via.array, obj.capacity * sizeof(detail::object), alignof(detail::object));
+        dealloc_helper<detail::object>(*alloc, obj.via.array, obj.capacity);
     } else if (obj.type == object_type::map) {
         for (std::size_t i = 0; i < obj.size; ++i) {
             object_destroy(obj.via.map[i].key, alloc);
             object_destroy(obj.via.map[i].val, alloc);
         }
-        alloc->deallocate(
-            obj.via.map, obj.capacity * sizeof(detail::object_kv), alignof(detail::object_kv));
+        dealloc_helper<detail::object_kv>(*alloc, obj.via.map, obj.capacity);
     } else if (obj.type == object_type::string) {
-        alloc->deallocate(obj.via.str, obj.length * sizeof(char));
+        dealloc_helper<char>(*alloc, obj.via.str, obj.length);
     }
 }
 
 inline void object_free(detail::object *ptr, std::pmr::memory_resource *alloc)
 {
     object_destroy(*ptr, alloc);
-    alloc->deallocate(ptr, sizeof(detail::object), alignof(detail::object));
+    dealloc_helper<detail::object>(*alloc, ptr, 1);
 }
 
 struct object_deleter {
@@ -107,8 +135,18 @@ inline bool requires_allocator(object_type type)
 } // namespace detail
 
 class owned_object;
+class borrowed_object;
 
-class borrowed_object {
+template <typename Derived> class base_object {
+public:
+    borrowed_object emplace_back(owned_object &&value);
+    borrowed_object emplace(std::string_view key, owned_object &&value);
+    borrowed_object emplace(owned_object &&key, owned_object &&value);
+};
+
+class owned_object;
+
+class borrowed_object : public base_object<borrowed_object> {
 public:
     borrowed_object() = default;
     explicit borrowed_object(
@@ -118,20 +156,16 @@ public:
 
     [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
 
-    borrowed_object emplace_back(owned_object &&value);
-    borrowed_object emplace(std::string_view key, owned_object &&value);
-    borrowed_object emplace(owned_object &&key, owned_object &&value);
-
-    [[nodiscard]] detail::object *ptr() const { return obj_; }
+    [[nodiscard]] detail::object *ptr() { return obj_; }
+    [[nodiscard]] const detail::object *ptr() const { return obj_; }
+    [[nodiscard]] std::pmr::memory_resource *alloc() { return alloc_; }
 
 protected:
     detail::object *obj_{nullptr};
     std::pmr::memory_resource *alloc_{nullptr};
-
-    friend class owned_object;
 };
 
-class owned_object {
+class owned_object : public base_object<owned_object> {
 public:
     using size_type = decltype(detail::object::size);
     using length_type = decltype(detail::object::length);
@@ -164,7 +198,9 @@ public:
         return *this;
     }
 
+    [[nodiscard]] detail::object *ptr() { return &obj_; }
     [[nodiscard]] const detail::object *ptr() const { return &obj_; }
+    [[nodiscard]] std::pmr::memory_resource *alloc() { return alloc_; }
 
     static owned_object make_null()
     {
@@ -233,12 +269,14 @@ public:
 
         if (str.size() <= detail::OBJ_SSTR_SIZE) {
             obj.type = object_type::small_string;
-            std::memcpy(&obj.via.sstr, str.data(), str.size());
+            if (str.data() != nullptr) {
+                std::memcpy(&obj.via.sstr, str.data(), str.size());
+            }
             return owned_object{obj, nullptr};
         }
 
         obj.type = object_type::string;
-        obj.via.str = static_cast<char *>(alloc->allocate(sizeof(char) * str.size()));
+        obj.via.str = detail::alloc_helper<char>(*alloc, str.size());
         std::memcpy(obj.via.str, str.data(), str.size());
         return owned_object{obj, alloc};
     }
@@ -246,15 +284,11 @@ public:
     static owned_object make_array(
         std::size_t capacity, std::pmr::memory_resource *alloc = std::pmr::get_default_resource())
     {
-        if (capacity > std::numeric_limits<size_type>::max()) {
+        if (capacity > std::numeric_limits<size_type>::max() || alloc == nullptr) {
             return {};
         }
         return owned_object{
-            {.via =
-                    {
-                        .array = static_cast<detail::object *>(alloc->allocate(
-                            sizeof(detail::object) * capacity, alignof(detail::object))),
-                    },
+            {.via = {.array = detail::alloc_helper<detail::object>(*alloc, capacity)},
                 .type = object_type::array,
                 .capacity = static_cast<size_type>(capacity),
                 .size = 0},
@@ -264,13 +298,12 @@ public:
     static owned_object make_map(
         std::size_t capacity, std::pmr::memory_resource *alloc = std::pmr::get_default_resource())
     {
-        if (capacity > std::numeric_limits<size_type>::max()) {
+        if (capacity > std::numeric_limits<size_type>::max() || alloc == nullptr) {
             return {};
         }
 
         return owned_object{
-            {.via = {.map = static_cast<detail::object_kv *>(alloc->allocate(
-                         sizeof(detail::object_kv) * capacity, alignof(detail::object_kv)))},
+            {.via = {.map = detail::alloc_helper<detail::object_kv>(*alloc, capacity)},
                 .type = object_type::map,
                 .capacity = static_cast<size_type>(capacity),
                 .size = 0},
@@ -284,94 +317,85 @@ public:
         return copy;
     }
 
-    borrowed_object emplace_back(owned_object &&value)
-    {
-        if (obj_.type != object_type::array || obj_.size == obj_.capacity ||
-            (detail::requires_allocator(value.obj_.type) && value.alloc_ != alloc_)) {
-            return {};
-        }
-
-        auto &current = obj_.via.array[obj_.size++];
-        current = value.move();
-        return borrowed_object{&current, alloc_};
-    }
-
-    borrowed_object emplace(std::string_view key, owned_object &&value)
-    {
-        if (obj_.type != object_type::map || obj_.size == obj_.capacity ||
-            (detail::requires_allocator(value.obj_.type) && value.alloc_ != alloc_)) {
-            return {};
-        }
-
-        auto &current = obj_.via.map[obj_.size++];
-        current.key = make_string(key).move();
-        current.val = value.move();
-
-        return borrowed_object{&current.val, alloc_};
-    }
-
-    borrowed_object emplace(owned_object &&key, owned_object &&value)
-    {
-        if (obj_.type != object_type::map || obj_.size == obj_.capacity ||
-            (key.obj_.type & object_type::string) == 0 ||
-            (detail::requires_allocator(key.obj_.type) && key.alloc_ != alloc_) ||
-            (detail::requires_allocator(value.obj_.type) && value.alloc_ != alloc_)) {
-            return {};
-        }
-
-        auto &current = obj_.via.map[obj_.size++];
-        current.key = key.move();
-        current.val = value.move();
-
-        return borrowed_object{&current.val, alloc_};
-    }
-
 protected:
-    friend class borrowed_object;
-
     detail::object obj_{};
     std::pmr::memory_resource *alloc_{std::pmr::get_default_resource()};
+
+    friend class base_object<borrowed_object>;
+    friend class base_object<owned_object>;
 };
 
-inline borrowed_object borrowed_object::emplace_back(owned_object &&value)
+template <typename Derived> borrowed_object base_object<Derived>::emplace_back(owned_object &&value)
 {
-    if (obj_->type != object_type::array || obj_->size == obj_->capacity ||
-        (detail::requires_allocator(value.obj_.type) && value.alloc_ != alloc_)) {
+    auto obj = static_cast<Derived *>(this)->ptr();
+    auto alloc = static_cast<Derived *>(this)->alloc();
+
+    if (obj == nullptr || obj->type != object_type::array ||
+        (detail::requires_allocator(value.obj_.type) && value.alloc_ != alloc)) {
         return {};
     }
 
-    auto &current = obj_->via.array[obj_->size++];
+    if (obj->size == obj->capacity) {
+        auto [new_array, new_capacity] =
+            detail::realloc_helper<detail::object>(*alloc, obj->via.array, obj->capacity);
+        obj->via.array = new_array;
+        obj->capacity = new_capacity;
+    }
+
+    auto &current = obj->via.array[obj->size++];
     current = value.move();
-    return borrowed_object{&current, alloc_};
+    return borrowed_object{&current, alloc};
 }
 
-inline borrowed_object borrowed_object::emplace(std::string_view key, owned_object &&value)
+template <typename Derived>
+borrowed_object base_object<Derived>::emplace(std::string_view key, owned_object &&value)
 {
-    if (obj_->type != object_type::map || obj_->size == obj_->capacity ||
-        (detail::requires_allocator(value.obj_.type) && value.alloc_ != alloc_)) {
+    auto obj = static_cast<Derived *>(this)->ptr();
+    auto alloc = static_cast<Derived *>(this)->alloc();
+
+    if (obj == nullptr || obj->type != object_type::map ||
+        (detail::requires_allocator(value.obj_.type) && value.alloc_ != alloc)) {
         return {};
     }
 
-    auto &current = obj_->via.map[obj_->size++];
-    current.key = owned_object::make_string(key, alloc_).move();
+    if (obj->size == obj->capacity) {
+        auto [new_map, new_capacity] =
+            detail::realloc_helper<detail::object_kv>(*alloc, obj->via.map, obj->capacity);
+        obj->via.map = new_map;
+        obj->capacity = new_capacity;
+    }
+
+    auto &current = obj->via.map[obj->size++];
+    current.key = owned_object::make_string(key, alloc).move();
     current.val = value.move();
-    return borrowed_object{&current.val, alloc_};
+    return borrowed_object{&current.val, alloc};
 }
 
-inline borrowed_object borrowed_object::emplace(owned_object &&key, owned_object &&value)
+template <typename Derived>
+borrowed_object base_object<Derived>::emplace(owned_object &&key, owned_object &&value)
 {
-    if (obj_->type != object_type::map || obj_->size == obj_->capacity ||
+    auto obj = static_cast<Derived *>(this)->ptr();
+    auto alloc = static_cast<Derived *>(this)->alloc();
+
+    if (obj == nullptr || obj->type != object_type::map ||
         (key.obj_.type & object_type::string) == 0 ||
-        (detail::requires_allocator(key.obj_.type) && key.alloc_ != alloc_) ||
-        (detail::requires_allocator(value.obj_.type) && value.alloc_ != alloc_)) {
+        (detail::requires_allocator(key.obj_.type) && key.alloc_ != alloc) ||
+        (detail::requires_allocator(value.obj_.type) && value.alloc_ != alloc)) {
         return {};
     }
 
-    auto &current = obj_->via.map[obj_->size++];
+    if (obj->size == obj->capacity) {
+        auto [new_map, new_capacity] =
+            detail::realloc_helper<detail::object_kv>(*alloc, obj->via.map, obj->capacity);
+        obj->via.map = new_map;
+        obj->capacity = new_capacity;
+    }
+
+    auto &current = obj->via.map[obj->size++];
     current.key = key.move();
     current.val = value.move();
 
-    return borrowed_object{&current.val, alloc_};
+    return borrowed_object{&current.val, alloc};
 }
 
 } // namespace ddwaf

@@ -14,19 +14,19 @@
 namespace ddwaf {
 
 enum class object_type : uint8_t {
-    invalid = 0x00,           // 0b00000000
-    null = 0x01,              // 0b00000001
-    boolean = 0x02,           // 0b00000010
-    int64 = 0x03,             // 0b00000011
-    uint64 = 0x04,            // 0b00000100
-    float64 = 0x05,           // 0b00000101
-    string = 0x10,            // 0b00010000
-    const_string = 0x11,      // 0b00010001
-    small_string = 0x12,      // 0b00010010
+    invalid = 0x00,      // 0b00000000
+    null = 0x01,         // 0b00000001
+    boolean = 0x02,      // 0b00000010
+    int64 = 0x03,        // 0b00000011
+    uint64 = 0x04,       // 0b00000100
+    float64 = 0x05,      // 0b00000101
+    string = 0x10,       // 0b00010000
+    const_string = 0x11, // 0b00010001
+    small_string = 0x12, // 0b00010010
     // string == (type & 0x10) != 0
     // scalar == (type & 0x1e) != 0
-    array = 0x20,             // 0b00100000
-    map = 0x40,               // 0b01000000
+    array = 0x20, // 0b00100000
+    map = 0x40,   // 0b01000000
     // container == (type & 0xE0) != 0
     // valid == (type & 0xFE) != 0
 };
