@@ -4,387 +4,288 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "ddwaf.h"
-#include "test.hpp"
-#include "utils.hpp"
+#include <gtest/gtest.h>
+#include <string_view>
+
+#include "object.hpp"
+#include "object_view.hpp"
+
+#define EXPECT_SVEQ(obtained, expected) \
+    EXPECT_TRUE(obtained == std::string_view{expected})
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 
-TEST(TestObject, TestCreateInvalid)
+TEST(Object, InvalidConstructor)
 {
-    ddwaf_object object;
-    ddwaf_object_invalid(&object);
-    EXPECT_EQ(object.type, DDWAF_OBJ_INVALID);
+    owned_object obj;
 
-    // Getters
-    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_INVALID);
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::invalid);
 }
 
-TEST(TestObject, TestInvalidString)
+TEST(Object, NullConstructor)
 {
-    ddwaf_object object;
-    EXPECT_EQ(ddwaf_object_string(&object, nullptr), nullptr);
-    EXPECT_EQ(ddwaf_object_stringl(&object, nullptr, 0), nullptr);
+    owned_object obj = owned_object::make_null();
+
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::null);
 }
 
-TEST(TestObject, TestString)
-{
-
-    ddwaf_object object;
-    ddwaf_object_string(&object, "Sqreen");
-
-    EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-    EXPECT_EQ(object.nbEntries, 6);
-    EXPECT_EQ(object.parameterName, nullptr);
-    EXPECT_STREQ((const char *)object.stringValue, "Sqreen");
-
-    // Getters
-    size_t length;
-    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(&object, &length), "Sqreen");
-    EXPECT_EQ(length, 6);
-    EXPECT_EQ(ddwaf_object_length(&object), 6);
-    EXPECT_EQ(ddwaf_object_size(&object), 0);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestObject, TestCreateStringl)
-{
-    ddwaf_object object;
-    ddwaf_object_stringl(&object, "Sqreen", sizeof("Sqreen") - 1);
-
-    EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-    EXPECT_EQ(object.nbEntries, 6);
-    EXPECT_EQ(object.parameterName, nullptr);
-    EXPECT_STREQ((const char *)object.stringValue, "Sqreen");
-
-    // Getters
-    size_t length;
-    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(&object, &length), "Sqreen");
-    EXPECT_EQ(length, 6);
-    EXPECT_EQ(ddwaf_object_length(&object), 6);
-    EXPECT_EQ(ddwaf_object_size(&object), 0);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestObject, TestCreateInt)
+TEST(Object, BooleanConstructor)
 {
     {
-        ddwaf_object object;
-        ddwaf_object_string_from_signed(&object, INT64_MIN);
+        owned_object obj = owned_object::make_boolean(true);
 
-        EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-        EXPECT_EQ(object.nbEntries, 20);
-        EXPECT_EQ(object.parameterName, nullptr);
-        EXPECT_STREQ(object.stringValue, "-9223372036854775808");
-
-        // Getters
-        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
-        EXPECT_EQ(ddwaf_object_length(&object), 20);
-        EXPECT_STREQ(ddwaf_object_get_string(&object, nullptr), "-9223372036854775808");
-        EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
-        EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
-        EXPECT_EQ(ddwaf_object_get_bool(&object), false);
-
-        ddwaf_object_free(&object);
+        object_view view{obj};
+        EXPECT_EQ(view.type(), object_type::boolean);
+        EXPECT_TRUE(view.as_unchecked<bool>());
     }
-
     {
-        ddwaf_object object;
-        ddwaf_object_string_from_signed(&object, INT64_MAX);
+        owned_object obj = owned_object::make_boolean(false);
 
-        EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-        EXPECT_EQ(object.nbEntries, 19);
-        EXPECT_EQ(object.parameterName, nullptr);
-        EXPECT_STREQ(object.stringValue, "9223372036854775807");
-
-        // Getters
-        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
-        EXPECT_EQ(ddwaf_object_length(&object), 19);
-        EXPECT_STREQ(ddwaf_object_get_string(&object, nullptr), "9223372036854775807");
-        EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
-        EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
-        EXPECT_EQ(ddwaf_object_get_bool(&object), false);
-
-        ddwaf_object_free(&object);
+        object_view view{obj};
+        EXPECT_EQ(view.type(), object_type::boolean);
+        EXPECT_FALSE(view.as_unchecked<bool>());
     }
 }
 
-TEST(TestObject, TestCreateIntForce)
-{
-    ddwaf_object object;
-    ddwaf_object_signed(&object, INT64_MIN);
-
-    EXPECT_EQ(object.type, DDWAF_OBJ_SIGNED);
-    EXPECT_EQ(object.intValue, INT64_MIN);
-
-    // Getters
-    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_SIGNED);
-    EXPECT_EQ(ddwaf_object_get_signed(&object), INT64_MIN);
-    EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
-    EXPECT_EQ(ddwaf_object_get_bool(&object), false);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestObject, TestCreateUint)
-{
-    ddwaf_object object;
-    ddwaf_object_string_from_unsigned(&object, UINT64_MAX);
-
-    EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-    EXPECT_EQ(object.nbEntries, 20);
-    EXPECT_EQ(object.parameterName, nullptr);
-    EXPECT_STREQ(object.stringValue, "18446744073709551615");
-
-    // Getters
-    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
-    EXPECT_EQ(ddwaf_object_length(&object), 20);
-    EXPECT_STREQ(ddwaf_object_get_string(&object, nullptr), "18446744073709551615");
-    EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
-    EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
-    EXPECT_EQ(ddwaf_object_get_bool(&object), false);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestObject, TestCreateUintForce)
-{
-    ddwaf_object object;
-    ddwaf_object_unsigned(&object, UINT64_MAX);
-
-    EXPECT_EQ(object.type, DDWAF_OBJ_UNSIGNED);
-    EXPECT_EQ(object.uintValue, UINT64_MAX);
-
-    // Getters
-    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_UNSIGNED);
-    EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
-    EXPECT_EQ(ddwaf_object_get_unsigned(&object), UINT64_MAX);
-    EXPECT_EQ(ddwaf_object_get_bool(&object), false);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestObject, TestCreateBool)
+TEST(Object, UnsignedConstructor)
 {
     {
-        ddwaf_object object;
-        ddwaf_object_bool(&object, true);
+        owned_object obj = owned_object::make_unsigned(42);
 
-        EXPECT_EQ(object.type, DDWAF_OBJ_BOOL);
-        EXPECT_EQ(object.boolean, true);
-
-        // Getters
-        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_BOOL);
-        EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
-        EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
-        EXPECT_EQ(ddwaf_object_get_bool(&object), true);
-
-        ddwaf_object_free(&object);
+        object_view view{obj};
+        EXPECT_EQ(view.type(), object_type::uint64);
+        EXPECT_EQ(view.as<unsigned>(), 42);
     }
-
     {
-        ddwaf_object object;
-        ddwaf_object_bool(&object, false);
+        auto value = std::numeric_limits<uint64_t>::max();
+        owned_object obj = owned_object::make_unsigned(value);
 
-        EXPECT_EQ(object.type, DDWAF_OBJ_BOOL);
-        EXPECT_EQ(object.boolean, false);
-
-        // Getters
-        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_BOOL);
-        EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
-        EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
-        EXPECT_EQ(ddwaf_object_get_bool(&object), false);
-
-        ddwaf_object_free(&object);
+        object_view view{obj};
+        EXPECT_EQ(view.type(), object_type::uint64);
+        EXPECT_EQ(view.as<uint64_t>(), value);
     }
 }
 
-TEST(TestObject, TestCreateArray)
+TEST(Object, SignedConstructor)
 {
-    ddwaf_object container;
-    ddwaf_object_array(&container);
+    {
+        owned_object obj = owned_object::make_signed(-42);
 
-    EXPECT_EQ(container.type, DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(container.nbEntries, 0);
-    EXPECT_EQ(container.parameterName, nullptr);
-    EXPECT_EQ(container.array, nullptr);
+        object_view view{obj};
+        EXPECT_EQ(view.type(), object_type::int64);
+        EXPECT_EQ(view.as<int>(), -42);
+    }
+    {
+        auto value = std::numeric_limits<int64_t>::min();
+        owned_object obj = owned_object::make_signed(value);
 
-    // Getters
-    EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_length(&container), 0);
-    EXPECT_EQ(ddwaf_object_size(&container), 0);
-    EXPECT_EQ(ddwaf_object_get_index(&container, 0), nullptr);
-
-    ddwaf_object_free(&container);
+        object_view view{obj};
+        EXPECT_EQ(view.type(), object_type::int64);
+        EXPECT_EQ(view.as<int64_t>(), value);
+    }
 }
 
-TEST(TestObject, TestCreateMap)
+TEST(Object, FloatConstructor)
 {
-    ddwaf_object container;
-    ddwaf_object_map(&container);
+    {
+        auto value = std::numeric_limits<double>::min();
+        owned_object obj = owned_object::make_float(value);
 
-    EXPECT_EQ(container.type, DDWAF_OBJ_MAP);
-    EXPECT_EQ(container.nbEntries, 0);
-    EXPECT_EQ(container.parameterName, nullptr);
-    EXPECT_EQ(container.array, nullptr);
+        object_view view{obj};
+        EXPECT_EQ(view.type(), object_type::float64);
+        EXPECT_EQ(view.as<double>(), value);
+    }
 
-    // Getters
-    EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_length(&container), 0);
-    EXPECT_EQ(ddwaf_object_size(&container), 0);
-    EXPECT_EQ(ddwaf_object_get_index(&container, 0), nullptr);
+    {
+        auto value = std::numeric_limits<float>::min();
+        owned_object obj = owned_object::make_float(value);
 
-    ddwaf_object_free(&container);
+        object_view view{obj};
+        EXPECT_EQ(view.type(), object_type::float64);
+        EXPECT_EQ(view.as<float>(), value);
+    }
 }
 
-TEST(TestObject, TestAddArray)
+TEST(Object, ConstStringConstructor)
 {
-    ddwaf_object container;
-    ddwaf_object_array(&container);
+    auto value = "hello"sv;
+    owned_object obj = owned_object::make_const_string(value.data(), value.size());
 
-    ddwaf_object object;
-    ddwaf_object_invalid(&object);
-
-    EXPECT_FALSE(ddwaf_object_array_add(nullptr, &object));
-    EXPECT_FALSE(ddwaf_object_array_add(&object, &container));
-
-    EXPECT_TRUE(ddwaf_object_array_add(&container, &object));
-    EXPECT_TRUE(ddwaf_object_array_add(&container, ddwaf_object_string_from_signed(&object, 42)));
-    EXPECT_TRUE(ddwaf_object_array_add(&container, ddwaf_object_string_from_unsigned(&object, 43)));
-
-    EXPECT_EQ(container.type, DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(container.nbEntries, 3);
-    EXPECT_EQ(container.parameterName, nullptr);
-
-    EXPECT_EQ(container.array[0].type, DDWAF_OBJ_INVALID);
-
-    EXPECT_EQ(container.array[1].type, DDWAF_OBJ_STRING);
-    EXPECT_STREQ(container.array[1].stringValue, "42");
-
-    EXPECT_EQ(container.array[1].type, DDWAF_OBJ_STRING);
-    EXPECT_STREQ(container.array[2].stringValue, "43");
-
-    // Getters
-    EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_length(&container), 0);
-    EXPECT_EQ(ddwaf_object_size(&container), 3);
-
-    const auto *internal = ddwaf_object_get_index(&container, 0);
-    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_INVALID);
-
-    internal = ddwaf_object_get_index(&container, 1);
-    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "42");
-
-    internal = ddwaf_object_get_index(&container, 2);
-    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "43");
-
-    EXPECT_EQ(ddwaf_object_get_index(&container, 3), nullptr);
-
-    ddwaf_object_free(&container);
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::const_string);
+    EXPECT_SVEQ(view.as<std::string_view>(), "hello");
+    EXPECT_EQ(view.length(), value.size());
 }
 
-TEST(TestObject, TestAddMap)
+TEST(Object, ConstStringViewConstructor)
 {
-    ddwaf_object map;
-    ddwaf_object array;
-    ddwaf_object tmp;
+    auto value = "hello"sv;
+    owned_object obj = owned_object::make_const_string(value);
 
-    ddwaf_object_map(&map);
-    ddwaf_object_array(&array);
-
-    EXPECT_FALSE(ddwaf_object_map_add(nullptr, "key", ddwaf_object_string_from_signed(&tmp, 42)));
-    ddwaf_object_free(&tmp);
-    EXPECT_FALSE(ddwaf_object_map_add(&array, "key", ddwaf_object_string_from_signed(&tmp, 42)));
-    ddwaf_object_free(&tmp);
-    EXPECT_FALSE(ddwaf_object_map_add(&map, nullptr, ddwaf_object_string_from_signed(&tmp, 42)));
-    ddwaf_object_free(&tmp);
-
-    EXPECT_FALSE(ddwaf_object_map_add(&map, "key", nullptr));
-
-    EXPECT_TRUE(ddwaf_object_map_add(&map, "key", ddwaf_object_invalid(&tmp)));
-    EXPECT_STREQ(map.array[0].parameterName, "key");
-
-    ASSERT_TRUE(ddwaf_object_map_add(&map, "key", ddwaf_object_string_from_signed(&tmp, 42)));
-    EXPECT_STREQ(map.array[1].parameterName, "key");
-
-    ASSERT_TRUE(ddwaf_object_map_addl(&map, "key2", 4, ddwaf_object_string_from_signed(&tmp, 43)));
-    EXPECT_STREQ(map.array[2].parameterName, "key2");
-
-    char *str = strdup("key3");
-    ASSERT_TRUE(ddwaf_object_map_addl_nc(&map, str, 4, ddwaf_object_string_from_signed(&tmp, 44)));
-    EXPECT_EQ(map.array[3].parameterName, str);
-
-    // Getters
-    EXPECT_EQ(ddwaf_object_type(&map), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_length(&map), 0);
-    EXPECT_EQ(ddwaf_object_size(&map), 4);
-
-    size_t length;
-    const auto *internal = ddwaf_object_get_index(&map, 0);
-    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_INVALID);
-    EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key");
-
-    internal = ddwaf_object_get_index(&map, 1);
-    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "42");
-    EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key");
-    EXPECT_EQ(length, 3);
-
-    internal = ddwaf_object_get_index(&map, 2);
-    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "43");
-    EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key2");
-    EXPECT_EQ(length, 4);
-
-    internal = ddwaf_object_get_index(&map, 3);
-    EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "44");
-    EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key3");
-    EXPECT_EQ(length, 4);
-
-    EXPECT_EQ(ddwaf_object_get_index(&map, 4), nullptr);
-
-    ddwaf_object_free(&map);
-    ddwaf_object_free(&array);
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::const_string);
+    EXPECT_SVEQ(view.as<std::string_view>(), "hello");
+    EXPECT_EQ(view.length(), value.size());
 }
 
-TEST(TestObject, NullFree) { ddwaf_object_free(nullptr); }
-
-TEST(TestUTF8, TestLongUTF8)
+TEST(Object, SmallStringConstructor)
 {
-    char buffer[DDWAF_MAX_STRING_LENGTH + 64] = {0};
-    const uint8_t emoji[] = {0xe2, 0x98, 0xa2};
+    auto value = "hello"sv;
+    owned_object obj = owned_object::make_string(value.data(), value.size());
 
-    // Only ASCII/single-byte characters
-    memset(buffer, 'A', sizeof(buffer));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::small_string);
+    EXPECT_SVEQ(view.as<std::string_view>(), "hello");
+    EXPECT_EQ(view.length(), value.size());
+}
 
-    // New sequence starting just after the cut-off point
-    memcpy(&buffer[DDWAF_MAX_STRING_LENGTH], emoji, sizeof(emoji));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
-    memset(&buffer[DDWAF_MAX_STRING_LENGTH], 'A', sizeof(emoji));
+TEST(Object, SmallStringViewConstructor)
+{
+    auto value = "hello"sv;
+    owned_object obj = owned_object::make_string(value);
 
-    // We need to step back once
-    memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 1], emoji, sizeof(emoji));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 1);
-    memset(&buffer[DDWAF_MAX_STRING_LENGTH - 1], 'A', sizeof(emoji));
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::small_string);
+    EXPECT_SVEQ(view.as<std::string_view>(), "hello");
+    EXPECT_EQ(view.length(), value.size());
+}
 
-    // We need to step back twice
-    memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 2], emoji, sizeof(emoji));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH - 2);
-    memset(&buffer[DDWAF_MAX_STRING_LENGTH - 2], 'A', sizeof(emoji));
+TEST(Object, StringConstructor)
+{
+    auto value = "hello world!"sv;
+    owned_object obj = owned_object::make_string(value.data(), value.size());
 
-    // No need to step back, the sequence finishes just before the cutoff
-    memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 3], emoji, sizeof(emoji));
-    EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::string);
+    EXPECT_SVEQ(view.as<std::string_view>(), "hello world!");
+    EXPECT_EQ(view.length(), value.size());
+}
+
+TEST(Object, StringViewConstructor)
+{
+    auto value = "hello world!"sv;
+    owned_object obj = owned_object::make_string(value);
+
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::string);
+    EXPECT_SVEQ(view.as<std::string_view>(), "hello world!");
+    EXPECT_EQ(view.length(), value.size());
+}
+
+TEST(Object, ArrayConstructor)
+{
+    owned_object obj = owned_object::make_array(8);
+
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::array);
+    EXPECT_EQ(view.size(), 0);
+    EXPECT_EQ(view.capacity(), 8);
+
+    auto array_view = view.as_unchecked<object_view::array>();
+    EXPECT_EQ(array_view.size(), 0);
+    EXPECT_EQ(array_view.capacity(), 8);
+}
+
+TEST(Object, MapConstructor)
+{
+    owned_object obj = owned_object::make_map(8);
+
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::map);
+    EXPECT_EQ(view.size(), 0);
+    EXPECT_EQ(view.capacity(), 8);
+
+    auto map_view = view.as_unchecked<object_view::map>();
+    EXPECT_EQ(map_view.size(), 0);
+    EXPECT_EQ(map_view.capacity(), 8);
+}
+
+TEST(Object, ArrayEmplaceBack)
+{
+    unsigned count = 8;
+    owned_object obj = owned_object::make_array(count);
+    while (count--) {
+        auto slot = obj.emplace_back({});
+        EXPECT_TRUE(slot.has_value());
+    }
+
+    {
+        auto slot = obj.emplace_back({});
+        EXPECT_FALSE(slot.has_value());
+    }
+
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::array);
+    EXPECT_EQ(view.size(), 8);
+    EXPECT_EQ(view.capacity(), 8);
+
+    auto array_view = view.as_unchecked<object_view::array>();
+    EXPECT_EQ(array_view.size(), 8);
+    EXPECT_EQ(array_view.capacity(), 8);
+    for (auto value : array_view) {
+        EXPECT_EQ(value.type(), object_type::invalid);
+    }
+}
+
+TEST(Object, MapEmplaceStringViewKey)
+{
+    unsigned count = 8;
+    owned_object obj = owned_object::make_map(count);
+    while ((count--) != 0) {
+        auto slot = obj.emplace("key"sv, {});
+        EXPECT_TRUE(slot.has_value());
+    }
+
+    {
+        auto slot = obj.emplace("key"sv, {});
+        EXPECT_FALSE(slot.has_value());
+    }
+
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::map);
+    EXPECT_EQ(view.size(), 8);
+    EXPECT_EQ(view.capacity(), 8);
+
+    auto map_view = view.as_unchecked<object_view::map>();
+    EXPECT_EQ(map_view.size(), 8);
+    EXPECT_EQ(map_view.capacity(), 8);
+    for (auto [key, value] : map_view) {
+        EXPECT_SVEQ(key, "key");
+        EXPECT_EQ(value.type(), object_type::invalid);
+    }
+}
+
+TEST(Object, MapEmplaceObjectKey)
+{
+    unsigned count = 8;
+    owned_object obj = owned_object::make_map(count);
+    while ((count--) != 0) {
+        auto slot = obj.emplace(owned_object::make_string("key"sv), {});
+        EXPECT_TRUE(slot.has_value());
+    }
+
+    {
+        auto slot = obj.emplace(owned_object::make_string("key"sv), {});
+        EXPECT_FALSE(slot.has_value());
+    }
+
+    object_view view{obj};
+    EXPECT_EQ(view.type(), object_type::map);
+    EXPECT_EQ(view.size(), 8);
+    EXPECT_EQ(view.capacity(), 8);
+
+    auto map_view = view.as_unchecked<object_view::map>();
+    EXPECT_EQ(map_view.size(), 8);
+    EXPECT_EQ(map_view.capacity(), 8);
+    for (auto [key, value] : map_view) {
+        EXPECT_SVEQ(key, "key");
+        EXPECT_EQ(value.type(), object_type::invalid);
+    }
 }
 
 } // namespace

@@ -78,7 +78,7 @@ std::set<const scanner *> references_to_scanners(
 
 } // namespace
 
-std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_ruleset_info &info)
+std::shared_ptr<ruleset> ruleset_builder::build(const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info)
 {
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
@@ -205,11 +205,11 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     return rs;
 }
 
-ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_ruleset_info &info)
+ruleset_builder::change_state ruleset_builder::load(const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info)
 {
     change_state state = change_state::none;
 
-    auto metadata = parser::at<parameter::map>(root, "metadata", {});
+    auto metadata = parser::at<std::unordered_map<std::string_view, object_view>>(root, "metadata", {});
     auto rules_version = parser::at<std::string_view>(metadata, "rules_version", {});
     if (!rules_version.empty()) {
         info.set_ruleset_version(rules_version);
@@ -223,7 +223,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             // If the actions array is empty, an empty action mapper will be
             // generated. Note that this mapper will still contain the default
             // actions.
-            auto actions = static_cast<parameter::vector>(it->second);
+            auto actions = static_cast<object_view::array>(it->second);
             actions_ = parser::v2::parse_actions(actions, section);
             state = state | change_state::actions;
         } catch (const std::exception &e) {
@@ -243,7 +243,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         DDWAF_DEBUG("Parsing base rules");
         auto &section = info.add_section("rules");
         try {
-            auto rules = static_cast<parameter::vector>(it->second);
+            auto rules = static_cast<object_view::array>(it->second);
             rule_data_ids_.clear();
 
             if (!rules.empty()) {
@@ -264,7 +264,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         DDWAF_DEBUG("Parsing custom rules");
         auto &section = info.add_section("custom_rules");
         try {
-            auto rules = static_cast<parameter::vector>(it->second);
+            auto rules = static_cast<object_view::array>(it->second);
             if (!rules.empty()) {
                 // Rule data is currently not supported by custom rules so these will
                 // be discarded after
@@ -296,7 +296,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         DDWAF_DEBUG("Parsing rule data");
         auto &section = info.add_section("rules_data");
         try {
-            auto rules_data = static_cast<parameter::vector>(it->second);
+            auto rules_data = static_cast<object_view::array>(it->second);
             if (!rules_data.empty()) {
                 auto new_matchers =
                     parser::v2::parse_rule_data(rules_data, section, rule_data_ids_);
@@ -323,7 +323,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         DDWAF_DEBUG("Parsing overrides");
         auto &section = info.add_section("rules_override");
         try {
-            auto overrides = static_cast<parameter::vector>(it->second);
+            auto overrides = static_cast<object_view::array>(it->second);
             if (!overrides.empty()) {
                 overrides_ = parser::v2::parse_overrides(overrides, section);
             } else {
@@ -342,7 +342,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         DDWAF_DEBUG("Parsing exclusions");
         auto &section = info.add_section("exclusions");
         try {
-            auto exclusions = static_cast<parameter::vector>(it->second);
+            auto exclusions = static_cast<object_view::array>(it->second);
             if (!exclusions.empty()) {
                 exclusions_ = parser::v2::parse_filters(exclusions, section, limits_);
             } else {
@@ -361,7 +361,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         DDWAF_DEBUG("Parsing processors");
         auto &section = info.add_section("processors");
         try {
-            auto processors = static_cast<parameter::vector>(it->second);
+            auto processors = static_cast<object_view::array>(it->second);
             if (!processors.empty()) {
                 processors_ = parser::v2::parse_processors(processors, section, limits_);
             } else {
@@ -380,7 +380,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         DDWAF_DEBUG("Parsing scanners");
         auto &section = info.add_section("scanners");
         try {
-            auto scanners = static_cast<parameter::vector>(it->second);
+            auto scanners = static_cast<object_view::array>(it->second);
             if (!scanners.empty()) {
                 scanners_ = parser::v2::parse_scanners(scanners, section);
             } else {

@@ -42,4 +42,23 @@ template <> struct object_view::converter<std::string> {
     object_view view;
 };
 
+template <> struct object_view::converter<std::unordered_map<std::string_view, object_view>> {
+    explicit converter(object_view view) : view(view) {}
+    std::unordered_map<std::string_view, object_view> operator()() const
+    {
+        if (view.type() != object_type::map) {
+            throw parsing_error("object not a map");
+        }
+
+        std::unordered_map<std::string_view, object_view> map;
+        auto map_view = view.as_unchecked<object_view::map>();
+        for (auto [key, value] : map_view) {
+            map.emplace(key, value);
+        }
+        return map;
+    }
+    object_view view;
+};
+
+
 } // namespace ddwaf

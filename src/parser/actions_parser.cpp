@@ -45,7 +45,7 @@ void validate_and_add_redirect(
 }
 
 std::shared_ptr<action_mapper> parse_actions(
-    parameter::vector &actions_array, base_section_info &info)
+    object_view::array &actions_array, base_section_info &info)
 {
     action_mapper_builder builder;
 

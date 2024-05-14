@@ -10,6 +10,7 @@
 #include <string>
 
 #include "exception.hpp"
+#include "object_converter.hpp"
 #include "object_view.hpp"
 #include "parameter.hpp"
 #include "transformer/base.hpp"
