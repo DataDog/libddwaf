@@ -161,6 +161,7 @@ void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsig
 
 int main(int argc, char *argv[])
 {
+    
     ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
 
     std::vector<std::string> args(argv, argv + argc);
