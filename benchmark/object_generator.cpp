@@ -6,6 +6,7 @@
 
 #include <ddwaf.h>
 #include <deque>
+#include <memory_resource>
 #include <vector>
 #include <yaml-cpp/node/node.h>
 
@@ -21,11 +22,12 @@ char *generate_random_string(std::size_t length)
                                  "`¬|\\|,<.>/?;:'@#~[{]}=+-_)(*&^%$£\"\0!";
 
     // NOLINTNEXTLINE
-    char *str = (char *)malloc(length + 1);
+    // TODO Should we have a no-copy string
+    auto *alloc = std::pmr::new_delete_resource();
+    char *str = static_cast<char *>(alloc->allocate(length, alignof(char)));
     for (std::size_t i = 0; i < length; i++) {
         str[i] = charset[random::get() % (sizeof(charset) - 2)];
     }
-    str[length] = '\0';
 
     return str;
 }
@@ -34,6 +36,7 @@ void generate_string_object(ddwaf_object &o, std::size_t length)
 {
     char *str = generate_random_string(length);
     ddwaf_object_set_const_string(&o, str, length);
+    o.type = DDWAF_OBJ_STRING;
 }
 
 void generate_container(ddwaf_object &o)
@@ -124,7 +127,7 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
 
             if (object->type == DDWAF_OBJ_MAP) {
                 auto *str = generate_random_string(s.key_length);
-                auto *slot = ddwaf_object_insert_const_key(object, str, s.key_length);
+                auto *slot = ddwaf_object_insert_key_nocopy(object, str, s.key_length);
                 *slot = next;
             } else {
                 auto slot = ddwaf_object_insert(object);

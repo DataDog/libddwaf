@@ -116,6 +116,9 @@ bool ddwaf_object_set_float(ddwaf_object *object, double value);
 
 bool ddwaf_object_set_string(
     ddwaf_object *object, const char *str, uint32_t length, ddwaf_allocator *alloc);
+bool ddwaf_object_set_string_nocopy(
+    ddwaf_object *object, char *str, uint32_t length);
+
 bool ddwaf_object_set_const_string(ddwaf_object *object, const char *str, uint32_t length);
 
 bool ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator *alloc);
@@ -127,6 +130,7 @@ ddwaf_object *ddwaf_object_insert(ddwaf_object *object);
 ddwaf_object *ddwaf_object_insert_key(
     ddwaf_object *object, const char *key, uint32_t length, ddwaf_allocator *alloc);
 ddwaf_object *ddwaf_object_insert_const_key(ddwaf_object *object, const char *key, uint32_t length);
+ddwaf_object *ddwaf_object_insert_key_nocopy(ddwaf_object *object, char *key, uint32_t length);
 
 // Getters
 ddwaf_object_type ddwaf_object_get_type(const ddwaf_object *object);

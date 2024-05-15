@@ -166,6 +166,16 @@ bool ddwaf_object_set_string(
     return true;
 }
 
+bool ddwaf_object_set_string_nocopy(ddwaf_object *object, char *str, uint32_t length)
+{
+    if (object == nullptr) {
+        return false;
+    }
+
+    to_ref(object) = owned_object::make_string_nocopy(str, length).move();
+    return true;
+}
+
 bool ddwaf_object_set_const_string(ddwaf_object *object, const char *str, uint32_t length)
 {
     if (object == nullptr) {
@@ -219,6 +229,20 @@ ddwaf_object *ddwaf_object_insert_key(
     }
 
     auto slot = to_borrowed(object, alloc).emplace(std::string_view{key, length}, {});
+    if (!slot.has_value()) {
+        return nullptr;
+    }
+
+    return reinterpret_cast<ddwaf_object *>(slot.ptr());
+}
+
+ddwaf_object *ddwaf_object_insert_key_nocopy(ddwaf_object *object, char *key, uint32_t length)
+{
+    if (object == nullptr) {
+        return nullptr;
+    }
+
+    auto slot = to_borrowed(object).emplace(owned_object::make_string_nocopy(key, length), {});
     if (!slot.has_value()) {
         return nullptr;
     }

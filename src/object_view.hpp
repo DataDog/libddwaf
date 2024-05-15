@@ -17,12 +17,12 @@
 
 namespace ddwaf {
 
+template <typename T> struct converter;
+
 class object_view {
 public:
     class map;
     class array;
-
-    template <typename T> struct converter;
 
     object_view() = default;
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
