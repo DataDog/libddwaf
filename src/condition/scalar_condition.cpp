@@ -35,18 +35,18 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
         src_sv = src_sv.substr(0, new_size);
         if (!transformers.empty()) {
             auto transformed = transformer::manager::transform(src_sv, transformers);
-            if (transformed.is_valid()) {
-                auto [res, highlight] = matcher.match(transformed);
+            if (transformed.has_value()) {
+                auto transformed_view = transformed.view();
+                auto [res, highlight] = matcher.match(transformed_view);
                 if (!res) {
                     return {};
                 }
 
                 DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-                // TODO convert can throw...
-                object_view view = transformed;
-                return {{{{"input"sv, view.convert<std::string>(), address, it.get_current_path()}},
-                    {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
+                return {
+                    {{{"input"sv, std::string{transformed_view}, address, it.get_current_path()}},
+                        {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
             }
         }
     }

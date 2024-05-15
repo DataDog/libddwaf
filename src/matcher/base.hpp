@@ -35,6 +35,7 @@ public:
     // Scalar matcher methods
     [[nodiscard]] virtual object_type supported_type() const = 0;
 
+    [[nodiscard]] virtual std::pair<bool, std::string> match(std::string_view str) const = 0;
     [[nodiscard]] virtual std::pair<bool, std::string> match(object_view obj) const = 0;
 };
 
@@ -60,6 +61,15 @@ public:
     template <typename U> [[nodiscard]] std::pair<bool, std::string> match(const U &data) const
     {
         return static_cast<const T *>(this)->match_impl(data);
+    }
+
+    [[nodiscard]] std::pair<bool, std::string> match(std::string_view str) const override
+    {
+        const auto *ptr = static_cast<const T *>(this);
+        if constexpr (T::supported_type_impl() == object_type::string) {
+            return ptr->match_impl(str);
+        }
+        return {false, {}};
     }
 
     [[nodiscard]] std::pair<bool, std::string> match(object_view obj) const override

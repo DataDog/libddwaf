@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string_view>
 
+#include "transformer/common/string_wrapper.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -101,22 +102,11 @@ public:
 
     // Moves the contents and invalidates the string if the buffer has been
     // modified, otherwise it does nothing
-    std::pair<char *, std::size_t> move()
+    string_wrapper move()
     {
-        // TODO String capacity?
-        if (modified_ && allocated_length_ != length_) {
-            auto *alloc = std::pmr::new_delete_resource();
-            char *new_copy = static_cast<char *>(alloc->allocate(length_, alignof(char)));
-            if (new_copy == nullptr) {
-                throw std::bad_alloc();
-            }
-            std::memcpy(new_copy, buffer_, length_);
-            replace_buffer(new_copy, length_);
-        } else {
-            force_copy(length_);
-        }
+        force_copy(length_);
 
-        std::pair<char *, std::size_t> res{buffer_, length_};
+        string_wrapper res{buffer_, length_, allocated_length_};
         modified_ = false;
         buffer_ = nullptr;
         length_ = 0;
@@ -157,7 +147,7 @@ protected:
     bool modified_{false};
     char *buffer_{nullptr};
     std::size_t length_;
-    std::size_t allocated_length_;
+    std::size_t allocated_length_{0};
 };
 
 } // namespace ddwaf

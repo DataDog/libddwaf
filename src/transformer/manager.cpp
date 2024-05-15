@@ -70,7 +70,7 @@ bool call_transformer(transformer_id id, cow_string &str)
     return false;
 }
 
-owned_object manager::transform(
+string_wrapper manager::transform(
     std::string_view source, const std::span<const transformer_id> &transformers)
 {
     bool transformed = false;
@@ -86,8 +86,7 @@ owned_object manager::transform(
 
     // Note that this object might contain a string which is greater in
     // capacity than the length specified
-    auto [buffer, length] = str.move();
-    return owned_object::make_string_nocopy(buffer, length);
+    return str.move();
 }
 
 } // namespace ddwaf::transformer

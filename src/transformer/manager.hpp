@@ -12,6 +12,7 @@
 #include "ddwaf.h"
 #include "object.hpp"
 #include "transformer/base.hpp"
+#include "transformer/common/string_wrapper.hpp"
 
 namespace ddwaf::transformer {
 
@@ -20,7 +21,7 @@ namespace ddwaf::transformer {
 // this will also host the cache and will have to be shared by all conditions.
 class manager {
 public:
-    static owned_object transform(
+    static string_wrapper transform(
         std::string_view source, const std::span<const transformer_id> &transformers);
 };
 
