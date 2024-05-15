@@ -63,6 +63,8 @@ typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_object_kv ddwaf_object_kv;
 typedef struct _ddwaf_allocator ddwaf_allocator;
 typedef enum _ddwaf_object_type ddwaf_object_type;
+typedef void *(ddwaf_alloc_fn_type)(void *, size_t size, size_t alignment);
+typedef void (ddwaf_free_fn_type)(void *, void *, size_t size, size_t alignment);
 #endif
 
 struct __attribute__((packed)) _ddwaf_object {

@@ -40,9 +40,6 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         }
     }
 
-    // If the timeout provided is 0, we need to ensure the parameters are owned
-    // by the additive to ensure that the semantics of DDWAF_ERR_TIMEOUT are
-    // consistent across all possible timeout scenarios.
     if (timeout == 0) {
         if (res.has_value()) {
             ddwaf_result &output = *res;

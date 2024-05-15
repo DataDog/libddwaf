@@ -49,6 +49,16 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
                         {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
             }
         }
+
+        auto [res, highlight] = matcher.match(src_sv);
+        if (!res) {
+            return {};
+        }
+
+        DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
+
+        return {{{{"input"sv, std::string{src_sv}, address, it.get_current_path()}},
+            {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
     }
 
     auto [res, highlight] = matcher.match(src);
@@ -72,10 +82,11 @@ std::optional<condition_match> eval_target(Iterator &it, std::string_view addres
             throw ddwaf::timeout_exception();
         }
 
-        // TODO FIX Type
-        /*        if (it.type() != matcher.supported_type()) {*/
-        /*continue;*/
-        /*}*/
+        // TODO Find a more ergonomic way to do this
+        if ((matcher.supported_type() == object_type::string &&
+                (it.type() & object_type::string) == 0)) {
+            continue;
+        }
 
         auto match = eval_object(it, address, ephemeral, matcher, transformers, limits);
         if (match.has_value()) {
