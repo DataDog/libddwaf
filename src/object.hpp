@@ -181,7 +181,12 @@ public:
         : obj_(obj), alloc_(alloc)
     {}
 
-    ~owned_object() { detail::object_destroy(obj_, alloc_); }
+    ~owned_object()
+    {
+        if (alloc_ != nullptr) {
+            detail::object_destroy(obj_, alloc_);
+        }
+    }
 
     owned_object(const owned_object &) = delete;
     owned_object &operator=(const owned_object &) = delete;
@@ -252,7 +257,8 @@ public:
             nullptr};
     }
 
-    static owned_object make_string_nocopy(char *str, std::size_t len)
+    static owned_object make_string_nocopy(char *str, std::size_t len,
+        std::pmr::memory_resource *alloc = std::pmr::get_default_resource())
     {
         if constexpr (sizeof(std::size_t) > sizeof(length_type)) {
             if (len > std::numeric_limits<length_type>::max()) {
@@ -263,7 +269,7 @@ public:
         return owned_object{{.via = {.str = str},
                                 .type = object_type::string,
                                 .length = static_cast<length_type>(len)},
-            nullptr};
+            alloc};
     }
 
     static owned_object make_string(const char *str, std::size_t len,

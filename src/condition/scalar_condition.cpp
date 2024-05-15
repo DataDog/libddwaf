@@ -25,7 +25,6 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
     object_view src = *it;
-
     if (src.is_string()) {
         auto src_sv = src.as_unchecked<std::string_view>();
         if (src_sv.empty()) {
@@ -33,7 +32,7 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
         }
 
         auto new_size = find_string_cutoff(src_sv.data(), src_sv.size(), limits);
-        src_sv.substr(0, new_size);
+        src_sv = src_sv.substr(0, new_size);
         if (!transformers.empty()) {
             auto transformed = transformer::manager::transform(src_sv, transformers);
             if (transformed.is_valid()) {
@@ -73,9 +72,10 @@ std::optional<condition_match> eval_target(Iterator &it, std::string_view addres
             throw ddwaf::timeout_exception();
         }
 
-        if (it.type() != matcher.supported_type()) {
-            continue;
-        }
+        // TODO FIX Type
+        /*        if (it.type() != matcher.supported_type()) {*/
+        /*continue;*/
+        /*}*/
 
         auto match = eval_object(it, address, ephemeral, matcher, transformers, limits);
         if (match.has_value()) {

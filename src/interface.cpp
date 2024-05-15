@@ -266,8 +266,8 @@ void ddwaf_result_free(ddwaf_result *result)
 {
     // NOLINTNEXTLINE
     ddwaf_object_destroy(&result->events, nullptr);
-    ddwaf_object_free(&result->actions, nullptr);
-    ddwaf_object_free(&result->derivatives, nullptr);
+    ddwaf_object_destroy(&result->actions, nullptr);
+    ddwaf_object_destroy(&result->derivatives, nullptr);
 
     *result = DDWAF_RESULT_INITIALISER;
 }

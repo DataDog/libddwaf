@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory_resource>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -199,8 +200,8 @@ struct ScratchpadChunck {
 
     explicit ScratchpadChunck(uint64_t chunckLength) : length(chunckLength)
     {
-        // Allow for potential \0
-        scratchpad = (char *)malloc(length + 1);
+        auto *alloc = std::pmr::new_delete_resource();
+        scratchpad = static_cast<char *>(alloc->allocate(length, alignof(char)));
     }
 
     ScratchpadChunck(ScratchpadChunck &) = delete;
@@ -210,7 +211,11 @@ struct ScratchpadChunck {
         chunck.scratchpad = nullptr;
     }
 
-    ~ScratchpadChunck() { free(scratchpad); }
+    ~ScratchpadChunck()
+    {
+        auto *alloc = std::pmr::new_delete_resource();
+        alloc->deallocate(scratchpad, length, alignof(char));
+    }
 };
 
 size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBufferLength)
@@ -330,29 +335,30 @@ bool normalize_string(cow_string &str)
 
     std::size_t new_length = 0;
     char *new_buffer = nullptr;
-    if (scratchPad.size() == 1) {
-        // We have a single scratchpad, we can simply swap the pointers :D
-        new_buffer = scratchPad.front().scratchpad;
-        new_length = scratchPad.front().used;
-        // Prevent the destructor from freeing the pointer we're now using.
-        scratchPad.front().scratchpad = nullptr;
-    } else {
-        // Compile the scratch pads into the final normalized string
-        for (const ScratchpadChunck &chunck : scratchPad) { new_length += chunck.used; }
+    // TODO fix the scratchpad stuff
+    /*    if (scratchPad.size() == 1) {*/
+    /*// We have a single scratchpad, we can simply swap the pointers :D*/
+    /*new_buffer = scratchPad.front().scratchpad;*/
+    /*new_length = scratchPad.front().used;*/
+    /*// Prevent the destructor from freeing the pointer we're now using.*/
+    /*scratchPad.front().scratchpad = nullptr;*/
+    /*} else {*/
+    // Compile the scratch pads into the final normalized string
+    for (const ScratchpadChunck &chunck : scratchPad) { new_length += chunck.used; }
 
-        new_buffer = (char *)malloc(new_length + 1);
-        if (new_buffer == nullptr) {
-            return false;
-        }
-
-        uint64_t writeIndex = 0;
-        for (const ScratchpadChunck &chunck : scratchPad) {
-            memcpy(&new_buffer[writeIndex], chunck.scratchpad, chunck.used);
-            writeIndex += chunck.used;
-        }
+    auto *alloc = std::pmr::new_delete_resource();
+    new_buffer = static_cast<char *>(alloc->allocate(new_length, alignof(char)));
+    if (new_buffer == nullptr) {
+        return false;
     }
 
-    new_buffer[new_length] = '\0';
+    uint64_t writeIndex = 0;
+    for (const ScratchpadChunck &chunck : scratchPad) {
+        memcpy(&new_buffer[writeIndex], chunck.scratchpad, chunck.used);
+        writeIndex += chunck.used;
+    }
+    //}
+
     str.replace_buffer(new_buffer, new_length);
 
     return true;

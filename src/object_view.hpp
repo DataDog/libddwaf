@@ -65,7 +65,7 @@ public:
         }
         return static_cast<std::size_t>(obj_->length);
     }
-    [[nodiscard]] bool empty() const noexcept { return (is_container() ? size() : length()) > 0; }
+    [[nodiscard]] bool empty() const noexcept { return (is_container() ? size() : length()) == 0; }
     template <typename T> [[nodiscard]] bool is() const noexcept
     {
         return obj_ != nullptr && is_compatible_type<T>(obj_->type);
@@ -76,7 +76,7 @@ public:
     }
     [[nodiscard]] bool is_invalid() const noexcept
     {
-        return obj_ != nullptr && obj_->type == object_type::invalid;
+        return obj_ == nullptr || obj_->type == object_type::invalid;
     }
     [[nodiscard]] bool is_container() const noexcept
     {
@@ -120,6 +120,13 @@ public:
             return std::nullopt;
         }
         return as_unchecked<T>();
+    }
+
+    template <typename T>
+    [[nodiscard]] std::optional<T> as() const noexcept
+        requires std::is_same_v<T, object_view>
+    {
+        return {*this};
     }
 
     template <typename T>
@@ -208,7 +215,7 @@ public:
             }
             return static_cast<std::size_t>(obj_->capacity);
         }
-        [[nodiscard]] bool empty() const { return size() > 0; }
+        [[nodiscard]] bool empty() const { return size() == 0; }
 
         [[nodiscard]] const detail::object *ptr() const { return obj_; }
 
@@ -318,7 +325,7 @@ public:
         {
             return static_cast<std::size_t>(obj_->capacity);
         }
-        [[nodiscard]] bool empty() const { return size() > 0; }
+        [[nodiscard]] bool empty() const { return size() == 0; }
 
         [[nodiscard]] const detail::object *ptr() const { return obj_; }
 

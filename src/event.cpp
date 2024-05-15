@@ -9,6 +9,7 @@
 #include "action_mapper.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
+#include "log.hpp"
 #include "rule.hpp"
 #include "uuid.hpp"
 
@@ -57,13 +58,14 @@ owned_object serialize_match(const condition_match &match, auto &obfuscator)
     match_map.emplace("operator_value", owned_object::make_string(match.operator_value));
 
     bool redact = redact_match(obfuscator, match);
+    auto param_array = match_map.emplace("parameters", owned_object::make_array(1));
     borrowed_object param;
 
     // Scalar case
     if (match.args.size() == 1 && match.args[0].name == "input") {
         const auto &arg = match.args[0];
 
-        param = match_map.emplace("parameters", owned_object::make_array(3 + 1));
+        param = param_array.emplace_back(owned_object::make_map(4));
         param.emplace("address", owned_object::make_string(arg.address));
 
         auto key_path = param.emplace("key_path", owned_object::make_array(arg.key_path.size()));
@@ -72,9 +74,9 @@ owned_object serialize_match(const condition_match &match, auto &obfuscator)
         }
         param.emplace("value", redacted_object(arg.resolved, redact));
     } else {
-        param = match_map.emplace("parameters", owned_object::make_array(match.args.size() + 1));
+        param = param_array.emplace_back(owned_object::make_map(match.args.size() + 1));
         for (const auto &arg : match.args) {
-            auto argument = param.emplace(arg.name, owned_object::make_array(3));
+            auto argument = param.emplace(arg.name, owned_object::make_map(3));
 
             argument.emplace("address", owned_object::make_string(arg.address));
 

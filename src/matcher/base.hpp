@@ -66,7 +66,7 @@ public:
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::supported_type_impl() == object_type::string) {
-            if (obj.type() == object_type::string) {
+            if (obj.is_string()) {
                 return ptr->match_impl(obj.as_unchecked<std::string_view>());
             }
         }

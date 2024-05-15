@@ -248,7 +248,6 @@ ruleset_builder::change_state ruleset_builder::load(
         try {
             auto rules = it->second.convert<object_view::array>();
             rule_data_ids_.clear();
-
             if (!rules.empty()) {
                 base_rules_ = parser::v2::parse_rules(rules, section, rule_data_ids_, limits_);
             } else {

@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ddwaf.h>
+#include <memory_resource>
 #include <stdexcept>
 #include <string_view>
 
@@ -35,8 +36,8 @@ public:
     ~cow_string()
     {
         [[likely]] if (modified_) {
-            // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-            free(buffer_);
+            auto *alloc = std::pmr::new_delete_resource();
+            alloc->deallocate(buffer_, allocated_length_, alignof(char)); // delete[] buffer_;
         }
     }
 
@@ -88,20 +89,32 @@ public:
     void replace_buffer(char *str, std::size_t length)
     {
         [[likely]] if (modified_) {
-            // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-            free(buffer_);
+            auto *alloc = std::pmr::new_delete_resource();
+            alloc->deallocate(buffer_, allocated_length_, alignof(char)); // delete[] buffer_;
         }
 
         modified_ = true;
         buffer_ = str;
         length_ = length;
+        allocated_length_ = length;
     }
 
     // Moves the contents and invalidates the string if the buffer has been
     // modified, otherwise it does nothing
     std::pair<char *, std::size_t> move()
     {
-        force_copy(length_);
+        // TODO String capacity?
+        if (modified_ && allocated_length_ != length_) {
+            auto *alloc = std::pmr::new_delete_resource();
+            char *new_copy = static_cast<char *>(alloc->allocate(length_, alignof(char)));
+            if (new_copy == nullptr) {
+                throw std::bad_alloc();
+            }
+            std::memcpy(new_copy, buffer_, length_);
+            replace_buffer(new_copy, length_);
+        } else {
+            force_copy(length_);
+        }
 
         std::pair<char *, std::size_t> res{buffer_, length_};
         modified_ = false;
@@ -115,7 +128,6 @@ public:
     {
         [[likely]] if (modified_) {
             length_ = length;
-            buffer_[length] = '\0';
         } else {
             force_copy(length);
         }
@@ -126,24 +138,26 @@ protected:
     void force_copy(std::size_t bytes)
     {
         [[unlikely]] if (!modified_) {
-            // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-            char *new_copy = static_cast<char *>(malloc(bytes + 1));
+            auto *alloc = std::pmr::new_delete_resource();
+            char *new_copy = static_cast<char *>(
+                alloc->allocate(bytes, alignof(char))); // static_cast<char *>(malloc(bytes + 1));
             if (new_copy == nullptr) {
                 throw std::bad_alloc();
             }
 
-            memcpy(new_copy, buffer_, bytes);
-            new_copy[bytes] = '\0';
+            std::memcpy(new_copy, buffer_, bytes);
 
             buffer_ = new_copy;
             modified_ = true;
             length_ = bytes;
+            allocated_length_ = bytes;
         }
     }
 
     bool modified_{false};
     char *buffer_{nullptr};
     std::size_t length_;
+    std::size_t allocated_length_;
 };
 
 } // namespace ddwaf

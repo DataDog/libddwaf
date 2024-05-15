@@ -13,8 +13,9 @@ test_runner::test_runner(const std::string &rule_file)
 {
     YAML::Node doc = YAML::Load(read_file(rule_file));
     auto rule_obj = doc.as<ddwaf_object>();
+
     handle_ = ddwaf_init(&rule_obj, nullptr, nullptr);
-    ddwaf_object_free(&rule_obj);
+    ddwaf_object_destroy(&rule_obj, nullptr);
     if (handle_ == nullptr) {
         throw std::runtime_error("Invalid rule file");
     }
@@ -71,18 +72,17 @@ bool test_runner::run_test(const YAML::Node &runs)
 
             ddwaf_object *persistent_ptr = nullptr;
             auto persistent = run["persistent-input"].as<ddwaf_object>();
-            if (ddwaf_object_type(&persistent) != DDWAF_OBJ_INVALID) {
+            if (!ddwaf_object_is_invalid(&persistent)) {
                 persistent_ptr = &persistent;
             }
 
             ddwaf_object *ephemeral_ptr = nullptr;
             auto ephemeral = run["ephemeral-input"].as<ddwaf_object>();
-            if (ddwaf_object_type(&ephemeral) != DDWAF_OBJ_INVALID) {
+            if (!ddwaf_object_is_invalid(&ephemeral)) {
                 ephemeral_ptr = &ephemeral;
             }
 
             auto retval = ddwaf_run(ctx.get(), persistent_ptr, ephemeral_ptr, res.get(), timeout);
-
             expect(retval, code);
             if (code == DDWAF_MATCH) {
                 validate(run["rules"], object_to_yaml(res->events));
@@ -98,7 +98,8 @@ bool test_runner::run_test(const YAML::Node &runs)
         error_ << "unknown exception";
     }
 
-    if (!passed && res->events.type != DDWAF_OBJ_INVALID && ddwaf_object_size(&res->events) > 0) {
+    if (!passed && res->events.type != DDWAF_OBJ_INVALID &&
+        ddwaf_object_get_size(&res->events) > 0) {
         YAML::Emitter out(output_);
         out.SetIndent(2);
         out.SetMapFormat(YAML::Block);

@@ -13,7 +13,20 @@
 #include <yaml-cpp/yaml.h>
 
 // clang-format off
-#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, 0}
+#define DDWAF_OBJECT_INITIALISER                                                                   \
+    {                                                                                              \
+        {0}, DDWAF_OBJ_INVALID,                                                                    \
+        {                                                                                          \
+            {                                                                                      \
+                0, 0                                                                               \
+            }                                                                                      \
+        }                                                                                          \
+    }
+#define DDWAF_RESULT_INITIALISER                                                                   \
+    {                                                                                              \
+        false, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, 0     \
+    }
+
 // clang-format on
 
 namespace YAML {

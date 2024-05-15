@@ -17,7 +17,7 @@
 namespace ddwaf {
 
 template <typename T>
-concept is_unsigned = std::is_integral_v<T>;
+concept is_unsigned = std::is_integral_v<T> && std::is_unsigned_v<T> && !std::is_same_v<T, bool>;
 
 /*template<typename T>*/
 /*concept is_signed = std::is_signed_v<T> && !std::is_same_v<T, bool>;*/
@@ -56,10 +56,17 @@ template <is_unsigned T> struct object_view::converter<T> {
     T operator()() const
     {
         if (view.type() == object_type::uint64) {
-            [[unlikely]] throw bad_cast(
-                "unsigned", object_type_to_string<std::string>(view.type()));
+            return static_cast<T>(view.as_unchecked<uint64_t>());
         }
-        return view.as_unchecked<T>();
+
+        if (view.is_string()) {
+            auto [res, result] = from_string<uint64_t>(view.as_unchecked<std::string_view>());
+            if (res) {
+                return result;
+            }
+        }
+
+        [[unlikely]] throw bad_cast("unsigned", object_type_to_string<std::string>(view.type()));
     }
     object_view view;
 };
@@ -94,6 +101,7 @@ template <> struct object_view::converter<std::string_view> {
     std::string_view operator()() const
     {
         if (!view.is_string()) {
+            abort();
             [[unlikely]] throw bad_cast("string", object_type_to_string<std::string>(view.type()));
         }
         return view.as_unchecked<std::string_view>();
@@ -121,6 +129,7 @@ template <> struct object_view::converter<std::string> {
         default:
             break;
         }
+        abort();
         [[unlikely]] throw bad_cast("string", object_type_to_string<std::string>(view.type()));
     }
     object_view view;

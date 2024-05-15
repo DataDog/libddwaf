@@ -450,7 +450,7 @@ void kv_iterator::set_cursor_to_next_object()
     current_ = {};
 
     while (!stack_.empty() && current_.second.is_invalid()) {
-        auto [_, parent, index] = stack_.back();
+        auto &[_, parent, index] = stack_.back();
 
         if (index >= parent.size() || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point

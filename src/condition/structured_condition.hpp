@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "condition/base.hpp"
+#include "log.hpp"
 #include "traits.hpp"
 #include "utils.hpp"
 

@@ -12,13 +12,15 @@ namespace ddwaf {
 
 bool object_store::insert(owned_object input, attribute attr)
 {
+    object_view input_view;
     if (attr == attribute::ephemeral) {
         ephemeral_objects_.emplace_back(std::move(input));
+        input_view = ephemeral_objects_.back();
     } else {
         input_objects_.emplace_back(std::move(input));
+        input_view = input_objects_.back();
     }
 
-    object_view input_view = input_objects_.back();
     if (input_view.type() != object_type::map) {
         return false;
     }

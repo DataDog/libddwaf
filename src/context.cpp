@@ -23,7 +23,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
     if (persistent.has_value()) {
-        owned_object owned{reinterpret_cast<detail::object &>(*persistent)};
+        owned_object owned{reinterpret_cast<detail::object &>(persistent->get())};
         if (!store_.insert(std::move(owned), attribute::none)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return DDWAF_ERR_INVALID_OBJECT;
@@ -31,7 +31,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     }
 
     if (ephemeral.has_value()) {
-        owned_object owned{reinterpret_cast<detail::object &>(*ephemeral)};
+        owned_object owned{reinterpret_cast<detail::object &>(ephemeral->get())};
         if (!store_.insert(std::move(owned), attribute::ephemeral)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return DDWAF_ERR_INVALID_OBJECT;
