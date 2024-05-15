@@ -140,6 +140,8 @@ class borrowed_object;
 template <typename Derived> class base_object {
 public:
     [[nodiscard]] object_type type() const noexcept;
+    [[nodiscard]] bool is_valid() const noexcept;
+    [[nodiscard]] bool is_invalid() const noexcept;
     borrowed_object emplace_back(owned_object &&value);
     borrowed_object emplace(std::string_view key, owned_object &&value);
     borrowed_object emplace(owned_object &&key, owned_object &&value);
@@ -250,6 +252,20 @@ public:
             nullptr};
     }
 
+    static owned_object make_string_nocopy(char *str, std::size_t len)
+    {
+        if constexpr (sizeof(std::size_t) > sizeof(length_type)) {
+            if (len > std::numeric_limits<length_type>::max()) {
+                return {};
+            }
+        }
+
+        return owned_object{{.via = {.str = str},
+                                .type = object_type::string,
+                                .length = static_cast<length_type>(len)},
+            nullptr};
+    }
+
     static owned_object make_string(const char *str, std::size_t len,
         std::pmr::memory_resource *alloc = std::pmr::get_default_resource())
     {
@@ -329,6 +345,18 @@ protected:
 template <typename Derived> [[nodiscard]] object_type base_object<Derived>::type() const noexcept
 {
     return static_cast<const Derived *>(this)->ptr()->type;
+}
+
+template <typename Derived> [[nodiscard]] bool base_object<Derived>::is_valid() const noexcept
+{
+    auto obj = static_cast<const Derived *>(this)->ptr();
+    return obj != nullptr && obj->type != object_type::invalid;
+}
+
+template <typename Derived> [[nodiscard]] bool base_object<Derived>::is_invalid() const noexcept
+{
+    auto obj = static_cast<const Derived *>(this)->ptr();
+    return obj != nullptr && obj->type == object_type::invalid;
 }
 
 template <typename Derived> borrowed_object base_object<Derived>::emplace_back(owned_object &&value)

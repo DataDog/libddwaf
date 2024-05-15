@@ -6,6 +6,7 @@
 
 #include "transformer/manager.hpp"
 #include "ddwaf.h"
+#include "object.hpp"
 #include "transformer/base64_decode.hpp"
 #include "transformer/base64_encode.hpp"
 #include "transformer/compress_whitespace.hpp"
@@ -69,34 +70,24 @@ bool call_transformer(transformer_id id, cow_string &str)
     return false;
 }
 
-bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
-    const std::span<const transformer_id> &transformers)
+owned_object manager::transform(
+    std::string_view source, const std::span<const transformer_id> &transformers)
 {
-    if (source.type != DDWAF_OBJ_STRING || source.stringValue == nullptr) {
-        return false;
-    }
-
     bool transformed = false;
-    cow_string str({source.stringValue, static_cast<std::size_t>(source.nbEntries)});
+    cow_string str(source);
     for (auto transformer : transformers) {
         auto res = call_transformer(transformer, str);
         transformed = transformed || res;
     }
 
     if (!transformed) {
-        return false;
+        return {};
     }
 
     // Note that this object might contain a string which is greater in
     // capacity than the length specified
     auto [buffer, length] = str.move();
-    ddwaf_object_stringl_nc(&destination, buffer, length);
-
-    // The memory returned by str.move() is now owned by destination, however
-    // clang-tidy believes it has been leaked as it can't track the fact that
-    // it has changed ownership.
-    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-    return true;
+    return owned_object::make_string_nocopy(buffer, length);
 }
 
 } // namespace ddwaf::transformer

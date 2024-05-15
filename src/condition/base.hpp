@@ -42,7 +42,7 @@ struct condition_cache {
     // used in the previous evaluation, if said object is non-ephemeral. This
     // ensures that the evaluation of the condition can be skipped for the same
     // object in the future.
-    memory::vector<const object_view *> targets;
+    memory::vector<object_view> targets;
     std::optional<condition_match> match;
 };
 

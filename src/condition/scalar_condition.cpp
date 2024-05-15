@@ -8,6 +8,7 @@
 #include "exception.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
+#include "object_converter.hpp"
 #include "transformer/manager.hpp"
 
 using namespace std::literals;
@@ -23,29 +24,29 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
-    ddwaf_object src = *(*it)->to_native();
+    object_view src = *it;
 
-    if (src.type == DDWAF_OBJ_STRING) {
-        if (src.stringValue == nullptr) {
+    if (src.is_string()) {
+        auto src_sv = src.as_unchecked<std::string_view>();
+        if (src_sv.empty()) {
             return {};
         }
 
-        src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
+        auto new_size = find_string_cutoff(src_sv.data(), src_sv.size(), limits);
+        src_sv.substr(0, new_size);
         if (!transformers.empty()) {
-            ddwaf_object dst;
-            ddwaf_object_invalid(&dst);
-
-            auto transformed = transformer::manager::transform(src, dst, transformers);
-            const scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
-            if (transformed) {
-                auto [res, highlight] = matcher.match(dst);
+            auto transformed = transformer::manager::transform(src_sv, transformers);
+            if (transformed.is_valid()) {
+                auto [res, highlight] = matcher.match(transformed);
                 if (!res) {
                     return {};
                 }
 
                 DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-                return {{{{"input"sv, object_to_string(dst), address, it.get_current_path()}},
+                // TODO convert can throw...
+                object_view view = transformed;
+                return {{{{"input"sv, view.convert<std::string>(), address, it.get_current_path()}},
                     {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
             }
         }
@@ -58,7 +59,7 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
 
     DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-    return {{{{"input"sv, object_to_string(src), address, it.get_current_path()}},
+    return {{{{"input"sv, src.convert<std::string>(), address, it.get_current_path()}},
         {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
 }
 
@@ -124,7 +125,7 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
 
         const auto &target = targets_[i];
         auto [object, attr] = store.get_target_view(target.root);
-        if (object == nullptr || object == cache.targets[i]) {
+        if (object.is_invalid() || object == cache.targets[i]) {
             continue;
         }
 
