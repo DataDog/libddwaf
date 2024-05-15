@@ -122,6 +122,7 @@ bool ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_alloc
 bool ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator *alloc);
 
 // Array and map insertion functions
+// TODO these functions need an allocator
 ddwaf_object *ddwaf_object_insert(ddwaf_object *object);
 ddwaf_object *ddwaf_object_insert_key(
     ddwaf_object *object, const char *key, uint32_t length, ddwaf_allocator *alloc);

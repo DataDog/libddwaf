@@ -32,17 +32,17 @@ void run_fixture::warmup()
         object_stack.emplace(&object, 0);
         while (!object_stack.empty()) {
             auto &[current, i] = object_stack.top();
-            for (; i < current->nbEntries; ++i) {
-                const auto &next = current->array[i];
+            for (; i < current->size; ++i) {
+                const auto &next = current->via.array[i];
                 if (object_stack.size() <= max_depth &&
                     (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP)) {
                     break;
                 }
             }
-            if (i == current->nbEntries) {
+            if (i == current->size) {
                 object_stack.pop();
             } else {
-                object_stack.push({&current->array[i++], 0});
+                object_stack.push({&current->via.array[i++], 0});
             }
         }
     }
@@ -54,7 +54,8 @@ uint64_t run_fixture::test_main()
 
     for (auto &object : objects_) {
         ddwaf_result res;
-        auto code = ddwaf_run(ctx_, nullptr, &object, &res, std::numeric_limits<uint32_t>::max());
+        auto code =
+            ddwaf_run(ctx_, nullptr, &object, &res, nullptr, std::numeric_limits<uint32_t>::max());
         if (code < 0) {
             throw std::runtime_error("WAF returned " + std::to_string(code));
         }

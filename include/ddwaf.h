@@ -267,7 +267,8 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  *  recommended and might be explicitly rejected in the future.
  **/
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, ddwaf_result *result,  uint64_t timeout);
+    ddwaf_object *ephemeral_data, ddwaf_result *result,  ddwaf_allocator*alloc,
+    uint64_t timeout);
 
 /**
  * ddwaf_context_destroy

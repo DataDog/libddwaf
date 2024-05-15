@@ -269,7 +269,7 @@ base_node generate_helper(object_view object, object_view key,
         for (std::size_t i = 0; i < size && depth > 1; i++) {
             auto [child_key, child_value] = object.at_unchecked(i);
             auto schema = generate_helper(child_value, child_key, scanners, depth - 1, deadline);
-            record->children.emplace(key.as_unchecked<std::string_view>(), std::move(schema));
+            record->children.emplace(child_key.as_unchecked<std::string_view>(), std::move(schema));
         }
         return record;
     }

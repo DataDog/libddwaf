@@ -198,9 +198,17 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
         false, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, 0     \
     }
 
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+namespace {
+std::pmr::memory_resource *to_memres(ddwaf_allocator *alloc)
+{
+    return reinterpret_cast<std::pmr::memory_resource *>(alloc);
+}
+} // namespace
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, ddwaf_result *result, uint64_t timeout)
+    ddwaf_object *ephemeral_data, ddwaf_result *result, ddwaf_allocator *alloc, uint64_t timeout)
 {
     if (result != nullptr) {
         *result = DDWAF_RESULT_INITIALISER;
@@ -226,7 +234,7 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
             ephemeral = *ephemeral_data;
         }
 
-        return context->run(persistent, ephemeral, res, timeout);
+        return context->run(persistent, ephemeral, res, to_memres(alloc), timeout);
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());

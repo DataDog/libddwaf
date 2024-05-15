@@ -6,6 +6,7 @@
 
 #include "runner.hpp"
 #include "assert.hpp"
+#include "ddwaf_object.h"
 #include "utils.hpp"
 #include <unordered_set>
 
@@ -82,7 +83,10 @@ bool test_runner::run_test(const YAML::Node &runs)
                 ephemeral_ptr = &ephemeral;
             }
 
-            auto retval = ddwaf_run(ctx.get(), persistent_ptr, ephemeral_ptr, res.get(), timeout);
+            auto *alloc = ddwaf_allocator_init_default();
+            ;
+            auto retval =
+                ddwaf_run(ctx.get(), persistent_ptr, ephemeral_ptr, res.get(), alloc, timeout);
             expect(retval, code);
             if (code == DDWAF_MATCH) {
                 validate(run["rules"], object_to_yaml(res->events));

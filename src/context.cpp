@@ -8,6 +8,7 @@
 #include "exception.hpp"
 #include "log.hpp"
 #include "utils.hpp"
+#include <memory_resource>
 
 namespace ddwaf {
 
@@ -15,7 +16,8 @@ using attribute = object_store::attribute;
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
-    optional_ref<ddwaf_object> ephemeral, optional_ref<ddwaf_result> res, uint64_t timeout)
+    optional_ref<ddwaf_object> ephemeral, optional_ref<ddwaf_result> res,
+    std::pmr::memory_resource *alloc, uint64_t timeout)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
@@ -23,7 +25,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
     if (persistent.has_value()) {
-        owned_object owned{reinterpret_cast<detail::object &>(persistent->get())};
+        owned_object owned{reinterpret_cast<detail::object &>(persistent->get()), alloc};
         if (!store_.insert(std::move(owned), attribute::none)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return DDWAF_ERR_INVALID_OBJECT;
@@ -31,7 +33,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     }
 
     if (ephemeral.has_value()) {
-        owned_object owned{reinterpret_cast<detail::object &>(ephemeral->get())};
+        owned_object owned{reinterpret_cast<detail::object &>(ephemeral->get()), alloc};
         if (!store_.insert(std::move(owned), attribute::ephemeral)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return DDWAF_ERR_INVALID_OBJECT;

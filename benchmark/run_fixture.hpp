@@ -18,7 +18,7 @@ public:
     run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&objects);
     ~run_fixture() override
     {
-        for (auto &o : objects_) { ddwaf_object_free(&o); }
+        for (auto &o : objects_) { ddwaf_object_destroy(&o, nullptr); }
     }
 
     run_fixture(const run_fixture &) = delete;
