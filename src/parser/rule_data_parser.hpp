@@ -8,11 +8,10 @@
 
 #include <string_view>
 
-#include "parameter.hpp"
 #include "parser/common.hpp"
 
 namespace ddwaf::parser {
 
-template <typename T> T parse_rule_data(std::string_view type, parameter &input);
+template <typename T> T parse_rule_data(std::string_view type, object_view input);
 
 }

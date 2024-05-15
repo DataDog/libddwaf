@@ -7,6 +7,7 @@
 #include "condition/lfi_detector.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
+#include "log.hpp"
 #include "platform.hpp"
 #include "utils.hpp"
 
@@ -80,7 +81,7 @@ bool lfi_impl_unix(std::string_view path, std::string_view param)
     return (param[0] == '/' && param == path) || find_directory_escape(param, "/");
 }
 
-lfi_result lfi_impl(std::string_view path, const object_view &params,
+lfi_result lfi_impl(std::string_view path, object_view params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
@@ -89,14 +90,14 @@ lfi_result lfi_impl(std::string_view path, const object_view &params,
         lfi_fn = &lfi_impl_windows;
     }
 
-    kv_iterator it(&params, {}, objects_excluded, limits);
+    kv_iterator it(params, {}, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const object_view &param = *(*it);
-        auto value = param.as_optional<std::string_view>();
+        object_view param = *it;
+        auto value = param.as<std::string_view>();
         if (value.has_value() && lfi_fn(path, value.value())) {
             return {{std::string(value.value()), it.get_current_path()}};
         }
@@ -107,11 +108,11 @@ lfi_result lfi_impl(std::string_view path, const object_view &params,
 } // namespace
 
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
-    const variadic_argument<const object_view *> &params, condition_cache &cache,
+    const variadic_argument<object_view> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
-        auto res = lfi_impl(path.value, *param.value, objects_excluded, limits_, deadline);
+        auto res = lfi_impl(path.value, param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
             std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
             bool ephemeral = path.ephemeral || param.ephemeral;

@@ -26,7 +26,7 @@
 #include "matcher/is_xss.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
-#include "parameter.hpp"
+#include "object_view.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "parser/rule_data_parser.hpp"
@@ -41,15 +41,15 @@ namespace ddwaf::parser::v2 {
 namespace {
 
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
-    std::string_view name, const parameter::map &params)
+    std::string_view name, const std::unordered_map<std::string_view, object_view> &params)
 {
-    parameter::map options;
+    std::unordered_map<std::string_view, object_view> options;
     std::unique_ptr<matcher::base> matcher;
     std::string rule_data_id;
 
     if (name == "phrase_match") {
-        auto list = at<parameter::vector>(params, "list");
-        options = at<parameter::map>(params, "options", options);
+        auto list = at<object_view::array>(params, "list");
+        options = at<std::unordered_map<std::string_view, object_view>>(params, "options", options);
         auto word_boundary = at<bool>(options, "enforce_word_boundary", false);
 
         std::vector<const char *> patterns;
@@ -58,19 +58,19 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
         patterns.reserve(list.size());
         lengths.reserve(list.size());
 
-        for (auto &pattern : list) {
-            if (pattern.type != DDWAF_OBJ_STRING) {
+        for (auto pattern : list) {
+            if (!pattern.is_string()) {
                 throw ddwaf::parsing_error("phrase_match list item not a string");
             }
 
-            patterns.push_back(pattern.stringValue);
-            lengths.push_back((uint32_t)pattern.nbEntries);
+            patterns.push_back(pattern.as_unchecked<const char *>());
+            lengths.push_back(pattern.length());
         }
 
         matcher = std::make_unique<matcher::phrase_match>(patterns, lengths, word_boundary);
     } else if (name == "match_regex") {
         auto regex = at<std::string>(params, "regex");
-        options = at<parameter::map>(params, "options", options);
+        options = at<std::unordered_map<std::string_view, object_view>>(params, "options", options);
 
         auto case_sensitive = at<bool>(options, "case_sensitive", false);
         auto min_length = at<int64_t>(options, "min_length", 0);
@@ -89,7 +89,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
             rule_data_id = at<std::string>(params, "data");
         } else {
             matcher = std::make_unique<matcher::ip_match>(
-                static_cast<std::vector<std::string_view>>(it->second));
+                it->second.convert<std::vector<std::string_view>>());
         }
     } else if (name == "exact_match") {
         auto it = params.find("list");
@@ -97,7 +97,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
             rule_data_id = at<std::string>(params, "data");
         } else {
             matcher = std::make_unique<matcher::exact_match>(
-                static_cast<std::vector<std::string>>(it->second));
+                it->second.convert<std::vector<std::string>>());
         }
     } else if (name == "equals") {
         auto value_type = at<std::string>(params, "type");
@@ -127,7 +127,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
     return {std::move(rule_data_id), std::move(matcher)};
 }
 
-std::vector<transformer_id> parse_transformers(const parameter::vector &root, data_source &source)
+std::vector<transformer_id> parse_transformers(object_view::array root, data_source &source)
 {
     if (root.empty()) {
         return {};
@@ -136,8 +136,8 @@ std::vector<transformer_id> parse_transformers(const parameter::vector &root, da
     std::vector<transformer_id> transformers;
     transformers.reserve(root.size());
 
-    for (const auto &transformer_param : root) {
-        auto transformer = static_cast<std::string_view>(transformer_param);
+    for (auto transformer_param : root) {
+        auto transformer = transformer_param.convert<std::string_view>();
         auto id = transformer_from_string(transformer);
         if (id.has_value()) {
             transformers.emplace_back(id.value());
@@ -153,7 +153,8 @@ std::vector<transformer_id> parse_transformers(const parameter::vector &root, da
 }
 
 template <typename T>
-std::vector<parameter_definition> parse_arguments(const parameter::map &params, data_source source,
+std::vector<parameter_definition> parse_arguments(
+    const std::unordered_map<std::string_view, object_view> &params, data_source source,
     const std::vector<transformer_id> &transformers, address_container &addresses)
 {
     const auto &specification = T::arguments();
@@ -165,7 +166,7 @@ std::vector<parameter_definition> parse_arguments(const parameter::map &params, 
         definitions.emplace_back();
         parameter_definition &def = definitions.back();
 
-        auto inputs = at<parameter::vector>(params, spec.name);
+        auto inputs = at<object_view::array>(params, spec.name);
         if (inputs.empty()) {
             if (!spec.optional) {
                 throw ddwaf::parsing_error("empty non-optional argument");
@@ -178,8 +179,9 @@ std::vector<parameter_definition> parse_arguments(const parameter::map &params, 
         }
 
         auto &targets = def.targets;
-        for (const auto &input_param : inputs) {
-            auto input = static_cast<parameter::map>(input_param);
+        for (auto input_param : inputs) {
+            auto input =
+                input_param.template convert<std::unordered_map<std::string_view, object_view>>();
             auto address = at<std::string>(input, "address");
 
             DDWAF_DEBUG("Found address {}", address);
@@ -201,7 +203,7 @@ std::vector<parameter_definition> parse_arguments(const parameter::map &params, 
                 targets.emplace_back(target_definition{
                     address, get_target_index(address), std::move(kp), transformers, source});
             } else {
-                auto input_transformers = static_cast<parameter::vector>(it->second);
+                auto input_transformers = it->second.template convert<object_view::array>();
                 source = data_source::values;
                 auto new_transformers = parse_transformers(input_transformers, source);
                 targets.emplace_back(target_definition{address, get_target_index(address),
@@ -213,17 +215,17 @@ std::vector<parameter_definition> parse_arguments(const parameter::map &params, 
     return definitions;
 }
 
-std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
+std::shared_ptr<expression> parse_expression(object_view::array conditions_array,
     std::unordered_map<std::string, std::string> &data_ids, data_source source,
     const std::vector<transformer_id> &transformers, address_container &addresses,
     const object_limits &limits)
 {
     std::vector<std::unique_ptr<base_condition>> conditions;
-    for (const auto &cond_param : conditions_array) {
-        auto root = static_cast<parameter::map>(cond_param);
+    for (auto cond_param : conditions_array) {
+        auto root = cond_param.convert<std::unordered_map<std::string_view, object_view>>();
 
         auto operator_name = at<std::string_view>(root, "operator");
-        auto params = at<parameter::map>(root, "parameters");
+        auto params = at<std::unordered_map<std::string_view, object_view>>(root, "parameters");
 
         if (operator_name == "lfi_detector") {
             auto arguments = parse_arguments<lfi_detector>(params, source, transformers, addresses);
@@ -254,16 +256,16 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
     return std::make_shared<expression>(std::move(conditions));
 }
 
-rule_spec parse_rule(parameter::map &rule,
+rule_spec parse_rule(std::unordered_map<std::string_view, object_view> &rule,
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source, address_container &addresses)
 {
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
-    auto transformers = at<parameter::vector>(rule, "transformers", {});
+    auto transformers = at<object_view::array>(rule, "transformers", {});
     rule_transformers = parse_transformers(transformers, data_source);
 
-    auto conditions_array = at<parameter::vector>(rule, "conditions");
+    auto conditions_array = at<object_view::array>(rule, "conditions");
     auto expr = parse_expression(
         conditions_array, rule_data_ids, data_source, rule_transformers, addresses, limits);
     if (expr->empty()) {
@@ -272,9 +274,9 @@ rule_spec parse_rule(parameter::map &rule,
     }
 
     std::unordered_map<std::string, std::string> tags;
-    for (auto &[key, value] : at<parameter::map>(rule, "tags")) {
+    for (auto &[key, value] : at<std::unordered_map<std::string_view, object_view>>(rule, "tags")) {
         try {
-            tags.emplace(key, std::string(value));
+            tags.emplace(key, value.convert<std::string>());
         } catch (const bad_cast &e) {
             throw invalid_type(std::string(key), e);
         }
@@ -288,7 +290,7 @@ rule_spec parse_rule(parameter::map &rule,
         std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
-reference_spec parse_reference(const parameter::map &target)
+reference_spec parse_reference(const std::unordered_map<std::string_view, object_view> &target)
 {
     auto ref_id = at<std::string>(target, "rule_id", {});
     if (!ref_id.empty()) {
@@ -300,10 +302,10 @@ reference_spec parse_reference(const parameter::map &target)
         return {reference_type::id, std::move(ref_id), {}};
     }
 
-    auto tag_map = at<parameter::map>(target, "tags", {});
+    auto tag_map = at<std::unordered_map<std::string_view, object_view>>(target, "tags", {});
     if (!tag_map.empty()) {
         std::unordered_map<std::string, std::string> tags;
-        for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
+        for (auto &[key, value] : tag_map) { tags.emplace(key, value.convert<std::string>()); }
 
         return {reference_type::tags, {}, std::move(tags)};
     }
@@ -311,30 +313,32 @@ reference_spec parse_reference(const parameter::map &target)
     return {reference_type::none, {}, {}};
 }
 
-std::pair<override_spec, reference_type> parse_override(const parameter::map &node)
+std::pair<override_spec, reference_type> parse_override(
+    const std::unordered_map<std::string_view, object_view> &node)
 {
     // Note that ID is a duplicate field and will be deprecated at some point
     override_spec current;
 
     auto it = node.find("enabled");
     if (it != node.end()) {
-        current.enabled = static_cast<bool>(it->second);
+        current.enabled = it->second.convert<bool>();
     }
 
     it = node.find("on_match");
     if (it != node.end()) {
-        auto actions = static_cast<std::vector<std::string>>(it->second);
+        auto actions = it->second.convert<std::vector<std::string>>();
         current.actions = std::move(actions);
     }
 
     reference_type type = reference_type::none;
 
-    auto rules_target_array = at<parameter::vector>(node, "rules_target", {});
+    auto rules_target_array = at<object_view::array>(node, "rules_target", {});
     if (!rules_target_array.empty()) {
         current.targets.reserve(rules_target_array.size());
 
         for (const auto &target : rules_target_array) {
-            auto target_spec = parse_reference(static_cast<parameter::map>(target));
+            auto target_spec = parse_reference(
+                target.convert<std::unordered_map<std::string_view, object_view>>());
             if (type == reference_type::none) {
                 type = target_spec.type;
             } else if (type != target_spec.type) {
@@ -357,7 +361,7 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
     return {current, type};
 }
 
-std::shared_ptr<expression> parse_simplified_expression(const parameter::vector &conditions_array,
+std::shared_ptr<expression> parse_simplified_expression(const object_view::array &conditions_array,
     address_container &addresses, const object_limits &limits)
 {
     std::unordered_map<std::string, std::string> data_ids;
@@ -365,24 +369,26 @@ std::shared_ptr<expression> parse_simplified_expression(const parameter::vector 
 }
 
 input_filter_spec parse_input_filter(
-    const parameter::map &filter, address_container &addresses, const object_limits &limits)
+    const std::unordered_map<std::string_view, object_view> &filter, address_container &addresses,
+    const object_limits &limits)
 {
     // Check for conditions first
-    auto conditions_array = at<parameter::vector>(filter, "conditions", {});
+    auto conditions_array = at<object_view::array>(filter, "conditions", {});
     auto expr = parse_simplified_expression(conditions_array, addresses, limits);
 
     std::vector<reference_spec> rules_target;
-    auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
+    auto rules_target_array = at<object_view::array>(filter, "rules_target", {});
     if (!rules_target_array.empty()) {
         rules_target.reserve(rules_target_array.size());
 
         for (const auto &target : rules_target_array) {
-            rules_target.emplace_back(parse_reference(static_cast<parameter::map>(target)));
+            rules_target.emplace_back(parse_reference(
+                target.convert<std::unordered_map<std::string_view, object_view>>()));
         }
     }
 
     auto obj_filter = std::make_shared<exclusion::object_filter>(limits);
-    auto inputs_array = at<parameter::vector>(filter, "inputs");
+    auto inputs_array = at<object_view::array>(filter, "inputs");
 
     // TODO: add empty method to object filter and check after
     if (expr->empty() && inputs_array.empty() && rules_target.empty()) {
@@ -390,7 +396,7 @@ input_filter_spec parse_input_filter(
     }
 
     for (const auto &input_param : inputs_array) {
-        auto input_map = static_cast<parameter::map>(input_param);
+        auto input_map = input_param.convert<std::unordered_map<std::string_view, object_view>>();
         auto address = at<std::string>(input_map, "address");
 
         auto target = get_target_index(address);
@@ -403,20 +409,21 @@ input_filter_spec parse_input_filter(
     return {std::move(expr), std::move(obj_filter), std::move(rules_target)};
 }
 
-rule_filter_spec parse_rule_filter(
-    const parameter::map &filter, address_container &addresses, const object_limits &limits)
+rule_filter_spec parse_rule_filter(const std::unordered_map<std::string_view, object_view> &filter,
+    address_container &addresses, const object_limits &limits)
 {
     // Check for conditions first
-    auto conditions_array = at<parameter::vector>(filter, "conditions", {});
+    auto conditions_array = at<object_view::array>(filter, "conditions", {});
     auto expr = parse_simplified_expression(conditions_array, addresses, limits);
 
     std::vector<reference_spec> rules_target;
-    auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
+    auto rules_target_array = at<object_view::array>(filter, "rules_target", {});
     if (!rules_target_array.empty()) {
         rules_target.reserve(rules_target_array.size());
 
         for (const auto &target : rules_target_array) {
-            rules_target.emplace_back(parse_reference(static_cast<parameter::map>(target)));
+            rules_target.emplace_back(parse_reference(
+                target.convert<std::unordered_map<std::string_view, object_view>>()));
         }
     }
 
@@ -438,23 +445,24 @@ rule_filter_spec parse_rule_filter(
 }
 
 std::vector<processor::target_mapping> parse_processor_mappings(
-    const parameter::vector &root, address_container &addresses)
+    object_view::array root, address_container &addresses)
 {
     if (root.empty()) {
         throw ddwaf::parsing_error("empty mappings");
     }
 
     std::vector<processor::target_mapping> mappings;
-    for (const auto &node : root) {
-        auto mapping = static_cast<parameter::map>(node);
+    for (auto node : root) {
+        auto mapping = node.convert<std::unordered_map<std::string_view, object_view>>();
 
         // TODO support n:1 mappings and key paths
-        auto inputs = at<parameter::vector>(mapping, "inputs");
+        auto inputs = at<object_view::array>(mapping, "inputs");
         if (inputs.empty()) {
             throw ddwaf::parsing_error("empty processor input mapping");
         }
 
-        auto input = static_cast<parameter::map>(inputs[0]);
+        auto input =
+            inputs.at_unchecked(0).convert<std::unordered_map<std::string_view, object_view>>();
         auto input_address = at<std::string>(input, "address");
         auto output = at<std::string>(mapping, "output");
 
@@ -467,10 +475,11 @@ std::vector<processor::target_mapping> parse_processor_mappings(
     return mappings;
 }
 
-std::unique_ptr<matcher::base> parse_scanner_matcher(const parameter::map &root)
+std::unique_ptr<matcher::base> parse_scanner_matcher(
+    const std::unordered_map<std::string_view, object_view> &root)
 {
     auto matcher_name = at<std::string_view>(root, "operator");
-    auto matcher_params = at<parameter::map>(root, "parameters");
+    auto matcher_params = at<std::unordered_map<std::string_view, object_view>>(root, "parameters");
 
     auto [rule_data_id, matcher] = parse_matcher(matcher_name, matcher_params);
     if (!rule_data_id.empty()) {
@@ -489,14 +498,14 @@ void add_addresses_to_info(const address_container &addresses, base_section_info
 
 } // namespace
 
-rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
+rule_spec_container parse_rules(object_view::array &rule_array, base_section_info &info,
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source)
 {
     rule_spec_container rules;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
-        const auto &rule_param = rule_array[i];
-        auto rule_map = static_cast<parameter::map>(rule_param);
+        auto rule_param = rule_array.at_unchecked(i);
+        auto rule_map = rule_param.convert<std::unordered_map<std::string_view, object_view>>();
         std::string id;
         try {
             address_container addresses;
@@ -526,20 +535,20 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
     return rules;
 }
 
-rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_info &info,
+rule_data_container parse_rule_data(object_view::array &rule_data, base_section_info &info,
     std::unordered_map<std::string, std::string> &rule_data_ids)
 {
     rule_data_container matchers;
     for (unsigned i = 0; i < rule_data.size(); ++i) {
-        const ddwaf::parameter object = rule_data[i];
+        auto object = rule_data.at_unchecked(i);
         std::string id;
         try {
-            const auto entry = static_cast<ddwaf::parameter::map>(object);
+            const auto entry = object.convert<std::unordered_map<std::string_view, object_view>>();
 
             id = at<std::string>(entry, "id");
 
             auto type = at<std::string_view>(entry, "type");
-            auto data = at<parameter>(entry, "data");
+            auto data = at<object_view>(entry, "data");
 
             std::string_view matcher_name;
             auto it = rule_data_ids.find(id);
@@ -590,14 +599,14 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
     return matchers;
 }
 
-override_spec_container parse_overrides(parameter::vector &override_array, base_section_info &info)
+override_spec_container parse_overrides(object_view::array &override_array, base_section_info &info)
 {
     override_spec_container overrides;
 
     for (unsigned i = 0; i < override_array.size(); ++i) {
         auto id = index_to_id(i);
-        const auto &node_param = override_array[i];
-        auto node = static_cast<parameter::map>(node_param);
+        auto node_param = override_array.at_unchecked(i);
+        auto node = node_param.convert<std::unordered_map<std::string_view, object_view>>();
         try {
             auto [spec, type] = parse_override(node);
             if (type == reference_type::id) {
@@ -622,12 +631,12 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
 }
 
 filter_spec_container parse_filters(
-    parameter::vector &filter_array, base_section_info &info, const object_limits &limits)
+    object_view::array &filter_array, base_section_info &info, const object_limits &limits)
 {
     filter_spec_container filters;
     for (unsigned i = 0; i < filter_array.size(); i++) {
-        const auto &node_param = filter_array[i];
-        auto node = static_cast<parameter::map>(node_param);
+        auto node_param = filter_array.at_unchecked(i);
+        auto node = node_param.convert<std::unordered_map<std::string_view, object_view>>();
         std::string id;
         try {
             address_container addresses;
@@ -664,14 +673,14 @@ filter_spec_container parse_filters(
 }
 
 processor_container parse_processors(
-    parameter::vector &processor_array, base_section_info &info, const object_limits &limits)
+    object_view::array &processor_array, base_section_info &info, const object_limits &limits)
 {
     processor_container processors;
     std::unordered_set<std::string> known_processors;
 
     for (unsigned i = 0; i < processor_array.size(); i++) {
-        const auto &node_param = processor_array[i];
-        auto node = static_cast<parameter::map>(node_param);
+        auto node_param = processor_array.at_unchecked(i);
+        auto node = node_param.convert<std::unordered_map<std::string_view, object_view>>();
         std::string id;
         try {
             address_container addresses;
@@ -693,19 +702,20 @@ processor_container parse_processors(
                 continue;
             }
 
-            auto conditions_array = at<parameter::vector>(node, "conditions", {});
+            auto conditions_array = at<object_view::array>(node, "conditions", {});
             auto expr = parse_simplified_expression(conditions_array, addresses, limits);
 
-            auto params = at<parameter::map>(node, "parameters");
-            auto mappings_vec = at<parameter::vector>(params, "mappings");
+            auto params = at<std::unordered_map<std::string_view, object_view>>(node, "parameters");
+            auto mappings_vec = at<object_view::array>(params, "mappings");
             auto mappings = parse_processor_mappings(mappings_vec, addresses);
 
             std::vector<reference_spec> scanners;
-            auto scanners_ref_array = at<parameter::vector>(params, "scanners", {});
+            auto scanners_ref_array = at<object_view::array>(params, "scanners", {});
             if (!scanners_ref_array.empty()) {
                 scanners.reserve(scanners_ref_array.size());
                 for (const auto &ref : scanners_ref_array) {
-                    scanners.emplace_back(parse_reference(static_cast<parameter::map>(ref)));
+                    scanners.emplace_back(parse_reference(
+                        ref.convert<std::unordered_map<std::string_view, object_view>>()));
                 }
             }
 
@@ -744,12 +754,12 @@ processor_container parse_processors(
     return processors;
 }
 
-indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_section_info &info)
+indexer<const scanner> parse_scanners(object_view::array &scanner_array, base_section_info &info)
 {
     indexer<const scanner> scanners;
     for (unsigned i = 0; i < scanner_array.size(); i++) {
-        const auto &node_param = scanner_array[i];
-        auto node = static_cast<parameter::map>(node_param);
+        auto node_param = scanner_array.at_unchecked(i);
+        auto node = node_param.convert<std::unordered_map<std::string_view, object_view>>();
         std::string id;
         try {
             id = at<std::string>(node, "id");
@@ -760,9 +770,10 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
             }
 
             std::unordered_map<std::string, std::string> tags;
-            for (auto &[key, value] : at<parameter::map>(node, "tags")) {
+            for (auto &[key, value] :
+                at<std::unordered_map<std::string_view, object_view>>(node, "tags")) {
                 try {
-                    tags.emplace(key, std::string(value));
+                    tags.emplace(key, value.convert<std::string>());
                 } catch (const bad_cast &e) {
                     throw invalid_type(std::string(key), e);
                 }
@@ -773,13 +784,15 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
 
             auto it = node.find("key");
             if (it != node.end()) {
-                auto matcher_node = parameter::map(it->second);
+                auto matcher_node =
+                    it->second.convert<std::unordered_map<std::string_view, object_view>>();
                 key_matcher = parse_scanner_matcher(matcher_node);
             }
 
             it = node.find("value");
             if (it != node.end()) {
-                auto matcher_node = parameter::map(it->second);
+                auto matcher_node =
+                    it->second.convert<std::unordered_map<std::string_view, object_view>>();
                 value_matcher = parse_scanner_matcher(matcher_node);
             }
 

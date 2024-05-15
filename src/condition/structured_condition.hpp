@@ -58,7 +58,7 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
             return std::nullopt;
         }
 
-        auto converted = object->as_optional<T>();
+        auto converted = object.as<T>();
         if (!converted.has_value()) {
             return std::nullopt;
         }

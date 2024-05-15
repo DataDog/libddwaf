@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-#include "object.hpp"
+#include "object_view.hpp"
 
 namespace ddwaf::matcher {
 
@@ -67,31 +67,31 @@ public:
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::supported_type_impl() == object_type::string) {
             if (obj.type() == object_type::string) {
-                return ptr->match_impl(obj.as<std::string_view>());
+                return ptr->match_impl(obj.as_unchecked<std::string_view>());
             }
         }
 
         if constexpr (T::supported_type_impl() == object_type::int64) {
             if (obj.type() == object_type::int64) {
-                return ptr->match_impl(obj.as<int64_t>());
+                return ptr->match_impl(obj.as_unchecked<int64_t>());
             }
         }
 
         if constexpr (T::supported_type_impl() == object_type::uint64) {
             if (obj.type() == object_type::uint64) {
-                return ptr->match_impl(obj.as<uint64_t>());
+                return ptr->match_impl(obj.as_unchecked<uint64_t>());
             }
         }
 
         if constexpr (T::supported_type_impl() == object_type::boolean) {
             if (obj.type() == object_type::boolean) {
-                return ptr->match_impl(obj.as<bool>());
+                return ptr->match_impl(obj.as_unchecked<bool>());
             }
         }
 
         if constexpr (T::supported_type_impl() == object_type::float64) {
             if (obj.type() == object_type::float64) {
-                return ptr->match_impl(obj.as<double>());
+                return ptr->match_impl(obj.as_unchecked<double>());
             }
         }
 

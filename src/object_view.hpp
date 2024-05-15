@@ -187,15 +187,25 @@ public:
 
     class array {
     public:
+        array() = default;
         ~array() = default;
         array(const array &) = default;
         array(array &&) = default;
         array &operator=(const array &) = default;
         array &operator=(array &&) = default;
 
-        [[nodiscard]] std::size_t size() const { return static_cast<std::size_t>(obj_->size); }
+        [[nodiscard]] std::size_t size() const
+        {
+            if (obj_ == nullptr) {
+                return 0;
+            }
+            return static_cast<std::size_t>(obj_->size);
+        }
         [[nodiscard]] std::size_t capacity() const
         {
+            if (obj_ == nullptr) {
+                return 0;
+            }
             return static_cast<std::size_t>(obj_->capacity);
         }
         [[nodiscard]] bool empty() const { return size() > 0; }
@@ -204,7 +214,7 @@ public:
 
         [[nodiscard]] object_view at(std::size_t index) const noexcept
         {
-            if (index > size()) {
+            if (index >= size()) {
                 [[unlikely]] return {};
             }
             return at_unchecked(index);
@@ -212,15 +222,19 @@ public:
 
         [[nodiscard]] object_view at_unchecked(std::size_t index) const noexcept
         {
+            if (obj_ == nullptr) {
+                return {};
+            }
             return &obj_->via.array[index];
         }
 
         class iterator {
         public:
+            iterator() = default;
             explicit iterator(array &ov, size_t index = 0)
                 : current_(ov.obj_->via.array), end_(ov.obj_->via.array + ov.size())
             {
-                if (index > ov.size()) {
+                if (index >= ov.size()) {
                     current_ = end_;
                 } else {
                     current_ += index;
@@ -250,8 +264,20 @@ public:
             detail::object *end_{nullptr};
         };
 
-        iterator begin() { return iterator{*this, 0}; }
-        iterator end() { return iterator{*this, obj_->size}; }
+        iterator begin()
+        {
+            if (obj_ == nullptr) {
+                return {};
+            }
+            return iterator{*this, 0};
+        }
+        iterator end()
+        {
+            if (obj_ == nullptr) {
+                return {};
+            }
+            return iterator{*this, obj_->size};
+        }
 
     protected:
         friend class object_view;
@@ -259,7 +285,7 @@ public:
         // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
         explicit array(const detail::object *underlying_object) : obj_(underlying_object) {}
 
-        const detail::object *obj_;
+        const detail::object *obj_{nullptr};
     };
 
     template <typename T>
