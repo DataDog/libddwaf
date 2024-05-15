@@ -131,7 +131,6 @@ template <> struct converter<std::string_view> {
     std::string_view operator()() const
     {
         if (!view.is_string()) {
-            abort();
             [[unlikely]] throw bad_cast("string", object_type_to_string<std::string>(view.type()));
         }
         return view.as_unchecked<std::string_view>();
@@ -159,7 +158,6 @@ template <> struct converter<std::string> {
         default:
             break;
         }
-        abort();
         [[unlikely]] throw bad_cast("string", object_type_to_string<std::string>(view.type()));
     }
     object_view view;
