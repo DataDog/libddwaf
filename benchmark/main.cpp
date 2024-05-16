@@ -132,38 +132,9 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
 
     return s;
 }
-const char *level_to_str(DDWAF_LOG_LEVEL level)
-{
-    switch (level) {
-    case DDWAF_LOG_TRACE:
-        return "trace";
-    case DDWAF_LOG_DEBUG:
-        return "debug";
-    case DDWAF_LOG_ERROR:
-        return "error";
-    case DDWAF_LOG_WARN:
-        return "warn";
-    case DDWAF_LOG_INFO:
-        return "info";
-    case DDWAF_LOG_OFF:
-        break;
-    }
-
-    return "off";
-}
-
-void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line,
-    const char *message, uint64_t /*length*/)
-{
-    std::cout << "[" << level_to_str(level) << "][" << file << ":" << function << ":" << line
-              << "]: " << message << '\n';
-}
 
 int main(int argc, char *argv[])
 {
-    
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
-
     std::vector<std::string> args(argv, argv + argc);
 
     auto s = generate_settings(args);
