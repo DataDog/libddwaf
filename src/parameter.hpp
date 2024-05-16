@@ -6,22 +6,21 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <string>
 #include <string_view>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "ddwaf.h"
-#include "exception.hpp"
 
 namespace ddwaf {
 
 class parameter : public ddwaf_object {
 public:
-    using map = std::unordered_map<std::string_view, parameter>;
+    using map = boost::unordered_flat_map<std::string_view, parameter>;
     using vector = std::vector<parameter>;
-    using string_set = std::unordered_set<std::string_view>;
+    using string_set = boost::unordered_flat_set<std::string_view>;
 
     parameter() = default;
     // NOLINTNEXTLINE(google-explicit-constructor)
@@ -46,7 +45,7 @@ public:
     explicit operator bool() const;
     explicit operator std::vector<std::string>() const;
     explicit operator std::vector<std::string_view>() const;
-    explicit operator std::unordered_map<std::string, std::string>() const;
+    explicit operator boost::unordered_flat_map<std::string, std::string>() const;
 
     ~parameter() = default;
 };
@@ -83,8 +82,8 @@ template <> struct parameter_traits<std::vector<std::string_view>> {
     static const char *name() { return "std::vector<std::string_view>"; }
 };
 
-template <> struct parameter_traits<std::unordered_map<std::string, std::string>> {
-    static const char *name() { return "std::unordered_map<std::string, std::string>"; }
+template <> struct parameter_traits<boost::unordered_flat_map<std::string, std::string>> {
+    static const char *name() { return "boost::unordered_flat_map<std::string, std::string>"; }
 };
 
 } // namespace ddwaf

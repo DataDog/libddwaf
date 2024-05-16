@@ -132,4 +132,5 @@ ExternalProject_Add(proj_event_rules
     INSTALL_COMMAND "")
 
 set_target_properties(proj_event_rules PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
 # vim: et

@@ -37,10 +37,11 @@ public:
 
     eval_result eval(cache_type &cache, const object_store &store,
         const exclusion::object_set_ref &objects_excluded,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+        const boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>>
+            &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    void get_addresses(boost::unordered_flat_map<target_index, std::string> &addresses) const
     {
         for (const auto &cond : conditions_) { cond->get_addresses(addresses); }
     }
@@ -66,6 +67,11 @@ public:
 
     [[nodiscard]] bool empty() const { return conditions_.empty(); }
     [[nodiscard]] std::size_t size() const { return conditions_.size(); }
+
+    [[nodiscard]] cache_type get_cache() const
+    {
+        return {false, {conditions_.size(), condition_cache{}}};
+    }
 
 protected:
     std::vector<std::unique_ptr<base_condition>> conditions_;

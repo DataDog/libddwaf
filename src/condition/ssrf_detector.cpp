@@ -136,7 +136,8 @@ bool detect_parameter_injection(
 ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     const std::unique_ptr<matcher::ip_match> &dangerous_ip_matcher,
-    const std::unordered_set<std::string_view> &authorised_scheme_set, ddwaf::timer &deadline)
+    const boost::unordered_flat_set<std::string_view> &authorised_scheme_set,
+    ddwaf::timer &deadline)
 {
     static constexpr std::size_t min_str_len = 4;
 

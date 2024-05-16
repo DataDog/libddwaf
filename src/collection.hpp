@@ -32,7 +32,7 @@ struct collection_cache {
 
 template <typename Derived> class base_collection {
 public:
-    using object_set = std::unordered_set<const ddwaf_object *>;
+    using object_set = boost::unordered_flat_set<const ddwaf_object *>;
     using cache_type = collection_cache;
 
     base_collection() = default;
@@ -46,7 +46,8 @@ public:
 
     void match(std::vector<event> &events, const object_store &store, collection_cache &cache,
         const exclusion::context_policy &exclusion,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+        const boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>>
+            &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
 protected:

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <optional>
 #include <string>
 
@@ -16,8 +17,8 @@
 namespace ddwaf::parser {
 
 struct address_container {
-    std::unordered_set<std::string> required;
-    std::unordered_set<std::string> optional;
+    boost::unordered_flat_set<std::string> required;
+    boost::unordered_flat_set<std::string> optional;
 };
 
 template <typename T, typename Key = std::string> T at(const parameter::map &map, const Key &key)

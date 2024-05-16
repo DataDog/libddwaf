@@ -111,7 +111,8 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
 }
 
 void parseRule(parameter::map &rule, base_section_info &info,
-    std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
+    boost::unordered_flat_set<std::string_view> &rule_ids, ddwaf::ruleset &rs,
+    ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
     if (rule_ids.find(id) != rule_ids.end()) {
@@ -135,7 +136,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
         auto conditions_array = at<parameter::vector>(rule, "conditions");
         auto expression = parse_expression(conditions_array, rule_transformers, limits);
 
-        std::unordered_map<std::string, std::string> tags;
+        boost::unordered_flat_map<std::string, std::string> tags;
         for (auto &[key, value] : at<parameter::map>(rule, "tags")) {
             try {
                 tags.emplace(key, std::string(value));
@@ -170,7 +171,7 @@ void parse(
 
     auto &section = info.add_section("rules");
 
-    std::unordered_set<std::string_view> rule_ids;
+    boost::unordered_flat_set<std::string_view> rule_ids;
     for (unsigned i = 0; i < rules_array.size(); ++i) {
         const auto &rule_param = rules_array[i];
         try {

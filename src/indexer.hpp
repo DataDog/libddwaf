@@ -57,7 +57,7 @@ public:
 
 protected:
     std::vector<std::shared_ptr<T>> items_;
-    std::unordered_map<std::string_view, T *> by_id_;
+    boost::unordered_flat_map<std::string_view, T *> by_id_;
     multi_key_map<std::string_view, T *> by_tags_;
 };
 

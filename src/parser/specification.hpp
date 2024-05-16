@@ -23,7 +23,7 @@ struct rule_spec {
     bool enabled;
     rule::source_type source;
     std::string name;
-    std::unordered_map<std::string, std::string> tags;
+    boost::unordered_flat_map<std::string, std::string> tags;
     std::shared_ptr<expression> expr;
     std::vector<std::string> actions;
 };
@@ -33,7 +33,7 @@ enum class reference_type { none, id, tags };
 struct reference_spec {
     reference_type type;
     std::string ref_id;
-    std::unordered_map<std::string, std::string> tags;
+    boost::unordered_flat_map<std::string, std::string> tags;
 };
 
 struct override_spec {
@@ -64,9 +64,9 @@ struct processor_spec {
 };
 
 // Containers
-using rule_spec_container = std::unordered_map<std::string, rule_spec>;
-using rule_data_container = std::unordered_map<std::string, std::shared_ptr<matcher::base>>;
-using scanner_container = std::unordered_map<std::string_view, std::shared_ptr<scanner>>;
+using rule_spec_container = boost::unordered_flat_map<std::string, rule_spec>;
+using rule_data_container = boost::unordered_flat_map<std::string, std::shared_ptr<matcher::base>>;
+using scanner_container = boost::unordered_flat_map<std::string_view, std::shared_ptr<scanner>>;
 
 struct processor_container {
     [[nodiscard]] bool empty() const { return pre.empty() && post.empty(); }
@@ -77,8 +77,8 @@ struct processor_container {
         post.clear();
     }
 
-    std::unordered_map<std::string, processor_spec> pre;
-    std::unordered_map<std::string, processor_spec> post;
+    boost::unordered_flat_map<std::string, processor_spec> pre;
+    boost::unordered_flat_map<std::string, processor_spec> post;
 };
 
 struct override_spec_container {
@@ -103,9 +103,9 @@ struct filter_spec_container {
         input_filters.clear();
     }
 
-    std::unordered_set<std::string> ids;
-    std::unordered_map<std::string, rule_filter_spec> rule_filters;
-    std::unordered_map<std::string, input_filter_spec> input_filters;
+    boost::unordered_flat_set<std::string> ids;
+    boost::unordered_flat_map<std::string, rule_filter_spec> rule_filters;
+    boost::unordered_flat_map<std::string, input_filter_spec> input_filters;
 };
 
 } // namespace ddwaf::parser

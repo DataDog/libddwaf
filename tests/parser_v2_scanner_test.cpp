@@ -47,7 +47,8 @@ TEST(TestParserV2Scanner, ParseKeyOnlyScanner)
     auto *scnr = scanners.find_by_id("ecd");
     ;
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
-    std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr->get_tags(), tags);
 
     ddwaf_object value;
@@ -96,7 +97,8 @@ TEST(TestParserV2Scanner, ParseValueOnlyScanner)
     auto *scnr = scanners.find_by_id("ecd");
     ;
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
-    std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr->get_tags(), tags);
 
     ddwaf_object value;
@@ -145,7 +147,8 @@ TEST(TestParserV2Scanner, ParseKeyValueScanner)
     auto *scnr = scanners.find_by_id("ecd");
     ;
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
-    std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr->get_tags(), tags);
 
     ddwaf_object value;

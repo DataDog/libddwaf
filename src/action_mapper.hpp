@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <map>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 #include "utils.hpp"
 
@@ -37,7 +37,7 @@ inline bool is_blocking_action(action_type type)
 struct action_spec {
     action_type type;
     std::string type_str;
-    std::unordered_map<std::string, std::string> parameters;
+    boost::unordered_flat_map<std::string, std::string> parameters;
 };
 
 using action_mapper = std::map<std::string, action_spec, std::less<>>;
@@ -53,8 +53,8 @@ public:
 
     void alias_default_action_to(std::string_view default_id, std::string alias);
 
-    void set_action(
-        std::string id, std::string type, std::unordered_map<std::string, std::string> parameters);
+    void set_action(std::string id, std::string type,
+        boost::unordered_flat_map<std::string, std::string> parameters);
 
     [[nodiscard]] static const action_spec &get_default_action(std::string_view id);
 

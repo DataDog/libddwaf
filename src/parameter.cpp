@@ -55,7 +55,7 @@ parameter::operator parameter::map() const
         return {};
     }
 
-    std::unordered_map<std::string_view, parameter> map;
+    boost::unordered_flat_map<std::string_view, parameter> map;
     map.reserve(nbEntries);
     for (unsigned i = 0; i < nbEntries; i++) {
         const parameter &kv = array[i];
@@ -281,7 +281,7 @@ parameter::operator std::vector<std::string_view>() const
     return data;
 }
 
-parameter::operator std::unordered_map<std::string, std::string>() const
+parameter::operator boost::unordered_flat_map<std::string, std::string>() const
 {
     if (type != DDWAF_OBJ_MAP) {
         throw bad_cast("map", strtype(type));
@@ -291,7 +291,7 @@ parameter::operator std::unordered_map<std::string, std::string>() const
         return {};
     }
 
-    std::unordered_map<std::string, std::string> data;
+    boost::unordered_flat_map<std::string, std::string> data;
     data.reserve(nbEntries);
     for (unsigned i = 0; i < nbEntries; i++) {
         std::string key{

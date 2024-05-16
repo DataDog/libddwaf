@@ -41,8 +41,8 @@ void action_mapper_builder::alias_default_action_to(std::string_view default_id,
     action_by_id_.emplace(std::move(alias), it->second);
 }
 
-void action_mapper_builder::set_action(
-    std::string id, std::string type, std::unordered_map<std::string, std::string> parameters)
+void action_mapper_builder::set_action(std::string id, std::string type,
+    boost::unordered_flat_map<std::string, std::string> parameters)
 {
     if (action_by_id_.find(id) != action_by_id_.end()) {
         throw std::runtime_error("duplicate action '" + id + '\'');

@@ -6,10 +6,10 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <map>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 
 #include "ddwaf.h"
 #include "utils.hpp"
@@ -165,11 +165,11 @@ public:
 
         /** Array of required addresses **/
         ddwaf_object required_addresses_{};
-        std::unordered_set<std::string_view> required_addresses_set_{};
+        boost::unordered_flat_set<std::string_view> required_addresses_set_{};
 
         /** Array of optional addresses **/
         ddwaf_object optional_addresses_{};
-        std::unordered_set<std::string_view> optional_addresses_set_{};
+        boost::unordered_flat_set<std::string_view> optional_addresses_set_{};
     };
 
     ruleset_info() = default;

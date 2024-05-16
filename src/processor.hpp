@@ -29,7 +29,7 @@ public:
 
     struct cache_type {
         expression::cache_type expr_cache;
-        std::unordered_set<target_index> generated;
+        boost::unordered_flat_set<target_index> generated;
     };
 
     processor(std::string id, std::shared_ptr<generator::base> generator,
@@ -52,7 +52,7 @@ public:
 
     [[nodiscard]] const std::string &get_id() const { return id_; }
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    void get_addresses(boost::unordered_flat_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
         for (auto mapping : mappings_) { addresses.emplace(mapping.input, mapping.input_address); }

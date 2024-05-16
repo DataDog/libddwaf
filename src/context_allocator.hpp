@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "memory_resource.hpp"
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_flat_set.hpp>
 
 namespace ddwaf::memory {
 extern thread_local std::pmr::memory_resource *local_memory_resource;
@@ -101,10 +103,10 @@ template <typename T> using vector = std::vector<T, context_allocator<T>>;
 
 template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>>
 using unordered_map =
-    std::unordered_map<Key, T, Hash, Pred, context_allocator<std::pair<const Key, T>>>;
+    boost::unordered_flat_map<Key, T, Hash, Pred, context_allocator<std::pair<const Key, T>>>;
 
 template <class T, class Hash = std::hash<T>, class Pred = std::equal_to<T>>
-using unordered_set = std::unordered_set<T, Hash, Pred, context_allocator<T>>;
+using unordered_set = boost::unordered_flat_set<T, Hash, Pred, context_allocator<T>>;
 
 template <class T> using list = std::list<T, context_allocator<T>>;
 

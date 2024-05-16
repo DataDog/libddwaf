@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include <unordered_map>
+#include <boost/unordered/unordered_flat_map.hpp>
 
 #include "test.hpp"
 #include "utils.hpp"
@@ -105,7 +105,7 @@ TEST(TestUtils, IsBoundary)
 }
 TEST(TestUtils, ToLower)
 {
-    std::unordered_map<char, char> mapping{{'A', 'a'}, {'B', 'b'}, {'C', 'c'}, {'D', 'd'},
+    boost::unordered_flat_map<char, char> mapping{{'A', 'a'}, {'B', 'b'}, {'C', 'c'}, {'D', 'd'},
         {'E', 'e'}, {'F', 'f'}, {'G', 'g'}, {'H', 'h'}, {'I', 'i'}, {'J', 'j'}, {'K', 'k'},
         {'L', 'l'}, {'M', 'm'}, {'N', 'n'}, {'O', 'o'}, {'P', 'p'}, {'Q', 'q'}, {'R', 'r'},
         {'S', 's'}, {'T', 't'}, {'U', 'u'}, {'V', 'v'}, {'W', 'w'}, {'X', 'x'}, {'Y', 'y'},
@@ -123,7 +123,7 @@ TEST(TestUtils, ToLower)
 
 TEST(TestUtils, ToUpper)
 {
-    std::unordered_map<char, char> mapping{{'a', 'A'}, {'b', 'B'}, {'c', 'C'}, {'d', 'D'},
+    boost::unordered_flat_map<char, char> mapping{{'a', 'A'}, {'b', 'B'}, {'c', 'C'}, {'d', 'D'},
         {'e', 'E'}, {'f', 'F'}, {'g', 'G'}, {'h', 'H'}, {'i', 'I'}, {'j', 'J'}, {'k', 'K'},
         {'l', 'L'}, {'m', 'M'}, {'n', 'N'}, {'o', 'O'}, {'p', 'P'}, {'q', 'Q'}, {'r', 'R'},
         {'s', 'S'}, {'t', 'T'}, {'u', 'U'}, {'v', 'V'}, {'w', 'W'}, {'x', 'X'}, {'y', 'Y'},
@@ -141,9 +141,9 @@ TEST(TestUtils, ToUpper)
 
 TEST(TestUtils, FromHex)
 {
-    std::unordered_map<char, uint8_t> mapping{{'0', 0}, {'1', 1}, {'2', 2}, {'3', 3}, {'4', 4},
-        {'5', 5}, {'6', 6}, {'7', 7}, {'8', 8}, {'9', 9}, {'a', 0xa}, {'b', 0xb}, {'c', 0xc},
-        {'d', 0xd}, {'e', 0xe}, {'f', 0xf}};
+    boost::unordered_flat_map<char, uint8_t> mapping{{'0', 0}, {'1', 1}, {'2', 2}, {'3', 3},
+        {'4', 4}, {'5', 5}, {'6', 6}, {'7', 7}, {'8', 8}, {'9', 9}, {'a', 0xa}, {'b', 0xb},
+        {'c', 0xc}, {'d', 0xd}, {'e', 0xe}, {'f', 0xf}};
 
     for (auto [c, expected] : mapping) {
         auto obtained = from_hex(c);

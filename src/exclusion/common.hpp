@@ -22,8 +22,8 @@ namespace exclusion {
 enum class filter_mode : uint8_t { none = 0, monitor = 1, bypass = 2 };
 
 struct object_set {
-    std::unordered_set<const ddwaf_object *> persistent;
-    std::unordered_set<const ddwaf_object *> ephemeral;
+    boost::unordered_flat_set<const ddwaf_object *> persistent;
+    boost::unordered_flat_set<const ddwaf_object *> ephemeral;
     bool empty() const { return persistent.empty() && ephemeral.empty(); }
     [[nodiscard]] std::size_t size() const { return persistent.size() + ephemeral.size(); }
 
@@ -35,12 +35,12 @@ struct object_set {
 
 struct rule_policy {
     filter_mode mode{filter_mode::none};
-    std::unordered_set<const ddwaf_object *> objects{};
+    boost::unordered_flat_set<const ddwaf_object *> objects{};
 };
 
 struct object_set_ref {
-    optional_ref<const std::unordered_set<const ddwaf_object *>> persistent{std::nullopt};
-    optional_ref<const std::unordered_set<const ddwaf_object *>> ephemeral{std::nullopt};
+    optional_ref<const boost::unordered_flat_set<const ddwaf_object *>> persistent{std::nullopt};
+    optional_ref<const boost::unordered_flat_set<const ddwaf_object *>> ephemeral{std::nullopt};
 
     [[nodiscard]] bool empty() const
     {
@@ -67,8 +67,8 @@ struct rule_policy_ref {
 };
 
 struct context_policy {
-    std::unordered_map<const rule *, rule_policy> persistent;
-    std::unordered_map<const rule *, rule_policy> ephemeral;
+    boost::unordered_flat_map<const rule *, rule_policy> persistent;
+    boost::unordered_flat_map<const rule *, rule_policy> ephemeral;
 
     [[nodiscard]] bool empty() const { return persistent.empty() && ephemeral.empty(); }
 
