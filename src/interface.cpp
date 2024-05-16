@@ -20,7 +20,6 @@
 #include "utils.hpp"
 #include "waf.hpp"
 
-#if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_INFO
 namespace {
 const char *log_level_to_str(DDWAF_LOG_LEVEL level)
 {
@@ -80,10 +79,7 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
 
     return limits;
 }
-
 } // namespace
-
-#endif
 // explicit instantiation declaration to suppress warning
 extern "C" {
 ddwaf::waf *ddwaf_init(
@@ -198,13 +194,6 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
         false, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, 0     \
     }
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-namespace {
-std::pmr::memory_resource *to_memres(ddwaf_allocator *alloc)
-{
-    return reinterpret_cast<std::pmr::memory_resource *>(alloc);
-}
-} // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
@@ -224,17 +213,19 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
             res = *result;
         }
 
-        optional_ref<ddwaf_object> persistent{std::nullopt};
+        auto *memres = reinterpret_cast<std::pmr::memory_resource *>(alloc);
+
+        ddwaf::owned_object persistent;
         if (persistent_data != nullptr) {
-            persistent = *persistent_data;
+            persistent = ddwaf::owned_object{reinterpret_cast<ddwaf::detail::object&>(*persistent_data), memres};
         }
 
-        optional_ref<ddwaf_object> ephemeral{std::nullopt};
+        ddwaf::owned_object ephemeral;
         if (ephemeral_data != nullptr) {
-            ephemeral = *ephemeral_data;
+            ephemeral = ddwaf::owned_object{reinterpret_cast<ddwaf::detail::object&>(*ephemeral_data), memres};
         }
 
-        return context->run(persistent, ephemeral, res, to_memres(alloc), timeout);
+        return context->run(std::move(persistent), std::move(ephemeral), res, timeout);
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());

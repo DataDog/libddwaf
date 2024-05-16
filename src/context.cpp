@@ -15,29 +15,22 @@ namespace ddwaf {
 using attribute = object_store::attribute;
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
-    optional_ref<ddwaf_object> ephemeral, optional_ref<ddwaf_result> res,
-    std::pmr::memory_resource *alloc, uint64_t timeout)
+DDWAF_RET_CODE context::run(owned_object persistent,
+    owned_object ephemeral, optional_ref<ddwaf_result> res, uint64_t timeout)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
     auto store_cleanup_scope = store_.get_eval_scope();
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
-    if (persistent.has_value()) {
-        owned_object owned{reinterpret_cast<detail::object &>(persistent->get()), alloc};
-        if (!store_.insert(std::move(owned), attribute::none)) {
-            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-            return DDWAF_ERR_INVALID_OBJECT;
-        }
+    if (persistent.is_valid() && !store_.insert(std::move(persistent), attribute::none)) {
+        DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+        return DDWAF_ERR_INVALID_OBJECT;
     }
 
-    if (ephemeral.has_value()) {
-        owned_object owned{reinterpret_cast<detail::object &>(ephemeral->get()), alloc};
-        if (!store_.insert(std::move(owned), attribute::ephemeral)) {
-            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-            return DDWAF_ERR_INVALID_OBJECT;
-        }
+    if (ephemeral.is_valid() && !store_.insert(std::move(ephemeral), attribute::ephemeral)) {
+        DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+        return DDWAF_ERR_INVALID_OBJECT;
     }
 
     if (timeout == 0) {
@@ -60,7 +53,8 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     optional_ref<ddwaf_object> derived;
     if (res.has_value()) {
         ddwaf_result &output = *res;
-        ddwaf_object_set_map(&output.derivatives, 32, nullptr);
+        owned_object derivatives_map = owned_object::make_map(0);
+        reinterpret_cast<ddwaf::detail::object&>(output.derivatives) = derivatives_map.move();
         derived.emplace(output.derivatives);
     }
 
