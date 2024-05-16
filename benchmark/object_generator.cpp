@@ -100,8 +100,6 @@ struct queue_node {
 
 void generate_objects(ddwaf_object &root, const object_specification &s)
 {
-    generate_container(root);
-
     auto levels =
         generate_vertical_distribution(s.depth, s.intermediate_nodes - 1, s.terminal_nodes);
 
