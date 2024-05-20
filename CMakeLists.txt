@@ -115,6 +115,7 @@ if (LIBDDWAF_TESTING)
     add_subdirectory(fuzzer EXCLUDE_FROM_ALL)
     add_subdirectory(tools EXCLUDE_FROM_ALL)
     add_subdirectory(examples EXCLUDE_FROM_ALL)
+    add_subdirectory(perf EXCLUDE_FROM_ALL)
 
     include(cmake/clang-tidy.cmake)
     include(cmake/clang-format.cmake)

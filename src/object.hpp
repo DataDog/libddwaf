@@ -44,8 +44,8 @@ struct [[gnu::packed, gnu::may_alias]] object {
 };
 
 struct [[gnu::packed]] object_kv {
-    detail::object key;
     detail::object val;
+    detail::object key;
 };
 
 static_assert(sizeof(object) == 16);

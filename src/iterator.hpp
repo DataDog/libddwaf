@@ -8,6 +8,8 @@
 
 #include <span>
 #include <string>
+#include <type_traits>
+#include <variant>
 #include <vector>
 
 #include "exclusion/common.hpp"
@@ -50,7 +52,16 @@ protected:
     const exclusion::object_set_ref &excluded_;
 };
 
-class value_iterator : public iterator_base<value_iterator> {
+struct [[gnu::packed]] object_node {
+    union {
+        const detail::object *ptr;
+        const detail::object_kv *ptr_kv;
+    };
+    bool is_kv;
+};
+
+//static_assert(sizeof(object_node) == 16);
+class value_iterator {
 public:
     explicit value_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
@@ -63,9 +74,25 @@ public:
     value_iterator &operator=(const value_iterator &) = delete;
     value_iterator &operator=(value_iterator &&) = delete;
 
-    [[nodiscard]] object_view operator*() { return current_.second; }
+    // TODO: Fix UB
+    [[nodiscard]] object_view operator*() { return current_.ptr; }
 
-    [[nodiscard]] object_type type() const { return current_.second.type(); }
+    [[nodiscard]] object_type type() const { return current_.ptr != nullptr ? current_.ptr->type : object_type::invalid; }
+
+    bool operator++();
+
+    [[nodiscard]] explicit operator bool() const {
+        // Technically UB
+        // TODO: fix
+        return current_.ptr != nullptr;
+    }
+    [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
+    [[nodiscard]] std::vector<std::string> get_current_path() const {return {};}
+    [[nodiscard]] object_view get_underlying_object() {
+        // Technically UB
+        // TODO: fix
+        return current_.ptr;
+    }
 
 protected:
     void initialise_cursor(object_view obj, std::span<const std::string> path);
@@ -73,7 +100,18 @@ protected:
 
     void set_cursor_to_next_object();
 
-    friend class iterator_base<value_iterator>;
+    static constexpr std::size_t initial_stack_size = 32;
+
+    object_limits limits_;
+    // This is only used when the iterator is initialised with a key path,
+    // since the iterator doesn't keep track of the root object provided,
+    // but only the beginning of the key path, we keep this here so that we
+    // can later provide the accurate full key path.
+    std::vector<std::string> path_;
+    std::vector<std::pair<object_node, uint16_t>> stack_;
+    object_node current_{{nullptr}, false};
+
+    const exclusion::object_set_ref &excluded_;
 };
 
 class key_iterator : public iterator_base<key_iterator> {

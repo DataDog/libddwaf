@@ -39,23 +39,14 @@ public:
 
     [[nodiscard]] object_type type() const noexcept
     {
-        if (obj_ == nullptr) {
-            [[unlikely]] return object_type::invalid;
-        }
-        return obj_->type;
+        return obj_ != nullptr ? obj_->type : object_type::invalid;
     }
     [[nodiscard]] std::size_t size() const noexcept
     {
-        if (!is_container()) {
-            [[unlikely]] return 0;
-        }
         return static_cast<std::size_t>(obj_->size);
     }
     [[nodiscard]] std::size_t capacity() const noexcept
     {
-        if (!is_container()) {
-            [[unlikely]] return 0;
-        }
         return static_cast<std::size_t>(obj_->capacity);
     }
     [[nodiscard]] std::size_t length() const noexcept

@@ -91,8 +91,8 @@ struct __attribute__((packed)) _ddwaf_object {
 };
 
 struct __attribute__((packed)) _ddwaf_object_kv {
-    ddwaf_object key;
     ddwaf_object val;
+    ddwaf_object key;
 };
 
 // Allocator constructors and destructor
