@@ -80,29 +80,71 @@ value_iterator::value_iterator(object_view obj, std::span<const std::string> pat
     initialise_cursor(obj, path);
 }
 
-void value_iterator::initialise_cursor(object_view view, std::span<const std::string> path)
+std::vector<std::string> value_iterator::get_current_path() const
 {
-    if (excluded_.contains(view)) {
+    if (current_.ptr == nullptr) {
+        return {};
+    }
+
+    std::vector<std::string> keys;
+    keys.reserve(path_.size() + stack_.size());
+    for (const auto &key : path_) { keys.emplace_back(key); }
+
+    if (stack_.empty()) {
+        if (keys.empty()) {
+            return {};
+        }
+        return keys;
+    }
+
+    auto [parent_node, parent_idx] = stack_.front();
+    for (unsigned i = 1; i < stack_.size(); i++) {
+
+        auto [child_node, child_idx] = stack_[i];
+        if (parent_node.ptr->type == object_type::map) {
+            keys.emplace_back(object_view{&child_node.ptr_kv->key}.as_unchecked<std::string>());
+        } else if (parent_node.ptr->type == object_type::array) {
+            // TODO intern these strings
+            keys.emplace_back(to_string<std::string>(parent_idx - 1));
+        }
+
+        parent_node = child_node;
+        parent_idx = child_idx;
+    }
+
+    if (parent_node.ptr->type == object_type::map && current_.ptr != nullptr) {
+        keys.emplace_back(object_view{&current_.ptr_kv->key}.as_unchecked<std::string>());
+    } else if (parent_node.ptr->type == object_type::array) {
+        keys.emplace_back(to_string<std::string>(parent_idx - 1));
+    }
+
+    return keys;
+}
+
+
+
+void value_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
+{
+    if (excluded_.contains(obj)) {
         return;
     }
 
     // TODO Fix
-    const detail::object *obj = view.ptr();
     if (path.empty()) {
-        if ((obj->type & scalar_object_type) != 0) {
-            current_.ptr = obj;
+        if (obj.is_scalar()) {
+            current_.ptr = obj.ptr();
             current_.is_kv = false;
             return;
         }
 
         // Uninitialised object...? We should throw an exception at some point
-        if ((obj->type & container_object_type) == 0) {
+        if (!obj.is_container()) {
             return;
         }
 
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(object_node{{obj}, false}, 0);
+            stack_.emplace_back(object_node{{obj.ptr()}, false}, 0);
             set_cursor_to_next_object();
         }
     } else {
@@ -140,18 +182,16 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
             auto size = parent_node.ptr->size > limits_.max_container_size ? limits_.max_container_size
                                                                    : parent_node.ptr->size;
             for (std::size_t j = 0; j < size; j++) {
-                if (parent_node.ptr->type == object_type::map) {
-                    auto &child = parent_node.ptr->via.map[i];
-                    if (excluded_.contains(object_view{&child.val})) {
-                        continue;
-                    }
+                auto &child = parent_node.ptr->via.map[j];
+                if (excluded_.contains(object_view{&child.val})) {
+                    continue;
+                }
 
-                    if (object_view{&child.key}.as_unchecked<std::string_view>() == key) {
-                        child_node.ptr_kv = &child;
-                        child_node.is_kv = true;
-                        index = j + 1;
-                        break;
-                    }
+                if (object_view{&child.key}.as_unchecked<std::string_view>() == key) {
+                    child_node.ptr_kv = &child;
+                    child_node.is_kv = true;
+                    index = j + 1;
+                    break;
                 }
             }
         }
@@ -204,20 +244,47 @@ void value_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        detail::object_kv *child =parent_node.ptr->type == object_type::map ? 
-                &parent_node.ptr_kv->val.via.map[index] :
-                reinterpret_cast<detail::object_kv*>(&parent_node.ptr->via.array[index]);
-        if ((child->val.type & container_object_type) != 0) {
-            if (depth() < limits_.max_container_depth) {
-                // Push can invalidate the current references to the parent
-                // so we increment the index before a potential reallocation
-                // and prevent any further use of the references.
-                stack_.emplace_back(object_node{{.ptr_kv = child}, true}, 0);
+        const auto &parent = parent_node.is_kv ? parent_node.ptr_kv->val : *parent_node.ptr;
+        if (parent.type == object_type::map) {
+            auto *child =  &parent.via.map[index];
+
+            if (excluded_.contains(&child->val)) {
                 ++index;
                 continue;
             }
-        } else if ((child->val.type & scalar_object_type) != 0) {
-            current_ = {{.ptr_kv = child}, true};
+
+            if ((child->val.type & container_object_type) != 0) {
+                if (depth() < limits_.max_container_depth) {
+                    // Push can invalidate the current references to the parent
+                    // so we increment the index before a potential reallocation
+                    // and prevent any further use of the references.
+                    stack_.emplace_back(object_node{{.ptr_kv = child}, true}, 0);
+                    ++index;
+                    continue;
+                }
+            } else if ((child->val.type & scalar_object_type) != 0) {
+                current_ = {{.ptr_kv = child}, true};
+            }
+        } else {
+            auto * child = &parent.via.array[index];
+
+            if (excluded_.contains(child)) {
+                ++index;
+                continue;
+            }
+
+            if ((child->type & container_object_type) != 0) {
+                if (depth() < limits_.max_container_depth) {
+                    // Push can invalidate the current references to the parent
+                    // so we increment the index before a potential reallocation
+                    // and prevent any further use of the references.
+                    stack_.emplace_back(object_node{{.ptr = child}, false}, 0);
+                    ++index;
+                    continue;
+                }
+            } else if ((child->type & scalar_object_type) != 0) {
+                current_ = {{.ptr = child}, false};
+            }
         }
 
         ++index;

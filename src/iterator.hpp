@@ -35,7 +35,6 @@ public:
     [[nodiscard]] explicit operator bool() const { return current_.second.is_valid(); }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
-    [[nodiscard]] object_view get_underlying_object() { return current_.second; }
 
 protected:
     static constexpr std::size_t initial_stack_size = 32;
@@ -87,12 +86,7 @@ public:
         return current_.ptr != nullptr;
     }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
-    [[nodiscard]] std::vector<std::string> get_current_path() const {return {};}
-    [[nodiscard]] object_view get_underlying_object() {
-        // Technically UB
-        // TODO: fix
-        return current_.ptr;
-    }
+    [[nodiscard]] std::vector<std::string> get_current_path() const;
 
 protected:
     void initialise_cursor(object_view obj, std::span<const std::string> path);
