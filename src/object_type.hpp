@@ -35,26 +35,26 @@ enum class object_type : uint8_t {
 constexpr inline uint8_t scalar_object_type = 0x1E;
 constexpr inline uint8_t container_object_type = 0xE0;
 
-template <typename T> object_type operator&(object_type left, T right)
+template <typename T>
+inline object_type operator&(object_type left, T right)
+    requires std::is_same_v<T, object_type> || std::is_integral_v<T>
 {
-    static_assert(std::is_same_v<T, object_type> || std::is_integral_v<T>);
-
     using utype = std::underlying_type_t<object_type>;
     return static_cast<object_type>(static_cast<utype>(left) & static_cast<utype>(right));
 }
 
-template <typename T> auto operator<=>(object_type left, T right)
+template <typename T>
+inline auto operator<=>(object_type left, T right)
+    requires std::is_same_v<T, object_type> || std::is_integral_v<T>
 {
-    static_assert(std::is_same_v<T, object_type> || std::is_integral_v<T>);
-
     using utype = std::underlying_type_t<object_type>;
     return static_cast<utype>(left) <=> static_cast<utype>(right);
 }
 
-template <typename T> bool operator==(object_type left, T right)
+template <typename T>
+inline bool operator==(object_type left, T right)
+    requires std::is_same_v<T, object_type> || std::is_integral_v<T>
 {
-    static_assert(std::is_same_v<T, object_type> || std::is_integral_v<T>);
-
     using utype = std::underlying_type_t<object_type>;
     return static_cast<utype>(left) == static_cast<utype>(right);
 }

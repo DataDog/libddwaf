@@ -22,17 +22,17 @@ iterator_base<T>::iterator_base(
 
 template <typename T> bool iterator_base<T>::operator++()
 {
-    if (current_.second.is_valid()) {
+    if (*static_cast<T *>(this)) {
         T &derived = static_cast<T &>(*this);
         derived.set_cursor_to_next_object();
     }
-    return current_.second.is_valid();
+    return static_cast<bool>(*static_cast<T *>(this));
 }
 
 // TODO: return string_view as this will be immediately copied after
 template <typename T> std::vector<std::string> iterator_base<T>::get_current_path() const
 {
-    if (current_.second.is_invalid()) {
+    if (!*static_cast<const T *>(this)) {
         return {};
     }
 
@@ -47,24 +47,20 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
         return keys;
     }
 
-    auto [parent_key, parent_val, parent_idx] = stack_.front();
-    for (unsigned i = 1; i < stack_.size(); i++) {
-        auto [child_key, child_val, child_idx] = stack_[i];
-        if (parent_val.type() == object_type::map) {
-            keys.emplace_back(child_key.as_unchecked<std::string>());
-        } else if (parent_val.type() == object_type::array) {
-            // TODO intern these strings
-            keys.emplace_back(to_string<std::string>(parent_idx - 1));
+    for (auto it : stack_) {
+        // TODO make this return an std::string_view
+        object_view::iterator current;
+        if (it.index() > 0) {
+            current = it - 1;
+        } else {
+            current = it;
         }
-
-        parent_val = child_val;
-        parent_idx = child_idx;
-    }
-
-    if (parent_val.type() == object_type::map && current_.first.is_valid()) {
-        keys.emplace_back(current_.first.as_unchecked<std::string>());
-    } else if (parent_val.type() == object_type::array) {
-        keys.emplace_back(to_string<std::string>(parent_idx - 1));
+        if (auto key = current.key(); key.is_string()) {
+            keys.emplace_back(key.as_unchecked<std::string>());
+        } else {
+            // TODO intern these strings or use std::variant in the return
+            keys.emplace_back(to_string<std::string>(current.index()));
+        }
     }
 
     return keys;
@@ -96,7 +92,7 @@ void value_iterator::initialise_cursor(object_view obj, std::span<const std::str
 
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(object_view{}, obj, 0);
+            stack_.emplace_back(obj.begin(limits_.max_container_size));
             set_cursor_to_next_object();
         }
     } else {
@@ -116,28 +112,23 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
     }
 
     // Add container to stack and find next scalar within the given path
-    stack_.emplace_back(object_view{}, obj, 0);
+    stack_.emplace_back(obj.begin(limits_.max_container_size));
 
     for (std::size_t i = 0; i < path.size(); i++) {
         const std::string_view key = path[i];
-        auto &[_, parent, index] = stack_.back();
+        auto &it = stack_.back();
 
         std::pair<object_view, object_view> child;
-        if (parent.type() == object_type::map) {
-            auto parent_map = parent.as_unchecked<object_view::map>();
-            auto size = parent.size() > limits_.max_container_size ? limits_.max_container_size
-                                                                   : parent.size();
-            for (std::size_t j = 0; j < size; j++) {
-                auto [child_key, child_value] = parent_map.at_unchecked<object_view>(j);
-                if (excluded_.contains(child_value)) {
-                    continue;
-                }
+        for (; it.is_valid(); ++it) {
+            auto [child_key, child_value] = *it;
+            if (excluded_.contains(child_value)) {
+                continue;
+            }
 
-                if (child_key.as_unchecked<std::string_view>() == key) {
-                    child = {child_key, child_value};
-                    index = j + 1;
-                    break;
-                }
+            if (child_key.has_value() && child_key.as_unchecked<std::string_view>() == key) {
+                child = {child_key, child_value};
+                ++it;
+                break;
             }
         }
 
@@ -155,7 +146,7 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
             }
 
             // Replace the stack top
-            stack_.back() = {child.first, child.second, 0};
+            stack_.back() = child.second.begin(limits_.max_container_size);
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -180,18 +171,16 @@ void value_iterator::set_cursor_to_next_object()
     current_ = {};
 
     while (!stack_.empty() && current_.second.is_invalid()) {
-        auto &[_, parent, index] = stack_.back();
-
-        if (index >= parent.size() || index >= limits_.max_container_size) {
-            // Pop can invalidate the parent references so after this point
-            // they should not be used.
+        auto &it = stack_.back();
+        if (!it.is_valid()) {
+            // Pop can invalidate the iterator reference so after this point
+            // it should not be used.
             stack_.pop_back();
-            continue;
         }
 
-        auto [child_key, child_value] = parent.at_unchecked(index);
+        auto [child_key, child_value] = *it;
         if (excluded_.contains(child_value)) {
-            ++index;
+            ++it;
             continue;
         }
 
@@ -200,15 +189,15 @@ void value_iterator::set_cursor_to_next_object()
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                stack_.emplace_back(child_key, child_value, 0);
-                ++index;
+                stack_.emplace_back(child_value.begin(limits_.max_container_size));
+                ++it;
                 continue;
             }
         } else if (child_value.is_scalar()) {
             current_ = {child_key, child_value};
         }
 
-        ++index;
+        ++it;
     }
 }
 
@@ -232,7 +221,7 @@ void key_iterator::initialise_cursor(object_view obj, std::span<const std::strin
     if (path.empty()) {
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(object_view{}, obj, 0);
+            stack_.emplace_back(obj.begin(limits_.max_container_size));
             set_cursor_to_next_object();
         }
     } else {
@@ -247,18 +236,16 @@ void key_iterator::initialise_cursor_with_path(object_view obj, std::span<const 
     }
 
     // Add container to stack and find next scalar within the given path
-    stack_.emplace_back(object_view{}, obj, 0);
+    stack_.emplace_back(obj.begin(limits_.max_container_size));
 
     for (std::size_t i = 0; i < path.size(); i++) {
         const std::string_view key = path[i];
-        auto [_, parent, index] = stack_.back();
+        auto &it = stack_.back();
 
         std::pair<object_view, object_view> child;
-        if (parent.type() == object_type::map) {
-            auto size = parent.size() > limits_.max_container_size ? limits_.max_container_size
-                                                                   : parent.size();
-            for (std::size_t j = 0; j < size; j++) {
-                auto [child_key, child_value] = parent.at_unchecked(j);
+        if (it.type() == object_type::map) {
+            for (; it.is_valid(); ++it) {
+                auto [child_key, child_value] = *it;
                 if (child_key.is_invalid()) {
                     continue;
                 }
@@ -269,14 +256,13 @@ void key_iterator::initialise_cursor_with_path(object_view obj, std::span<const 
 
                 if (child_key.as<std::string_view>() == key) {
                     child = {child_key, child_value};
-                    index = j;
                     break;
                 }
             }
         }
 
         if (child.second.is_container()) {
-            stack_.back() = {child.first, child.second, 0};
+            stack_.back() = child.second.begin(limits_.max_container_size);
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -300,19 +286,18 @@ void key_iterator::set_cursor_to_next_object()
     current_ = {};
 
     while (!stack_.empty() && current_.second.is_invalid()) {
-        auto &[_, parent, index] = stack_.back();
+        auto &it = stack_.back();
 
-        if (index >= parent.size() || index >= limits_.max_container_size) {
+        if (!it.is_valid()) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
             continue;
         }
 
-        auto [child_key, child_value] = parent.at_unchecked(index);
-
+        auto [child_key, child_value] = *it;
         if (excluded_.contains(child_value)) {
-            ++index;
+            ++it;
             continue;
         }
 
@@ -328,15 +313,15 @@ void key_iterator::set_cursor_to_next_object()
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                ++index;
-                stack_.emplace_back(child_key, child_value, 0);
+                ++it;
+                stack_.emplace_back(child_value.begin(limits_.max_container_size));
                 continue;
             }
         } else if (child_key.is_valid()) {
             current_ = {child_key, child_value};
         }
 
-        ++index;
+        ++it;
     }
 }
 
@@ -367,7 +352,7 @@ void kv_iterator::initialise_cursor(object_view obj, std::span<const std::string
 
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(object_view{}, obj, 0);
+            stack_.emplace_back(obj.begin(limits_.max_container_size));
             set_cursor_to_next_object();
         }
     } else {
@@ -382,18 +367,17 @@ void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const s
     }
 
     // Add container to stack and find next scalar within the given path
-    stack_.emplace_back(object_view{}, obj, 0);
+    stack_.emplace_back(obj.begin(limits_.max_container_size));
 
     for (std::size_t i = 0; i < path.size(); i++) {
         const std::string_view key = path[i];
-        auto [_, parent, index] = stack_.back();
+        auto &it = stack_.back();
 
         std::pair<object_view, object_view> child;
-        if (parent.type() == object_type::map) {
-            auto size = parent.size() > limits_.max_container_size ? limits_.max_container_size
-                                                                   : parent.size();
-            for (std::size_t j = 0; j < size; j++) {
-                auto [child_key, child_value] = parent.at_unchecked(j);
+        if (it.type() == object_type::map) {
+            for (; it.is_valid(); ++it) {
+                auto [child_key, child_value] = *it;
+
                 if (child_key.is_invalid()) {
                     continue;
                 }
@@ -404,7 +388,6 @@ void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const s
 
                 if (child_key.as<std::string_view>() == key) {
                     child = {child_key, child_value};
-                    index = j;
                     break;
                 }
             }
@@ -425,7 +408,7 @@ void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const s
             }
 
             // Replace the stack top
-            stack_.back() = {child.first, child.second, 0};
+            stack_.back() = child.second.begin(limits_.max_container_size);
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -450,18 +433,18 @@ void kv_iterator::set_cursor_to_next_object()
     current_ = {};
 
     while (!stack_.empty() && current_.second.is_invalid()) {
-        auto &[_, parent, index] = stack_.back();
+        auto &it = stack_.back();
 
-        if (index >= parent.size() || index >= limits_.max_container_size) {
+        if (!it.is_valid()) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
             continue;
         }
 
-        auto [child_key, child_value] = parent.at_unchecked(index);
+        auto [child_key, child_value] = *it;
         if (excluded_.contains(child_value)) {
-            ++index;
+            ++it;
             continue;
         }
 
@@ -478,15 +461,15 @@ void kv_iterator::set_cursor_to_next_object()
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                ++index;
-                stack_.emplace_back(child_key, child_value, 0);
+                ++it;
+                stack_.emplace_back(child_value.begin(limits_.max_container_size));
                 continue;
             }
         } else if (child_value.is_scalar()) {
             if (previous.second != child_value) {
                 current_ = {child_key, child_value};
                 if (child_key.is_invalid()) {
-                    ++index;
+                    ++it;
                     scalar_value_ = true;
                 } else {
                     scalar_value_ = false;
@@ -504,7 +487,7 @@ void kv_iterator::set_cursor_to_next_object()
             scalar_value_ = false;
         }
 
-        ++index;
+        ++it;
     }
 }
 template class iterator_base<value_iterator>;

@@ -15,8 +15,8 @@ namespace ddwaf {
 using attribute = object_store::attribute;
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-DDWAF_RET_CODE context::run(owned_object persistent,
-    owned_object ephemeral, optional_ref<ddwaf_result> res, uint64_t timeout)
+DDWAF_RET_CODE context::run(owned_object persistent, owned_object ephemeral,
+    optional_ref<ddwaf_result> res, uint64_t timeout)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
@@ -54,7 +54,7 @@ DDWAF_RET_CODE context::run(owned_object persistent,
     if (res.has_value()) {
         ddwaf_result &output = *res;
         owned_object derivatives_map = owned_object::make_map(0);
-        reinterpret_cast<ddwaf::detail::object&>(output.derivatives) = derivatives_map.move();
+        reinterpret_cast<ddwaf::detail::object &>(output.derivatives) = derivatives_map.move();
         derived.emplace(output.derivatives);
     }
 

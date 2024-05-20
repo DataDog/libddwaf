@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <cstring>
+#include <iostream>
 #include <optional>
 #include <string_view>
 #include <type_traits>
@@ -36,6 +37,8 @@ public:
     object_view(object_view &&) = default;
     object_view &operator=(const object_view &) = default;
     object_view &operator=(object_view &&) = default;
+
+    [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
 
     [[nodiscard]] object_type type() const noexcept
     {
@@ -191,6 +194,176 @@ public:
     }
 
     template <typename T> T convert() const { return converter<T>{*this}(); }
+
+    class iterator {
+    public:
+        iterator() = default;
+
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        explicit iterator(const detail::object *obj, std::size_t index = 0,
+            std::size_t max_size = std::numeric_limits<uint16_t>::max())
+            : internal_(obj, index, max_size)
+        {}
+
+        [[nodiscard]] bool is_valid() const noexcept { return internal_.index < internal_.size; }
+
+        [[nodiscard]] object_type type() const noexcept
+        {
+            if (internal_.type == iterator_type::array) {
+                return object_type::array;
+            }
+            if (internal_.type == iterator_type::map) {
+                return object_type::map;
+            }
+
+            return object_type::invalid;
+        }
+
+        bool operator!=(const iterator &rhs) const noexcept
+        {
+            return internal_.type == rhs.internal_.type && internal_.index == rhs.internal_.index &&
+                   ((internal_.type == iterator_type::map &&
+                        internal_.via.kv_ptr == rhs.internal_.via.kv_ptr) ||
+                       (internal_.type == iterator_type::array &&
+                           internal_.via.ptr == rhs.internal_.via.ptr));
+        }
+
+        std::pair<object_view, object_view> operator*() const noexcept
+        {
+            if (internal_.index < internal_.size) {
+                if (internal_.type == iterator_type::array) {
+                    return {{}, &internal_.via.ptr[internal_.index]};
+                }
+
+                if (internal_.type == iterator_type::map) {
+                    const auto &kv = internal_.via.kv_ptr[internal_.index];
+                    return {&kv.key, &kv.val};
+                }
+            }
+
+            [[unlikely]] return {};
+        }
+
+        [[nodiscard]] object_view key() const noexcept
+        {
+            if (internal_.index < internal_.size && internal_.type == iterator_type::map) {
+                std::cout << "We're here\n";
+                return &internal_.via.kv_ptr[internal_.index].key;
+            }
+
+            [[unlikely]] return {};
+        }
+
+        [[nodiscard]] object_view value() const noexcept
+        {
+            if (internal_.index < internal_.size) {
+                if (internal_.type == iterator_type::array) {
+                    return &internal_.via.ptr[internal_.index];
+                }
+
+                if (internal_.type == iterator_type::map) {
+                    return &internal_.via.kv_ptr[internal_.index].val;
+                }
+            }
+
+            [[unlikely]] return {};
+        }
+
+        [[nodiscard]] std::size_t index() const noexcept
+        {
+            return static_cast<std::size_t>(internal_.index);
+        }
+
+        [[nodiscard]] std::size_t size() const noexcept
+        {
+            return static_cast<std::size_t>(internal_.size);
+        }
+
+        iterator &operator++() noexcept
+        {
+            if (internal_.index < internal_.size) {
+                ++internal_.index;
+            }
+            return *this;
+        }
+
+        iterator operator-(std::size_t index) const noexcept
+        {
+            if (internal_.index < index) {
+                return {};
+            }
+
+            iterator it = *this;
+            it.internal_.index -= index;
+            return it;
+        }
+
+        iterator &operator--() noexcept
+        {
+            if (internal_.index > 0) {
+                --internal_.index;
+            }
+            return *this;
+        }
+
+    protected:
+        enum class iterator_type : uint8_t { invalid, array, map };
+
+        struct [[gnu::packed, gnu::aligned(16)]] internal_iterator {
+            union {
+                const detail::object *ptr;
+                const detail::object_kv *kv_ptr;
+            } via{nullptr};
+            uint16_t index{};
+            uint16_t size{};
+            iterator_type type{iterator_type::invalid};
+            // 1 byte of padding to spare
+
+            internal_iterator() = default;
+
+            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+            internal_iterator(const detail::object *obj, std::size_t index, std::size_t max_size)
+            {
+                if (obj->type == object_type::array) {
+                    via.ptr = obj->via.array;
+                    type = iterator_type::array;
+                    size = obj->size < max_size ? obj->size : max_size;
+                    index = index < size ? index : size;
+                } else if (obj->type == object_type::map) {
+                    via.kv_ptr = obj->via.map;
+                    type = iterator_type::map;
+                    size = obj->size < max_size ? obj->size : max_size;
+                    index = index < size ? index : size;
+                } else {
+                    via.ptr = nullptr;
+                    type = iterator_type::invalid;
+                    size = index = 0;
+                }
+            }
+        };
+
+        static_assert(sizeof(internal_iterator) == 16);
+        static_assert(alignof(internal_iterator) == 16);
+
+        internal_iterator internal_;
+
+        friend class object_view;
+    };
+
+    iterator begin(std::size_t max_size)
+    {
+        if (obj_ == nullptr) {
+            return {};
+        }
+        return iterator{obj_, 0, max_size};
+    }
+    iterator end()
+    {
+        if (obj_ == nullptr) {
+            return {};
+        }
+        return iterator{obj_, obj_->size};
+    }
 
     class array {
     public:

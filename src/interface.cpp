@@ -194,7 +194,6 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
         false, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, 0     \
     }
 
-
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
     ddwaf_object *ephemeral_data, ddwaf_result *result, ddwaf_allocator *alloc, uint64_t timeout)
@@ -217,12 +216,14 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
 
         ddwaf::owned_object persistent;
         if (persistent_data != nullptr) {
-            persistent = ddwaf::owned_object{reinterpret_cast<ddwaf::detail::object&>(*persistent_data), memres};
+            persistent = ddwaf::owned_object{
+                reinterpret_cast<ddwaf::detail::object &>(*persistent_data), memres};
         }
 
         ddwaf::owned_object ephemeral;
         if (ephemeral_data != nullptr) {
-            ephemeral = ddwaf::owned_object{reinterpret_cast<ddwaf::detail::object&>(*ephemeral_data), memres};
+            ephemeral = ddwaf::owned_object{
+                reinterpret_cast<ddwaf::detail::object &>(*ephemeral_data), memres};
         }
 
         return context->run(std::move(persistent), std::move(ephemeral), res, timeout);

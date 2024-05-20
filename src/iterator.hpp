@@ -30,10 +30,8 @@ public:
 
     bool operator++();
 
-    [[nodiscard]] explicit operator bool() const { return current_.second.is_valid(); }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
-    [[nodiscard]] object_view get_underlying_object() { return current_.second; }
 
 protected:
     static constexpr std::size_t initial_stack_size = 32;
@@ -44,8 +42,9 @@ protected:
     // but only the beginning of the key path, we keep this here so that we
     // can later provide the accurate full key path.
     std::vector<std::string> path_;
-    std::vector<std::tuple<object_view /*key*/, object_view /*val*/, std::size_t>> stack_;
-    std::pair<object_view /*key*/, object_view /*val*/> current_;
+    std::vector<object_view::iterator> stack_;
+
+    std::pair<object_view, object_view> current_;
 
     const exclusion::object_set_ref &excluded_;
 };
@@ -63,7 +62,8 @@ public:
     value_iterator &operator=(const value_iterator &) = delete;
     value_iterator &operator=(value_iterator &&) = delete;
 
-    [[nodiscard]] object_view operator*() { return current_.second; }
+    [[nodiscard]] explicit operator bool() const { return current_.second.has_value(); }
+    [[nodiscard]] object_view operator*() const { return current_.second; }
 
     [[nodiscard]] object_type type() const { return current_.second.type(); }
 
@@ -92,14 +92,13 @@ public:
     [[nodiscard]] object_type type() const { return current_.first.type(); }
 
     [[nodiscard]] object_view operator*() { return current_.first; }
+    [[nodiscard]] explicit operator bool() const { return current_.first.has_value(); }
 
 protected:
     void initialise_cursor(object_view obj, std::span<const std::string> path);
     void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
-
-    ddwaf_object current_key_{};
 
     friend class iterator_base<key_iterator>;
 };
@@ -117,27 +116,22 @@ public:
     kv_iterator &operator=(const kv_iterator &) = delete;
     kv_iterator &operator=(kv_iterator &&) = delete;
 
+    [[nodiscard]] explicit operator bool() const { return current_.second.has_value(); }
+
     [[nodiscard]] object_type type() const
     {
-        if (current_.second.is_valid()) {
-            if (scalar_value_) {
-                return current_.second.type();
-            }
-            return current_.first.type();
+        if (scalar_value_) {
+            return current_.second.type();
         }
-        return object_type::invalid;
+        return current_.first.type();
     }
 
-    [[nodiscard]] object_view operator*()
+    [[nodiscard]] object_view operator*() const
     {
-        if (current_.second.is_valid()) {
-            if (scalar_value_) {
-                return current_.second;
-            }
-
-            return current_.first;
+        if (scalar_value_) {
+            return current_.second;
         }
-        return {};
+        return current_.first;
     }
 
 protected:
@@ -147,7 +141,10 @@ protected:
     void set_cursor_to_next_object();
 
     bool scalar_value_{false};
-    ddwaf_object current_key_{};
+
+    // TODO treat a map as an array and iterate as normal, this would simplify
+    // the logic as one wouldn't need to keep track of whether we're looking at
+    // a key or a value
 
     friend class iterator_base<kv_iterator>;
 };
