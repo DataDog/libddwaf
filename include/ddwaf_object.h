@@ -67,7 +67,7 @@ typedef void *(ddwaf_alloc_fn_type)(void *, size_t size, size_t alignment);
 typedef void (ddwaf_free_fn_type)(void *, void *, size_t size, size_t alignment);
 #endif
 
-struct __attribute__((packed, aligned(16))) _ddwaf_object {
+struct __attribute__((packed)) _ddwaf_object {
     union __attribute__((packed)) {
         bool b8;
         uint64_t u64;
@@ -90,7 +90,7 @@ struct __attribute__((packed, aligned(16))) _ddwaf_object {
     };
 };
 
-struct __attribute__((packed, aligned(32))) _ddwaf_object_kv {
+struct __attribute__((packed)) _ddwaf_object_kv {
     ddwaf_object key;
     ddwaf_object val;
 };

@@ -45,7 +45,6 @@ protected:
     std::vector<detail::object_iterator> stack_;
 
     std::pair<object_view, object_view> current_;
-
     const exclusion::object_set_ref &excluded_;
 };
 
@@ -62,10 +61,9 @@ public:
     value_iterator &operator=(const value_iterator &) = delete;
     value_iterator &operator=(value_iterator &&) = delete;
 
-    [[nodiscard]] explicit operator bool() const { return current_.second.has_value(); }
-    [[nodiscard]] object_view operator*() const { return current_.second; }
-
-    [[nodiscard]] object_type type() const { return current_.second.type(); }
+    [[nodiscard]] explicit operator bool() const { return current_ != nullptr; }
+    [[nodiscard]] object_view operator*() const { return current_; }
+    [[nodiscard]] object_type type() const { return current_->type; }
 
 protected:
     void initialise_cursor(object_view obj, std::span<const std::string> path);
@@ -73,6 +71,7 @@ protected:
 
     void set_cursor_to_next_object();
 
+    const detail::object *current_;
     friend class iterator_base<value_iterator>;
 };
 
@@ -90,7 +89,6 @@ public:
     key_iterator &operator=(key_iterator &&) = delete;
 
     [[nodiscard]] object_type type() const { return current_.first.type(); }
-
     [[nodiscard]] object_view operator*() { return current_.first; }
     [[nodiscard]] explicit operator bool() const { return current_.first.has_value(); }
 

@@ -21,7 +21,7 @@ namespace detail {
 constexpr std::size_t OBJ_SSTR_SIZE = 11;
 
 struct object_kv;
-struct [[gnu::packed, gnu::aligned(16), gnu::may_alias]] object {
+struct [[gnu::packed, gnu::may_alias]] object {
     union [[gnu::packed]] {
         bool b8;
         uint64_t u64;
@@ -43,12 +43,12 @@ struct [[gnu::packed, gnu::aligned(16), gnu::may_alias]] object {
     };
 };
 
-struct [[gnu::packed, gnu::aligned(32)]] object_kv {
+struct [[gnu::packed]] object_kv {
     detail::object key;
     detail::object val;
 };
 
-struct [[gnu::packed, gnu::aligned(16)]] object_iterator {
+struct object_iterator {
     union {
         const object *ptr;
         const object_kv *kv_ptr;
@@ -115,7 +115,7 @@ struct [[gnu::packed, gnu::aligned(16)]] object_iterator {
 
     [[nodiscard]] const object *key() const noexcept
     {
-        if (index < size && type == object_type::map) {
+        if (type == object_type::map) {
             return &via.kv_ptr[index].key;
         }
         return nullptr;
@@ -123,13 +123,11 @@ struct [[gnu::packed, gnu::aligned(16)]] object_iterator {
 
     [[nodiscard]] const object *value() const noexcept
     {
-        if (index < size) {
-            if (type == object_type::map) {
-                return &via.kv_ptr[index].val;
-            }
-            if (type == object_type::array) {
-                return &via.ptr[index];
-            }
+        if (type == object_type::map) {
+            return &via.kv_ptr[index].val;
+        }
+        if (type == object_type::array) {
+            return &via.ptr[index];
         }
         return nullptr;
     }
@@ -137,13 +135,13 @@ struct [[gnu::packed, gnu::aligned(16)]] object_iterator {
 
 // Assert that all detail types have the correct size and alignment
 static_assert(sizeof(object) == 16);
-static_assert(alignof(object) == 16);
+//static_assert(alignof(object) == 16);
 
 static_assert(sizeof(object_kv) == 32);
-static_assert(alignof(object_kv) == 32);
+//static_assert(alignof(object_kv) == 32);
 
-static_assert(sizeof(object_iterator) == 16);
-static_assert(alignof(object_iterator) == 16);
+//static_assert(sizeof(object_iterator) == 13);
+//static_assert(alignof(object_iterator) == 16);
 
 // Assert that all detail types have a standard layout
 static_assert(std::is_standard_layout_v<object>);
