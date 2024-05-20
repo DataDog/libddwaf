@@ -42,7 +42,7 @@ protected:
     // but only the beginning of the key path, we keep this here so that we
     // can later provide the accurate full key path.
     std::vector<std::string> path_;
-    std::vector<object_view::iterator> stack_;
+    std::vector<detail::object_iterator> stack_;
 
     std::pair<object_view, object_view> current_;
 

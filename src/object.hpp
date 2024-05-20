@@ -21,9 +21,8 @@ namespace detail {
 constexpr std::size_t OBJ_SSTR_SIZE = 11;
 
 struct object_kv;
-struct [[gnu::packed, gnu::may_alias]] object {
+struct [[gnu::packed, gnu::aligned(16), gnu::may_alias]] object {
     union [[gnu::packed]] {
-        std::array<char, OBJ_SSTR_SIZE> sstr;
         bool b8;
         uint64_t u64;
         int64_t i64;
@@ -31,32 +30,137 @@ struct [[gnu::packed, gnu::may_alias]] object {
         object_kv *map;
         object *array;
         char *str;
-        const char *cstr{nullptr};
-    } via{{0}};
-    object_type type{object_type::invalid};
+        const char *cstr;
+        std::array<char, OBJ_SSTR_SIZE> sstr;
+    } via;
+    object_type type;
     union [[gnu::packed]] {
         struct [[gnu::packed]] {
-            uint16_t capacity{0};
-            uint16_t size{0};
+            uint16_t capacity;
+            uint16_t size;
         };
         uint32_t length;
     };
 };
 
-struct [[gnu::packed]] object_kv {
+struct [[gnu::packed, gnu::aligned(32)]] object_kv {
     detail::object key;
     detail::object val;
 };
 
-static_assert(sizeof(object) == 16);
-static_assert(sizeof(object_kv) == 32);
+struct [[gnu::packed, gnu::aligned(16)]] object_iterator {
+    union {
+        const object *ptr;
+        const object_kv *kv_ptr;
+    } via;
+    uint16_t index;
+    uint16_t size;
+    object_type type;
+    // 1 byte of padding to spare
 
-static_assert(
-    std::numeric_limits<std::size_t>::max() / sizeof(char) >= std::numeric_limits<uint32_t>::max());
-static_assert(std::numeric_limits<std::size_t>::max() / sizeof(detail::object) >=
-              std::numeric_limits<uint16_t>::max());
-static_assert(std::numeric_limits<std::size_t>::max() / sizeof(detail::object_kv) >=
-              std::numeric_limits<uint16_t>::max());
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    static object_iterator construct(
+        const detail::object *obj, std::size_t index, std::size_t max_size)
+    {
+        if (obj->type == object_type::array) {
+            return {
+                .via = {.ptr = obj->via.array},
+                .index = index < obj->size ? index : obj->size,
+                .size = obj->size < max_size ? obj->size : max_size,
+                .type = object_type::array,
+            };
+        }
+        if (obj->type == object_type::map) {
+            return {
+                .via = {.kv_ptr = obj->via.map},
+                .index = index < obj->size ? index : obj->size,
+                .size = obj->size < max_size ? obj->size : max_size,
+                .type = object_type::map,
+            };
+        }
+
+        return {
+            .via = {.ptr = nullptr},
+            .index = 0,
+            .size = 0,
+            .type = object_type::invalid,
+        };
+    }
+
+    object_iterator &operator++() noexcept
+    {
+        if (index < size) {
+            ++index;
+        }
+        return *this;
+    }
+
+    std::pair<const detail::object *, const detail::object *> operator*() const noexcept
+    {
+        if (index < size) {
+            if (type == object_type::array) {
+                return {nullptr, &via.ptr[index]};
+            }
+
+            if (type == object_type::map) {
+                const auto &kv = via.kv_ptr[index];
+                return {&kv.key, &kv.val};
+            }
+        }
+
+        [[unlikely]] return {};
+    }
+
+    [[nodiscard]] bool is_valid() const noexcept { return index < size; }
+
+    [[nodiscard]] const object *key() const noexcept
+    {
+        if (index < size && type == object_type::map) {
+            return &via.kv_ptr[index].key;
+        }
+        return nullptr;
+    }
+
+    [[nodiscard]] const object *value() const noexcept
+    {
+        if (index < size) {
+            if (type == object_type::map) {
+                return &via.kv_ptr[index].val;
+            }
+            if (type == object_type::array) {
+                return &via.ptr[index];
+            }
+        }
+        return nullptr;
+    }
+};
+
+// Assert that all detail types have the correct size and alignment
+static_assert(sizeof(object) == 16);
+static_assert(alignof(object) == 16);
+
+static_assert(sizeof(object_kv) == 32);
+static_assert(alignof(object_kv) == 32);
+
+static_assert(sizeof(object_iterator) == 16);
+static_assert(alignof(object_iterator) == 16);
+
+// Assert that all detail types have a standard layout
+static_assert(std::is_standard_layout_v<object>);
+static_assert(std::is_standard_layout_v<object_kv>);
+static_assert(std::is_standard_layout_v<object_iterator>);
+
+// Assert that all detail types incur no construction, copy  or destruction overhead
+static_assert(std::is_trivial_v<object>);
+static_assert(std::is_trivial_v<object_kv>);
+static_assert(std::is_trivial_v<object_iterator>);
+
+// Allocation-related assertions to avoid further runtime checks later on
+template <typename T> inline constexpr std::size_t maxof() { return std::numeric_limits<T>::max(); }
+
+static_assert(maxof<std::size_t>() / sizeof(char) >= maxof<uint32_t>());
+static_assert(maxof<std::size_t>() / sizeof(detail::object) >= maxof<uint16_t>());
+static_assert(maxof<std::size_t>() / sizeof(detail::object_kv) >= maxof<uint16_t>());
 
 // These helper work under some assumptions:
 // - Static asserts above ensure that sizeof(T) * count never overflows, since these
