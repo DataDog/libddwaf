@@ -1,0 +1,29 @@
+{
+  name: "Basic run with match",
+  runs: [
+    {
+      persistent-input: {
+        server.io.fs.file: "documents/../../../../../../../../../etc/passwd",
+        server.request.query: [ "no", "injection", "here" ],
+        server.request.body: [ "no", "injection", "before", "../../../../../../../../../etc/passwd", "or", "after"]
+      },
+      rules: [
+        {
+          "rsp-930-001": [
+            {
+              resource: {
+                address: "server.io.fs.file",
+                value: "documents/../../../../../../../../../etc/passwd"
+              },
+              params: {
+                address: "server.request.body",
+                value: "../../../../../../../../../etc/passwd"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

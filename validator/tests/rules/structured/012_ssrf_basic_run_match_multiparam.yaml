@@ -1,0 +1,29 @@
+{
+  name: "Basic run with match",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url: "https://169.254.169.254/somewhere/in/the/app",
+        server.request.query: [ "no", "injection", "in", "query" ],
+        server.request.body: [ "no", "injection", "before", "169.254.169.254", "or", "after" ]
+      },
+      rules: [
+        {
+          "rsp-930-002": [
+            {
+              resource: {
+                address: "server.io.net.url",
+                value: "https://169.254.169.254/somewhere/in/the/app"
+              },
+              params: {
+                address: "server.request.body",
+                value: "169.254.169.254"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

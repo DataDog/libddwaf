@@ -1,0 +1,1 @@
+SELECT corpus sqli_detector_test.cpp src FROM ships WHERE id= 1 -- AND password=HASH('str') 1 --

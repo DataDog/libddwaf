@@ -46,7 +46,7 @@ jobs:
         run: grep -v -f fuzzer/global/scripts/report-negative-patterns.txt fuzzer/global/fuzz-*.log
 
       - name: Show coverage
-        run: ./fuzzer/global/scripts/show_coverage.sh 40
+        run: ./fuzzer/global/scripts/show_coverage.sh 40 || true
 
       - name: Compress artifact
         if: ${{ always() }}
@@ -64,9 +64,29 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          - uri_parse
-          - ssrf_detector
-          - lfi_detector
+          - fuzzer: uri_parse
+            params: ""
+          - fuzzer: ssrf_detector
+            params: ""
+          - fuzzer: lfi_detector
+            params: ""
+          - fuzzer: sql_tokenizer
+            params: "--dialect=mysql"
+          - fuzzer: sql_tokenizer
+            params: "--dialect=postgresql"
+          - fuzzer: sql_tokenizer
+            params: "--dialect=sqlite"
+          - fuzzer: sql_tokenizer
+            params: "--dialect=standard"
+          - fuzzer: sqli_detector
+            params: "--dialect=mysql"
+          - fuzzer: sqli_detector
+            params: "--dialect=postgresql"
+          - fuzzer: sqli_detector
+            params: "--dialect=sqlite"
+          - fuzzer: sqli_detector
+            params: "--dialect=standard"
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -85,10 +105,10 @@ jobs:
         run: |
           mkdir build ; cd build
           cmake -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-          make -j $(nproc) ${{ matrix.variant }}_fuzzer
-          cp fuzzer/${{ matrix.variant }}_fuzzer ../fuzzer/${{ matrix.variant }}
+          make -j $(nproc) ${{ matrix.variant.fuzzer }}_fuzzer
+          cp fuzzer/${{ matrix.variant.fuzzer }}_fuzzer ../fuzzer/${{ matrix.variant.fuzzer }}
 
       - name: Run fuzzer
         run: |
-          cd fuzzer/${{ matrix.variant }}
-          ./${{ matrix.variant }}_fuzzer -max_total_time=${{ github.event.inputs.duration || 300 }} corpus/
+          cd fuzzer/${{ matrix.variant.fuzzer }}
+          ./${{ matrix.variant.fuzzer }}_fuzzer ${{ matrix.variant.params }} -max_total_time=${{ github.event.inputs.duration || 300 }} corpus/

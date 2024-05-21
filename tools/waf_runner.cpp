@@ -47,6 +47,8 @@ auto parse_args(int argc, char *argv[])
     }
     return args;
 }
+const char *key_regex = "(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?)key)|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization";
+const char *value_regex = R"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:\s*=[^;]|"\s*:\s*"[^"]+")|bearer\s+[a-z0-9\._\-]+|token:[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=-]+\.ey[I-L][\w=-]+(?:\.[\w.+\/=-]+)?|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*[a-z0-9\/\.+]{100,})";
 
 int main(int argc, char *argv[])
 {
@@ -66,7 +68,7 @@ int main(int argc, char *argv[])
     for (const auto &ruleset : rulesets) {
         auto rule = YAML::Load(read_file(ruleset)).as<ddwaf_object>();
         if (handle == nullptr) {
-            const ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
+            const ddwaf_config config{{0, 0, 0}, {key_regex, value_regex}, ddwaf_object_free};
             handle = ddwaf_init(&rule, &config, nullptr);
         } else {
             auto *updated_handle = ddwaf_update(handle, &rule, nullptr);

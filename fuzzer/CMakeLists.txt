@@ -10,16 +10,10 @@ ENDMACRO()
 
 GET_DIRS(subdirs ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(LINK_COMPILE_FLAGS "-fsanitize=fuzzer,address,undefined,leak -fprofile-instr-generate -fcoverage-mapping")
+set(LINK_COMPILE_FLAGS -fsanitize=fuzzer,address,undefined,leak -fprofile-instr-generate -fcoverage-mapping)
 
-add_library(fuzzer-common OBJECT ${LIBDDWAF_SOURCE})
-set_target_properties(fuzzer-common PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED YES
-    CXX_EXTENSIONS NO
-    COMPILE_FLAGS ${LINK_COMPILE_FLAGS}
-    LINK_FLAGS ${LINK_COMPILE_FLAGS})
-target_include_directories(fuzzer-common PRIVATE ${LIBDDWAF_PUBLIC_INCLUDES} ${LIBDDWAF_PRIVATE_INCLUDES})
+gen_objects(fuzzer-common)
+target_compile_options(fuzzer-common PRIVATE ${LINK_COMPILE_FLAGS})
 
 foreach(dir ${subdirs})
     set(FUZZER_NAME "${dir}_fuzzer")
