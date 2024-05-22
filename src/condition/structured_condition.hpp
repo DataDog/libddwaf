@@ -87,7 +87,7 @@ template <typename T> struct argument_retriever : default_argument_retriever {};
 
 template <typename T> struct argument_retriever<unary_argument<T>> : default_argument_retriever {
     static std::optional<unary_argument<T>> retrieve(const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, const target_definition &target)
+        const exclusion::object_set_ref &objects_excluded, const condition_target &target)
     {
         auto [object, attr] = store.get_target(target.root);
         if (object == nullptr || objects_excluded.contains(object)) {
@@ -107,7 +107,7 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
 template <typename T> struct argument_retriever<optional_argument<T>> : default_argument_retriever {
     static constexpr bool is_optional = true;
     static optional_argument<T> retrieve(const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, const target_definition &target)
+        const exclusion::object_set_ref &objects_excluded, const condition_target &target)
     {
         return argument_retriever<unary_argument<T>>::retrieve(store, objects_excluded, target);
     }
@@ -117,7 +117,7 @@ template <typename T> struct argument_retriever<variadic_argument<T>> : default_
     static constexpr bool is_variadic = true;
     static variadic_argument<T> retrieve(const object_store &store,
         const exclusion::object_set_ref &objects_excluded,
-        const std::vector<target_definition> &targets)
+        const std::vector<condition_target> &targets)
     {
         variadic_argument<T> args;
         for (const auto &target : targets) {
@@ -138,7 +138,7 @@ function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
 
 template <typename Self> class base_impl : public base_condition {
 public:
-    explicit base_impl(std::vector<parameter_definition> args, const object_limits &limits)
+    explicit base_impl(std::vector<condition_parameter> args, const object_limits &limits)
         : arguments_(std::move(args)), limits_(limits)
     {}
     ~base_impl() override = default;
@@ -256,7 +256,7 @@ protected:
         }
     }
 
-    std::vector<parameter_definition> arguments_;
+    std::vector<condition_parameter> arguments_;
     const object_limits limits_;
 };
 

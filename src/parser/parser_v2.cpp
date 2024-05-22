@@ -153,17 +153,17 @@ std::vector<transformer_id> parse_transformers(const parameter::vector &root, da
 }
 
 template <typename T>
-std::vector<parameter_definition> parse_arguments(const parameter::map &params, data_source source,
+std::vector<condition_parameter> parse_arguments(const parameter::map &params, data_source source,
     const std::vector<transformer_id> &transformers, address_container &addresses)
 {
     const auto &specification = T::arguments();
-    std::vector<parameter_definition> definitions;
+    std::vector<condition_parameter> definitions;
 
     definitions.reserve(specification.size());
 
     for (const auto spec : specification) {
         definitions.emplace_back();
-        parameter_definition &def = definitions.back();
+        condition_parameter &def = definitions.back();
 
         auto inputs = at<parameter::vector>(params, spec.name);
         if (inputs.empty()) {
@@ -198,13 +198,13 @@ std::vector<parameter_definition> parse_arguments(const parameter::map &params, 
             addresses.required.emplace(address);
             auto it = input.find("transformers");
             if (it == input.end()) {
-                targets.emplace_back(target_definition{
+                targets.emplace_back(condition_target{
                     address, get_target_index(address), std::move(kp), transformers, source});
             } else {
                 auto input_transformers = static_cast<parameter::vector>(it->second);
                 source = data_source::values;
                 auto new_transformers = parse_transformers(input_transformers, source);
-                targets.emplace_back(target_definition{address, get_target_index(address),
+                targets.emplace_back(condition_target{address, get_target_index(address),
                     std::move(kp), std::move(new_transformers), source});
             }
         }

@@ -95,7 +95,7 @@ public:
         std::vector<transformer_id> transformers = {}, data_source source = data_source::values)
     {
         auto &argument = arguments_.back();
-        argument.targets.emplace_back(target_definition{
+        argument.targets.emplace_back(condition_target{
             name, get_target_index(name), std::move(key_path), std::move(transformers), source});
     }
 
@@ -105,7 +105,7 @@ public:
     }
 
 protected:
-    std::vector<parameter_definition> arguments_{};
+    std::vector<condition_parameter> arguments_{};
     std::vector<std::unique_ptr<base_condition>> conditions_{};
 };
 

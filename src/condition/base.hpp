@@ -56,7 +56,7 @@ struct parameter_specification {
 
 // Provides the definition of an individual address(target) to parameter mapping.
 // Each target must satisfy the associated parameter specification.
-struct target_definition {
+struct condition_target {
     std::string name;
     target_index root{};
     std::vector<std::string> key_path{};
@@ -66,8 +66,8 @@ struct target_definition {
 
 // Provides the list of targets mapped to the given condition parameter. If the
 // parameter is non-variadic, only one mapping should be present.
-struct parameter_definition {
-    std::vector<target_definition> targets;
+struct condition_parameter {
+    std::vector<condition_target> targets;
 };
 
 class base_condition {
