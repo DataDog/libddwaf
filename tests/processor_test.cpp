@@ -46,7 +46,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), false, true};
@@ -95,10 +95,10 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address.first"), "input_address.first"}},
-            {get_target_index("output_address.first"), "output_address.first"}},
-        {{{get_target_index("input_address.second"), "input_address.second"}},
-            {get_target_index("output_address.second"), "output_address.second"}}};
+        {{{get_target_index("input_address.first"), "input_address.first", {}}},
+            {get_target_index("output_address.first"), "output_address.first", {}}},
+        {{{get_target_index("input_address.second"), "input_address.second", {}}},
+            {get_target_index("output_address.second"), "output_address.second", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), false, true};
@@ -153,7 +153,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
     builder.start_condition();
@@ -199,7 +199,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
     builder.start_condition();
@@ -261,7 +261,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
     builder.start_condition();
@@ -305,7 +305,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), true, false};
@@ -351,7 +351,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
     builder.start_condition();
@@ -399,7 +399,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
     builder.start_condition();
@@ -444,10 +444,10 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address.first"), "input_address.first"}},
-            {get_target_index("output_address.first"), "output_address.first"}},
-        {{{get_target_index("input_address.second"), "input_address.second"}},
-            {get_target_index("output_address.second"), "output_address.second"}}};
+        {{{get_target_index("input_address.first"), "input_address.first", {}}},
+            {get_target_index("output_address.first"), "output_address.first", {}}},
+        {{{get_target_index("input_address.second"), "input_address.second", {}}},
+            {get_target_index("output_address.second"), "output_address.second", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), true, false};
@@ -496,7 +496,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), true, true};
@@ -550,7 +550,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), false, true};
@@ -585,7 +585,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), false, true};
@@ -651,7 +651,7 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), false, true};
@@ -683,7 +683,7 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), true, true};
@@ -716,7 +716,7 @@ TEST(TestProcessor, Timeout)
 
     std::vector<processor_mapping> mappings{
         {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+            {get_target_index("output_address"), "output_address", {}}}};
 
     processor<mock::generator> proc{
         "id", std::make_shared<expression>(), std::move(mappings), true, false};

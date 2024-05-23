@@ -103,6 +103,7 @@ public:
         (object_store & store, optional_ref<ddwaf_object> &, processor_cache &,
             ddwaf::timer &deadline),
         (const override));
+    MOCK_METHOD(const std::string &, get_id, (), (const override));
 };
 
 } // namespace mock

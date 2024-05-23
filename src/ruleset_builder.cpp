@@ -158,14 +158,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
         for (auto &builder : processors_.pre) {
             auto proc = builder.build(scanners_);
-            // TODO FIX so that string_view points to the processor
-            preprocessors_.emplace(builder.id, std::move(proc));
+            preprocessors_.emplace(proc->get_id(), std::move(proc));
         }
 
         for (auto &builder : processors_.post) {
             auto proc = builder.build(scanners_);
-            // TODO FIX so that string_view points to the processor
-            postprocessors_.emplace(builder.id, std::move(proc));
+            postprocessors_.emplace(proc->get_id(), std::move(proc));
         }
     }
 

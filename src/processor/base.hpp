@@ -21,7 +21,7 @@ namespace ddwaf {
 struct processor_target {
     target_index index;
     std::string name;
-    std::vector<std::string> key_path{};
+    std::vector<std::string> key_path;
 };
 
 struct processor_mapping {
@@ -48,6 +48,8 @@ public:
         processor_cache &cache, ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
+
+    [[nodiscard]] virtual const std::string &get_id() const = 0;
 };
 
 template <typename T> class processor : public base_processor {
@@ -126,7 +128,7 @@ public:
             }
         }
     }
-    [[nodiscard]] const std::string &get_id() const { return id_; }
+    [[nodiscard]] const std::string &get_id() const override { return id_; }
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
     {
