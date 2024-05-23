@@ -23,15 +23,17 @@ public:
     static constexpr std::size_t max_array_nodes = 10;
     static constexpr std::size_t max_record_nodes = 255;
 
-    extract_schema() = default;
+    explicit extract_schema(std::set<const scanner *> scanners) : scanners_(std::move(scanners)) {}
     ~extract_schema() override = default;
     extract_schema(const extract_schema &) = delete;
     extract_schema(extract_schema &&) = default;
     extract_schema &operator=(const extract_schema &) = delete;
     extract_schema &operator=(extract_schema &&) = default;
 
-    ddwaf_object generate(const ddwaf_object *input, const std::set<const scanner *> &scanners,
-        ddwaf::timer &deadline) const override;
+    ddwaf_object generate(const ddwaf_object *input, ddwaf::timer &deadline) const override;
+
+protected:
+    std::set<const scanner *> scanners_;
 };
 
 } // namespace ddwaf::generator

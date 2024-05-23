@@ -338,14 +338,13 @@ ddwaf_object generate(
 
 } // namespace schema
 
-ddwaf_object extract_schema::generate(const ddwaf_object *input,
-    const std::set<const scanner *> &scanners, ddwaf::timer &deadline) const
+ddwaf_object extract_schema::generate(const ddwaf_object *input, ddwaf::timer &deadline) const
 {
     if (input == nullptr) {
         return {};
     }
 
-    return schema::generate(input, scanners, deadline);
+    return schema::generate(input, scanners_, deadline);
 }
 
 } // namespace ddwaf::generator

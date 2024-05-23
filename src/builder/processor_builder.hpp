@@ -12,7 +12,7 @@
 
 #include "indexer.hpp"
 #include "parser/specification.hpp"
-#include "processor.hpp"
+#include "processor/base.hpp"
 
 namespace ddwaf {
 

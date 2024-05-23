@@ -27,8 +27,7 @@ public:
     base &operator=(const base &) = default;
     base &operator=(base &&) = default;
 
-    virtual ddwaf_object generate(const ddwaf_object *input,
-        const std::set<const scanner *> &scanners, ddwaf::timer &deadline) const = 0;
+    virtual ddwaf_object generate(const ddwaf_object *input, ddwaf::timer &deadline) const = 0;
 };
 
 } // namespace ddwaf::generator

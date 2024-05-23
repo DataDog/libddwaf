@@ -40,8 +40,9 @@ template <> struct typed_processor_builder<generator::extract_schema> {
     std::shared_ptr<base_processor> build(const auto &spec, const auto &scanners)
     {
         auto ref_scanners = references_to_scanners(spec.scanners, scanners);
-        return std::make_shared<processor<generator_type>>(spec.id, generator_type{}, spec.expr,
-            spec.mappings, std::move(ref_scanners), spec.evaluate, spec.output);
+        return std::make_shared<processor<generator_type>>(spec.id,
+            generator_type{std::move(ref_scanners)}, spec.expr, spec.mappings, spec.evaluate,
+            spec.output);
     }
 };
 

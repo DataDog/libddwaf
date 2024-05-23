@@ -7,7 +7,7 @@
 #include "exception.hpp"
 #include "generator/base.hpp"
 #include "matcher/equals.hpp"
-#include "processor.hpp"
+#include "processor/base.hpp"
 
 #include <gmock/gmock.h>
 
@@ -24,9 +24,7 @@ namespace {
 namespace mock {
 class generator : public ddwaf::generator::base {
 public:
-    MOCK_METHOD(ddwaf_object, generate,
-        (const ddwaf_object *, const std::set<const scanner *> &, ddwaf::timer &),
-        (const override));
+    MOCK_METHOD(ddwaf_object, generate, (const ddwaf_object *, ddwaf::timer &), (const override));
 };
 
 } // namespace mock
@@ -51,10 +49,10 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
             {get_target_index("output_address"), "output_address"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, false, true};
+        "id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     auto &gen = proc.generator();
-    EXPECT_CALL(gen, generate(_, _, _)).WillOnce(Return(output));
+    EXPECT_CALL(gen, generate(_, _)).WillOnce(Return(output));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -103,10 +101,10 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
             {get_target_index("output_address.second"), "output_address.second"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, false, true};
+        "id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _))
+    EXPECT_CALL(proc.generator(), generate(_, _))
         .WillOnce(Return(first_output))
         .WillOnce(Return(second_output));
 
@@ -163,10 +161,10 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     builder.add_target("enabled?");
     builder.end_condition<matcher::equals<bool>>(true);
 
-    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), {}, false, true};
+    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc.generator(), generate(_, _)).WillOnce(Return(output));
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -209,10 +207,10 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     builder.add_target("enabled?");
     builder.end_condition<matcher::equals<bool>>(true);
 
-    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), {}, false, true};
+    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc.generator(), generate(_, _)).WillOnce(Return(output));
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -271,7 +269,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     builder.add_target("enabled?");
     builder.end_condition<matcher::equals<bool>>(true);
 
-    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), {}, false, true};
+    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
@@ -310,10 +308,10 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
             {get_target_index("output_address"), "output_address"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, true, false};
+        "id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc.generator(), generate(_, _)).WillOnce(Return(output));
 
     processor_cache cache;
     timer deadline{2s};
@@ -361,10 +359,10 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     builder.add_target("enabled?");
     builder.end_condition<matcher::equals<bool>>(true);
 
-    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), {}, true, false};
+    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc.generator(), generate(_, _)).WillOnce(Return(output));
     processor_cache cache;
 
     timer deadline{2s};
@@ -409,7 +407,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     builder.add_target("enabled?");
     builder.end_condition<matcher::equals<bool>>(true);
 
-    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), {}, true, false};
+    processor<mock::generator> proc{"id", builder.build(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     processor_cache cache;
@@ -452,10 +450,10 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
             {get_target_index("output_address.second"), "output_address.second"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, true, false};
+        "id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _))
+    EXPECT_CALL(proc.generator(), generate(_, _))
         .WillOnce(Return(first_output))
         .WillOnce(Return(second_output));
 
@@ -501,10 +499,10 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
             {get_target_index("output_address"), "output_address"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, true, true};
+        "id", std::make_shared<expression>(), std::move(mappings), true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc.generator(), generate(_, _)).WillOnce(Return(output));
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -555,10 +553,10 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
             {get_target_index("output_address"), "output_address"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, false, true};
+        "id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).Times(0);
+    EXPECT_CALL(proc.generator(), generate(_, _)).Times(0);
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -590,10 +588,10 @@ TEST(TestProcessor, OutputAlreadyGenerated)
             {get_target_index("output_address"), "output_address"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, false, true};
+        "id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).Times(1);
+    EXPECT_CALL(proc.generator(), generate(_, _)).Times(1);
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -627,10 +625,10 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
             {get_target_index("output_address"), "output_address"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, true, false};
+        "id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).Times(0);
+    EXPECT_CALL(proc.generator(), generate(_, _)).Times(0);
 
     processor_cache cache;
     timer deadline{2s};
@@ -656,10 +654,10 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
             {get_target_index("output_address"), "output_address"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, false, true};
+        "id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).Times(0);
+    EXPECT_CALL(proc.generator(), generate(_, _)).Times(0);
 
     processor_cache cache;
     timer deadline{2s};
@@ -688,10 +686,10 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
             {get_target_index("output_address"), "output_address"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, true, true};
+        "id", std::make_shared<expression>(), std::move(mappings), true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc.generator(), generate(_, _)).WillOnce(Return(output));
 
     processor_cache cache;
     timer deadline{2s};
@@ -721,10 +719,10 @@ TEST(TestProcessor, Timeout)
             {get_target_index("output_address"), "output_address"}}};
 
     processor<mock::generator> proc{
-        "id", std::make_shared<expression>(), std::move(mappings), {}, true, false};
+        "id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc.generator(), generate(_, _, _)).Times(0);
+    EXPECT_CALL(proc.generator(), generate(_, _)).Times(0);
 
     processor_cache cache;
     timer deadline{0s};

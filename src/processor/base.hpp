@@ -12,7 +12,7 @@
 
 #include "exception.hpp"
 #include "expression.hpp"
-#include "generator/base.hpp"
+#include "generator/base.hpp" // IWYU pragma: keep
 #include "object_store.hpp"
 #include "utils.hpp"
 
@@ -53,18 +53,15 @@ public:
 template <typename T> class processor : public base_processor {
 public:
     processor(std::string id, T &&generator, std::shared_ptr<expression> expr,
-        std::vector<processor_mapping> mappings, std::set<const scanner *> scanners, bool evaluate,
-        bool output)
+        std::vector<processor_mapping> mappings, bool evaluate, bool output)
         : id_(std::move(id)), generator_(std::move(generator)), expr_(std::move(expr)),
-          mappings_(std::move(mappings)), scanners_(std::move(scanners)), evaluate_(evaluate),
-          output_(output)
+          mappings_(std::move(mappings)), evaluate_(evaluate), output_(output)
     {}
 
     processor(std::string id, std::shared_ptr<expression> expr,
-        std::vector<processor_mapping> mappings, std::set<const scanner *> scanners, bool evaluate,
-        bool output)
+        std::vector<processor_mapping> mappings, bool evaluate, bool output)
         : id_(std::move(id)), generator_(), expr_(std::move(expr)), mappings_(std::move(mappings)),
-          scanners_(std::move(scanners)), evaluate_(evaluate), output_(output)
+          evaluate_(evaluate), output_(output)
     {}
 
     processor(const processor &) = delete;
@@ -109,7 +106,7 @@ public:
                 cache.generated.emplace(mapping.output.index);
             }
 
-            auto object = generator_.generate(input, scanners_, deadline);
+            auto object = generator_.generate(input, deadline);
             if (object.type == DDWAF_OBJ_INVALID) {
                 continue;
             }
@@ -147,7 +144,6 @@ protected:
     T generator_;
     std::shared_ptr<expression> expr_;
     std::vector<processor_mapping> mappings_;
-    std::set<const scanner *> scanners_;
     bool evaluate_{false};
     bool output_{true};
 };
