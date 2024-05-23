@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "builder/processor_builder.hpp"
 #include "indexer.hpp"
 #include "parameter.hpp"
 #include "parser/specification.hpp"

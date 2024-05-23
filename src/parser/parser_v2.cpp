@@ -437,14 +437,14 @@ rule_filter_spec parse_rule_filter(
     return {std::move(expr), std::move(rules_target), on_match};
 }
 
-std::vector<processor::target_mapping> parse_processor_mappings(
+std::vector<processor_mapping> parse_processor_mappings(
     const parameter::vector &root, address_container &addresses)
 {
     if (root.empty()) {
         throw ddwaf::parsing_error("empty mappings");
     }
 
-    std::vector<processor::target_mapping> mappings;
+    std::vector<processor_mapping> mappings;
     for (const auto &node : root) {
         auto mapping = static_cast<parameter::map>(node);
 
@@ -460,8 +460,9 @@ std::vector<processor::target_mapping> parse_processor_mappings(
 
         addresses.optional.emplace(input_address);
 
-        mappings.emplace_back(processor::target_mapping{get_target_index(input_address),
-            std::move(input_address), get_target_index(output), std::move(output)});
+        mappings.emplace_back(processor_mapping{
+            {processor_target{get_target_index(input_address), std::move(input_address), {}}},
+            {get_target_index(output), std::move(output), {}}});
     }
 
     return mappings;
@@ -683,10 +684,10 @@ processor_container parse_processors(
                 continue;
             }
 
-            std::shared_ptr<generator::base> generator;
+            processor_type type;
             auto generator_id = at<std::string>(node, "generator");
             if (generator_id == "extract_schema") {
-                generator = std::make_shared<generator::extract_schema>();
+                type = processor_type::extract_schema;
             } else {
                 DDWAF_WARN("Unknown generator: {}", generator_id);
                 info.add_failed(id, "unknown generator '" + generator_id + "'");
@@ -724,13 +725,11 @@ processor_container parse_processors(
             add_addresses_to_info(addresses, info);
 
             if (eval) {
-                processors.pre.emplace(
-                    std::move(id), processor_spec{std::move(generator), std::move(expr),
-                                       std::move(mappings), std::move(scanners), eval, output});
+                processors.pre.emplace_back(processor_builder{type, std::move(id), std::move(expr),
+                    std::move(mappings), std::move(scanners), eval, output});
             } else {
-                processors.post.emplace(
-                    std::move(id), processor_spec{std::move(generator), std::move(expr),
-                                       std::move(mappings), std::move(scanners), eval, output});
+                processors.post.emplace_back(processor_builder{type, std::move(id), std::move(expr),
+                    std::move(mappings), std::move(scanners), eval, output});
             }
 
         } catch (const std::exception &e) {

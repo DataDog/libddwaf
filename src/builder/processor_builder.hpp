@@ -32,10 +32,23 @@ struct processor_builder {
     processor_type type;
     std::string id;
     std::shared_ptr<expression> expr;
-    std::vector<processor::target_mapping> mappings;
+    std::vector<processor_mapping> mappings;
     std::vector<parser::reference_spec> scanners;
     bool evaluate{false};
     bool output{true};
+};
+
+struct processor_container {
+    [[nodiscard]] bool empty() const { return pre.empty() && post.empty(); }
+    [[nodiscard]] std::size_t size() const { return pre.size() + post.size(); }
+    void clear()
+    {
+        pre.clear();
+        post.clear();
+    }
+
+    std::vector<processor_builder> pre;
+    std::vector<processor_builder> post;
 };
 
 } // namespace ddwaf

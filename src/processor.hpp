@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "exception.hpp"
 #include "expression.hpp"
 #include "generator/base.hpp"
 #include "object_store.hpp"
@@ -18,13 +19,13 @@
 namespace ddwaf {
 
 struct processor_target {
-    std::string name;
     target_index index;
+    std::string name;
     std::vector<std::string> key_path{};
 };
 
 struct processor_mapping {
-    std::vector<processor_target> input;
+    std::vector<processor_target> inputs;
     processor_target output;
 };
 
@@ -49,27 +50,21 @@ public:
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
 };
 
-class processor : public base_processor {
+template <typename T> class processor : public base_processor {
 public:
-    struct target_mapping {
-        // TODO implement n:1 support
-        target_index input;
-        std::string input_address;
-        target_index output;
-        std::string output_address;
-    };
-
-    struct cache_type {
-        expression::cache_type expr_cache;
-        std::unordered_set<target_index> generated;
-    };
-
-    processor(std::string id, std::shared_ptr<generator::base> generator,
-        std::shared_ptr<expression> expr, std::vector<target_mapping> mappings,
-        std::set<const scanner *> scanners, bool evaluate, bool output)
+    processor(std::string id, T &&generator, std::shared_ptr<expression> expr,
+        std::vector<processor_mapping> mappings, std::set<const scanner *> scanners, bool evaluate,
+        bool output)
         : id_(std::move(id)), generator_(std::move(generator)), expr_(std::move(expr)),
           mappings_(std::move(mappings)), scanners_(std::move(scanners)), evaluate_(evaluate),
           output_(output)
+    {}
+
+    processor(std::string id, std::shared_ptr<expression> expr,
+        std::vector<processor_mapping> mappings, std::set<const scanner *> scanners, bool evaluate,
+        bool output)
+        : id_(std::move(id)), generator_(), expr_(std::move(expr)), mappings_(std::move(mappings)),
+          scanners_(std::move(scanners)), evaluate_(evaluate), output_(output)
     {}
 
     processor(const processor &) = delete;
@@ -80,21 +75,78 @@ public:
     ~processor() override = default;
 
     void eval(object_store &store, optional_ref<ddwaf_object> &derived, processor_cache &cache,
-        ddwaf::timer &deadline) const override;
+        ddwaf::timer &deadline) const override
+    {
+        // No result structure, but this processor only produces derived objects
+        // so it makes no sense to evaluate.
+        if (!derived.has_value() && !evaluate_ && output_) {
+            return;
+        }
 
+        DDWAF_DEBUG("Evaluating processor '{}'", id_);
+
+        if (!expr_->eval(cache.expr_cache, store, {}, {}, deadline).outcome) {
+            return;
+        }
+
+        for (const auto &mapping : mappings_) {
+            if (deadline.expired()) {
+                throw ddwaf::timeout_exception();
+            }
+
+            if (store.has_target(mapping.output.index) ||
+                cache.generated.find(mapping.output.index) != cache.generated.end()) {
+                continue;
+            }
+
+            auto [input, attr] = store.get_target(mapping.inputs[0].index);
+            if (input == nullptr) {
+                continue;
+            }
+
+            if (attr != object_store::attribute::ephemeral) {
+                // Whatever the outcome, we don't want to try and generate it again
+                cache.generated.emplace(mapping.output.index);
+            }
+
+            auto object = generator_.generate(input, scanners_, deadline);
+            if (object.type == DDWAF_OBJ_INVALID) {
+                continue;
+            }
+
+            if (evaluate_) {
+                store.insert(mapping.output.index, mapping.output.name, object, attr);
+            }
+
+            if (output_ && derived.has_value()) {
+                ddwaf_object &output = derived.value();
+                if (evaluate_) {
+                    auto copy = ddwaf::object::clone(&object);
+                    ddwaf_object_map_add(&output, mapping.output.name.c_str(), &copy);
+                } else {
+                    ddwaf_object_map_add(&output, mapping.output.name.c_str(), &object);
+                }
+            }
+        }
+    }
     [[nodiscard]] const std::string &get_id() const { return id_; }
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
     {
         expr_->get_addresses(addresses);
-        for (auto mapping : mappings_) { addresses.emplace(mapping.input, mapping.input_address); }
+        for (const auto &mapping : mappings_) {
+            for (const auto &input : mapping.inputs) { addresses.emplace(input.index, input.name); }
+        }
     }
+
+    // Used for testing
+    T &generator() { return generator_; }
 
 protected:
     std::string id_;
-    std::shared_ptr<generator::base> generator_;
+    T generator_;
     std::shared_ptr<expression> expr_;
-    std::vector<target_mapping> mappings_;
+    std::vector<processor_mapping> mappings_;
     std::set<const scanner *> scanners_;
     bool evaluate_{false};
     bool output_{true};

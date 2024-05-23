@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "builder/processor_builder.hpp"
 #include "indexer.hpp"
 #include "parameter.hpp"
 #include "parser/specification.hpp"
@@ -87,7 +88,7 @@ protected:
     // Obtained from 'exclusions'
     parser::filter_spec_container exclusions_;
     // Obtained from 'processors'
-    parser::processor_container processors_;
+    processor_container processors_;
     // These are the contents of the latest generated ruleset
 
     // Rules

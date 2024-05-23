@@ -33,14 +33,15 @@ std::set<const scanner *> references_to_scanners(
 template <typename T> struct typed_processor_builder;
 
 template <> struct typed_processor_builder<generator::extract_schema> {
+    using generator_type = generator::extract_schema;
+
     static constexpr bool requires_scanner = true;
 
     std::shared_ptr<base_processor> build(const auto &spec, const auto &scanners)
     {
         auto ref_scanners = references_to_scanners(spec.scanners, scanners);
-        auto generator = std::make_shared<generator::extract_schema>();
-        return std::make_shared<processor>(spec.id, std::move(generator), spec.expr, spec.mappings,
-            std::move(ref_scanners), spec.evaluate, spec.output);
+        return std::make_shared<processor<generator_type>>(spec.id, generator_type{}, spec.expr,
+            spec.mappings, std::move(ref_scanners), spec.evaluate, spec.output);
     }
 };
 

@@ -338,8 +338,8 @@ ddwaf_object generate(
 
 } // namespace schema
 
-ddwaf_object extract_schema::generate(
-    const ddwaf_object *input, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
+ddwaf_object extract_schema::generate(const ddwaf_object *input,
+    const std::set<const scanner *> &scanners, ddwaf::timer &deadline) const
 {
     if (input == nullptr) {
         return {};

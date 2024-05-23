@@ -31,7 +31,7 @@ public:
     extract_schema &operator=(extract_schema &&) = default;
 
     ddwaf_object generate(const ddwaf_object *input, const std::set<const scanner *> &scanners,
-        ddwaf::timer &deadline) override;
+        ddwaf::timer &deadline) const override;
 };
 
 } // namespace ddwaf::generator
