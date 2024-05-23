@@ -62,8 +62,7 @@ void output_json(std::ostream &o, const settings & /*s*/,
             o << ",";
         }
 
-        o << R"({"parameters":{)"
-          << R"("scenario":")" << scenario << R"(",)"
+        o << R"({"parameters":{)" << R"("scenario":")" << scenario << R"(",)"
           << R"("waf_version":")" << version << R"("},"runs":{)";
 
         bool first_run = true;

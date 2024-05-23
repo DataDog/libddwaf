@@ -5,8 +5,8 @@
 // (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
 
 #include "../test_utils.hpp"
-#include "generator/extract_schema.hpp"
 #include "matcher/regex_match.hpp"
+#include "processor/extract_schema.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -18,10 +18,10 @@ TEST(TestExtractSchema, UnknownScalarSchema)
     ddwaf_object input;
     ddwaf_object_invalid(&input);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([0])");
 
     ddwaf_object_free(&output);
@@ -32,10 +32,10 @@ TEST(TestExtractSchema, NullScalarSchema)
     ddwaf_object input;
     ddwaf_object_null(&input);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([1])");
 
     ddwaf_object_free(&output);
@@ -46,10 +46,10 @@ TEST(TestExtractSchema, BoolScalarSchema)
     ddwaf_object input;
     ddwaf_object_bool(&input, true);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([2])");
 
     ddwaf_object_free(&output);
@@ -61,10 +61,10 @@ TEST(TestExtractSchema, IntScalarSchema)
     {
         ddwaf_object_unsigned(&input, 5);
 
-        generator::extract_schema gen{{}};
+        extract_schema gen{"id", {}, {}, {}, false, true};
 
         ddwaf::timer deadline{2s};
-        auto output = gen.generate(&input, deadline);
+        auto output = gen.eval_impl(&input, deadline);
         EXPECT_SCHEMA_EQ(output, R"([4])");
 
         ddwaf_object_free(&output);
@@ -72,10 +72,10 @@ TEST(TestExtractSchema, IntScalarSchema)
     {
         ddwaf_object_signed(&input, -5);
 
-        generator::extract_schema gen{{}};
+        extract_schema gen{"id", {}, {}, {}, false, true};
 
         ddwaf::timer deadline{2s};
-        auto output = gen.generate(&input, deadline);
+        auto output = gen.eval_impl(&input, deadline);
         EXPECT_SCHEMA_EQ(output, R"([4])");
 
         ddwaf_object_free(&output);
@@ -87,10 +87,10 @@ TEST(TestExtractSchema, StringScalarSchema)
     ddwaf_object input;
     ddwaf_object_string(&input, "string");
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([8])");
 
     ddwaf_object_free(&output);
@@ -102,10 +102,10 @@ TEST(TestExtractSchema, FloatScalarSchema)
     ddwaf_object input;
     ddwaf_object_float(&input, 1.5);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([16])");
 
     ddwaf_object_free(&output);
@@ -116,10 +116,10 @@ TEST(TestExtractSchema, EmptyArraySchema)
     ddwaf_object input;
     ddwaf_object_array(&input);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[],{"len":0}])");
 
     ddwaf_object_free(&output);
@@ -135,10 +135,10 @@ TEST(TestExtractSchema, ArraySchema)
     ddwaf_object_array_add(&input, ddwaf_object_invalid(&tmp));
     ddwaf_object_array_add(&input, ddwaf_object_null(&tmp));
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[1],[0],[8],[4]],{"len":4}])");
 
     ddwaf_object_free(&output);
@@ -155,10 +155,10 @@ TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
     ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
     ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[8]],{"len":4}])");
 
     ddwaf_object_free(&output);
@@ -191,10 +191,10 @@ TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
     ddwaf_object_map_add(&child, "string", ddwaf_object_string(&tmp, "wahtever"));
     ddwaf_object_array_add(&input, &child);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output,
         R"([[[{"unsigned":[4]}],[{"signed":[4]}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
 
@@ -228,10 +228,10 @@ TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
     ddwaf_object_array_add(&child, ddwaf_object_string(&tmp, "wahtever"));
     ddwaf_object_array_add(&input, &child);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[[[4]],{"len":1}],[[[8],[4]],{"len":2}]],{"len":4}])");
 
     ddwaf_object_free(&output);
@@ -264,10 +264,10 @@ TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
     ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 109));
     ddwaf_object_array_add(&input, &child);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[[[4]],{"len":1}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
 
     ddwaf_object_free(&output);
@@ -279,10 +279,10 @@ TEST(TestExtractSchema, EmptyMapSchema)
     ddwaf_object input;
     ddwaf_object_map(&input);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([{}])");
 
     ddwaf_object_free(&output);
@@ -308,10 +308,10 @@ TEST(TestExtractSchema, MapSchema)
     ddwaf_object_array_add(&child, ddwaf_object_signed(&tmp, -5));
     ddwaf_object_map_add(&input, "array", &child);
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output,
         R"([{"array":[[[4]],{"len":1}],"invalid":[0],"map":[{"unsigned":[4],"string":[8]}],"null":[1],"string":[8],"unsigned":[4]}])");
     ddwaf_object_free(&output);
@@ -324,17 +324,17 @@ TEST(TestExtractSchema, DepthLimit)
     ddwaf_object_array(&input);
 
     ddwaf_object *parent = &input;
-    for (unsigned i = 0; i < generator::extract_schema::max_container_depth + 10; ++i) {
+    for (unsigned i = 0; i < extract_schema::max_container_depth + 10; ++i) {
         ddwaf_object child;
         ddwaf_object_array(&child);
         ddwaf_object_array_add(parent, &child);
         parent = &parent->array[0];
     }
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output,
         R"([[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}])");
 
@@ -346,15 +346,15 @@ TEST(TestExtractSchema, ArrayNodesLimit)
 {
     ddwaf_object input;
     ddwaf_object_array(&input);
-    for (unsigned i = 0; i < generator::extract_schema::max_array_nodes + 10; ++i) {
+    for (unsigned i = 0; i < extract_schema::max_array_nodes + 10; ++i) {
         ddwaf_object child;
         ddwaf_object_array(&child);
         ddwaf_object_array_add(&input, &child);
     }
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[[],{"len":0}]],{"len":20,"truncated":true}])");
 
     ddwaf_object_free(&output);
@@ -365,15 +365,15 @@ TEST(TestExtractSchema, RecordNodesLimit)
 {
     ddwaf_object input;
     ddwaf_object_map(&input);
-    for (unsigned i = 0; i < generator::extract_schema::max_record_nodes + 10; ++i) {
+    for (unsigned i = 0; i < extract_schema::max_record_nodes + 10; ++i) {
         ddwaf_object child;
         ddwaf_object_array(&child);
         ddwaf_object_map_add(&input, "child", &child);
     }
 
-    generator::extract_schema gen{{}};
+    extract_schema gen{"id", {}, {}, {}, false, true};
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([{"child":[[],{"len":0}]},{"truncated":true}])");
 
     ddwaf_object_free(&output);
@@ -388,10 +388,10 @@ TEST(TestExtractSchema, SchemaWithSingleScanner)
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}}, nullptr,
         std::make_unique<matcher::regex_match>("string", 6, true)};
 
-    generator::extract_schema gen{{&scnr}};
+    extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([8,{"type":"PII","category":"IP"}])");
 
     ddwaf_object_free(&output);
@@ -410,10 +410,10 @@ TEST(TestExtractSchema, SchemaWithMultipleScanners)
     scanner scnr2{"2", {{"type", "PII"}, {"category", "third"}}, nullptr,
         std::make_unique<matcher::regex_match>("stng", 4, true)};
 
-    generator::extract_schema gen{{&scnr0, &scnr1, &scnr2}};
+    extract_schema gen{"id", {}, {}, {&scnr0, &scnr1, &scnr2}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([8,{"type":"PII","category":"second"}])");
 
     ddwaf_object_free(&output);
@@ -432,10 +432,10 @@ TEST(TestExtractSchema, SchemaWithScannerNoMatch)
     scanner scnr2{"2", {{"type", "PII"}, {"category", "third"}}, nullptr,
         std::make_unique<matcher::regex_match>("what", 4, true)};
 
-    generator::extract_schema gen{{&scnr0, &scnr1, &scnr2}};
+    extract_schema gen{"id", {}, {}, {&scnr0, &scnr1, &scnr2}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([8])");
 
     ddwaf_object_free(&output);
@@ -451,10 +451,10 @@ TEST(TestExtractSchema, SchemaWithScannerSingleValueNoKey)
         std::make_unique<matcher::regex_match>("string", 6, true),
         std::make_unique<matcher::regex_match>("string", 6, true)};
 
-    generator::extract_schema gen{{&scnr}};
+    extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([8])");
 
     ddwaf_object_free(&output);
@@ -472,10 +472,10 @@ TEST(TestExtractSchema, SchemaWithScannerArrayNoKey)
         std::make_unique<matcher::regex_match>("string", 6, true),
         std::make_unique<matcher::regex_match>("string", 6, true)};
 
-    generator::extract_schema gen{{&scnr}};
+    extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([[[8]],{"len":1}])");
 
     ddwaf_object_free(&output);
@@ -498,10 +498,10 @@ TEST(TestExtractSchema, SchemaWithScannerArrayWithKey)
         std::make_unique<matcher::regex_match>("string", 6, true),
         std::make_unique<matcher::regex_match>("string", 6, true)};
 
-    generator::extract_schema gen{{&scnr}};
+    extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(output, R"([{"string":[[[8,{"category":"IP","type":"PII"}]],{"len":1}]}])");
 
     ddwaf_object_free(&output);
@@ -528,10 +528,10 @@ TEST(TestExtractSchema, SchemaWithScannerNestedArrayWithKey)
         std::make_unique<matcher::regex_match>("string", 6, true),
         std::make_unique<matcher::regex_match>("string", 6, true)};
 
-    generator::extract_schema gen{{&scnr}};
+    extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto output = gen.generate(&input, deadline);
+    auto output = gen.eval_impl(&input, deadline);
     EXPECT_SCHEMA_EQ(
         output, R"([{"string":[[[[[8,{"category":"IP","type":"PII"}]],{"len":1}]],{"len":1}]}])");
 

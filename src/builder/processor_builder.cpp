@@ -5,8 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "builder/processor_builder.hpp"
-#include "generator/base.hpp"
-#include "generator/extract_schema.hpp"
+#include "processor/extract_schema.hpp"
 
 namespace ddwaf {
 
@@ -32,24 +31,21 @@ std::set<const scanner *> references_to_scanners(
 
 template <typename T> struct typed_processor_builder;
 
-template <> struct typed_processor_builder<generator::extract_schema> {
-    using generator_type = generator::extract_schema;
-
+template <> struct typed_processor_builder<extract_schema> {
     static constexpr bool requires_scanner = true;
 
     std::shared_ptr<base_processor> build(const auto &spec, const auto &scanners)
     {
         auto ref_scanners = references_to_scanners(spec.scanners, scanners);
-        return std::make_shared<processor<generator_type>>(spec.id,
-            generator_type{std::move(ref_scanners)}, spec.expr, spec.mappings, spec.evaluate,
-            spec.output);
+        return std::make_shared<extract_schema>(
+            spec.id, spec.expr, spec.mappings, std::move(ref_scanners), spec.evaluate, spec.output);
     }
 };
 
 template <typename T>
 [[nodiscard]] std::shared_ptr<base_processor> build_with_type(
     const auto &spec, const auto &scanners)
-    requires std::is_base_of_v<generator::base, T>
+    requires std::is_base_of_v<base_processor, T>
 {
     typed_processor_builder<T> typed_builder;
     if constexpr (typed_builder.requires_scanner) {
@@ -66,7 +62,7 @@ template <typename T>
 {
     switch (type) {
     case processor_type::extract_schema:
-        return build_with_type<generator::extract_schema>(*this, scanners);
+        return build_with_type<extract_schema>(*this, scanners);
     default:
         break;
     }

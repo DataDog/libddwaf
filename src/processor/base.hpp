@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 
+#include "argument_retriever.hpp"
 #include "exception.hpp"
 #include "expression.hpp"
-#include "generator/base.hpp" // IWYU pragma: keep
 #include "object_store.hpp"
 #include "utils.hpp"
 
@@ -52,26 +52,20 @@ public:
     [[nodiscard]] virtual const std::string &get_id() const = 0;
 };
 
-template <typename T> class processor : public base_processor {
+template <typename Self> class structured_processor : public base_processor {
 public:
-    processor(std::string id, T &&generator, std::shared_ptr<expression> expr,
+    structured_processor(std::string id, std::shared_ptr<expression> expr,
         std::vector<processor_mapping> mappings, bool evaluate, bool output)
-        : id_(std::move(id)), generator_(std::move(generator)), expr_(std::move(expr)),
-          mappings_(std::move(mappings)), evaluate_(evaluate), output_(output)
-    {}
-
-    processor(std::string id, std::shared_ptr<expression> expr,
-        std::vector<processor_mapping> mappings, bool evaluate, bool output)
-        : id_(std::move(id)), generator_(), expr_(std::move(expr)), mappings_(std::move(mappings)),
+        : id_(std::move(id)), expr_(std::move(expr)), mappings_(std::move(mappings)),
           evaluate_(evaluate), output_(output)
     {}
 
-    processor(const processor &) = delete;
-    processor &operator=(const processor &) = delete;
+    structured_processor(const structured_processor &) = delete;
+    structured_processor &operator=(const structured_processor &) = delete;
 
-    processor(processor &&rhs) noexcept = default;
-    processor &operator=(processor &&rhs) noexcept = default;
-    ~processor() override = default;
+    structured_processor(structured_processor &&rhs) noexcept = default;
+    structured_processor &operator=(structured_processor &&rhs) noexcept = default;
+    ~structured_processor() override = default;
 
     void eval(object_store &store, optional_ref<ddwaf_object> &derived, processor_cache &cache,
         ddwaf::timer &deadline) const override
@@ -108,7 +102,7 @@ public:
                 cache.generated.emplace(mapping.output.index);
             }
 
-            auto object = generator_.generate(input, deadline);
+            auto object = static_cast<const Self *>(this)->eval_impl(input, deadline);
             if (object.type == DDWAF_OBJ_INVALID) {
                 continue;
             }
@@ -138,12 +132,8 @@ public:
         }
     }
 
-    // Used for testing
-    T &generator() { return generator_; }
-
 protected:
     std::string id_;
-    T generator_;
     std::shared_ptr<expression> expr_;
     std::vector<processor_mapping> mappings_;
     bool evaluate_{false};
