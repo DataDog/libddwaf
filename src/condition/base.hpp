@@ -58,7 +58,7 @@ struct parameter_specification {
 // Each target must satisfy the associated parameter specification.
 struct condition_target {
     std::string name;
-    target_index root{};
+    target_index index{};
     std::vector<std::string> key_path{};
     std::vector<transformer_id> transformers{};
     data_source source{data_source::values};

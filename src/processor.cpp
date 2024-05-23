@@ -10,8 +10,8 @@
 
 namespace ddwaf {
 
-void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
-    ddwaf::timer &deadline) const
+void processor::eval(object_store &store, optional_ref<ddwaf_object> &derived,
+    processor_cache &cache, ddwaf::timer &deadline) const
 {
     // No result structure, but this processor only produces derived objects
     // so it makes no sense to evaluate.

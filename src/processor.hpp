@@ -17,7 +17,39 @@
 
 namespace ddwaf {
 
-class processor {
+struct processor_target {
+    std::string name;
+    target_index index;
+    std::vector<std::string> key_path{};
+};
+
+struct processor_mapping {
+    std::vector<processor_target> input;
+    processor_target output;
+};
+
+struct processor_cache {
+    expression::cache_type expr_cache;
+    std::unordered_set<target_index> generated;
+};
+
+class base_processor {
+public:
+    base_processor() = default;
+    base_processor(const base_processor &) = delete;
+    base_processor &operator=(const base_processor &) = delete;
+
+    base_processor(base_processor &&rhs) noexcept = default;
+    base_processor &operator=(base_processor &&rhs) noexcept = default;
+    virtual ~base_processor() = default;
+
+    virtual void eval(object_store &store, optional_ref<ddwaf_object> &derived,
+        processor_cache &cache, ddwaf::timer &deadline) const = 0;
+
+    virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
+};
+
+class processor : public base_processor {
 public:
     struct target_mapping {
         // TODO implement n:1 support
@@ -45,14 +77,14 @@ public:
 
     processor(processor &&rhs) noexcept = default;
     processor &operator=(processor &&rhs) noexcept = default;
-    virtual ~processor() = default;
+    ~processor() override = default;
 
-    virtual void eval(object_store &store, optional_ref<ddwaf_object> &derived, cache_type &cache,
-        ddwaf::timer &deadline) const;
+    void eval(object_store &store, optional_ref<ddwaf_object> &derived, processor_cache &cache,
+        ddwaf::timer &deadline) const override;
 
     [[nodiscard]] const std::string &get_id() const { return id_; }
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
     {
         expr_->get_addresses(addresses);
         for (auto mapping : mappings_) { addresses.emplace(mapping.input, mapping.input_address); }

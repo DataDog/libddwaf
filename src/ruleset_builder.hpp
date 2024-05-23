@@ -99,8 +99,8 @@ protected:
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters_;
 
     // Processors
-    std::unordered_map<std::string_view, std::shared_ptr<processor>> preprocessors_;
-    std::unordered_map<std::string_view, std::shared_ptr<processor>> postprocessors_;
+    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> preprocessors_;
+    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> postprocessors_;
 
     // Scanners
     indexer<const scanner> scanners_;

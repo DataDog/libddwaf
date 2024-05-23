@@ -110,7 +110,7 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
 
         auto it = processor_cache_.find(preproc.get());
         if (it == processor_cache_.end()) {
-            auto [new_it, res] = processor_cache_.emplace(preproc.get(), processor::cache_type{});
+            auto [new_it, res] = processor_cache_.emplace(preproc.get(), processor_cache{});
             it = new_it;
         }
 
@@ -130,7 +130,7 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
 
         auto it = processor_cache_.find(postproc.get());
         if (it == processor_cache_.end()) {
-            auto [new_it, res] = processor_cache_.emplace(postproc.get(), processor::cache_type{});
+            auto [new_it, res] = processor_cache_.emplace(postproc.get(), processor_cache{});
             it = new_it;
         }
 

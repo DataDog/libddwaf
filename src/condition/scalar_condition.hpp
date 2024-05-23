@@ -34,7 +34,7 @@ public:
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
     {
-        for (const auto &target : targets_) { addresses.emplace(target.root, target.name); }
+        for (const auto &target : targets_) { addresses.emplace(target.index, target.name); }
     }
 
     static constexpr auto arguments()

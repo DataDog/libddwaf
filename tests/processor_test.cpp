@@ -58,7 +58,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{output_map};
 
@@ -111,7 +111,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{output_map};
 
@@ -169,7 +169,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{output_map};
 
@@ -215,7 +215,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{output_map};
 
@@ -276,7 +276,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{output_map};
 
@@ -314,7 +314,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
         "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
 
     optional_ref<ddwaf_object> derived{std::nullopt};
@@ -365,7 +365,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
 
     optional_ref<ddwaf_object> derived{std::nullopt};
@@ -412,7 +412,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     processor proc{"id", std::move(gen), builder.build(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
 
     optional_ref<ddwaf_object> derived{std::nullopt};
@@ -460,7 +460,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
         "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{std::nullopt};
 
@@ -510,7 +510,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
 
     optional_ref<ddwaf_object> derived{output_map};
@@ -564,7 +564,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{output_map};
 
@@ -599,7 +599,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{output_map};
 
@@ -633,7 +633,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
         "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{};
 
@@ -662,7 +662,7 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
         "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{};
 
@@ -694,7 +694,7 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
         "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{2s};
 
     optional_ref<ddwaf_object> derived{};
@@ -727,7 +727,7 @@ TEST(TestProcessor, Timeout)
         "id", std::move(gen), std::make_shared<expression>(), std::move(mappings), {}, true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor::cache_type cache;
+    processor_cache cache;
     timer deadline{0s};
     optional_ref<ddwaf_object> derived{};
 

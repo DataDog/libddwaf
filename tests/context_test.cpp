@@ -92,13 +92,15 @@ public:
         (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
 };
 
-class processor : public ddwaf::processor {
+class processor : public ddwaf::base_processor {
 public:
-    processor() : ddwaf::processor({}, {}, {}, {}, {}, true, true) {}
+    processor() = default;
     ~processor() override = default;
 
+    MOCK_METHOD(
+        void, get_addresses, ((std::unordered_map<target_index, std::string> &)), (const override));
     MOCK_METHOD(void, eval,
-        (object_store & store, optional_ref<ddwaf_object> &, processor::cache_type &,
+        (object_store & store, optional_ref<ddwaf_object> &, processor_cache &,
             ddwaf::timer &deadline),
         (const override));
 };
