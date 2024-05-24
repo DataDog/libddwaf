@@ -261,33 +261,33 @@ std::list<ddwaf::test::event::match> from_matches(
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
-    {                                                                                              \
-        auto data = ddwaf::test::object_to_json(result.events);                                    \
-        EXPECT_TRUE(ValidateSchema(data));                                                         \
-        YAML::Node doc = YAML::Load(data.c_str());                                                 \
-        auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
-        EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                            \
-    }
+  {                                                                                                \
+    auto data = ddwaf::test::object_to_json(result.events);                                        \
+    EXPECT_TRUE(ValidateSchema(data));                                                             \
+    YAML::Node doc = YAML::Load(data.c_str());                                                     \
+    auto events = doc.as<std::list<ddwaf::test::event>>();                                         \
+    EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                                \
+  }
 
 #define EXPECT_MATCHES(matches, ...) EXPECT_THAT(from_matches(matches), WithMatches({__VA_ARGS__}));
 
 #define EXPECT_SCHEMA_EQ(obtained, expected)                                                       \
-    {                                                                                              \
-        auto obtained_doc = test::object_to_rapidjson(obtained);                                   \
-        EXPECT_TRUE(ValidateSchemaSchema(obtained_doc));                                           \
-        rapidjson::Document expected_doc;                                                          \
-        expected_doc.Parse(expected);                                                              \
-        EXPECT_FALSE(expected_doc.HasParseError());                                                \
-        EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);    \
-    }
+  {                                                                                                \
+    auto obtained_doc = test::object_to_rapidjson(obtained);                                       \
+    EXPECT_TRUE(ValidateSchemaSchema(obtained_doc));                                               \
+    rapidjson::Document expected_doc;                                                              \
+    expected_doc.Parse(expected);                                                                  \
+    EXPECT_FALSE(expected_doc.HasParseError());                                                    \
+    EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);        \
+  }
 
 #define EXPECT_ACTIONS(result, ...)                                                                \
-    {                                                                                              \
-        auto data = ddwaf::test::object_to_json(result.actions);                                   \
-        YAML::Node doc = YAML::Load(data.c_str());                                                 \
-        auto obtained = doc.as<ddwaf::test::action_map>();                                         \
-        EXPECT_THAT(obtained, WithActions(__VA_ARGS__));                                           \
-    }
+  {                                                                                                \
+    auto data = ddwaf::test::object_to_json(result.actions);                                       \
+    YAML::Node doc = YAML::Load(data.c_str());                                                     \
+    auto obtained = doc.as<ddwaf::test::action_map>();                                             \
+    EXPECT_THAT(obtained, WithActions(__VA_ARGS__));                                               \
+  }
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 ddwaf_object read_file(std::string_view filename, std::string_view base = "./");

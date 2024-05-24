@@ -27,41 +27,41 @@ template <std::size_t N> constexpr std::array<char, N - 1> literal_to_array(cons
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
-    {                                                                                              \
-        auto data = ddwaf::test::object_to_json(result.events);                                    \
-        EXPECT_TRUE(ValidateSchema(data));                                                         \
-        YAML::Node doc = YAML::Load(data.c_str());                                                 \
-        auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
-        EXPECT_ACTIONS(result, __VA_ARGS__)                                                        \
-    }
+  {                                                                                                \
+    auto data = ddwaf::test::object_to_json(result.events);                                        \
+    EXPECT_TRUE(ValidateSchema(data));                                                             \
+    YAML::Node doc = YAML::Load(data.c_str());                                                     \
+    auto events = doc.as<std::list<ddwaf::test::event>>();                                         \
+    EXPECT_ACTIONS(result, __VA_ARGS__)                                                            \
+  }
 
 #define EXPECT_TRANSFORM(name, source, expected)                                                   \
+  {                                                                                                \
     {                                                                                              \
-        {                                                                                          \
-            cow_string str({source, sizeof(source) - 1});                                          \
-            EXPECT_TRUE(transformer::name::transform(str));                                        \
-            EXPECT_STREQ(str.data(), expected);                                                    \
-        }                                                                                          \
-        if constexpr (sizeof(source) > 1) {                                                        \
-            std::array<char, sizeof(source) - 1> copy{literal_to_array(source)};                   \
-            cow_string str({copy.data(), copy.size()});                                            \
-            EXPECT_TRUE(transformer::name::transform(str)) << "Non nul-terminated string";         \
-            EXPECT_STREQ(str.data(), expected) << "Non nul-terminated string";                     \
-        }                                                                                          \
-    }
+      cow_string str({source, sizeof(source) - 1});                                                \
+      EXPECT_TRUE(transformer::name::transform(str));                                              \
+      EXPECT_STREQ(str.data(), expected);                                                          \
+    }                                                                                              \
+    if constexpr (sizeof(source) > 1) {                                                            \
+      std::array<char, sizeof(source) - 1> copy{literal_to_array(source)};                         \
+      cow_string str({copy.data(), copy.size()});                                                  \
+      EXPECT_TRUE(transformer::name::transform(str)) << "Non nul-terminated string";               \
+      EXPECT_STREQ(str.data(), expected) << "Non nul-terminated string";                           \
+    }                                                                                              \
+  }
 
 #define EXPECT_NO_TRANSFORM(name, source)                                                          \
+  {                                                                                                \
     {                                                                                              \
-        {                                                                                          \
-            cow_string str({source, sizeof(source) - 1});                                          \
-            EXPECT_FALSE(transformer::name::transform(str));                                       \
-            EXPECT_FALSE(str.modified());                                                          \
-        }                                                                                          \
-        if constexpr (sizeof(source) > 1) {                                                        \
-            std::array<char, sizeof(source) - 1> copy{literal_to_array(source)};                   \
-            cow_string str({copy.data(), copy.size()});                                            \
-            EXPECT_FALSE(transformer::name::transform(str)) << "Non nul-terminated string";        \
-            EXPECT_FALSE(str.modified());                                                          \
-        }                                                                                          \
-    }
+      cow_string str({source, sizeof(source) - 1});                                                \
+      EXPECT_FALSE(transformer::name::transform(str));                                             \
+      EXPECT_FALSE(str.modified());                                                                \
+    }                                                                                              \
+    if constexpr (sizeof(source) > 1) {                                                            \
+      std::array<char, sizeof(source) - 1> copy{literal_to_array(source)};                         \
+      cow_string str({copy.data(), copy.size()});                                                  \
+      EXPECT_FALSE(transformer::name::transform(str)) << "Non nul-terminated string";              \
+      EXPECT_FALSE(str.modified());                                                                \
+    }                                                                                              \
+  }
 // NOLINTEND(cppcoreguidelines-macro-usage)

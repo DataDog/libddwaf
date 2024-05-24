@@ -23,13 +23,16 @@ namespace {
 namespace mock {
 class processor : public ddwaf::structured_processor<processor> {
 public:
+    static constexpr std::array<std::string_view, 1> param_names{"inputs"};
+
     processor(std::string id, std::shared_ptr<expression> expr,
         std::vector<processor_mapping> mappings, bool evaluate, bool output)
         : structured_processor(
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    MOCK_METHOD(ddwaf_object, eval_impl, (const ddwaf_object *, ddwaf::timer &), (const));
+    MOCK_METHOD((std::pair<ddwaf_object, object_store::attribute>), eval_impl,
+        (const unary_argument<const ddwaf_object *> &, ddwaf::timer &), (const));
 };
 
 } // namespace mock
@@ -50,12 +53,14 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
-    EXPECT_CALL(proc, eval_impl(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc, eval_impl(_, _))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
+            output, object_store::attribute::none}));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -98,17 +103,19 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address.first"), "input_address.first", {}}},
+        {{{{{get_target_index("input_address.first"), "input_address.first", {}}}}},
             {get_target_index("output_address.first"), "output_address.first", {}}},
-        {{{get_target_index("input_address.second"), "input_address.second", {}}},
+        {{{{{get_target_index("input_address.second"), "input_address.second", {}}}}},
             {get_target_index("output_address.second"), "output_address.second", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _))
-        .WillOnce(Return(first_output))
-        .WillOnce(Return(second_output));
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
+            first_output, object_store::attribute::none)))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
+            second_output, object_store::attribute::none)));
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -154,7 +161,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
@@ -166,7 +173,9 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     mock::processor proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc, eval_impl(_, _))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
+            output, object_store::attribute::none}));
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -200,7 +209,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
@@ -212,7 +221,9 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     mock::processor proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc, eval_impl(_, _))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
+            output, object_store::attribute::none}));
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -262,7 +273,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
@@ -306,13 +317,15 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc, eval_impl(_, _))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
+            output, object_store::attribute::none}));
 
     processor_cache cache;
     timer deadline{2s};
@@ -351,7 +364,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
@@ -363,7 +376,9 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     mock::processor proc{"id", builder.build(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc, eval_impl(_, _))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
+            output, object_store::attribute::none}));
     processor_cache cache;
 
     timer deadline{2s};
@@ -399,7 +414,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     test::expression_builder builder(1);
@@ -445,17 +460,19 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address.first"), "input_address.first", {}}},
+        {{{{{get_target_index("input_address.first"), "input_address.first", {}}}}},
             {get_target_index("output_address.first"), "output_address.first", {}}},
-        {{{get_target_index("input_address.second"), "input_address.second", {}}},
+        {{{{{get_target_index("input_address.second"), "input_address.second", {}}}}},
             {get_target_index("output_address.second"), "output_address.second", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _))
-        .WillOnce(Return(first_output))
-        .WillOnce(Return(second_output));
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
+            first_output, object_store::attribute::none)))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
+            second_output, object_store::attribute::none)));
 
     processor_cache cache;
     timer deadline{2s};
@@ -495,13 +512,15 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc, eval_impl(_, _))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
+            output, object_store::attribute::none}));
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -548,7 +567,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
@@ -582,7 +601,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
@@ -618,8 +637,8 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
-            {get_target_index("output_address"), "output_address"}}};
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
+            {get_target_index("output_address"), "output_address", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
@@ -646,7 +665,7 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
@@ -677,13 +696,15 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).WillOnce(Return(output));
+    EXPECT_CALL(proc, eval_impl(_, _))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
+            output, object_store::attribute::none}));
 
     processor_cache cache;
     timer deadline{2s};
@@ -709,7 +730,7 @@ TEST(TestProcessor, Timeout)
     object_store store;
 
     std::vector<processor_mapping> mappings{
-        {{{get_target_index("input_address"), "input_address", {}}},
+        {{{{{get_target_index("input_address"), "input_address", {}}}}},
             {get_target_index("output_address"), "output_address", {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};

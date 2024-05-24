@@ -15,13 +15,13 @@
 #include "utils.hpp"
 
 #define expect(lhs, rhs)                                                                           \
-    try {                                                                                          \
-        assert(lhs, rhs, __LINE__, __func__);                                                      \
-    } catch (const assert_exception &e) {                                                          \
-        throw;                                                                                     \
-    } catch (const std::exception &e) {                                                            \
-        throw assert_exception(e.what(), __LINE__, __func__);                                      \
-    }
+  try {                                                                                            \
+    assert(lhs, rhs, __LINE__, __func__);                                                          \
+  } catch (const assert_exception &e) {                                                            \
+    throw;                                                                                         \
+  } catch (const std::exception &e) {                                                              \
+    throw assert_exception(e.what(), __LINE__, __func__);                                          \
+  }
 
 class assert_exception : public std::exception {
 public:

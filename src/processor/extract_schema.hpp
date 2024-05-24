@@ -15,6 +15,8 @@ namespace ddwaf {
 
 class extract_schema : public structured_processor<extract_schema> {
 public:
+    static constexpr std::array<std::string_view, 1> param_names{"inputs"};
+
     static constexpr std::size_t max_container_depth = 18;
     static constexpr std::size_t max_array_nodes = 10;
     static constexpr std::size_t max_record_nodes = 255;
@@ -27,7 +29,8 @@ public:
           scanners_(std::move(scanners))
     {}
 
-    ddwaf_object eval_impl(const ddwaf_object *input, ddwaf::timer &deadline) const;
+    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+        const unary_argument<const ddwaf_object *> &input, ddwaf::timer &deadline) const;
 
 protected:
     std::set<const scanner *> scanners_;

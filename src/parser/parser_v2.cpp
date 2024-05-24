@@ -460,7 +460,8 @@ std::vector<processor_mapping> parse_processor_mappings(
         addresses.optional.emplace(input_address);
 
         mappings.emplace_back(processor_mapping{
-            {processor_target{get_target_index(input_address), std::move(input_address), {}}},
+            {processor_parameter{
+                {processor_target{get_target_index(input_address), std::move(input_address), {}}}}},
             {get_target_index(output), std::move(output), {}}});
     }
 

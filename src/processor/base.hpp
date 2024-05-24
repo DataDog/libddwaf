@@ -24,8 +24,12 @@ struct processor_target {
     std::vector<std::string> key_path;
 };
 
+struct processor_parameter {
+    std::vector<processor_target> targets;
+};
+
 struct processor_mapping {
-    std::vector<processor_target> inputs;
+    std::vector<processor_parameter> inputs;
     processor_target output;
 };
 
@@ -33,6 +37,10 @@ struct processor_cache {
     expression::cache_type expr_cache;
     std::unordered_set<target_index> generated;
 };
+
+template <typename Class, typename... Args>
+function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
+    std::pair<ddwaf_object, object_store::attribute> (Class::*)(Args...) const);
 
 class base_processor {
 public:
@@ -82,6 +90,9 @@ public:
             return;
         }
 
+        using func_traits = decltype(make_eval_traits(&Self::eval_impl));
+        static_assert(func_traits::nargs == Self::param_names.size());
+
         for (const auto &mapping : mappings_) {
             if (deadline.expired()) {
                 throw ddwaf::timeout_exception();
@@ -92,17 +103,24 @@ public:
                 continue;
             }
 
-            auto [input, attr] = store.get_target(mapping.inputs[0].index);
-            if (input == nullptr) {
+            typename func_traits::tuple_type args;
+            if (!resolve_arguments(
+                    mapping, store, args, std::make_index_sequence<func_traits::nargs>{})) {
                 continue;
             }
+
+            auto [object, attr] = std::apply(
+                [&](auto &&...args) {
+                    return static_cast<const Self *>(this)->eval_impl(
+                        std::forward<decltype(args)>(args)..., deadline);
+                },
+                std::move(args));
 
             if (attr != object_store::attribute::ephemeral) {
                 // Whatever the outcome, we don't want to try and generate it again
                 cache.generated.emplace(mapping.output.index);
             }
 
-            auto object = static_cast<const Self *>(this)->eval_impl(input, deadline);
             if (object.type == DDWAF_OBJ_INVALID) {
                 continue;
             }
@@ -128,11 +146,89 @@ public:
     {
         expr_->get_addresses(addresses);
         for (const auto &mapping : mappings_) {
-            for (const auto &input : mapping.inputs) { addresses.emplace(input.index, input.name); }
+            for (const auto &input : mapping.inputs) {
+                for (const auto &target : input.targets) {
+                    addresses.emplace(target.index, target.name);
+                }
+            }
         }
     }
 
+    static constexpr auto arguments()
+    {
+        return generate_argument_spec(std::make_index_sequence<Self::param_names.size()>());
+    }
+
+    template <size_t... Is>
+    static constexpr auto generate_argument_spec(std::index_sequence<Is...>) // NOLINT
+    {
+        constexpr auto param_names = Self::param_names;
+        using func_traits = decltype(make_eval_traits(&Self::eval_impl));
+        static_assert(param_names.size() <= func_traits::nargs);
+
+        return std::array<parameter_specification, sizeof...(Is)>{{
+            {
+                param_names[Is],
+                argument_retriever<typename func_traits::template arg_type<Is>>::is_variadic,
+                argument_retriever<typename func_traits::template arg_type<Is>>::is_optional,
+            }...,
+        }};
+    }
+
 protected:
+    template <size_t I, size_t... Is, typename Args>
+    bool resolve_arguments(const processor_mapping &mapping, const object_store &store, Args &args,
+        std::index_sequence<I, Is...> /*unused*/) const
+    {
+        using TupleElement = std::tuple_element_t<I, Args>;
+        auto arg = resolve_argument<I>(mapping, store);
+        if constexpr (is_unary_argument<TupleElement>::value) {
+            if (!arg.has_value()) {
+                return false;
+            }
+
+            std::get<I>(args) = std::move(arg.value());
+        } else if constexpr (is_variadic_argument<TupleElement>::value) {
+            if (arg.empty()) {
+                return false;
+            }
+
+            std::get<I>(args) = std::move(arg);
+        } else {
+            std::get<I>(args) = std::move(arg);
+        }
+
+        if constexpr (sizeof...(Is) > 0) {
+            return resolve_arguments(mapping, store, args, std::index_sequence<Is...>{});
+        } else {
+            return true;
+        }
+    }
+
+    template <size_t I>
+    auto resolve_argument(const processor_mapping &mapping, const object_store &store) const
+    {
+        using func_traits = decltype(make_eval_traits(&Self::eval_impl));
+        using target_type = typename func_traits::template arg_type<I>;
+
+        using retriever = argument_retriever<target_type>;
+        if constexpr (retriever::is_variadic) {
+            if (mapping.inputs.size() <= I) {
+                return target_type{};
+            }
+            return retriever::retrieve(store, {}, mapping.inputs[I]);
+        } else {
+            if (mapping.inputs.size() <= I) {
+                return std::optional<target_type>{};
+            }
+
+            const auto &arg = mapping.inputs[I];
+            if (arg.targets.empty()) {
+                return std::optional<target_type>{};
+            }
+            return retriever::retrieve(store, {}, arg.targets.at(0));
+        }
+    }
     std::string id_;
     std::shared_ptr<expression> expr_;
     std::vector<processor_mapping> mappings_;
