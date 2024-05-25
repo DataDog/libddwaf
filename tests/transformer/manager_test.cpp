@@ -14,20 +14,20 @@ namespace {
 
 // NOLINTNEXTLINE
 #define EXPECT_TRANSFORM(src, dst, ...)                                                            \
-  {                                                                                                \
-    auto res = transform({src, sizeof(src) - 1}, {__VA_ARGS__});                                   \
-    EXPECT_TRUE(res);                                                                              \
-    if (res) {                                                                                     \
-      EXPECT_STR(res.value(), dst);                                                                \
-    }                                                                                              \
-  }
+    {                                                                                              \
+        auto res = transform({src, sizeof(src) - 1}, {__VA_ARGS__});                               \
+        EXPECT_TRUE(res);                                                                          \
+        if (res) {                                                                                 \
+            EXPECT_STR(res.value(), dst);                                                          \
+        }                                                                                          \
+    }
 
 // NOLINTNEXTLINE
 #define EXPECT_NO_TRANSFORM(src, ...)                                                              \
-  {                                                                                                \
-    auto res = transform({src, sizeof(src) - 1}, {__VA_ARGS__});                                   \
-    EXPECT_FALSE(res);                                                                             \
-  }
+    {                                                                                              \
+        auto res = transform({src, sizeof(src) - 1}, {__VA_ARGS__});                               \
+        EXPECT_FALSE(res);                                                                         \
+    }
 
 std::optional<std::string> transform(std::string_view input, const std::vector<transformer_id> &ids)
 {
