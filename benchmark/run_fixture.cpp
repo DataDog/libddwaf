@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <chrono>
 #include <ddwaf.h>
 #include <iostream>
 #include <stack>
@@ -54,6 +55,8 @@ uint64_t run_fixture::test_main()
 
     for (auto &object : objects_) {
         ddwaf_result res;
+        auto now = std::chrono::high_resolution_clock::now();
+
         auto code = ddwaf_run(ctx_, nullptr, &object, &res, std::numeric_limits<uint32_t>::max());
         if (code < 0) {
             throw std::runtime_error("WAF returned " + std::to_string(code));
@@ -63,7 +66,8 @@ uint64_t run_fixture::test_main()
             throw std::runtime_error("WAF timed-out");
         }
 
-        total_runtime += res.total_runtime;
+        total_runtime += (std::chrono::high_resolution_clock::now() - now).count();
+
         ddwaf_result_free(&res);
     }
 
