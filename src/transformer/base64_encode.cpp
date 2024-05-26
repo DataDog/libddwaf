@@ -6,6 +6,7 @@
 
 #include <array>
 #include <limits>
+#include <memory_resource>
 
 #include "transformer/base64_encode.hpp"
 
@@ -19,7 +20,8 @@ bool base64_encode::transform_impl(cow_string &str)
 
     // We need to allocate a buffer to contain the base64 encoded string
     const size_t encoded_length = (str.length() + 2) / 3 * 4;
-    auto *new_string = static_cast<char *>(malloc(encoded_length + 1));
+    auto *alloc = std::pmr::new_delete_resource();
+    auto *new_string = static_cast<char *>(alloc->allocate(encoded_length, alignof(char)));
 
     // We don't have a good way to make this test fail in the CI, thus crapping on the coverage
     if (new_string == nullptr) {
@@ -73,8 +75,6 @@ bool base64_encode::transform_impl(cow_string &str)
 
         new_string[write++] = '=';
     }
-
-    new_string[write] = 0;
 
     str.replace_buffer(new_string, write);
 

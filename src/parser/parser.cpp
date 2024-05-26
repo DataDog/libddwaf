@@ -14,7 +14,7 @@
 
 namespace ddwaf::parser {
 
-unsigned parse_schema_version(parameter::map &ruleset)
+unsigned parse_schema_version(const std::unordered_map<std::string_view, object_view> &ruleset)
 {
     auto version = at<std::string_view>(ruleset, "version");
 

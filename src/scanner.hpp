@@ -30,33 +30,34 @@ public:
 
     virtual ~scanner() = default;
 
-    bool eval(const ddwaf_object &key, const ddwaf_object &value) const
+    bool eval(object_view key, object_view value) const
     {
         DDWAF_DEBUG("Evaluating scanner '{}'", id_);
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
-    bool eval(std::string_view key, const ddwaf_object &value) const
-    {
-        ddwaf_object key_obj;
-        if (key.data() != nullptr && !key.empty()) {
-            ddwaf_object_stringl_nc(&key_obj, key.data(), key.size());
-        } else {
-            ddwaf_object_invalid(&key_obj);
-        }
-        return eval(key_obj, value);
-    }
+    /*    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)*/
+    /*bool eval(object_view key, object_view value) const*/
+    /*{*/
+    /*ddwaf_object key_obj;*/
+    /*if (key.data() != nullptr && !key.empty()) {*/
+    /*ddwaf_object_stringl_nc(&key_obj, key.data(), key.size());*/
+    /*} else {*/
+    /*ddwaf_object_invalid(&key_obj);*/
+    /*}*/
+    /*return eval(key_obj, value);*/
+    /*}*/
 
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
     std::string_view get_id() const { return id_; }
 
 protected:
-    static bool eval_matcher(const std::unique_ptr<matcher::base> &matcher, const ddwaf_object &obj)
+    static bool eval_matcher(const std::unique_ptr<matcher::base> &matcher, object_view obj)
     {
         if (!matcher) {
             return true;
         }
-        if (obj.type == DDWAF_OBJ_INVALID) {
+        if (obj.is_invalid()) {
             return false;
         }
         return matcher->match(obj).first;

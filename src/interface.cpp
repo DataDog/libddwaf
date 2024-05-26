@@ -13,12 +13,13 @@
 #include "exception.hpp"
 #include "log.hpp"
 #include "obfuscator.hpp"
+#include "object_converter.hpp"
+#include "object_view.hpp"
 #include "ruleset_info.hpp"
 #include "unordered_map"
 #include "utils.hpp"
 #include "waf.hpp"
 
-#if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_INFO
 namespace {
 const char *log_level_to_str(DDWAF_LOG_LEVEL level)
 {
@@ -78,31 +79,27 @@ ddwaf::object_limits limits_from_config(const ddwaf_config *config)
 
     return limits;
 }
-
 } // namespace
-
-#endif
 // explicit instantiation declaration to suppress warning
 extern "C" {
 ddwaf::waf *ddwaf_init(
-    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_object *diagnostics)
+    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_object * /*diagnostics*/)
 {
     try {
         if (ruleset != nullptr) {
-            const ddwaf::parameter input = *ruleset;
+            ddwaf::object_view input{reinterpret_cast<const ddwaf::detail::object *>(ruleset)};
 
-            auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
-            if (diagnostics == nullptr) {
-                ddwaf::null_ruleset_info ri;
-                return new ddwaf::waf(
-                    input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
-            }
-
-            ddwaf::ruleset_info ri;
-            const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
-
+            // if (diagnostics == nullptr) {
+            ddwaf::null_ruleset_info ri;
             return new ddwaf::waf(
-                input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
+                input, ri, limits_from_config(config), obfuscator_from_config(config));
+            //}
+
+            /*ddwaf::ruleset_info ri;*/
+            /*const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });*/
+
+            /*            return new ddwaf::waf(*/
+            /*input, ri, limits_from_config(config), obfuscator_from_config(config));*/
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
@@ -113,20 +110,21 @@ ddwaf::waf *ddwaf_init(
     return nullptr;
 }
 
-ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_object *diagnostics)
+ddwaf::waf *ddwaf_update(
+    ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_object * /*diagnostics*/)
 {
     try {
         if (handle != nullptr && ruleset != nullptr) {
-            const ddwaf::parameter input = *ruleset;
-            if (diagnostics == nullptr) {
-                ddwaf::null_ruleset_info ri;
-                return handle->update(input, ri);
-            }
-
-            ddwaf::ruleset_info ri;
-            const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
-
+            ddwaf::object_view input{reinterpret_cast<const ddwaf::detail::object *>(ruleset)};
+            // if (diagnostics == nullptr) {
+            ddwaf::null_ruleset_info ri;
             return handle->update(input, ri);
+            //}
+
+            /*ddwaf::ruleset_info ri;*/
+            /*const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });*/
+
+            /*return handle->update(input, ri);*/
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
@@ -182,9 +180,23 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
     return nullptr;
 }
 
+#define DDWAF_OBJECT_INITIALISER                                                                   \
+    {                                                                                              \
+        {0}, DDWAF_OBJ_INVALID,                                                                    \
+        {                                                                                          \
+            {                                                                                      \
+                0, 0                                                                               \
+            }                                                                                      \
+        }                                                                                          \
+    }
+#define DDWAF_RESULT_INITIALISER                                                                   \
+    {                                                                                              \
+        false, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, DDWAF_OBJECT_INITIALISER, 0     \
+    }
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, ddwaf_result *result, uint64_t timeout)
+    ddwaf_object *ephemeral_data, ddwaf_result *result, ddwaf_allocator *alloc, uint64_t timeout)
 {
     if (result != nullptr) {
         *result = DDWAF_RESULT_INITIALISER;
@@ -200,17 +212,21 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
             res = *result;
         }
 
-        optional_ref<ddwaf_object> persistent{std::nullopt};
+        auto *memres = reinterpret_cast<std::pmr::memory_resource *>(alloc);
+
+        ddwaf::owned_object persistent;
         if (persistent_data != nullptr) {
-            persistent = *persistent_data;
+            persistent = ddwaf::owned_object{
+                reinterpret_cast<ddwaf::detail::object &>(*persistent_data), memres};
         }
 
-        optional_ref<ddwaf_object> ephemeral{std::nullopt};
+        ddwaf::owned_object ephemeral;
         if (ephemeral_data != nullptr) {
-            ephemeral = *ephemeral_data;
+            ephemeral = ddwaf::owned_object{
+                reinterpret_cast<ddwaf::detail::object &>(*ephemeral_data), memres};
         }
 
-        return context->run(persistent, ephemeral, res, timeout);
+        return context->run(std::move(persistent), std::move(ephemeral), res, timeout);
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
@@ -249,9 +265,9 @@ bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 void ddwaf_result_free(ddwaf_result *result)
 {
     // NOLINTNEXTLINE
-    ddwaf_object_free(&result->events);
-    ddwaf_object_free(&result->actions);
-    ddwaf_object_free(&result->derivatives);
+    ddwaf_object_destroy(&result->events, nullptr);
+    ddwaf_object_destroy(&result->actions, nullptr);
+    ddwaf_object_destroy(&result->derivatives, nullptr);
 
     *result = DDWAF_RESULT_INITIALISER;
 }

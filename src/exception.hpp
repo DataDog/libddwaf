@@ -39,9 +39,9 @@ public:
 
 class bad_cast : public exception {
 public:
-    bad_cast(const std::string &exp, const std::string &obt)
-        : exception("bad cast, expected '" + exp + "', obtained '" + obt + "'"), expected_(exp),
-          obtained_(obt)
+    bad_cast(std::string exp, std::string obt)
+        : exception("bad cast, expected '" + exp + "', obtained '" + obt + "'"),
+          expected_(std::move(exp)), obtained_(std::move(obt))
     {}
 
     [[nodiscard]] std::string expected() const { return expected_; }

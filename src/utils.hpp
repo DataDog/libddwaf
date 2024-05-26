@@ -32,9 +32,7 @@ template <typename T> using optional_ref = std::optional<std::reference_wrapper<
 
 // Internals
 // clang-format off
-#define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING | DDWAF_OBJ_BOOL | DDWAF_OBJ_FLOAT)
-#define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
-#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, 0}
+//#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, 0}
 // clang-format on
 
 namespace ddwaf {
@@ -88,30 +86,7 @@ inline size_t find_string_cutoff(const char *str, size_t length, object_limits l
     return pos;
 }
 
-namespace object {
-
-inline bool is_container(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
-}
-
-inline bool is_map(const ddwaf_object *obj)
-{
-    return obj != nullptr && obj->type == DDWAF_OBJ_MAP && obj->array != nullptr;
-}
-
-inline bool is_scalar(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
-}
-
-inline bool is_invalid_or_null(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type == DDWAF_OBJ_INVALID || obj->type == DDWAF_OBJ_NULL);
-}
-
 ddwaf_object clone(ddwaf_object *input);
-} // namespace object
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 inline bool isalpha(char c) { return (static_cast<unsigned>(c) | 32) - 'a' < 26; }
@@ -233,31 +208,6 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
     }
 
     return {false, {}};
-}
-
-inline std::string object_to_string(const ddwaf_object &object)
-{
-    if (object.type == DDWAF_OBJ_STRING) {
-        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
-    }
-
-    if (object.type == DDWAF_OBJ_BOOL) {
-        return to_string<std::string>(object.boolean);
-    }
-
-    if (object.type == DDWAF_OBJ_SIGNED) {
-        return to_string<std::string>(object.intValue);
-    }
-
-    if (object.type == DDWAF_OBJ_UNSIGNED) {
-        return to_string<std::string>(object.uintValue);
-    }
-
-    if (object.type == DDWAF_OBJ_FLOAT) {
-        return to_string<std::string>(object.f64);
-    }
-
-    return {};
 }
 
 inline std::vector<std::string_view> split(std::string_view str, char sep)

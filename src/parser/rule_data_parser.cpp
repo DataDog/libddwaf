@@ -12,18 +12,18 @@ namespace ddwaf::parser {
 using data_with_expiration = std::vector<std::pair<std::string_view, uint64_t>>;
 
 template <>
-data_with_expiration parse_rule_data<data_with_expiration>(std::string_view type, parameter &input)
+data_with_expiration parse_rule_data<data_with_expiration>(std::string_view type, object_view input)
 {
     if (type != "ip_with_expiration" && type != "data_with_expiration") {
         return {};
     }
 
     data_with_expiration data;
-    data.reserve(input.nbEntries);
+    data.reserve(input.size());
 
-    auto array = static_cast<parameter::vector>(input);
-    for (const auto &values_param : array) {
-        auto values = static_cast<parameter::map>(values_param);
+    auto array = input.convert<object_view::array>();
+    for (auto values_param : array) {
+        auto values = values_param.convert<std::unordered_map<std::string_view, object_view>>();
         data.emplace_back(
             at<std::string_view>(values, "value"), at<uint64_t>(values, "expiration", 0));
     }

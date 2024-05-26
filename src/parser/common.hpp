@@ -8,9 +8,11 @@
 
 #include <optional>
 #include <string>
+#include <unordered_set>
 
 #include "exception.hpp"
-#include "parameter.hpp"
+#include "object_converter.hpp"
+#include "object_view.hpp"
 #include "transformer/base.hpp"
 
 namespace ddwaf::parser {
@@ -20,10 +22,12 @@ struct address_container {
     std::unordered_set<std::string> optional;
 };
 
-template <typename T, typename Key = std::string> T at(const parameter::map &map, const Key &key)
+template <typename T, typename Key = std::string>
+T at(const std::unordered_map<std::string_view, object_view> &map, const Key &key)
 {
     try {
-        return static_cast<T>(map.at(key));
+        auto view = map.at(key);
+        return view.template convert<T>();
     } catch (const std::out_of_range &) {
         throw missing_key(std::string(key));
     } catch (const bad_cast &e) {
@@ -32,11 +36,12 @@ template <typename T, typename Key = std::string> T at(const parameter::map &map
 }
 
 template <typename T, typename Key>
-T at(const parameter::map &map, const Key &key, const T &default_)
+T at(
+    const std::unordered_map<std::string_view, object_view> &map, const Key &key, const T &default_)
 {
     try {
         auto it = map.find(key);
-        return it == map.end() ? default_ : static_cast<T>(it->second);
+        return it == map.end() ? default_ : it->second.template convert<T>();
     } catch (const bad_cast &e) {
         throw invalid_type(std::string(key), e);
     }

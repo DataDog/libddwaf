@@ -12,8 +12,6 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "utils.hpp"
-
 namespace ddwaf {
 
 enum class action_type : uint8_t {

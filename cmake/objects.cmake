@@ -1,12 +1,11 @@
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/ruleset_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
-    ${libddwaf_SOURCE_DIR}/src/parameter.cpp
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
     ${libddwaf_SOURCE_DIR}/src/context.cpp
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
     ${libddwaf_SOURCE_DIR}/src/event.cpp
-    ${libddwaf_SOURCE_DIR}/src/object.cpp
+    ${libddwaf_SOURCE_DIR}/src/object_interface.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/collection.cpp
     ${libddwaf_SOURCE_DIR}/src/expression.cpp
@@ -34,7 +33,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/actions_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/common.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp

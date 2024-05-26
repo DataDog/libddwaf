@@ -6,6 +6,7 @@
 #include "condition/sqli_detector.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
+#include "log.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
@@ -439,24 +440,24 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
 }
 
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
-    const ddwaf_object &params, sql_dialect dialect,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+    object_view params, sql_dialect dialect, const exclusion::object_set_ref &objects_excluded,
+    const object_limits &limits, ddwaf::timer &deadline)
 {
     static constexpr std::size_t min_str_len = 3;
 
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    kv_iterator it(params, {}, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING || param.nbEntries < min_str_len) {
+        object_view obj = *it;
+        auto opt_param = obj.as<std::string_view>();
+        if (!opt_param.has_value() || opt_param->length() < min_str_len) {
             continue;
         }
 
-        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        std::string_view value = opt_param.value();
         std::size_t param_index = resource.find(value);
         if (param_index == npos) {
             continue;
@@ -495,9 +496,9 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 } // namespace internal
 
 [[nodiscard]] eval_result sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
-    const variadic_argument<const ddwaf_object *> &params,
-    const unary_argument<std::string_view> &db_type, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const variadic_argument<object_view> &params, const unary_argument<std::string_view> &db_type,
+    condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
+    ddwaf::timer &deadline) const
 {
     auto dialect = sql_dialect_from_type(db_type.value);
 
@@ -505,7 +506,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
     for (const auto &param : params) {
         auto res = internal::sqli_impl(
-            sql.value, resource_tokens, *param.value, dialect, objects_excluded, limits_, deadline);
+            sql.value, resource_tokens, param.value, dialect, objects_excluded, limits_, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             bool ephemeral = sql.ephemeral || param.ephemeral;

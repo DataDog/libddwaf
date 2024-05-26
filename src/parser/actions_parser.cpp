@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "log.hpp"
+#include "object_converter.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 
@@ -45,13 +46,13 @@ void validate_and_add_redirect(
 }
 
 std::shared_ptr<action_mapper> parse_actions(
-    parameter::vector &actions_array, base_section_info &info)
+    object_view::array &actions_array, base_section_info &info)
 {
     action_mapper_builder builder;
 
     for (unsigned i = 0; i < actions_array.size(); i++) {
-        const auto &node_param = actions_array[i];
-        auto node = static_cast<parameter::map>(node_param);
+        const auto &node_param = actions_array.at_unchecked(i);
+        auto node = node_param.convert<std::unordered_map<std::string_view, object_view>>();
 
         std::string id;
         try {

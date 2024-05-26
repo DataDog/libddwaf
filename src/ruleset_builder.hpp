@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "indexer.hpp"
-#include "parameter.hpp"
+#include "object_view.hpp"
 #include "parser/specification.hpp"
 #include "rule.hpp"
 #include "ruleset.hpp"
@@ -22,9 +22,8 @@ namespace ddwaf {
 
 class ruleset_builder {
 public:
-    ruleset_builder(object_limits limits, ddwaf_object_free_fn free_fn,
-        std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
-        : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
+    ruleset_builder(object_limits limits, std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
+        : limits_(limits), event_obfuscator_(std::move(event_obfuscator))
     {}
 
     ~ruleset_builder() = default;
@@ -33,13 +32,14 @@ public:
     ruleset_builder &operator=(ruleset_builder &&) = delete;
     ruleset_builder &operator=(const ruleset_builder &) = delete;
 
-    std::shared_ptr<ruleset> build(parameter root_map, base_ruleset_info &info)
+    std::shared_ptr<ruleset> build(object_view root_map, base_ruleset_info &info)
     {
-        auto root = static_cast<parameter::map>(root_map);
+        auto root = root_map.convert<std::unordered_map<std::string_view, object_view>>();
         return build(root, info);
     }
 
-    std::shared_ptr<ruleset> build(parameter::map &root, base_ruleset_info &info);
+    std::shared_ptr<ruleset> build(
+        const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info);
 
 protected:
     enum class change_state : uint32_t {
@@ -57,12 +57,12 @@ protected:
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
     friend constexpr change_state operator&(change_state lhs, change_state rhs);
 
-    change_state load(parameter::map &root, base_ruleset_info &info);
+    change_state load(
+        const std::unordered_map<std::string_view, object_view> &root, base_ruleset_info &info);
 
     // These members are obtained through ddwaf_config and are persistent across
     // all updates.
     const object_limits limits_;
-    const ddwaf_object_free_fn free_fn_;
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator_;
 
     // Map representing rule data IDs to matcher type, this is obtained

@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "generator/base.hpp"
+#include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::generator {
@@ -30,7 +31,7 @@ public:
     extract_schema &operator=(const extract_schema &) = delete;
     extract_schema &operator=(extract_schema &&) = default;
 
-    ddwaf_object generate(const ddwaf_object *input, const std::set<const scanner *> &scanners,
+    owned_object generate(object_view input, const std::set<const scanner *> &scanners,
         ddwaf::timer &deadline) override;
 };
 
