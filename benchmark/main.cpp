@@ -82,6 +82,7 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
         } else {
             s.scenarios.emplace_back(root);
         }
+        std::sort(s.scenarios.begin(), s.scenarios.end());
     }
 
     if (opts.contains("format")) {
