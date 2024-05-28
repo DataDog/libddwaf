@@ -131,6 +131,16 @@ protected:
                 return target_type{};
             }
             return retriever::retrieve(store, objects_excluded, arguments_[I].targets);
+        } else if constexpr (retriever::is_optional) {
+            if (arguments_.size() <= I) {
+                return target_type{};
+            }
+
+            const auto &arg = arguments_[I];
+            if (arg.targets.empty()) {
+                return target_type{};
+            }
+            return retriever::retrieve(store, objects_excluded, arg.targets.at(0));
         } else {
             if (arguments_.size() <= I) {
                 return std::optional<target_type>{};

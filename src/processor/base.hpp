@@ -216,7 +216,17 @@ protected:
             if (mapping.inputs.size() <= I) {
                 return target_type{};
             }
-            return retriever::retrieve(store, {}, mapping.inputs[I]);
+            return retriever::retrieve(store, {}, mapping.inputs[I].targets);
+        } else if constexpr (retriever::is_optional) {
+            if (mapping.inputs.size() <= I) {
+                return target_type{};
+            }
+
+            const auto &arg = mapping.inputs[I];
+            if (arg.targets.empty()) {
+                return target_type{};
+            }
+            return retriever::retrieve(store, {}, arg.targets.at(0));
         } else {
             if (mapping.inputs.size() <= I) {
                 return std::optional<target_type>{};
