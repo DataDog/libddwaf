@@ -142,11 +142,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 
 TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
-
     ddwaf_object tmp;
-
     ddwaf_object input_map;
     ddwaf_object_map(&input_map);
     ddwaf_object_map_add(
@@ -186,11 +182,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
 TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
-
     ddwaf_object tmp;
-
     ddwaf_object input_map;
     ddwaf_object_map(&input_map);
     ddwaf_object_map_add(&input_map, "unary_address", ddwaf_object_string(&tmp, "unary_string"));
