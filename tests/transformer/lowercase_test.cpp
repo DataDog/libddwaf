@@ -22,6 +22,8 @@ TEST(TestLowercase, EmptyString) { EXPECT_NO_TRANSFORM(lowercase, ""); }
 TEST(TestLowercase, ValidTransform)
 {
     EXPECT_TRANSFORM(lowercase, "L", "l");
+    EXPECT_TRANSFORM(lowercase, "zzzzzzzzzzzzzzzZ", "zzzzzzzzzzzzzzzz");
+    EXPECT_TRANSFORM(lowercase, "aaaaaaaaaaaaaaaA", "aaaaaaaaaaaaaaaa");
     EXPECT_TRANSFORM(lowercase, "LE", "le");
     EXPECT_TRANSFORM(lowercase, "LoWeRCase", "lowercase");
     EXPECT_TRANSFORM(lowercase, "LowercasE", "lowercase");
