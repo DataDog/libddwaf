@@ -59,4 +59,27 @@ std::optional<transformer_id> transformer_from_string(std::string_view str)
     return std::nullopt;
 }
 
+reference_spec parse_reference(const parameter::map &target)
+{
+    auto ref_id = at<std::string>(target, "rule_id", {});
+    if (!ref_id.empty()) {
+        return {reference_type::id, std::move(ref_id), {}};
+    }
+
+    ref_id = at<std::string>(target, "id", {});
+    if (!ref_id.empty()) {
+        return {reference_type::id, std::move(ref_id), {}};
+    }
+
+    auto tag_map = at<parameter::map>(target, "tags", {});
+    if (!tag_map.empty()) {
+        std::unordered_map<std::string, std::string> tags;
+        for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
+
+        return {reference_type::tags, {}, std::move(tags)};
+    }
+
+    return {reference_type::none, {}, {}};
+}
+
 } // namespace ddwaf::parser
