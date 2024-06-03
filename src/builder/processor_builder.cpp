@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <concepts>
+
 #include "builder/processor_builder.hpp"
 #include "processor/extract_schema.hpp"
 
