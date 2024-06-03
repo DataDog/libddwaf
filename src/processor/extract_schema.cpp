@@ -14,10 +14,10 @@
 #include <variant>
 
 #include "exception.hpp"
-#include "generator/extract_schema.hpp"
 #include "log.hpp"
+#include "processor/extract_schema.hpp"
 
-namespace ddwaf::generator {
+namespace ddwaf {
 namespace schema {
 
 struct node_record;
@@ -338,14 +338,16 @@ ddwaf_object generate(
 
 } // namespace schema
 
-ddwaf_object extract_schema::generate(
-    const ddwaf_object *input, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
+std::pair<ddwaf_object, object_store::attribute> extract_schema::eval_impl(
+    const unary_argument<const ddwaf_object *> &input, ddwaf::timer &deadline) const
 {
-    if (input == nullptr) {
+    if (input.value == nullptr) {
         return {};
     }
 
-    return schema::generate(input, scanners, deadline);
+    object_store::attribute attr =
+        input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
+    return {schema::generate(input.value, scanners_, deadline), attr};
 }
 
-} // namespace ddwaf::generator
+} // namespace ddwaf

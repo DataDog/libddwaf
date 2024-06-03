@@ -20,7 +20,7 @@ extern "C" int LLVMFuzzerInitialize(const int * /*argc*/, char *** /*argv*/)
     return 0;
 }
 
-template <typename... Args> std::vector<parameter_definition> gen_param_def(Args... addresses)
+template <typename... Args> std::vector<condition_parameter> gen_param_def(Args... addresses)
 {
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }

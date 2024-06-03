@@ -15,8 +15,7 @@ class ssrf_detector : public base_impl<ssrf_detector> {
 public:
     static constexpr std::array<std::string_view, 2> param_names{"resource", "params"};
 
-    explicit ssrf_detector(
-        std::vector<parameter_definition> args, const object_limits &limits = {});
+    explicit ssrf_detector(std::vector<condition_parameter> args, const object_limits &limits = {});
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &uri,

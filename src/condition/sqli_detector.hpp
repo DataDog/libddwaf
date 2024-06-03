@@ -15,7 +15,7 @@ class sqli_detector : public base_impl<sqli_detector> {
 public:
     static constexpr std::array<std::string_view, 3> param_names{"resource", "params", "db_type"};
 
-    explicit sqli_detector(std::vector<parameter_definition> args, const object_limits &limits = {})
+    explicit sqli_detector(std::vector<condition_parameter> args, const object_limits &limits = {})
         : base_impl<sqli_detector>(std::move(args), limits)
     {}
 

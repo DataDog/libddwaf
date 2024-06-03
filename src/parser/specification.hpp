@@ -13,7 +13,7 @@
 #include "exclusion/rule_filter.hpp"
 #include "expression.hpp"
 #include "parameter.hpp"
-#include "processor.hpp"
+#include "processor/base.hpp"
 #include "rule.hpp"
 #include "scanner.hpp"
 
@@ -54,32 +54,10 @@ struct input_filter_spec {
     std::vector<reference_spec> targets;
 };
 
-struct processor_spec {
-    std::shared_ptr<generator::base> generator;
-    std::shared_ptr<expression> expr;
-    std::vector<processor::target_mapping> mappings;
-    std::vector<reference_spec> scanners;
-    bool evaluate{false};
-    bool output{true};
-};
-
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
 using rule_data_container = std::unordered_map<std::string, std::shared_ptr<matcher::base>>;
 using scanner_container = std::unordered_map<std::string_view, std::shared_ptr<scanner>>;
-
-struct processor_container {
-    [[nodiscard]] bool empty() const { return pre.empty() && post.empty(); }
-    [[nodiscard]] std::size_t size() const { return pre.size() + post.size(); }
-    void clear()
-    {
-        pre.clear();
-        post.clear();
-    }
-
-    std::unordered_map<std::string, processor_spec> pre;
-    std::unordered_map<std::string, processor_spec> post;
-};
 
 struct override_spec_container {
     [[nodiscard]] bool empty() const { return by_ids.empty() && by_tags.empty(); }
