@@ -32,8 +32,6 @@ std::set<const scanner *> references_to_scanners(
 template <typename T> struct typed_processor_builder;
 
 template <> struct typed_processor_builder<extract_schema> {
-    static constexpr bool requires_scanner = true;
-
     std::shared_ptr<base_processor> build(const auto &spec, const auto &scanners)
     {
         auto ref_scanners = references_to_scanners(spec.scanners, scanners);
@@ -42,19 +40,26 @@ template <> struct typed_processor_builder<extract_schema> {
     }
 };
 
+template <typename T, typename Spec, typename Scanners>
+concept has_build_with_scanners =
+    requires(typed_processor_builder<T> b, Spec spec, Scanners scanners) {
+        {
+            b.build(spec, scanners)
+        } -> std::same_as<std::shared_ptr<base_processor>>;
+    };
+
 template <typename T>
 [[nodiscard]] std::shared_ptr<base_processor> build_with_type(
     const auto &spec, const auto &scanners)
     requires std::is_base_of_v<base_processor, T>
 {
     typed_processor_builder<T> typed_builder;
-    if constexpr (typed_builder.requires_scanner) {
+    if constexpr (has_build_with_scanners<T, decltype(spec), decltype(scanners)>) {
         return typed_builder.build(spec, scanners);
     } else {
         return typed_builder.build(spec);
     }
 }
-
 } // namespace
 
 [[nodiscard]] std::shared_ptr<base_processor> processor_builder::build(

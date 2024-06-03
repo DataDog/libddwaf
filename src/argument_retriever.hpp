@@ -21,6 +21,8 @@ namespace ddwaf {
 
 // A type of argument with a single address (target) mapping
 template <typename T> struct unary_argument {
+    // The memory associated with the address and the key path is owned
+    // by either the condition (condition_target) or the processor (processor_target).
     std::string_view address{};
     std::span<const std::string> key_path;
     bool ephemeral{false};
@@ -41,11 +43,6 @@ template <typename T> using variadic_argument = std::vector<unary_argument<T>>;
 
 template <typename T, typename = void> struct is_variadic_argument : std::false_type {};
 template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
-
-struct default_argument_retriever {
-    static constexpr bool is_variadic = false;
-    static constexpr bool is_optional = false;
-};
 
 template <typename T> std::optional<T> convert(const ddwaf_object *obj)
 {
@@ -82,6 +79,11 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
 
     return {};
 }
+
+struct default_argument_retriever {
+    static constexpr bool is_variadic = false;
+    static constexpr bool is_optional = false;
+};
 
 template <typename T> struct argument_retriever : default_argument_retriever {};
 
