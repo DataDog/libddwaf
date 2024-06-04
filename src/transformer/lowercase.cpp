@@ -41,13 +41,13 @@ bool lowercase::needs_transform(std::string_view str)
 
     const char *input = str.data();
 
-    const __m128i sse_mask_lower_bound = _mm_set1_epi8('A');
-    const __m128i sse_mask_upper_bound = _mm_set1_epi8('Z');
+    const __m128i sse_mask_lower_bound = _mm_set1_epi8('A' - 1);
+    const __m128i sse_mask_upper_bound = _mm_set1_epi8('Z' + 1);
 
     const std::size_t aligned_size = str.size() & ~0xF;
 
-    __m128i cmp_result_final = _mm_setzero_si128();
-    for (std::size_t i = 0; i < aligned_size; i += 16) {
+    bool has_uppercase = false;
+    for (std::size_t i = 0; i < aligned_size && !has_uppercase; i += 16) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
         const __m128i input_data = _mm_loadu_si128((__m128i *)(input + i));
 
@@ -56,15 +56,15 @@ bool lowercase::needs_transform(std::string_view str)
         const __m128i cmp_lower = _mm_cmpgt_epi8(sse_mask_upper_bound, input_data); // Less than 'Z'
         const __m128i cmp_result =
             _mm_and_si128(cmp_upper, cmp_lower); // Combine the two comparison results
-        cmp_result_final = _mm_or_si128(cmp_result_final, cmp_result);
+        has_uppercase =
+            _mm_movemask_epi8(_mm_cmpeq_epi8(cmp_result, _mm_setzero_si128())) != 0xFFFF;
     }
 
-    bool is_lowercase =
-        _mm_movemask_epi8(_mm_cmpeq_epi8(cmp_result_final, _mm_setzero_si128())) == 0xFFFF;
+    for (std::size_t i = aligned_size; i < str.size() && !has_uppercase; i++) {
+        has_uppercase = isupper(input[i]);
+    }
 
-    for (std::size_t i = aligned_size; i < str.size(); i++) { is_lowercase &= !isupper(input[i]); }
-
-    return !is_lowercase;
+    return has_uppercase;
 }
 
 bool lowercase::transform_impl(cow_string &str)
@@ -72,7 +72,7 @@ bool lowercase::transform_impl(cow_string &str)
     auto size = str.length();
     char *input = str.modifiable_data();
 
-    const __m128i sse_mask_upper_bound = _mm_set1_epi8('Z');
+    const __m128i sse_mask_upper_bound = _mm_set1_epi8('Z' + 1);
     const __m128i sse_mask_lower_bound = _mm_set1_epi8('A' - 1);
     const __m128i sse_addition_value = _mm_set1_epi8(0x20); // value to add to convert up to lc
 
@@ -83,7 +83,7 @@ bool lowercase::transform_impl(cow_string &str)
         const __m128i input_data = _mm_loadu_si128((__m128i *)(input + i));
 
         const __m128i cmp_upper = _mm_cmpgt_epi8(input_data, sse_mask_lower_bound); // > 'A' - 1
-        const __m128i cmp_lower = _mm_cmpgt_epi8(sse_mask_upper_bound, input_data); // < 'Z'
+        const __m128i cmp_lower = _mm_cmpgt_epi8(sse_mask_upper_bound, input_data); // < 'Z' + 1
         const __m128i cmp_result = _mm_and_si128(cmp_upper, cmp_lower);
 
         const __m128i result =

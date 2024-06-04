@@ -11,7 +11,11 @@
 
 #include "exception.hpp"
 #include "parameter.hpp"
+#include "parser/specification.hpp"
+#include "ruleset_info.hpp"
 #include "transformer/base.hpp"
+
+using base_section_info = ddwaf::base_ruleset_info::base_section_info;
 
 namespace ddwaf::parser {
 
@@ -45,5 +49,13 @@ T at(const parameter::map &map, const Key &key, const T &default_)
 std::optional<transformer_id> transformer_from_string(std::string_view str);
 
 inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
+
+reference_spec parse_reference(const parameter::map &target);
+
+inline void add_addresses_to_info(const address_container &addresses, base_section_info &info)
+{
+    for (const auto &address : addresses.required) { info.add_required_address(address); }
+    for (const auto &address : addresses.optional) { info.add_optional_address(address); }
+}
 
 } // namespace ddwaf::parser

@@ -13,7 +13,7 @@ namespace ddwaf {
 class scalar_condition : public base_condition {
 public:
     scalar_condition(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
-        std::vector<parameter_definition> args, const object_limits &limits = {})
+        std::vector<condition_parameter> args, const object_limits &limits = {})
         : matcher_(std::move(matcher)), data_id_(std::move(data_id)), limits_(limits)
     {
         if (args.size() > 1) {
@@ -34,7 +34,7 @@ public:
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
     {
-        for (const auto &target : targets_) { addresses.emplace(target.root, target.name); }
+        for (const auto &target : targets_) { addresses.emplace(target.index, target.name); }
     }
 
     static constexpr auto arguments()
@@ -49,7 +49,7 @@ protected:
 
     std::unique_ptr<matcher::base> matcher_;
     std::string data_id_;
-    std::vector<target_definition> targets_;
+    std::vector<condition_target> targets_;
     const object_limits limits_;
 };
 

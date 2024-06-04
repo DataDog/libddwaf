@@ -241,7 +241,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
 
 } // namespace
 
-ssrf_detector::ssrf_detector(std::vector<parameter_definition> args, const object_limits &limits)
+ssrf_detector::ssrf_detector(std::vector<condition_parameter> args, const object_limits &limits)
     : base_impl<ssrf_detector>(std::move(args), limits),
       dangerous_ip_matcher_(std::make_unique<matcher::ip_match>(dangerous_ips)),
       authorised_schemes_(authorised_schemes.begin(), authorised_schemes.end())

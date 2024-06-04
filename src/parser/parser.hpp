@@ -10,14 +10,14 @@
 #include <unordered_map>
 #include <vector>
 
+#include "builder/processor_builder.hpp"
 #include "indexer.hpp"
 #include "parameter.hpp"
+#include "parser/common.hpp"
 #include "parser/specification.hpp"
 #include "rule.hpp"
 #include "ruleset.hpp"
 #include "ruleset_info.hpp"
-
-using base_section_info = ddwaf::base_ruleset_info::base_section_info;
 
 namespace ddwaf::parser {
 
@@ -49,6 +49,19 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
 
 std::shared_ptr<action_mapper> parse_actions(
     parameter::vector &actions_array, base_section_info &info);
+
+std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
+    std::unordered_map<std::string, std::string> &data_ids, data_source source,
+    const std::vector<transformer_id> &transformers, address_container &addresses,
+    const object_limits &limits);
+
+std::shared_ptr<expression> parse_simplified_expression(const parameter::vector &conditions_array,
+    address_container &addresses, const object_limits &limits);
+
+std::vector<transformer_id> parse_transformers(const parameter::vector &root, data_source &source);
+
+std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
+    std::string_view name, const parameter::map &params);
 
 } // namespace v2
 } // namespace ddwaf::parser

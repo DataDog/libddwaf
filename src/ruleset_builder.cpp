@@ -57,25 +57,6 @@ std::set<rule *> references_to_rules(
     return rule_refs;
 }
 
-std::set<const scanner *> references_to_scanners(
-    const std::vector<parser::reference_spec> &references, const indexer<const scanner> &scanners)
-{
-    std::set<const scanner *> scanner_refs;
-    for (const auto &ref : references) {
-        if (ref.type == parser::reference_type::id) {
-            const auto *scanner = scanners.find_by_id(ref.ref_id);
-            if (scanner == nullptr) {
-                continue;
-            }
-            scanner_refs.emplace(scanner);
-        } else if (ref.type == parser::reference_type::tags) {
-            auto current_refs = scanners.find_by_tags(ref.tags);
-            scanner_refs.merge(current_refs);
-        }
-    }
-    return scanner_refs;
-}
-
 } // namespace
 
 std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_ruleset_info &info)
@@ -175,17 +156,13 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         preprocessors_.clear();
         postprocessors_.clear();
 
-        for (auto &[id, spec] : processors_.pre) {
-            auto scanners = references_to_scanners(spec.scanners, scanners_);
-            auto proc = std::make_shared<processor>(id, spec.generator, spec.expr, spec.mappings,
-                std::move(scanners), spec.evaluate, spec.output);
+        for (auto &builder : processors_.pre) {
+            auto proc = builder.build(scanners_);
             preprocessors_.emplace(proc->get_id(), std::move(proc));
         }
 
-        for (auto &[id, spec] : processors_.post) {
-            auto scanners = references_to_scanners(spec.scanners, scanners_);
-            auto proc = std::make_shared<processor>(id, spec.generator, spec.expr, spec.mappings,
-                std::move(scanners), spec.evaluate, spec.output);
+        for (auto &builder : processors_.post) {
+            auto proc = builder.build(scanners_);
             postprocessors_.emplace(proc->get_id(), std::move(proc));
         }
     }

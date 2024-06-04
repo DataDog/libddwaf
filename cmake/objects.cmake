@@ -12,7 +12,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/expression.cpp
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp
     ${libddwaf_SOURCE_DIR}/src/ip_utils.cpp
-    ${libddwaf_SOURCE_DIR}/src/processor.cpp
     ${libddwaf_SOURCE_DIR}/src/iterator.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
@@ -22,6 +21,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/platform.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
+    ${libddwaf_SOURCE_DIR}/src/builder/processor_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/sql_base.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/pgsql.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/mysql.cpp
@@ -30,13 +30,20 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
-    ${libddwaf_SOURCE_DIR}/src/generator/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/actions_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/common.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/parser_v2.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/processor_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/expression_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/matcher_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/transformer_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/rule_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/rule_override_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/scanner_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/exclusion_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/sqli_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/ssrf_detector.cpp

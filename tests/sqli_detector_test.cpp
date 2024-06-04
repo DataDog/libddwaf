@@ -17,7 +17,7 @@ class DialectTestFixture : public ::testing::TestWithParam<std::string> {};
 INSTANTIATE_TEST_SUITE_P(
     TestSqliDetector, DialectTestFixture, ::testing::Values("mysql", "sqlite", "postgresql"));
 
-template <typename... Args> std::vector<parameter_definition> gen_param_def(Args... addresses)
+template <typename... Args> std::vector<condition_parameter> gen_param_def(Args... addresses)
 {
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }

@@ -24,10 +24,8 @@ bool remove_nulls::transform_impl(cow_string &str)
     std::size_t write = read;
     for (; read < str.length(); ++read) {
         auto c = str.at(read);
-        if (c == 0) {
-            continue;
-        }
-        str[write++] = c;
+        str[write] = c;
+        write += !!c;
     }
 
     str.truncate(write);
