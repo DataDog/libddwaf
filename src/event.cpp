@@ -178,10 +178,10 @@ void serialize_empty_rule(ddwaf_object &rule_map)
 }
 
 void serialize_and_consolidate_rule_actions(const ddwaf::rule &rule, ddwaf_object &rule_map,
-    action_type action_override, action_tracker &actions, ddwaf_object &stack_id)
+    std::string_view action_override, action_tracker &actions, ddwaf_object &stack_id)
 {
     const auto &rule_actions = rule.get_actions();
-    if (rule_actions.empty()) {
+    if (rule_actions.empty() && action_override.empty()) {
         return;
     }
 
@@ -189,15 +189,20 @@ void serialize_and_consolidate_rule_actions(const ddwaf::rule &rule, ddwaf_objec
     ddwaf_object actions_array;
     ddwaf_object_array(&actions_array);
 
-    if (action_override == action_type::monitor) {
-        ddwaf_object_array_add(&actions_array, to_object(tmp, "monitor"));
+    if (!action_override.empty()) {
+        ddwaf_object_array_add(&actions_array, to_object(tmp, action_override));
+        auto action_it = actions.mapper.find(action_override);
+        if (action_it != actions.mapper.end()) {
+            const auto &[type, type_str, parameters] = action_it->second;
+            add_action_to_tracker(actions, action_override, type);
+        }
     }
 
     for (const auto &action_id : rule_actions) {
         auto action_it = actions.mapper.find(action_id);
         if (action_it != actions.mapper.end()) {
             const auto &[type, type_str, parameters] = action_it->second;
-            if (action_override == action_type::monitor &&
+            if (!action_override.empty() &&
                 (type == action_type::monitor || is_blocking_action(type))) {
                 // If the rule was in monitor mode, ignore blocking and monitor actions
                 continue;

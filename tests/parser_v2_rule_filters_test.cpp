@@ -635,7 +635,7 @@ TEST(TestParserV2RuleFilters, ParseOnMatchBypass)
     EXPECT_EQ(filter.on_match, exclusion::filter_mode::bypass);
 }
 
-TEST(TestParserV2RuleFilters, ParseInvalidOnMatch)
+TEST(TestParserV2RuleFilters, ParseCustomOnMatch)
 {
     ddwaf::object_limits limits;
 
@@ -654,26 +654,27 @@ TEST(TestParserV2RuleFilters, ParseInvalidOnMatch)
         auto root_map = static_cast<parameter::map>(root);
 
         auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 0);
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
 
         auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 1);
-        EXPECT_NE(failed.find("1"), failed.end());
+        EXPECT_EQ(failed.size(), 0);
 
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("unsupported on_match value: obliterate");
-        EXPECT_NE(it, errors.end());
-
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
-        EXPECT_EQ(error_rules.size(), 1);
-        EXPECT_NE(error_rules.find("1"), error_rules.end());
+        EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.rule_filters.size(), 1);
     EXPECT_EQ(filters.input_filters.size(), 0);
+
+    const auto &filter_it = filters.rule_filters.begin();
+    EXPECT_STR(filter_it->first, "1");
+
+    const auto &filter = filter_it->second;
+    EXPECT_EQ(filter.on_match, exclusion::filter_mode::custom);
+    EXPECT_STR(filter.custom_action, "obliterate");
 }
 
 } // namespace

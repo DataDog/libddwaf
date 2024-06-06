@@ -19,7 +19,7 @@ class rule;
 
 namespace exclusion {
 
-enum class filter_mode : uint8_t { none = 0, monitor = 1, bypass = 2 };
+enum class filter_mode : uint8_t { none = 0, custom = 1, monitor = 2, bypass = 3 };
 
 struct object_set {
     std::unordered_set<const ddwaf_object *> persistent;
@@ -35,7 +35,8 @@ struct object_set {
 
 struct rule_policy {
     filter_mode mode{filter_mode::none};
-    std::unordered_set<const ddwaf_object *> objects{};
+    std::string_view action;
+    std::unordered_set<const ddwaf_object *> objects;
 };
 
 struct object_set_ref {
@@ -63,6 +64,7 @@ struct object_set_ref {
 
 struct rule_policy_ref {
     filter_mode mode{filter_mode::none};
+    std::string_view action;
     object_set_ref objects;
 };
 
@@ -86,38 +88,38 @@ struct context_policy {
 
         if (p_it == persistent.end()) {
             if (e_it == ephemeral.end()) {
-                return {filter_mode::none, {std::nullopt, std::nullopt}};
+                return {filter_mode::none, {}, {std::nullopt, std::nullopt}};
             }
 
             const auto &e_policy = e_it->second;
-            return {e_policy.mode, {std::nullopt, e_policy.objects}};
+            return {e_policy.mode, e_policy.action, {std::nullopt, e_policy.objects}};
         }
 
         if (e_it == ephemeral.end()) {
             const auto &p_policy = p_it->second;
             p_policy.objects.size();
-            return {p_policy.mode, {p_policy.objects, std::nullopt}};
+            return {p_policy.mode, p_policy.action, {p_policy.objects, std::nullopt}};
         }
 
         const auto &p_policy = p_it->second;
         const auto &e_policy = e_it->second;
-        auto mode = p_policy.mode > e_policy.mode ? p_policy.mode : e_policy.mode;
 
-        return {mode, {p_policy.objects, e_policy.objects}};
+        if (p_policy.mode > e_policy.mode) {
+            return {p_policy.mode, p_policy.action, {p_policy.objects, e_policy.objects}};
+        }
+        return {e_policy.mode, e_policy.action, {p_policy.objects, e_policy.objects}};
     }
 
-    void add_rule_exclusion(const ddwaf::rule *rule, filter_mode mode, bool ephemeral_exclusion)
+    void add_rule_exclusion(const ddwaf::rule *rule, filter_mode mode, std::string_view action,
+        bool ephemeral_exclusion)
     {
         auto &rule_policy = ephemeral_exclusion ? ephemeral : persistent;
 
-        auto it = rule_policy.find(rule);
+        auto &policy = rule_policy[rule];
         // Bypass has precedence over monitor
-        if (it != rule_policy.end()) {
-            if (it->second.mode < mode) {
-                it->second.mode = mode;
-            }
-        } else {
-            rule_policy[rule].mode = mode;
+        if (policy.mode < mode) {
+            policy.mode = mode;
+            policy.action = action;
         }
     }
 
