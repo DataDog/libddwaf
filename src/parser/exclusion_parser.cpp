@@ -78,9 +78,11 @@ rule_filter_spec parse_rule_filter(
         on_match = exclusion::filter_mode::bypass;
     } else if (on_match_str == "monitor") {
         on_match = exclusion::filter_mode::monitor;
-    } else {
+    } else if (!on_match_str.empty()) {
         on_match = exclusion::filter_mode::custom;
         on_match_id = on_match_str;
+    } else {
+        throw ddwaf::parsing_error("empty on_match value");
     }
 
     if (expr->empty() && rules_target.empty()) {

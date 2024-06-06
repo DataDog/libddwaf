@@ -1,0 +1,22 @@
+{
+  name: "Rule custom action by ID",
+  runs: [
+    {
+      persistent-input: {
+        rule11-input: "rule11"
+      },
+      rules: [
+        {
+          11: [
+            {
+              address: rule11-input,
+              value: rule11,
+              on_match: [ block ]
+            }
+          ]
+        }
+      ],
+      code: match,
+    }
+  ]
+}
