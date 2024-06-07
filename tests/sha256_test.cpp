@@ -125,14 +125,37 @@ TEST(TestSha256, StreamedTest)
                        "y9OqKZSeuDfiwUAgWXbFNI7QTxsPzy12"
                        "L2CyAIGsYvwEpzIBKu2ZrD7eKTBUnjhZ"
                        "w5jZADzh4dO79PZ5kyzPEyK56TF2KSb6"
-                       "aAs29";
+                       "ZT3bZhnruaHMnQnOG8bk"
+                       "WPFXaHtDusILTT6xrv4S"
+                       "1GGIuIloQRt7CwM7aA5i"
+                       "uSLS8ZwmeVW9nyHhKPEF"
+                       "ERH0zHH7Camp2sZ621Sz"
+                       "DcDZQkxGoixYaFqemYpD"
+                       "zxo0s1rNTYzUWtDIxfFK"
+                       "UkX9j8XOTepq0s9PmBks"
+                       "lAGJhcPvO8kFojBJyubu"
+                       "Kq72twgeJpablacHOtfD"
+                       "JKfkR8ALfqaEI7ubAv9C"
+                       "AuiUMCcOuNdAqWNbjybN"
+                       "XM7ScXx9yvPvdiMeY1ma"
+                       "XZXPw6yL3V6ufx20ZLVT"
+                       "VKoYSrCVLGpEyRLaMz3e"
+                       "RAGX5eKp6S6XBKUe0iwx"
+                       "D22oOuVl6R78MgvGWsoS"
+                       "YG1qxg4dJayp5O4IRAUy"
+                       "KNWlAmcXjspkFDYOFRk2"
+                       "cxvLG2mrBgXZkBe7tqVw"
+                       "FkNsRWwswSJvT7aP1MpI"
+                       "t6k4rhJLholcpQCTN2Vi"
+                       "50fM7yVWNBCIOrdyF0R9"
+                       "HE2Zd3BDVPl9dhb5oYDN";
 
     // Test whole blob first
     {
         ddwaf::sha256_hash hasher;
         hasher << blob;
         EXPECT_STR(
-            hasher.digest(), "83f6f81ae50bad3f221a494ee4e79be65b51283c0fa19c99923e0c8827ca484a");
+            hasher.digest(), "a198619280b5107d1fde448e4098d5b527a216a4bc41df70d24ae33fc2dac2da");
     }
 
     {
@@ -144,6 +167,6 @@ TEST(TestSha256, StreamedTest)
         }
 
         EXPECT_STR(
-            hasher.digest(), "83f6f81ae50bad3f221a494ee4e79be65b51283c0fa19c99923e0c8827ca484a");
+            hasher.digest(), "a198619280b5107d1fde448e4098d5b527a216a4bc41df70d24ae33fc2dac2da");
     }
 }
