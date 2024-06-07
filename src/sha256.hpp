@@ -15,8 +15,15 @@ namespace ddwaf {
 class sha256_hash {
 public:
     sha256_hash() = default;
+    ~sha256_hash() = default;
+    sha256_hash(const sha256_hash &) = delete;
+    sha256_hash(sha256_hash &&) = delete;
+    sha256_hash &operator=(const sha256_hash &) = delete;
+    sha256_hash &operator=(sha256_hash &&) noexcept = delete;
+
     sha256_hash &operator<<(std::string_view str);
-    std::string digest();
+    [[nodiscard]] std::string digest();
+
     void reset()
     {
         hash = initial_hash_values;

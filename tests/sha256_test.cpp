@@ -7,9 +7,12 @@
 #include "sha256.hpp"
 #include "test.hpp"
 
+#include <utility>
+#include <vector>
+
 TEST(TestSha256, RandomInputTest)
 {
-    std::unordered_map<std::string, std::string> samples{
+    std::vector<std::pair<std::string, std::string>> samples{
         {"YqJwhSIzGlqqehMom6Z3Ok4bqLFN2Kpn",
             "403b62faf37de5e5e6e02a300a2ed1a42e2dbf9d83951ec8b288bf026b6f79a2"},
         {"3f3qLGvqHleNTAWS7MxB0QGXLoS1IMk1",
@@ -50,6 +53,16 @@ TEST(TestSha256, RandomInputTest)
             "48f76b330cf0d34a1942956af302f6b85d6806eb52f8a736a057744298be58e2"},
         {"uVF4yUAufiREPkPFwlUOrEsQ10duGD0L",
             "e61c936a0d8c85f4bc9d22e25bca6cea9ac6b2097fd567f60d5efa38c34cfb30"},
+        {"JaoF4myRTg4TCMm", "a1f9adb16b52ef2c845e85bc552a86c6426cb2780bb061e34c8982e41c2e36af"},
+        {"1sj5xeZxRF623qV", "97cc8c0f72ed810be1f3d9653372926e6e5884f341e58f4edfb2f875b097655e"},
+        {"ipsEfuH3nmPqzcp", "32adf694cb470c2ffd50b26fb684510510b0d4b227f89bd2ae5ba49d2a6e4c3a"},
+        {"Biy1I5idi5TQK9e", "76d42814fecde876121bbf8c73721893578077092eb30aa072a78679f80a48a8"},
+        {"dE8BpndRLevSL81", "6d7218b399480aed8afb21194f57daf1767c4ac20ff5edcd2c757e7c214d9ef7"},
+        {"92eB4V0FBDivRwB", "ff7e8ec21651f29cfeb692318b506db7b09be207765ff4eae000a8a2f9b579cc"},
+        {"we37ZqY2Swj5hrf", "da1134a980af5aa6a74d2cd09f6478ada8cfd69e4385a66bf8393345629db865"},
+        {"YmmkJi9JmR5F4uK", "6eb6206a23058f0c8c945b79dab52e374a7cccfde17928312d7dd1156ec0b013"},
+        {"xVdC0kucB0ykKd3", "065093b4389e81c2235ccf57c4f7d9916e478ece5209aac5d850ae82d7c1106b"},
+        {"kovdtReY2LmgFn8", "d51e607c19b019efe4d3768bb9e0202c0b439c0c556bd4ba87e2e05417f54c3f"},
     };
 
     for (auto &[original, hash] : samples) {
