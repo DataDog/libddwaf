@@ -1,0 +1,31 @@
+version: '2.1'
+exclusions:
+  - id: 1
+    rules_target:
+      - rule_id: 1
+    on_match: block
+  - id: 2
+    rules_target:
+      - rule_id: 1
+    on_match: bypass
+rules:
+  - id: 1
+    name: rule1
+    tags:
+      type: type1
+      category: category
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: http.client_ip
+          list:
+            - 192.168.0.1
+    on_match: [ redirect ]
+actions:
+  - id: redirect
+    parameters:
+      status_code: 303
+      location: google.com
+    type: redirect_request
+
