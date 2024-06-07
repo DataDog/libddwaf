@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 //
-// This code has been adapter from OpenSSL.
+// This code has been adapted from OpenSSL.
 //
 // Copyright 2004-2023 The OpenSSL Project Authors. All Rights Reserved.
 //
