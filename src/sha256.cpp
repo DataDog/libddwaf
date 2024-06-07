@@ -33,17 +33,15 @@ namespace {
  */
 #define ROTATE(a, n) (((a) << (n)) | (((a) & 0xffffffff) >> (32 - (n))))
 
-#define HOST_c2l(c, l)                                                                             \
-    ((l) = ((static_cast<uint32_t>(*((c)++))) << 24),                                              \
-        (l) |= ((static_cast<uint32_t>(*((c)++))) << 16),                                          \
-        (l) |= ((static_cast<uint32_t>(*((c)++))) << 8),                                           \
-        (l) |= ((static_cast<uint32_t>(*((c)++)))))
+#define CHAR_TO_UINT32(c, l)                                                                       \
+    {                                                                                              \
+        (l) = ((static_cast<uint32_t>(*((c)++))) << 24);                                           \
+        (l) |= ((static_cast<uint32_t>(*((c)++))) << 16);                                          \
+        (l) |= ((static_cast<uint32_t>(*((c)++))) << 8);                                           \
+        (l) |= ((static_cast<uint32_t>(*((c)++))));                                                \
+    }
 
-#define HOST_l2c(l, c)                                                                             \
-    (*((c)++) = static_cast<uint8_t>(((l) >> 24) & 0xff),                                          \
-        *((c)++) = static_cast<uint8_t>(((l) >> 16) & 0xff),                                       \
-        *((c)++) = static_cast<uint8_t>(((l) >> 8) & 0xff),                                        \
-        *((c)++) = static_cast<uint8_t>(((l)) & 0xff), l)
+#define UINT8_TO_HEX_CHAR(u) static_cast<char>((u) < 10 ? (u) + '0' : (u)-10 + 'a')
 
 /*
  * FIPS specification refers to right rotations, while our ROTATE macro
@@ -70,14 +68,14 @@ constexpr std::array<uint32_t, 64> K256 = {0x428a2f98UL, 0x71374491UL, 0xb5c0fbc
     0x391c0cb3UL, 0x4ed8aa4aUL, 0x5b9cca4fUL, 0x682e6ff3UL, 0x748f82eeUL, 0x78a5636fUL,
     0x84c87814UL, 0x8cc70208UL, 0x90befffaUL, 0xa4506cebUL, 0xbef9a3f7UL, 0xc67178f2UL};
 
-constexpr std::size_t sha_digest_length = 32;
+constexpr std::size_t sha_digest_length = 64;
 constexpr std::size_t sha_block_size = 64;
 
 } // namespace
 
 sha256_hash &sha256_hash::operator<<(std::string_view str)
 {
-    unsigned char *p;
+    uint8_t *p;
     uint32_t l;
     size_t n;
 
@@ -86,9 +84,9 @@ sha256_hash &sha256_hash::operator<<(std::string_view str)
     }
     auto len = static_cast<uint32_t>(str.length());
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    const auto *data = reinterpret_cast<const unsigned char *>(str.data());
+    const auto *data = reinterpret_cast<const uint8_t *>(str.data());
 
-    l = (length_low + (((uint32_t)len) << 3)) & 0xffffffffUL;
+    l = (length_low + ((len) << 3)) & 0xffffffffUL;
     if (l < length_low) { /* overflow */
         length_high++;
     }
@@ -147,25 +145,40 @@ std::string sha256_hash::digest()
     memset(p + n, 0, sha_block_size - 8 - n);
 
     p += sha_block_size - 8;
-    (void)HOST_l2c(length_high, p);
-    (void)HOST_l2c(length_low, p);
+
+    *(p++) = static_cast<uint8_t>((length_high >> 24) & 0xff);
+    *(p++) = static_cast<uint8_t>((length_high >> 16) & 0xff);
+    *(p++) = static_cast<uint8_t>((length_high >> 8) & 0xff);
+    *(p++) = static_cast<uint8_t>(length_high & 0xff);
+
+    *(p++) = static_cast<uint8_t>((length_low >> 24) & 0xff);
+    *(p++) = static_cast<uint8_t>((length_low >> 16) & 0xff);
+    *(p++) = static_cast<uint8_t>((length_low >> 8) & 0xff);
+    *(p++) = static_cast<uint8_t>(length_low & 0xff);
+
     p -= sha_block_size;
+
     sha_block_data_order(p, 1);
     num = 0;
     memset(p, 0, sha_block_size);
 
-    std::array<uint8_t, sha_digest_length> digest_buffer{0};
-    auto *digest_ptr = digest_buffer.data();
-    for (unsigned int nn = 0; nn < sha_digest_length / 4; nn++) {
-        uint32_t ll = hash[nn];
-        (void)HOST_l2c(ll, digest_ptr);
+    std::array<char, 64> final_digest{0};
+    for (unsigned int nn = 0; nn < sha_digest_length; nn += 8) {
+        uint32_t ll = hash[nn >> 3];
+        final_digest[nn + 0] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 28) & 0x0f));
+        final_digest[nn + 1] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 24) & 0x0f));
+        final_digest[nn + 2] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 20) & 0x0f));
+        final_digest[nn + 3] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 16) & 0x0f));
+        final_digest[nn + 4] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 12) & 0x0f));
+        final_digest[nn + 5] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 8) & 0x0f));
+        final_digest[nn + 6] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 4) & 0x0f));
+        final_digest[nn + 7] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>(ll & 0x0f));
     }
 
-    std::stringstream ss;
-    for (unsigned char &uc : digest_buffer) {
-        ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<unsigned>(uc);
-    }
-    return ss.str();
+    // Reset the hasher and return
+    reset();
+
+    return std::string{final_digest.data(), 64};
 }
 
 void sha256_hash::sha_block_data_order(const uint8_t *data, size_t len)
@@ -198,7 +211,7 @@ void sha256_hash::sha_block_data_order(const uint8_t *data, size_t len)
         h = hash[7];
 
         for (i = 0; i < 16; i++) {
-            (void)HOST_c2l(data, l);
+            CHAR_TO_UINT32(data, l);
             T1 = X[i] = l;
             T1 += h + Sigma1(e) + Ch(e, f, g) + K256[i];
             T2 = Sigma0(a) + Maj(a, b, c);
