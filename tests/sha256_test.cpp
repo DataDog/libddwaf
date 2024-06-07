@@ -72,3 +72,78 @@ TEST(TestSha256, RandomInputTest)
         EXPECT_STR(hasher.digest(), hash.c_str());
     }
 }
+
+TEST(TestSha256, StreamedTest)
+{
+    std::string blob = "Ai2KO2HKBOXdwJRlrxbNrDXQus8Slx9G"
+                       "DW7DU9Uptyr1TLZM4msEuP0qRXZqbIcl"
+                       "9IdxP1H909eeH09vC7fM6zGY5OGh9oIZ"
+                       "hlHjjC2cLC47vOpthrUQTwKaEs06uwnt"
+                       "4haHvH3Y9znnEkFz9iEVMtvpO3Apxtyh"
+                       "lwXNcvrj56UKTz2KHPHQV2GdrRRrDDWt"
+                       "4mjiQTX8ozDyQO1mN8WZapm1F16Fj538"
+                       "IenCvtermrzDYIFXsBe1tovNIatThxVS"
+                       "euVkn2oijl7XgT1dmOnWkaFGjer8Ic38"
+                       "itIcWeNzqID6mUQxoYual6Qkl7OqD8jb"
+                       "WpkOshSHB2y1hkRUnSub5rCFwh2nTvsp"
+                       "F0oH1FOIn7gU6OI24DWgPsxJrz18Teht"
+                       "EhGQUBcVxBZiNaVV87VniRbUT6kkGKKN"
+                       "F1pGrWGSDSwTL1AEXuhpSXv1Q705kGzi"
+                       "TExoakd2wOUsordxOv3bF2Um1EKfFGHN"
+                       "FTFTph7B49WdhxTXDF0JLHdHYCkNS6oc"
+                       "MB6D2hmZAEuNPp3sO7YDXnGCI0lk2mEK"
+                       "IHk17j3jBIEI6KJOHHErtZiE3i2g2j9a"
+                       "dWetVl6ElvfTewSHByuLSAkYjfEhtAct"
+                       "EmHBedfeQ8mLiKd2fcRzItB4DtZRlRGw"
+                       "1eHlCZFFciwxTPxUL30ornn1sDdHa7N7"
+                       "TewPCQiljeRilUK4rzl24toKBrF3FheK"
+                       "JPfUlmOV8T6rrqpq8iDX4fMVwkHcyyNZ"
+                       "JD6n3TIfDnZcsurqjywtp9PbWuvB0FxP"
+                       "Ujm4U3Nn68kIQs326iLrpy1tDwu1e7Io"
+                       "iRyA3xpLIKvnIAabgXggUzL6hTd2QbRZ"
+                       "4QwRvJoHwZjjei08baJqrAL5CiytVsMW"
+                       "gIqWp8Wq4HmlOhJpLxuLHn6xPoCsuaPh"
+                       "0yFqjZ33cmZJ3M2jAG2Fwnx7kObsOO2E"
+                       "ENUR6iVXLUQJeDGep1JA7tupGQtynAmL"
+                       "kmM82VgKlKx3tMsWEU1xZXM6oJeeRKPm"
+                       "KSfe8ivjQBb9YaLfcuidxhmoWCu0vn9H"
+                       "hGQaeHhqlbZ0CVDR1R4wPeF4cGr1AaFJ"
+                       "E10KDeGJaMiagBMOT5o8h4K7PvkBpnDv"
+                       "U1a55iWhxPf9w952Si0EsFLRJBjb5QYn"
+                       "sqdhqeCe3DyPQbCOGRITYdKuxQBcBL7W"
+                       "PdtHrWSqEkwOL6Mc1HLmEQALr3uSgvA7"
+                       "wxP6WN3A05T0v9w6UkEWlwspX4nd96Xj"
+                       "zZKgKEwsEjJ7bL2Lo0T0BokSjA2n5pTn"
+                       "1iw0quvM9wiPk2FKmXV0IMWI9oHBlwmu"
+                       "FVzE023CSNiN0UQ4fOklUPwOZ2ugdNeI"
+                       "AGPppJa6LYPdR1vg7G1BbDg7gR74XjxU"
+                       "eKQFDGMTELYhloXFC9J5U9oAwxKwcSWK"
+                       "wjIKFWazNYXDVKJWN4BlutUOE6MqvPaD"
+                       "COk1r4LiWCI88CvvoTleQMtDbeO4dYHp"
+                       "cLiXmG57FrGEu9NhaPkFPe9Qn4CaBmq8"
+                       "Ivq7RDYnQnbEnvuQXsiL9bXnL8gwR5Ws"
+                       "y9OqKZSeuDfiwUAgWXbFNI7QTxsPzy12"
+                       "L2CyAIGsYvwEpzIBKu2ZrD7eKTBUnjhZ"
+                       "w5jZADzh4dO79PZ5kyzPEyK56TF2KSb6"
+                       "aAs29";
+
+    // Test whole blob first
+    {
+        ddwaf::sha256_hash hasher;
+        hasher << blob;
+        EXPECT_STR(
+            hasher.digest(), "83f6f81ae50bad3f221a494ee4e79be65b51283c0fa19c99923e0c8827ca484a");
+    }
+
+    {
+        ddwaf::sha256_hash hasher;
+
+        for (std::size_t i = 0, bytes = 1; i < blob.size(); i += bytes, ++bytes) {
+            auto sub = blob.substr(i, (i + bytes) >= blob.size() ? std::string::npos : bytes);
+            hasher << sub;
+        }
+
+        EXPECT_STR(
+            hasher.digest(), "83f6f81ae50bad3f221a494ee4e79be65b51283c0fa19c99923e0c8827ca484a");
+    }
+}
