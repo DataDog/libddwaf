@@ -21,7 +21,7 @@ struct event {
     const ddwaf::rule *rule{nullptr};
     std::vector<condition_match> matches;
     bool ephemeral{false};
-    std::string action_override;
+    std::string_view action_override;
 };
 
 using optional_event = std::optional<event>;

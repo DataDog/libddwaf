@@ -58,7 +58,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
         event = rule->match(store, rule_cache, exclusion.objects, dynamic_matchers, deadline);
 
         if (event.has_value()) {
-            event->action_override = std::string{action_override};
+            event->action_override = action_override;
         }
 
         return event;
