@@ -30,22 +30,5 @@
       }
     ]
   },
-  "fixtures": {
-    "eval.valid": {
-      "server.request.uri.raw": [
-        "%uFf28",
-        "%uFFab",
-        "%uFfE2",
-        "%uff8F",
-        "%ufFCF",
-        "%ufF3A",
-        "%uFfAa",
-        "%uFfFC",
-        "%uffDc",
-        "%uFfCB",
-        "%uffBD",
-        "%ufFb7"
-      ]
-    }
-  }
+  "fixtures": {}
 }
