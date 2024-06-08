@@ -14,8 +14,8 @@
 
 namespace ddwaf::benchmark {
 
-run_fixture::run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&objects)
-    : objects_(std::move(objects)), handle_(handle)
+run_fixture::run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &objects, unsigned cycles)
+    : objects_(objects), cycles_(cycles), handle_(handle)
 {}
 
 bool run_fixture::set_up()
@@ -42,7 +42,7 @@ void run_fixture::warmup()
             if (i == current->nbEntries) {
                 object_stack.pop();
             } else {
-                object_stack.push({&current->array[i++], 0});
+                object_stack.emplace(&current->array[i++], 0);
             }
         }
     }
@@ -52,9 +52,10 @@ uint64_t run_fixture::test_main()
 {
     uint64_t total_runtime = 0;
 
-    for (auto &object : objects_) {
+    auto it = objects_.begin();
+    for (unsigned i = 0; i < cycles_ && it != objects_.end(); ++i, ++it) {
         ddwaf_result res;
-        auto code = ddwaf_run(ctx_, nullptr, &object, &res, std::numeric_limits<uint32_t>::max());
+        auto code = ddwaf_run(ctx_, nullptr, &*it, &res, std::numeric_limits<uint32_t>::max());
         if (code < 0) {
             throw std::runtime_error("WAF returned " + std::to_string(code));
         }

@@ -156,7 +156,7 @@ std::vector<ddwaf_object> object_generator::operator()(unsigned n, object_specif
         ddwaf_object root;
         ddwaf_object_map(&root);
 
-        for (const auto addr : addresses_) {
+        for (const auto &addr : addresses_) {
             ddwaf_object value;
             if (spec.depth == 0) {
                 generate_string_object(value, spec.string_length);

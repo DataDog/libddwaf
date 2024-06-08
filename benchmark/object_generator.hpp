@@ -6,10 +6,7 @@
 
 #pragma once
 
-#include <filesystem>
 #include <string>
-#include <string_view>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -35,7 +32,7 @@ struct object_specification {
 
 class object_generator {
 public:
-    explicit object_generator(std::vector<std::string_view> addresses)
+    explicit object_generator(std::unordered_set<std::string> addresses)
         : addresses_(std::move(addresses))
     {}
 
@@ -50,7 +47,7 @@ public:
     std::vector<ddwaf_object> operator()(unsigned n, object_specification spec = {}) const;
 
 protected:
-    std::vector<std::string_view> addresses_;
+    std::unordered_set<std::string> addresses_;
 };
 
 } // namespace ddwaf::benchmark

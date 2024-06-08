@@ -140,52 +140,61 @@ int main(int argc, char *argv[])
 
     auto s = generate_settings(args);
 
+    std::unordered_map<std::string, ddwaf_handle> handles;
+    std::unordered_set<std::string> all_addresses;
+    unsigned max_cycles = 20;
+
+    // Preprocess scenarios
+    for (const auto &scenario : s.scenarios) {
+        benchmark::random::seed(s.seed);
+        YAML::Node spec = YAML::Load(utils::read_file(scenario));
+
+        auto name = spec["scenario"].as<std::string>();
+        auto ruleset = spec["ruleset"].as<ddwaf_object>();
+
+        ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+        ddwaf_handle handle = ddwaf_init(&ruleset, &cfg, nullptr);
+        ddwaf_object_free(&ruleset);
+        if (handle == nullptr) {
+            std::cerr << "Invalid ruleset file" << std::endl;
+            utils::exit_failure();
+        }
+
+        handles.emplace(scenario, handle);
+
+        uint32_t addrs_len;
+        const auto *const addrs = ddwaf_known_addresses(handle, &addrs_len);
+        std::vector<std::string_view> addresses{addrs, addrs + static_cast<size_t>(addrs_len)};
+
+        for (auto a : addresses) { all_addresses.emplace(a); }
+
+        if (std::regex_search("random", s.fixtures)) {
+            auto cycle_spec = spec["max_cycles"];
+            if (cycle_spec.IsDefined()) {
+                max_cycles = std::max(max_cycles, cycle_spec.as<unsigned>());
+            }
+        }
+    }
+
+    benchmark::random::seed(s.seed);
+    benchmark::object_generator generator(std::move(all_addresses));
+    auto objects = generator(max_cycles);
+
     std::map<std::string, std::vector<test_result>> all_results;
     for (unsigned i = 0; i < s.runs; ++i) {
-        for (const auto &scenario : s.scenarios) {
+        for (const auto &[name, handle] : handles) {
             benchmark::random::seed(s.seed);
-            YAML::Node spec = YAML::Load(utils::read_file(scenario));
+            benchmark::runner runner(name, s);
 
-            auto name = spec["scenario"].as<std::string>();
-            auto ruleset = spec["ruleset"].as<ddwaf_object>();
-
-            ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
-            ddwaf_handle handle = ddwaf_init(&ruleset, &cfg, nullptr);
-            ddwaf_object_free(&ruleset);
-            if (handle == nullptr) {
-                std::cerr << "Invalid ruleset file" << std::endl;
-                utils::exit_failure();
-            }
-
-            uint32_t addrs_len;
-            const auto *const addrs = ddwaf_known_addresses(handle, &addrs_len);
-            std::vector<std::string_view> addresses{addrs, addrs + static_cast<size_t>(addrs_len)};
-
-            benchmark::runner runner(std::move(name), s);
-
+            YAML::Node spec = YAML::Load(utils::read_file(name));
             if (std::regex_search("random", s.fixtures)) {
-                unsigned max_cycles = 20;
+                unsigned cycles = 20;
                 auto cycle_spec = spec["max_cycles"];
                 if (cycle_spec.IsDefined()) {
-                    max_cycles = cycle_spec.as<unsigned>();
+                    cycles = cycle_spec.as<unsigned>();
                 }
 
-                benchmark::object_generator generator(addresses);
-                runner.register_fixture<benchmark::run_fixture>(
-                    "random", handle, generator(max_cycles));
-            }
-
-            auto fixtures_spec = spec["fixtures"];
-            if (fixtures_spec.IsDefined()) {
-                for (auto it = fixtures_spec.begin(); it != fixtures_spec.end(); ++it) {
-                    auto custom_name = it->first.as<std::string>();
-                    if (!std::regex_search(custom_name, s.fixtures)) {
-                        continue;
-                    }
-                    std::vector objects{it->second.as<ddwaf_object>()};
-                    runner.register_fixture<benchmark::run_fixture>(
-                        custom_name, handle, std::move(objects));
-                }
+                runner.register_fixture<benchmark::run_fixture>("random", handle, objects, cycles);
             }
 
             auto results = runner.run();
@@ -198,12 +207,13 @@ int main(int argc, char *argv[])
                     it->second.emplace_back(std::move(value));
                 }
             }
-
-            ddwaf_destroy(handle);
         }
     }
 
     benchmark::output_results(s, all_results);
+
+    for (auto &o : objects) { ddwaf_object_free(&o); }
+    for (auto &[name, handle] : handles) { ddwaf_destroy(handle); }
 
     return EXIT_SUCCESS;
 }
