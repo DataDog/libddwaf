@@ -15,9 +15,6 @@
 //
 
 #include "sha256.hpp"
-#include "log.hpp"
-#include <iomanip>
-#include <sstream>
 
 namespace ddwaf {
 namespace {
@@ -54,6 +51,25 @@ namespace {
 #define sigma1(x) (ROTATE((x), 15) ^ ROTATE((x), 13) ^ ((x) >> 10))
 #define Ch(x, y, z) (((x) & (y)) ^ ((~(x)) & (z)))
 #define Maj(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
+
+#define ROUND_00_15(i, a, b, c, d, e, f, g, h)                                                     \
+    {                                                                                              \
+        T1 += (h) + Sigma1(e) + Ch(e, f, g) + K256[i];                                             \
+        (h) = Sigma0(a) + Maj(a, b, c);                                                            \
+        (d) += T1;                                                                                 \
+        (h) += T1;                                                                                 \
+    }
+
+#define ROUND_16_63(i, a, b, c, d, e, f, g, h, X)                                                  \
+    {                                                                                              \
+        s0 = (X)[((i) + 1) & 0x0f];                                                                \
+        s0 = sigma0(s0);                                                                           \
+        s1 = (X)[((i) + 14) & 0x0f];                                                               \
+        s1 = sigma1(s1);                                                                           \
+        T1 = (X)[(i) & 0x0f] += s0 + s1 + (X)[((i) + 9) & 0x0f];                                   \
+        ROUND_00_15(i, a, b, c, d, e, f, g, h);                                                    \
+    }
+
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 constexpr std::array<uint32_t, 64> K256 = {0x428a2f98UL, 0x71374491UL, 0xb5c0fbcfUL, 0xe9b5dba5UL,
@@ -194,9 +210,7 @@ void sha256_hash::sha_block_data_order(const uint8_t *data, size_t len)
     unsigned int s0;
     unsigned int s1;
     unsigned int T1;
-    unsigned int T2;
-    std::array<uint32_t, 16> X{};
-    uint32_t l;
+    std::array<uint32_t, 16> X{0};
     int i;
 
     while ((len--) != 0) {
@@ -210,38 +224,66 @@ void sha256_hash::sha_block_data_order(const uint8_t *data, size_t len)
         g = hash[6];
         h = hash[7];
 
-        for (i = 0; i < 16; i++) {
-            CHAR_TO_UINT32(data, l);
-            T1 = X[i] = l;
-            T1 += h + Sigma1(e) + Ch(e, f, g) + K256[i];
-            T2 = Sigma0(a) + Maj(a, b, c);
-            h = g;
-            g = f;
-            f = e;
-            e = d + T1;
-            d = c;
-            c = b;
-            b = a;
-            a = T1 + T2;
-        }
+        uint32_t l;
 
-        for (; i < 64; i++) {
-            s0 = X[(i + 1) & 0x0f];
-            s0 = sigma0(s0);
-            s1 = X[(i + 14) & 0x0f];
-            s1 = sigma1(s1);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[0] = l;
+        ROUND_00_15(0, a, b, c, d, e, f, g, h);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[1] = l;
+        ROUND_00_15(1, h, a, b, c, d, e, f, g);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[2] = l;
+        ROUND_00_15(2, g, h, a, b, c, d, e, f);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[3] = l;
+        ROUND_00_15(3, f, g, h, a, b, c, d, e);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[4] = l;
+        ROUND_00_15(4, e, f, g, h, a, b, c, d);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[5] = l;
+        ROUND_00_15(5, d, e, f, g, h, a, b, c);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[6] = l;
+        ROUND_00_15(6, c, d, e, f, g, h, a, b);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[7] = l;
+        ROUND_00_15(7, b, c, d, e, f, g, h, a);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[8] = l;
+        ROUND_00_15(8, a, b, c, d, e, f, g, h);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[9] = l;
+        ROUND_00_15(9, h, a, b, c, d, e, f, g);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[10] = l;
+        ROUND_00_15(10, g, h, a, b, c, d, e, f);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[11] = l;
+        ROUND_00_15(11, f, g, h, a, b, c, d, e);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[12] = l;
+        ROUND_00_15(12, e, f, g, h, a, b, c, d);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[13] = l;
+        ROUND_00_15(13, d, e, f, g, h, a, b, c);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[14] = l;
+        ROUND_00_15(14, c, d, e, f, g, h, a, b);
+        CHAR_TO_UINT32(data, l);
+        T1 = X[15] = l;
+        ROUND_00_15(15, b, c, d, e, f, g, h, a);
 
-            T1 = X[i & 0xf] += s0 + s1 + X[(i + 9) & 0xf];
-            T1 += h + Sigma1(e) + Ch(e, f, g) + K256[i];
-            T2 = Sigma0(a) + Maj(a, b, c);
-            h = g;
-            g = f;
-            f = e;
-            e = d + T1;
-            d = c;
-            c = b;
-            b = a;
-            a = T1 + T2;
+        for (i = 16; i < 64; i += 8) {
+            ROUND_16_63(i + 0, a, b, c, d, e, f, g, h, X);
+            ROUND_16_63(i + 1, h, a, b, c, d, e, f, g, X);
+            ROUND_16_63(i + 2, g, h, a, b, c, d, e, f, X);
+            ROUND_16_63(i + 3, f, g, h, a, b, c, d, e, X);
+            ROUND_16_63(i + 4, e, f, g, h, a, b, c, d, X);
+            ROUND_16_63(i + 5, d, e, f, g, h, a, b, c, X);
+            ROUND_16_63(i + 6, c, d, e, f, g, h, a, b, X);
+            ROUND_16_63(i + 7, b, c, d, e, f, g, h, a, X);
         }
 
         hash[0] += a;
