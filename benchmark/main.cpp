@@ -149,7 +149,6 @@ int main(int argc, char *argv[])
         benchmark::random::seed(s.seed);
         YAML::Node spec = YAML::Load(utils::read_file(scenario));
 
-        auto name = spec["scenario"].as<std::string>();
         auto ruleset = spec["ruleset"].as<ddwaf_object>();
 
         ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -182,11 +181,13 @@ int main(int argc, char *argv[])
 
     std::map<std::string, std::vector<test_result>> all_results;
     for (unsigned i = 0; i < s.runs; ++i) {
-        for (const auto &[name, handle] : handles) {
+        for (const auto &[scenario, handle] : handles) {
             benchmark::random::seed(s.seed);
-            benchmark::runner runner(name, s);
 
-            YAML::Node spec = YAML::Load(utils::read_file(name));
+            YAML::Node spec = YAML::Load(utils::read_file(scenario));
+            auto name = spec["scenario"].as<std::string>();
+
+            benchmark::runner runner(name, s);
             if (std::regex_search("random", s.fixtures)) {
                 unsigned cycles = 20;
                 auto cycle_spec = spec["max_cycles"];
@@ -213,7 +214,7 @@ int main(int argc, char *argv[])
     benchmark::output_results(s, all_results);
 
     for (auto &o : objects) { ddwaf_object_free(&o); }
-    for (auto &[name, handle] : handles) { ddwaf_destroy(handle); }
+    for (auto &[scenario, handle] : handles) { ddwaf_destroy(handle); }
 
     return EXIT_SUCCESS;
 }
