@@ -84,8 +84,8 @@ constexpr std::array<uint32_t, 64> K256 = {0x428a2f98UL, 0x71374491UL, 0xb5c0fbc
     0x391c0cb3UL, 0x4ed8aa4aUL, 0x5b9cca4fUL, 0x682e6ff3UL, 0x748f82eeUL, 0x78a5636fUL,
     0x84c87814UL, 0x8cc70208UL, 0x90befffaUL, 0xa4506cebUL, 0xbef9a3f7UL, 0xc67178f2UL};
 
+// Length of the string representation of the digest
 constexpr std::size_t sha_digest_length = 64;
-constexpr std::size_t sha_block_size = 64;
 
 } // namespace
 
@@ -114,14 +114,14 @@ sha256_hash &sha256_hash::operator<<(std::string_view str)
     if (n != 0) {
         p = buffer.data();
 
-        if (len >= sha_block_size || len + n >= sha_block_size) {
-            memcpy(p + n, data, sha_block_size - n);
+        if (len >= block_size || len + n >= block_size) {
+            memcpy(p + n, data, block_size - n);
             sha_block_data_order(p, 1);
-            n = sha_block_size - n;
+            n = block_size - n;
             data += n;
             len -= n;
             num = 0;
-            memset(p, 0, sha_block_size); /* keep it zeroed */
+            memset(p, 0, block_size); /* keep it zeroed */
         } else {
             memcpy(p + n, data, len);
             num += len;
@@ -129,10 +129,10 @@ sha256_hash &sha256_hash::operator<<(std::string_view str)
         }
     }
 
-    n = len / sha_block_size;
+    n = len / block_size;
     if (n > 0) {
         sha_block_data_order(data, n);
-        n *= sha_block_size;
+        n *= block_size;
         data += n;
         len -= n;
     }
@@ -153,14 +153,14 @@ std::string sha256_hash::digest()
     p[n] = 0x80; /* there is always room for one */
     n++;
 
-    if (n > (sha_block_size - 8)) {
-        memset(p + n, 0, sha_block_size - n);
+    if (n > (block_size - 8)) {
+        memset(p + n, 0, block_size - n);
         n = 0;
         sha_block_data_order(p, 1);
     }
-    memset(p + n, 0, sha_block_size - 8 - n);
+    memset(p + n, 0, block_size - 8 - n);
 
-    p += sha_block_size - 8;
+    p += block_size - 8;
 
     *(p++) = static_cast<uint8_t>((length_high >> 24) & 0xff);
     *(p++) = static_cast<uint8_t>((length_high >> 16) & 0xff);
@@ -172,11 +172,11 @@ std::string sha256_hash::digest()
     *(p++) = static_cast<uint8_t>((length_low >> 8) & 0xff);
     *(p++) = static_cast<uint8_t>(length_low & 0xff);
 
-    p -= sha_block_size;
+    p -= block_size;
 
     sha_block_data_order(p, 1);
     num = 0;
-    memset(p, 0, sha_block_size);
+    memset(p, 0, block_size);
 
     std::array<char, 64> final_digest{0};
     for (unsigned int nn = 0; nn < sha_digest_length; nn += 8) {

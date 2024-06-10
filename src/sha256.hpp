@@ -6,7 +6,6 @@
 
 #include <array>
 #include <cstring>
-#include <iostream>
 #include <string>
 #include <string_view>
 
@@ -34,6 +33,7 @@ public:
     }
 
 protected:
+    static constexpr std::size_t block_size = 64;
     static constexpr std::array<uint32_t, 8> initial_hash_values{0x6a09e667, 0xbb67ae85, 0x3c6ef372,
         0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
 
@@ -42,7 +42,7 @@ protected:
     std::array<uint32_t, 8> hash{initial_hash_values};
     uint32_t length_low{0};
     uint32_t length_high{0};
-    std::array<uint8_t, 128> buffer{0};
+    std::array<uint8_t, block_size> buffer{0};
     uint32_t num{0};
 };
 
