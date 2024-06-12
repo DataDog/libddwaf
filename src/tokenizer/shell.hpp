@@ -23,7 +23,10 @@ enum class shell_token_type {
     field,
     literal,
     double_quote,
+    double_quoted_string_open,
+    double_quoted_string_close,
     single_quote,
+    single_quoted_string,
     control,
     variable_definition,
     variable,
@@ -39,6 +42,12 @@ enum class shell_token_type {
     parenthesis_close,
     curly_brace_open,
     curly_brace_close,
+    process_substitution_open,
+    process_substitution_close,
+    subshell_open,
+    subshell_close,
+    compound_command_open,
+    compound_command_close,
 };
 
 using shell_token = base_token<shell_token_type>;
@@ -68,9 +77,9 @@ protected:
         double_quoted_string,  // " ... "
         backtick_substitution, // ` ... `
         command_substitution,  // $( ... )
-        // Unused
-        command_grouping, // { ... }
+        compound_command, // { ... }
         subshell,         // ( ... )
+        process_substitution, // <() or >()
     };
 
     std::vector<shell_scope> scope_stack;

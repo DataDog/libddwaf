@@ -15,24 +15,42 @@ using stt = shell_token_type;
 
 TEST(TestShellTokenizer, Basic)
 {
-    shell_tokenizer tokenizer("ls -l");
+    std::vector<std::pair<std::string, std::vector<stt>>> samples {
+        {"echo", {stt::executable}},
+        {"echo    ", {stt::executable}},
+        {"test echo", {stt::executable, stt::field}},
+        {"ls -l", {stt::executable, stt::field}},
+        {"ls dir1 dir2", {stt::executable, stt::field, stt::field}},
+    };
 
-    auto tokens = tokenizer.tokenize();
-    EXPECT_EQ(tokens.size(), 2);
-    EXPECT_EQ(tokens[0].type, stt::executable);
-    EXPECT_EQ(tokens[1].type, stt::field);
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        EXPECT_EQ(tokens.size(), expected_tokens.size());
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]);
+        }
+    }
 }
 
 TEST(TestShellTokenizer, BasicDoubleQuotedString)
 {
-    shell_tokenizer tokenizer(R"(ls "string")");
+    std::vector<std::pair<std::string, std::vector<stt>>> samples {
+        {"echo \"stuff\"", {stt::executable, stt::double_quoted_string_open, stt::literal, stt::double_quoted_string_close}},
+    };
 
-    auto tokens = tokenizer.tokenize();
-    EXPECT_EQ(tokens.size(), 4);
-    EXPECT_EQ(tokens[0].type, stt::executable);
-    EXPECT_EQ(tokens[1].type, stt::double_quote);
-    EXPECT_EQ(tokens[2].type, stt::literal);
-    EXPECT_EQ(tokens[3].type, stt::double_quote);
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        EXPECT_EQ(tokens.size(), expected_tokens.size());
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]);
+        }
+    }
 }
 
 TEST(TestShellTokenizer, DoubleQuotedStringWithCommandSubstitution)
@@ -42,12 +60,12 @@ TEST(TestShellTokenizer, DoubleQuotedStringWithCommandSubstitution)
     auto tokens = tokenizer.tokenize();
     EXPECT_EQ(tokens.size(), 7);
     EXPECT_EQ(tokens[0].type, stt::executable);
-    EXPECT_EQ(tokens[1].type, stt::double_quote);
+    EXPECT_EQ(tokens[1].type, stt::double_quoted_string_open);
     EXPECT_EQ(tokens[2].type, stt::command_substitution_open);
     EXPECT_EQ(tokens[3].type, stt::executable);
     EXPECT_EQ(tokens[4].type, stt::field);
     EXPECT_EQ(tokens[5].type, stt::command_substitution_close);
-    EXPECT_EQ(tokens[6].type, stt::double_quote);
+    EXPECT_EQ(tokens[6].type, stt::double_quoted_string_close);
 }
 
 TEST(TestShellTokenizer, DoubleQuotedStringWithBacktickSubstitution)
@@ -57,12 +75,12 @@ TEST(TestShellTokenizer, DoubleQuotedStringWithBacktickSubstitution)
     auto tokens = tokenizer.tokenize();
     EXPECT_EQ(tokens.size(), 7);
     EXPECT_EQ(tokens[0].type, stt::executable);
-    EXPECT_EQ(tokens[1].type, stt::double_quote);
+    EXPECT_EQ(tokens[1].type, stt::double_quoted_string_open);
     EXPECT_EQ(tokens[2].type, stt::backtick_substitution_open);
     EXPECT_EQ(tokens[3].type, stt::executable);
     EXPECT_EQ(tokens[4].type, stt::field);
     EXPECT_EQ(tokens[5].type, stt::backtick_substitution_close);
-    EXPECT_EQ(tokens[6].type, stt::double_quote);
+    EXPECT_EQ(tokens[6].type, stt::double_quoted_string_close);
 }
 
 TEST(TestShellTokenizer, Pipe)
@@ -75,6 +93,18 @@ TEST(TestShellTokenizer, Pipe)
     EXPECT_EQ(tokens[1].type, stt::control);
     EXPECT_EQ(tokens[2].type, stt::executable);
 }
+
+TEST(TestShellTokenizer, CommandSequence)
+{
+    shell_tokenizer tokenizer("ls ; cat");
+
+    auto tokens = tokenizer.tokenize();
+    EXPECT_EQ(tokens.size(), 3);
+    EXPECT_EQ(tokens[0].type, stt::executable);
+    EXPECT_EQ(tokens[1].type, stt::control);
+    EXPECT_EQ(tokens[2].type, stt::executable);
+}
+
 
 TEST(TestShellTokenizer, Redirections)
 {

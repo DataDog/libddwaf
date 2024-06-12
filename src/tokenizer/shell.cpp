@@ -33,11 +33,14 @@ std::ostream &operator<<(std::ostream &os, shell_tokenizer::shell_scope scope)
     case shell_scope::command_substitution:
         os << "command_substitution";
         break;
-    case shell_scope::command_grouping:
+    case shell_scope::compound_command:
         os << "command_grouping";
         break;
     case shell_scope::subshell:
         os << "subshell";
+        break;
+    case shell_scope::process_substitution:
+        os << "process_substitution";
         break;
     }
     return os;
@@ -61,8 +64,17 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
     case shell_token_type::double_quote:
         os << "double_quote";
         break;
+    case shell_token_type::double_quoted_string_open:
+        os << "double_quoted_string_open";
+        break;
+    case shell_token_type::double_quoted_string_close:
+        os << "double_quoted_string_close";
+        break;
     case shell_token_type::single_quote:
         os << "single_quote";
+        break;
+    case shell_token_type::single_quoted_string:
+        os << "single_quoted_string";
         break;
     case shell_token_type::control:
         os << "control";
@@ -109,6 +121,24 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
     case shell_token_type::curly_brace_close:
         os << "curly_brace_close";
         break;
+    case shell_token_type::process_substitution_open:
+        os << "process_substitution_open";
+        break;
+    case shell_token_type::process_substitution_close:
+        os << "process_substitution_close";
+        break;
+    case shell_token_type::subshell_open:
+        os << "subshell_open";
+        break;
+    case shell_token_type::subshell_close:
+        os << "subshell_close";
+        break;
+    case shell_token_type::compound_command_open:
+        os << "compound_command_open";
+        break;
+    case shell_token_type::compound_command_close:
+        os << "compound_command_close";
+        break;
     }
     return os;
 }
@@ -143,7 +173,7 @@ void shell_tokenizer::tokenize_single_quoted_string()
 
     shell_token token;
     token.index = index();
-    token.type = shell_token_type::single_quote;
+    token.type = shell_token_type::single_quoted_string;
     token.str = substr(token.index, index() - token.index + 1);
     emplace_token(token);
 }
@@ -182,6 +212,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
 
     auto begin = index();
     unsigned slash_count = 0;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while)
     do {
         auto c = peek();
         if (c == '"' && slash_count == 0) {
@@ -193,7 +224,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
                 emplace_token(token);
             }
 
-            add_token(shell_token_type::double_quote);
+            add_token(shell_token_type::double_quoted_string_close);
             break;
         }
 
@@ -313,7 +344,7 @@ std::vector<shell_token> shell_tokenizer::tokenize()
 
         auto c = peek();
         if (c == '"') {
-            add_token(shell_token_type::double_quote);
+            add_token(shell_token_type::double_quoted_string_open);
             scope_stack.emplace_back(shell_scope::double_quoted_string);
 
             // Skip "
@@ -358,6 +389,11 @@ std::vector<shell_token> shell_tokenizer::tokenize()
 
                 scope_stack.pop_back();
                 current_scope = scope_stack.back();
+            } else if (current_scope == shell_scope::process_substitution) {
+                add_token(shell_token_type::process_substitution_close);
+
+                scope_stack.pop_back();
+                current_scope = scope_stack.back();
             } else {
                 add_token(shell_token_type::parenthesis_close);
             }
@@ -388,8 +424,6 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             emplace_token(token);
         } else if (c == '(') {
             add_token(shell_token_type::parenthesis_open);
-        } else if (c == ')') {
-            add_token(shell_token_type::parenthesis_close);
         } else if (c == '=') {
             add_token(shell_token_type::equal);
         } else if (c == '\n' || c == ';' || c == '|') {
@@ -402,9 +436,23 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 add_token(shell_token_type::control);
             }
         } else if (c == '{') {
-            add_token(shell_token_type::curly_brace_open);
+            auto n = next();
+            if (n == ' ') {
+                add_token(shell_token_type::compound_command_open);
+                scope_stack.emplace_back(shell_scope::compound_command);
+                current_scope = scope_stack.back();
+            } else {
+                add_token(shell_token_type::curly_brace_open);
+            }
         } else if (c == '}') {
-            add_token(shell_token_type::curly_brace_close);
+            if (current_scope == shell_scope::compound_command) {
+                add_token(shell_token_type::compound_command_close);
+
+                scope_stack.pop_back();
+                current_scope = scope_stack.back();
+            } else {
+                add_token(shell_token_type::curly_brace_close);
+            }
         } else if (c == '\'') {
             tokenize_single_quoted_string();
         } else if (ddwaf::isdigit(c)) {
@@ -415,7 +463,14 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 tokenize_field();
             }
         } else if (c == '<' || c == '>') {
-            tokenize_redirection();
+            auto n = next();
+            if (n == '(') {
+                add_token(shell_token_type::process_substitution_open, 2);
+                scope_stack.emplace_back(shell_scope::process_substitution);
+                current_scope = scope_stack.back();
+            } else {
+                tokenize_redirection();
+            }
         } else {
             tokenize_field();
         }
@@ -432,23 +487,12 @@ std::vector<shell_token> shell_tokenizer::tokenize()
     // Remove whitespaces, identify
     for (std::size_t i = 0; i < tokens_.size(); ++i) {
         auto token = tokens_[i];
-        if (token.type == shell_token_type::double_quote) {
-            if (token_stack.back() == shell_token_type::double_quote) {
-                token_stack.pop_back();
-                if (token_stack.back() == shell_token_type::variable_definition) {
-                    if (!final_tokens.empty()) {
-                        final_tokens.back().type = shell_token_type::executable;
-                    }
-                    token_stack.pop_back();
+        if (token.type == shell_token_type::double_quoted_string_close) {
+            if (token_stack.back() == shell_token_type::variable_definition) {
+                if (!final_tokens.empty()) {
+                    final_tokens.back().type = shell_token_type::executable;
                 }
-            } else {
-                token_stack.emplace_back(token.type);
-            }
-        } else if (token.type == shell_token_type::single_quote) {
-            if (token_stack.back() == shell_token_type::single_quote) {
                 token_stack.pop_back();
-            } else {
-                token_stack.emplace_back(token.type);
             }
         } else if (token.type == shell_token_type::backtick_substitution_open ||
                 token.type == shell_token_type::command_substitution_open ||
