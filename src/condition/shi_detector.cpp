@@ -78,8 +78,7 @@ shi_detector::shi_detector(std::vector<condition_parameter> args, const object_l
 {}
 
 eval_result shi_detector::eval_impl(const unary_argument<std::string_view> &resource,
-    const variadic_argument<const ddwaf_object *> &params,
-    const optional_argument<std::string_view> & /*ifs*/, condition_cache &cache,
+    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     shi_result res;
@@ -100,7 +99,7 @@ eval_result shi_detector::eval_impl(const unary_argument<std::string_view> &reso
             cache.match = condition_match{
                 {{"resource"sv, std::string{resource.value}, resource.address, resource_kp},
                     {"params"sv, highlight, param.address, param_kp}},
-                {std::move(highlight)}, "ssrf_detector", {}, ephemeral};
+                {std::move(highlight)}, "shi_detector", {}, ephemeral};
 
             return {true, ephemeral};
         }

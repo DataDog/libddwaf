@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "tokenizer/shell.hpp"
-#include "log.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;
@@ -15,6 +14,16 @@ namespace ddwaf {
 namespace {
 re2::RE2 redirection_regex(
     R"((&>>?|(?:[0-9]?>(?:\||>|&[0-9]?-?)?)|(?:[0-9]?<(?:<(?:-|<)?|&[0-9]?-?|>)?)))");
+
+bool is_shell_space(char c) { return c == ' ' || c == '\t' || c == '\n'; }
+
+bool is_var_char(char c) { return ddwaf::isalnum(c) || c == '_'; }
+
+bool is_field_char(char c)
+{
+    static constexpr std::string_view known_chars = "`${}[]()'\"#=|<>;&\n\t ";
+    return known_chars.find(c) == std::string_view::npos;
+}
 
 } // namespace
 
@@ -193,16 +202,16 @@ void shell_tokenizer::tokenize_variable()
     advance();
 
     // We know the first character is $
-    auto c = next();
+    auto c = peek();
     if (c == '-' || c == '?' || c == '@' || c == '#' || c == '*' || c == '$' || c == '!' ||
         ddwaf::isdigit(c)) {
         // Special variable, these are one character long + dollar
         token.str = substr(token.index, 2);
-    } else {
-        // TODO variables can contain the following characters: [a-zA-Z_]{1,}[a-zA-Z0-9_]{0,}
-        // If the next element is a bracket, find the last bracket, otherwise find IFS
-        auto expected_end = c == '{' ? '}' : IFS;
-        while (advance() && peek() != expected_end) {}
+    } else if (c == '{') {
+        while (advance() && peek() != '}') {}
+        token.str = substr(token.index, index() - token.index + 1);
+    } else { // alphabetic
+        while (is_var_char(next()) && advance()) {};
         token.str = substr(token.index, index() - token.index + 1);
     }
 
@@ -288,15 +297,12 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
 
 void shell_tokenizer::tokenize_field()
 {
-    // TODO add user-provided IFS?
-    static constexpr std::string_view known_chars = "`${}[]()'\"#=|<>;&\n ";
-
     shell_token token;
     token.index = index();
     token.type = shell_token_type::field;
 
     // Find the end of this token by searching for a "known" character
-    while (known_chars.find(next()) == std::string_view::npos && advance()) {}
+    while (is_field_char(next()) && advance()) {}
 
     token.str = substr(token.index, index() - token.index);
     emplace_token(token);
@@ -317,8 +323,8 @@ void shell_tokenizer::tokenize_redirection()
         if (!redirection.empty()) {
             token.str = substr(token.index, redirection.size());
             advance(token.str.size() - 1);
+            emplace_token(token);
         }
-        emplace_token(token);
     }
 }
 
@@ -340,9 +346,9 @@ std::vector<shell_token> shell_tokenizer::tokenize()
         }
 
         auto c = peek();
-        if (ddwaf::isspace(c)) {
+        if (is_shell_space(c)) {
             // Skip spaces
-            while (ddwaf::isspace(next()) && advance()) {}
+            while (is_shell_space(next()) && advance()) {}
         } else if (c == '"') {
             add_token(shell_token_type::double_quoted_string_open);
             push_scope(shell_scope::double_quoted_string);

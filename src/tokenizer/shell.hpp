@@ -62,8 +62,6 @@ public:
     std::vector<shell_token> tokenize();
 
 protected:
-    static constexpr char IFS = ' ';
-
     enum class shell_scope {
         global,
         double_quoted_string,  // " ... "

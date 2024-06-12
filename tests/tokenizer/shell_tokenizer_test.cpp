@@ -183,4 +183,24 @@ TEST(TestShellTokenizer, VariableDefinition)
     }
 }
 
+TEST(TestShellTokenizer, Variable)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"${var}", {stt::variable}},
+        {"$var", {stt::variable}},
+        {"${var[@]}", {stt::variable}},
+    };
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
+}
+
 } // namespace
