@@ -19,12 +19,10 @@ template <typename... Args> std::vector<condition_parameter> gen_param_def(Args.
 
 TEST(TestSHIDetector, Basic)
 {
-    shi_detector cond{
-        {gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    std::vector<std::pair<std::string, std::string>> samples {
-        {R"(cat hello> cat /etc/passwd; echo "")", R"(hello>)"}
-    };
+    std::vector<std::pair<std::string, std::string>> samples{
+        {R"(cat hello> cat /etc/passwd; echo "")", R"(hello>)"}};
 
     for (const auto &[resource, param] : samples) {
         ddwaf_object tmp;
@@ -56,6 +54,5 @@ TEST(TestSHIDetector, Basic)
 
         EXPECT_STR(cache.match->highlights[0], param.c_str());
     }
-
 }
 } // namespace

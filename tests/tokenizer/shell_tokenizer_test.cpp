@@ -15,7 +15,7 @@ using stt = shell_token_type;
 
 TEST(TestShellTokenizer, Basic)
 {
-    std::vector<std::pair<std::string, std::vector<stt>>> samples {
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {"echo", {stt::executable}},
         {"echo    ", {stt::executable}},
         {"test echo", {stt::executable, stt::field}},
@@ -27,28 +27,31 @@ TEST(TestShellTokenizer, Basic)
         shell_tokenizer tokenizer(input);
 
         auto tokens = tokenizer.tokenize();
-        EXPECT_EQ(tokens.size(), expected_tokens.size());
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
 
         for (std::size_t i = 0; i < tokens.size(); ++i) {
-            EXPECT_EQ(tokens[i].type, expected_tokens[i]);
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
         }
     }
 }
 
 TEST(TestShellTokenizer, BasicDoubleQuotedString)
 {
-    std::vector<std::pair<std::string, std::vector<stt>>> samples {
-        {"echo \"stuff\"", {stt::executable, stt::double_quoted_string_open, stt::literal, stt::double_quoted_string_close}},
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"echo \"stuff\"", {stt::executable, stt::double_quoted_string_open, stt::literal,
+                               stt::double_quoted_string_close}},
+        {"\"var=2\"",
+            {stt::double_quoted_string_open, stt::literal, stt::double_quoted_string_close}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
         shell_tokenizer tokenizer(input);
 
         auto tokens = tokenizer.tokenize();
-        EXPECT_EQ(tokens.size(), expected_tokens.size());
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
 
         for (std::size_t i = 0; i < tokens.size(); ++i) {
-            EXPECT_EQ(tokens[i].type, expected_tokens[i]);
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
         }
     }
 }
@@ -83,6 +86,34 @@ TEST(TestShellTokenizer, DoubleQuotedStringWithBacktickSubstitution)
     EXPECT_EQ(tokens[6].type, stt::double_quoted_string_close);
 }
 
+TEST(TestShellTokenizer, Executable)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"echo", {stt::executable}},
+        {"test echo", {stt::executable, stt::field}},
+        {"{ echo; }", {stt::compound_command_open, stt::executable, stt::control,
+                          stt::compound_command_close}},
+        {"(ls -l)", {stt::subshell_open, stt::executable, stt::field, stt::subshell_close}},
+        {"$(ls -l)", {stt::command_substitution_open, stt::executable, stt::field,
+                         stt::command_substitution_close}},
+        {"diff <(ls -l)", {stt::executable, stt::process_substitution_open, stt::executable,
+                              stt::field, stt::process_substitution_close}},
+        {"diff >(ls -l)", {stt::executable, stt::process_substitution_open, stt::executable,
+                              stt::field, stt::process_substitution_close}},
+    };
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
+}
+
 TEST(TestShellTokenizer, Pipe)
 {
     shell_tokenizer tokenizer("ls | cat");
@@ -105,14 +136,13 @@ TEST(TestShellTokenizer, CommandSequence)
     EXPECT_EQ(tokens[2].type, stt::executable);
 }
 
-
 TEST(TestShellTokenizer, Redirections)
 {
-    std::vector<std::string> samples {
-        "&>>", "1>", ">", ">>", ">|", ">&", "1>&", "1>&2", "1>&2-", "1>&-", "<", "1<", "2<&", "2<<", "2<<-", "<<-", "<<", "<<<", "1<<<", "1<&", "1<", "<&", "1<>", "<>"
-    };
+    std::vector<std::string> samples{"&>>", "1>", ">", ">>", ">|", ">&", "1>&", "1>&2", "1>&2-",
+        "1>&-", "<", "1<", "2<&", "2<<", "2<<-", "<<-", "<<", "<<<", "1<<<", "1<&", "1<", "<&",
+        "1<>", "<>"};
 
-    for (const auto& sample: samples) {
+    for (const auto &sample : samples) {
         shell_tokenizer tokenizer(sample);
         auto tokens = tokenizer.tokenize();
         EXPECT_EQ(tokens.size(), 1);
@@ -121,5 +151,36 @@ TEST(TestShellTokenizer, Redirections)
     }
 }
 
+TEST(TestShellTokenizer, VariableDefinition)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"var=2", {stt::variable_definition, stt::equal, stt::field}},
+        {"var=2; var=3", {stt::variable_definition, stt::equal, stt::field, stt::control,
+                             stt::variable_definition, stt::equal, stt::field}},
+        {"{ var=2; }", {stt::compound_command_open, stt::variable_definition, stt::equal,
+                           stt::field, stt::control, stt::compound_command_close}},
+        {"`var=2`", {stt::backtick_substitution_open, stt::variable_definition, stt::equal,
+                        stt::field, stt::backtick_substitution_close}},
+        {"(var=2)", {stt::subshell_open, stt::variable_definition, stt::equal, stt::field,
+                        stt::subshell_close}},
+        {"$(var=2)", {stt::command_substitution_open, stt::variable_definition, stt::equal,
+                         stt::field, stt::command_substitution_close}},
+        {"<(var=2)", {stt::process_substitution_open, stt::variable_definition, stt::equal,
+                         stt::field, stt::process_substitution_close}},
+        {">(var=2)", {stt::process_substitution_open, stt::variable_definition, stt::equal,
+                         stt::field, stt::process_substitution_close}},
+    };
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
+}
 
 } // namespace

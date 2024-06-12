@@ -18,9 +18,9 @@ namespace {
 
 using shi_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
 
-shi_result shi_string_impl(std::string_view resource, std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+shi_result shi_string_impl(std::string_view resource, std::vector<shell_token> &resource_tokens,
+    const ddwaf_object &params, const exclusion::object_set_ref &objects_excluded,
+    const object_limits &limits, ddwaf::timer &deadline)
 {
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
@@ -61,7 +61,8 @@ shi_result shi_string_impl(std::string_view resource, std::vector<shell_token> &
                 continue;
             }
 
-            if (token.type == shell_token_type::executable || token.type == shell_token_type::redirection) {
+            if (token.type == shell_token_type::executable ||
+                token.type == shell_token_type::redirection) {
                 return {{std::string(param), it.get_current_path()}};
             }
         }
@@ -85,19 +86,21 @@ eval_result shi_detector::eval_impl(const unary_argument<std::string_view> &reso
     std::vector<shell_token> resource_tokens;
 
     for (const auto &param : params) {
-        auto res = shi_string_impl(resource.value, resource_tokens, *param.value, objects_excluded, limits_, deadline);
+        auto res = shi_string_impl(
+            resource.value, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> resource_kp{resource.key_path.begin(), resource.key_path.end()};
+            std::vector<std::string> resource_kp{
+                resource.key_path.begin(), resource.key_path.end()};
             bool ephemeral = resource.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match =
-                condition_match{{{"resource"sv, std::string{resource.value}, resource.address, resource_kp},
-                                    {"params"sv, highlight, param.address, param_kp}},
-                    {std::move(highlight)}, "ssrf_detector", {}, ephemeral};
+            cache.match = condition_match{
+                {{"resource"sv, std::string{resource.value}, resource.address, resource_kp},
+                    {"params"sv, highlight, param.address, param_kp}},
+                {std::move(highlight)}, "ssrf_detector", {}, ephemeral};
 
             return {true, ephemeral};
         }
