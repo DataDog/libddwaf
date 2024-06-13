@@ -237,9 +237,9 @@ TEST(TestShellTokenizer, VariableDefinition)
 TEST(TestShellTokenizer, Variable)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
-        {"${var}", {stt::variable}},
-        {"$var", {stt::variable}},
-        {"${var[@]}", {stt::variable}},
+        {"echo ${var}", {stt::executable, stt::variable}},
+        {"echo $var", {stt::executable, stt::variable}},
+        {"echo ${var[@]}", {stt::executable, stt::variable}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {

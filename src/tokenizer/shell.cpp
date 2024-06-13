@@ -471,14 +471,22 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 tokenize_redirection();
             }
         } else {
-            bool def_or_exec = should_expect_definition_or_executable();
             tokenize_field();
-            if (!tokens_.empty() && def_or_exec) {
+            if (!tokens_.empty() && should_expect_definition_or_executable()) {
                 if (next() == '=') {
                     last_token().type = shell_token_type::variable_definition;
                 } else {
                     last_token().type = shell_token_type::executable;
                 }
+            }
+        }
+
+        if (!tokens_.empty()) {
+            auto type = last_token_type();
+            if (type == shell_token_type::executable) {
+                set_executable_found();
+            } else if (type == shell_token_type::control) {
+                reset_executable_found();
             }
         }
     }

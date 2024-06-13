@@ -72,19 +72,19 @@ protected:
         process_substitution,  // <() or >()
     };
 
-    std::vector<shell_scope> scope_stack_;
+    std::vector<std::pair<shell_scope, /*executable expected*/ bool>> scope_stack_;
     shell_scope current_scope_{shell_scope::global};
 
     void push_scope(shell_scope scope)
     {
-        scope_stack_.emplace_back(scope);
+        scope_stack_.emplace_back(scope, scope != shell_scope::double_quoted_string);
         current_scope_ = scope;
     }
 
     void pop_scope()
     {
         scope_stack_.pop_back();
-        current_scope_ = scope_stack_.back();
+        current_scope_ = scope_stack_.back().first;
     }
 
     shell_token_type last_token_type() const { return tokens_.back().type; }
@@ -93,17 +93,12 @@ protected:
 
     [[nodiscard]] bool should_expect_definition_or_executable() const
     {
-        if (tokens_.empty()) {
-            return true;
-        }
-
-        auto t = last_token_type();
-        return t == shell_token_type::control ||
-               t == shell_token_type::backtick_substitution_open ||
-               t == shell_token_type::command_substitution_open ||
-               t == shell_token_type::process_substitution_open ||
-               t == shell_token_type::subshell_open || t == shell_token_type::compound_command_open;
+        return scope_stack_.back().second;
     }
+
+    void set_executable_found() { scope_stack_.back().second = false; }
+
+    void reset_executable_found() { scope_stack_.back().second = true; }
 
     [[nodiscard]] bool should_expect_subprocess() const
     {
