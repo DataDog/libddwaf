@@ -15,8 +15,6 @@ namespace {
 re2::RE2 redirection_regex(
     R"((&>>?|(?:[0-9]?>(?:\||>|&[0-9]?-?)?)|(?:[0-9]?<(?:<(?:-|<)?|&[0-9]?-?|>)?)))");
 
-bool is_shell_space(char c) { return c == ' ' || c == '\t' || c == '\n'; }
-
 bool is_var_char(char c) { return ddwaf::isalnum(c) || c == '_'; }
 
 bool is_field_char(char c)
@@ -196,7 +194,11 @@ void shell_tokenizer::tokenize_variable()
 {
     shell_token token;
     token.index = index();
-    token.type = shell_token_type::variable;
+    if (should_expect_definition_or_executable()) {
+        token.type = shell_token_type::executable;
+    } else {
+        token.type = shell_token_type::variable;
+    }
 
     // Skip dollar
     advance();
@@ -238,6 +240,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
             }
 
             add_token(shell_token_type::double_quoted_string_close);
+            pop_scope();
             break;
         }
 
@@ -304,7 +307,7 @@ void shell_tokenizer::tokenize_field()
     // Find the end of this token by searching for a "known" character
     while (is_field_char(next()) && advance()) {}
 
-    token.str = substr(token.index, index() - token.index);
+    token.str = substr(token.index, index() - token.index + 1);
     emplace_token(token);
 }
 
@@ -338,7 +341,6 @@ std::vector<shell_token> shell_tokenizer::tokenize()
     // tokenization must attempt to find substitutions / expansions.
     push_scope(shell_scope::global);
 
-    bool expected_definition_or_executable{true};
     for (; !eof(); advance()) {
         if (current_scope_ == shell_scope::double_quoted_string) {
             tokenize_double_quoted_string_scope();
@@ -346,9 +348,9 @@ std::vector<shell_token> shell_tokenizer::tokenize()
         }
 
         auto c = peek();
-        if (is_shell_space(c)) {
+        if (ddwaf::isspace(c)) {
             // Skip spaces
-            while (is_shell_space(next()) && advance()) {}
+            while (ddwaf::isspace(next()) && advance()) {}
         } else if (c == '"') {
             add_token(shell_token_type::double_quoted_string_open);
             push_scope(shell_scope::double_quoted_string);
@@ -415,7 +417,7 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             if (!tokens_.empty() && last_token_type() == shell_token_type::equal) {
                 // Array
                 tokenize_delimited_token(")", shell_token_type::field);
-            } else if (tokens_.empty() || should_expect_subprocess()) {
+            } else if (should_expect_subprocess()) {
                 add_token(shell_token_type::subshell_open);
                 push_scope(shell_scope::subshell);
             } else {
@@ -423,12 +425,16 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             }
         } else if (c == '=') {
             add_token(shell_token_type::equal);
-        } else if (c == '\n' || c == ';' || c == '|') {
+        } else if (c == '\n' || c == ';') {
             add_token(shell_token_type::control);
+        } else if (c == '|') {
+            add_token(shell_token_type::control, next() == '|' ? 2 : 1);
         } else if (c == '&') {
             auto n = next();
             if (n == '>') {
                 tokenize_redirection();
+            } else if (n == '&') {
+                add_token(shell_token_type::control, 2);
             } else {
                 add_token(shell_token_type::control);
             }
@@ -465,8 +471,9 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 tokenize_redirection();
             }
         } else {
+            bool def_or_exec = should_expect_definition_or_executable();
             tokenize_field();
-            if (expected_definition_or_executable && !tokens_.empty()) {
+            if (!tokens_.empty() && def_or_exec) {
                 if (next() == '=') {
                     last_token().type = shell_token_type::variable_definition;
                 } else {
@@ -474,8 +481,6 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 }
             }
         }
-
-        expected_definition_or_executable = should_expect_definition_or_executable();
     }
 
     return tokens_;

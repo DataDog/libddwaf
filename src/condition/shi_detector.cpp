@@ -46,21 +46,23 @@ shi_result shi_string_impl(std::string_view resource, std::vector<shell_token> &
         }
 
         auto end_index = param_index + param.size();
-        for (std::size_t i = 0; i < resource_tokens.size(); ++i) {
-            const auto &token = resource_tokens[i];
-            if (token.index < param_index) {
-                continue;
-            }
 
-            if (token.index > end_index) {
+        // Find first token
+        std::size_t i = 0;
+        for (; i < resource_tokens.size(); ++i) {
+            const auto &token = resource_tokens[i];
+            if (token.index >= param_index && token.index <= end_index) {
                 break;
             }
+        }
 
-            // Ignore if it's a single token
-            if ((i + 1) < resource_tokens.size() && resource_tokens[i].index >= end_index) {
-                continue;
-            }
+        // Ignore if it's a single token
+        if ((i + 1) < resource_tokens.size() && resource_tokens[i + 1].index >= end_index) {
+            continue;
+        }
 
+        for (; i < resource_tokens.size(); ++i) {
+            const auto &token = resource_tokens[i];
             if (token.type == shell_token_type::executable ||
                 token.type == shell_token_type::redirection) {
                 return {{std::string(param), it.get_current_path()}};

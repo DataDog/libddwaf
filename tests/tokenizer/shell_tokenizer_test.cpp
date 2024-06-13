@@ -136,7 +136,7 @@ TEST(TestShellTokenizer, CommandSequence)
     EXPECT_EQ(tokens[2].type, stt::executable);
 }
 
-TEST(TestShellTokenizer, Redirections)
+TEST(TestShellTokenizer, RedirectionTokens)
 {
     std::vector<std::string> samples{"&>>", "1>", ">", ">>", ">|", ">&", "1>&", "1>&2", "1>&2-",
         "1>&-", "<", "1<", "2<&", "2<<", "2<<-", "<<-", "<<", "<<<", "1<<<", "1<&", "1<", "<&",
@@ -148,6 +148,56 @@ TEST(TestShellTokenizer, Redirections)
         EXPECT_EQ(tokens.size(), 1);
         EXPECT_EQ(tokens[0].type, stt::redirection);
         EXPECT_STRV(tokens[0].str, sample.c_str());
+    }
+}
+
+TEST(TestShellTokenizer, Redirections)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"ls > /tmp/test args", {stt::executable, stt::redirection, stt::field, stt::field}},
+        {"ls args > /tmp/test", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls >                               /tmp/test args",
+            {stt::executable, stt::redirection, stt::field, stt::field}},
+        {"ls args 2> /tmp/test", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args >> /tmp/test", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args > /tmp/test 2> /etc/stderr", {stt::executable, stt::field, stt::redirection,
+                                                   stt::field, stt::redirection, stt::field}},
+        {"ls args>/tmp/test", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args < file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args<file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args <<< file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args << file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args <<- file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args <& file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args &> file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args <> file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args >| file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args <&1 file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0> file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0>> file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0< file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0<< file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0<& file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0<&- file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0<&1 file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0>& file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0>&1 file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0>&- file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0<<- file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0<> file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 0>| file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        // TODO invalid / seemingly redirections
+    };
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
     }
 }
 
@@ -169,6 +219,7 @@ TEST(TestShellTokenizer, VariableDefinition)
                          stt::field, stt::process_substitution_close}},
         {">(var=2)", {stt::process_substitution_open, stt::variable_definition, stt::equal,
                          stt::field, stt::process_substitution_close}},
+        {"var=(1 2 3)", {stt::variable_definition, stt::equal, stt::field}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
@@ -189,6 +240,28 @@ TEST(TestShellTokenizer, Variable)
         {"${var}", {stt::variable}},
         {"$var", {stt::variable}},
         {"${var[@]}", {stt::variable}},
+    };
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
+}
+
+TEST(TestShellTokenizer, MultipleCommands)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"true && echo \"hello\" | tr h '' | tr e a",
+            {stt::executable, stt::control, stt::executable, stt::double_quoted_string_open,
+                stt::literal, stt::double_quoted_string_close, stt::control, stt::executable,
+                stt::field, stt::single_quoted_string, stt::control, stt::executable, stt::field,
+                stt::field}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {

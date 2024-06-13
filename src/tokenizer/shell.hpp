@@ -93,6 +93,10 @@ protected:
 
     [[nodiscard]] bool should_expect_definition_or_executable() const
     {
+        if (tokens_.empty()) {
+            return true;
+        }
+
         auto t = last_token_type();
         return t == shell_token_type::control ||
                t == shell_token_type::backtick_substitution_open ||
@@ -103,6 +107,10 @@ protected:
 
     [[nodiscard]] bool should_expect_subprocess() const
     {
+        if (tokens_.empty()) {
+            return true;
+        }
+
         auto t = last_token_type();
         return t == shell_token_type::control ||
                t == shell_token_type::backtick_substitution_open ||
