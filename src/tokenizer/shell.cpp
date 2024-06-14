@@ -231,7 +231,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
     for (; !eof(); advance()) {
         auto c = peek();
         if (c == '"' && slash_count == 0) {
-            if (begin < index() - 1) {
+            if (begin < index()) {
                 shell_token token;
                 token.index = begin;
                 token.type = shell_token_type::literal;
@@ -250,7 +250,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
                 // Command substitution, we add a field for the current string
                 // contents, update the scope and exit. Note that we skip
                 // arithmetic expansions
-                if (begin < index() - 1) {
+                if (begin < index()) {
                     shell_token token;
                     token.index = begin;
                     token.type = shell_token_type::literal;
@@ -266,11 +266,17 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
             if (n == '{' || ddwaf::isalnum(n) || n == '_' || n == '-' || n == '?' || n == '@' ||
                 n == '#' || n == '*' || n == '$' || n == '!') {
                 // Variable expansion, we tokenize it and continue
-                add_token(shell_token_type::field, index() - begin);
+                if (begin < index()) {
+                    shell_token token;
+                    token.index = begin;
+                    token.type = shell_token_type::literal;
+                    token.str = substr(begin, index() - begin);
+                    emplace_token(token);
+                }
                 tokenize_variable();
 
                 // We're still in the string so we can continue
-                begin = index();
+                begin = index() + 1;
                 continue;
             }
 
@@ -281,7 +287,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
         } else if (c == '`') {
             // Backtick substitution, we add a literal for the current string
             // contents, update the scope and exit
-            if (begin < index() - 1) {
+            if (begin < index()) {
                 shell_token token;
                 token.index = begin;
                 token.type = shell_token_type::literal;

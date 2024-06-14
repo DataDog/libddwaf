@@ -38,10 +38,23 @@ TEST(TestShellTokenizer, Basic)
 TEST(TestShellTokenizer, BasicDoubleQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
-        {"echo \"stuff\"", {stt::executable, stt::double_quoted_string_open, stt::literal,
-                               stt::double_quoted_string_close}},
-        {"\"var=2\"",
+        {R"(echo "stuff")", {stt::executable, stt::double_quoted_string_open, stt::literal,
+                                stt::double_quoted_string_close}},
+        {R"("var=2")",
             {stt::double_quoted_string_open, stt::literal, stt::double_quoted_string_close}},
+        {R"(echo "literal $0")", {stt::executable, stt::double_quoted_string_open, stt::literal,
+                                     stt::variable, stt::double_quoted_string_close}},
+        {R"(echo "$0 literal")", {stt::executable, stt::double_quoted_string_open, stt::variable,
+                                     stt::literal, stt::double_quoted_string_close}},
+        {R"(echo "literal $0 literal")",
+            {stt::executable, stt::double_quoted_string_open, stt::literal, stt::variable,
+                stt::literal, stt::double_quoted_string_close}},
+        {R"(echo "l$0")", {stt::executable, stt::double_quoted_string_open, stt::literal,
+                              stt::variable, stt::double_quoted_string_close}},
+        {R"(echo "$0l")", {stt::executable, stt::double_quoted_string_open, stt::variable,
+                              stt::literal, stt::double_quoted_string_close}},
+        {R"(echo "l$0l")", {stt::executable, stt::double_quoted_string_open, stt::literal,
+                               stt::variable, stt::literal, stt::double_quoted_string_close}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
@@ -58,32 +71,92 @@ TEST(TestShellTokenizer, BasicDoubleQuotedString)
 
 TEST(TestShellTokenizer, DoubleQuotedStringWithCommandSubstitution)
 {
-    shell_tokenizer tokenizer("ls \"$(ls -l)\"");
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {R"!(ls "$(ls -l)")!",
+            {stt::executable, stt::double_quoted_string_open, stt::command_substitution_open,
+                stt::executable, stt::field, stt::command_substitution_close,
+                stt::double_quoted_string_close}},
+        {R"!(ls "literal $(ls -l)")!",
+            {stt::executable, stt::double_quoted_string_open, stt::literal,
+                stt::command_substitution_open, stt::executable, stt::field,
+                stt::command_substitution_close, stt::double_quoted_string_close}},
+        {R"!(ls "l$(ls -l)")!",
+            {stt::executable, stt::double_quoted_string_open, stt::literal,
+                stt::command_substitution_open, stt::executable, stt::field,
+                stt::command_substitution_close, stt::double_quoted_string_close}},
+        {R"!(ls "$(ls -l) literal")!",
+            {stt::executable, stt::double_quoted_string_open, stt::command_substitution_open,
+                stt::executable, stt::field, stt::command_substitution_close, stt::literal,
+                stt::double_quoted_string_close}},
+        {R"!(ls "$(ls -l)l")!",
+            {stt::executable, stt::double_quoted_string_open, stt::command_substitution_open,
+                stt::executable, stt::field, stt::command_substitution_close, stt::literal,
+                stt::double_quoted_string_close}},
+        {R"!(ls "literal $(ls -l) literal")!",
+            {stt::executable, stt::double_quoted_string_open, stt::literal,
+                stt::command_substitution_open, stt::executable, stt::field,
+                stt::command_substitution_close, stt::literal, stt::double_quoted_string_close}},
+        {R"!(ls "l$(ls -l)l")!",
+            {stt::executable, stt::double_quoted_string_open, stt::literal,
+                stt::command_substitution_open, stt::executable, stt::field,
+                stt::command_substitution_close, stt::literal, stt::double_quoted_string_close}},
+    };
 
-    auto tokens = tokenizer.tokenize();
-    EXPECT_EQ(tokens.size(), 7);
-    EXPECT_EQ(tokens[0].type, stt::executable);
-    EXPECT_EQ(tokens[1].type, stt::double_quoted_string_open);
-    EXPECT_EQ(tokens[2].type, stt::command_substitution_open);
-    EXPECT_EQ(tokens[3].type, stt::executable);
-    EXPECT_EQ(tokens[4].type, stt::field);
-    EXPECT_EQ(tokens[5].type, stt::command_substitution_close);
-    EXPECT_EQ(tokens[6].type, stt::double_quoted_string_close);
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
 }
 
 TEST(TestShellTokenizer, DoubleQuotedStringWithBacktickSubstitution)
 {
-    shell_tokenizer tokenizer("ls \"`ls -l`\"");
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {R"!(ls "`ls -l`")!",
+            {stt::executable, stt::double_quoted_string_open, stt::backtick_substitution_open,
+                stt::executable, stt::field, stt::backtick_substitution_close,
+                stt::double_quoted_string_close}},
+        {R"!(ls "literal `ls -l`")!",
+            {stt::executable, stt::double_quoted_string_open, stt::literal,
+                stt::backtick_substitution_open, stt::executable, stt::field,
+                stt::backtick_substitution_close, stt::double_quoted_string_close}},
+        {R"!(ls "l`ls -l`")!",
+            {stt::executable, stt::double_quoted_string_open, stt::literal,
+                stt::backtick_substitution_open, stt::executable, stt::field,
+                stt::backtick_substitution_close, stt::double_quoted_string_close}},
+        {R"!(ls "`ls -l` literal")!",
+            {stt::executable, stt::double_quoted_string_open, stt::backtick_substitution_open,
+                stt::executable, stt::field, stt::backtick_substitution_close, stt::literal,
+                stt::double_quoted_string_close}},
+        {R"!(ls "`ls -l`l")!",
+            {stt::executable, stt::double_quoted_string_open, stt::backtick_substitution_open,
+                stt::executable, stt::field, stt::backtick_substitution_close, stt::literal,
+                stt::double_quoted_string_close}},
+        {R"!(ls "literal `ls -l` literal")!",
+            {stt::executable, stt::double_quoted_string_open, stt::literal,
+                stt::backtick_substitution_open, stt::executable, stt::field,
+                stt::backtick_substitution_close, stt::literal, stt::double_quoted_string_close}},
+        {R"!(ls "l`ls -l`l")!",
+            {stt::executable, stt::double_quoted_string_open, stt::literal,
+                stt::backtick_substitution_open, stt::executable, stt::field,
+                stt::backtick_substitution_close, stt::literal, stt::double_quoted_string_close}},
+    };
 
-    auto tokens = tokenizer.tokenize();
-    EXPECT_EQ(tokens.size(), 7);
-    EXPECT_EQ(tokens[0].type, stt::executable);
-    EXPECT_EQ(tokens[1].type, stt::double_quoted_string_open);
-    EXPECT_EQ(tokens[2].type, stt::backtick_substitution_open);
-    EXPECT_EQ(tokens[3].type, stt::executable);
-    EXPECT_EQ(tokens[4].type, stt::field);
-    EXPECT_EQ(tokens[5].type, stt::backtick_substitution_close);
-    EXPECT_EQ(tokens[6].type, stt::double_quoted_string_close);
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
 }
 
 TEST(TestShellTokenizer, Executable)
@@ -240,6 +313,23 @@ TEST(TestShellTokenizer, Variable)
         {"echo ${var}", {stt::executable, stt::variable}},
         {"echo $var", {stt::executable, stt::variable}},
         {"echo ${var[@]}", {stt::executable, stt::variable}},
+        {"echo $0", {stt::executable, stt::variable}},
+        {"echo $1", {stt::executable, stt::variable}},
+        {"echo $2", {stt::executable, stt::variable}},
+        {"echo $3", {stt::executable, stt::variable}},
+        {"echo $4", {stt::executable, stt::variable}},
+        {"echo $5", {stt::executable, stt::variable}},
+        {"echo $6", {stt::executable, stt::variable}},
+        {"echo $7", {stt::executable, stt::variable}},
+        {"echo $8", {stt::executable, stt::variable}},
+        {"echo $9", {stt::executable, stt::variable}},
+        {"echo $-", {stt::executable, stt::variable}},
+        {"echo $#", {stt::executable, stt::variable}},
+        {"echo $@", {stt::executable, stt::variable}},
+        {"echo $?", {stt::executable, stt::variable}},
+        {"echo $*", {stt::executable, stt::variable}},
+        {"echo $$", {stt::executable, stt::variable}},
+        {"echo $!", {stt::executable, stt::variable}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
