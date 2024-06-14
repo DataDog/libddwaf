@@ -51,7 +51,7 @@ shi_result shi_string_impl(std::string_view resource, std::vector<shell_token> &
         std::size_t i = 0;
         for (; i < resource_tokens.size(); ++i) {
             const auto &token = resource_tokens[i];
-            if (token.index >= param_index && token.index <= end_index) {
+            if (end_index >= token.index && param_index < (token.index + token.str.size())) {
                 break;
             }
         }
