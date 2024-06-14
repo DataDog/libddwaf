@@ -18,6 +18,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     // Force the compiler to not optimize away tokens
     // NOLINTNEXTLINE(hicpp-no-assembler)
     asm volatile("" : "+m"(tokens) : : "memory");
-    
+
     return 0;
 }
