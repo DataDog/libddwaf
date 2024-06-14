@@ -70,17 +70,11 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
     case shell_token_type::literal:
         os << "literal";
         break;
-    case shell_token_type::double_quote:
-        os << "double_quote";
-        break;
     case shell_token_type::double_quoted_string_open:
         os << "double_quoted_string_open";
         break;
     case shell_token_type::double_quoted_string_close:
         os << "double_quoted_string_close";
-        break;
-    case shell_token_type::single_quote:
-        os << "single_quote";
         break;
     case shell_token_type::single_quoted_string:
         os << "single_quoted_string";
@@ -93,9 +87,6 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
         break;
     case shell_token_type::variable:
         os << "variable";
-        break;
-    case shell_token_type::whitespace:
-        os << "whitespace";
         break;
     case shell_token_type::equal:
         os << "equal";
@@ -423,6 +414,9 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             if (!tokens_.empty() && last_token_type() == shell_token_type::equal) {
                 // Array
                 tokenize_delimited_token(")", shell_token_type::field);
+            } else if (next() == '(') {
+                // Arithmetic expansions
+                tokenize_delimited_token("))", shell_token_type::field);
             } else if (should_expect_subprocess()) {
                 add_token(shell_token_type::subshell_open);
                 push_scope(shell_scope::subshell);

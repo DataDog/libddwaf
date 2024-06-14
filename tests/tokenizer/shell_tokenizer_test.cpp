@@ -13,6 +13,51 @@ using namespace std::literals;
 namespace {
 using stt = shell_token_type;
 
+TEST(TestShellTokenizer, TokenTypeOstream)
+{
+    auto stream_token = [](auto token) {
+        std::stringstream ss;
+        ss << token;
+        return ss.str();
+    };
+
+    EXPECT_STR(stream_token(shell_token_type::unknown), "unknown");
+    EXPECT_STR(stream_token(shell_token_type::executable), "executable");
+    EXPECT_STR(stream_token(shell_token_type::field), "field");
+    EXPECT_STR(stream_token(shell_token_type::literal), "literal");
+    EXPECT_STR(
+        stream_token(shell_token_type::double_quoted_string_open), "double_quoted_string_open");
+    EXPECT_STR(
+        stream_token(shell_token_type::double_quoted_string_close), "double_quoted_string_close");
+    EXPECT_STR(stream_token(shell_token_type::single_quoted_string), "single_quoted_string");
+    EXPECT_STR(stream_token(shell_token_type::control), "control");
+    EXPECT_STR(stream_token(shell_token_type::variable_definition), "variable_definition");
+    EXPECT_STR(stream_token(shell_token_type::variable), "variable");
+    EXPECT_STR(stream_token(shell_token_type::equal), "equal");
+    EXPECT_STR(
+        stream_token(shell_token_type::backtick_substitution_open), "backtick_substitution_open");
+    EXPECT_STR(
+        stream_token(shell_token_type::backtick_substitution_close), "backtick_substitution_close");
+    EXPECT_STR(stream_token(shell_token_type::dollar), "dollar");
+    EXPECT_STR(stream_token(shell_token_type::redirection), "redirection");
+    EXPECT_STR(
+        stream_token(shell_token_type::command_substitution_open), "command_substitution_open");
+    EXPECT_STR(
+        stream_token(shell_token_type::command_substitution_close), "command_substitution_close");
+    EXPECT_STR(stream_token(shell_token_type::parenthesis_open), "parenthesis_open");
+    EXPECT_STR(stream_token(shell_token_type::parenthesis_close), "parenthesis_close");
+    EXPECT_STR(stream_token(shell_token_type::curly_brace_open), "curly_brace_open");
+    EXPECT_STR(stream_token(shell_token_type::curly_brace_close), "curly_brace_close");
+    EXPECT_STR(
+        stream_token(shell_token_type::process_substitution_open), "process_substitution_open");
+    EXPECT_STR(
+        stream_token(shell_token_type::process_substitution_close), "process_substitution_close");
+    EXPECT_STR(stream_token(shell_token_type::subshell_open), "subshell_open");
+    EXPECT_STR(stream_token(shell_token_type::subshell_close), "subshell_close");
+    EXPECT_STR(stream_token(shell_token_type::compound_command_open), "compound_command_open");
+    EXPECT_STR(stream_token(shell_token_type::compound_command_close), "compound_command_close");
+}
+
 TEST(TestShellTokenizer, Basic)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
@@ -293,6 +338,8 @@ TEST(TestShellTokenizer, VariableDefinition)
         {">(var=2)", {stt::process_substitution_open, stt::variable_definition, stt::equal,
                          stt::field, stt::process_substitution_close}},
         {"var=(1 2 3)", {stt::variable_definition, stt::equal, stt::field}},
+        {"var=$(( 1+1 ))", {stt::variable_definition, stt::equal, stt::field}},
+        {"var=$[ 1+1 ]", {stt::variable_definition, stt::equal, stt::field}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
@@ -353,6 +400,22 @@ TEST(TestShellTokenizer, MultipleCommands)
                 stt::field, stt::single_quoted_string, stt::control, stt::executable, stt::field,
                 stt::field}},
     };
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
+}
+
+TEST(TestShellTokenizer, ArithmeticExpansion)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{{"(( var=1+1 ))", {stt::field}}};
 
     for (const auto &[input, expected_tokens] : samples) {
         shell_tokenizer tokenizer(input);
