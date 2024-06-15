@@ -24,6 +24,7 @@ enum class shell_token_type {
     literal,
     double_quoted_string_open,
     double_quoted_string_close,
+    double_quoted_string,
     single_quoted_string,
     control,
     variable_definition,

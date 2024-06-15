@@ -76,6 +76,9 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
     case shell_token_type::double_quoted_string_close:
         os << "double_quoted_string_close";
         break;
+    case shell_token_type::double_quoted_string:
+        os << "double_quoted_string";
+        break;
     case shell_token_type::single_quoted_string:
         os << "single_quoted_string";
         break;
@@ -169,18 +172,6 @@ void shell_tokenizer::tokenize_delimited_token(std::string_view delimiter, shell
     emplace_token(token);
 }
 
-void shell_tokenizer::tokenize_single_quoted_string()
-{
-    // Find the final single quote
-    while (advance() && peek() != '\'') {}
-
-    shell_token token;
-    token.index = index();
-    token.type = shell_token_type::single_quoted_string;
-    token.str = substr(token.index, index() - token.index + 1);
-    emplace_token(token);
-}
-
 void shell_tokenizer::tokenize_variable()
 {
     shell_token token;
@@ -222,16 +213,28 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
     for (; !eof(); advance()) {
         auto c = peek();
         if (c == '"' && slash_count == 0) {
-            if (begin < index()) {
-                shell_token token;
-                token.index = begin;
-                token.type = shell_token_type::literal;
-                token.str = substr(begin, index() - begin);
-                emplace_token(token);
-            }
-
-            add_token(shell_token_type::double_quoted_string_close);
             pop_scope();
+
+            // At this point we know there's at least one token so no need to check
+            auto &token = last_token();
+            if (token.type == shell_token_type::double_quoted_string_open) {
+                if (should_expect_definition_or_executable()) {
+                    token.type = shell_token_type::executable;
+                } else {
+                    token.type = shell_token_type::double_quoted_string;
+                }
+                token.str = substr(token.index, index() - token.index + 1);
+            } else {
+                if (begin < index()) {
+                    shell_token token;
+                    token.index = begin;
+                    token.type = shell_token_type::literal;
+                    token.str = substr(begin, index() - begin);
+                    emplace_token(token);
+                }
+
+                add_token(shell_token_type::double_quoted_string_close);
+            }
             break;
         }
 
@@ -254,27 +257,10 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
                 break;
             }
 
-            if (n == '{' || ddwaf::isalnum(n) || n == '_' || n == '-' || n == '?' || n == '@' ||
-                n == '#' || n == '*' || n == '$' || n == '!') {
-                // Variable expansion, we tokenize it and continue
-                if (begin < index()) {
-                    shell_token token;
-                    token.index = begin;
-                    token.type = shell_token_type::literal;
-                    token.str = substr(begin, index() - begin);
-                    emplace_token(token);
-                }
-                tokenize_variable();
-
-                // We're still in the string so we can continue
-                begin = index() + 1;
-                continue;
-            }
-
-            // Other interesting cases are $[] which is an ancient syntax used for arithmetic,
-            // equivalent to $(( ... )), but we don't care about these expansions.
-
-            // Any other variant should be considered part of a literal
+            // Other interesting cases which we make part of the literal:
+            // - Variables, which we ignore for now
+            // - $[] legacy arithmetic expansion
+            // - $(( ... )) arithmetic expansions
         } else if (c == '`') {
             // Backtick substitution, we add a literal for the current string
             // contents, update the scope and exit
@@ -454,7 +440,11 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 add_token(shell_token_type::curly_brace_close);
             }
         } else if (c == '\'') {
-            tokenize_single_quoted_string();
+            if (should_expect_definition_or_executable()) {
+                tokenize_delimited_token("'", shell_token_type::executable);
+            } else {
+                tokenize_delimited_token("'", shell_token_type::single_quoted_string);
+            }
         } else if (ddwaf::isdigit(c)) {
             auto n = next();
             if (n == '<' || n == '>') {

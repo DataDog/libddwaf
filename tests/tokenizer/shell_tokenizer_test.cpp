@@ -29,6 +29,7 @@ TEST(TestShellTokenizer, TokenTypeOstream)
         stream_token(shell_token_type::double_quoted_string_open), "double_quoted_string_open");
     EXPECT_STR(
         stream_token(shell_token_type::double_quoted_string_close), "double_quoted_string_close");
+    EXPECT_STR(stream_token(shell_token_type::double_quoted_string), "double_quoted_string");
     EXPECT_STR(stream_token(shell_token_type::single_quoted_string), "single_quoted_string");
     EXPECT_STR(stream_token(shell_token_type::control), "control");
     EXPECT_STR(stream_token(shell_token_type::variable_definition), "variable_definition");
@@ -80,26 +81,46 @@ TEST(TestShellTokenizer, Basic)
     }
 }
 
+// TODO a double quoted string can be considered an executable
 TEST(TestShellTokenizer, BasicDoubleQuotedString)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
-        {R"(echo "stuff")", {stt::executable, stt::double_quoted_string_open, stt::literal,
-                                stt::double_quoted_string_close}},
-        {R"("var=2")",
-            {stt::double_quoted_string_open, stt::literal, stt::double_quoted_string_close}},
-        {R"(echo "literal $0")", {stt::executable, stt::double_quoted_string_open, stt::literal,
-                                     stt::variable, stt::double_quoted_string_close}},
-        {R"(echo "$0 literal")", {stt::executable, stt::double_quoted_string_open, stt::variable,
-                                     stt::literal, stt::double_quoted_string_close}},
-        {R"(echo "literal $0 literal")",
-            {stt::executable, stt::double_quoted_string_open, stt::literal, stt::variable,
-                stt::literal, stt::double_quoted_string_close}},
-        {R"(echo "l$0")", {stt::executable, stt::double_quoted_string_open, stt::literal,
-                              stt::variable, stt::double_quoted_string_close}},
-        {R"(echo "$0l")", {stt::executable, stt::double_quoted_string_open, stt::variable,
-                              stt::literal, stt::double_quoted_string_close}},
-        {R"(echo "l$0l")", {stt::executable, stt::double_quoted_string_open, stt::literal,
-                               stt::variable, stt::literal, stt::double_quoted_string_close}},
+        {R"(echo "stuff")", {stt::executable, stt::double_quoted_string}},
+        {R"(echo "var=2")", {stt::executable, stt::double_quoted_string}},
+        {R"(echo "literal $0")", {stt::executable, stt::double_quoted_string}},
+        {R"(echo "$0 literal")", {stt::executable, stt::double_quoted_string}},
+        {R"(echo "literal $0 literal")", {stt::executable, stt::double_quoted_string}},
+        {R"(echo "l$0")", {stt::executable, stt::double_quoted_string}},
+        {R"(echo "$0l")", {stt::executable, stt::double_quoted_string}},
+        {R"(echo "l$0l")", {stt::executable, stt::double_quoted_string}},
+        {R"("stuff")", {stt::executable}},
+        {R"("var=2")", {stt::executable}},
+    };
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
+}
+
+// TODO a single quoted string can be considered an executable
+TEST(TestShellTokenizer, BasicSingleQuotedString)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {R"(echo 'stuff')", {stt::executable, stt::single_quoted_string}},
+        {R"(echo 'var=2')", {stt::executable, stt::single_quoted_string}},
+        {R"(echo 'literal $0')", {stt::executable, stt::single_quoted_string}},
+        // Executable
+        {R"('stuff')", {stt::executable}},
+        {R"('var=2')", {stt::executable}},
+        {R"('literal $0')", {stt::executable}},
+
     };
 
     for (const auto &[input, expected_tokens] : samples) {
@@ -395,10 +416,9 @@ TEST(TestShellTokenizer, MultipleCommands)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {"true && echo \"hello\" | tr h '' | tr e a",
-            {stt::executable, stt::control, stt::executable, stt::double_quoted_string_open,
-                stt::literal, stt::double_quoted_string_close, stt::control, stt::executable,
-                stt::field, stt::single_quoted_string, stt::control, stt::executable, stt::field,
-                stt::field}},
+            {stt::executable, stt::control, stt::executable, stt::double_quoted_string,
+                stt::control, stt::executable, stt::field, stt::single_quoted_string, stt::control,
+                stt::executable, stt::field, stt::field}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
