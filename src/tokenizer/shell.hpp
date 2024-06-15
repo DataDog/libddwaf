@@ -7,7 +7,6 @@
 #pragma once
 
 #include "tokenizer/base.hpp"
-#include "utils.hpp"
 #include <fmt/format.h>
 #include <ostream>
 #include <re2/re2.h>
@@ -119,8 +118,6 @@ protected:
     void tokenize_literal();
     void tokenize_redirection();
     void tokenize_delimited_token(std::string_view delimiter, shell_token_type type);
-
-    friend std::ostream &operator<<(std::ostream &os, shell_scope scope);
 };
 
 } // namespace ddwaf

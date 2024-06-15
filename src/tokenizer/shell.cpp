@@ -25,36 +25,6 @@ bool is_field_char(char c)
 
 } // namespace
 
-std::ostream &operator<<(std::ostream &os, shell_tokenizer::shell_scope scope)
-{
-    using shell_scope = shell_tokenizer::shell_scope;
-
-    switch (scope) {
-    case shell_scope::global:
-        os << "global";
-        break;
-    case shell_scope::double_quoted_string:
-        os << "double_quoted_string";
-        break;
-    case shell_scope::backtick_substitution:
-        os << "backtick_substitution";
-        break;
-    case shell_scope::command_substitution:
-        os << "command_substitution";
-        break;
-    case shell_scope::compound_command:
-        os << "command_grouping";
-        break;
-    case shell_scope::subshell:
-        os << "subshell";
-        break;
-    case shell_scope::process_substitution:
-        os << "process_substitution";
-        break;
-    }
-    return os;
-}
-
 std::ostream &operator<<(std::ostream &os, shell_token_type type)
 {
     switch (type) {
@@ -411,7 +381,7 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             }
         } else if (c == '=') {
             add_token(shell_token_type::equal);
-        } else if (c == '\n' || c == ';') {
+        } else if (c == '\n' || c == ';' || c == '!') {
             add_token(shell_token_type::control);
         } else if (c == '|') {
             add_token(shell_token_type::control, next() == '|' ? 2 : 1);
