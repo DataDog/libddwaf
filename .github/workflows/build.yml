@@ -305,7 +305,7 @@ jobs:
           path: ${{ github.workspace }}/output-packages
 
   release:
-    needs: [ windows-builds, macos-build, macos-cross-build, docker-builds, linux-musl-build, package-nuget]
+    needs: [ windows-builds, macos-build, docker-builds, linux-musl-build, package-nuget]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
