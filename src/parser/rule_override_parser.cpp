@@ -28,6 +28,12 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
         current.actions = std::move(actions);
     }
 
+    it = node.find("tags");
+    if (it != node.end()) {
+        auto tags = static_cast<std::unordered_map<std::string, std::string>>(it->second);
+        current.tags = std::move(tags);
+    }
+
     reference_type type = reference_type::none;
 
     auto rules_target_array = at<parameter::vector>(node, "rules_target", {});
