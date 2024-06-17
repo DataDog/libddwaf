@@ -488,4 +488,118 @@ TEST(TestURI, Complete)
     }
 }
 
+TEST(TestURI, RelativeRefHostPortQuery)
+{
+    auto uri = ddwaf::uri_parse("//authority:123?query");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "authority");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_STRV(uri->authority.port, "123");
+    EXPECT_STRV(uri->query, "query");
+}
+
+TEST(TestURI, RelativeRefHostPortPath)
+{
+    auto uri = ddwaf::uri_parse("//authority:12/path");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "authority");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_STRV(uri->authority.port, "12");
+    EXPECT_STRV(uri->path, "/path");
+}
+
+TEST(TestURI, RelativeRefHostPortFragment)
+{
+    auto uri = ddwaf::uri_parse("//authority:1#f");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "authority");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_STRV(uri->authority.port, "1");
+    EXPECT_STRV(uri->fragment, "f");
+}
+
+TEST(TestURI, RelativeRefUserHostQuery)
+{
+    auto uri = ddwaf::uri_parse("//user@authority?query");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "authority");
+    EXPECT_STRV(uri->authority.userinfo, "user");
+    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->query, "query");
+}
+
+TEST(TestURI, RelativeRefUserHostPath)
+{
+    auto uri = ddwaf::uri_parse("//us@authority/path");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "authority");
+    EXPECT_STRV(uri->authority.userinfo, "us");
+    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->path, "/path");
+}
+
+TEST(TestURI, RelativeRefUserHostFragment)
+{
+    auto uri = ddwaf::uri_parse("//u@authority#f");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "authority");
+    EXPECT_STRV(uri->authority.userinfo, "u");
+    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->fragment, "f");
+}
+
+TEST(TestURI, RelativeRefAbsolutePath)
+{
+    auto uri = ddwaf::uri_parse("/path");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_STRV(uri->authority.port, "");
+    EXPECT_STRV(uri->path, "/path");
+}
+
+TEST(TestURI, RelativeRefAbsolutePathFragment)
+{
+    auto uri = ddwaf::uri_parse("/path#f");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_STRV(uri->authority.port, "");
+    EXPECT_STRV(uri->path, "/path");
+    EXPECT_STRV(uri->fragment, "f");
+}
+
+TEST(TestURI, RelativeRefAbsolutePathQuery)
+{
+    auto uri = ddwaf::uri_parse("/path?query");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_STRV(uri->authority.port, "");
+    EXPECT_STRV(uri->path, "/path");
+    EXPECT_STRV(uri->query, "query");
+}
+
+TEST(TestURI, RelativeRefAbsolutePathQueryFragment)
+{
+    auto uri = ddwaf::uri_parse("/path?query#f");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_STRV(uri->authority.port, "");
+    EXPECT_STRV(uri->path, "/path");
+    EXPECT_STRV(uri->query, "query");
+    EXPECT_STRV(uri->fragment, "f");
+}
+
 } // namespace

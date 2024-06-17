@@ -59,6 +59,7 @@ namespace {
 enum class token_type {
     none,
     scheme,
+    scheme_authority_or_path,
     hierarchical_part,
     authority,
     userinfo,
@@ -107,7 +108,7 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
     uri_decomposed decomposed;
     decomposed.raw = uri;
 
-    auto expected_token = token_type::scheme;
+    auto expected_token = token_type::scheme_authority_or_path;
     auto lookahead_token = token_type::none;
 
     // Authority helpers
@@ -120,6 +121,20 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
         expected_token = token_type::none;
 
         switch (current_token) {
+        case token_type::scheme_authority_or_path: {
+            if (uri[i] == '/') {
+                // Path or authority
+                if ((i + 1) < uri.size() && uri[i + 1] == '/') {
+                    expected_token = token_type::authority;
+                    i += 2;
+                } else {
+                    expected_token = token_type::path;
+                }
+            } else if (isalpha(uri[i])) {
+                expected_token = token_type::scheme;
+            }
+            break;
+        }
         case token_type::scheme: {
             auto token_begin = i;
             if (!isalpha(uri[i++])) {
