@@ -14,6 +14,11 @@
                  / path-absolute
                  / path-rootless
                  / path-empty
+   relative-ref  = relative-part [ "?" query ] [ "#" fragment ]
+   relative-part = "//" authority path-abempty
+                 / path-absolute
+                 / path-noscheme -> Not supported
+                 / path-empty -> Not supported
    scheme        = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
    authority     = [ userinfo "@" ] host [ ":" port ]
    userinfo      = *( unreserved / pct-encoded / sub-delims / ":" )
@@ -68,7 +73,6 @@ enum class token_type {
     ipv6address,
     regname_or_ipv4address,
     path,
-    path_no_authority,
     query,
     fragment,
 };
@@ -172,25 +176,9 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                 i += 2;
             } else {
                 // Otherwise we expect a path (path-absolute, path-rootless, path-empty)
-                expected_token = token_type::path_no_authority;
+                expected_token = token_type::path;
             }
             break;
-        }
-        case token_type::path_no_authority: {
-            auto token_begin = i;
-            // The path can be empty but we wouldn't be here...
-            while (i < uri.size()) {
-                const auto c = uri[i++];
-                if (!is_path_char(c) && c != '/') {
-                    return std::nullopt;
-                }
-            }
-
-            decomposed.path_index = token_begin;
-            decomposed.path = uri.substr(token_begin, i - token_begin);
-
-            // We're done, nothing else to parse
-            return decomposed;
         }
         case token_type::authority: {
             auto token_begin = i;

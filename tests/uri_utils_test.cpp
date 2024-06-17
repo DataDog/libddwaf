@@ -140,12 +140,7 @@ TEST(TestURI, SchemeAndPath)
     }
 }
 
-TEST(TestURI, SchemeMalformedPath)
-{
-    EXPECT_FALSE(ddwaf::uri_parse("file:[][][]"));
-    EXPECT_FALSE(ddwaf::uri_parse("file:?query"));
-    EXPECT_FALSE(ddwaf::uri_parse("file:#fragment"));
-}
+TEST(TestURI, SchemeMalformedPath) { EXPECT_FALSE(ddwaf::uri_parse("file:[][][]")); }
 
 TEST(TestURI, SchemeHost)
 {
@@ -176,6 +171,40 @@ TEST(TestURI, SchemeHost)
         EXPECT_TRUE(uri->authority.userinfo.empty());
         EXPECT_TRUE(uri->authority.port.empty());
     }
+}
+
+TEST(TestURI, SchemeQuery)
+{
+    auto uri = ddwaf::uri_parse("http:?hello");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "http");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->query, "hello");
+}
+
+TEST(TestURI, SchemeFragment)
+{
+    auto uri = ddwaf::uri_parse("http:#hello");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "http");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->fragment, "hello");
+}
+
+TEST(TestURI, SchemeQueryFragment)
+{
+    auto uri = ddwaf::uri_parse("http:?hello#bye");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "http");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->query, "hello");
+    EXPECT_STRV(uri->fragment, "bye");
 }
 
 TEST(TestURI, SchemeIPv4Host)
@@ -600,6 +629,43 @@ TEST(TestURI, RelativeRefAbsolutePathQueryFragment)
     EXPECT_STRV(uri->path, "/path");
     EXPECT_STRV(uri->query, "query");
     EXPECT_STRV(uri->fragment, "f");
+}
+
+TEST(TestURI, RelativeRefQuery)
+{
+    auto uri = ddwaf::uri_parse("/?hello");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->path, "/");
+    EXPECT_STRV(uri->query, "hello");
+}
+
+TEST(TestURI, RelativeRefFragment)
+{
+    auto uri = ddwaf::uri_parse("/#hello");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->path, "/");
+    EXPECT_STRV(uri->fragment, "hello");
+}
+
+TEST(TestURI, RelativeRefQueryFragment)
+{
+    auto uri = ddwaf::uri_parse("/?hello#bye");
+    ASSERT_TRUE(uri);
+    EXPECT_STRV(uri->scheme, "");
+    EXPECT_STRV(uri->authority.host, "");
+    EXPECT_TRUE(uri->authority.userinfo.empty());
+    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_STRV(uri->path, "/");
+    EXPECT_STRV(uri->query, "hello");
+    EXPECT_STRV(uri->fragment, "bye");
 }
 
 } // namespace
