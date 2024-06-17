@@ -54,7 +54,14 @@ jobs:
             ${{ github.workspace }}/packages/*.sha256
 
   macos-build:
-    runs-on: macos-11
+    strategy:
+      matrix:
+        target:
+          - os: macos-13
+            arch: x86_64
+          - os: macos-13-xlarge
+            arch: arm64
+    runs-on: ${{ matrix.target.os }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -81,44 +88,15 @@ jobs:
         run: for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
       - uses: actions/upload-artifact@v4
         with:
-          name: libddwaf-macos-x86_64
+          name: libddwaf-macos-${{ matrix.target.arch }}
           path: |
             ${{ github.workspace }}/packages/*.tar.gz
             ${{ github.workspace }}/packages/*.sha256
 
-  macos-cross-build:
-    runs-on: macos-11
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Create Build Directory
-        run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
-      - name: Generating Build Scripts
-        run: cmake -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMACOSX_DEPLOYMENT_TARGET=10.9 -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
-        working-directory: ${{ github.workspace }}/build
-      - name: Build Binaries
-        run: cmake --build . --config RelWithDebInfo --verbose --target all -j
-        working-directory: ${{ github.workspace }}/build
-      - name: Build Packages
-        run: cmake --build . --target package --config RelWithDebInfo --verbose
-        working-directory: ${{ github.workspace }}/build
-      - name: Remove Temporary Files
-        run: cmake -E remove_directory _CPack_Packages
-        working-directory: ${{ github.workspace }}/packages
-      - name: Generate Package sha256
-        working-directory: ${{ github.workspace }}/packages
-        run: for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v4
-        with:
-          name: libddwaf-macos-arm64
-          path: |
-            ${{ github.workspace }}/packages/*.tar.gz
-            ${{ github.workspace }}/packages/*.sha256
 
   macos-universal-package:
-    runs-on: macos-11
-    needs: [macos-build, macos-cross-build]
+    runs-on: macos-13
+    needs: [macos-build]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
