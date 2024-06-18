@@ -42,23 +42,8 @@ public:
     rule(const rule &) = delete;
     rule &operator=(const rule &) = delete;
 
-    rule(rule &&rhs) noexcept
-        : enabled_(rhs.enabled_), source_(rhs.source_), id_(std::move(rhs.id_)),
-          name_(std::move(rhs.name_)), tags_(std::move(rhs.tags_)), expr_(std::move(rhs.expr_)),
-          actions_(std::move(rhs.actions_))
-    {}
-
-    rule &operator=(rule &&rhs) noexcept
-    {
-        enabled_ = rhs.enabled_;
-        source_ = rhs.source_;
-        id_ = std::move(rhs.id_);
-        name_ = std::move(rhs.name_);
-        tags_ = std::move(rhs.tags_);
-        expr_ = std::move(rhs.expr_);
-        actions_ = std::move(rhs.actions_);
-        return *this;
-    }
+    rule(rule &&rhs) noexcept = default;
+    rule &operator=(rule &&rhs) noexcept = default;
 
     virtual ~rule() = default;
 
@@ -94,8 +79,18 @@ public:
     }
 
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
+    const std::unordered_map<std::string, std::string> &get_ancillary_tags() const
+    {
+        return ancillary_tags_;
+    }
 
-    void set_tag(const std::string &key, const std::string &value) { tags_[key] = value; }
+    void set_ancillary_tag(const std::string &key, const std::string &value)
+    {
+        // Ancillary tags aren't allowed to overlap with standard tags
+        if (!tags_.contains(key)) {
+            ancillary_tags_[key] = value;
+        }
+    }
 
     const std::vector<std::string> &get_actions() const { return actions_; }
 
@@ -112,6 +107,7 @@ protected:
     std::string id_;
     std::string name_;
     std::unordered_map<std::string, std::string> tags_;
+    std::unordered_map<std::string, std::string> ancillary_tags_;
     std::shared_ptr<expression> expr_;
     std::vector<std::string> actions_;
 };

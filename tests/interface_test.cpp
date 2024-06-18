@@ -780,7 +780,7 @@ TEST(TestInterface, UpdateTagsByID)
         EXPECT_EVENTS(result2,
             {.id = "1",
                 .name = "rule1",
-                .tags = {{"type", "flow1"}, {"category", "new_category"}, {"confidence", "0"},
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"},
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
@@ -834,7 +834,7 @@ TEST(TestInterface, UpdateTagsByID)
         EXPECT_EVENTS(result2,
             {.id = "1",
                 .name = "rule1",
-                .tags = {{"type", "flow1"}, {"category", "new_category"}, {"confidence", "0"},
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"},
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
@@ -907,7 +907,7 @@ TEST(TestInterface, UpdateTagsByTags)
         EXPECT_EVENTS(result2,
             {.id = "1",
                 .name = "rule1",
-                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "0"},
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"},
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
@@ -1000,7 +1000,7 @@ TEST(TestInterface, UpdateTagsByTags)
         EXPECT_EVENTS(result2,
             {.id = "3",
                 .name = "rule3",
-                .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "0"},
+                .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "1"},
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule3",
@@ -1055,7 +1055,7 @@ TEST(TestInterface, UpdateTagsByTags)
         EXPECT_EVENTS(result2,
             {.id = "3",
                 .name = "rule3",
-                .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "0"},
+                .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "1"},
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule3",
@@ -1088,7 +1088,7 @@ TEST(TestInterface, UpdateOverrideByIDAndTag)
     ddwaf_handle handle2;
     {
         auto overrides = yaml_to_object(
-            R"({rules_override: [{rules_target: [{tags: {type: flow1}}], on_match: ["block"], enabled: false}, {rules_target: [{rule_id: 1}], enabled: true}]})");
+            R"({rules_override: [{rules_target: [{tags: {type: flow1}}], tags: {new_tag: old_value}, on_match: ["block"], enabled: false}, {rules_target: [{rule_id: 1}], tags: {new_tag: new_value}, enabled: true}]})");
         handle2 = ddwaf_update(handle1, &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
@@ -1109,6 +1109,28 @@ TEST(TestInterface, UpdateOverrideByIDAndTag)
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+
+        EXPECT_EVENTS(result1,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+
+        EXPECT_EVENTS(result2,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"},
+                    {"new_tag", "new_value"}},
+                .actions = {"block"},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(
@@ -1148,6 +1170,28 @@ TEST(TestInterface, UpdateOverrideByIDAndTag)
 
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
+
+        EXPECT_EVENTS(result2,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"},
+                    {"new_tag", "new_value"}},
+                .actions = {"block"},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+
+        EXPECT_EVENTS(result3,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
 
         EXPECT_ACTIONS(
             result2, {{"block_request",
