@@ -57,7 +57,7 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
         type = reference_type::id;
     }
 
-    if (!current.actions.has_value() && !current.enabled.has_value()) {
+    if (!current.actions.has_value() && !current.enabled.has_value() && current.tags.empty()) {
         throw ddwaf::parsing_error("rule override without side-effects");
     }
 

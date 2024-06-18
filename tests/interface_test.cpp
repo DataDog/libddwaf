@@ -731,6 +731,349 @@ TEST(TestInterface, UpdateActionsByTags)
     ddwaf_destroy(handle2);
 }
 
+TEST(TestInterface, UpdateTagsByID)
+{
+    auto rule = read_file("interface.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle1, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_handle handle2;
+    {
+        auto overrides = yaml_to_object(
+            R"({rules_override: [{rules_target: [{rule_id: 1}], tags: {category: new_category, confidence: 0, new_tag: value}}]})");
+        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    {
+        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ASSERT_NE(context1, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+
+        ddwaf_result result1;
+        ddwaf_result result2;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+
+        EXPECT_EVENTS(result1,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+
+        EXPECT_EVENTS(result2,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "new_category"}, {"confidence", "0"},
+                    {"new_tag", "value"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_result_free(&result1);
+        ddwaf_result_free(&result2);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context1);
+    }
+
+    ddwaf_handle handle3;
+    {
+        auto overrides = yaml_to_object(R"({rules_override: []})");
+        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    {
+        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ASSERT_NE(context3, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+
+        ddwaf_result result3;
+        ddwaf_result result2;
+
+        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+
+        EXPECT_EVENTS(result3,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+
+        EXPECT_EVENTS(result2,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "new_category"}, {"confidence", "0"},
+                    {"new_tag", "value"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+
+        ddwaf_object_free(&parameter);
+
+        ddwaf_result_free(&result3);
+        ddwaf_result_free(&result2);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context3);
+    }
+
+    ddwaf_destroy(handle2);
+    ddwaf_destroy(handle1);
+    ddwaf_destroy(handle3);
+}
+
+TEST(TestInterface, UpdateTagsByTags)
+{
+    auto rule = read_file("interface.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle1, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_handle handle2;
+    {
+        auto overrides = yaml_to_object(
+            R"({rules_override: [{rules_target: [{tags: {confidence: 1}}], tags: {new_tag: value, confidence: 0}}]})");
+        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    {
+        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ASSERT_NE(context1, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+
+        ddwaf_result result1;
+        ddwaf_result result2;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EVENTS(result1,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+
+        EXPECT_EVENTS(result2,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "0"},
+                    {"new_tag", "value"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule1",
+                    .highlight = "rule1",
+                    .args = {
+                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+
+        ddwaf_result_free(&result1);
+        ddwaf_result_free(&result2);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context1);
+    }
+
+    {
+        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ASSERT_NE(context1, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+
+        ddwaf_result result1;
+        ddwaf_result result2;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EVENTS(result1,
+            {.id = "2",
+                .name = "rule2",
+                .tags = {{"type", "flow2"}, {"category", "category2"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule2",
+                    .highlight = "rule2",
+                    .args = {
+                        {.name = "input", .value = "rule2", .address = "value1", .path = {}}}}}});
+
+        EXPECT_EVENTS(result2,
+            {.id = "2",
+                .name = "rule2",
+                .tags = {{"type", "flow2"}, {"category", "category2"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule2",
+                    .highlight = "rule2",
+                    .args = {
+                        {.name = "input", .value = "rule2", .address = "value1", .path = {}}}}}});
+
+        ddwaf_result_free(&result1);
+        ddwaf_result_free(&result2);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context1);
+    }
+
+    {
+        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ASSERT_NE(context1, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule3"));
+
+        ddwaf_result result1;
+        ddwaf_result result2;
+
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EVENTS(result1,
+            {.id = "3",
+                .name = "rule3",
+                .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "1"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule3",
+                    .highlight = "rule3",
+                    .args = {
+                        {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
+
+        EXPECT_EVENTS(result2,
+            {.id = "3",
+                .name = "rule3",
+                .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "0"},
+                    {"new_tag", "value"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule3",
+                    .highlight = "rule3",
+                    .args = {
+                        {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
+
+        ddwaf_result_free(&result1);
+        ddwaf_result_free(&result2);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context1);
+    }
+
+    ddwaf_handle handle3;
+    {
+        auto overrides = yaml_to_object(
+            R"({rules_override: [{rules_target: [{tags: {confidence: 0}}], tags: {should_not: exist}}]})");
+        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    {
+        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ASSERT_NE(context3, nullptr);
+
+        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ASSERT_NE(context2, nullptr);
+
+        ddwaf_object tmp;
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule3"));
+
+        ddwaf_result result3;
+        ddwaf_result result2;
+
+        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_object_free(&parameter);
+
+        EXPECT_EVENTS(result3,
+            {.id = "3",
+                .name = "rule3",
+                .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "1"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule3",
+                    .highlight = "rule3",
+                    .args = {
+                        {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
+
+        EXPECT_EVENTS(result2,
+            {.id = "3",
+                .name = "rule3",
+                .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "0"},
+                    {"new_tag", "value"}},
+                .matches = {{.op = "match_regex",
+                    .op_value = "rule3",
+                    .highlight = "rule3",
+                    .args = {
+                        {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
+        ddwaf_result_free(&result3);
+        ddwaf_result_free(&result2);
+
+        ddwaf_context_destroy(context2);
+        ddwaf_context_destroy(context3);
+    }
+
+    ddwaf_destroy(handle1);
+    ddwaf_destroy(handle2);
+    ddwaf_destroy(handle3);
+}
+
 TEST(TestInterface, UpdateOverrideByIDAndTag)
 {
     auto rule = read_file("interface.yaml");
