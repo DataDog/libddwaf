@@ -45,6 +45,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/scanner_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/exclusion_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
+    ${libddwaf_SOURCE_DIR}/src/processor/http_fingerprint.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/sqli_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/ssrf_detector.cpp
