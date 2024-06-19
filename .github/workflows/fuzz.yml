@@ -88,6 +88,8 @@ jobs:
             params: "--dialect=standard"
           - fuzzer: shell_tokenizer
             params: ""
+          - fuzzer: sha256
+            params: ""
     steps:
       - uses: actions/checkout@v4
         with:
