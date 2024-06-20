@@ -18,6 +18,7 @@ namespace ddwaf {
 
 enum class shell_token_type {
     unknown,
+    whitespace,
     executable,
     field,
     literal,
@@ -111,13 +112,24 @@ protected:
                t == shell_token_type::compound_command_open;
     }
 
+    [[nodiscard]] static bool token_allowed_before_executable(shell_token_type type)
+    {
+        return type == shell_token_type::control ||
+               type == shell_token_type::backtick_substitution_open ||
+               type == shell_token_type::command_substitution_open ||
+               type == shell_token_type::process_substitution_open ||
+               type == shell_token_type::compound_command_open ||
+               type == shell_token_type::subshell_open || type == shell_token_type::whitespace;
+    }
+
     void tokenize_single_quoted_string();
     void tokenize_double_quoted_string_scope();
     void tokenize_variable();
-    void tokenize_field();
+    void tokenize_field(shell_token_type type = shell_token_type::field);
     void tokenize_literal();
     void tokenize_redirection();
     void tokenize_delimited_token(std::string_view delimiter, shell_token_type type);
+    void strip_whitespaces();
 };
 
 } // namespace ddwaf

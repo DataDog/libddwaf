@@ -31,6 +31,9 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
     case shell_token_type::unknown:
         os << "unknown";
         break;
+    case shell_token_type::whitespace:
+        os << "whitespace";
+        break;
     case shell_token_type::executable:
         os << "executable";
         break;
@@ -251,11 +254,11 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
     }
 }
 
-void shell_tokenizer::tokenize_field()
+void shell_tokenizer::tokenize_field(shell_token_type type)
 {
     shell_token token;
     token.index = index();
-    token.type = shell_token_type::field;
+    token.type = type;
 
     // Find the end of this token by searching for a "known" character
     while (is_field_char(next()) && advance()) {}
@@ -284,6 +287,21 @@ void shell_tokenizer::tokenize_redirection()
     }
 }
 
+void shell_tokenizer::strip_whitespaces()
+{
+    std::size_t read = 0;
+    std::size_t write = 0;
+    for (; read < tokens_.size(); read++) {
+        if (tokens_[read].type == shell_token_type::whitespace) {
+            continue;
+        }
+
+        tokens_[write++] = tokens_[read];
+    }
+
+    tokens_.resize(write);
+}
+
 std::vector<shell_token> shell_tokenizer::tokenize()
 {
     // The string is evaluated based on the current scope, if we're in the global
@@ -302,8 +320,14 @@ std::vector<shell_token> shell_tokenizer::tokenize()
 
         auto c = peek();
         if (ddwaf::isspace(c)) {
-            // Skip spaces
+            shell_token token;
+            token.index = index();
+            token.type = shell_token_type::whitespace;
+
             while (ddwaf::isspace(next()) && advance()) {}
+
+            token.str = substr(token.index, index() - token.index + 1);
+            emplace_token(token);
         } else if (c == '"') {
             add_token(shell_token_type::double_quoted_string_open);
             push_scope(shell_scope::double_quoted_string);
@@ -397,7 +421,8 @@ std::vector<shell_token> shell_tokenizer::tokenize()
         } else if (c == '{') {
             auto n = next();
             if (n == ' ') {
-                add_token(shell_token_type::compound_command_open);
+                // Swallow the whitespace
+                add_token(shell_token_type::compound_command_open, 2);
                 push_scope(shell_scope::compound_command);
             } else {
                 add_token(shell_token_type::curly_brace_open);
@@ -431,13 +456,17 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 tokenize_redirection();
             }
         } else {
-            tokenize_field();
-            if (!tokens_.empty() && should_expect_definition_or_executable()) {
+            if (should_expect_definition_or_executable()) {
+                auto type_before_field =
+                    tokens_.empty() ? shell_token_type::whitespace : last_token_type();
+                tokenize_field();
                 if (next() == '=') {
                     last_token().type = shell_token_type::variable_definition;
-                } else {
+                } else if (token_allowed_before_executable(type_before_field)) {
                     last_token().type = shell_token_type::executable;
                 }
+            } else {
+                tokenize_field();
             }
         }
 
@@ -450,6 +479,8 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             }
         }
     }
+
+    strip_whitespaces();
 
     return tokens_;
 }

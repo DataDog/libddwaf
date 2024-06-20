@@ -22,6 +22,7 @@ TEST(TestShellTokenizer, TokenTypeOstream)
     };
 
     EXPECT_STR(stream_token(shell_token_type::unknown), "unknown");
+    EXPECT_STR(stream_token(shell_token_type::whitespace), "whitespace");
     EXPECT_STR(stream_token(shell_token_type::executable), "executable");
     EXPECT_STR(stream_token(shell_token_type::field), "field");
     EXPECT_STR(stream_token(shell_token_type::literal), "literal");
@@ -239,6 +240,7 @@ TEST(TestShellTokenizer, Executable)
                               stt::field, stt::process_substitution_close}},
         {"diff >(ls -l)", {stt::executable, stt::process_substitution_open, stt::executable,
                               stt::field, stt::process_substitution_close}},
+        {"var= echo hello", {stt::variable_definition, stt::equal, stt::executable, stt::field}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
