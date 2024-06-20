@@ -21,6 +21,7 @@ enum class shell_token_type {
     whitespace,
     executable,
     field,
+    arithmetic_expansion,
     literal,
     double_quoted_string_open,
     double_quoted_string_close,
@@ -70,33 +71,25 @@ protected:
         process_substitution,  // <() or >()
     };
 
-    std::vector<std::pair<shell_scope, /*executable expected*/ bool>> scope_stack_;
-    shell_scope current_scope_{shell_scope::global};
+    std::vector<shell_scope> shell_scope_stack_;
+    shell_scope current_shell_scope_{shell_scope::global};
 
-    void push_scope(shell_scope scope)
+    void push_shell_scope(shell_scope scope)
     {
-        scope_stack_.emplace_back(scope, scope != shell_scope::double_quoted_string);
-        current_scope_ = scope;
+        current_shell_scope_ = scope;
+
+        shell_scope_stack_.emplace_back(scope);
     }
 
-    void pop_scope()
+    void pop_shell_scope()
     {
-        scope_stack_.pop_back();
-        current_scope_ = scope_stack_.back().first;
+        shell_scope_stack_.pop_back();
+        current_shell_scope_ = shell_scope_stack_.back();
     }
 
-    shell_token_type last_token_type() const { return tokens_.back().type; }
+    shell_token_type current_token_type() const { return tokens_.back().type; }
 
-    shell_token &last_token() { return tokens_.back(); }
-
-    [[nodiscard]] bool should_expect_definition_or_executable() const
-    {
-        return scope_stack_.back().second;
-    }
-
-    void set_executable_found() { scope_stack_.back().second = false; }
-
-    void reset_executable_found() { scope_stack_.back().second = true; }
+    shell_token &current_token() { return tokens_.back(); }
 
     [[nodiscard]] bool should_expect_subprocess() const
     {
@@ -104,7 +97,7 @@ protected:
             return true;
         }
 
-        auto t = last_token_type();
+        auto t = current_token_type();
         return t == shell_token_type::control ||
                t == shell_token_type::backtick_substitution_open ||
                t == shell_token_type::command_substitution_open ||
@@ -129,7 +122,6 @@ protected:
     void tokenize_literal();
     void tokenize_redirection();
     void tokenize_delimited_token(std::string_view delimiter, shell_token_type type);
-    void strip_whitespaces();
 };
 
 } // namespace ddwaf

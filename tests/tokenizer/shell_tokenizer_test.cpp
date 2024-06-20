@@ -361,8 +361,8 @@ TEST(TestShellTokenizer, VariableDefinition)
         {">(var=2)", {stt::process_substitution_open, stt::variable_definition, stt::equal,
                          stt::field, stt::process_substitution_close}},
         {"var=(1 2 3)", {stt::variable_definition, stt::equal, stt::field}},
-        {"var=$(( 1+1 ))", {stt::variable_definition, stt::equal, stt::field}},
-        {"var=$[ 1+1 ]", {stt::variable_definition, stt::equal, stt::field}},
+        {"var=$(( 1+1 ))", {stt::variable_definition, stt::equal, stt::arithmetic_expansion}},
+        {"var=$[ 1+1 ]", {stt::variable_definition, stt::equal, stt::arithmetic_expansion}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
@@ -437,7 +437,8 @@ TEST(TestShellTokenizer, MultipleCommands)
 
 TEST(TestShellTokenizer, ArithmeticExpansion)
 {
-    std::vector<std::pair<std::string, std::vector<stt>>> samples{{"(( var=1+1 ))", {stt::field}}};
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"(( var=1+1 ))", {stt::arithmetic_expansion}}};
 
     for (const auto &[input, expected_tokens] : samples) {
         shell_tokenizer tokenizer(input);
@@ -455,6 +456,50 @@ TEST(TestShellTokenizer, Negation)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {"! ls", {stt::control, stt::executable}}};
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
+}
+
+TEST(TestShellTokenizer, CompoundCommands)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"{ echo; }", {stt::compound_command_open, stt::executable, stt::control,
+                          stt::compound_command_close}},
+        {"{ ls -l ; echo hello; }",
+            {stt::compound_command_open, stt::executable, stt::field, stt::control, stt::executable,
+                stt::field, stt::control, stt::compound_command_close}},
+        {"{ ls -l | grep passwd; }",
+            {stt::compound_command_open, stt::executable, stt::field, stt::control, stt::executable,
+                stt::field, stt::control, stt::compound_command_close}},
+        {R"({ "command"; })", {stt::compound_command_open, stt::executable, stt::control,
+                                  stt::compound_command_close}},
+        {R"({ 'command'; })", {stt::compound_command_open, stt::executable, stt::control,
+                                  stt::compound_command_close}},
+        {R"({ "ls" -l; })", {stt::compound_command_open, stt::executable, stt::field, stt::control,
+                                stt::compound_command_close}},
+        {R"({ 'ls' -l; })", {stt::compound_command_open, stt::executable, stt::field, stt::control,
+                                stt::compound_command_close}},
+        {R"({ var=10 ls -l; })",
+            {stt::compound_command_open, stt::variable_definition, stt::equal, stt::field,
+                stt::executable, stt::field, stt::control, stt::compound_command_close}},
+        {R"({ var= ls -l; })",
+            {stt::compound_command_open, stt::variable_definition, stt::equal, stt::executable,
+                stt::field, stt::control, stt::compound_command_close}},
+        {R"!({ "$(echo ls)" -l; })!",
+            {stt::compound_command_open, stt::double_quoted_string_open,
+                stt::command_substitution_open, stt::executable, stt::field,
+                stt::command_substitution_close, stt::double_quoted_string_close, stt::field,
+                stt::control, stt::compound_command_close}},
+    };
 
     for (const auto &[input, expected_tokens] : samples) {
         shell_tokenizer tokenizer(input);

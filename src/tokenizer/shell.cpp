@@ -23,6 +23,83 @@ bool is_field_char(char c)
     return known_chars.find(c) == std::string_view::npos;
 }
 
+std::vector<shell_token> find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
+{
+    // The scope within the command, this helps identify high level constructs
+    // which end up evaluating as part of a command, e.g. an executable
+    // generated from a command substitution
+    enum class command_scope {
+        variable_definition_or_executable,
+        variable_definition,
+        arguments,
+        none,
+    };
+
+    std::size_t read = 0;
+    std::size_t write = 0;
+
+    std::vector<command_scope> command_scope_stack{
+        command_scope::variable_definition_or_executable};
+    for (; read < tokens.size(); read++) {
+        auto &token = tokens[read];
+        auto &scope = command_scope_stack.back();
+
+        switch (token.type) {
+        case shell_token_type::backtick_substitution_open:
+        case shell_token_type::command_substitution_open:
+        case shell_token_type::process_substitution_open:
+        case shell_token_type::compound_command_open:
+        case shell_token_type::subshell_open:
+            if (scope == command_scope::variable_definition_or_executable) {
+                // These tokens have nested commands which will be interpreted
+                // as the executable, so we can consider the executable of this
+                // scope "found", albeit detections will rely on nested
+                // executables, rather than considering this the executable.
+                scope = command_scope::arguments;
+            }
+            command_scope_stack.emplace_back(command_scope::variable_definition_or_executable);
+            break;
+        case shell_token_type::backtick_substitution_close:
+        case shell_token_type::command_substitution_close:
+        case shell_token_type::process_substitution_close:
+        case shell_token_type::compound_command_close:
+        case shell_token_type::subshell_close:
+            command_scope_stack.pop_back();
+            break;
+        case shell_token_type::variable_definition:
+            if (scope == command_scope::variable_definition_or_executable) {
+                scope = command_scope::variable_definition;
+            }
+            break;
+        case shell_token_type::field:
+        case shell_token_type::variable:
+        case shell_token_type::single_quoted_string:
+        case shell_token_type::double_quoted_string:
+            if (scope == command_scope::variable_definition_or_executable) {
+                token.type = shell_token_type::executable;
+                scope = command_scope::arguments;
+            }
+            break;
+        case shell_token_type::whitespace:
+            if (scope == command_scope::variable_definition) {
+                scope = command_scope::variable_definition_or_executable;
+            }
+            // Skip adding the whitespace
+            continue;
+        case shell_token_type::control:
+            // Control commands reset the command scope
+            scope = command_scope::variable_definition_or_executable;
+            break;
+        default:
+            break;
+        }
+        tokens[write++] = token;
+    }
+
+    tokens.resize(write);
+    return tokens;
+}
+
 } // namespace
 
 std::ostream &operator<<(std::ostream &os, shell_token_type type)
@@ -39,6 +116,9 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
         break;
     case shell_token_type::field:
         os << "field";
+        break;
+    case shell_token_type::arithmetic_expansion:
+        os << "arithmetic_expansion";
         break;
     case shell_token_type::literal:
         os << "literal";
@@ -123,7 +203,7 @@ shell_tokenizer::shell_tokenizer(
     std::string_view str, std::unordered_set<shell_token_type> skip_tokens)
     : base_tokenizer(str, std::move(skip_tokens))
 {
-    scope_stack_.reserve(8);
+    shell_scope_stack_.reserve(8);
 
     if (!redirection_regex.ok()) {
         throw std::runtime_error("redirection regex not valid: " + redirection_regex.error_arg());
@@ -149,11 +229,7 @@ void shell_tokenizer::tokenize_variable()
 {
     shell_token token;
     token.index = index();
-    if (should_expect_definition_or_executable()) {
-        token.type = shell_token_type::executable;
-    } else {
-        token.type = shell_token_type::variable;
-    }
+    token.type = shell_token_type::variable;
 
     // Skip dollar
     advance();
@@ -186,16 +262,12 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
     for (; !eof(); advance()) {
         auto c = peek();
         if (c == '"' && slash_count == 0) {
-            pop_scope();
+            pop_shell_scope();
 
             // At this point we know there's at least one token so no need to check
-            auto &token = last_token();
+            auto &token = current_token();
             if (token.type == shell_token_type::double_quoted_string_open) {
-                if (should_expect_definition_or_executable()) {
-                    token.type = shell_token_type::executable;
-                } else {
-                    token.type = shell_token_type::double_quoted_string;
-                }
+                token.type = shell_token_type::double_quoted_string;
                 token.str = substr(token.index, index() - token.index + 1);
             } else {
                 if (begin < index()) {
@@ -226,7 +298,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
                 }
 
                 add_token(shell_token_type::command_substitution_open, 2);
-                push_scope(shell_scope::command_substitution);
+                push_shell_scope(shell_scope::command_substitution);
                 break;
             }
 
@@ -246,7 +318,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
             }
 
             add_token(shell_token_type::backtick_substitution_open);
-            push_scope(shell_scope::backtick_substitution);
+            push_shell_scope(shell_scope::backtick_substitution);
             break;
         } else if (c == '\\') {
             slash_count ^= 1;
@@ -287,21 +359,6 @@ void shell_tokenizer::tokenize_redirection()
     }
 }
 
-void shell_tokenizer::strip_whitespaces()
-{
-    std::size_t read = 0;
-    std::size_t write = 0;
-    for (; read < tokens_.size(); read++) {
-        if (tokens_[read].type == shell_token_type::whitespace) {
-            continue;
-        }
-
-        tokens_[write++] = tokens_[read];
-    }
-
-    tokens_.resize(write);
-}
-
 std::vector<shell_token> shell_tokenizer::tokenize()
 {
     // The string is evaluated based on the current scope, if we're in the global
@@ -310,10 +367,10 @@ std::vector<shell_token> shell_tokenizer::tokenize()
     // substution) the string must be tokenized whilst searching for the end of
     // the current subcommand. If we're inside a double quoted string, the
     // tokenization must attempt to find substitutions / expansions.
-    push_scope(shell_scope::global);
+    push_shell_scope(shell_scope::global);
 
     for (; !eof(); advance()) {
-        if (current_scope_ == shell_scope::double_quoted_string) {
+        if (current_shell_scope_ == shell_scope::double_quoted_string) {
             tokenize_double_quoted_string_scope();
             continue;
         }
@@ -330,7 +387,7 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             emplace_token(token);
         } else if (c == '"') {
             add_token(shell_token_type::double_quoted_string_open);
-            push_scope(shell_scope::double_quoted_string);
+            push_shell_scope(shell_scope::double_quoted_string);
 
             // Skip "
             advance();
@@ -348,13 +405,13 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 auto n2 = next(2);
                 if (n2 == '(') {
                     // Arithmetic expansion
-                    tokenize_delimited_token("))", shell_token_type::field);
+                    tokenize_delimited_token("))", shell_token_type::arithmetic_expansion);
                 } else if (n2 == '<') {
                     // File redirection
                     tokenize_delimited_token(")", shell_token_type::field);
                 } else {
                     add_token(shell_token_type::command_substitution_open, 2);
-                    push_scope(shell_scope::command_substitution);
+                    push_shell_scope(shell_scope::command_substitution);
                     // advance();
                 }
             } else if (n == '{' || ddwaf::isalnum(n) || n == '_' || n == '-' || n == '?' ||
@@ -362,44 +419,44 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 tokenize_variable();
             } else if (n == '[') {
                 // Legacy Arithmetic expansion
-                tokenize_delimited_token("]", shell_token_type::field);
+                tokenize_delimited_token("]", shell_token_type::arithmetic_expansion);
             }
         } else if (c == ')') {
-            if (current_scope_ == shell_scope::command_substitution) {
+            if (current_shell_scope_ == shell_scope::command_substitution) {
                 add_token(shell_token_type::command_substitution_close);
-                pop_scope();
-            } else if (current_scope_ == shell_scope::process_substitution) {
+                pop_shell_scope();
+            } else if (current_shell_scope_ == shell_scope::process_substitution) {
                 add_token(shell_token_type::process_substitution_close);
-                pop_scope();
-            } else if (current_scope_ == shell_scope::subshell) {
+                pop_shell_scope();
+            } else if (current_shell_scope_ == shell_scope::subshell) {
                 add_token(shell_token_type::subshell_close);
-                pop_scope();
+                pop_shell_scope();
             } else {
                 add_token(shell_token_type::parenthesis_close);
             }
         } else if (c == '`') {
-            if (current_scope_ == shell_scope::backtick_substitution) {
+            if (current_shell_scope_ == shell_scope::backtick_substitution) {
                 // End of the backtick command substitution, add a token for the
                 // final backtick and exit the scope
                 add_token(shell_token_type::backtick_substitution_close);
 
-                pop_scope();
+                pop_shell_scope();
             } else {
                 // Backtick substitution, add a token for the first backtick and
                 // open a new scope
                 add_token(shell_token_type::backtick_substitution_open);
-                push_scope(shell_scope::backtick_substitution);
+                push_shell_scope(shell_scope::backtick_substitution);
             }
         } else if (c == '(') {
-            if (!tokens_.empty() && last_token_type() == shell_token_type::equal) {
+            if (!tokens_.empty() && current_token_type() == shell_token_type::equal) {
                 // Array
                 tokenize_delimited_token(")", shell_token_type::field);
             } else if (next() == '(') {
                 // Arithmetic expansions
-                tokenize_delimited_token("))", shell_token_type::field);
+                tokenize_delimited_token("))", shell_token_type::arithmetic_expansion);
             } else if (should_expect_subprocess()) {
                 add_token(shell_token_type::subshell_open);
-                push_scope(shell_scope::subshell);
+                push_shell_scope(shell_scope::subshell);
             } else {
                 add_token(shell_token_type::parenthesis_open);
             }
@@ -421,25 +478,22 @@ std::vector<shell_token> shell_tokenizer::tokenize()
         } else if (c == '{') {
             auto n = next();
             if (n == ' ') {
+                add_token(shell_token_type::compound_command_open);
                 // Swallow the whitespace
-                add_token(shell_token_type::compound_command_open, 2);
-                push_scope(shell_scope::compound_command);
+                advance();
+                push_shell_scope(shell_scope::compound_command);
             } else {
                 add_token(shell_token_type::curly_brace_open);
             }
         } else if (c == '}') {
-            if (current_scope_ == shell_scope::compound_command) {
+            if (current_shell_scope_ == shell_scope::compound_command) {
                 add_token(shell_token_type::compound_command_close);
-                pop_scope();
+                pop_shell_scope();
             } else {
                 add_token(shell_token_type::curly_brace_close);
             }
         } else if (c == '\'') {
-            if (should_expect_definition_or_executable()) {
-                tokenize_delimited_token("'", shell_token_type::executable);
-            } else {
-                tokenize_delimited_token("'", shell_token_type::single_quoted_string);
-            }
+            tokenize_delimited_token("'", shell_token_type::single_quoted_string);
         } else if (ddwaf::isdigit(c)) {
             auto n = next();
             if (n == '<' || n == '>') {
@@ -451,38 +505,19 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             auto n = next();
             if (n == '(') {
                 add_token(shell_token_type::process_substitution_open, 2);
-                push_scope(shell_scope::process_substitution);
+                push_shell_scope(shell_scope::process_substitution);
             } else {
                 tokenize_redirection();
             }
         } else {
-            if (should_expect_definition_or_executable()) {
-                auto type_before_field =
-                    tokens_.empty() ? shell_token_type::whitespace : last_token_type();
-                tokenize_field();
-                if (next() == '=') {
-                    last_token().type = shell_token_type::variable_definition;
-                } else if (token_allowed_before_executable(type_before_field)) {
-                    last_token().type = shell_token_type::executable;
-                }
-            } else {
-                tokenize_field();
-            }
-        }
-
-        if (!tokens_.empty()) {
-            auto type = last_token_type();
-            if (type == shell_token_type::executable) {
-                set_executable_found();
-            } else if (type == shell_token_type::control) {
-                reset_executable_found();
+            tokenize_field();
+            if (next() == '=') {
+                current_token().type = shell_token_type::variable_definition;
             }
         }
     }
 
-    strip_whitespaces();
-
-    return tokens_;
+    return find_executables_and_strip_whitespaces(tokens_);
 }
 
 } // namespace ddwaf
