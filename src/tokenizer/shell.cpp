@@ -23,6 +23,8 @@ bool is_field_char(char c)
     return known_chars.find(c) == std::string_view::npos;
 }
 
+bool is_space_char(char c) { return c == ' ' || c == '\t'; }
+
 std::vector<shell_token> find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
 {
     // The scope within the command, this helps identify high level constructs
@@ -376,12 +378,12 @@ std::vector<shell_token> shell_tokenizer::tokenize()
         }
 
         auto c = peek();
-        if (ddwaf::isspace(c)) {
+        if (is_space_char(c)) {
             shell_token token;
             token.index = index();
             token.type = shell_token_type::whitespace;
 
-            while (ddwaf::isspace(next()) && advance()) {}
+            while (is_space_char(next()) && advance()) {}
 
             token.str = substr(token.index, index() - token.index + 1);
             emplace_token(token);
