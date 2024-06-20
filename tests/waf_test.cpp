@@ -53,20 +53,11 @@ TEST(TestWaf, RuleDisabledInRuleset)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf::null_ruleset_info info;
-    ddwaf::waf instance{
-        rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
+    EXPECT_THROW((ddwaf::waf{rule, info, ddwaf::object_limits(), ddwaf_object_free,
+                     std::make_shared<obfuscator>()}),
+        ddwaf::parsing_error);
+
     ddwaf_object_free(&rule);
-
-    {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-
-        auto *ctx = instance.create_context();
-        EXPECT_EQ(ctx->run(root, std::nullopt, std::nullopt, LONG_TIME), DDWAF_OK);
-        delete ctx;
-    }
 }
 
 TEST(TestWaf, AddressUniqueness)

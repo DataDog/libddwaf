@@ -180,6 +180,15 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
+    // Since disabled rules aren't added to the final ruleset, we must check
+    // again that there are rules avialable
+    if (rs->rules.empty()) {
+        // If we haven't received rules and our base ruleset is empty, the
+        // WAF can't proceed.
+        DDWAF_WARN("No valid rules found");
+        throw ddwaf::parsing_error("no valid rules found");
+    }
+
     return rs;
 }
 
