@@ -112,6 +112,15 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 }
             }
         }
+
+        // Remove any disabled rules
+        for (auto it = final_base_rules_.begin(); it != final_base_rules_.end();) {
+            if (!(*it)->is_enabled()) {
+                it = final_base_rules_.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
 
     if ((state & change_state::custom_rules) != change_state::none) {
@@ -121,6 +130,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         for (const auto &[id, spec] : user_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
+            if (!rule_ptr->is_enabled()) {
+                // Skip disabled rules
+                continue;
+            }
             final_user_rules_.emplace(rule_ptr);
         }
     }

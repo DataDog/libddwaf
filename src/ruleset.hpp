@@ -24,11 +24,6 @@ namespace ddwaf {
 struct ruleset {
     void insert_rule(const std::shared_ptr<rule> &rule)
     {
-        if (!rule->is_enabled()) {
-            // Skip disabled rules
-            return;
-        }
-
         rules.emplace_back(rule);
         std::string_view type = rule->get_tag("type");
         collection_types.emplace(type);
