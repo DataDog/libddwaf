@@ -55,28 +55,46 @@ std::string get_truncated_hash(std::string_view str)
 {
     sha256_hash hasher;
     hasher << str;
-    return hasher.digest();
+    return hasher.digest().substr(0, 8);
 }
+
+std::string get_truncated_hash(const ddwaf_object &body)
+{
+    if (body.type != DDWAF_OBJ_MAP or body.nbEntries == 0) {
+        return "";
+    }
+
+    sha256_hash hasher;
+    for (unsigned i = 0; i < body.nbEntries; ++i) {
+        const auto &child = body.array[i];
+        hasher << std::string_view{child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+    };
+    return hasher.digest().substr(0, 8);
+}
+
 
 } // namespace
 
 std::pair<ddwaf_object, object_store::attribute> http_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
-    const unary_argument<const ddwaf_object *> & /*body*/,
-    const unary_argument<const ddwaf_object *> & /*query*/, ddwaf::timer & /*deadline*/) const
+    const unary_argument<const ddwaf_object *> &body,
+    const unary_argument<const ddwaf_object *> &query, ddwaf::timer &deadline) const
 {
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
     // http-<method>-<uri hash>-<body hash>-<query hash>
     string_buffer buffer{4 + 1 + method.value.size() + 1 + 8 + 1 + 8 + 1 + 8};
     buffer.append("http-");
     buffer.append_lowercase(method.value);
     buffer.append('-');
 
-    auto uri_hash = get_truncated_hash(uri_raw.value);
-    buffer.append(uri_hash.substr(0, 8));
+    buffer.append(get_truncated_hash(uri_raw.value));
     buffer.append('-');
-    buffer.append("e3b0c442");
+    buffer.append(get_truncated_hash(*body.value));
     buffer.append('-');
-    buffer.append("e3b0c442");
+    buffer.append(get_truncated_hash(*query.value));
 
     ddwaf_object res;
     ddwaf_object_stringl_nc(&res, buffer.move(), buffer.length);
