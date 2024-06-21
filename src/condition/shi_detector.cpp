@@ -43,8 +43,6 @@ shi_result shi_string_impl(std::string_view resource, std::vector<shell_token> &
         if (resource_tokens.empty()) {
             shell_tokenizer tokenizer(resource);
             resource_tokens = tokenizer.tokenize();
-            for (const auto &t : resource_tokens) { std::cout << t.type << "[" << t.str << "] "; }
-            std::cout << '\n';
         }
 
         auto end_index = param_index + param.size();
