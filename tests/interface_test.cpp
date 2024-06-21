@@ -1848,4 +1848,64 @@ TEST(TestInterface, UpdateEverything)
     ddwaf_destroy(handle1);
 }
 
+TEST(TestInterface, KnownAddressesDisabledRule)
+{
+    auto rule = read_file("ruleset_with_disabled_rule.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ASSERT_NE(handle1, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_handle handle2;
+    {
+        auto overrides = yaml_to_object(
+            R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: true}]})");
+        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    ddwaf_handle handle3;
+    {
+        auto overrides = yaml_to_object(
+            R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: false}]})");
+        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    {
+        uint32_t size;
+        const auto *addresses = ddwaf_known_addresses(handle1, &size);
+        std::set<std::string_view> available_addresses{"value2"};
+        while ((size--) != 0U) {
+            EXPECT_NE(available_addresses.find(addresses[size]), available_addresses.end());
+        }
+    }
+
+    {
+        uint32_t size;
+        const auto *addresses = ddwaf_known_addresses(handle2, &size);
+
+        std::set<std::string_view> available_addresses{"value1", "value2"};
+        while ((size--) != 0U) {
+            EXPECT_NE(available_addresses.find(addresses[size]), available_addresses.end());
+        }
+    }
+
+    {
+        uint32_t size;
+        const auto *addresses = ddwaf_known_addresses(handle3, &size);
+        std::set<std::string_view> available_addresses{"value2"};
+        while ((size--) != 0U) {
+            EXPECT_NE(available_addresses.find(addresses[size]), available_addresses.end());
+        }
+    }
+
+    ddwaf_destroy(handle1);
+    ddwaf_destroy(handle2);
+    ddwaf_destroy(handle3);
+}
+
 } // namespace
