@@ -120,6 +120,15 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 }
             }
         }
+
+        // Remove any disabled rules
+        for (auto it = final_base_rules_.begin(); it != final_base_rules_.end();) {
+            if (!(*it)->is_enabled()) {
+                it = final_base_rules_.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
 
     if ((state & change_state::custom_rules) != change_state::none) {
@@ -129,6 +138,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         for (const auto &[id, spec] : user_rules_) {
             auto rule_ptr = std::make_shared<ddwaf::rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
+            if (!rule_ptr->is_enabled()) {
+                // Skip disabled rules
+                continue;
+            }
             final_user_rules_.emplace(rule_ptr);
         }
     }
@@ -187,6 +200,13 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->actions = actions_;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
+
+    // Since disabled rules aren't added to the final ruleset, we must check
+    // again that there are rules available.
+    if (rs->rules.empty()) {
+        DDWAF_WARN("No valid rules found");
+        throw ddwaf::parsing_error("no valid or enabled rules found");
+    }
 
     return rs;
 }
