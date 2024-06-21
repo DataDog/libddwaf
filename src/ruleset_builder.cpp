@@ -184,7 +184,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     // again that there are rules available.
     if (rs->rules.empty()) {
         DDWAF_WARN("No valid rules found");
-        throw ddwaf::parsing_error("no valid rules found");
+        throw ddwaf::parsing_error("no valid or enabled rules found");
     }
 
     return rs;
