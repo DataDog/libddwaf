@@ -115,8 +115,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf_object root;
     ddwaf_object tmp;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(
-        &root, "server.sys.shell.cmd", ddwaf_object_stringl(&tmp, resource.data(), resource.size()));
+    ddwaf_object_map_add(&root, "server.sys.shell.cmd",
+        ddwaf_object_stringl(&tmp, resource.data(), resource.size()));
     ddwaf_object_map_add(
         &root, "server.request.query", ddwaf_object_stringl(&tmp, param.data(), param.size()));
 
