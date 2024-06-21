@@ -88,6 +88,8 @@ jobs:
             params: "--dialect=standard"
           - fuzzer: shell_tokenizer
             params: ""
+          - fuzzer: shi_detector
+            params: ""
           - fuzzer: sha256
             params: ""
     steps:
