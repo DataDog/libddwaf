@@ -93,6 +93,8 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         serializer.serialize(events, output);
         output.total_runtime = deadline.elapsed().count();
         output.timeout = deadline.expired_before();
+        DDWAF_DEBUG("Request took {} ns and had {}timeout", deadline.elapsed().count(),
+            output.timeout ? "a " : "no ");
     }
 
     return code;
