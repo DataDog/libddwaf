@@ -187,7 +187,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->insert_filters(input_filters_);
     rs->insert_preprocessors(preprocessors_);
     rs->insert_postprocessors(postprocessors_);
-    rs->dynamic_matchers = dynamic_matchers_;
+    rs->rule_matchers = rule_matchers_;
+    rs->exclusion_matchers = exclusion_matchers_;
     rs->scanners = scanners_.items();
     rs->actions = actions_;
     rs->free_fn = free_fn_;
@@ -242,10 +243,9 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         auto &section = info.add_section("rules");
         try {
             auto rules = static_cast<parameter::vector>(it->second);
-            rule_data_ids_.clear();
 
             if (!rules.empty()) {
-                base_rules_ = parser::v2::parse_rules(rules, section, rule_data_ids_, limits_);
+                base_rules_ = parser::v2::parse_rules(rules, section, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all base rules");
                 base_rules_.clear();
@@ -264,12 +264,8 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto rules = static_cast<parameter::vector>(it->second);
             if (!rules.empty()) {
-                // Rule data is currently not supported by custom rules so these will
-                // be discarded after
-                decltype(rule_data_ids_) rule_data_ids;
-
-                auto new_user_rules = parser::v2::parse_rules(
-                    rules, section, rule_data_ids, limits_, rule::source_type::user);
+                auto new_user_rules =
+                    parser::v2::parse_rules(rules, section, limits_, rule::source_type::user);
                 user_rules_ = std::move(new_user_rules);
             } else {
                 DDWAF_DEBUG("Clearing all custom rules");
@@ -296,20 +292,19 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto rules_data = static_cast<parameter::vector>(it->second);
             if (!rules_data.empty()) {
-                auto new_matchers =
-                    parser::v2::parse_rule_data(rules_data, section, rule_data_ids_);
+                auto new_matchers = parser::v2::parse_data(rules_data, section);
                 if (new_matchers.empty()) {
                     // The rules_data array might have unrelated IDs, so we need
                     // to consider "no valid IDs" as an empty rules_data
-                    dynamic_matchers_.clear();
+                    rule_matchers_.clear();
                 } else {
-                    dynamic_matchers_ = std::move(new_matchers);
+                    rule_matchers_ = std::move(new_matchers);
                 }
             } else {
                 DDWAF_DEBUG("Clearing all rule data");
-                dynamic_matchers_.clear();
+                rule_matchers_.clear();
             }
-            state = state | change_state::data;
+            state = state | change_state::rule_data;
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse rule data: {}", e.what());
             section.set_error(e.what());
@@ -350,6 +345,32 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             state = state | change_state::filters;
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse exclusions: {}", e.what());
+            section.set_error(e.what());
+        }
+    }
+
+    it = root.find("exclusion_data");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing exclusion data");
+        auto &section = info.add_section("exclusions_data");
+        try {
+            auto exclusions_data = static_cast<parameter::vector>(it->second);
+            if (!exclusions_data.empty()) {
+                auto new_matchers = parser::v2::parse_data(exclusions_data, section);
+                if (new_matchers.empty()) {
+                    // The exclusions_data array might have unrelated IDs, so we need
+                    // to consider "no valid IDs" as an empty exclusions_data
+                    exclusion_matchers_.clear();
+                } else {
+                    exclusion_matchers_ = std::move(new_matchers);
+                }
+            } else {
+                DDWAF_DEBUG("Clearing all exclusion data");
+                exclusion_matchers_.clear();
+            }
+            state = state | change_state::exclusion_data;
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse exclusion data: {}", e.what());
             section.set_error(e.what());
         }
     }

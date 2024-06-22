@@ -16,13 +16,12 @@ TEST(TestParserV2Rules, ParseRule)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
-    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, limits);
     ddwaf_object_free(&rule_object);
 
     {
@@ -61,13 +60,12 @@ TEST(TestParserV2Rules, ParseRuleWithoutType)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
-    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, limits);
     ddwaf_object_free(&rule_object);
 
     {
@@ -102,13 +100,12 @@ TEST(TestParserV2Rules, ParseRuleInvalidTransformer)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y], transformers: [unknown]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
-    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, limits);
     ddwaf_object_free(&rule_object);
 
     {
@@ -142,13 +139,12 @@ TEST(TestParserV2Rules, ParseRuleWithoutID)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = yaml_to_object(
         R"([{name: rule1, tags: {type: type1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
-    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, limits);
     ddwaf_object_free(&rule_object);
 
     {
@@ -183,7 +179,6 @@ TEST(TestParserV2Rules, ParseMultipleRules)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: secondrule, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}])");
@@ -191,7 +186,7 @@ TEST(TestParserV2Rules, ParseMultipleRules)
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
     EXPECT_EQ(rule_array.size(), 2);
 
-    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, limits);
     ddwaf_object_free(&rule_object);
 
     {
@@ -247,14 +242,13 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneInvalid)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: secondrule, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}, {id: error}])");
 
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
 
-    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, limits);
     ddwaf_object_free(&rule_object);
 
     {
@@ -317,7 +311,6 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: 1, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}])");
@@ -325,7 +318,7 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
     EXPECT_EQ(rule_array.size(), 2);
 
-    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, limits);
     ddwaf_object_free(&rule_object);
 
     {
