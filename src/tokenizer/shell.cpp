@@ -287,7 +287,8 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
 
         if (c == '$' && slash_count == 0) {
             auto n = next();
-            if (n == '(' && next(2) != '(') {
+            auto n2 = next(2);
+            if (n == '(' && n2 != '(' && n2 != '<') {
                 // Command substitution, we add a field for the current string
                 // contents, update the scope and exit. Note that we skip
                 // arithmetic expansions

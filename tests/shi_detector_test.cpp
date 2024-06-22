@@ -57,7 +57,7 @@ TEST(TestSHIDetector, NoMatchAndFalsePositives)
     }
 }
 
-TEST(TestSHIDetector, SingleArgumentMatch)
+TEST(TestSHIDetector, ExecutablesAndRedirections)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -65,6 +65,9 @@ TEST(TestSHIDetector, SingleArgumentMatch)
         {R"( ls /sqreensecure/home/zeta/repos/RubyAgentTests/weblog-rails4/public/; echo "testing"; ls robots.txt)",
             R"( echo "testing"; ls robots)"},
         {"ls; echo hello", "echo hello"},
+        {"ls 2> file; echo hello", "2> file"},
+        {"ls &> file; echo hello", "&> file"},
+        {"$(<file) -l", "$(<file) -l"},
     };
 
     for (const auto &[resource, param] : samples) {

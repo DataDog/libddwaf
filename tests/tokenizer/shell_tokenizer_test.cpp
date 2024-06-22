@@ -65,6 +65,7 @@ TEST(TestShellTokenizer, Basic)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {"echo", {stt::executable}},
+        {"$(<file)", {stt::executable}},
         {"echo    ", {stt::executable}},
         {"test echo", {stt::executable, stt::field}},
         {"ls -l", {stt::executable, stt::field}},
@@ -99,6 +100,7 @@ TEST(TestShellTokenizer, DoubleQuotedString)
         {R"("var=2")", {stt::executable}},
         {R"!("$(( 1+1 ))")!", {stt::executable}},
         {R"!("$[ 1+1 ]")!", {stt::executable}},
+        {R"!("$(<file)")!", {stt::executable}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
@@ -239,9 +241,12 @@ TEST(TestShellTokenizer, Executable)
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {"echo", {stt::executable}},
         {"test echo", {stt::executable, stt::field}},
+        {"ls &", {stt::executable, stt::control}},
+        {"ls & ls -l", {stt::executable, stt::control, stt::executable, stt::field}},
         {"{ echo; }", {stt::compound_command_open, stt::executable, stt::control,
                           stt::compound_command_close}},
         {"(ls -l)", {stt::subshell_open, stt::executable, stt::field, stt::subshell_close}},
+        {"$(<file)", {stt::executable}},
         {"$(ls -l)", {stt::command_substitution_open, stt::executable, stt::field,
                          stt::command_substitution_close}},
         {"diff <(ls -l)", {stt::executable, stt::process_substitution_open, stt::executable,
@@ -267,6 +272,8 @@ TEST(TestShellTokenizer, Pipe)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {"ls | cat", {stt::executable, stt::control, stt::executable}},
+        {"ls & ls | cat",
+            {stt::executable, stt::control, stt::executable, stt::control, stt::executable}},
         {"ls -l | cat", {stt::executable, stt::field, stt::control, stt::executable}},
         {"ls -l | cat | grep passwd", {stt::executable, stt::field, stt::control, stt::executable,
                                           stt::control, stt::executable, stt::field}},
