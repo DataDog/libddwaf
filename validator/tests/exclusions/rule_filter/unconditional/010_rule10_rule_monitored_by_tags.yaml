@@ -1,5 +1,5 @@
 {
-  name: "Rule monitored by rags",
+  name: "Rule monitored by tags",
   runs: [
     {
       persistent-input: {
