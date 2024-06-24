@@ -19,6 +19,10 @@ rule_spec parse_rule(parameter::map &rule,
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
     auto transformers = at<parameter::vector>(rule, "transformers", {});
+    if (transformers.size() > limits.max_transformers_per_address) {
+        throw ddwaf::parsing_error("number of transformers beyond allowed limit");
+    }
+
     rule_transformers = parse_transformers(transformers, data_source);
 
     auto conditions_array = at<parameter::vector>(rule, "conditions");
