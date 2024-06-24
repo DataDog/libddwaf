@@ -40,7 +40,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
         DDWAF_DEBUG("Monitoring rule '{}'", id);
         action_override = "monitor";
     } else if (exclusion.mode == exclusion::filter_mode::custom) {
-        action_override = exclusion.action;
+        action_override = exclusion.action_override;
         DDWAF_DEBUG("Evaluating rule '{}' with custom action '{}'", id, action_override);
     } else {
         DDWAF_DEBUG("Evaluating rule '{}'", id);

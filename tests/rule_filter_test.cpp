@@ -1212,4 +1212,121 @@ TEST(TestRuleFilter, ConditionalCustomFilterMode)
     ddwaf_destroy(handle);
 }
 
+TEST(TestRuleFilter, CustomFilterModeUnknownAction)
+{
+    auto rule = read_file("exclude_with_unknown_action.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    auto *handle1 = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle1, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle1);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(out, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "type1"}, {"category", "category"}},
+                               .matches = {{.op = "ip_match",
+                                   .highlight = "192.168.0.1",
+                                   .args = {{
+                                       .value = "192.168.0.1",
+                                       .address = "http.client_ip",
+                                   }}}}});
+        EXPECT_EQ(out.actions.nbEntries, 0);
+
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_handle handle2;
+    {
+        auto overrides =
+            yaml_to_object(R"({actions: [{id: block2, type: block_request, parameters: {}}]})");
+        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+        ASSERT_NE(handle2, nullptr);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle2);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf_result out;
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(out, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "type1"}, {"category", "category"}},
+                               .actions = {"block2"},
+                               .matches = {{.op = "ip_match",
+                                   .highlight = "192.168.0.1",
+                                   .args = {{
+                                       .value = "192.168.0.1",
+                                       .address = "http.client_ip",
+                                   }}}}});
+        EXPECT_ACTIONS(out, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+                                                   {"type", "auto"}}}})
+
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_destroy(handle1);
+    ddwaf_destroy(handle2);
+}
+
+TEST(TestRuleFilter, CustomFilterModeNonblockingAction)
+{
+    // In this test, the ruleset contains a rule filter with the action
+    // generate_stack, which is neither a blocking, redirecting or monitoring
+    // action, hence its ignored.
+    auto rule = read_file("exclude_with_nonblocking_action.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    auto *handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+    ddwaf_result out;
+    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "type1"}, {"category", "category"}},
+                           .actions = {"block"},
+                           .matches = {{.op = "ip_match",
+                               .highlight = "192.168.0.1",
+                               .args = {{
+                                   .value = "192.168.0.1",
+                                   .address = "http.client_ip",
+                               }}}}});
+    EXPECT_ACTIONS(out,
+        {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}})
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+
+    ddwaf_destroy(handle);
+}
+
 } // namespace

@@ -35,7 +35,7 @@ struct object_set {
 
 struct rule_policy {
     filter_mode mode{filter_mode::none};
-    std::string_view action;
+    std::string_view action_override;
     std::unordered_set<const ddwaf_object *> objects;
 };
 
@@ -64,7 +64,7 @@ struct object_set_ref {
 
 struct rule_policy_ref {
     filter_mode mode{filter_mode::none};
-    std::string_view action;
+    std::string_view action_override;
     object_set_ref objects;
 };
 
@@ -92,22 +92,21 @@ struct context_policy {
             }
 
             const auto &e_policy = e_it->second;
-            return {e_policy.mode, e_policy.action, {std::nullopt, e_policy.objects}};
+            return {e_policy.mode, e_policy.action_override, {std::nullopt, e_policy.objects}};
         }
 
         if (e_it == ephemeral.end()) {
             const auto &p_policy = p_it->second;
             p_policy.objects.size();
-            return {p_policy.mode, p_policy.action, {p_policy.objects, std::nullopt}};
+            return {p_policy.mode, p_policy.action_override, {p_policy.objects, std::nullopt}};
         }
 
         const auto &p_policy = p_it->second;
         const auto &e_policy = e_it->second;
 
-        if (p_policy.mode > e_policy.mode) {
-            return {p_policy.mode, p_policy.action, {p_policy.objects, e_policy.objects}};
-        }
-        return {e_policy.mode, e_policy.action, {p_policy.objects, e_policy.objects}};
+        const auto &effective_policy = p_policy.mode > e_policy.mode ? p_policy : e_policy;
+        return {effective_policy.mode, effective_policy.action_override,
+            {p_policy.objects, e_policy.objects}};
     }
 
     void add_rule_exclusion(const ddwaf::rule *rule, filter_mode mode, std::string_view action,
@@ -119,7 +118,7 @@ struct context_policy {
         // Bypass has precedence over monitor
         if (policy.mode < mode) {
             policy.mode = mode;
-            policy.action = action;
+            policy.action_override = action;
         }
     }
 

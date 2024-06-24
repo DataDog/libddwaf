@@ -190,11 +190,25 @@ void serialize_and_consolidate_rule_actions(const ddwaf::rule &rule, ddwaf_objec
     ddwaf_object_array(&actions_array);
 
     if (!action_override.empty()) {
-        ddwaf_object_array_add(&actions_array, to_object(tmp, action_override));
         auto action_it = actions.mapper.find(action_override);
         if (action_it != actions.mapper.end()) {
             const auto &[type, type_str, parameters] = action_it->second;
-            add_action_to_tracker(actions, action_override, type);
+
+            // The action override must be either a blocking one or monitor
+            if (type == action_type::monitor || is_blocking_action(type)) {
+                add_action_to_tracker(actions, action_override, type);
+            } else {
+                // Clear the action override because it's not usable
+                action_override = {};
+            }
+        } else {
+            // Without a definition, the override can't be applied
+            action_override = {};
+        }
+
+        // Tha override might have been clear if no definition was found
+        if (!action_override.empty()) {
+            ddwaf_object_array_add(&actions_array, to_object(tmp, action_override));
         }
     }
 
