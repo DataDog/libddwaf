@@ -361,4 +361,87 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
         EXPECT_STR(rule.tags["category"], "category1");
     }
 }
+
+TEST(TestParserV2Rules, ParseSingleRuleTooManyTransformers)
+{
+    ddwaf::object_limits limits;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = yaml_to_object(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}], transformers: [base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    EXPECT_EQ(rule_array.size(), 1);
+
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("number of transformers beyond allowed limit");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+}
+
+TEST(TestParserV2Rules, ParseSingleRuleTooManyInputTransformers)
+{
+    ddwaf::object_limits limits;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = yaml_to_object(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y], transformers: [base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode]}], regex: .*}}]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    EXPECT_EQ(rule_array.size(), 1);
+
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("number of transformers beyond allowed limit");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+}
+
 } // namespace

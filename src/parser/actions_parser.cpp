@@ -7,6 +7,7 @@
 #include "log.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
+#include "uri_utils.hpp"
 
 namespace ddwaf::parser::v2 {
 
@@ -31,10 +32,25 @@ void validate_and_add_redirect(
         return;
     }
 
+    // Validate the URL;
+    //   - Check it's a valid URL
+    //   - If it has a scheme, check it's http or https
+    //   - If it doesn't have a scheme:
+    //     - Check it also doesn't have an authority
+    //     - Check it's a path starting with /
+    auto decomposed = uri_parse(it->second);
+    if (!decomposed.has_value() ||
+        (!decomposed->scheme.empty() && decomposed->scheme != "http" &&
+            decomposed->scheme != "https") ||
+        (decomposed->scheme_and_authority.empty() && !decomposed->path.starts_with('/'))) {
+        builder.alias_default_action_to("block", id);
+        return;
+    }
+
     it = parameters.find("status_code");
     if (it != parameters.end()) {
         auto [res, code] = ddwaf::from_string<unsigned>(it->second);
-        if (!res || code < 300 || code > 399) {
+        if (!res || (code != 301 && code != 302 && code != 303 && code != 307)) {
             it->second = "303";
         }
     } else {

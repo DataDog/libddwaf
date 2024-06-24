@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "fmt/core.h"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "test_utils.hpp"
@@ -90,8 +91,78 @@ TEST(TestParserV2Actions, SingleAction)
 
 TEST(TestParserV2Actions, RedirectAction)
 {
+    std::vector<std::tuple<std::string, std::string, std::string>> redirections{
+        {"redirect_301", "301", "http://www.datadoghq.com"},
+        {"redirect_302", "302", "http://www.datadoghq.com"},
+        {"redirect_303", "303", "http://www.datadoghq.com"},
+        {"redirect_307", "307", "http://www.datadoghq.com"},
+        {"redirect_https", "303", "https://www.datadoghq.com"},
+        {"redirect_path", "303", "/security/appsec"},
+    };
+
+    std::string yaml;
+    yaml.append("[");
+    for (auto &[name, status_code, url] : redirections) {
+        yaml += fmt::format("{{id: {}, parameters: {{location: \"{}\", status_code: {}}}, type: "
+                            "redirect_request}},",
+            name, url, status_code);
+    }
+    yaml.append("]");
+    auto object = yaml_to_object(yaml);
+
+    ddwaf::ruleset_info::section_info section;
+    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions = parser::v2::parse_actions(actions_array, section);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 6);
+        EXPECT_NE(loaded.find("redirect_301"), loaded.end());
+        EXPECT_NE(loaded.find("redirect_302"), loaded.end());
+        EXPECT_NE(loaded.find("redirect_303"), loaded.end());
+        EXPECT_NE(loaded.find("redirect_307"), loaded.end());
+        EXPECT_NE(loaded.find("redirect_https"), loaded.end());
+        EXPECT_NE(loaded.find("redirect_path"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(actions->size(), 10);
+    EXPECT_TRUE(actions->contains("block"));
+    EXPECT_TRUE(actions->contains("stack_trace"));
+    EXPECT_TRUE(actions->contains("extract_schema"));
+    EXPECT_TRUE(actions->contains("monitor"));
+
+    for (auto &[name, status_code, url] : redirections) {
+        ASSERT_TRUE(actions->contains(name));
+
+        const auto &spec = actions->at(name);
+        EXPECT_EQ(spec.type, action_type::redirect_request) << name;
+        EXPECT_EQ(spec.type_str, "redirect_request");
+        EXPECT_EQ(spec.parameters.size(), 2);
+
+        const auto &parameters = spec.parameters;
+        EXPECT_STR(parameters.at("status_code"), status_code.c_str());
+        EXPECT_STR(parameters.at("location"), url.c_str());
+    }
+}
+
+TEST(TestParserV2Actions, RedirectActionInvalidStatusCode)
+{
     auto object = yaml_to_object(
-        R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 302}, type: redirect_request}])");
+        R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 404}, type: redirect_request}])");
 
     ddwaf::ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
@@ -131,15 +202,15 @@ TEST(TestParserV2Actions, RedirectAction)
         EXPECT_EQ(spec.parameters.size(), 2);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(parameters.at("status_code"), "302");
+        EXPECT_STR(parameters.at("status_code"), "303");
         EXPECT_STR(parameters.at("location"), "http://www.google.com");
     }
 }
 
-TEST(TestParserV2Actions, RedirectActionInvalidStatusCode)
+TEST(TestParserV2Actions, RedirectActionInvalid300StatusCode)
 {
     auto object = yaml_to_object(
-        R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 404}, type: redirect_request}])");
+        R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 304}, type: redirect_request}])");
 
     ddwaf::ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
@@ -236,6 +307,104 @@ TEST(TestParserV2Actions, RedirectActionMissingLocation)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {status_code: 303}, type: redirect_request}])");
+
+    ddwaf::ruleset_info::section_info section;
+    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions = parser::v2::parse_actions(actions_array, section);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("redirect"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(actions->size(), 5);
+    EXPECT_TRUE(actions->contains("redirect"));
+    EXPECT_TRUE(actions->contains("block"));
+    EXPECT_TRUE(actions->contains("stack_trace"));
+    EXPECT_TRUE(actions->contains("extract_schema"));
+    EXPECT_TRUE(actions->contains("monitor"));
+
+    {
+        const auto &spec = actions->at("redirect");
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
+
+        const auto &parameters = spec.parameters;
+        EXPECT_STR(parameters.at("status_code"), "403");
+        EXPECT_STR(parameters.at("grpc_status_code"), "10");
+        EXPECT_STR(parameters.at("type"), "auto");
+    }
+}
+
+TEST(TestParserV2Actions, RedirectActionNonHttpURL)
+{
+    auto object = yaml_to_object(
+        R"([{id: redirect, parameters: {status_code: 303, location: ftp://myftp.mydomain.com}, type: redirect_request}])");
+
+    ddwaf::ruleset_info::section_info section;
+    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions = parser::v2::parse_actions(actions_array, section);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("redirect"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(actions->size(), 5);
+    EXPECT_TRUE(actions->contains("redirect"));
+    EXPECT_TRUE(actions->contains("block"));
+    EXPECT_TRUE(actions->contains("stack_trace"));
+    EXPECT_TRUE(actions->contains("extract_schema"));
+    EXPECT_TRUE(actions->contains("monitor"));
+
+    {
+        const auto &spec = actions->at("redirect");
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
+
+        const auto &parameters = spec.parameters;
+        EXPECT_STR(parameters.at("status_code"), "403");
+        EXPECT_STR(parameters.at("grpc_status_code"), "10");
+        EXPECT_STR(parameters.at("type"), "auto");
+    }
+}
+
+TEST(TestParserV2Actions, RedirectActionInvalidRelativePathURL)
+{
+    auto object = yaml_to_object(
+        R"([{id: redirect, parameters: {status_code: 303, location: ../../../etc/passwd}, type: redirect_request}])");
 
     ddwaf::ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
