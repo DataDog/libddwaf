@@ -73,19 +73,23 @@ rule_filter_spec parse_rule_filter(
 
     exclusion::filter_mode on_match;
     auto on_match_str = at<std::string_view>(filter, "on_match", "bypass");
+    std::string on_match_id;
     if (on_match_str == "bypass") {
         on_match = exclusion::filter_mode::bypass;
     } else if (on_match_str == "monitor") {
         on_match = exclusion::filter_mode::monitor;
+    } else if (!on_match_str.empty()) {
+        on_match = exclusion::filter_mode::custom;
+        on_match_id = on_match_str;
     } else {
-        throw ddwaf::parsing_error("unsupported on_match value: " + std::string(on_match_str));
+        throw ddwaf::parsing_error("empty on_match value");
     }
 
     if (expr->empty() && rules_target.empty()) {
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 
-    return {std::move(expr), std::move(rules_target), on_match};
+    return {std::move(expr), std::move(rules_target), on_match, std::move(on_match_id)};
 }
 
 } // namespace
