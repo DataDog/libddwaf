@@ -40,6 +40,7 @@ struct override_spec {
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
     std::vector<reference_spec> targets;
+    std::unordered_map<std::string, std::string> tags;
 };
 
 struct rule_filter_spec {

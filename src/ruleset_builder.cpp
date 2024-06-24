@@ -97,6 +97,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 if (ovrd.actions.has_value()) {
                     rule_ptr->set_actions(*ovrd.actions);
                 }
+
+                for (const auto &[tag, value] : ovrd.tags) {
+                    rule_ptr->set_ancillary_tag(tag, value);
+                }
             }
         }
 
@@ -109,6 +113,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
                 if (ovrd.actions.has_value()) {
                     rule_ptr->set_actions(*ovrd.actions);
+                }
+
+                for (const auto &[tag, value] : ovrd.tags) {
+                    rule_ptr->set_ancillary_tag(tag, value);
                 }
             }
         }
