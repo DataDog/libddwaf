@@ -8,7 +8,7 @@
 #include "expression.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;

@@ -12,14 +12,14 @@ using namespace ddwaf;
 
 namespace {
 
-TEST(TestParserV2RuleData, ParseIPData)
+TEST(TestParserV2Data, ParseIPData)
 {
     auto object = yaml_to_object(
         R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto rule_data = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, section);
     ddwaf_object_free(&object);
 
     {
@@ -41,18 +41,18 @@ TEST(TestParserV2RuleData, ParseIPData)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(rule_data.size(), 1);
-    EXPECT_STRV(rule_data["ip_data"]->name(), "ip_match");
+    EXPECT_EQ(data_cfg.size(), 1);
+    EXPECT_STRV(data_cfg["ip_data"]->name(), "ip_match");
 }
 
-TEST(TestParserV2RuleData, ParseStringData)
+TEST(TestParserV2Data, ParseStringData)
 {
     auto object = yaml_to_object(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto rule_data = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, section);
     ddwaf_object_free(&object);
 
     {
@@ -74,18 +74,18 @@ TEST(TestParserV2RuleData, ParseStringData)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(rule_data.size(), 1);
-    EXPECT_STRV(rule_data["usr_data"]->name(), "exact_match");
+    EXPECT_EQ(data_cfg.size(), 1);
+    EXPECT_STRV(data_cfg["usr_data"]->name(), "exact_match");
 }
 
-TEST(TestParserV2RuleData, ParseMultipleRuleData)
+TEST(TestParserV2Data, ParseMultipleRuleData)
 {
     auto object = yaml_to_object(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto rule_data = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, section);
     ddwaf_object_free(&object);
 
     {
@@ -108,19 +108,19 @@ TEST(TestParserV2RuleData, ParseMultipleRuleData)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(rule_data.size(), 2);
-    EXPECT_STRV(rule_data["usr_data"]->name(), "exact_match");
-    EXPECT_STRV(rule_data["ip_data"]->name(), "ip_match");
+    EXPECT_EQ(data_cfg.size(), 2);
+    EXPECT_STRV(data_cfg["usr_data"]->name(), "exact_match");
+    EXPECT_STRV(data_cfg["ip_data"]->name(), "ip_match");
 }
 
-TEST(TestParserV2RuleData, ParseUnsupportedTypes)
+TEST(TestParserV2Data, ParseUnsupportedTypes)
 {
     auto object = yaml_to_object(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: whatever, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto rule_data = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, section);
     ddwaf_object_free(&object);
 
     {
@@ -160,17 +160,17 @@ TEST(TestParserV2RuleData, ParseUnsupportedTypes)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(rule_data.size(), 0);
+    EXPECT_EQ(data_cfg.size(), 0);
 }
 
-TEST(TestParserV2RuleData, ParseMissingType)
+TEST(TestParserV2Data, ParseMissingType)
 {
     auto object =
         yaml_to_object(R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto rule_data = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, section);
     ddwaf_object_free(&object);
 
     {
@@ -198,17 +198,17 @@ TEST(TestParserV2RuleData, ParseMissingType)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(rule_data.size(), 0);
+    EXPECT_EQ(data_cfg.size(), 0);
 }
 
-TEST(TestParserV2RuleData, ParseMissingID)
+TEST(TestParserV2Data, ParseMissingID)
 {
     auto object = yaml_to_object(
         R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto rule_data = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, section);
     ddwaf_object_free(&object);
 
     {
@@ -236,16 +236,16 @@ TEST(TestParserV2RuleData, ParseMissingID)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(rule_data.size(), 0);
+    EXPECT_EQ(data_cfg.size(), 0);
 }
 
-TEST(TestParserV2RuleData, ParseMissingData)
+TEST(TestParserV2Data, ParseMissingData)
 {
     auto object = yaml_to_object(R"([{id: ip_data, type: ip_with_expiration}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto rule_data = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, section);
     ddwaf_object_free(&object);
 
     {
@@ -273,6 +273,6 @@ TEST(TestParserV2RuleData, ParseMissingData)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(rule_data.size(), 0);
+    EXPECT_EQ(data_cfg.size(), 0);
 }
 } // namespace

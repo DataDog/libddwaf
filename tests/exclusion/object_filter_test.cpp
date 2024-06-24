@@ -6,7 +6,7 @@
 
 #include "exception.hpp"
 #include "exclusion/object_filter.hpp"
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 
 using namespace ddwaf;
 using namespace ddwaf::exclusion;
