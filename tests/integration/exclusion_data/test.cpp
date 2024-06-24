@@ -33,24 +33,25 @@ TEST(TestExclusionDataIntegration, ExcludeByUserID)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(out, {{.id = "1",
-                                .name = "rule1",
-                                .tags = {{"type", "type1"}, {"category", "category"}},
-                                .matches = {{.op = "ip_match",
-                                    .highlight = "192.168.0.1",
-                                    .args = {{
-                                        .value = "192.168.0.1",
-                                        .address = "http.client_ip",
-                                    }}}}},
-                               {.id = "2",
-                                   .name = "rule2",
-                                   .tags = {{"type", "type2"}, {"category", "category"}},
-                                   .matches = {{.op = "ip_match",
-                                       .highlight = "192.168.0.1",
-                                       .args = {{
-                                           .value = "192.168.0.1",
-                                           .address = "http.client_ip",
-                                       }}}}}});
+        EXPECT_EVENTS(out,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "type1"}, {"category", "category"}},
+                .matches = {{.op = "ip_match",
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}},
+            {.id = "2",
+                .name = "rule2",
+                .tags = {{"type", "type2"}, {"category", "category"}},
+                .matches = {{.op = "ip_match",
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -113,24 +114,25 @@ TEST(TestExclusionDataIntegration, ExcludeByUserID)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(out, {{.id = "1",
-                                .name = "rule1",
-                                .tags = {{"type", "type1"}, {"category", "category"}},
-                                .matches = {{.op = "ip_match",
-                                    .highlight = "192.168.0.1",
-                                    .args = {{
-                                        .value = "192.168.0.1",
-                                        .address = "http.client_ip",
-                                    }}}}},
-                               {.id = "2",
-                                   .name = "rule2",
-                                   .tags = {{"type", "type2"}, {"category", "category"}},
-                                   .matches = {{.op = "ip_match",
-                                       .highlight = "192.168.0.1",
-                                       .args = {{
-                                           .value = "192.168.0.1",
-                                           .address = "http.client_ip",
-                                       }}}}}});
+        EXPECT_EVENTS(out,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "type1"}, {"category", "category"}},
+                .matches = {{.op = "ip_match",
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}},
+            {.id = "2",
+                .name = "rule2",
+                .tags = {{"type", "type2"}, {"category", "category"}},
+                .matches = {{.op = "ip_match",
+                    .highlight = "192.168.0.1",
+                    .args = {{
+                        .value = "192.168.0.1",
+                        .address = "http.client_ip",
+                    }}}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -162,24 +164,25 @@ TEST(TestExclusionDataIntegration, ExcludeByClientIP)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(out, {{.id = "1",
-                                .name = "rule1",
-                                .tags = {{"type", "type1"}, {"category", "category"}},
-                                .matches = {{.op = "exact_match",
-                                    .highlight = "admin",
-                                    .args = {{
-                                        .value = "admin",
-                                        .address = "usr.id",
-                                    }}}}},
-                               {.id = "2",
-                                   .name = "rule2",
-                                   .tags = {{"type", "type2"}, {"category", "category"}},
-                                   .matches = {{.op = "exact_match",
-                                       .highlight = "admin",
-                                       .args = {{
-                                           .value = "admin",
-                                           .address = "usr.id",
-                                       }}}}}});
+        EXPECT_EVENTS(out,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "type1"}, {"category", "category"}},
+                .matches = {{.op = "exact_match",
+                    .highlight = "admin",
+                    .args = {{
+                        .value = "admin",
+                        .address = "usr.id",
+                    }}}}},
+            {.id = "2",
+                .name = "rule2",
+                .tags = {{"type", "type2"}, {"category", "category"}},
+                .matches = {{.op = "exact_match",
+                    .highlight = "admin",
+                    .args = {{
+                        .value = "admin",
+                        .address = "usr.id",
+                    }}}}});
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -242,24 +245,25 @@ TEST(TestExclusionDataIntegration, ExcludeByClientIP)
 
         ddwaf_result out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EVENTS(out, {{.id = "1",
-                                .name = "rule1",
-                                .tags = {{"type", "type1"}, {"category", "category"}},
-                                .matches = {{.op = "exact_match",
-                                    .highlight = "admin",
-                                    .args = {{
-                                        .value = "admin",
-                                        .address = "usr.id",
-                                    }}}}},
-                               {.id = "2",
-                                   .name = "rule2",
-                                   .tags = {{"type", "type2"}, {"category", "category"}},
-                                   .matches = {{.op = "exact_match",
-                                       .highlight = "admin",
-                                       .args = {{
-                                           .value = "admin",
-                                           .address = "usr.id",
-                                       }}}}}});
+        EXPECT_EVENTS(out,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "type1"}, {"category", "category"}},
+                .matches = {{.op = "exact_match",
+                    .highlight = "admin",
+                    .args = {{
+                        .value = "admin",
+                        .address = "usr.id",
+                    }}}}},
+            {.id = "2",
+                .name = "rule2",
+                .tags = {{"type", "type2"}, {"category", "category"}},
+                .matches = {{.op = "exact_match",
+                    .highlight = "admin",
+                    .args = {{
+                        .value = "admin",
+                        .address = "usr.id",
+                    }}}}});
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
