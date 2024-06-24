@@ -47,6 +47,7 @@ struct rule_filter_spec {
     std::shared_ptr<expression> expr;
     std::vector<reference_spec> targets;
     exclusion::filter_mode on_match;
+    std::string custom_action;
 };
 
 struct input_filter_spec {

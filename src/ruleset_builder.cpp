@@ -157,7 +157,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
             rule_targets.merge(references_to_rules(filter.targets, final_user_rules_));
 
             auto filter_ptr = std::make_shared<exclusion::rule_filter>(
-                id, filter.expr, std::move(rule_targets), filter.on_match);
+                id, filter.expr, std::move(rule_targets), filter.on_match, filter.custom_action);
             rule_filters_.emplace(filter_ptr->get_id(), filter_ptr);
         }
 
