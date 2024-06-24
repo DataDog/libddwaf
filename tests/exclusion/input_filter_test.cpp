@@ -967,3 +967,73 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
         ASSERT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 }
+
+TEST(TestInputFilter, MatchWithDynamicMatcher)
+{
+    test::expression_builder builder(2);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("http.client_ip");
+    builder.end_condition_with_data<matcher::ip_match>("ip_data");
+
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("usr.id");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("query"), "query", {"params"});
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
+
+    {
+        ddwaf::object_store store;
+        input_filter::cache_type cache;
+
+        ddwaf_object root;
+        ddwaf_object object;
+        ddwaf_object tmp;
+        ddwaf_object_map(&object);
+        ddwaf_object_map_add(&object, "params", ddwaf_object_string(&tmp, "value"));
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_map_add(&root, "query", &object);
+
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        auto opt_spec = filter.match(store, cache, {}, deadline);
+        ASSERT_FALSE(opt_spec.has_value());
+    }
+
+    {
+        ddwaf::object_store store;
+        input_filter::cache_type cache;
+
+        ddwaf_object root;
+        ddwaf_object object;
+        ddwaf_object tmp;
+        ddwaf_object_map(&object);
+        ddwaf_object_map_add(&object, "params", ddwaf_object_string(&tmp, "value"));
+
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_map_add(&root, "query", &object);
+
+        store.insert(root);
+
+        std::unordered_map<std::string, std::shared_ptr<matcher::base>> matchers{{"ip_data",
+            std::make_shared<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"})}};
+
+        ddwaf::timer deadline{2s};
+        auto opt_spec = filter.match(store, cache, matchers, deadline);
+        ASSERT_TRUE(opt_spec.has_value());
+        EXPECT_EQ(opt_spec->rules.size(), 1);
+        EXPECT_EQ(opt_spec->objects.size(), 1);
+        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+    }
+}

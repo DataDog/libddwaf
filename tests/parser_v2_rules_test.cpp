@@ -366,7 +366,6 @@ TEST(TestParserV2Rules, ParseSingleRuleTooManyTransformers)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}], transformers: [base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode]}])");
@@ -374,7 +373,7 @@ TEST(TestParserV2Rules, ParseSingleRuleTooManyTransformers)
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
-    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, limits);
     ddwaf_object_free(&rule_object);
 
     {
@@ -407,7 +406,6 @@ TEST(TestParserV2Rules, ParseSingleRuleTooManyInputTransformers)
 {
     ddwaf::object_limits limits;
     ddwaf::ruleset_info::section_info section;
-    std::unordered_map<std::string, std::string> rule_data_ids;
 
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y], transformers: [base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode, base64_encode]}], regex: .*}}]}])");
@@ -415,7 +413,7 @@ TEST(TestParserV2Rules, ParseSingleRuleTooManyInputTransformers)
     auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
-    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    auto rules = parser::v2::parse_rules(rule_array, section, limits);
     ddwaf_object_free(&rule_object);
 
     {

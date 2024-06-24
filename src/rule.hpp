@@ -77,7 +77,7 @@ public:
             return std::nullopt;
         }
 
-        return {ddwaf::event{this, expression::get_matches(cache), res.ephemeral}};
+        return {ddwaf::event{this, expression::get_matches(cache), res.ephemeral, {}}};
     }
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
