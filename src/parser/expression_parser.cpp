@@ -20,7 +20,8 @@ namespace {
 
 template <typename T>
 std::vector<condition_parameter> parse_arguments(const parameter::map &params, data_source source,
-    const std::vector<transformer_id> &transformers, address_container &addresses)
+    const std::vector<transformer_id> &transformers, address_container &addresses,
+    const object_limits &limits)
 {
     const auto &specification = T::arguments();
     std::vector<condition_parameter> definitions;
@@ -68,6 +69,10 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
                     address, get_target_index(address), std::move(kp), transformers, source});
             } else {
                 auto input_transformers = static_cast<parameter::vector>(it->second);
+                if (input_transformers.size() > limits.max_transformers_per_address) {
+                    throw ddwaf::parsing_error("number of transformers beyond allowed limit");
+                }
+
                 source = data_source::values;
                 auto new_transformers = parse_transformers(input_transformers, source);
                 targets.emplace_back(condition_target{address, get_target_index(address),
@@ -94,15 +99,16 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         auto params = at<parameter::map>(root, "parameters");
 
         if (operator_name == "lfi_detector") {
-            auto arguments = parse_arguments<lfi_detector>(params, source, transformers, addresses);
+            auto arguments =
+                parse_arguments<lfi_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<lfi_detector>(std::move(arguments), limits));
         } else if (operator_name == "ssrf_detector") {
             auto arguments =
-                parse_arguments<ssrf_detector>(params, source, transformers, addresses);
+                parse_arguments<ssrf_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<ssrf_detector>(std::move(arguments), limits));
         } else if (operator_name == "sqli_detector") {
             auto arguments =
-                parse_arguments<sqli_detector>(params, source, transformers, addresses);
+                parse_arguments<sqli_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<sqli_detector>(std::move(arguments), limits));
         } else if (operator_name == "shi_detector") {
             auto arguments = parse_arguments<shi_detector>(params, source, transformers, addresses);
@@ -115,7 +121,7 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
             }
 
             auto arguments =
-                parse_arguments<scalar_condition>(params, source, transformers, addresses);
+                parse_arguments<scalar_condition>(params, source, transformers, addresses, limits);
 
             conditions.emplace_back(std::make_unique<scalar_condition>(
                 std::move(matcher), data_id, std::move(arguments), limits));

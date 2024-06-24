@@ -123,6 +123,10 @@ void parseRule(parameter::map &rule, base_section_info &info,
     try {
         std::vector<transformer_id> rule_transformers;
         auto transformers = at<parameter::vector>(rule, "transformers", parameter::vector());
+        if (transformers.size() > limits.max_transformers_per_address) {
+            throw ddwaf::parsing_error("number of transformers beyond allowed limit");
+        }
+
         for (const auto &transformer_param : transformers) {
             auto transformer = static_cast<std::string_view>(transformer_param);
             auto id = transformer_from_string(transformer);
