@@ -111,7 +111,8 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
                 parse_arguments<sqli_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<sqli_detector>(std::move(arguments), limits));
         } else if (operator_name == "shi_detector") {
-            auto arguments = parse_arguments<shi_detector>(params, source, transformers, addresses);
+            auto arguments =
+                parse_arguments<shi_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<shi_detector>(std::move(arguments), limits));
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
