@@ -243,9 +243,10 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         auto &section = info.add_section("rules");
         try {
             auto rules = static_cast<parameter::vector>(it->second);
+            rule_data_ids_.clear();
 
             if (!rules.empty()) {
-                base_rules_ = parser::v2::parse_rules(rules, section, limits_);
+                base_rules_ = parser::v2::parse_rules(rules, section, rule_data_ids_, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all base rules");
                 base_rules_.clear();
@@ -264,8 +265,12 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto rules = static_cast<parameter::vector>(it->second);
             if (!rules.empty()) {
-                auto new_user_rules =
-                    parser::v2::parse_rules(rules, section, limits_, rule::source_type::user);
+                // Rule data is currently not supported by custom rules so these will
+                // be discarded after
+                decltype(rule_data_ids_) rule_data_ids;
+
+                auto new_user_rules = parser::v2::parse_rules(
+                    rules, section, rule_data_ids, limits_, rule::source_type::user);
                 user_rules_ = std::move(new_user_rules);
             } else {
                 DDWAF_DEBUG("Clearing all custom rules");
@@ -292,7 +297,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto rules_data = static_cast<parameter::vector>(it->second);
             if (!rules_data.empty()) {
-                auto new_matchers = parser::v2::parse_data(rules_data, section);
+                auto new_matchers = parser::v2::parse_data(rules_data, rule_data_ids_, section);
                 if (new_matchers.empty()) {
                     // The rules_data array might have unrelated IDs, so we need
                     // to consider "no valid IDs" as an empty rules_data
@@ -336,8 +341,10 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         auto &section = info.add_section("exclusions");
         try {
             auto exclusions = static_cast<parameter::vector>(it->second);
+            filter_data_ids_.clear();
             if (!exclusions.empty()) {
-                exclusions_ = parser::v2::parse_filters(exclusions, section, limits_);
+                exclusions_ =
+                    parser::v2::parse_filters(exclusions, section, filter_data_ids_, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all exclusions");
                 exclusions_.clear();
@@ -356,7 +363,8 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto exclusions_data = static_cast<parameter::vector>(it->second);
             if (!exclusions_data.empty()) {
-                auto new_matchers = parser::v2::parse_data(exclusions_data, section);
+                auto new_matchers =
+                    parser::v2::parse_data(exclusions_data, filter_data_ids_, section);
                 if (new_matchers.empty()) {
                     // The exclusions_data array might have unrelated IDs, so we need
                     // to consider "no valid IDs" as an empty exclusions_data

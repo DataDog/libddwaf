@@ -86,8 +86,9 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
 } // namespace
 
 std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
-    data_source source, const std::vector<transformer_id> &transformers,
-    address_container &addresses, const object_limits &limits)
+    std::unordered_map<std::string, std::string> &data_ids_to_type, data_source source,
+    const std::vector<transformer_id> &transformers, address_container &addresses,
+    const object_limits &limits)
 {
     std::vector<std::unique_ptr<base_condition>> conditions;
     for (const auto &cond_param : conditions_array) {
@@ -111,6 +112,10 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 
+            if (!matcher && !data_id.empty()) {
+                data_ids_to_type.emplace(data_id, operator_name);
+            }
+
             auto arguments =
                 parse_arguments<scalar_condition>(params, source, transformers, addresses, limits);
 
@@ -125,7 +130,8 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
 std::shared_ptr<expression> parse_simplified_expression(const parameter::vector &conditions_array,
     address_container &addresses, const object_limits &limits)
 {
-    return parse_expression(conditions_array, data_source::values, {}, addresses, limits);
+    std::unordered_map<std::string, std::string> data_ids;
+    return parse_expression(conditions_array, data_ids, data_source::values, {}, addresses, limits);
 }
 
 } // namespace ddwaf::parser::v2

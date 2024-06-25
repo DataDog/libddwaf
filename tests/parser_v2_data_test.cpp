@@ -14,12 +14,14 @@ namespace {
 
 TEST(TestParserV2Data, ParseIPData)
 {
+    std::unordered_map<std::string, std::string> data_ids{{"ip_data", "ip_match"}};
+
     auto object = yaml_to_object(
         R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto data_cfg = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, data_ids, section);
     ddwaf_object_free(&object);
 
     {
@@ -47,12 +49,14 @@ TEST(TestParserV2Data, ParseIPData)
 
 TEST(TestParserV2Data, ParseStringData)
 {
+    std::unordered_map<std::string, std::string> data_ids{{"usr_data", "exact_match"}};
+
     auto object = yaml_to_object(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto data_cfg = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, data_ids, section);
     ddwaf_object_free(&object);
 
     {
@@ -80,12 +84,15 @@ TEST(TestParserV2Data, ParseStringData)
 
 TEST(TestParserV2Data, ParseMultipleRuleData)
 {
+    std::unordered_map<std::string, std::string> data_ids{
+        {"ip_data", "ip_match"}, {"usr_data", "exact_match"}};
+
     auto object = yaml_to_object(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto data_cfg = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, data_ids, section);
     ddwaf_object_free(&object);
 
     {
@@ -113,14 +120,54 @@ TEST(TestParserV2Data, ParseMultipleRuleData)
     EXPECT_STRV(data_cfg["ip_data"]->name(), "ip_match");
 }
 
+TEST(TestParserV2Data, ParseUnknownDataID)
+{
+    std::unordered_map<std::string, std::string> data_ids{{"usr_data", "exact_match"}};
+
+    auto object = yaml_to_object(
+        R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
+    auto input = static_cast<parameter::vector>(parameter(object));
+
+    ddwaf::ruleset_info::section_info section;
+    auto data_cfg = parser::v2::parse_data(input, data_ids, section);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 2);
+        EXPECT_NE(loaded.find("ip_data"), loaded.end());
+        EXPECT_NE(loaded.find("usr_data"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(data_cfg.size(), 2);
+    EXPECT_STRV(data_cfg["ip_data"]->name(), "ip_match");
+    EXPECT_STRV(data_cfg["usr_data"]->name(), "exact_match");
+}
+
 TEST(TestParserV2Data, ParseUnsupportedTypes)
 {
+    std::unordered_map<std::string, std::string> data_ids{
+        {"usr_data", "match_regex"}, {"ip_data", "phrase_match"}};
+
     auto object = yaml_to_object(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: whatever, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto data_cfg = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, data_ids, section);
     ddwaf_object_free(&object);
 
     {
@@ -140,7 +187,7 @@ TEST(TestParserV2Data, ParseUnsupportedTypes)
         auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 2);
         {
-            auto it = errors.find("unknown data type 'blob_with_expiration'");
+            auto it = errors.find("matcher match_regex doesn't support dynamic data");
             EXPECT_NE(it, errors.end());
 
             auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -149,7 +196,7 @@ TEST(TestParserV2Data, ParseUnsupportedTypes)
         }
 
         {
-            auto it = errors.find("unknown data type 'whatever'");
+            auto it = errors.find("matcher phrase_match doesn't support dynamic data");
             EXPECT_NE(it, errors.end());
 
             auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
@@ -165,12 +212,14 @@ TEST(TestParserV2Data, ParseUnsupportedTypes)
 
 TEST(TestParserV2Data, ParseMissingType)
 {
+    std::unordered_map<std::string, std::string> data_ids{{"ip_data", "ip_match"}};
+
     auto object =
         yaml_to_object(R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto data_cfg = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, data_ids, section);
     ddwaf_object_free(&object);
 
     {
@@ -203,12 +252,14 @@ TEST(TestParserV2Data, ParseMissingType)
 
 TEST(TestParserV2Data, ParseMissingID)
 {
+    std::unordered_map<std::string, std::string> data_ids{{"ip_data", "ip_match"}};
+
     auto object = yaml_to_object(
         R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto data_cfg = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, data_ids, section);
     ddwaf_object_free(&object);
 
     {
@@ -241,11 +292,13 @@ TEST(TestParserV2Data, ParseMissingID)
 
 TEST(TestParserV2Data, ParseMissingData)
 {
+    std::unordered_map<std::string, std::string> data_ids{{"ip_data", "ip_match"}};
+
     auto object = yaml_to_object(R"([{id: ip_data, type: ip_with_expiration}])");
     auto input = static_cast<parameter::vector>(parameter(object));
 
     ddwaf::ruleset_info::section_info section;
-    auto data_cfg = parser::v2::parse_data(input, section);
+    auto data_cfg = parser::v2::parse_data(input, data_ids, section);
     ddwaf_object_free(&object);
 
     {

@@ -12,8 +12,9 @@ namespace ddwaf::parser::v2 {
 
 namespace {
 
-rule_spec parse_rule(parameter::map &rule, const object_limits &limits, rule::source_type source,
-    address_container &addresses)
+rule_spec parse_rule(parameter::map &rule,
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    rule::source_type source, address_container &addresses)
 {
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
@@ -25,8 +26,8 @@ rule_spec parse_rule(parameter::map &rule, const object_limits &limits, rule::so
     rule_transformers = parse_transformers(transformers, data_source);
 
     auto conditions_array = at<parameter::vector>(rule, "conditions");
-    auto expr =
-        parse_expression(conditions_array, data_source, rule_transformers, addresses, limits);
+    auto expr = parse_expression(
+        conditions_array, rule_data_ids, data_source, rule_transformers, addresses, limits);
     if (expr->empty()) {
         // This is likely unreachable
         throw ddwaf::parsing_error("rule has no valid conditions");
@@ -52,7 +53,8 @@ rule_spec parse_rule(parameter::map &rule, const object_limits &limits, rule::so
 } // namespace
 
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
-    const object_limits &limits, rule::source_type source)
+    std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
+    rule::source_type source)
 {
     rule_spec_container rules;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
@@ -69,7 +71,7 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
                 continue;
             }
 
-            auto rule = parse_rule(rule_map, limits, source, addresses);
+            auto rule = parse_rule(rule_map, rule_data_ids, limits, source, addresses);
             DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
