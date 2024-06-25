@@ -1,0 +1,1 @@
+phantomjs /vendor/assets/javascripts/highcharts/highcharts-convert.js -infile /app/tmp/highcharts/json/input.json -outfile /app/tmp/highcharts/png/survey_641_chart.png -width 700 2>&1

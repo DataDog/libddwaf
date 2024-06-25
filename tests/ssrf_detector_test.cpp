@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "condition/ssrf_detector.hpp"
-#include "platform.hpp"
 #include "test_utils.hpp"
 
 using namespace ddwaf;

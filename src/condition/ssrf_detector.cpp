@@ -272,7 +272,7 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
                                     {"params"sv, highlight, param.address, param_kp}},
                     {std::move(highlight)}, "ssrf_detector", {}, ephemeral};
 
-            return {true, uri.ephemeral || param.ephemeral};
+            return {true, ephemeral};
         }
     }
 

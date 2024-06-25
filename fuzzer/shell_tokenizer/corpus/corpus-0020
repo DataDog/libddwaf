@@ -1,0 +1,1 @@
+diff <(file) <(rm -rf /etc/systemd/)
