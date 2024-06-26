@@ -17,7 +17,7 @@ namespace ddwaf::matcher {
 
 class ip_match : public base_impl<ip_match> {
 public:
-    using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
+    using data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
     ip_match() = default;
     explicit ip_match(const std::vector<std::string_view> &ip_list);
@@ -32,7 +32,7 @@ public:
         init_tree(ip_list);
     }
 
-    explicit ip_match(const rule_data_type &ip_list);
+    explicit ip_match(const data_type &ip_list);
     ~ip_match() override = default;
     ip_match(const ip_match &) = delete;
     ip_match(ip_match &&) = default;

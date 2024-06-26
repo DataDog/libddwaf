@@ -74,7 +74,10 @@ public:
     ~rule_filter() override = default;
 
     MOCK_METHOD(std::optional<ddwaf::exclusion::rule_filter::excluded_set>, match,
-        (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
+        (const object_store &store, cache_type &cache,
+            (const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &),
+            ddwaf::timer &deadline),
+        (const override));
 };
 
 class input_filter : public ddwaf::exclusion::input_filter {
@@ -89,7 +92,10 @@ public:
     ~input_filter() override = default;
 
     MOCK_METHOD(std::optional<excluded_set>, match,
-        (const object_store &store, cache_type &cache, ddwaf::timer &deadline), (const override));
+        (const object_store &store, cache_type &cache,
+            (const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &),
+            ddwaf::timer &deadline),
+        (const override));
 };
 
 class processor : public ddwaf::base_processor {
@@ -1021,7 +1027,7 @@ TEST(TestContext, SkipRuleFilterNoTargets)
     }
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _, _)).Times(0);
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -1070,7 +1076,7 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
     }
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
+    EXPECT_CALL(*filter, match(_, _, _, _)).WillOnce(Return(std::nullopt));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -1837,7 +1843,7 @@ TEST(TestContext, SkipInputFilterNoTargets)
     }
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _, _)).Times(0);
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -1883,7 +1889,7 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
     }
 
     EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _)).WillOnce(Return(std::nullopt));
+    EXPECT_CALL(*filter, match(_, _, _, _)).WillOnce(Return(std::nullopt));
 
     ddwaf_object root;
     ddwaf_object tmp;

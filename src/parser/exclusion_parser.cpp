@@ -15,12 +15,13 @@ namespace ddwaf::parser::v2 {
 
 namespace {
 
-input_filter_spec parse_input_filter(
-    const parameter::map &filter, address_container &addresses, const object_limits &limits)
+input_filter_spec parse_input_filter(const parameter::map &filter, address_container &addresses,
+    std::unordered_map<std::string, std::string> &filter_data_ids, const object_limits &limits)
 {
     // Check for conditions first
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
-    auto expr = parse_simplified_expression(conditions_array, addresses, limits);
+    auto expr = parse_expression(
+        conditions_array, filter_data_ids, data_source::values, {}, addresses, limits);
 
     std::vector<reference_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
@@ -54,12 +55,13 @@ input_filter_spec parse_input_filter(
     return {std::move(expr), std::move(obj_filter), std::move(rules_target)};
 }
 
-rule_filter_spec parse_rule_filter(
-    const parameter::map &filter, address_container &addresses, const object_limits &limits)
+rule_filter_spec parse_rule_filter(const parameter::map &filter, address_container &addresses,
+    std::unordered_map<std::string, std::string> &filter_data_ids, const object_limits &limits)
 {
     // Check for conditions first
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
-    auto expr = parse_simplified_expression(conditions_array, addresses, limits);
+    auto expr = parse_expression(
+        conditions_array, filter_data_ids, data_source::values, {}, addresses, limits);
 
     std::vector<reference_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
@@ -94,8 +96,8 @@ rule_filter_spec parse_rule_filter(
 
 } // namespace
 
-filter_spec_container parse_filters(
-    parameter::vector &filter_array, base_section_info &info, const object_limits &limits)
+filter_spec_container parse_filters(parameter::vector &filter_array, base_section_info &info,
+    std::unordered_map<std::string, std::string> &filter_data_ids, const object_limits &limits)
 {
     filter_spec_container filters;
     for (unsigned i = 0; i < filter_array.size(); i++) {
@@ -112,11 +114,11 @@ filter_spec_container parse_filters(
             }
 
             if (node.find("inputs") != node.end()) {
-                auto filter = parse_input_filter(node, addresses, limits);
+                auto filter = parse_input_filter(node, addresses, filter_data_ids, limits);
                 filters.ids.emplace(id);
                 filters.input_filters.emplace(id, std::move(filter));
             } else {
-                auto filter = parse_rule_filter(node, addresses, limits);
+                auto filter = parse_rule_filter(node, addresses, filter_data_ids, limits);
                 filters.ids.emplace(id);
                 filters.rule_filters.emplace(id, std::move(filter));
             }

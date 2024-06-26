@@ -75,11 +75,11 @@ public:
     }
 
     template <typename T>
-    void end_condition(std::string data_id)
+    void end_condition_with_data(std::string data_id)
         requires std::is_base_of_v<matcher::base, T>
     {
         conditions_.emplace_back(std::make_unique<scalar_condition>(
-            std::move(arguments_), std::move(data_id), std::make_unique<T>()));
+            std::unique_ptr<matcher::base>{}, std::move(data_id), std::move(arguments_)));
     }
 
     template <typename T>

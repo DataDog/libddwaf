@@ -133,7 +133,8 @@ struct ruleset {
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
 
     std::vector<std::shared_ptr<rule>> rules;
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> dynamic_matchers;
+    std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers;
+    std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers;
 
     std::vector<std::shared_ptr<const scanner>> scanners;
     std::shared_ptr<action_mapper> actions;
