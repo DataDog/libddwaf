@@ -82,7 +82,7 @@ TEST(TestParserV2Data, ParseStringData)
     EXPECT_STRV(data_cfg["usr_data"]->name(), "exact_match");
 }
 
-TEST(TestParserV2Data, ParseMultipleRuleData)
+TEST(TestParserV2Data, ParseMultipleData)
 {
     std::unordered_map<std::string, std::string> data_ids{
         {"ip_data", "ip_match"}, {"usr_data", "exact_match"}};
@@ -203,6 +203,46 @@ TEST(TestParserV2Data, ParseUnsupportedTypes)
             EXPECT_EQ(error_rules.size(), 1);
             EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
         }
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(data_cfg.size(), 0);
+}
+
+TEST(TestParserV2Data, ParseUnknownDataIDWithUnsupportedType)
+{
+    std::unordered_map<std::string, std::string> data_ids{};
+
+    auto object = yaml_to_object(
+        R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]}])");
+    auto input = static_cast<parameter::vector>(parameter(object));
+
+    ddwaf::ruleset_info::section_info section;
+    auto data_cfg = parser::v2::parse_data(input, data_ids, section);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("usr_data"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("failed to infer matcher");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("usr_data"), error_rules.end());
 
         ddwaf_object_free(&root);
     }
