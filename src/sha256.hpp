@@ -21,7 +21,9 @@ public:
     sha256_hash &operator=(sha256_hash &&) noexcept = delete;
 
     sha256_hash &operator<<(std::string_view str);
-    [[nodiscard]] std::string digest();
+    template <std::size_t N = 64>
+    [[nodiscard]] std::string digest()
+        requires(N % 8 == 0 && N <= 64);
 
     void reset()
     {
@@ -37,8 +39,11 @@ protected:
     static constexpr std::array<uint32_t, 8> initial_hash_values{0x6a09e667, 0xbb67ae85, 0x3c6ef372,
         0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
 
-    void sha_block_data_order(const uint8_t *data, size_t len);
+    template <std::size_t N>
+    void write_digest(std::array<char, N> &output)
+        requires(N % 8 == 0 && N <= 64);
 
+    void sha_block_data_order(const uint8_t *data, size_t len);
     std::array<uint32_t, 8> hash{initial_hash_values};
     uint32_t length_low{0};
     uint32_t length_high{0};

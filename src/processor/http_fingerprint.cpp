@@ -7,6 +7,7 @@
 #include "processor/http_fingerprint.hpp"
 
 #include "sha256.hpp"
+#include "transformer/lowercase.hpp"
 
 namespace ddwaf {
 
@@ -25,6 +26,8 @@ struct string_buffer {
 
     char &operator[](std::size_t idx) const { return buffer[idx]; }
 
+    [[nodiscard]] std::span<char> subspan(std::size_t len) const { return {&buffer[index], len}; }
+
     void append(std::string_view str)
     {
         memcpy(&buffer[index], str.data(), str.size());
@@ -36,13 +39,24 @@ struct string_buffer {
         for (auto c : str) { buffer[index++] = ddwaf::tolower(c); }
     }
 
+    template <std::size_t N> void append(std::array<char, N> str)
+    {
+        memcpy(&buffer[index], str.data(), str.size());
+        index += str.size();
+    }
+
+    template <std::size_t N> void append_lowercase(std::array<char, N> str)
+    {
+        for (auto c : str) { buffer[index++] = ddwaf::tolower(c); }
+    }
+
     void append(char c) { buffer[index++] = c; }
 
-    char *move()
+    std::pair<char *, std::size_t> move()
     {
         auto *ptr = buffer;
         buffer = nullptr;
-        return ptr;
+        return {ptr, index};
     }
 
     char *buffer{nullptr};
@@ -64,14 +78,41 @@ std::string get_truncated_hash(const ddwaf_object &body)
         return "";
     }
 
-    sha256_hash hasher;
+    std::vector<char *> lc_key_buffer;
+    lc_key_buffer.reserve(body.nbEntries);
+
+    scope_exit free_ptrs_at_exit([&lc_key_buffer]() {
+        for (auto *ptr : lc_key_buffer) {
+            // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc)
+            free(ptr);
+        }
+    });
+    std::vector<std::string_view> keys;
+    keys.reserve(body.nbEntries);
+
     for (unsigned i = 0; i < body.nbEntries; ++i) {
         const auto &child = body.array[i];
-        hasher << std::string_view{child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-    };
-    return hasher.digest().substr(0, 8);
-}
 
+        std::string_view key{
+            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+        cow_string lc_key{key};
+
+        if (transformer::lowercase::transform(lc_key)) {
+            auto [ptr, size] = lc_key.move();
+            lc_key_buffer.emplace_back(ptr);
+            keys.emplace_back(ptr, size);
+        } else {
+            keys.emplace_back(key);
+        }
+    }
+
+    std::sort(keys.begin(), keys.end());
+
+    sha256_hash hasher;
+    for (auto key : keys) { hasher << key; }
+
+    return hasher.digest<8>();
+}
 
 } // namespace
 
@@ -96,8 +137,9 @@ std::pair<ddwaf_object, object_store::attribute> http_fingerprint::eval_impl(
     buffer.append('-');
     buffer.append(get_truncated_hash(*query.value));
 
+    auto [ptr, size] = buffer.move();
     ddwaf_object res;
-    ddwaf_object_stringl_nc(&res, buffer.move(), buffer.length);
+    ddwaf_object_stringl_nc(&res, ptr, size);
     return {res, object_store::attribute::none};
 }
 
