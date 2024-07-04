@@ -30,7 +30,7 @@ public:
 
 protected:
     static constexpr std::string_view default_key_regex_str{
-        R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)"};
+        R"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret(?:[_-]?key)?|(?:(?:api|private|public|access)[_-]?)key)|(?:(?:auth|access|id|refresh)[_-]?)?token|consumer[_-]?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization|jsessionid|phpsessid|asp\.net[_-]sessionid|sid|jwt)"};
 
     std::unique_ptr<re2::RE2> key_regex{nullptr};
     std::unique_ptr<re2::RE2> value_regex{nullptr};
