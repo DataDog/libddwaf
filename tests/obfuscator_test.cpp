@@ -74,8 +74,7 @@ TEST(TestObfuscator, TestDefaultObfuscator)
         "IDTOKEN", "REFRESH_TOKEN", "REFRESH-TOKEN", "REFRESHTOKEN", "CONSUMER-ID", "CONSUMER_ID",
         "CONSUMERID", "CONSUMER-KEY", "CONSUMER_KEY", "CONSUMERKEY", "CONSUMER-SECRET",
         "CONSUMER_SECRET", "CONSUMERSECRET", "SIGNED", "SIGNATURE", "BEARER", "AUTHORIZATION",
-        "JSESSIONID", "PHPSESSID", "ASP.NET_SESSIONID", "ASP.NET-SESSIONID", "SID", "JWT"
-    };
+        "JSESSIONID", "PHPSESSID", "ASP.NET_SESSIONID", "ASP.NET-SESSIONID", "SID", "JWT"};
 
     ddwaf::obfuscator event_obfuscator{ddwaf::obfuscator::default_key_regex_str, {}};
     for (auto &sample : samples) { EXPECT_TRUE(event_obfuscator.is_sensitive_key(sample)); }
