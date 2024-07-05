@@ -15,6 +15,9 @@
 //
 
 #include "sha256.hpp"
+#include <iostream>
+#include <ostream>
+#include <span>
 
 namespace ddwaf {
 namespace {
@@ -146,16 +149,17 @@ template <std::size_t N>
 std::string sha256_hash::digest()
     requires(N % 8 == 0 && N <= 64)
 {
-    std::array<char, N> final_digest{0};
-    write_digest(final_digest);
-    return std::string{final_digest.data(), N};
+    std::string final_digest;
+    final_digest.resize(N, 0);
+    write_digest(std::span<char, N>{final_digest});
+    return final_digest;
 }
 
 template std::string sha256_hash::digest<64>();
 template std::string sha256_hash::digest<8>();
 
 template <std::size_t N>
-void sha256_hash::write_digest(std::array<char, N> &output)
+void sha256_hash::write_digest(std::span<char, N> output)
     requires(N % 8 == 0 && N <= 64)
 {
     auto *p = buffer.data();
@@ -204,6 +208,9 @@ void sha256_hash::write_digest(std::array<char, N> &output)
     // Reset the hasher and return
     reset();
 }
+
+template void sha256_hash::write_digest<8>(std::span<char, 8> output);
+template void sha256_hash::write_digest<64>(std::span<char, 64> output);
 
 void sha256_hash::sha_block_data_order(const uint8_t *data, size_t len)
 {

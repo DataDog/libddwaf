@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstring>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -25,6 +26,11 @@ public:
     [[nodiscard]] std::string digest()
         requires(N % 8 == 0 && N <= 64);
 
+    template <std::size_t N = 64>
+    void write_digest(std::span<char, N> output)
+        requires(N % 8 == 0 && N <= 64);
+
+
     void reset()
     {
         hash = initial_hash_values;
@@ -38,10 +44,6 @@ protected:
     static constexpr std::size_t block_size = 64;
     static constexpr std::array<uint32_t, 8> initial_hash_values{0x6a09e667, 0xbb67ae85, 0x3c6ef372,
         0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
-
-    template <std::size_t N>
-    void write_digest(std::array<char, N> &output)
-        requires(N % 8 == 0 && N <= 64);
 
     void sha_block_data_order(const uint8_t *data, size_t len);
     std::array<uint32_t, 8> hash{initial_hash_values};
