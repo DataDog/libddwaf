@@ -103,8 +103,8 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
     }
 
     auto res = fingerprint::generate_fragment("http", fingerprint::string_field{method.value},
-        fingerprint::string_hash_field{uri_raw.value}, fingerprint::key_hash_field{*body.value},
-        fingerprint::key_hash_field{*query.value});
+        fingerprint::string_hash_field{uri_raw.value}, fingerprint::key_hash_field{*query.value},
+        fingerprint::key_hash_field{*body.value});
 
     return {res, object_store::attribute::none};
 }

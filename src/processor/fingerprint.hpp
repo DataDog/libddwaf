@@ -18,8 +18,7 @@ namespace fingerprint {
 
 struct string_buffer {
     explicit string_buffer(std::size_t length)
-        // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,
-        // hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
+        // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
         : buffer(reinterpret_cast<char *>(malloc(sizeof(char) * length))), length(length)
     {
         if (buffer == nullptr) {
@@ -31,7 +30,9 @@ struct string_buffer {
 
     template <std::size_t N> [[nodiscard]] std::span<char, N> subspan()
     {
-        return std::span<char, N>{&buffer[index], N};
+        std::span<char, N> res{&buffer[index], N};
+        index += N;
+        return res;
     }
 
     void append(std::string_view str)
@@ -104,7 +105,7 @@ struct string_hash_field : field_generator {
     string_hash_field &operator=(const string_hash_field &) = default;
     string_hash_field &operator=(string_hash_field &&) = default;
 
-    std::size_t length() override { return value.size(); }
+    std::size_t length() override { return 8; }
     void operator()(string_buffer &output) override;
 
     std::string_view value;
@@ -118,7 +119,7 @@ struct key_hash_field : field_generator {
     key_hash_field &operator=(const key_hash_field &) = default;
     key_hash_field &operator=(key_hash_field &&) = default;
 
-    std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? value.nbEntries : 0; }
+    std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? 8 : 0; }
     void operator()(string_buffer &output) override;
 
     ddwaf_object value;
@@ -132,7 +133,7 @@ struct value_hash_field : field_generator {
     value_hash_field &operator=(const value_hash_field &) = default;
     value_hash_field &operator=(value_hash_field &&) = default;
 
-    std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? value.nbEntries : 0; }
+    std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? 8 : 0; }
     void operator()(string_buffer &output) override;
 
     ddwaf_object value;
