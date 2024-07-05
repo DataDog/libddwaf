@@ -4,11 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "processor/fingerprint.hpp"
 #include "sha256.hpp"
-#include "processor/fingerprint_common.hpp"
 #include "transformer/lowercase.hpp"
 
-namespace ddwaf::fingerprint {
+namespace ddwaf {
+namespace fingerprint {
 
 // Retur true if the first argument is less than (i.e. is ordered before) the second
 bool str_casei_cmp(std::string_view left, std::string_view right)
@@ -17,7 +18,7 @@ bool str_casei_cmp(std::string_view left, std::string_view right)
     for (std::size_t i = 0; i < n; ++i) {
         auto lc = ddwaf::tolower(left[i]);
         auto rc = ddwaf::tolower(right[i]);
-        if (lc != rc ) {
+        if (lc != rc) {
             return lc < rc;
         }
     }
@@ -61,7 +62,9 @@ void string_hash_field::operator()(string_buffer &output)
 
 void key_hash_field::operator()(string_buffer &output)
 {
-    if (value.type != DDWAF_OBJ_MAP or value.nbEntries == 0) { return; }
+    if (value.type != DDWAF_OBJ_MAP or value.nbEntries == 0) {
+        return;
+    }
 
     std::vector<std::string_view> keys;
     keys.reserve(value.nbEntries);
@@ -87,4 +90,23 @@ void key_hash_field::operator()(string_buffer &output)
     hasher.write_digest(output.subspan<8>());
 }
 
-} // namespace ddwaf::fingerprint
+} // namespace fingerprint
+
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+std::pair<ddwaf_object, object_store::attribute> http_fingerprint::eval_impl(
+    const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
+    const unary_argument<const ddwaf_object *> &body,
+    const unary_argument<const ddwaf_object *> &query, ddwaf::timer &deadline) const
+{
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
+    auto res = fingerprint::generate_fragment("http", fingerprint::string_field{method.value},
+        fingerprint::string_hash_field{uri_raw.value}, fingerprint::key_hash_field{*body.value},
+        fingerprint::key_hash_field{*query.value});
+
+    return {res, object_store::attribute::none};
+}
+
+} // namespace ddwaf

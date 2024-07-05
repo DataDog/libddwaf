@@ -8,7 +8,7 @@
 
 #include "builder/processor_builder.hpp"
 #include "processor/extract_schema.hpp"
-#include "processor/http_fingerprint.hpp"
+#include "processor/fingerprint.hpp"
 
 namespace ddwaf {
 

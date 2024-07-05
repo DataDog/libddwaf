@@ -9,7 +9,7 @@
 #include "parser/parser.hpp"
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
-#include "processor/http_fingerprint.hpp"
+#include "processor/fingerprint.hpp"
 #include <vector>
 
 namespace ddwaf::parser::v2 {

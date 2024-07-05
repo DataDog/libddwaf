@@ -30,7 +30,6 @@ public:
     void write_digest(std::span<char, N> output)
         requires(N % 8 == 0 && N <= 64);
 
-
     void reset()
     {
         hash = initial_hash_values;

@@ -4,18 +4,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstdlib>
+#include <cstring>
 #include <span>
 #include <string_view>
-#include <cstring>
-#include <cstdlib>
 
+#include "processor/base.hpp"
+#include "scanner.hpp"
 #include "utils.hpp"
 
-namespace ddwaf::fingerprint {
+namespace ddwaf {
+namespace fingerprint {
 
 struct string_buffer {
     explicit string_buffer(std::size_t length)
-    // NOLINTNEXTLINE(cppcoreguidelines-no-malloc, hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
+        // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,
+        // hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
         : buffer(reinterpret_cast<char *>(malloc(sizeof(char) * length))), length(length)
     {
         if (buffer == nullptr) {
@@ -25,8 +29,8 @@ struct string_buffer {
 
     char &operator[](std::size_t idx) const { return buffer[idx]; }
 
-    template <std::size_t N>
-    [[nodiscard]] std::span<char, N> subspan() {
+    template <std::size_t N> [[nodiscard]] std::span<char, N> subspan()
+    {
         return std::span<char, N>{&buffer[index], N};
     }
 
@@ -69,38 +73,36 @@ struct string_buffer {
 struct field_generator {
     field_generator() = default;
     virtual ~field_generator() = default;
-    field_generator(const field_generator&) = default;
-    field_generator(field_generator&&) = default;
-    field_generator& operator=(const field_generator&) = default;
-    field_generator& operator=(field_generator&&) = default;
+    field_generator(const field_generator &) = default;
+    field_generator(field_generator &&) = default;
+    field_generator &operator=(const field_generator &) = default;
+    field_generator &operator=(field_generator &&) = default;
 
     virtual std::size_t length() = 0;
     virtual void operator()(string_buffer &output) = 0;
 };
 
 struct string_field : field_generator {
-    explicit string_field(std::string_view input): value(input) {}
+    explicit string_field(std::string_view input) : value(input) {}
     ~string_field() override = default;
-    string_field(const string_field&) = default;
-    string_field(string_field&&) = default;
-    string_field& operator=(const string_field&) = default;
-    string_field& operator=(string_field&&) = default;
+    string_field(const string_field &) = default;
+    string_field(string_field &&) = default;
+    string_field &operator=(const string_field &) = default;
+    string_field &operator=(string_field &&) = default;
 
     std::size_t length() override { return value.size(); }
-    void operator()(string_buffer &output) override {
-        output.append_lowercase(value);
-    }
+    void operator()(string_buffer &output) override { output.append_lowercase(value); }
 
     std::string_view value;
 };
 
 struct string_hash_field : field_generator {
-    explicit string_hash_field(std::string_view input): value(input) {}
+    explicit string_hash_field(std::string_view input) : value(input) {}
     ~string_hash_field() override = default;
-    string_hash_field(const string_hash_field&) = default;
-    string_hash_field(string_hash_field&&) = default;
-    string_hash_field& operator=(const string_hash_field&) = default;
-    string_hash_field& operator=(string_hash_field&&) = default;
+    string_hash_field(const string_hash_field &) = default;
+    string_hash_field(string_hash_field &&) = default;
+    string_hash_field &operator=(const string_hash_field &) = default;
+    string_hash_field &operator=(string_hash_field &&) = default;
 
     std::size_t length() override { return value.size(); }
     void operator()(string_buffer &output) override;
@@ -108,34 +110,29 @@ struct string_hash_field : field_generator {
     std::string_view value;
 };
 
-
 struct key_hash_field : field_generator {
-    explicit key_hash_field(const ddwaf_object &input): value(input) {}
+    explicit key_hash_field(const ddwaf_object &input) : value(input) {}
     ~key_hash_field() override = default;
-    key_hash_field(const key_hash_field&) = default;
-    key_hash_field(key_hash_field&&) = default;
-    key_hash_field& operator=(const key_hash_field&) = default;
-    key_hash_field& operator=(key_hash_field&&) = default;
+    key_hash_field(const key_hash_field &) = default;
+    key_hash_field(key_hash_field &&) = default;
+    key_hash_field &operator=(const key_hash_field &) = default;
+    key_hash_field &operator=(key_hash_field &&) = default;
 
-    std::size_t length() override {
-        return value.type == DDWAF_OBJ_MAP ? value.nbEntries : 0;
-    }
+    std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? value.nbEntries : 0; }
     void operator()(string_buffer &output) override;
 
     ddwaf_object value;
 };
 
 struct value_hash_field : field_generator {
-    explicit value_hash_field(const ddwaf_object &input): value(input) {}
+    explicit value_hash_field(const ddwaf_object &input) : value(input) {}
     ~value_hash_field() override = default;
-    value_hash_field(const value_hash_field&) = default;
-    value_hash_field(value_hash_field&&) = default;
-    value_hash_field& operator=(const value_hash_field&) = default;
-    value_hash_field& operator=(value_hash_field&&) = default;
+    value_hash_field(const value_hash_field &) = default;
+    value_hash_field(value_hash_field &&) = default;
+    value_hash_field &operator=(const value_hash_field &) = default;
+    value_hash_field &operator=(value_hash_field &&) = default;
 
-    std::size_t length() override {
-        return value.type == DDWAF_OBJ_MAP ? value.nbEntries : 0;
-    }
+    std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? value.nbEntries : 0; }
     void operator()(string_buffer &output) override;
 
     ddwaf_object value;
@@ -179,4 +176,24 @@ ddwaf_object generate_fragment(std::string_view header, Args... generators)
     return res;
 }
 
-} // namespace ddwaf::fingerprint
+} // namespace fingerprint
+
+class http_fingerprint : public structured_processor<http_fingerprint> {
+public:
+    static constexpr std::array<std::string_view, 4> param_names{
+        "method", "uri_raw", "query", "body"};
+
+    http_fingerprint(std::string id, std::shared_ptr<expression> expr,
+        std::vector<processor_mapping> mappings, bool evaluate, bool output)
+        : structured_processor(
+              std::move(id), std::move(expr), std::move(mappings), evaluate, output)
+    {}
+
+    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+        const unary_argument<std::string_view> &method,
+        const unary_argument<std::string_view> &uri_raw,
+        const unary_argument<const ddwaf_object *> &query,
+        const unary_argument<const ddwaf_object *> &body, ddwaf::timer &deadline) const;
+};
+
+} // namespace ddwaf
