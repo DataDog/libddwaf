@@ -43,10 +43,10 @@ template <> struct typed_processor_builder<extract_schema> {
     }
 };
 
-template <> struct typed_processor_builder<http_fingerprint> {
+template <> struct typed_processor_builder<http_endpoint_fingerprint> {
     std::shared_ptr<base_processor> build(const auto &spec)
     {
-        return std::make_shared<http_fingerprint>(
+        return std::make_shared<http_endpoint_fingerprint>(
             spec.id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 };
@@ -79,8 +79,8 @@ template <typename T>
     switch (type) {
     case processor_type::extract_schema:
         return build_with_type<extract_schema>(*this, scanners);
-    case processor_type::http_fingerprint:
-        return build_with_type<http_fingerprint>(*this, scanners);
+    case processor_type::http_endpoint_fingerprint:
+        return build_with_type<http_endpoint_fingerprint>(*this, scanners);
     default:
         break;
     }

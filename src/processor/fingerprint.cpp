@@ -93,10 +93,10 @@ void key_hash_field::operator()(string_buffer &output)
 } // namespace fingerprint
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<ddwaf_object, object_store::attribute> http_fingerprint::eval_impl(
+std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
-    const unary_argument<const ddwaf_object *> &body,
-    const unary_argument<const ddwaf_object *> &query, ddwaf::timer &deadline) const
+    const unary_argument<const ddwaf_object *> &query,
+    const unary_argument<const ddwaf_object *> &body, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();

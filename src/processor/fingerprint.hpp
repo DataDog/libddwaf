@@ -178,12 +178,12 @@ ddwaf_object generate_fragment(std::string_view header, Args... generators)
 
 } // namespace fingerprint
 
-class http_fingerprint : public structured_processor<http_fingerprint> {
+class http_endpoint_fingerprint : public structured_processor<http_endpoint_fingerprint> {
 public:
     static constexpr std::array<std::string_view, 4> param_names{
         "method", "uri_raw", "query", "body"};
 
-    http_fingerprint(std::string id, std::shared_ptr<expression> expr,
+    http_endpoint_fingerprint(std::string id, std::shared_ptr<expression> expr,
         std::vector<processor_mapping> mappings, bool evaluate, bool output)
         : structured_processor(
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
@@ -194,6 +194,51 @@ public:
         const unary_argument<std::string_view> &uri_raw,
         const unary_argument<const ddwaf_object *> &query,
         const unary_argument<const ddwaf_object *> &body, ddwaf::timer &deadline) const;
+};
+
+class http_header_fingerprint : public structured_processor<http_header_fingerprint> {
+public:
+    static constexpr std::array<std::string_view, 1> param_names{"headers"};
+
+    http_header_fingerprint(std::string id, std::shared_ptr<expression> expr,
+        std::vector<processor_mapping> mappings, bool evaluate, bool output)
+        : structured_processor(
+              std::move(id), std::move(expr), std::move(mappings), evaluate, output)
+    {}
+
+    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+        const unary_argument<const ddwaf_object *> &headers, ddwaf::timer &deadline) const;
+};
+
+class http_network_fingerprint : public structured_processor<http_network_fingerprint> {
+public:
+    static constexpr std::array<std::string_view, 1> param_names{"headers"};
+
+    http_network_fingerprint(std::string id, std::shared_ptr<expression> expr,
+        std::vector<processor_mapping> mappings, bool evaluate, bool output)
+        : structured_processor(
+              std::move(id), std::move(expr), std::move(mappings), evaluate, output)
+    {}
+
+    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+        const unary_argument<const ddwaf_object *> &headers, ddwaf::timer &deadline) const;
+};
+
+class session_fingerprint : public structured_processor<session_fingerprint> {
+public:
+    static constexpr std::array<std::string_view, 3> param_names{
+        "cookies", "session_id", "user_id"};
+
+    session_fingerprint(std::string id, std::shared_ptr<expression> expr,
+        std::vector<processor_mapping> mappings, bool evaluate, bool output)
+        : structured_processor(
+              std::move(id), std::move(expr), std::move(mappings), evaluate, output)
+    {}
+
+    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+        const unary_argument<const ddwaf_object *> &cookies,
+        const unary_argument<std::string_view> &session_id,
+        const unary_argument<std::string_view> &user_id, ddwaf::timer &deadline) const;
 };
 
 } // namespace ddwaf

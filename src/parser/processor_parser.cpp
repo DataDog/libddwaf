@@ -78,8 +78,20 @@ processor_container parse_processors(
             auto generator_id = at<std::string>(node, "generator");
             if (generator_id == "extract_schema") {
                 type = processor_type::extract_schema;
-            } else if (generator_id == "http_fingerprint") {
-                type = processor_type::http_fingerprint;
+            } else if (generator_id == "http_endpoint_fingerprint") {
+                type = processor_type::http_endpoint_fingerprint;
+            } else if (generator_id == "http_network_fingerprint") {
+                type = processor_type::http_network_fingerprint;
+                // Skip for now
+                continue;
+            } else if (generator_id == "http_header_fingerprint") {
+                type = processor_type::http_header_fingerprint;
+                // Skip for now
+                continue;
+            } else if (generator_id == "session_fingerprint") {
+                type = processor_type::session_fingerprint;
+                // Skip for now
+                continue;
             } else {
                 DDWAF_WARN("Unknown generator: {}", generator_id);
                 info.add_failed(id, "unknown generator '" + generator_id + "'");
@@ -95,7 +107,8 @@ processor_container parse_processors(
             if (type == processor_type::extract_schema) {
                 mappings = parse_processor_mappings<extract_schema>(mappings_vec, addresses);
             } else {
-                mappings = parse_processor_mappings<http_fingerprint>(mappings_vec, addresses);
+                mappings =
+                    parse_processor_mappings<http_endpoint_fingerprint>(mappings_vec, addresses);
             }
 
             std::vector<reference_spec> scanners;
