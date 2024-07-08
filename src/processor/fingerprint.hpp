@@ -143,7 +143,7 @@ template <typename T, typename... Rest>
 std::size_t generate_fragment_length(T &generator, Rest... rest)
 {
     if constexpr (sizeof...(rest) > 0) {
-        return generator.length() + generate_fragment_length(rest...);
+        return generator.length() + 1 + generate_fragment_length(rest...);
     } else {
         return generator.length();
     }
