@@ -82,12 +82,8 @@ processor_container parse_processors(
                 type = processor_type::http_endpoint_fingerprint;
             } else if (generator_id == "http_network_fingerprint") {
                 type = processor_type::http_network_fingerprint;
-                // Skip for now
-                continue;
             } else if (generator_id == "http_header_fingerprint") {
                 type = processor_type::http_header_fingerprint;
-                // Skip for now
-                continue;
             } else if (generator_id == "session_fingerprint") {
                 type = processor_type::session_fingerprint;
                 // Skip for now
@@ -106,9 +102,15 @@ processor_container parse_processors(
             std::vector<processor_mapping> mappings;
             if (type == processor_type::extract_schema) {
                 mappings = parse_processor_mappings<extract_schema>(mappings_vec, addresses);
-            } else {
+            } else if (type == processor_type::http_endpoint_fingerprint) {
                 mappings =
                     parse_processor_mappings<http_endpoint_fingerprint>(mappings_vec, addresses);
+            } else if (type == processor_type::http_header_fingerprint) {
+                mappings =
+                    parse_processor_mappings<http_header_fingerprint>(mappings_vec, addresses);
+            } else {
+                mappings =
+                    parse_processor_mappings<http_network_fingerprint>(mappings_vec, addresses);
             }
 
             std::vector<reference_spec> scanners;

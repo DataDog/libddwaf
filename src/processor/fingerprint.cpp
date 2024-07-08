@@ -5,8 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "processor/fingerprint.hpp"
+#include "ddwaf.h"
 #include "sha256.hpp"
 #include "transformer/lowercase.hpp"
+#include "utils.hpp"
+
 #include <stdexcept>
 
 namespace ddwaf {
@@ -126,6 +129,20 @@ struct string_field : field_generator {
     std::string_view value;
 };
 
+struct unsigned_field : field_generator {
+    explicit unsigned_field(unsigned input) : value(ddwaf::to_string<std::string>(input)) {}
+    ~unsigned_field() override = default;
+    unsigned_field(const unsigned_field &) = default;
+    unsigned_field(unsigned_field &&) = default;
+    unsigned_field &operator=(const unsigned_field &) = default;
+    unsigned_field &operator=(unsigned_field &&) = default;
+
+    std::size_t length() override { return value.size(); }
+    void operator()(string_buffer &output) override { output.append(value); }
+
+    std::string value;
+};
+
 struct string_hash_field : field_generator {
     explicit string_hash_field(std::string_view input) : value(input) {}
     ~string_hash_field() override = default;
@@ -152,6 +169,21 @@ struct key_hash_field : field_generator {
     void operator()(string_buffer &output) override;
 
     ddwaf_object value;
+};
+
+struct vector_hash_field : field_generator {
+    explicit vector_hash_field(const std::vector<std::string> &input) : value(input) {}
+    ~vector_hash_field() override = default;
+    vector_hash_field(const vector_hash_field &) = default;
+    vector_hash_field(vector_hash_field &&) = default;
+    vector_hash_field &operator=(const vector_hash_field &) = delete;
+    vector_hash_field &operator=(vector_hash_field &&) = delete;
+
+    std::size_t length() override { return value.empty() ? 0 : 8; }
+    void operator()(string_buffer &output) override;
+
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const std::vector<std::string> &value;
 };
 
 template <typename T, typename... Rest>
@@ -273,53 +305,62 @@ void key_hash_field::operator()(string_buffer &output)
     hasher.write_digest(output.subspan<8>());
 }
 
-enum class header_type {
-    unknown,
-    standard,
-    xff
-};
-
-header_type get_header_type_and_index(std::string_view header)
+void vector_hash_field::operator()(string_buffer &output)
 {
-    static std::unordered_map<std::string_view, header_type> headers{
-        {"referer", header_type::standard},
-        {"connection", header_type::standard},
-        {"accept-encoding", header_type::standard},
-        {"content-encoding", header_type::standard},
-        {"cache-control", header_type::standard},
-        {"te", header_type::standard},
-        {"accept-charset", header_type::standard},
-        {"content-type", header_type::standard},
-        {"accept", header_type::standard},
-        {"accept-language", header_type::standard},
-        {"x-forwarded-for", header_type::xff},
-        {"x-real-ip", header_type::xff},
-        {"true-client-ip", header_type::xff},
-        {"x-client-ip", header_type::xff},
-        {"x-forwarded", header_type::xff},
-        {"forwarded-for", header_type::xff},
-        {"x-cluster-client-ip", header_type::xff},
-        {"fastly-client-ip", header_type::xff},
-        {"cf-connecting-ip", header_type::xff},
-        {"cf-connecting-ipv6", header_type::xff}
-    };
+    sha256_hash hasher;
+    for (unsigned i = 0; i < value.size(); ++i) {
+        hasher << value[i];
+        if ((i + 1) < value.size()) {
+            hasher << ",";
+        }
+    }
+    hasher.write_digest(output.subspan<8>());
+}
+
+enum class header_type { unknown, standard, ip_origin, user_agent, datadog };
+
+constexpr std::size_t standard_headers_length = 10;
+constexpr std::size_t ip_origin_headers_length = 10;
+
+std::pair<header_type, unsigned> get_header_type_and_index(std::string_view header)
+{
+    static std::unordered_map<std::string_view, std::pair<header_type, unsigned>> headers{
+        {"referer", {header_type::standard, 0}}, {"connection", {header_type::standard, 1}},
+        {"accept-encoding", {header_type::standard, 2}},
+        {"content-encoding", {header_type::standard, 3}},
+        {"cache-control", {header_type::standard, 4}}, {"te", {header_type::standard, 5}},
+        {"accept-charset", {header_type::standard, 6}},
+        {"content-type", {header_type::standard, 7}}, {"accept", {header_type::standard, 8}},
+        {"accept-language", {header_type::standard, 9}},
+        {"x-forwarded-for", {header_type::ip_origin, 0}},
+        {"x-real-ip", {header_type::ip_origin, 1}}, {"true-client-ip", {header_type::ip_origin, 2}},
+        {"x-client-ip", {header_type::ip_origin, 3}}, {"x-forwarded", {header_type::ip_origin, 4}},
+        {"forwarded-for", {header_type::ip_origin, 5}},
+        {"x-cluster-client-ip", {header_type::ip_origin, 6}},
+        {"fastly-client-ip", {header_type::ip_origin, 7}},
+        {"cf-connecting-ip", {header_type::ip_origin, 8}},
+        {"cf-connecting-ipv6", {header_type::ip_origin, 9}},
+        {"user-agent", {header_type::user_agent, 0}}};
+
+    if (header.starts_with("x-datadog")) {
+        return {header_type::datadog, 0};
+    }
 
     auto it = headers.find(header);
-    return it == headers.end() ? header_type::unknown : it->second;
+    if (it == headers.end()) {
+        return {header_type::unknown, 0};
+    }
+    return it->second;
 }
 
 // "normalized" is a preallocated std::string, to avoid unnecessary allocations
-void normalize_header(std::string_view original, std::string normalized)
+void normalize_header(std::string_view original, std::string &normalized)
 {
     normalized.resize(original.size());
 
     for (std::size_t i = 0; i < original.size(); ++i) {
         auto c = original[i];
-        if (c == '_') {
-            normalized[i] = '-';
-        } else {
-            normalized[i] = ddwaf::tolower(c);
-        }
+        normalized[i] = c == '_' ? '-' : ddwaf::tolower(c);
     }
 }
 
@@ -350,6 +391,89 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http endpoint fingerprint: {}", e.what());
     }
+
+    return {res, object_store::attribute::none};
+}
+
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_impl(
+    const unary_argument<const ddwaf_object *> &headers, ddwaf::timer &deadline) const
+{
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
+    std::string known_header_bitset;
+    known_header_bitset.resize(standard_headers_length, '0');
+
+    std::string_view user_agent;
+    std::vector<std::string> unknown_headers;
+    std::string normalized_header;
+    for (std::size_t i = 0; i < headers.value->nbEntries; ++i) {
+        const auto &child = headers.value->array[i];
+
+        std::string_view header{
+            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+
+        normalize_header(header, normalized_header);
+        auto [type, index] = get_header_type_and_index(normalized_header);
+        if (type == header_type::standard) {
+            known_header_bitset[index] = '1';
+        } else if (type == header_type::unknown) {
+            unknown_headers.emplace_back(normalized_header);
+        } else if (type == header_type::user_agent && child.type == DDWAF_OBJ_STRING) {
+            user_agent = {child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+        }
+    }
+    std::sort(unknown_headers.begin(), unknown_headers.end());
+
+    auto res =
+        generate_fragment("hdr", string_field{known_header_bitset}, string_hash_field{user_agent},
+            unsigned_field{unknown_headers.size()}, vector_hash_field{unknown_headers});
+
+    return {res, object_store::attribute::none};
+}
+
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_impl(
+    const unary_argument<const ddwaf_object *> &headers, ddwaf::timer &deadline) const
+{
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
+    std::string ip_origin_bitset;
+    ip_origin_bitset.resize(ip_origin_headers_length, '0');
+
+    unsigned chosen_header = ip_origin_headers_length;
+    std::string_view chosen_header_value;
+    std::string normalized_header;
+    for (std::size_t i = 0; i < headers.value->nbEntries; ++i) {
+        const auto &child = headers.value->array[i];
+
+        std::string_view header{
+            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+
+        normalize_header(header, normalized_header);
+        auto [type, index] = get_header_type_and_index(normalized_header);
+        if (type == header_type::ip_origin) {
+            ip_origin_bitset[index] = '1';
+            if (chosen_header > index) {
+                chosen_header_value = {
+                    child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+                chosen_header = index;
+            }
+        }
+    }
+
+    unsigned ip_count = 0;
+    if (!chosen_header_value.empty()) {
+        // For now, count commas
+        ++ip_count;
+        for (auto c : chosen_header_value) { ip_count += static_cast<unsigned int>(c == ','); }
+    }
+
+    auto res = generate_fragment("net", unsigned_field{ip_count}, string_field{ip_origin_bitset});
 
     return {res, object_store::attribute::none};
 }
