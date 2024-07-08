@@ -51,6 +51,10 @@ void normalize_string(std::string_view key, std::string &buffer, bool trailing_s
 
 void string_hash_field::operator()(string_buffer &output)
 {
+    if (value.empty()) {
+        return;
+    }
+
     cow_string value_lc{value};
     transformer::lowercase::transform(value_lc);
 

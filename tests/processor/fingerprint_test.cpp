@@ -48,4 +48,123 @@ TEST(TestHttpEndpointFingerprint, Basic)
     ddwaf_object_free(&output);
 }
 
+TEST(TestHttpEndpointFingerprint, EmptyQuery)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object query;
+    ddwaf_object_map(&query);
+
+    ddwaf_object body;
+    ddwaf_object_map(&body);
+    ddwaf_object_map_add(&body, "KEY1", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "KEY2", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "KEY", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "3", ddwaf_object_invalid(&tmp));
+
+    http_endpoint_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] =
+        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
+            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{output.stringValue, output.nbEntries};
+    EXPECT_STRV(output_sv, "http-get-b8dfda97--9798c0e4");
+
+    ddwaf_object_free(&query);
+    ddwaf_object_free(&body);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpEndpointFingerprint, EmptyBody)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object query;
+    ddwaf_object_map(&query);
+    ddwaf_object_map_add(&query, "Key1", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&query, "KEY2", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&query, "key,3", ddwaf_object_invalid(&tmp));
+
+    ddwaf_object body;
+    ddwaf_object_map(&body);
+
+    http_endpoint_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] =
+        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
+            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{output.stringValue, output.nbEntries};
+    EXPECT_STRV(output_sv, "http-get-b8dfda97-0ac3796a-");
+
+    ddwaf_object_free(&query);
+    ddwaf_object_free(&body);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpEndpointFingerprint, EmptyEverything)
+{
+    ddwaf_object query;
+    ddwaf_object_map(&query);
+
+    ddwaf_object body;
+    ddwaf_object_map(&body);
+
+    http_endpoint_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl({{}, {}, false, ""}, {{}, {}, false, ""},
+        {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{output.stringValue, output.nbEntries};
+    EXPECT_STRV(output_sv, "http----");
+
+    ddwaf_object_free(&query);
+    ddwaf_object_free(&body);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpEndpointFingerprint, KeyConsistency)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object query;
+    ddwaf_object_map(&query);
+    ddwaf_object_map_add(&query, "Key1", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&query, "KEY2", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&query, "key3,Key4", ddwaf_object_invalid(&tmp));
+
+    ddwaf_object body;
+    ddwaf_object_map(&body);
+    ddwaf_object_map_add(&body, "KeY1", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "kEY2", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "KEY3", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "KeY4", ddwaf_object_invalid(&tmp));
+
+    http_endpoint_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] =
+        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
+            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{output.stringValue, output.nbEntries};
+    EXPECT_STRV(output_sv, "http-get-b8dfda97-ced401fa-ff07216e");
+
+    ddwaf_object_free(&query);
+    ddwaf_object_free(&body);
+    ddwaf_object_free(&output);
+}
+
 } // namespace
