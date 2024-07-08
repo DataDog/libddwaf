@@ -273,6 +273,56 @@ void key_hash_field::operator()(string_buffer &output)
     hasher.write_digest(output.subspan<8>());
 }
 
+enum class header_type {
+    unknown,
+    standard,
+    xff
+};
+
+header_type get_header_type_and_index(std::string_view header)
+{
+    static std::unordered_map<std::string_view, header_type> headers{
+        {"referer", header_type::standard},
+        {"connection", header_type::standard},
+        {"accept-encoding", header_type::standard},
+        {"content-encoding", header_type::standard},
+        {"cache-control", header_type::standard},
+        {"te", header_type::standard},
+        {"accept-charset", header_type::standard},
+        {"content-type", header_type::standard},
+        {"accept", header_type::standard},
+        {"accept-language", header_type::standard},
+        {"x-forwarded-for", header_type::xff},
+        {"x-real-ip", header_type::xff},
+        {"true-client-ip", header_type::xff},
+        {"x-client-ip", header_type::xff},
+        {"x-forwarded", header_type::xff},
+        {"forwarded-for", header_type::xff},
+        {"x-cluster-client-ip", header_type::xff},
+        {"fastly-client-ip", header_type::xff},
+        {"cf-connecting-ip", header_type::xff},
+        {"cf-connecting-ipv6", header_type::xff}
+    };
+
+    auto it = headers.find(header);
+    return it == headers.end() ? header_type::unknown : it->second;
+}
+
+// "normalized" is a preallocated std::string, to avoid unnecessary allocations
+void normalize_header(std::string_view original, std::string normalized)
+{
+    normalized.resize(original.size());
+
+    for (std::size_t i = 0; i < original.size(); ++i) {
+        auto c = original[i];
+        if (c == '_') {
+            normalized[i] = '-';
+        } else {
+            normalized[i] = ddwaf::tolower(c);
+        }
+    }
+}
+
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
