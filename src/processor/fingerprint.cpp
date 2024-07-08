@@ -106,8 +106,15 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
         throw ddwaf::timeout_exception();
     }
 
+    // Strip query parameter from raw URI
+    auto stripped_uri = uri_raw.value;
+    auto query_idx = stripped_uri.find_first_of('?');
+    if (query_idx != std::string_view::npos) {
+        stripped_uri = stripped_uri.substr(0, query_idx);
+    }
+
     auto res = fingerprint::generate_fragment("http", fingerprint::string_field{method.value},
-        fingerprint::string_hash_field{uri_raw.value}, fingerprint::key_hash_field{*query.value},
+        fingerprint::string_hash_field{stripped_uri}, fingerprint::key_hash_field{*query.value},
         fingerprint::key_hash_field{*body.value});
 
     return {res, object_store::attribute::none};

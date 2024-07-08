@@ -41,7 +41,7 @@ TEST(TestHttpEndpointFingerprint, Basic)
     EXPECT_EQ(attr, object_store::attribute::none);
 
     std::string_view output_sv{output.stringValue, output.nbEntries};
-    EXPECT_STRV(output_sv, "http-get-b8dfda97-0ac3796a-9798c0e4");
+    EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
@@ -72,7 +72,7 @@ TEST(TestHttpEndpointFingerprint, EmptyQuery)
     EXPECT_EQ(attr, object_store::attribute::none);
 
     std::string_view output_sv{output.stringValue, output.nbEntries};
-    EXPECT_STRV(output_sv, "http-get-b8dfda97--9798c0e4");
+    EXPECT_STRV(output_sv, "http-get-0ede9e60--9798c0e4");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
@@ -102,7 +102,7 @@ TEST(TestHttpEndpointFingerprint, EmptyBody)
     EXPECT_EQ(attr, object_store::attribute::none);
 
     std::string_view output_sv{output.stringValue, output.nbEntries};
-    EXPECT_STRV(output_sv, "http-get-b8dfda97-0ac3796a-");
+    EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
@@ -160,7 +160,7 @@ TEST(TestHttpEndpointFingerprint, KeyConsistency)
     EXPECT_EQ(attr, object_store::attribute::none);
 
     std::string_view output_sv{output.stringValue, output.nbEntries};
-    EXPECT_STRV(output_sv, "http-get-b8dfda97-ced401fa-ff07216e");
+    EXPECT_STRV(output_sv, "http-get-0ede9e60-ced401fa-ff07216e");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
