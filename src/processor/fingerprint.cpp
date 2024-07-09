@@ -262,9 +262,9 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
 
     // Strip query parameter from raw URI
     auto stripped_uri = uri_raw.value;
-    auto query_idx = stripped_uri.find_first_of('?');
-    if (query_idx != std::string_view::npos) {
-        stripped_uri = stripped_uri.substr(0, query_idx);
+    auto query_or_frag_idx = stripped_uri.find_first_of("?#");
+    if (query_or_frag_idx != std::string_view::npos) {
+        stripped_uri = stripped_uri.substr(0, query_or_frag_idx);
     }
 
     auto res = generate_fragment("http", string_field{method.value},

@@ -305,6 +305,34 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
     {
         ddwaf::timer deadline{2s};
         auto [output, attr] =
+            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever#fragment"},
+                {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        std::string_view output_sv{output.stringValue,
+            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
+        ddwaf_object_free(&output);
+    }
+
+    {
+        ddwaf::timer deadline{2s};
+        auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+            {{}, {}, false, "/path/to/whatever?param=hello#fragment"}, {{}, {}, false, &query},
+            {{}, {}, false, &body}, deadline);
+        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        std::string_view output_sv{output.stringValue,
+            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
+        ddwaf_object_free(&output);
+    }
+
+    {
+        ddwaf::timer deadline{2s};
+        auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever"},
                 {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
         EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
