@@ -83,7 +83,6 @@ eval_result shi_detector::eval_impl(const unary_argument<std::string_view> &reso
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
-    shi_result res;
     std::vector<shell_token> resource_tokens;
 
     for (const auto &param : params) {

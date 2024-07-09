@@ -19,13 +19,14 @@ bool is_var_char(char c) { return ddwaf::isalnum(c) || c == '_'; }
 
 bool is_field_char(char c)
 {
-    static constexpr std::string_view known_chars = "`${}[]()'\"#=|<>;&\n\t ";
-    return known_chars.find(c) == std::string_view::npos;
+    return c != '`' && c != '$' && c != '{' && c != '}' && c != '[' && c != ']' && c != '(' &&
+           c != ')' && c != '\'' && c != '"' && c != '#' && c != '=' && c != '|' && c != '<' &&
+           c != '>' && c != ';' && c != '&' && c != '\n' && c != '\t' && c != ' ';
 }
 
 bool is_space_char(char c) { return c == ' ' || c == '\t'; }
 
-std::vector<shell_token> find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
+void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
 {
     // The scope within the command, this helps identify high level constructs
     // which end up evaluating as part of a command, e.g. an executable
@@ -99,7 +100,6 @@ std::vector<shell_token> find_executables_and_strip_whitespaces(std::vector<shel
     }
 
     tokens.resize(write);
-    return tokens;
 }
 
 } // namespace
@@ -219,9 +219,7 @@ void shell_tokenizer::tokenize_delimited_token(std::string_view delimiter, shell
     token.type = type;
 
     std::size_t idx = 0;
-    while (idx < delimiter.size() && advance()) {
-        idx += static_cast<int>(peek() == delimiter[idx]);
-    }
+    while (idx < delimiter.size() && advance()) { idx = (peek() == delimiter[idx] ? idx + 1 : 0); }
 
     token.str = substr(token.index, index() - token.index + 1);
     emplace_token(token);
@@ -245,7 +243,7 @@ void shell_tokenizer::tokenize_variable()
     } else if (c == '{') {
         while (advance() && peek() != '}') {}
         token.str = substr(token.index, index() - token.index + 1);
-    } else { // alphabetic
+    } else { // alphanumeric and underscores
         while (is_var_char(next()) && advance()) {};
         token.str = substr(token.index, index() - token.index + 1);
     }
@@ -260,7 +258,6 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
     // the final quote, taking into consideration escaped quotes.
     auto begin = index();
     unsigned slash_count = 0;
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while)
     for (; !eof(); advance()) {
         auto c = peek();
         if (c == '"' && slash_count == 0) {
@@ -415,7 +412,6 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 } else {
                     add_token(shell_token_type::command_substitution_open, 2);
                     push_shell_scope(shell_scope::command_substitution);
-                    // advance();
                 }
             } else if (n == '{' || ddwaf::isalnum(n) || n == '_' || n == '-' || n == '?' ||
                        n == '@' || n == '#' || n == '*' || n == '$' || n == '!') {
@@ -520,7 +516,8 @@ std::vector<shell_token> shell_tokenizer::tokenize()
         }
     }
 
-    return find_executables_and_strip_whitespaces(tokens_);
+    find_executables_and_strip_whitespaces(tokens_);
+    return tokens_;
 }
 
 } // namespace ddwaf
