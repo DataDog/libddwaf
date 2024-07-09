@@ -21,6 +21,15 @@ struct string_buffer {
         }
     }
 
+    // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
+    ~string_buffer() { free(buffer); }
+
+    string_buffer(const string_buffer &) = delete;
+    string_buffer(string_buffer &&) = delete;
+
+    string_buffer &operator=(const string_buffer &) = delete;
+    string_buffer &operator=(string_buffer &&) = delete;
+
     char &operator[](std::size_t idx) const { return buffer[idx]; }
 
     template <std::size_t N> [[nodiscard]] std::span<char, N> subspan()
@@ -113,20 +122,6 @@ struct key_hash_field : field_generator {
     key_hash_field(key_hash_field &&) = default;
     key_hash_field &operator=(const key_hash_field &) = default;
     key_hash_field &operator=(key_hash_field &&) = default;
-
-    std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? 8 : 0; }
-    void operator()(string_buffer &output) override;
-
-    ddwaf_object value;
-};
-
-struct value_hash_field : field_generator {
-    explicit value_hash_field(const ddwaf_object &input) : value(input) {}
-    ~value_hash_field() override = default;
-    value_hash_field(const value_hash_field &) = default;
-    value_hash_field(value_hash_field &&) = default;
-    value_hash_field &operator=(const value_hash_field &) = default;
-    value_hash_field &operator=(value_hash_field &&) = default;
 
     std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? 8 : 0; }
     void operator()(string_buffer &output) override;
