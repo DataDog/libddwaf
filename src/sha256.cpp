@@ -145,22 +145,22 @@ sha256_hash &sha256_hash::operator<<(std::string_view str)
     return *this;
 }
 
-template <std::size_t N>
+template <std::size_t DigestLength>
 std::string sha256_hash::digest()
-    requires(N % 8 == 0 && N <= 64)
+    requires(DigestLength % 8 == 0 && DigestLength <= 64)
 {
     std::string final_digest;
-    final_digest.resize(N, 0);
-    write_digest(std::span<char, N>{final_digest});
+    final_digest.resize(DigestLength, 0);
+    write_digest(std::span<char, DigestLength>{final_digest});
     return final_digest;
 }
 
 template std::string sha256_hash::digest<64>();
 template std::string sha256_hash::digest<8>();
 
-template <std::size_t N>
-void sha256_hash::write_digest(std::span<char, N> output)
-    requires(N % 8 == 0 && N <= 64)
+template <std::size_t DigestLength>
+void sha256_hash::write_digest(std::span<char, DigestLength> output)
+    requires(DigestLength % 8 == 0 && DigestLength <= 64)
 {
     auto *p = buffer.data();
     size_t n = num;
@@ -193,7 +193,7 @@ void sha256_hash::write_digest(std::span<char, N> output)
     num = 0;
     memset(p, 0, block_size);
 
-    for (unsigned int nn = 0; nn < N; nn += 8) {
+    for (unsigned int nn = 0; nn < DigestLength; nn += 8) {
         uint32_t ll = hash[nn >> 3];
         output[nn + 0] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 28) & 0x0f));
         output[nn + 1] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 24) & 0x0f));

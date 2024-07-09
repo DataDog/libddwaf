@@ -167,7 +167,7 @@ ddwaf_object generate_fragment(std::string_view header, Args... generators)
     return res;
 }
 
-// Retur true if the first argument is less than (i.e. is ordered before) the second
+// Return true if the first argument is less than (i.e. is ordered before) the second
 bool str_casei_cmp(std::string_view left, std::string_view right)
 {
     auto n = std::min(left.size(), right.size());
@@ -183,8 +183,6 @@ bool str_casei_cmp(std::string_view left, std::string_view right)
 
 void normalize_string(std::string_view key, std::string &buffer, bool trailing_separator)
 {
-    // Clear should not deallocate...
-    // TODO: verify
     buffer.clear();
 
     if (buffer.capacity() < key.size()) {
