@@ -12,8 +12,33 @@ using namespace std::literals;
 namespace ddwaf {
 
 namespace {
+/*
+ *  &>>?               # Matches &> and &>>
+ *  |                  # OR
+ *  (?:
+ *      [0-9]*>        # Matches optional digits followed by >
+ *      (?:
+ *          \|         # Matches a |
+ *          |          # OR
+ *          >          # Matches a >
+ *          |          # OR
+ *          &[0-9]*-?  # Matches & followed by optional digits and an optional -
+ *      )?
+ *  )
+ *  |                  # OR
+ *  (?:
+ *      [0-9]*<        # Matches optional digit followed by <
+ *      (?:
+ *          <(?:-|<)?  # Matches < optionally followed by - or <
+ *          |          # OR
+ *          &[0-9]*-?  # Matches & followed by optional digits and an optional -
+ *          |          # OR
+ *          >          # Matches a >
+ *      )?
+ *  )
+ */
 re2::RE2 redirection_regex(
-    R"((&>>?|(?:[0-9]?>(?:\||>|&[0-9]?-?)?)|(?:[0-9]?<(?:<(?:-|<)?|&[0-9]?-?|>)?)))");
+    R"((&>>?|(?:[0-9]*>(?:\||>|&[0-9]*-?)?)|(?:[0-9]*<(?:<(?:-|<)?|&[0-9]*-?|>)?)))");
 
 bool is_var_char(char c) { return ddwaf::isalnum(c) || c == '_'; }
 
@@ -359,6 +384,48 @@ void shell_tokenizer::tokenize_redirection()
     }
 }
 
+void shell_tokenizer::tokenize_redirection_or_field()
+{
+    shell_token token;
+    token.index = index();
+
+    auto n = next();
+    // The first character is a digit, check if there are others
+    while (ddwaf::isdigit(n) && advance()) { n = next(); }
+
+    // We have exited, either because we reached the end of the string or because
+    // the next character is not a digit
+    if (eof()) {
+        // We found a long number at the end of the resource
+        token.type = shell_token_type::field;
+        token.str = substr(token.index, index() - token.index + 1);
+        emplace_token(token);
+    } else if (n == '>' || n == '<') {
+        advance(); // Skip that current digit
+        auto remaining_str = substr(index());
+
+        re2::StringPiece redirection;
+        const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
+        if (re2::RE2::PartialMatch(ref, redirection_regex, &redirection)) {
+            // At least one of the strings will contain a match
+            if (!redirection.empty()) {
+                token.type = shell_token_type::redirection;
+                token.str = substr(token.index, index() - token.index + redirection.size());
+                advance(redirection.size());
+                emplace_token(token);
+            }
+        }
+    } else {
+        token.type = shell_token_type::field;
+
+        // Find the end of this token by searching for a "known" character
+        while (is_field_char(next()) && advance()) {}
+
+        token.str = substr(token.index, index() - token.index + 1);
+        emplace_token(token);
+    }
+}
+
 std::vector<shell_token> shell_tokenizer::tokenize()
 {
     // The string is evaluated based on the current scope, if we're in the global
@@ -494,12 +561,7 @@ std::vector<shell_token> shell_tokenizer::tokenize()
         } else if (c == '\'') {
             tokenize_delimited_token("'", shell_token_type::single_quoted_string);
         } else if (ddwaf::isdigit(c)) {
-            auto n = next();
-            if (n == '<' || n == '>') {
-                tokenize_redirection();
-            } else {
-                tokenize_field();
-            }
+            tokenize_redirection_or_field();
         } else if (c == '<' || c == '>') {
             auto n = next();
             if (n == '(') {

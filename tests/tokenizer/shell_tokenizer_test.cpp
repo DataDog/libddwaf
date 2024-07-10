@@ -240,6 +240,9 @@ TEST(TestShellTokenizer, Executable)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {"echo", {stt::executable}},
+        {"echo 291292;", {stt::executable, stt::field, stt::control}},
+        {"echo 291292", {stt::executable, stt::field}},
+        {"echo 2111111a9sd1c2d92", {stt::executable, stt::field}},
         {"test echo", {stt::executable, stt::field}},
         {"ls &", {stt::executable, stt::control}},
         {"ls & ls -l", {stt::executable, stt::control, stt::executable, stt::field}},
@@ -316,7 +319,8 @@ TEST(TestShellTokenizer, RedirectionTokens)
 {
     std::vector<std::string> samples{"&>>", "1>", ">", ">>", ">|", ">&", "1>&", "1>&2", "1>&2-",
         "1>&-", "<", "1<", "2<&", "2<<", "2<<-", "<<-", "<<", "<<<", "1<<<", "1<&", "1<", "<&",
-        "1<>", "<>"};
+        "1<>", "<>", "11>", "21>&", "11>&22", "21>&12-", "111>&-", "221<", "332<&", "12<<", "42<<-",
+        "22<<<", "11<&", "31<", "221<>"};
 
     for (const auto &sample : samples) {
         shell_tokenizer tokenizer(sample);
@@ -362,6 +366,23 @@ TEST(TestShellTokenizer, Redirections)
         {"ls args 0<<- file", {stt::executable, stt::field, stt::redirection, stt::field}},
         {"ls args 0<> file", {stt::executable, stt::field, stt::redirection, stt::field}},
         {"ls args 0>| file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args <&221 file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args <&221", {stt::executable, stt::field, stt::redirection}},
+        {"ls args 01> file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 02>> file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 03< file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 04<< file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 05<& file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 06<&- file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 01<&21 file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 01<&21", {stt::executable, stt::field, stt::redirection}},
+        {"ls args 01>& file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 01>&31 file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 01>&31", {stt::executable, stt::field, stt::redirection}},
+        {"ls args 01>&- file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 10<<- file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 22<> file", {stt::executable, stt::field, stt::redirection, stt::field}},
+        {"ls args 33>| file", {stt::executable, stt::field, stt::redirection, stt::field}},
         // TODO invalid / seemingly redirections
     };
 

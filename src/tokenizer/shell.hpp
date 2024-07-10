@@ -121,6 +121,7 @@ protected:
     void tokenize_field(shell_token_type type = shell_token_type::field);
     void tokenize_literal();
     void tokenize_redirection();
+    void tokenize_redirection_or_field();
     void tokenize_delimited_token(std::string_view delimiter, shell_token_type type);
 };
 
