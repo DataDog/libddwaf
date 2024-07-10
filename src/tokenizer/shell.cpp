@@ -40,8 +40,13 @@ namespace {
 re2::RE2 redirection_regex(
     R"((&>>?|(?:[0-9]*>(?:\||>|&[0-9]*-?)?)|(?:[0-9]*<(?:<(?:-|<)?|&[0-9]*-?|>)?)))");
 
+// Valid characters in a variable name
 bool is_var_char(char c) { return ddwaf::isalnum(c) || c == '_'; }
 
+// This functions returns true for any character which could potentially belong to a field and has
+// no secondary meaning, for example, the { character could be part of a field, but it might also
+// have a secondary meaning (command grouping), hence it allows us to attempt to match a potentially
+// different token if applicable.
 bool is_field_char(char c)
 {
     return c != '`' && c != '$' && c != '{' && c != '}' && c != '[' && c != ']' && c != '(' &&
@@ -49,6 +54,7 @@ bool is_field_char(char c)
            c != '>' && c != ';' && c != '&' && c != '\n' && c != '\t' && c != ' ';
 }
 
+// Characters used to represent a space
 bool is_space_char(char c) { return c == ' ' || c == '\t'; }
 
 void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)

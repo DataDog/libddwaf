@@ -16,11 +16,15 @@ namespace ddwaf {
 
 namespace {
 
-using shi_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
+struct shi_result {
+    std::string value;
+    std::vector<std::string> key_path;
+};
 
-shi_result shi_string_impl(std::string_view resource, std::vector<shell_token> &resource_tokens,
-    const ddwaf_object &params, const exclusion::object_set_ref &objects_excluded,
-    const object_limits &limits, ddwaf::timer &deadline)
+std::optional<shi_result> shi_string_impl(std::string_view resource,
+    std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline)
 {
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
