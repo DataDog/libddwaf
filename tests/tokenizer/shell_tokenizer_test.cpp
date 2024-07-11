@@ -105,6 +105,11 @@ TEST(TestShellTokenizer, DoubleQuotedString)
             {stt::double_quoted_string_open, stt::arithmetic_expansion_open, stt::field,
                 stt::arithmetic_expansion_close, stt::double_quoted_string_close}},
         {R"!("$(<file)")!", {stt::executable}},
+        {R"!("$(( $(echo value) ))")!",
+            {stt::double_quoted_string_open, stt::arithmetic_expansion_open,
+                stt::command_substitution_open, stt::executable, stt::field,
+                stt::command_substitution_close, stt::arithmetic_expansion_close,
+                stt::double_quoted_string_close}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
@@ -447,7 +452,8 @@ TEST(TestShellTokenizer, VariableDefinition)
                          stt::field, stt::process_substitution_close}},
         {"var=(1 2 3)", {stt::variable_definition, stt::equal, stt::array_open, stt::field,
                             stt::field, stt::field, stt::array_close}},
-        {"var=$(( 1+1 ))", {stt::variable_definition, stt::equal, stt::arithmetic_expansion}},
+        {"var=$(( 1+1 ))", {stt::variable_definition, stt::equal, stt::arithmetic_expansion_open,
+                               stt::field, stt::arithmetic_expansion_close}},
         {"var=$[ 1+1 ]", {stt::variable_definition, stt::equal, stt::arithmetic_expansion_open,
                              stt::field, stt::arithmetic_expansion_close}},
         {"var=$[1+1]", {stt::variable_definition, stt::equal, stt::arithmetic_expansion_open,

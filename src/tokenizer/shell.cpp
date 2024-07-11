@@ -500,8 +500,8 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             if (n == '(') {
                 auto n2 = next(2);
                 if (n2 == '(') {
-                    // Arithmetic expansion
-                    tokenize_delimited_token("))", shell_token_type::arithmetic_expansion);
+                    add_token(shell_token_type::arithmetic_expansion_open, 3);
+                    push_shell_scope(shell_scope::arithmetic_expansion);
                 } else if (n2 == '<') {
                     // File redirection
                     tokenize_delimited_token(")", shell_token_type::field);
