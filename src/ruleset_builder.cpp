@@ -97,6 +97,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 if (ovrd.actions.has_value()) {
                     rule_ptr->set_actions(*ovrd.actions);
                 }
+
+                for (const auto &[tag, value] : ovrd.tags) {
+                    rule_ptr->set_ancillary_tag(tag, value);
+                }
             }
         }
 
@@ -109,6 +113,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
                 if (ovrd.actions.has_value()) {
                     rule_ptr->set_actions(*ovrd.actions);
+                }
+
+                for (const auto &[tag, value] : ovrd.tags) {
+                    rule_ptr->set_ancillary_tag(tag, value);
                 }
             }
         }
@@ -187,7 +195,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->insert_filters(input_filters_);
     rs->insert_preprocessors(preprocessors_);
     rs->insert_postprocessors(postprocessors_);
-    rs->dynamic_matchers = dynamic_matchers_;
+    rs->rule_matchers = rule_matchers_;
+    rs->exclusion_matchers = exclusion_matchers_;
     rs->scanners = scanners_.items();
     rs->actions = actions_;
     rs->free_fn = free_fn_;
@@ -296,20 +305,19 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         try {
             auto rules_data = static_cast<parameter::vector>(it->second);
             if (!rules_data.empty()) {
-                auto new_matchers =
-                    parser::v2::parse_rule_data(rules_data, section, rule_data_ids_);
+                auto new_matchers = parser::v2::parse_data(rules_data, rule_data_ids_, section);
                 if (new_matchers.empty()) {
                     // The rules_data array might have unrelated IDs, so we need
                     // to consider "no valid IDs" as an empty rules_data
-                    dynamic_matchers_.clear();
+                    rule_matchers_.clear();
                 } else {
-                    dynamic_matchers_ = std::move(new_matchers);
+                    rule_matchers_ = std::move(new_matchers);
                 }
             } else {
                 DDWAF_DEBUG("Clearing all rule data");
-                dynamic_matchers_.clear();
+                rule_matchers_.clear();
             }
-            state = state | change_state::data;
+            state = state | change_state::rule_data;
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse rule data: {}", e.what());
             section.set_error(e.what());
@@ -341,8 +349,10 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         auto &section = info.add_section("exclusions");
         try {
             auto exclusions = static_cast<parameter::vector>(it->second);
+            filter_data_ids_.clear();
             if (!exclusions.empty()) {
-                exclusions_ = parser::v2::parse_filters(exclusions, section, limits_);
+                exclusions_ =
+                    parser::v2::parse_filters(exclusions, section, filter_data_ids_, limits_);
             } else {
                 DDWAF_DEBUG("Clearing all exclusions");
                 exclusions_.clear();
@@ -350,6 +360,33 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             state = state | change_state::filters;
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse exclusions: {}", e.what());
+            section.set_error(e.what());
+        }
+    }
+
+    it = root.find("exclusion_data");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing exclusion data");
+        auto &section = info.add_section("exclusions_data");
+        try {
+            auto exclusions_data = static_cast<parameter::vector>(it->second);
+            if (!exclusions_data.empty()) {
+                auto new_matchers =
+                    parser::v2::parse_data(exclusions_data, filter_data_ids_, section);
+                if (new_matchers.empty()) {
+                    // The exclusions_data array might have unrelated IDs, so we need
+                    // to consider "no valid IDs" as an empty exclusions_data
+                    exclusion_matchers_.clear();
+                } else {
+                    exclusion_matchers_ = std::move(new_matchers);
+                }
+            } else {
+                DDWAF_DEBUG("Clearing all exclusion data");
+                exclusion_matchers_.clear();
+            }
+            state = state | change_state::exclusion_data;
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse exclusion data: {}", e.what());
             section.set_error(e.what());
         }
     }

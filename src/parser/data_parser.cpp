@@ -41,12 +41,12 @@ data_with_expiration parse_data<data_with_expiration>(std::string_view type, par
 
 } // namespace
 
-rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_info &info,
-    std::unordered_map<std::string, std::string> &rule_data_ids)
+matcher_container parse_data(parameter::vector &data_array,
+    std::unordered_map<std::string, std::string> &data_ids_to_type, base_section_info &info)
 {
-    rule_data_container matchers;
-    for (unsigned i = 0; i < rule_data.size(); ++i) {
-        const ddwaf::parameter object = rule_data[i];
+    matcher_container matchers;
+    for (unsigned i = 0; i < data_array.size(); ++i) {
+        const ddwaf::parameter object = data_array[i];
         std::string id;
         try {
             const auto entry = static_cast<ddwaf::parameter::map>(object);
@@ -57,15 +57,15 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
             auto data = at<parameter>(entry, "data");
 
             std::string_view matcher_name;
-            auto it = rule_data_ids.find(id);
-            if (it == rule_data_ids.end()) {
+            auto it = data_ids_to_type.find(id);
+            if (it == data_ids_to_type.end()) {
                 // Infer matcher from data type
                 if (type == "ip_with_expiration") {
                     matcher_name = "ip_match";
                 } else if (type == "data_with_expiration") {
                     matcher_name = "exact_match";
                 } else {
-                    DDWAF_DEBUG("Failed to process rule data id '{}", id);
+                    DDWAF_DEBUG("Failed to process dynamic data id '{}", id);
                     info.add_failed(id, "failed to infer matcher");
                     continue;
                 }
@@ -75,21 +75,21 @@ rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_i
 
             std::shared_ptr<matcher::base> matcher;
             if (matcher_name == "ip_match") {
-                using rule_data_type = matcher::ip_match::rule_data_type;
-                auto parsed_data = parse_data<rule_data_type>(type, data);
+                using data_type = matcher::ip_match::data_type;
+                auto parsed_data = parse_data<data_type>(type, data);
                 matcher = std::make_shared<matcher::ip_match>(parsed_data);
             } else if (matcher_name == "exact_match") {
-                using rule_data_type = matcher::exact_match::rule_data_type;
-                auto parsed_data = parse_data<rule_data_type>(type, data);
+                using data_type = matcher::exact_match::data_type;
+                auto parsed_data = parse_data<data_type>(type, data);
                 matcher = std::make_shared<matcher::exact_match>(parsed_data);
             } else {
-                DDWAF_WARN("Matcher {} doesn't support dynamic rule data", matcher_name.data());
-                info.add_failed(id,
-                    "matcher " + std::string(matcher_name) + " doesn't support dynamic rule data");
+                DDWAF_WARN("Matcher {} doesn't support dynamic data", matcher_name.data());
+                info.add_failed(
+                    id, "matcher " + std::string(matcher_name) + " doesn't support dynamic data");
                 continue;
             }
 
-            DDWAF_DEBUG("Parsed rule data {}", id);
+            DDWAF_DEBUG("Parsed dynamic data {}", id);
             info.add_loaded(id);
             matchers.emplace(std::move(id), std::move(matcher));
         } catch (const ddwaf::exception &e) {

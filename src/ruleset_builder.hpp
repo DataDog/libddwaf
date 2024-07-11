@@ -49,10 +49,11 @@ protected:
         custom_rules = 2,
         overrides = 4,
         filters = 8,
-        data = 16,
+        rule_data = 16,
         processors = 32,
         scanners = 64,
         actions = 128,
+        exclusion_data = 256,
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
@@ -69,6 +70,7 @@ protected:
     // Map representing rule data IDs to matcher type, this is obtained
     // from parsing the ruleset ('rules' key).
     std::unordered_map<std::string, std::string> rule_data_ids_;
+    std::unordered_map<std::string, std::string> filter_data_ids_;
 
     // These contain the specification of each main component obtained directly
     // from the parser. These are only modified on update, if the relevant key
@@ -82,11 +84,13 @@ protected:
     // Obtained from 'custom_rules'
     parser::rule_spec_container user_rules_;
     // Obtained from 'rules_data', depends on base_rules_
-    parser::rule_data_container dynamic_matchers_;
+    parser::matcher_container rule_matchers_;
     // Obtained from 'rules_override'
     parser::override_spec_container overrides_;
     // Obtained from 'exclusions'
     parser::filter_spec_container exclusions_;
+    // Obtained from 'exclusion_data', depends on exclusions_
+    parser::matcher_container exclusion_matchers_;
     // Obtained from 'processors'
     processor_container processors_;
     // These are the contents of the latest generated ruleset
