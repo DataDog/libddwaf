@@ -51,6 +51,8 @@ enum class shell_token_type {
     subshell_close,
     compound_command_open,
     compound_command_close,
+    array_open,
+    array_close
 };
 
 using shell_token = base_token<shell_token_type>;
@@ -75,6 +77,7 @@ protected:
         process_substitution,        // <() or >()
         legacy_arithmetic_expansion, // $[]
         arithmetic_expansion,        // (()) or $(( ))
+        array
     };
 
     std::vector<shell_scope> shell_scope_stack_;

@@ -98,6 +98,8 @@ void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
         case shell_token_type::process_substitution_close:
         case shell_token_type::compound_command_close:
         case shell_token_type::subshell_close:
+        case shell_token_type::arithmetic_expansion_close:
+        case shell_token_type::array_close:
             command_scope_stack.pop_back();
             break;
         case shell_token_type::variable_definition:
@@ -125,7 +127,8 @@ void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
             scope = command_scope::variable_definition_or_executable;
             break;
         case shell_token_type::arithmetic_expansion_open:
-            scope = command_scope::arguments;
+        case shell_token_type::array_open:
+            command_scope_stack.emplace_back(command_scope::arguments);
             break;
         default:
             break;
@@ -236,6 +239,12 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
         break;
     case shell_token_type::compound_command_close:
         os << "compound_command_close";
+        break;
+    case shell_token_type::array_open:
+        os << "array_open";
+        break;
+    case shell_token_type::array_close:
+        os << "array_close";
         break;
     }
     return os;
@@ -520,8 +529,11 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             } else if (current_shell_scope_ == shell_scope::subshell) {
                 add_token(shell_token_type::subshell_close);
                 pop_shell_scope();
-            } else if (next() == ')' && current_shell_scope_ == shell_scope::arithmetic_expansion) {
+            } else if (current_shell_scope_ == shell_scope::arithmetic_expansion && next() == ')') {
                 add_token(shell_token_type::arithmetic_expansion_close, 2);
+                pop_shell_scope();
+            } else if (current_shell_scope_ == shell_scope::array) {
+                add_token(shell_token_type::array_close);
                 pop_shell_scope();
             } else {
                 add_token(shell_token_type::parenthesis_close);
@@ -542,7 +554,8 @@ std::vector<shell_token> shell_tokenizer::tokenize()
         } else if (c == '(') {
             if (!tokens_.empty() && current_token_type() == shell_token_type::equal) {
                 // Array
-                tokenize_delimited_token(")", shell_token_type::field);
+                add_token(shell_token_type::array_open);
+                push_shell_scope(shell_scope::array);
             } else if (next() == '(') {
                 add_token(shell_token_type::arithmetic_expansion_open, 2);
                 push_shell_scope(shell_scope::arithmetic_expansion);
