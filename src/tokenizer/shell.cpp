@@ -124,6 +124,9 @@ void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
             // Control commands reset the command scope
             scope = command_scope::variable_definition_or_executable;
             break;
+        case shell_token_type::arithmetic_expansion_open:
+            scope = command_scope::arguments;
+            break;
         default:
             break;
         }
@@ -152,6 +155,12 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
         break;
     case shell_token_type::arithmetic_expansion:
         os << "arithmetic_expansion";
+        break;
+    case shell_token_type::arithmetic_expansion_open:
+        os << "arithmetic_expansion_open";
+        break;
+    case shell_token_type::arithmetic_expansion_close:
+        os << "arithmetic_expansion_close";
         break;
     case shell_token_type::literal:
         os << "literal";
@@ -301,11 +310,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
                 token.str = substr(token.index, index() - token.index + 1);
             } else {
                 if (begin < index()) {
-                    shell_token token;
-                    token.index = begin;
-                    token.type = shell_token_type::literal;
-                    token.str = substr(begin, index() - begin);
-                    emplace_token(token);
+                    add_token_from(shell_token_type::literal, begin);
                 }
 
                 add_token(shell_token_type::double_quoted_string_close);
@@ -321,11 +326,7 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
                 // contents, update the scope and exit. Note that we skip
                 // arithmetic expansions
                 if (begin < index()) {
-                    shell_token token;
-                    token.index = begin;
-                    token.type = shell_token_type::literal;
-                    token.str = substr(begin, index() - begin);
-                    emplace_token(token);
+                    add_token_from(shell_token_type::literal, begin);
                 }
 
                 add_token(shell_token_type::command_substitution_open, 2);
@@ -333,19 +334,32 @@ void shell_tokenizer::tokenize_double_quoted_string_scope()
                 break;
             }
 
+            if (n == '(' && n2 == '(') {
+                if (begin < index()) {
+                    add_token_from(shell_token_type::literal, begin);
+                }
+
+                add_token(shell_token_type::arithmetic_expansion_open, 3);
+                push_shell_scope(shell_scope::arithmetic_expansion);
+                break;
+            }
+
+            if (n == '[') {
+                if (begin < index()) {
+                    add_token_from(shell_token_type::literal, begin);
+                }
+
+                add_token(shell_token_type::arithmetic_expansion_open, 2);
+                push_shell_scope(shell_scope::legacy_arithmetic_expansion);
+                break;
+            }
             // Other interesting cases which we make part of the literal:
             // - Variables, which we ignore for now
-            // - $[] legacy arithmetic expansion
-            // - $(( ... )) arithmetic expansions
         } else if (c == '`') {
             // Backtick substitution, we add a literal for the current string
             // contents, update the scope and exit
             if (begin < index()) {
-                shell_token token;
-                token.index = begin;
-                token.type = shell_token_type::literal;
-                token.str = substr(begin, index() - begin);
-                emplace_token(token);
+                add_token_from(shell_token_type::literal, begin);
             }
 
             add_token(shell_token_type::backtick_substitution_open);
@@ -490,9 +504,12 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                        n == '@' || n == '#' || n == '*' || n == '$' || n == '!') {
                 tokenize_variable();
             } else if (n == '[') {
-                // Legacy Arithmetic expansion
-                tokenize_delimited_token("]", shell_token_type::arithmetic_expansion);
+                add_token(shell_token_type::arithmetic_expansion_open, 2);
+                push_shell_scope(shell_scope::legacy_arithmetic_expansion);
             }
+        } else if (c == ']' && current_shell_scope_ == shell_scope::legacy_arithmetic_expansion) {
+            add_token(shell_token_type::arithmetic_expansion_close);
+            pop_shell_scope();
         } else if (c == ')') {
             if (current_shell_scope_ == shell_scope::command_substitution) {
                 add_token(shell_token_type::command_substitution_close);
@@ -502,6 +519,9 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 pop_shell_scope();
             } else if (current_shell_scope_ == shell_scope::subshell) {
                 add_token(shell_token_type::subshell_close);
+                pop_shell_scope();
+            } else if (next() == ')' && current_shell_scope_ == shell_scope::arithmetic_expansion) {
+                add_token(shell_token_type::arithmetic_expansion_close, 2);
                 pop_shell_scope();
             } else {
                 add_token(shell_token_type::parenthesis_close);
@@ -524,8 +544,8 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 // Array
                 tokenize_delimited_token(")", shell_token_type::field);
             } else if (next() == '(') {
-                // Arithmetic expansions
-                tokenize_delimited_token("))", shell_token_type::arithmetic_expansion);
+                add_token(shell_token_type::arithmetic_expansion_open, 2);
+                push_shell_scope(shell_scope::arithmetic_expansion);
             } else if (should_expect_subprocess()) {
                 add_token(shell_token_type::subshell_open);
                 push_shell_scope(shell_scope::subshell);

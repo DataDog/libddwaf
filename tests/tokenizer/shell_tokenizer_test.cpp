@@ -98,8 +98,12 @@ TEST(TestShellTokenizer, DoubleQuotedString)
         {R"(echo "l$0l")", {stt::executable, stt::double_quoted_string}},
         {R"("stuff")", {stt::executable}},
         {R"("var=2")", {stt::executable}},
-        {R"!("$(( 1+1 ))")!", {stt::executable}},
-        {R"!("$[ 1+1 ]")!", {stt::executable}},
+        {R"!("$(( 1+1 ))")!",
+            {stt::double_quoted_string_open, stt::arithmetic_expansion_open, stt::field,
+                stt::arithmetic_expansion_close, stt::double_quoted_string_close}},
+        {R"!("$[ 1+1 ]")!",
+            {stt::double_quoted_string_open, stt::arithmetic_expansion_open, stt::field,
+                stt::arithmetic_expansion_close, stt::double_quoted_string_close}},
         {R"!("$(<file)")!", {stt::executable}},
     };
 
@@ -257,6 +261,18 @@ TEST(TestShellTokenizer, Executable)
         {"diff >(ls -l)", {stt::executable, stt::process_substitution_open, stt::executable,
                               stt::field, stt::process_substitution_close}},
         {"var= echo hello", {stt::variable_definition, stt::equal, stt::executable, stt::field}},
+        {"var=$[1+$(echo ]2)]",
+            {stt::variable_definition, stt::equal, stt::arithmetic_expansion_open, stt::field,
+                stt::command_substitution_open, stt::executable, stt::field,
+                stt::command_substitution_close, stt::arithmetic_expansion_close}},
+        {"var=$[1+`echo 2`]",
+            {stt::variable_definition, stt::equal, stt::arithmetic_expansion_open, stt::field,
+                stt::backtick_substitution_open, stt::executable, stt::field,
+                stt::backtick_substitution_close, stt::arithmetic_expansion_close}},
+        {"(( 1 + `echo 2` ))",
+            {stt::arithmetic_expansion_open, stt::field, stt::field,
+                stt::backtick_substitution_open, stt::executable, stt::field,
+                stt::backtick_substitution_close, stt::arithmetic_expansion_close}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
@@ -418,7 +434,10 @@ TEST(TestShellTokenizer, VariableDefinition)
                          stt::field, stt::process_substitution_close}},
         {"var=(1 2 3)", {stt::variable_definition, stt::equal, stt::field}},
         {"var=$(( 1+1 ))", {stt::variable_definition, stt::equal, stt::arithmetic_expansion}},
-        {"var=$[ 1+1 ]", {stt::variable_definition, stt::equal, stt::arithmetic_expansion}},
+        {"var=$[ 1+1 ]", {stt::variable_definition, stt::equal, stt::arithmetic_expansion_open,
+                             stt::field, stt::arithmetic_expansion_close}},
+        {"var=$[1+1]", {stt::variable_definition, stt::equal, stt::arithmetic_expansion_open,
+                           stt::field, stt::arithmetic_expansion_close}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
@@ -494,7 +513,22 @@ TEST(TestShellTokenizer, MultipleCommands)
 TEST(TestShellTokenizer, ArithmeticExpansion)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
-        {"(( var=1+1 ))", {stt::arithmetic_expansion}}};
+        {"(( var=1+1 ))", {stt::arithmetic_expansion_open, stt::variable_definition, stt::equal,
+                              stt::field, stt::arithmetic_expansion_close}},
+        {"(( var=$(echo 1) ))",
+            {stt::arithmetic_expansion_open, stt::variable_definition, stt::equal,
+                stt::command_substitution_open, stt::executable, stt::field,
+                stt::command_substitution_close, stt::arithmetic_expansion_close}},
+        {"(( var=`echo 1` ))",
+            {stt::arithmetic_expansion_open, stt::variable_definition, stt::equal,
+                stt::backtick_substitution_open, stt::executable, stt::field,
+                stt::backtick_substitution_close, stt::arithmetic_expansion_close}},
+        {"command (( var=`echo 1` )) -2 -3",
+            {stt::executable, stt::arithmetic_expansion_open, stt::variable_definition, stt::equal,
+                stt::backtick_substitution_open, stt::executable, stt::field,
+                stt::backtick_substitution_close, stt::arithmetic_expansion_close, stt::field,
+                stt::field}},
+    };
 
     for (const auto &[input, expected_tokens] : samples) {
         shell_tokenizer tokenizer(input);

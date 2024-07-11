@@ -75,6 +75,15 @@ protected:
         advance(token.str.size() - 1);
     }
 
+    void add_token_from(T type, std::size_t begin)
+    {
+        base_token<T> token;
+        token.index = begin;
+        token.type = type;
+        token.str = substr(begin, index() - begin);
+        emplace_token(token);
+    }
+
     void emplace_token(const base_token<T> &token)
     {
         if (!skip_tokens_.contains(token.type)) {

@@ -22,6 +22,8 @@ enum class shell_token_type {
     executable,
     field,
     arithmetic_expansion,
+    arithmetic_expansion_open,
+    arithmetic_expansion_close,
     literal,
     double_quoted_string_open,
     double_quoted_string_close,
@@ -30,6 +32,8 @@ enum class shell_token_type {
     control,
     variable_definition,
     variable,
+    parameter_expansion_open,
+    parameter_expansion_close,
     equal,
     backtick_substitution_open,
     backtick_substitution_close,
@@ -63,12 +67,14 @@ public:
 protected:
     enum class shell_scope {
         global,
-        double_quoted_string,  // " ... "
-        backtick_substitution, // ` ... `
-        command_substitution,  // $( ... )
-        compound_command,      // { ... }
-        subshell,              // ( ... )
-        process_substitution,  // <() or >()
+        double_quoted_string,        // " ... "
+        backtick_substitution,       // ` ... `
+        command_substitution,        // $( ... )
+        compound_command,            // { ... }
+        subshell,                    // ( ... )
+        process_substitution,        // <() or >()
+        legacy_arithmetic_expansion, // $[]
+        arithmetic_expansion,        // (()) or $(( ))
     };
 
     std::vector<shell_scope> shell_scope_stack_;
@@ -118,6 +124,7 @@ protected:
     void tokenize_single_quoted_string();
     void tokenize_double_quoted_string_scope();
     void tokenize_variable();
+    void tokenize_parameter_expansion();
     void tokenize_field(shell_token_type type = shell_token_type::field);
     void tokenize_literal();
     void tokenize_redirection();
