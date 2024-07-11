@@ -43,7 +43,7 @@ public:
     rule &operator=(const rule &) = delete;
 
     rule(rule &&rhs) noexcept = default;
-    rule &operator=(rule &&rhs) noexcept = default;
+    rule &operator=(rule &&rhs) = default;
 
     virtual ~rule() = default;
 
