@@ -86,7 +86,7 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
 } // namespace
 
 std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
-    std::unordered_map<std::string, std::string> &data_ids, data_source source,
+    std::unordered_map<std::string, std::string> &data_ids_to_type, data_source source,
     const std::vector<transformer_id> &transformers, address_container &addresses,
     const object_limits &limits)
 {
@@ -113,7 +113,7 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 
             if (!matcher && !data_id.empty()) {
-                data_ids.emplace(data_id, operator_name);
+                data_ids_to_type.emplace(data_id, operator_name);
             }
 
             auto arguments =
