@@ -32,8 +32,6 @@ enum class shell_token_type {
     control,
     variable_definition,
     variable,
-    parameter_expansion_open,
-    parameter_expansion_close,
     equal,
     backtick_substitution_open,
     backtick_substitution_close,
@@ -52,7 +50,11 @@ enum class shell_token_type {
     compound_command_open,
     compound_command_close,
     array_open,
-    array_close
+    array_close,
+    parameter_expansion_open,
+    parameter_expansion_close,
+    file_redirection_open,
+    file_redirection_close,
 };
 
 using shell_token = base_token<shell_token_type>;
@@ -77,7 +79,9 @@ protected:
         process_substitution,        // <() or >()
         legacy_arithmetic_expansion, // $[]
         arithmetic_expansion,        // (()) or $(( ))
-        array
+        array,                       // =()
+        file_redirection,            // $(< )
+        parameter_expansion,         // ${}
     };
 
     std::vector<shell_scope> shell_scope_stack_;
@@ -188,7 +192,8 @@ protected:
     }
 
     void tokenize_single_quoted_string();
-    void tokenize_double_quoted_string_scope();
+    void tokenize_expandable_scope(std::string_view delimiter, shell_token_type full_token,
+        shell_token_type open_token, shell_token_type close_token);
     void tokenize_variable();
     void tokenize_parameter_expansion();
     void tokenize_field(shell_token_type type = shell_token_type::field);

@@ -85,10 +85,14 @@ void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
         case shell_token_type::compound_command_open:
         case shell_token_type::subshell_open:
             if (scope == command_scope::variable_definition_or_executable) {
-                // These tokens have nested commands which will be interpreted
-                // as the executable, so we can consider the executable of this
-                // scope "found", albeit detections will rely on nested
-                // executables, rather than considering this the executable.
+                // The new scope is expected to contain at least one executable
+                // as these are effectively the beginning of a new command. Since
+                // the evaluation of the current scope was currently in the stage
+                // of looking for the executable, we can now skip it under the
+                // assumption that there will be one in the child scope.
+                //
+                // This might not always be accurate and perhaps sone scopes
+                // should be flattened to executables.
                 scope = command_scope::arguments;
             }
             command_scope_stack.emplace_back(command_scope::variable_definition_or_executable);
@@ -100,6 +104,8 @@ void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
         case shell_token_type::subshell_close:
         case shell_token_type::arithmetic_expansion_close:
         case shell_token_type::array_close:
+        case shell_token_type::file_redirection_close:
+        case shell_token_type::parameter_expansion_close:
             command_scope_stack.pop_back();
             break;
         case shell_token_type::variable_definition:
@@ -128,6 +134,8 @@ void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
             break;
         case shell_token_type::arithmetic_expansion_open:
         case shell_token_type::array_open:
+        case shell_token_type::file_redirection_open:
+        case shell_token_type::parameter_expansion_open:
             command_scope_stack.emplace_back(command_scope::arguments);
             break;
         default:
@@ -246,6 +254,18 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
     case shell_token_type::array_close:
         os << "array_close";
         break;
+    case shell_token_type::parameter_expansion_open:
+        os << "parameter_expansion_open";
+        break;
+    case shell_token_type::parameter_expansion_close:
+        os << "parameter_expansion_close";
+        break;
+    case shell_token_type::file_redirection_open:
+        os << "file_redirection_open";
+        break;
+    case shell_token_type::file_redirection_close:
+        os << "file_redirection_close";
+        break;
     }
     return os;
 }
@@ -300,77 +320,63 @@ void shell_tokenizer::tokenize_variable()
     emplace_token(token);
 }
 
-void shell_tokenizer::tokenize_double_quoted_string_scope()
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+void shell_tokenizer::tokenize_expandable_scope(std::string_view delimiter,
+    shell_token_type full_token, shell_token_type open_token, shell_token_type close_token)
 {
-    // Within a double quoted string, we need to search for either
-    // arbitrary characters, an expansion or substitution and
-    // the final quote, taking into consideration escaped quotes.
-    auto begin = index();
     unsigned slash_count = 0;
+    std::size_t delim_idx = 0;
+
     for (; !eof(); advance()) {
         auto c = peek();
-        if (c == '"' && slash_count == 0) {
-            pop_shell_scope();
+        if (delim_idx < delimiter.size() && c == delimiter[delim_idx] && slash_count == 0) {
+            ++delim_idx;
+            if (delim_idx == delimiter.size()) {
+                pop_shell_scope();
 
-            // At this point we know there's at least one token so no need to check
-            auto &token = current_token();
-            if (token.type == shell_token_type::double_quoted_string_open) {
-                token.type = shell_token_type::double_quoted_string;
-                token.str = substr(token.index, index() - token.index + 1);
-            } else {
-                if (begin < index()) {
-                    add_token_from(shell_token_type::literal, begin);
+                // At this point we know there's at least one token so no need to check
+                auto &token = current_token();
+                if (token.type == open_token) {
+                    token.type = full_token;
+                    token.str = substr(token.index, index() - token.index + 1);
+                } else {
+                    add_token(close_token);
                 }
-
-                add_token(shell_token_type::double_quoted_string_close);
+                break;
             }
-            break;
+        } else {
+            delim_idx = 0;
         }
 
         if (c == '$' && slash_count == 0) {
             auto n = next();
-            auto n2 = next(2);
-            if (n == '(' && n2 != '(' && n2 != '<') {
-                // Command substitution, we add a field for the current string
-                // contents, update the scope and exit. Note that we skip
-                // arithmetic expansions
-                if (begin < index()) {
-                    add_token_from(shell_token_type::literal, begin);
+            if (n == '(') {
+                auto n2 = next(2);
+                if (n2 == '(') {
+                    add_token(shell_token_type::arithmetic_expansion_open, 3);
+                    push_shell_scope(shell_scope::arithmetic_expansion);
+                } else if (n2 == '<') {
+                    add_token(shell_token_type::file_redirection_open, 3);
+                    push_shell_scope(shell_scope::file_redirection);
+                } else {
+                    add_token(shell_token_type::command_substitution_open, 2);
+                    push_shell_scope(shell_scope::command_substitution);
                 }
-
-                add_token(shell_token_type::command_substitution_open, 2);
-                push_shell_scope(shell_scope::command_substitution);
-                break;
-            }
-
-            if (n == '(' && n2 == '(') {
-                if (begin < index()) {
-                    add_token_from(shell_token_type::literal, begin);
-                }
-
-                add_token(shell_token_type::arithmetic_expansion_open, 3);
-                push_shell_scope(shell_scope::arithmetic_expansion);
                 break;
             }
 
             if (n == '[') {
-                if (begin < index()) {
-                    add_token_from(shell_token_type::literal, begin);
-                }
-
                 add_token(shell_token_type::arithmetic_expansion_open, 2);
                 push_shell_scope(shell_scope::legacy_arithmetic_expansion);
                 break;
             }
-            // Other interesting cases which we make part of the literal:
-            // - Variables, which we ignore for now
-        } else if (c == '`') {
-            // Backtick substitution, we add a literal for the current string
-            // contents, update the scope and exit
-            if (begin < index()) {
-                add_token_from(shell_token_type::literal, begin);
-            }
 
+            if (n == '{') {
+                add_token(shell_token_type::parameter_expansion_open, 2);
+                push_shell_scope(shell_scope::parameter_expansion);
+                break;
+            }
+        } else if (c == '`') {
             add_token(shell_token_type::backtick_substitution_open);
             push_shell_scope(shell_scope::backtick_substitution);
             break;
@@ -467,7 +473,30 @@ std::vector<shell_token> shell_tokenizer::tokenize()
 
     for (; !eof(); advance()) {
         if (current_shell_scope_ == shell_scope::double_quoted_string) {
-            tokenize_double_quoted_string_scope();
+            tokenize_expandable_scope("\"", shell_token_type::double_quoted_string,
+                shell_token_type::double_quoted_string_open,
+                shell_token_type::double_quoted_string_close);
+            continue;
+        }
+
+        if (current_shell_scope_ == shell_scope::parameter_expansion) {
+            tokenize_expandable_scope("}", shell_token_type::variable,
+                shell_token_type::parameter_expansion_open,
+                shell_token_type::parameter_expansion_close);
+            continue;
+        }
+
+        if (current_shell_scope_ == shell_scope::arithmetic_expansion) {
+            tokenize_expandable_scope("))", shell_token_type::arithmetic_expansion,
+                shell_token_type::arithmetic_expansion_open,
+                shell_token_type::arithmetic_expansion_close);
+            continue;
+        }
+
+        if (current_shell_scope_ == shell_scope::legacy_arithmetic_expansion) {
+            tokenize_expandable_scope("]", shell_token_type::arithmetic_expansion,
+                shell_token_type::arithmetic_expansion_open,
+                shell_token_type::arithmetic_expansion_close);
             continue;
         }
 
@@ -484,12 +513,6 @@ std::vector<shell_token> shell_tokenizer::tokenize()
         } else if (c == '"') {
             add_token(shell_token_type::double_quoted_string_open);
             push_shell_scope(shell_scope::double_quoted_string);
-
-            // Skip "
-            advance();
-            // Tokenize the double quoted string, which might be interrupted
-            // if there is a substitution / expansion
-            tokenize_double_quoted_string_scope();
         } else if (c == '$') {
             auto n = next();
             // Tokenize:
@@ -503,15 +526,18 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                     add_token(shell_token_type::arithmetic_expansion_open, 3);
                     push_shell_scope(shell_scope::arithmetic_expansion);
                 } else if (n2 == '<') {
-                    // File redirection
-                    tokenize_delimited_token(")", shell_token_type::field);
+                    add_token(shell_token_type::file_redirection_open, 3);
+                    push_shell_scope(shell_scope::file_redirection);
                 } else {
                     add_token(shell_token_type::command_substitution_open, 2);
                     push_shell_scope(shell_scope::command_substitution);
                 }
-            } else if (n == '{' || ddwaf::isalnum(n) || n == '_' || n == '-' || n == '?' ||
-                       n == '@' || n == '#' || n == '*' || n == '$' || n == '!') {
+            } else if (ddwaf::isalnum(n) || n == '_' || n == '-' || n == '?' || n == '@' ||
+                       n == '#' || n == '*' || n == '$' || n == '!') {
                 tokenize_variable();
+            } else if (n == '{') {
+                add_token(shell_token_type::parameter_expansion_open, 2);
+                push_shell_scope(shell_scope::parameter_expansion);
             } else if (n == '[') {
                 add_token(shell_token_type::arithmetic_expansion_open, 2);
                 push_shell_scope(shell_scope::legacy_arithmetic_expansion);
@@ -534,6 +560,9 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 pop_shell_scope();
             } else if (current_shell_scope_ == shell_scope::array) {
                 add_token(shell_token_type::array_close);
+                pop_shell_scope();
+            } else if (current_shell_scope_ == shell_scope::file_redirection) {
+                add_token(shell_token_type::file_redirection_close);
                 pop_shell_scope();
             } else {
                 add_token(shell_token_type::parenthesis_close);
@@ -592,8 +621,13 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             }
         } else if (c == '}') {
             if (current_shell_scope_ == shell_scope::compound_command &&
-                (match_last_n_nonws_tokens(";"sv))) {
+                match_last_n_nonws_tokens(";"sv)) {
                 add_token(shell_token_type::compound_command_close);
+                pop_shell_scope();
+            } else if (current_shell_scope_ == shell_scope::parameter_expansion) {
+                // This won't always be accurate and some other patterns might
+                // need to be taken into consideration
+                add_token(shell_token_type::parameter_expansion_close);
                 pop_shell_scope();
             } else {
                 add_token(shell_token_type::curly_brace_close);
