@@ -497,6 +497,17 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             continue;
         }
 
+        if (current_shell_scope_ == shell_scope::array) {
+            tokenize_expandable_scope(")", shell_token_type::field, shell_token_type::array_open,
+                shell_token_type::array_close);
+            continue;
+        }
+        if (current_shell_scope_ == shell_scope::file_redirection) {
+            tokenize_expandable_scope(")", shell_token_type::redirection,
+                shell_token_type::file_redirection_open, shell_token_type::file_redirection_close);
+            continue;
+        }
+
         auto c = peek();
         if (is_space_char(c)) {
             shell_token token;

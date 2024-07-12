@@ -58,13 +58,25 @@ TEST(TestShellTokenizer, TokenTypeOstream)
     EXPECT_STR(stream_token(shell_token_type::subshell_close), "subshell_close");
     EXPECT_STR(stream_token(shell_token_type::compound_command_open), "compound_command_open");
     EXPECT_STR(stream_token(shell_token_type::compound_command_close), "compound_command_close");
+    EXPECT_STR(
+        stream_token(shell_token_type::arithmetic_expansion_open), "arithmetic_expansion_open");
+    EXPECT_STR(
+        stream_token(shell_token_type::arithmetic_expansion_close), "arithmetic_expansion_close");
+    EXPECT_STR(stream_token(shell_token_type::array_open), "array_open");
+    EXPECT_STR(stream_token(shell_token_type::array_close), "array_close");
+    EXPECT_STR(
+        stream_token(shell_token_type::parameter_expansion_open), "parameter_expansion_open");
+    EXPECT_STR(
+        stream_token(shell_token_type::parameter_expansion_close), "parameter_expansion_close");
+    EXPECT_STR(stream_token(shell_token_type::file_redirection_open), "file_redirection_open");
+    EXPECT_STR(stream_token(shell_token_type::file_redirection_close), "file_redirection_close");
 }
 
 TEST(TestShellTokenizer, Basic)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
         {"echo", {stt::executable}},
-        {"$(<file)", {stt::file_redirection_open, stt::field, stt::file_redirection_close}},
+        {"$(<file)", {stt::redirection}},
         {"echo    ", {stt::executable}},
         {"test echo", {stt::executable, stt::field}},
         {"ls -l", {stt::executable, stt::field}},
@@ -101,8 +113,8 @@ TEST(TestShellTokenizer, DoubleQuotedString)
                                   stt::double_quoted_string_close}},
         {R"!("$[ 1+1 ]")!", {stt::double_quoted_string_open, stt::arithmetic_expansion,
                                 stt::double_quoted_string_close}},
-        {R"!("$(<file)")!", {stt::double_quoted_string_open, stt::file_redirection_open, stt::field,
-                                stt::file_redirection_close, stt::double_quoted_string_close}},
+        {R"!("$(<file)")!",
+            {stt::double_quoted_string_open, stt::redirection, stt::double_quoted_string_close}},
         {R"!("$(( $(echo value) ))")!",
             {stt::double_quoted_string_open, stt::arithmetic_expansion_open,
                 stt::command_substitution_open, stt::executable, stt::field,
@@ -446,8 +458,7 @@ TEST(TestShellTokenizer, VariableDefinition)
                          stt::field, stt::process_substitution_close}},
         {">(var=2)", {stt::process_substitution_open, stt::variable_definition, stt::equal,
                          stt::field, stt::process_substitution_close}},
-        {"var=(1 2 3)", {stt::variable_definition, stt::equal, stt::array_open, stt::field,
-                            stt::field, stt::field, stt::array_close}},
+        {"var=(1 2 3)", {stt::variable_definition, stt::equal, stt::field}},
         {"var=$(( 1+1 ))", {stt::variable_definition, stt::equal, stt::arithmetic_expansion}},
         {"var=$[ 1+1 ]", {stt::variable_definition, stt::equal, stt::arithmetic_expansion}},
         {"var=$[1+1]", {stt::variable_definition, stt::equal, stt::arithmetic_expansion}},
@@ -633,6 +644,31 @@ TEST(TestShellTokenizer, Subshell)
         {"( echo )", {stt::subshell_open, stt::executable, stt::subshell_close}},
         {"ls | ( echo )", {stt::executable, stt::control, stt::subshell_open, stt::executable,
                               stt::subshell_close}},
+    };
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
+}
+
+TEST(TestShellTokenizer, FileRedirection)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"$(<file)", {stt::redirection}},
+        {"$(< $( echo ))",
+            {stt::file_redirection_open, stt::command_substitution_open, stt::executable,
+                stt::command_substitution_close, stt::file_redirection_close}},
+        {"echo $(< $( echo ))",
+            {stt::executable, stt::file_redirection_open, stt::command_substitution_open,
+                stt::executable, stt::command_substitution_close, stt::file_redirection_close}},
+        {"echo $(<file)", {stt::executable, stt::redirection}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
