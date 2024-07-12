@@ -100,20 +100,6 @@ protected:
 
     shell_token &current_token() { return tokens_.back(); }
 
-    [[nodiscard]] bool should_expect_subprocess() const
-    {
-        if (tokens_.empty()) {
-            return true;
-        }
-
-        auto t = current_token_type();
-        return t == shell_token_type::control ||
-               t == shell_token_type::backtick_substitution_open ||
-               t == shell_token_type::command_substitution_open ||
-               t == shell_token_type::process_substitution_open ||
-               t == shell_token_type::compound_command_open;
-    }
-
     [[nodiscard]] static bool token_allowed_before_executable(shell_token_type type)
     {
         return type == shell_token_type::control ||
@@ -122,6 +108,83 @@ protected:
                type == shell_token_type::process_substitution_open ||
                type == shell_token_type::compound_command_open ||
                type == shell_token_type::subshell_open || type == shell_token_type::whitespace;
+    }
+
+    template <typename T, typename... Rest>
+    bool match_nth_nonws_token_descending(std::size_t n, T expected, Rest... args) const
+    {
+        const auto &nth_token = tokens_[n];
+        if (nth_token.type == shell_token_type::whitespace) {
+            return n > 0 && match_nth_nonws_token_descending(n - 1, expected, args...);
+        }
+        bool res = false;
+        if constexpr (std::is_same_v<T, shell_token_type>) {
+            res = (nth_token.type == expected);
+        }
+        if constexpr (std::is_same_v<T, std::string_view>) {
+            res = (nth_token.str == expected);
+        }
+        if constexpr (sizeof...(args) > 0) {
+            return n > 0 && res && match_nth_nonws_token_descending(n - 1, args...);
+        } else {
+            return res;
+        }
+    }
+    // Match each provided token or string with the relevant token or string
+    // starting from the end of the token array, ignoring whitespaces:
+    // - args[0] == tokens_[last]
+    // - args[1] == tokens_[last - 1]
+    template <typename... Args> bool match_last_n_nonws_tokens(Args... args) const
+    {
+        if (tokens_.size() < sizeof...(Args)) {
+            return false;
+        }
+
+        return match_nth_nonws_token_descending(tokens_.size() - 1, args...);
+    }
+
+    template <typename T, typename... Rest>
+    bool match_last_nonws_token_with_one_of_T(
+        const shell_token &obtained, T expected, Rest... args) const
+    {
+        bool res = false;
+        if constexpr (std::is_same_v<T, shell_token_type>) {
+            res = (obtained.type == expected);
+        }
+        if constexpr (std::is_same_v<T, std::string_view>) {
+            res = (obtained.str == expected);
+        }
+
+        if constexpr (sizeof...(args) > 0) {
+            return res || match_last_nonws_token_with_one_of_T(obtained, args...);
+        } else {
+            return res;
+        }
+    }
+
+    template <typename... Args> bool match_last_nonws_token_with_one_of(Args... args) const
+    {
+        auto last_it = tokens_.rbegin();
+        if (last_it != tokens_.rend() && last_it->type == shell_token_type::whitespace) {
+            // Whitespaces are grouped together, so only one token can be expected
+            ++last_it;
+        }
+
+        if (last_it == tokens_.rend()) {
+            return false;
+        }
+
+        return match_last_nonws_token_with_one_of_T(*last_it, args...);
+    }
+
+    bool is_beginning_of_command()
+    {
+        return tokens_.empty() || match_last_nonws_token_with_one_of(shell_token_type::control,
+                                      shell_token_type::backtick_substitution_open,
+                                      shell_token_type::command_substitution_open,
+                                      shell_token_type::process_substitution_open,
+                                      shell_token_type::compound_command_open,
+                                      shell_token_type::subshell_open, shell_token_type::control);
     }
 
     void tokenize_single_quoted_string();

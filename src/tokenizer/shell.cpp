@@ -559,7 +559,7 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             } else if (next() == '(') {
                 add_token(shell_token_type::arithmetic_expansion_open, 2);
                 push_shell_scope(shell_scope::arithmetic_expansion);
-            } else if (should_expect_subprocess()) {
+            } else if (is_beginning_of_command()) {
                 add_token(shell_token_type::subshell_open);
                 push_shell_scope(shell_scope::subshell);
             } else {
@@ -582,7 +582,7 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             }
         } else if (c == '{') {
             auto n = next();
-            if (n == ' ') {
+            if (n == ' ' && is_beginning_of_command()) {
                 add_token(shell_token_type::compound_command_open);
                 // Swallow the whitespace
                 advance();
@@ -591,7 +591,8 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 add_token(shell_token_type::curly_brace_open);
             }
         } else if (c == '}') {
-            if (current_shell_scope_ == shell_scope::compound_command) {
+            if (current_shell_scope_ == shell_scope::compound_command &&
+                (match_last_n_nonws_tokens(";"sv))) {
                 add_token(shell_token_type::compound_command_close);
                 pop_shell_scope();
             } else {

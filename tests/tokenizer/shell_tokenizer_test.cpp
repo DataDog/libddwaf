@@ -609,6 +609,41 @@ TEST(TestShellTokenizer, CompoundCommands)
                 stt::command_substitution_open, stt::executable, stt::field,
                 stt::command_substitution_close, stt::double_quoted_string_close, stt::field,
                 stt::control, stt::compound_command_close}},
+        {R"!({ echo }; })!", {stt::compound_command_open, stt::executable, stt::curly_brace_close,
+                                 stt::control, stt::compound_command_close}},
+        {R"!({ echo {}; })!",
+            {stt::compound_command_open, stt::executable, stt::curly_brace_open,
+                stt::curly_brace_close, stt::control, stt::compound_command_close}},
+        {R"!({ echo {};})!",
+            {stt::compound_command_open, stt::executable, stt::curly_brace_open,
+                stt::curly_brace_close, stt::control, stt::compound_command_close}},
+        {R"!({ echo { }; })!",
+            {stt::compound_command_open, stt::executable, stt::curly_brace_open,
+                stt::curly_brace_close, stt::control, stt::compound_command_close}},
+        {R"!(echo { }; { echo; })!",
+            {stt::executable, stt::curly_brace_open, stt::curly_brace_close, stt::control,
+                stt::compound_command_open, stt::executable, stt::control,
+                stt::compound_command_close}},
+    };
+
+    for (const auto &[input, expected_tokens] : samples) {
+        shell_tokenizer tokenizer(input);
+
+        auto tokens = tokenizer.tokenize();
+        ASSERT_EQ(tokens.size(), expected_tokens.size()) << input;
+
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            EXPECT_EQ(tokens[i].type, expected_tokens[i]) << input;
+        }
+    }
+}
+
+TEST(TestShellTokenizer, Subshell)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {"( echo )", {stt::subshell_open, stt::executable, stt::subshell_close}},
+        {"ls | ( echo )", {stt::executable, stt::control, stt::subshell_open, stt::executable,
+                              stt::subshell_close}},
     };
 
     for (const auto &[input, expected_tokens] : samples) {
