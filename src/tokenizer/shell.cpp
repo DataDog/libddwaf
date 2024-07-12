@@ -307,8 +307,8 @@ void shell_tokenizer::tokenize_variable()
         // Special variable, these are one character long + dollar
         token.str = substr(token.index, 2);
     } else if (c == '{') {
-        while (advance() && peek() != '}') {}
-        token.str = substr(token.index, index() - token.index + 1);
+        add_token(shell_token_type::parameter_expansion_open, 2);
+        push_shell_scope(shell_scope::parameter_expansion);
     } else { // alphanumeric and underscores
         while (is_var_char(next()) && advance()) {};
         token.str = substr(token.index, index() - token.index + 1);
@@ -433,7 +433,7 @@ void shell_tokenizer::tokenize_redirection_or_field()
         token.str = substr(token.index, index() - token.index + 1);
         emplace_token(token);
     } else if (n == '>' || n == '<') {
-        advance(); // Skip that current digit
+        advance(); // Skip the current digit
         auto remaining_str = substr(index());
 
         re2::StringPiece redirection;
