@@ -26,7 +26,6 @@ TEST(TestShellTokenizer, TokenTypeOstream)
     EXPECT_STR(stream_token(shell_token_type::executable), "executable");
     EXPECT_STR(stream_token(shell_token_type::field), "field");
     EXPECT_STR(stream_token(shell_token_type::arithmetic_expansion), "arithmetic_expansion");
-    EXPECT_STR(stream_token(shell_token_type::literal), "literal");
     EXPECT_STR(
         stream_token(shell_token_type::double_quoted_string_open), "double_quoted_string_open");
     EXPECT_STR(

@@ -173,9 +173,6 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
     case shell_token_type::arithmetic_expansion_close:
         os << "arithmetic_expansion_close";
         break;
-    case shell_token_type::literal:
-        os << "literal";
-        break;
     case shell_token_type::double_quoted_string_open:
         os << "double_quoted_string_open";
         break;
@@ -320,8 +317,8 @@ void shell_tokenizer::tokenize_variable()
     emplace_token(token);
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void shell_tokenizer::tokenize_expandable_scope(std::string_view delimiter,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     shell_token_type full_token, shell_token_type open_token, shell_token_type close_token)
 {
     unsigned slash_count = 0;

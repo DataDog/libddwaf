@@ -24,7 +24,6 @@ enum class shell_token_type {
     arithmetic_expansion,
     arithmetic_expansion_open,
     arithmetic_expansion_close,
-    literal,
     double_quoted_string_open,
     double_quoted_string_close,
     double_quoted_string,
@@ -103,16 +102,6 @@ protected:
     shell_token_type current_token_type() const { return tokens_.back().type; }
 
     shell_token &current_token() { return tokens_.back(); }
-
-    [[nodiscard]] static bool token_allowed_before_executable(shell_token_type type)
-    {
-        return type == shell_token_type::control ||
-               type == shell_token_type::backtick_substitution_open ||
-               type == shell_token_type::command_substitution_open ||
-               type == shell_token_type::process_substitution_open ||
-               type == shell_token_type::compound_command_open ||
-               type == shell_token_type::subshell_open || type == shell_token_type::whitespace;
-    }
 
     template <typename T, typename... Rest>
     bool match_nth_nonws_token_descending(std::size_t n, T expected, Rest... args) const
@@ -197,7 +186,6 @@ protected:
     void tokenize_variable();
     void tokenize_parameter_expansion();
     void tokenize_field(shell_token_type type = shell_token_type::field);
-    void tokenize_literal();
     void tokenize_redirection();
     void tokenize_redirection_or_field();
     void tokenize_delimited_token(std::string_view delimiter, shell_token_type type);
