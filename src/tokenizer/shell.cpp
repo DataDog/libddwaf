@@ -518,7 +518,8 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             // Tokenize:
             // - Command substitution $()
             // - Arithmetic expansion $(()) or $[]
-            // - Variable $XYZ or ${XYZ}
+            // - Variable $XYZ
+            // - Parameter Expansion ${XYZ}
             // - Special variable
             if (n == '(') {
                 auto n2 = next(2);
@@ -542,9 +543,6 @@ std::vector<shell_token> shell_tokenizer::tokenize()
                 add_token(shell_token_type::arithmetic_expansion_open, 2);
                 push_shell_scope(shell_scope::legacy_arithmetic_expansion);
             }
-        } else if (c == ']' && current_shell_scope_ == shell_scope::legacy_arithmetic_expansion) {
-            add_token(shell_token_type::arithmetic_expansion_close);
-            pop_shell_scope();
         } else if (c == ')') {
             if (current_shell_scope_ == shell_scope::command_substitution) {
                 add_token(shell_token_type::command_substitution_close);
