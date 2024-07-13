@@ -552,6 +552,10 @@ TEST(TestShellTokenizer, ArithmeticExpansion)
             {stt::executable, stt::arithmetic_expansion_open, stt::backtick_substitution_open,
                 stt::executable, stt::field, stt::backtick_substitution_close,
                 stt::arithmetic_expansion_close, stt::field, stt::field}},
+        {"command (( var=${hello} )) -2 -3",
+            {stt::executable, stt::arithmetic_expansion_open, stt::variable,
+                stt::arithmetic_expansion_close, stt::field, stt::field}},
+
     };
 
     for (const auto &[input, expected_tokens] : samples) {

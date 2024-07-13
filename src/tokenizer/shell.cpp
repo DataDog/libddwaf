@@ -306,9 +306,6 @@ void shell_tokenizer::tokenize_variable()
         ddwaf::isdigit(c)) {
         // Special variable, these are one character long + dollar
         token.str = substr(token.index, 2);
-    } else if (c == '{') {
-        add_token(shell_token_type::parameter_expansion_open, 2);
-        push_shell_scope(shell_scope::parameter_expansion);
     } else { // alphanumeric and underscores
         while (is_var_char(next()) && advance()) {};
         token.str = substr(token.index, index() - token.index + 1);
@@ -427,12 +424,7 @@ void shell_tokenizer::tokenize_redirection_or_field()
 
     // We have exited, either because we reached the end of the string or because
     // the next character is not a digit
-    if (eof()) {
-        // We found a long number at the end of the resource
-        token.type = shell_token_type::field;
-        token.str = substr(token.index, index() - token.index + 1);
-        emplace_token(token);
-    } else if (n == '>' || n == '<') {
+    if (n == '>' || n == '<') {
         advance(); // Skip the current digit
         auto remaining_str = substr(index());
 
@@ -451,7 +443,7 @@ void shell_tokenizer::tokenize_redirection_or_field()
         token.type = shell_token_type::field;
 
         // Find the end of this token by searching for a "known" character
-        while (is_field_char(next()) && advance()) {}
+        while (is_field_char(n) && advance()) { n = next(); }
 
         token.str = substr(token.index, index() - token.index + 1);
         emplace_token(token);
@@ -563,15 +555,6 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             } else if (current_shell_scope_ == shell_scope::subshell) {
                 add_token(shell_token_type::subshell_close);
                 pop_shell_scope();
-            } else if (current_shell_scope_ == shell_scope::arithmetic_expansion && next() == ')') {
-                add_token(shell_token_type::arithmetic_expansion_close, 2);
-                pop_shell_scope();
-            } else if (current_shell_scope_ == shell_scope::array) {
-                add_token(shell_token_type::array_close);
-                pop_shell_scope();
-            } else if (current_shell_scope_ == shell_scope::file_redirection) {
-                add_token(shell_token_type::file_redirection_close);
-                pop_shell_scope();
             } else {
                 add_token(shell_token_type::parenthesis_close);
             }
@@ -631,11 +614,6 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             if (current_shell_scope_ == shell_scope::compound_command &&
                 match_last_n_nonws_tokens(";"sv)) {
                 add_token(shell_token_type::compound_command_close);
-                pop_shell_scope();
-            } else if (current_shell_scope_ == shell_scope::parameter_expansion) {
-                // This won't always be accurate and some other patterns might
-                // need to be taken into consideration
-                add_token(shell_token_type::parameter_expansion_close);
                 pop_shell_scope();
             } else {
                 add_token(shell_token_type::curly_brace_close);
