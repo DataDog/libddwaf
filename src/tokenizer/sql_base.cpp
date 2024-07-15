@@ -159,7 +159,7 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
 template <typename T>
 sql_tokenizer<T>::sql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
-    : buffer_(str), skip_tokens_(std::move(skip_tokens))
+    : base_tokenizer(str, std::move(skip_tokens))
 {
     if (!number_regex.ok()) {
         throw std::runtime_error("sql number regex not valid: " + number_regex.error_arg());
