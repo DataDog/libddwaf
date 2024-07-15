@@ -23,7 +23,7 @@ concurrency:
 jobs:
   # TODO: build all fuzzers first, then run independently
   global-fuzzer:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,7 +59,7 @@ jobs:
           name: fuzzing-data
           path: fuzzing.tar.gz
   local-fuzzer:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

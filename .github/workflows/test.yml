@@ -174,7 +174,7 @@ jobs:
 
   upload-coverage:
     needs: [ coverage ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -212,7 +212,7 @@ jobs:
           path: ${{ github.workspace }}/coverage/
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -249,7 +249,7 @@ jobs:
         working-directory: Debug
 
   tools:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
     steps:
@@ -273,7 +273,7 @@ jobs:
         working-directory: Debug
 
   #verify_ruleset:
-    #runs-on: ubuntu-latest
+    #runs-on: ubuntu-24.04
     #strategy:
       #fail-fast: false
     #steps:
