@@ -11,6 +11,24 @@
 
 namespace ddwaf {
 
+namespace {
+void set_context_event_address(object_store &store, bool ephemeral)
+{
+    static std::string_view event_addr = "waf.context.event";
+    static auto event_addr_idx = get_target_index(event_addr);
+
+    if (store.has_target(event_addr_idx)) {
+        return;
+    }
+
+    ddwaf_object true_obj;
+    ddwaf_object_bool(&true_obj, true);
+    store.insert(event_addr_idx, event_addr, true_obj,
+        ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none);
+}
+
+} // namespace
+
 std::optional<event> match_rule(rule *rule, const object_store &store,
     memory::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
     const exclusion::context_policy &policy,
@@ -71,7 +89,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
 }
 
 template <typename Derived>
-void base_collection<Derived>::match(std::vector<event> &events, const object_store &store,
+void base_collection<Derived>::match(std::vector<event> &events, object_store &store,
     collection_cache &cache, const exclusion::context_policy &exclusion,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
@@ -94,6 +112,8 @@ void base_collection<Derived>::match(std::vector<event> &events, const object_st
         if (event.has_value()) {
             cache.result = Derived::type();
             cache.ephemeral = event->ephemeral;
+
+            set_context_event_address(store, event->ephemeral);
 
             events.emplace_back(std::move(*event));
             DDWAF_DEBUG("Found event on rule {}", rule->get_id());
