@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "tokenizer/base.hpp"
 #include "utils.hpp"
 #include <fmt/format.h>
 #include <ostream>
@@ -47,11 +48,7 @@ enum class sql_token_type {
     curly_brace_close,
 };
 
-struct sql_token {
-    sql_token_type type{sql_token_type::unknown};
-    std::string_view str;
-    std::size_t index{};
-};
+using sql_token = base_token<sql_token_type>;
 
 sql_dialect sql_dialect_from_type(std::string_view type);
 std::string_view sql_dialect_to_string(sql_dialect dialect);
@@ -67,7 +64,7 @@ template <> struct fmt::formatter<sql_dialect> : fmt::formatter<std::string_view
 
 std::ostream &operator<<(std::ostream &os, sql_token_type type);
 
-template <typename T> class sql_tokenizer {
+template <typename T> class sql_tokenizer : protected base_tokenizer<sql_token_type> {
 public:
     explicit sql_tokenizer(
         std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
@@ -75,59 +72,6 @@ public:
     std::vector<sql_token> tokenize() { return static_cast<T *>(this)->tokenize_impl(); }
 
 protected:
-    [[nodiscard]] char peek() const
-    {
-        if (idx_ >= buffer_.size()) {
-            [[unlikely]] return '\0';
-        }
-        return buffer_[idx_];
-    }
-    [[nodiscard]] char prev(std::size_t offset = 1) const
-    {
-        if (idx_ < offset) {
-            [[unlikely]] return '\0';
-        }
-        return buffer_[idx_ - 1];
-    }
-
-    bool advance(std::size_t offset = 1) { return (idx_ += offset) < buffer_.size(); }
-
-    [[nodiscard]] char next(std::size_t offset = 1)
-    {
-        if ((idx_ + offset) >= buffer_.size()) {
-            [[unlikely]] return '\0';
-        }
-        return buffer_[idx_ + offset];
-    }
-
-    bool eof() { return idx_ >= buffer_.size(); }
-
-    [[nodiscard]] std::size_t index() const { return idx_; }
-
-    std::string_view substr(std::size_t start, std::size_t size = std::string_view::npos)
-    {
-        return buffer_.substr(start, size);
-    }
-
-    std::string_view substr() { return buffer_.substr(idx_); }
-
-    void add_token(sql_token_type type, std::size_t size = 1)
-    {
-        sql_token token;
-        token.index = index();
-        token.type = type;
-        token.str = substr(token.index, size);
-        emplace_token(token);
-        advance(token.str.size() - 1);
-    }
-
-    void emplace_token(const sql_token &token)
-    {
-        if (!skip_tokens_.contains(token.type)) {
-            tokens_.emplace_back(token);
-        }
-    }
-
     std::string_view extract_unescaped_string(char quote);
     std::string_view extract_conforming_string(char quote);
     std::string_view extract_escaped_string(char quote);
@@ -137,11 +81,6 @@ protected:
     void tokenize_conforming_string(char quote, sql_token_type type);
     void tokenize_escaped_string(char quote, sql_token_type type);
     void tokenize_number();
-
-    std::string_view buffer_;
-    std::size_t idx_{0};
-    std::unordered_set<sql_token_type> skip_tokens_{};
-    std::vector<sql_token> tokens_{};
 };
 
 } // namespace ddwaf

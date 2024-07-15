@@ -86,9 +86,12 @@ jobs:
             params: "--dialect=sqlite"
           - fuzzer: sqli_detector
             params: "--dialect=standard"
+          - fuzzer: shell_tokenizer
+            params: ""
+          - fuzzer: shi_detector
+            params: ""
           - fuzzer: sha256
             params: ""
-
     steps:
       - uses: actions/checkout@v4
         with:
