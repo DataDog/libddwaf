@@ -24,6 +24,48 @@
           "operator": "match_regex"
         }
       ]
+    },
+    {
+      "id": "rule2",
+      "name": "rule2",
+      "tags": {
+        "type": "flow2",
+        "category": "category2"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "_dd.appsec.fp.http.header"
+              }
+            ],
+            "regex": ".*"
+          },
+          "operator": "match_regex"
+        }
+      ]
+    },
+    {
+      "id": "rule3",
+      "name": "rule3",
+      "tags": {
+        "type": "flow3",
+        "category": "category3"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "_dd.appsec.fp.http.network"
+              }
+            ],
+            "regex": ".*"
+          },
+          "operator": "match_regex"
+        }
+      ]
     }
   ],
   "processors": [
@@ -71,6 +113,76 @@
               }
             ],
             "output": "_dd.appsec.fp.http.endpoint"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": false
+    },
+    {
+      "id": "processor-002",
+      "generator": "http_header_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.header"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": false
+    },
+    {
+      "id": "processor-003",
+      "generator": "http_network_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.network"
           }
         ]
       },

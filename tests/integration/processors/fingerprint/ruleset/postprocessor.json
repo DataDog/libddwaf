@@ -77,6 +77,76 @@
       },
       "evaluate": false,
       "output": true
+    },
+    {
+      "id": "processor-002",
+      "generator": "http_header_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.header"
+          }
+        ]
+      },
+      "evaluate": false,
+      "output": true
+    },
+    {
+      "id": "processor-003",
+      "generator": "http_network_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.network"
+          }
+        ]
+      },
+      "evaluate": false,
+      "output": true
     }
   ]
 }
