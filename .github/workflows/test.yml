@@ -25,7 +25,7 @@ jobs:
         arch:
           - amd64
           - arm64
-    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-latest' || 'arm-4core-linux' }}
+    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'arm-4core-linux-ubuntu24.04 ' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,10 +33,6 @@ jobs:
 
       - name: Create directories
         run: mkdir Debug
-
-      - name: Install dependencies
-        if: matrix.arch == 'arm64'
-        run: sudo apt update ; sudo apt install -y cmake git make curl
 
       - name: Install clang-{tidy,format}
         run: |
