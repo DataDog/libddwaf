@@ -7,6 +7,7 @@
 #include "processor/fingerprint.hpp"
 #include "sha256.hpp"
 #include "transformer/lowercase.hpp"
+#include <stdexcept>
 
 namespace ddwaf {
 namespace {
@@ -32,8 +33,14 @@ struct string_buffer {
 
     char &operator[](std::size_t idx) const { return buffer[idx]; }
 
-    template <std::size_t N> [[nodiscard]] std::span<char, N> subspan()
+    template <std::size_t N>
+    [[nodiscard]] std::span<char, N> subspan()
+        requires(N > 0)
     {
+        if ((index + N - 1) >= length) {
+            throw std::out_of_range("span[index, N) beyond buffer limit");
+        }
+
         std::span<char, N> res{&buffer[index], N};
         index += N;
         return res;
@@ -41,27 +48,45 @@ struct string_buffer {
 
     void append(std::string_view str)
     {
+        if (str.empty()) {
+            return;
+        }
+
+        if ((index + str.length() - 1) >= length) {
+            throw std::out_of_range("appending string beyond buffer limit");
+        }
         memcpy(&buffer[index], str.data(), str.size());
         index += str.size();
     }
 
     void append_lowercase(std::string_view str)
     {
+        if (str.empty()) {
+            return;
+        }
+
+        if ((index + str.length() - 1) >= length) {
+            throw std::out_of_range("appending string beyond buffer limit");
+        }
+
         for (auto c : str) { buffer[index++] = ddwaf::tolower(c); }
     }
 
-    template <std::size_t N> void append(std::array<char, N> str)
+    template <std::size_t N>
+    void append(std::array<char, N> str)
+        requires(N > 0)
     {
-        memcpy(&buffer[index], str.data(), str.size());
-        index += str.size();
+        append(std::string_view{str.data(), N});
     }
 
-    template <std::size_t N> void append_lowercase(std::array<char, N> str)
+    template <std::size_t N>
+    void append_lowercase(std::array<char, N> str)
+        requires(N > 0)
     {
-        for (auto c : str) { buffer[index++] = ddwaf::tolower(c); }
+        append_lowercase(std::string_view{str.data(), N});
     }
 
-    void append(char c) { buffer[index++] = c; }
+    void append(char c) { append(std::string_view{&c, 1}); }
 
     std::pair<char *, std::size_t> move()
     {
@@ -267,8 +292,14 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
         stripped_uri = stripped_uri.substr(0, query_or_frag_idx);
     }
 
-    auto res = generate_fragment("http", string_field{method.value},
-        string_hash_field{stripped_uri}, key_hash_field{*query.value}, key_hash_field{*body.value});
+    ddwaf_object res;
+    ddwaf_object_invalid(&res);
+    try {
+        res = generate_fragment("http", string_field{method.value}, string_hash_field{stripped_uri},
+            key_hash_field{*query.value}, key_hash_field{*body.value});
+    } catch (const std::out_of_range &e) {
+        DDWAF_WARN("Failed to generate http endpoint fingerprint: {}", e.what());
+    }
 
     return {res, object_store::attribute::none};
 }
