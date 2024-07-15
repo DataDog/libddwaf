@@ -16,11 +16,11 @@ namespace ddwaf::matcher {
 
 class exact_match : public base_impl<exact_match> {
 public:
-    using rule_data_type = std::vector<std::pair<std::string_view, uint64_t>>;
+    using data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
     exact_match() = default;
     explicit exact_match(std::vector<std::string> &&data);
-    explicit exact_match(const rule_data_type &data);
+    explicit exact_match(const data_type &data);
     ~exact_match() override = default;
     exact_match(const exact_match &) = default;
     exact_match(exact_match &&) = default;

@@ -156,7 +156,7 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, deadline);
+        auto exclusion = filter->match(store_, cache, ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_rule_exclusion(
@@ -181,7 +181,7 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, deadline);
+        auto exclusion = filter->match(store_, cache, ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_input_exclusion(rule, exclusion->objects);
@@ -203,7 +203,7 @@ std::vector<event> context::eval_rules(
             auto [new_it, res] = collection_cache_.emplace(type, collection_cache{});
             it = new_it;
         }
-        collection.match(events, store_, it->second, policy, ruleset_->dynamic_matchers, deadline);
+        collection.match(events, store_, it->second, policy, ruleset_->rule_matchers, deadline);
     };
 
     // Evaluate user priority collections first

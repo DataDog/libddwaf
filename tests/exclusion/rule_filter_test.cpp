@@ -4,11 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "../test_utils.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "expression.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
-#include "test_utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -42,13 +42,70 @@ TEST(TestRuleFilter, Match)
 
     ddwaf::timer deadline{2s};
 
-    exclusion::rule_filter::excluded_set default_set{{}, true, {}};
+    exclusion::rule_filter::excluded_set default_set{{}, true, {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    auto res = filter.match(store, cache, deadline);
+    auto res = filter.match(store, cache, {}, deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
     EXPECT_FALSE(res.value_or(default_set).ephemeral);
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
+}
+
+TEST(TestRuleFilter, MatchWithDynamicMatcher)
+{
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("http.client_ip");
+    builder.end_condition_with_data<matcher::ip_match>("ip_data");
+
+    auto rule =
+        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
+
+    std::unordered_map<target_index, std::string> addresses;
+    filter.get_addresses(addresses);
+    EXPECT_EQ(addresses.size(), 1);
+    EXPECT_STREQ(addresses.begin()->second.c_str(), "http.client_ip");
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf::object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        ddwaf::exclusion::rule_filter::cache_type cache;
+        auto res = filter.match(store, cache, {}, deadline);
+        EXPECT_FALSE(res.has_value());
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        ddwaf::object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+
+        std::unordered_map<std::string, std::shared_ptr<matcher::base>> matchers{{"ip_data",
+            std::make_shared<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"})}};
+
+        exclusion::rule_filter::excluded_set default_set{{}, true, {}, {}};
+
+        ddwaf::exclusion::rule_filter::cache_type cache;
+        auto res = filter.match(store, cache, matchers, deadline);
+        EXPECT_FALSE(res.value_or(default_set).rules.empty());
+        EXPECT_FALSE(res.value_or(default_set).ephemeral);
+        EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
+    }
 }
 
 TEST(TestRuleFilter, EphemeralMatch)
@@ -78,10 +135,10 @@ TEST(TestRuleFilter, EphemeralMatch)
 
     ddwaf::timer deadline{2s};
 
-    exclusion::rule_filter::excluded_set default_set{{}, false, {}};
+    exclusion::rule_filter::excluded_set default_set{{}, false, {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    auto res = filter.match(store, cache, deadline);
+    auto res = filter.match(store, cache, {}, deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
     EXPECT_TRUE(res.value_or(default_set).ephemeral);
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -108,7 +165,7 @@ TEST(TestRuleFilter, NoMatch)
     ddwaf::timer deadline{2s};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    EXPECT_FALSE(filter.match(store, cache, deadline));
+    EXPECT_FALSE(filter.match(store, cache, {}, deadline));
 }
 
 TEST(TestRuleFilter, ValidateCachedMatch)
@@ -144,7 +201,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 
     {
@@ -158,9 +215,9 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
         ddwaf::timer deadline{2s};
 
-        exclusion::rule_filter::excluded_set default_set{{}, false, {}};
+        exclusion::rule_filter::excluded_set default_set{{}, false, {}, {}};
 
-        auto res = filter.match(store, cache, deadline);
+        auto res = filter.match(store, cache, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
         EXPECT_FALSE(res.value_or(default_set).ephemeral);
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -202,7 +259,7 @@ TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 
     {
@@ -216,9 +273,9 @@ TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
         store.insert(root, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
-        exclusion::rule_filter::excluded_set default_set{{}, false, {}};
+        exclusion::rule_filter::excluded_set default_set{{}, false, {}, {}};
 
-        auto res = filter.match(store, cache, deadline);
+        auto res = filter.match(store, cache, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
         EXPECT_TRUE(res.value_or(default_set).ephemeral);
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -260,7 +317,7 @@ TEST(TestRuleFilter, ValidateEphemeralMatchCache)
         store.insert(root, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 
     {
@@ -274,7 +331,7 @@ TEST(TestRuleFilter, ValidateEphemeralMatchCache)
         store.insert(root, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 }
 
@@ -310,7 +367,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 
     {
@@ -323,7 +380,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline)->rules.empty());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline)->rules.empty());
     }
 }
 
@@ -358,7 +415,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 
     {
@@ -372,7 +429,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 }
 
@@ -409,7 +466,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline)->rules.empty());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline)->rules.empty());
         EXPECT_TRUE(cache.result);
     }
 
@@ -422,7 +479,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 }
 

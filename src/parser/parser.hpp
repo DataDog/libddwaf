@@ -34,13 +34,13 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
     rule::source_type source = rule::source_type::base);
 
-rule_data_container parse_rule_data(parameter::vector &rule_data, base_section_info &info,
-    std::unordered_map<std::string, std::string> &rule_data_ids);
+matcher_container parse_data(parameter::vector &data_array,
+    std::unordered_map<std::string, std::string> &data_ids_to_type, base_section_info &info);
 
 override_spec_container parse_overrides(parameter::vector &override_array, base_section_info &info);
 
-filter_spec_container parse_filters(
-    parameter::vector &filter_array, base_section_info &info, const object_limits &limits);
+filter_spec_container parse_filters(parameter::vector &filter_array, base_section_info &info,
+    std::unordered_map<std::string, std::string> &filter_data_ids, const object_limits &limits);
 
 processor_container parse_processors(
     parameter::vector &processor_array, base_section_info &info, const object_limits &limits);
@@ -51,7 +51,7 @@ std::shared_ptr<action_mapper> parse_actions(
     parameter::vector &actions_array, base_section_info &info);
 
 std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
-    std::unordered_map<std::string, std::string> &data_ids, data_source source,
+    std::unordered_map<std::string, std::string> &data_ids_to_type, data_source source,
     const std::vector<transformer_id> &transformers, address_container &addresses,
     const object_limits &limits);
 
