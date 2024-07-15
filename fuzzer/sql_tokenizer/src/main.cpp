@@ -30,6 +30,9 @@ template <typename T> [[clang::optnone]] void tokenize(std::string_view query)
 {
     T tokenizer(query);
     auto tokens = tokenizer.tokenize();
+    // Force the compiler to not optimize away tokens
+    // NOLINTNEXTLINE(hicpp-no-assembler)
+    asm volatile("" : "+m"(tokens) : : "memory");
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
