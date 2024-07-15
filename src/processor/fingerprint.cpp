@@ -130,7 +130,11 @@ struct string_field : field_generator {
 };
 
 struct unsigned_field : field_generator {
-    explicit unsigned_field(unsigned input) : value(ddwaf::to_string<std::string>(input)) {}
+    template <typename T>
+    explicit unsigned_field(T input)
+        requires std::is_unsigned_v<T>
+        : value(ddwaf::to_string<std::string>(input))
+    {}
     ~unsigned_field() override = default;
     unsigned_field(const unsigned_field &) = default;
     unsigned_field(unsigned_field &&) = default;
@@ -461,7 +465,10 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
         auto [type, index] = get_header_type_and_index(normalized_header);
         if (type == header_type::ip_origin) {
             ip_origin_bitset[index] = '1';
-            if (chosen_header > index) {
+            // Verify not only precedence but also type, as a header of an unexpected
+            // type will be unlikely to be used unless the framework has somehow
+            // broken down the header into constituent IPs
+            if (chosen_header > index && child.type == DDWAF_OBJ_STRING) {
                 chosen_header_value = {
                     child.stringValue, static_cast<std::size_t>(child.nbEntries)};
                 chosen_header = index;

@@ -442,7 +442,6 @@ TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
     ddwaf_object_free(&output);
 }
 
-
 TEST(TestHttpHeaderFingerprint, UserAgent)
 {
     ddwaf_object tmp;
@@ -570,6 +569,174 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
 
     ddwaf_object_free(&headers);
     ddwaf_object_free(&output);
+}
+
+TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_string(&tmp, "192.168.1.1"));
+    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+
+    http_network_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "net-1-1111111111");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+TEST(TestHttpNetworkFingerprint, NoHeaders)
+{
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+
+    http_network_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "net-0-0000000000");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(
+        &headers, "x-forwarded-for", ddwaf_object_string(&tmp, "192.168.1.1,::1,8.7.6.5"));
+    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+
+    http_network_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "net-3-1111111111");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(
+        &headers, "fastly-client-ip", ddwaf_object_string(&tmp, "192.168.1.1,::1,8.7.6.5"));
+    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+
+    http_network_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "net-3-1111111111");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
+{
+    http_network_fingerprint gen{"id", {}, {}, false, true};
+
+    auto get_headers = [](std::size_t begin) {
+        ddwaf_object tmp;
+        ddwaf_object headers;
+        ddwaf_object_map(&headers);
+
+        std::array<std::string, 10> names{"x-forwarded-for", "x-real-ip", "true-client-ip",
+            "x-client-ip", "x-forwarded", "forwarded-for", "x-cluster-client-ip",
+            "fastly-client-ip", "cf-connecting-ip", "cf-connecting-ipv6"};
+
+        std::string value = "::1";
+        for (std::size_t i = 0; i < begin; ++i) { value += ",::1"; }
+
+        for (std::size_t i = begin; i < names.size(); ++i) {
+            ddwaf_object_map_add(
+                &headers, names[i].c_str(), ddwaf_object_string(&tmp, value.c_str()));
+            value += ",::1";
+        }
+
+        return headers;
+    };
+
+    auto match_frag = [&](ddwaf_object headers, const std::string &expected) {
+        ddwaf::timer deadline{2s};
+        auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        std::string_view output_sv{output.stringValue,
+            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        EXPECT_STRV(output_sv, expected.c_str());
+
+        ddwaf_object_free(&headers);
+        ddwaf_object_free(&output);
+    };
+
+    match_frag(get_headers(0), "net-1-1111111111");
+    match_frag(get_headers(1), "net-2-0111111111");
+    match_frag(get_headers(2), "net-3-0011111111");
+    match_frag(get_headers(3), "net-4-0001111111");
+    match_frag(get_headers(4), "net-5-0000111111");
+    match_frag(get_headers(5), "net-6-0000011111");
+    match_frag(get_headers(6), "net-7-0000001111");
+    match_frag(get_headers(7), "net-8-0000000111");
+    match_frag(get_headers(8), "net-9-0000000011");
+    match_frag(get_headers(9), "net-10-0000000001");
 }
 
 } // namespace
