@@ -74,7 +74,7 @@ jobs:
         arch:
           - amd64
           - arm64
-    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-latest' || 'arm-4core-linux' }}
+    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'arm-4core-linux-ubuntu24.04 ' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -119,7 +119,7 @@ jobs:
         arch:
           - amd64
           - arm64
-    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-latest' || 'arm-4core-linux' }}
+    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'arm-4core-linux-ubuntu24.04 ' }}
 
     steps:
       - uses: actions/checkout@v4
