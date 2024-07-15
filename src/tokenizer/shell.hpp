@@ -144,7 +144,8 @@ protected:
         if constexpr (std::is_same_v<T, shell_token_type>) {
             res = (obtained.type == expected);
         }
-        if constexpr (std::is_same_v<T, std::string_view>) {
+        if constexpr (std::is_same_v<T, std::string_view> ||
+                      std::is_constructible_v<std::string_view, T>) {
             res = (obtained.str == expected);
         }
 

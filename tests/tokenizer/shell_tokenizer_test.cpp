@@ -632,6 +632,12 @@ TEST(TestShellTokenizer, CompoundCommands)
             {stt::executable, stt::curly_brace_open, stt::curly_brace_close, stt::control,
                 stt::compound_command_open, stt::executable, stt::control,
                 stt::compound_command_close}},
+        {R"!(echo { }; { echo
+        })!",
+            {stt::executable, stt::curly_brace_open, stt::curly_brace_close, stt::control,
+                stt::compound_command_open, stt::executable, stt::control,
+                stt::compound_command_close}},
+
     };
 
     for (const auto &[input, expected_tokens] : samples) {

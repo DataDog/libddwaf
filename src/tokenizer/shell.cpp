@@ -610,7 +610,7 @@ std::vector<shell_token> shell_tokenizer::tokenize()
             }
         } else if (c == '}') {
             if (current_shell_scope_ == shell_scope::compound_command &&
-                match_last_n_nonws_tokens(";"sv)) {
+                match_last_nonws_token_with_one_of(";"sv, "\n")) {
                 add_token(shell_token_type::compound_command_close);
                 pop_shell_scope();
             } else {
