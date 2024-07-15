@@ -307,6 +307,10 @@ void key_hash_field::operator()(string_buffer &output)
 
 void vector_hash_field::operator()(string_buffer &output)
 {
+    if (value.empty()) {
+        return;
+    }
+
     sha256_hash hasher;
     for (unsigned i = 0; i < value.size(); ++i) {
         hasher << value[i];
@@ -359,7 +363,7 @@ void normalize_header(std::string_view original, std::string &normalized)
     normalized.resize(original.size());
 
     for (std::size_t i = 0; i < original.size(); ++i) {
-        auto c = original[i];
+        const auto c = original[i];
         normalized[i] = c == '_' ? '-' : ddwaf::tolower(c);
     }
 }
@@ -399,10 +403,6 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
 std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_impl(
     const unary_argument<const ddwaf_object *> &headers, ddwaf::timer &deadline) const
 {
-    if (deadline.expired()) {
-        throw ddwaf::timeout_exception();
-    }
-
     std::string known_header_bitset;
     known_header_bitset.resize(standard_headers_length, '0');
 
@@ -410,8 +410,11 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
     std::vector<std::string> unknown_headers;
     std::string normalized_header;
     for (std::size_t i = 0; i < headers.value->nbEntries; ++i) {
-        const auto &child = headers.value->array[i];
+        if (deadline.expired()) {
+            throw ddwaf::timeout_exception();
+        }
 
+        const auto &child = headers.value->array[i];
         std::string_view header{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
@@ -438,10 +441,6 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
 std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_impl(
     const unary_argument<const ddwaf_object *> &headers, ddwaf::timer &deadline) const
 {
-    if (deadline.expired()) {
-        throw ddwaf::timeout_exception();
-    }
-
     std::string ip_origin_bitset;
     ip_origin_bitset.resize(ip_origin_headers_length, '0');
 
@@ -449,6 +448,10 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
     std::string_view chosen_header_value;
     std::string normalized_header;
     for (std::size_t i = 0; i < headers.value->nbEntries; ++i) {
+        if (deadline.expired()) {
+            throw ddwaf::timeout_exception();
+        }
+
         const auto &child = headers.value->array[i];
 
         std::string_view header{
