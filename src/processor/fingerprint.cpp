@@ -31,8 +31,6 @@ struct string_buffer {
     string_buffer &operator=(const string_buffer &) = delete;
     string_buffer &operator=(string_buffer &&) = delete;
 
-    char &operator[](std::size_t idx) const { return buffer[idx]; }
-
     template <std::size_t N>
     [[nodiscard]] std::span<char, N> subspan()
         requires(N > 0)
@@ -154,14 +152,10 @@ struct key_hash_field : field_generator {
     ddwaf_object value;
 };
 
-template <typename T, typename... Rest>
-std::size_t generate_fragment_length(T &generator, Rest... rest)
+template <typename... Generators> std::size_t generate_fragment_length(Generators &...generators)
 {
-    if constexpr (sizeof...(rest) > 0) {
-        return generator.length() + 1 + generate_fragment_length(rest...);
-    } else {
-        return generator.length();
-    }
+    static_assert(sizeof...(generators) > 0, "At least one generator is required");
+    return (generators.length() + ...) + sizeof...(generators) - 1;
 }
 
 template <typename T, typename... Rest>
@@ -174,8 +168,8 @@ void generate_fragment_field(string_buffer &buffer, T &generator, Rest... rest)
     }
 }
 
-template <typename... Args>
-ddwaf_object generate_fragment(std::string_view header, Args... generators)
+template <typename... Generators>
+ddwaf_object generate_fragment(std::string_view header, Generators... generators)
 {
     std::size_t total_length = header.size() + 1 + generate_fragment_length(generators...);
 
