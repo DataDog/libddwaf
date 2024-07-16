@@ -15,7 +15,6 @@
 namespace ddwaf::parser::v2 {
 
 namespace {
-template <typename T>
 std::vector<processor_mapping> parse_processor_mappings(
     const parameter::vector &root, address_container &addresses, const auto &param_names)
 {
