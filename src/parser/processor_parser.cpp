@@ -17,7 +17,7 @@ namespace ddwaf::parser::v2 {
 namespace {
 template <typename T>
 std::vector<processor_mapping> parse_processor_mappings(
-    const parameter::vector &root, address_container &addresses)
+    const parameter::vector &root, address_container &addresses, const auto &param_names)
 {
     if (root.empty()) {
         throw ddwaf::parsing_error("empty mappings");
@@ -28,7 +28,7 @@ std::vector<processor_mapping> parse_processor_mappings(
         auto mapping = static_cast<parameter::map>(node);
 
         std::vector<processor_parameter> parameters;
-        for (const auto &param : T::param_names) {
+        for (const auto &param : param_names) {
             // TODO support n:1 mappings and key paths
             auto inputs = at<parameter::vector>(mapping, param);
             if (inputs.empty()) {
@@ -39,11 +39,9 @@ std::vector<processor_mapping> parse_processor_mappings(
             auto input_address = at<std::string>(input, "address");
 
             addresses.optional.emplace(input_address);
-
             parameters.emplace_back(processor_parameter{
                 {processor_target{get_target_index(input_address), std::move(input_address), {}}}});
         }
-
         auto output = at<std::string>(mapping, "output");
         mappings.emplace_back(processor_mapping{
             std::move(parameters), {get_target_index(output), std::move(output), {}}});
@@ -101,16 +99,17 @@ processor_container parse_processors(
             auto mappings_vec = at<parameter::vector>(params, "mappings");
             std::vector<processor_mapping> mappings;
             if (type == processor_type::extract_schema) {
-                mappings = parse_processor_mappings<extract_schema>(mappings_vec, addresses);
+                mappings =
+                    parse_processor_mappings(mappings_vec, addresses, extract_schema::param_names);
             } else if (type == processor_type::http_endpoint_fingerprint) {
-                mappings =
-                    parse_processor_mappings<http_endpoint_fingerprint>(mappings_vec, addresses);
+                mappings = parse_processor_mappings(
+                    mappings_vec, addresses, http_endpoint_fingerprint::param_names);
             } else if (type == processor_type::http_header_fingerprint) {
-                mappings =
-                    parse_processor_mappings<http_header_fingerprint>(mappings_vec, addresses);
+                mappings = parse_processor_mappings(
+                    mappings_vec, addresses, http_header_fingerprint::param_names);
             } else {
-                mappings =
-                    parse_processor_mappings<http_network_fingerprint>(mappings_vec, addresses);
+                mappings = parse_processor_mappings(
+                    mappings_vec, addresses, http_network_fingerprint::param_names);
             }
 
             std::vector<reference_spec> scanners;

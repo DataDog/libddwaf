@@ -224,6 +224,7 @@ TEST(TestFingerprintIntegration, Processor)
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
+
     EXPECT_EQ(size, 9);
     std::unordered_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
