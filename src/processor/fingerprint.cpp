@@ -167,7 +167,10 @@ struct key_hash_field : field_generator {
     key_hash_field &operator=(const key_hash_field &) = default;
     key_hash_field &operator=(key_hash_field &&) = default;
 
-    std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? 8 : 0; }
+    std::size_t length() override
+    {
+        return value.type == DDWAF_OBJ_MAP && value.nbEntries > 0 ? 8 : 0;
+    }
     void operator()(string_buffer &output) override;
 
     ddwaf_object value;
@@ -186,6 +189,23 @@ struct vector_hash_field : field_generator {
 
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const std::vector<std::string> &value;
+};
+
+struct kv_hash_fields : field_generator {
+    explicit kv_hash_fields(const ddwaf_object &input) : value(input) {}
+    ~kv_hash_fields() override = default;
+    kv_hash_fields(const kv_hash_fields &) = default;
+    kv_hash_fields(kv_hash_fields &&) = default;
+    kv_hash_fields &operator=(const kv_hash_fields &) = default;
+    kv_hash_fields &operator=(kv_hash_fields &&) = default;
+
+    std::size_t length() override
+    {
+        return value.type == DDWAF_OBJ_MAP && value.nbEntries > 0 ? (8 + 1 + 8) : 1;
+    }
+    void operator()(string_buffer &output) override;
+
+    ddwaf_object value;
 };
 
 template <typename... Generators> std::size_t generate_fragment_length(Generators &...generators)
@@ -275,7 +295,7 @@ void string_hash_field::operator()(string_buffer &output)
 
 void key_hash_field::operator()(string_buffer &output)
 {
-    if (value.type != DDWAF_OBJ_MAP or value.nbEntries == 0) {
+    if (value.type != DDWAF_OBJ_MAP || value.nbEntries == 0) {
         return;
     }
 
@@ -317,6 +337,58 @@ void vector_hash_field::operator()(string_buffer &output)
         }
     }
     hasher.write_digest(output.subspan<8>());
+}
+
+void kv_hash_fields::operator()(string_buffer &output)
+{
+    if (value.nbEntries == 0) {
+        output.append('-');
+        return;
+    }
+
+    std::vector<std::pair<std::string_view, std::string_view>> kv_sorted;
+    kv_sorted.reserve(value.nbEntries);
+
+    for (std::size_t i = 0; i < value.nbEntries; ++i) {
+        const auto &child = value.array[i];
+
+        // TODO track max length and reserve normalized buffer
+        std::string_view key{
+            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+
+        std::string_view val;
+        if (child.type == DDWAF_OBJ_STRING) {
+            val = std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+        }
+
+        kv_sorted.emplace_back(key, val);
+    }
+
+    std::sort(kv_sorted.begin(), kv_sorted.end(),
+        [](auto &left, auto &right) { return str_casei_cmp(left.first, right.first); });
+
+    sha256_hash key_hasher;
+    sha256_hash val_hasher;
+
+    std::string normalized;
+    for (unsigned i = 0; i < kv_sorted.size(); ++i) {
+        auto [key, value] = kv_sorted[i];
+
+        bool add_comma = ((i + 1) < kv_sorted.size());
+
+        normalize_string(key, normalized, add_comma);
+        key_hasher << normalized;
+
+        // TODO normalize value
+        val_hasher << value;
+        if (add_comma) {
+            val_hasher << ",";
+        }
+    }
+
+    key_hasher.write_digest(output.subspan<8>());
+    output.append('-');
+    val_hasher.write_digest(output.subspan<8>());
 }
 
 enum class header_type { unknown, standard, ip_origin, user_agent, datadog };
@@ -479,6 +551,21 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
 
     auto res = generate_fragment("net", unsigned_field{ip_count}, string_field{ip_origin_bitset});
 
+    return {res, object_store::attribute::none};
+}
+
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+std::pair<ddwaf_object, object_store::attribute> session_fingerprint::eval_impl(
+    const unary_argument<const ddwaf_object *> &cookies,
+    const unary_argument<std::string_view> &session_id,
+    const unary_argument<std::string_view> &user_id, ddwaf::timer &deadline) const
+{
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
+    auto res = generate_fragment("ssn", string_hash_field{user_id.value},
+        kv_hash_fields{*cookies.value}, string_hash_field{session_id.value});
     return {res, object_store::attribute::none};
 }
 
