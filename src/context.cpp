@@ -104,7 +104,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
 
             if (should_eval_rules) {
                 events = eval_rules(policy, deadline);
-                if (events.empty()) {
+                if (!events.empty()) {
                     set_context_event_address(store_);
                 }
             }
