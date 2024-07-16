@@ -8,13 +8,15 @@
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "processor/base.hpp"
+#include "processor/extract_schema.hpp"
+#include "processor/fingerprint.hpp"
 #include <vector>
 
 namespace ddwaf::parser::v2 {
 
 namespace {
 std::vector<processor_mapping> parse_processor_mappings(
-    const parameter::vector &root, address_container &addresses)
+    const parameter::vector &root, address_container &addresses, const auto &param_names)
 {
     if (root.empty()) {
         throw ddwaf::parsing_error("empty mappings");
@@ -24,22 +26,26 @@ std::vector<processor_mapping> parse_processor_mappings(
     for (const auto &node : root) {
         auto mapping = static_cast<parameter::map>(node);
 
-        // TODO support n:1 mappings and key paths
-        auto inputs = at<parameter::vector>(mapping, "inputs");
-        if (inputs.empty()) {
-            throw ddwaf::parsing_error("empty processor input mapping");
+        std::vector<processor_parameter> parameters;
+        for (const auto &param : param_names) {
+            // TODO support n:1 mappings and key paths
+            auto inputs = at<parameter::vector>(mapping, param);
+            if (inputs.empty()) {
+                throw ddwaf::parsing_error("empty processor input mapping");
+            }
+
+            auto input = static_cast<parameter::map>(inputs[0]);
+            auto input_address = at<std::string>(input, "address");
+
+            addresses.optional.emplace(input_address);
+
+            parameters.emplace_back(processor_parameter{
+                {processor_target{get_target_index(input_address), std::move(input_address), {}}}});
         }
 
-        auto input = static_cast<parameter::map>(inputs[0]);
-        auto input_address = at<std::string>(input, "address");
         auto output = at<std::string>(mapping, "output");
-
-        addresses.optional.emplace(input_address);
-
         mappings.emplace_back(processor_mapping{
-            {processor_parameter{
-                {processor_target{get_target_index(input_address), std::move(input_address), {}}}}},
-            {get_target_index(output), std::move(output), {}}});
+            std::move(parameters), {get_target_index(output), std::move(output), {}}});
     }
 
     return mappings;
@@ -71,6 +77,20 @@ processor_container parse_processors(
             auto generator_id = at<std::string>(node, "generator");
             if (generator_id == "extract_schema") {
                 type = processor_type::extract_schema;
+            } else if (generator_id == "http_endpoint_fingerprint") {
+                type = processor_type::http_endpoint_fingerprint;
+            } else if (generator_id == "http_network_fingerprint") {
+                type = processor_type::http_network_fingerprint;
+                // Skip for now
+                continue;
+            } else if (generator_id == "http_header_fingerprint") {
+                type = processor_type::http_header_fingerprint;
+                // Skip for now
+                continue;
+            } else if (generator_id == "session_fingerprint") {
+                type = processor_type::session_fingerprint;
+                // Skip for now
+                continue;
             } else {
                 DDWAF_WARN("Unknown generator: {}", generator_id);
                 info.add_failed(id, "unknown generator '" + generator_id + "'");
@@ -82,7 +102,14 @@ processor_container parse_processors(
 
             auto params = at<parameter::map>(node, "parameters");
             auto mappings_vec = at<parameter::vector>(params, "mappings");
-            auto mappings = parse_processor_mappings(mappings_vec, addresses);
+            std::vector<processor_mapping> mappings;
+            if (type == processor_type::extract_schema) {
+                mappings =
+                    parse_processor_mappings(mappings_vec, addresses, extract_schema::param_names);
+            } else {
+                mappings = parse_processor_mappings(
+                    mappings_vec, addresses, http_endpoint_fingerprint::param_names);
+            }
 
             std::vector<reference_spec> scanners;
             auto scanners_ref_array = at<parameter::vector>(params, "scanners", {});

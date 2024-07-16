@@ -15,6 +15,9 @@
 //
 
 #include "sha256.hpp"
+#include <iostream>
+#include <ostream>
+#include <span>
 
 namespace ddwaf {
 namespace {
@@ -84,9 +87,6 @@ constexpr std::array<uint32_t, 64> K256 = {0x428a2f98UL, 0x71374491UL, 0xb5c0fbc
     0x391c0cb3UL, 0x4ed8aa4aUL, 0x5b9cca4fUL, 0x682e6ff3UL, 0x748f82eeUL, 0x78a5636fUL,
     0x84c87814UL, 0x8cc70208UL, 0x90befffaUL, 0xa4506cebUL, 0xbef9a3f7UL, 0xc67178f2UL};
 
-// Length of the string representation of the digest
-constexpr std::size_t sha_digest_length = 64;
-
 } // namespace
 
 sha256_hash &sha256_hash::operator<<(std::string_view str)
@@ -145,7 +145,22 @@ sha256_hash &sha256_hash::operator<<(std::string_view str)
     return *this;
 }
 
+template <std::size_t DigestLength>
 std::string sha256_hash::digest()
+    requires(DigestLength % 8 == 0 && DigestLength <= 64)
+{
+    std::string final_digest;
+    final_digest.resize(DigestLength, 0);
+    write_digest(std::span<char, DigestLength>{final_digest});
+    return final_digest;
+}
+
+template std::string sha256_hash::digest<64>();
+template std::string sha256_hash::digest<8>();
+
+template <std::size_t DigestLength>
+void sha256_hash::write_digest(std::span<char, DigestLength> output)
+    requires(DigestLength % 8 == 0 && DigestLength <= 64)
 {
     auto *p = buffer.data();
     size_t n = num;
@@ -178,24 +193,24 @@ std::string sha256_hash::digest()
     num = 0;
     memset(p, 0, block_size);
 
-    std::array<char, 64> final_digest{0};
-    for (unsigned int nn = 0; nn < sha_digest_length; nn += 8) {
+    for (unsigned int nn = 0; nn < DigestLength; nn += 8) {
         uint32_t ll = hash[nn >> 3];
-        final_digest[nn + 0] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 28) & 0x0f));
-        final_digest[nn + 1] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 24) & 0x0f));
-        final_digest[nn + 2] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 20) & 0x0f));
-        final_digest[nn + 3] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 16) & 0x0f));
-        final_digest[nn + 4] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 12) & 0x0f));
-        final_digest[nn + 5] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 8) & 0x0f));
-        final_digest[nn + 6] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 4) & 0x0f));
-        final_digest[nn + 7] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>(ll & 0x0f));
+        output[nn + 0] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 28) & 0x0f));
+        output[nn + 1] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 24) & 0x0f));
+        output[nn + 2] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 20) & 0x0f));
+        output[nn + 3] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 16) & 0x0f));
+        output[nn + 4] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 12) & 0x0f));
+        output[nn + 5] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 8) & 0x0f));
+        output[nn + 6] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 4) & 0x0f));
+        output[nn + 7] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>(ll & 0x0f));
     }
 
     // Reset the hasher and return
     reset();
-
-    return std::string{final_digest.data(), 64};
 }
+
+template void sha256_hash::write_digest<8>(std::span<char, 8> output);
+template void sha256_hash::write_digest<64>(std::span<char, 64> output);
 
 void sha256_hash::sha_block_data_order(const uint8_t *data, size_t len)
 {
