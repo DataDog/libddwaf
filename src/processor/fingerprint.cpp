@@ -10,6 +10,7 @@
 #include "transformer/lowercase.hpp"
 #include "utils.hpp"
 
+#include <iostream>
 #include <stdexcept>
 
 namespace ddwaf {
@@ -439,9 +440,11 @@ void kv_hash_fields::operator()(string_buffer &output)
         bool trailing_comma = ((i + 1) < kv_sorted.size());
 
         normalize_key(key, normalized, trailing_comma);
+        std::cout << "Hashing key " << normalized << '\n';
         key_hasher << normalized;
 
         normalize_value(val, normalized, trailing_comma);
+        std::cout << "Hashing value " << normalized << '\n';
         val_hasher << normalized;
     }
 
