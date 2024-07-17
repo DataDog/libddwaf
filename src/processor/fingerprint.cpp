@@ -425,7 +425,7 @@ void kv_hash_fields::operator()(string_buffer &output)
     }
 
     std::sort(kv_sorted.begin(), kv_sorted.end(),
-        [](auto &left, auto &right) { return str_casei_cmp(left.first, right.first); });
+        [](auto &left, auto &right) { return left.first < right.first; });
 
     sha256_hash key_hasher;
     sha256_hash val_hasher;
