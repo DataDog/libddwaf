@@ -10,7 +10,6 @@
 #include "transformer/lowercase.hpp"
 #include "utils.hpp"
 
-#include <iostream>
 #include <stdexcept>
 
 namespace ddwaf {
@@ -254,7 +253,7 @@ bool str_casei_cmp(std::string_view left, std::string_view right)
             return lc < rc;
         }
     }
-    return left.size() <= right.size();
+    return left.size() < right.size();
 }
 
 // Default key normalization implies:
@@ -425,7 +424,7 @@ void kv_hash_fields::operator()(string_buffer &output)
     }
 
     std::sort(kv_sorted.begin(), kv_sorted.end(),
-        [](auto &left, auto &right) { return left.first < right.first; });
+        [](auto &left, auto &right) { return str_casei_cmp(left.first, right.first); });
 
     sha256_hash key_hasher;
     sha256_hash val_hasher;
@@ -440,11 +439,9 @@ void kv_hash_fields::operator()(string_buffer &output)
         bool trailing_comma = ((i + 1) < kv_sorted.size());
 
         normalize_key(key, normalized, trailing_comma);
-        std::cout << "Hashing key " << normalized << '\n';
         key_hasher << normalized;
 
         normalize_value(val, normalized, trailing_comma);
-        std::cout << "Hashing value " << normalized << '\n';
         val_hasher << normalized;
     }
 
