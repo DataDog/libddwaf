@@ -1,0 +1,11 @@
+{
+  name: "Basic run with exists operator and no match",
+  runs: [
+    {
+      persistent-input: {
+        rule2-input: "something"
+      },
+      code: ok
+    }
+  ]
+}

@@ -862,4 +862,81 @@ TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
     ddwaf_destroy(handle);
 }
 
+TEST(TestContextIntegration, WafContextEventAddress)
+{
+    auto rule = read_json_file("context_event_address.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_object tmp;
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+
+        ddwaf_object body = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&map, "server.request.body", &body);
+
+        ddwaf_object query = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&map, "server.request.query", &query);
+
+        ddwaf_object_map_add(
+            &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
+        ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
+
+        ddwaf_object_map_add(&map, "waf.trigger", ddwaf_object_string(&tmp, "irrelevant"));
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+
+        ddwaf_object body = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&map, "server.request.body", &body);
+
+        ddwaf_object query = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&map, "server.request.query", &query);
+
+        ddwaf_object_map_add(
+            &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
+        ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
+
+        ddwaf_object_map_add(&map, "waf.trigger", ddwaf_object_string(&tmp, "rule"));
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        auto json = test::object_to_json(out.derivatives);
+        EXPECT_STR(
+            json, R"({"_dd.appsec.fp.http.endpoint":"http-put-729d56c3-2c70e12b-2c70e12b"})");
+
+        ddwaf_result_free(&out);
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_destroy(handle);
+}
+
 } // namespace
