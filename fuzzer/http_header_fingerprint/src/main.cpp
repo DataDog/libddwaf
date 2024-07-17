@@ -14,6 +14,11 @@ using namespace std::literals;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
+    static std::array<std::string_view, 17> headers{"referer", "connection", "accept-encoding",
+        "content-encoding", "cache-control", "accept-charset", "content-type", "accept-language",
+        "x-forwarded-for", "x-real-ip", "x-client-ip", "forwarded-for", "x-cluster-client-ip",
+        "fastly-client-ip", "cf-connecting-ip", "cf-connecting-ipv6", "user-agent"};
+
     random_buffer buffer{bytes, size};
 
     ddwaf_object tmp;
@@ -22,9 +27,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf_object_map(&header);
     auto header_size = buffer.get<uint8_t>();
     for (uint8_t i = 0; i < header_size; ++i) {
-        auto key = buffer.get<std::string_view>();
         auto value = buffer.get<std::string_view>();
 
+        std::string_view key;
+        if (buffer.get<bool>()) { // Known header
+            key = headers[buffer.get<uint8_t>() % headers.size()];
+        } else {
+            key = buffer.get<std::string_view>();
+        }
         ddwaf_object_map_addl(&header, key.data(), key.size(),
             ddwaf_object_stringl(&tmp, value.data(), value.size()));
     }

@@ -14,7 +14,7 @@ public:
 
     template <typename T> T get()
     {
-        if ((index_ + sizeof(T)) >= size_) {
+        if ((index_ + sizeof(T)) > size_) {
             return {};
         }
 
@@ -24,14 +24,21 @@ public:
         return *value;
     }
 
-    template <> std::string_view get()
+    template <> bool get()
     {
-        if ((index_ + sizeof(uint16_t)) >= size_) {
-            return "";
+        if (index_ >= size_) {
+            return false;
         }
 
-        auto size = std::min(static_cast<size_t>(get<uint16_t>()) % 4096, size_ - index_);
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        bool value = bytes_[index_] > 0;
+        index_ += 2;
+        return value;
+    }
 
+    template <> std::string_view get()
+    {
+        auto size = std::min(static_cast<size_t>(get<uint16_t>()) % 4096, size_ - index_);
         if (size == 0) {
             return "";
         }
