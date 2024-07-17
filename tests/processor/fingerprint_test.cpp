@@ -739,4 +739,172 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
     match_frag(get_headers(9), "net-10-0000000001");
 }
 
+TEST(TestSessionFingerprint, UserOnly)
+{
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+
+    session_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl(
+        {{}, {}, false, &cookies}, {{}, {}, false, {}}, {{}, {}, false, "admin"}, deadline);
+
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "ssn-8c6976e5---");
+
+    ddwaf_object_free(&cookies);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestSessionFingerprint, SessionOnly)
+{
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+
+    session_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl(
+        {{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"}, {{}, {}, false, {}}, deadline);
+
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "ssn----269500d3");
+
+    ddwaf_object_free(&cookies);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestSessionFingerprint, CookiesOnly)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+    ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert"));
+    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB"));
+    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, "yes"));
+    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
+    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+
+    session_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl(
+        {{}, {}, false, &cookies}, {{}, {}, false, {}}, {{}, {}, false, {}}, deadline);
+
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "ssn--df6143bc-60ba1602-");
+
+    ddwaf_object_free(&cookies);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestSessionFingerprint, UserCookieAndSession)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+    ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert"));
+    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB"));
+    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, "yes"));
+    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
+    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+
+    session_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"},
+        {{}, {}, false, "admin"}, deadline);
+
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
+
+    ddwaf_object_free(&cookies);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestSessionFingerprint, CookieKeysNormalization)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+    ddwaf_object_map_add(&cookies, "nAmE", ddwaf_object_string(&tmp, "albert"));
+    ddwaf_object_map_add(&cookies, "THEME", ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_map_add(&cookies, "language,ID", ddwaf_object_string(&tmp, "en-GB"));
+    ddwaf_object_map_add(&cookies, "tra,cKing,ID", ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_map_add(&cookies, "Gdpr_consent", ddwaf_object_string(&tmp, "yes"));
+    ddwaf_object_map_add(&cookies, "SESSION_ID", ddwaf_object_string(&tmp, "ansd0182u2n"));
+    ddwaf_object_map_add(&cookies, "last_visiT", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+
+    session_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"},
+        {{}, {}, false, "admin"}, deadline);
+
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "ssn-8c6976e5-424e7e09-60ba1602-269500d3");
+
+    ddwaf_object_free(&cookies);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestSessionFingerprint, CookieValuessNormalization)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+    ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert,martinez"));
+    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB,en-US"));
+    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, ",yes"));
+    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n,"));
+    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+
+    session_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"},
+        {{}, {}, false, "admin"}, deadline);
+
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-64f82cf7-269500d3");
+
+    ddwaf_object_free(&cookies);
+    ddwaf_object_free(&output);
+}
+
 } // namespace

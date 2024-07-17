@@ -167,7 +167,10 @@ struct key_hash_field : field_generator {
     key_hash_field &operator=(const key_hash_field &) = default;
     key_hash_field &operator=(key_hash_field &&) = default;
 
-    std::size_t length() override { return value.type == DDWAF_OBJ_MAP ? 8 : 0; }
+    std::size_t length() override
+    {
+        return value.type == DDWAF_OBJ_MAP && value.nbEntries > 0 ? 8 : 0;
+    }
     void operator()(string_buffer &output) override;
 
     ddwaf_object value;
@@ -186,6 +189,23 @@ struct vector_hash_field : field_generator {
 
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const std::vector<std::string> &value;
+};
+
+struct kv_hash_fields : field_generator {
+    explicit kv_hash_fields(const ddwaf_object &input) : value(input) {}
+    ~kv_hash_fields() override = default;
+    kv_hash_fields(const kv_hash_fields &) = default;
+    kv_hash_fields(kv_hash_fields &&) = default;
+    kv_hash_fields &operator=(const kv_hash_fields &) = default;
+    kv_hash_fields &operator=(kv_hash_fields &&) = default;
+
+    std::size_t length() override
+    {
+        return value.type == DDWAF_OBJ_MAP && value.nbEntries > 0 ? (8 + 1 + 8) : 1;
+    }
+    void operator()(string_buffer &output) override;
+
+    ddwaf_object value;
 };
 
 template <typename... Generators> std::size_t generate_fragment_length(Generators &...generators)
@@ -233,10 +253,14 @@ bool str_casei_cmp(std::string_view left, std::string_view right)
             return lc < rc;
         }
     }
-    return left.size() <= right.size();
+    return left.size() < right.size();
 }
 
-void normalize_string(std::string_view key, std::string &buffer, bool trailing_separator)
+// Default key normalization implies:
+// - Lowercasing the string
+// - Escaping commas
+// - Adding trailing commas
+void normalize_key(std::string_view key, std::string &buffer, bool trailing_separator)
 {
     buffer.clear();
 
@@ -250,6 +274,48 @@ void normalize_string(std::string_view key, std::string &buffer, bool trailing_s
             buffer.append(R"(\,)");
         } else {
             buffer.append(1, ddwaf::tolower(c));
+        }
+    }
+
+    if (trailing_separator) {
+        buffer.append(1, ',');
+    }
+}
+
+// Header normalization implies:
+// - Lowercasing the header
+// - Replacing '_' with '-'
+void normalize_header(std::string_view original, std::string &buffer)
+{
+    buffer.resize(original.size());
+
+    for (std::size_t i = 0; i < original.size(); ++i) {
+        const auto c = original[i];
+        buffer[i] = c == '_' ? '-' : ddwaf::tolower(c);
+    }
+}
+
+// Value (as opposed to key) normalisation only requires escaping commas
+void normalize_value(std::string_view key, std::string &buffer, bool trailing_separator)
+{
+    buffer.clear();
+
+    if (buffer.capacity() < key.size()) {
+        // Add space for the extra comma, just in case
+        buffer.reserve(key.size() + 1);
+    }
+
+    for (std::size_t i = 0; i < key.size(); ++i) {
+        auto comma_idx = key.find(',', i);
+        if (comma_idx != std::string_view::npos) {
+            if (comma_idx != i) {
+                buffer.append(key.substr(i, comma_idx - i));
+            }
+            buffer.append(R"(\,)");
+            i = comma_idx;
+        } else {
+            buffer.append(key.substr(i));
+            break;
         }
     }
 
@@ -275,18 +341,22 @@ void string_hash_field::operator()(string_buffer &output)
 
 void key_hash_field::operator()(string_buffer &output)
 {
-    if (value.type != DDWAF_OBJ_MAP or value.nbEntries == 0) {
+    if (value.type != DDWAF_OBJ_MAP || value.nbEntries == 0) {
         return;
     }
 
     std::vector<std::string_view> keys;
     keys.reserve(value.nbEntries);
 
+    std::size_t max_string_size = 0;
     for (unsigned i = 0; i < value.nbEntries; ++i) {
         const auto &child = value.array[i];
 
         std::string_view key{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+        if (max_string_size > key.size()) {
+            max_string_size = key.size();
+        }
 
         keys.emplace_back(key);
     }
@@ -295,8 +365,12 @@ void key_hash_field::operator()(string_buffer &output)
 
     sha256_hash hasher;
     std::string normalized;
+    // By reserving the largest possible size, it should reduce reallocations
+    // We also add +1 to account for the trailing comma
+    normalized.reserve(max_string_size + 1);
     for (unsigned i = 0; i < keys.size(); ++i) {
-        normalize_string(keys[i], normalized, (i + 1) < keys.size());
+        bool trailing_comma = ((i + 1) < keys.size());
+        normalize_key(keys[i], normalized, trailing_comma);
         hasher << normalized;
     }
 
@@ -317,6 +391,63 @@ void vector_hash_field::operator()(string_buffer &output)
         }
     }
     hasher.write_digest(output.subspan<8>());
+}
+
+void kv_hash_fields::operator()(string_buffer &output)
+{
+    if (value.nbEntries == 0) {
+        output.append('-');
+        return;
+    }
+
+    std::vector<std::pair<std::string_view, std::string_view>> kv_sorted;
+    kv_sorted.reserve(value.nbEntries);
+
+    std::size_t max_string_size = 0;
+    for (std::size_t i = 0; i < value.nbEntries; ++i) {
+        const auto &child = value.array[i];
+
+        std::string_view key{
+            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+
+        std::string_view val;
+        if (child.type == DDWAF_OBJ_STRING) {
+            val = std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+        }
+
+        auto larger_size = std::max(key.size(), val.size());
+        if (max_string_size < larger_size) {
+            max_string_size = larger_size;
+        }
+
+        kv_sorted.emplace_back(key, val);
+    }
+
+    std::sort(kv_sorted.begin(), kv_sorted.end(),
+        [](auto &left, auto &right) { return str_casei_cmp(left.first, right.first); });
+
+    sha256_hash key_hasher;
+    sha256_hash val_hasher;
+
+    std::string normalized;
+    // By reserving the largest possible size, it should reduce reallocations
+    // We also add +1 to account for the trailing comma
+    normalized.reserve(max_string_size + 1);
+    for (unsigned i = 0; i < kv_sorted.size(); ++i) {
+        auto [key, val] = kv_sorted[i];
+
+        bool trailing_comma = ((i + 1) < kv_sorted.size());
+
+        normalize_key(key, normalized, trailing_comma);
+        key_hasher << normalized;
+
+        normalize_value(val, normalized, trailing_comma);
+        val_hasher << normalized;
+    }
+
+    key_hasher.write_digest(output.subspan<8>());
+    output.append('-');
+    val_hasher.write_digest(output.subspan<8>());
 }
 
 enum class header_type { unknown, standard, ip_origin, user_agent, datadog };
@@ -353,17 +484,6 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
         return {header_type::unknown, 0};
     }
     return it->second;
-}
-
-// "normalized" is a preallocated std::string, to avoid unnecessary allocations
-void normalize_header(std::string_view original, std::string &normalized)
-{
-    normalized.resize(original.size());
-
-    for (std::size_t i = 0; i < original.size(); ++i) {
-        const auto c = original[i];
-        normalized[i] = c == '_' ? '-' : ddwaf::tolower(c);
-    }
 }
 
 } // namespace
@@ -479,6 +599,21 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
 
     auto res = generate_fragment("net", unsigned_field{ip_count}, string_field{ip_origin_bitset});
 
+    return {res, object_store::attribute::none};
+}
+
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+std::pair<ddwaf_object, object_store::attribute> session_fingerprint::eval_impl(
+    const unary_argument<const ddwaf_object *> &cookies,
+    const unary_argument<std::string_view> &session_id,
+    const unary_argument<std::string_view> &user_id, ddwaf::timer &deadline) const
+{
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
+    auto res = generate_fragment("ssn", string_hash_field{user_id.value},
+        kv_hash_fields{*cookies.value}, string_hash_field{session_id.value});
     return {res, object_store::attribute::none};
 }
 
