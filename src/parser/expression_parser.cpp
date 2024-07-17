@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "condition/exists.hpp"
 #include "condition/lfi_detector.hpp"
 #include "condition/scalar_condition.hpp"
 #include "condition/shi_detector.hpp"
@@ -114,6 +115,11 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
             auto arguments =
                 parse_arguments<shi_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<shi_detector>(std::move(arguments), limits));
+        } else if (operator_name == "exists") {
+            auto arguments =
+                parse_arguments<exists_condition>(params, source, transformers, addresses, limits);
+            conditions.emplace_back(
+                std::make_unique<exists_condition>(std::move(arguments), limits));
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 
