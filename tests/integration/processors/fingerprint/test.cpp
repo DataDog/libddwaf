@@ -21,13 +21,16 @@ TEST(TestFingerprintIntegration, Postprocessor)
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
-    EXPECT_EQ(size, 6);
+    EXPECT_EQ(size, 9);
     std::unordered_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.uri.raw"));
     EXPECT_TRUE(address_set.contains("server.request.method"));
     EXPECT_TRUE(address_set.contains("server.request.query"));
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
+    EXPECT_TRUE(address_set.contains("server.request.cookies"));
+    EXPECT_TRUE(address_set.contains("usr.id"));
+    EXPECT_TRUE(address_set.contains("usr.session_id"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
     ddwaf_context context = ddwaf_context_init(handle);
@@ -76,6 +79,20 @@ TEST(TestFingerprintIntegration, Postprocessor)
 
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+    ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert"));
+    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB"));
+    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, "yes"));
+    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
+    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+
+    ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
+    ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
+
     ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
@@ -83,12 +100,13 @@ TEST(TestFingerprintIntegration, Postprocessor)
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
     EXPECT_FALSE(out.timeout);
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 3);
+    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 4);
 
     auto derivatives = test::object_to_map(out.derivatives);
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-2c70e12b");
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.header"], "hdr-1111111111-a441b15f-0-");
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.network"], "net-1-1111111111");
+    EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -105,17 +123,21 @@ TEST(TestFingerprintIntegration, Preprocessor)
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
-    EXPECT_EQ(size, 9);
+    EXPECT_EQ(size, 13);
     std::unordered_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.uri.raw"));
     EXPECT_TRUE(address_set.contains("server.request.method"));
     EXPECT_TRUE(address_set.contains("server.request.query"));
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
+    EXPECT_TRUE(address_set.contains("server.request.cookies"));
+    EXPECT_TRUE(address_set.contains("usr.id"));
+    EXPECT_TRUE(address_set.contains("usr.session_id"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.endpoint"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.header"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.network"));
+    EXPECT_TRUE(address_set.contains("_dd.appsec.fp.session"));
 
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
@@ -162,6 +184,20 @@ TEST(TestFingerprintIntegration, Preprocessor)
     ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
 
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
+
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+    ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert"));
+    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB"));
+    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, "yes"));
+    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
+    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+
+    ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
+    ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
     ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
@@ -203,9 +239,18 @@ TEST(TestFingerprintIntegration, Preprocessor)
                     .value = "net-1-1111111111",
                     .address = "_dd.appsec.fp.http.network",
                     .path = {},
-                }}}}}
-
-    );
+                }}}}},
+        {.id = "rule4",
+            .name = "rule4",
+            .tags = {{"type", "flow4"}, {"category", "category4"}},
+            .matches = {{.op = "match_regex",
+                .op_value = ".*",
+                .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                .args = {{
+                    .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                    .address = "_dd.appsec.fp.session",
+                    .path = {},
+                }}}}}, );
 
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
 
@@ -225,17 +270,21 @@ TEST(TestFingerprintIntegration, Processor)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
 
-    EXPECT_EQ(size, 9);
+    EXPECT_EQ(size, 13);
     std::unordered_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.uri.raw"));
     EXPECT_TRUE(address_set.contains("server.request.method"));
     EXPECT_TRUE(address_set.contains("server.request.query"));
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
+    EXPECT_TRUE(address_set.contains("server.request.cookies"));
+    EXPECT_TRUE(address_set.contains("usr.id"));
+    EXPECT_TRUE(address_set.contains("usr.session_id"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.endpoint"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.header"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.network"));
+    EXPECT_TRUE(address_set.contains("_dd.appsec.fp.session"));
 
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
@@ -283,6 +332,20 @@ TEST(TestFingerprintIntegration, Processor)
 
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+    ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert"));
+    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB"));
+    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, "yes"));
+    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
+    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+
+    ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
+    ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
+
     ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
@@ -323,14 +386,26 @@ TEST(TestFingerprintIntegration, Processor)
                     .value = "net-1-1111111111",
                     .address = "_dd.appsec.fp.http.network",
                     .path = {},
-                }}}}});
+                }}}}},
+        {.id = "rule4",
+            .name = "rule4",
+            .tags = {{"type", "flow4"}, {"category", "category4"}},
+            .matches = {{.op = "match_regex",
+                .op_value = ".*",
+                .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                .args = {{
+                    .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                    .address = "_dd.appsec.fp.session",
+                    .path = {},
+                }}}}}, );
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 3);
+    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 4);
 
     auto derivatives = test::object_to_map(out.derivatives);
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-2c70e12b");
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.header"], "hdr-1111111111-a441b15f-0-");
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.network"], "net-1-1111111111");
+    EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
