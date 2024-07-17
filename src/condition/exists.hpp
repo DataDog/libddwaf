@@ -7,7 +7,6 @@
 #pragma once
 
 #include "condition/structured_condition.hpp"
-#include "matcher/ip_match.hpp"
 
 namespace ddwaf {
 
