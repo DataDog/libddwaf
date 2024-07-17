@@ -256,7 +256,11 @@ bool str_casei_cmp(std::string_view left, std::string_view right)
     return left.size() <= right.size();
 }
 
-void normalize_string(std::string_view key, std::string &buffer, bool trailing_separator)
+// Default key normalization implies:
+// - Lowercasing the string
+// - Escaping commas
+// - Adding trailing commas
+void normalize_key(std::string_view key, std::string &buffer, bool trailing_separator)
 {
     buffer.clear();
 
@@ -270,6 +274,48 @@ void normalize_string(std::string_view key, std::string &buffer, bool trailing_s
             buffer.append(R"(\,)");
         } else {
             buffer.append(1, ddwaf::tolower(c));
+        }
+    }
+
+    if (trailing_separator) {
+        buffer.append(1, ',');
+    }
+}
+
+// Header normalization implies:
+// - Lowercasing the header
+// - Replacing '_' with '-'
+void normalize_header(std::string_view original, std::string &buffer)
+{
+    buffer.resize(original.size());
+
+    for (std::size_t i = 0; i < original.size(); ++i) {
+        const auto c = original[i];
+        buffer[i] = c == '_' ? '-' : ddwaf::tolower(c);
+    }
+}
+
+// Value (as opposed to key) normalisation only requires escaping commas
+void normalize_value(std::string_view key, std::string &buffer, bool trailing_separator)
+{
+    buffer.clear();
+
+    if (buffer.capacity() < key.size()) {
+        // Add space for the extra comma, just in case
+        buffer.reserve(key.size() + 1);
+    }
+
+    for (std::size_t i = 0; i < key.size(); ++i) {
+        auto comma_idx = key.find(',', i);
+        if (comma_idx != std::string_view::npos) {
+            if (comma_idx != i) {
+                buffer.append(key.substr(i, comma_idx - i));
+            }
+            buffer.append(R"(\,)");
+            i = comma_idx;
+        } else {
+            buffer.append(key.substr(i));
+            break;
         }
     }
 
@@ -302,11 +348,15 @@ void key_hash_field::operator()(string_buffer &output)
     std::vector<std::string_view> keys;
     keys.reserve(value.nbEntries);
 
+    std::size_t max_string_size = 0;
     for (unsigned i = 0; i < value.nbEntries; ++i) {
         const auto &child = value.array[i];
 
         std::string_view key{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+        if (max_string_size > key.size()) {
+            max_string_size = key.size();
+        }
 
         keys.emplace_back(key);
     }
@@ -315,8 +365,12 @@ void key_hash_field::operator()(string_buffer &output)
 
     sha256_hash hasher;
     std::string normalized;
+    // By reserving the largest possible size, it should reduce reallocations
+    // We also add +1 to account for the trailing comma
+    normalized.reserve(max_string_size + 1);
     for (unsigned i = 0; i < keys.size(); ++i) {
-        normalize_string(keys[i], normalized, (i + 1) < keys.size());
+        bool trailing_comma = ((i + 1) < keys.size());
+        normalize_key(keys[i], normalized, trailing_comma);
         hasher << normalized;
     }
 
@@ -349,16 +403,21 @@ void kv_hash_fields::operator()(string_buffer &output)
     std::vector<std::pair<std::string_view, std::string_view>> kv_sorted;
     kv_sorted.reserve(value.nbEntries);
 
+    std::size_t max_string_size = 0;
     for (std::size_t i = 0; i < value.nbEntries; ++i) {
         const auto &child = value.array[i];
 
-        // TODO track max length and reserve normalized buffer
         std::string_view key{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
         std::string_view val;
         if (child.type == DDWAF_OBJ_STRING) {
             val = std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+        }
+
+        auto larger_size = std::max(key.size(), val.size());
+        if (max_string_size < larger_size) {
+            max_string_size = larger_size;
         }
 
         kv_sorted.emplace_back(key, val);
@@ -371,19 +430,19 @@ void kv_hash_fields::operator()(string_buffer &output)
     sha256_hash val_hasher;
 
     std::string normalized;
+    // By reserving the largest possible size, it should reduce reallocations
+    // We also add +1 to account for the trailing comma
+    normalized.reserve(max_string_size + 1);
     for (unsigned i = 0; i < kv_sorted.size(); ++i) {
-        auto [key, value] = kv_sorted[i];
+        auto [key, val] = kv_sorted[i];
 
-        bool add_comma = ((i + 1) < kv_sorted.size());
+        bool trailing_comma = ((i + 1) < kv_sorted.size());
 
-        normalize_string(key, normalized, add_comma);
+        normalize_key(key, normalized, trailing_comma);
         key_hasher << normalized;
 
-        // TODO normalize value
-        val_hasher << value;
-        if (add_comma) {
-            val_hasher << ",";
-        }
+        normalize_value(val, normalized, trailing_comma);
+        val_hasher << normalized;
     }
 
     key_hasher.write_digest(output.subspan<8>());
@@ -425,17 +484,6 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
         return {header_type::unknown, 0};
     }
     return it->second;
-}
-
-// "normalized" is a preallocated std::string, to avoid unnecessary allocations
-void normalize_header(std::string_view original, std::string &normalized)
-{
-    normalized.resize(original.size());
-
-    for (std::size_t i = 0; i < original.size(); ++i) {
-        const auto c = original[i];
-        normalized[i] = c == '_' ? '-' : ddwaf::tolower(c);
-    }
 }
 
 } // namespace
