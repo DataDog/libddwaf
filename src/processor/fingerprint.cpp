@@ -191,6 +191,10 @@ struct vector_hash_field : field_generator {
     const std::vector<std::string> &value;
 };
 
+// This particular generator generates multiple fields (hence the fields name)
+// This is to prevent having to create intermediate structures for key and value
+// when both have to be processed together. This generator also includes the
+// relevant separator, whether the map is empty or not.
 struct kv_hash_fields : field_generator {
     explicit kv_hash_fields(const ddwaf_object &input) : value(input) {}
     ~kv_hash_fields() override = default;

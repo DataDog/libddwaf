@@ -20,10 +20,15 @@ public:
     {}
 
 protected:
-    [[nodiscard]] eval_result eval_impl(const unary_argument<const ddwaf_object *> &input,
+    [[nodiscard]] eval_result eval_impl(const variadic_argument<const ddwaf_object *> &inputs,
         condition_cache &cache, const exclusion::object_set_ref & /*objects_excluded*/,
         ddwaf::timer & /*deadline*/) const
     {
+        if (inputs.empty()) {
+            return {false, false};
+        }
+        // We only care about the first input
+        auto input = inputs.front();
         cache.match = {{{{"input", {}, input.address, {}}}, {}, "exists", {}, input.ephemeral}};
         return {true, input.ephemeral};
     }
