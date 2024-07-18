@@ -399,7 +399,7 @@ void vector_hash_field::operator()(string_buffer &output)
 
 void kv_hash_fields::operator()(string_buffer &output)
 {
-    if (value.nbEntries == 0) {
+    if (value.type != DDWAF_OBJ_MAP || value.nbEntries == 0) {
         output.append('-');
         return;
     }
