@@ -2503,7 +2503,31 @@ TEST(TestInterface, KnownActions)
         ddwaf_destroy(handle8);
     }
 
-    ddwaf_destroy(handle9);
+    // Disable the rule containing the only action
+    ddwaf_handle handle10;
+    {
+        auto overrides = yaml_to_object(
+            R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [whatever]}]})");
+        handle10 = ddwaf_update(handle9, &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+
+        uint32_t size;
+        const char *const *actions = ddwaf_known_actions(handle10, &size);
+        EXPECT_EQ(size, 0);
+        EXPECT_EQ(actions, nullptr);
+
+        ddwaf_destroy(handle9);
+    }
+
+    ddwaf_destroy(handle10);
+}
+
+TEST(TestInterface, KnownActionsNullHandle)
+{
+    uint32_t size;
+    const char *const *actions = ddwaf_known_actions(nullptr, &size);
+    EXPECT_EQ(size, 0);
+    EXPECT_EQ(actions, nullptr);
 }
 
 } // namespace
