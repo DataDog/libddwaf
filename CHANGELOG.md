@@ -1,5 +1,38 @@
 # libddwaf release
 
+### v1.19.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+This version of libddwaf introduces a multitude of new features in order to support new use cases and improve existing ones.
+
+- Shell injection detection: as part of the exploit prevention feature, this release introduces a new rule which can be used to detect and block shell injections.
+- Attacker and request fingerprinting: this release includes a new family of processors which can be used to generate different fingerprints for a request and / or user, depending on available information.
+- Suspicious attacker blocking: with the combination of custom exclusion filter actions and exclusion data, it is now possible to change the action of a rule dynamically depending on a condition, e.g. all rules could be set to blocking mode if a given IP performs a known attack.
+
+#### Changes
+- Multivariate processors and remove generators (#298)
+- Custom rule filter actions (#303)
+- SHA256 hash based on OpenSSL (#304)
+- Shell injection detection operator (#308)
+- Limit the number of transformers per rule or input (#309)
+- Validate redirection location and restrict status codes (#310)
+- Rule override for adding tags (#313)
+- Add support for dynamic exclusion filter data (#316)
+- HTTP Endpoint Fingerprint Processor (#318)
+- HTTP Header, HTTP Network and Session Fingerprints (#320)
+- Exists operator and waf.context.event virtual address (#321)
+- Add function to obtain available actions (#324)
+
+#### Fixes
+- Transformer fixes and improvements (#299)
+
+#### Miscellaneous
+- Fix object generator stray container (#294)
+- Regex tools & benchmark rename (#290)
+- Order benchmark scenarios (#300)
+- Upgrade to macos-12 (#312)
+- Skip disabled rules when generating ruleset (#314)
+- Update default obfuscator regex (#317)
+
 ### v1.18.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 This version introduces a new operator `sqli_detector` for the detection of SQL injections. In addition, the ruleset parser has been updated to allow non-string parameter values on action definitions.
 
