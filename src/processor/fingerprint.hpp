@@ -6,12 +6,9 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <span>
 #include <string_view>
 
 #include "processor/base.hpp"
-#include "scanner.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
