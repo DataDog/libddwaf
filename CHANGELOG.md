@@ -61,7 +61,7 @@ exclusion_data:
 ```
 
 #### Other new features
-- New operator `exists`: this new operator can be used to assert the presence of one or multiple addresses, regardless of their underlying value.
+- New operator `exists`: this new operator can be used to assert the presence of at least one address from a given set of addresses, regardless of their underlying value.
 - Rule tagging overrides: rule overrides now allow adding tags to an existing rule, e.g. to provide information about the policy used.
 - New function `ddwaf_known_actions`: this new function can be used to obtain a list of the action types which can be triggered given the set of rules and exclusion filters available.
 
