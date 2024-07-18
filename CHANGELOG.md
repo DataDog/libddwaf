@@ -1,6 +1,97 @@
 # libddwaf release
 
-### v1.18.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.19.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+### New features
+This new version of `libddwaf` introduces a multitude of new features in order to support new use cases and expand existing ones.
+
+#### Exploit prevention: Shell injection detection
+A new operator `shi_detector` has been introduced for detecting and blocking shell injections, based on input parameters and the final shell code being evaluated. This new operator is part of the exploit prevention feature, so it is meant to be used in combination with targeted instrumentation. 
+
+The following example rule takes advantage of the new operator to identify injections originating from request parameters:
+
+```yaml
+  - id: rsp-930-004
+    name: SHi Exploit detection
+    tags:
+      type: shi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.sys.shell.cmd
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+        operator: shi_detector
+```
+
+#### Attacker \& Request Fingerprinting
+This release includes a new family of processors which can be used to generate different fingerprints for a request and / or user, depending on available information:
+- `http_endpoint_fingerprint`: this processor generates a fingerprint which uniquely identifies the HTTP endpoint accessed by the request as well as how this endpoint was accessed (i.e. which parameters were used).
+- `http_headers_fingerprint`: generates a fingerprint which provides information about the headers used when accessing said HTTP endpoint.
+- `http_network_fingerprint`: provides a fingerprint containing some information about the network-related HTTP headers used within the request.
+- `session_fingerprint`: this processor generates a specific fingeprint with sufficient information to track a unique session and / or attacker.
+
+#### Suspicious attacker blocking
+Suspicious attackers can now be blocked conditionally when they perform a restricted action or an attack. With the combination of custom exclusion filter actions and exclusion data, it is now possible to change the action of a rule dynamically depending on a condition, e.g. all rules could be set to blocking mode if a given IP performs a known attack.
+
+The following exclusion filter, in combination with the provided exclusion data, changes the action of all rules based on the client IP:
+
+```yaml
+exclusions:
+  - id: suspicious_attacker
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: http.client_ip
+          data: ip_data
+exclusion_data:
+  - id: ip_data
+    type: ip_with_expiration
+    data:
+      - value: 1.2.3.4
+        expiration: 0
+```
+
+#### Other new features
+- New operator `exists`: this new operator can be used to assert the presence of one or multiple addresses, regardless of their underlying value.
+- Rule tagging overrides: rule overrides now allow adding tags to an existing rule, e.g. to provide information about the policy used.
+- New function `ddwaf_known_actions`: this new function can be used to obtain a list of the action types which can be triggered given the set of rules and exclusion filters available.
+
+### Release changelog
+#### Changes
+- Multivariate processors and remove generators ([#298](https://github.com/DataDog/libddwaf/pull/298))
+- Custom rule filter actions ([#303](https://github.com/DataDog/libddwaf/pull/303))
+- SHA256 hash based on OpenSSL ([#304](https://github.com/DataDog/libddwaf/pull/304))
+- Shell injection detection operator ([#308](https://github.com/DataDog/libddwaf/pull/308))
+- Limit the number of transformers per rule or input ([#309](https://github.com/DataDog/libddwaf/pull/309))
+- Validate redirection location and restrict status codes ([#310](https://github.com/DataDog/libddwaf/pull/310))
+- Rule override for adding tags ([#313](https://github.com/DataDog/libddwaf/pull/313))
+- Add support for dynamic exclusion filter data ([#316](https://github.com/DataDog/libddwaf/pull/316))
+- HTTP Endpoint Fingerprint Processor ([#318](https://github.com/DataDog/libddwaf/pull/318))
+- HTTP Header, HTTP Network and Session Fingerprints ([#320](https://github.com/DataDog/libddwaf/pull/320))
+- Exists operator and waf.context.event virtual address ([#321](https://github.com/DataDog/libddwaf/pull/321))
+- Add function to obtain available actions ([#324](https://github.com/DataDog/libddwaf/pull/324))
+
+#### Fixes
+- Transformer fixes and improvements ([#299](https://github.com/DataDog/libddwaf/pull/299))
+
+#### Miscellaneous
+- Fix object generator stray container ([#294](https://github.com/DataDog/libddwaf/pull/294))
+- Regex tools & benchmark rename ([#290](https://github.com/DataDog/libddwaf/pull/290))
+- Order benchmark scenarios ([#300](https://github.com/DataDog/libddwaf/pull/300))
+- Upgrade to macos-12 ([#312](https://github.com/DataDog/libddwaf/pull/312))
+- Skip disabled rules when generating ruleset ([#314](https://github.com/DataDog/libddwaf/pull/314))
+- Update default obfuscator regex ([#317](https://github.com/DataDog/libddwaf/pull/317))
+
+## v1.18.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 This version introduces a new operator `sqli_detector` for the detection of SQL injections. In addition, the ruleset parser has been updated to allow non-string parameter values on action definitions.
 
 #### Changes
@@ -14,7 +105,7 @@ This version introduces a new operator `sqli_detector` for the detection of SQL 
 - Use SSE4.1 ceilf when available and add badges to readme ([#288](https://github.com/DataDog/libddwaf/pull/288))
 - SQLi Detector Fuzzer and improvements ([#291](https://github.com/DataDog/libddwaf/pull/291))
 
-### v1.17.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.17.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 This new version introduces RASP rules and supporting features, including:
 - Multivariate operators for the development of complex rules.
@@ -43,14 +134,14 @@ The [upgrading guide](UPGRADING.md#upgrading-from-116x-to-1170) has also been up
 - LFI detector fuzzer ([#274](https://github.com/DataDog/libddwaf/pull/274))
 - Remove rpath from linux-musl binary ([#282](https://github.com/DataDog/libddwaf/pull/282))
 
-### v1.17.0-alpha3 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.17.0-alpha3 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Action semantics and related improvements ([#277](https://github.com/DataDog/libddwaf/pull/277))
 
 #### Miscellaneous
 - LFI detector fuzzer ([#274](https://github.com/DataDog/libddwaf/pull/274))
 
-### v1.17.0-alpha2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.17.0-alpha2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Server-side request forgery (SSRF) detection operator ([#268](https://github.com/DataDog/libddwaf/pull/268))
 
@@ -58,14 +149,14 @@ The [upgrading guide](UPGRADING.md#upgrading-from-116x-to-1170) has also been up
 - Attempt to build libddwaf on arm64 runner ([#270](https://github.com/DataDog/libddwaf/pull/270))
 - Run tests on arm64 ([#271](https://github.com/DataDog/libddwaf/pull/271))
 
-### v1.17.0-alpha1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.17.0-alpha1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
 - Fix parsing of variadic arguments ([#267](https://github.com/DataDog/libddwaf/pull/267))
 
 #### Miscellaneous
 - Update node-16 actions to node-20 ones ([#266](https://github.com/DataDog/libddwaf/pull/266))
 
-### v1.17.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.17.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
 - Add support for old glibc (e.g. RHEL 6) ([#262](https://github.com/DataDog/libddwaf/pull/262))
 - Add weak ceilf symbol and definition ([#263](https://github.com/DataDog/libddwaf/pull/263))
@@ -77,12 +168,12 @@ The [upgrading guide](UPGRADING.md#upgrading-from-116x-to-1170) has also been up
 #### Miscellaneous
 - Reduce benchmark noise ([#257](https://github.com/DataDog/libddwaf/pull/257), [#259](https://github.com/DataDog/libddwaf/pull/259), [#260](https://github.com/DataDog/libddwaf/pull/260))
 
-### v1.16.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.16.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 ### Fixes
 - Add support for old glibc (e.g. RHEL 6) ([#262](https://github.com/DataDog/libddwaf/pull/262))
 - Add weak ceilf symbol and definition ([#263](https://github.com/DataDog/libddwaf/pull/263))
 
-### v1.16.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.16.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
 - Address a libinjection false positive ([#251](https://github.com/DataDog/libddwaf/pull/251))
 - Remove a few fingerprints causing false positives ([#252](https://github.com/DataDog/libddwaf/pull/252))
@@ -99,12 +190,12 @@ The [upgrading guide](UPGRADING.md#upgrading-from-116x-to-1170) has also been up
 - Refactor cmake scripts and support LTO ([#232](https://github.com/DataDog/libddwaf/pull/232))
 - Microbenchmarks ([#242](https://github.com/DataDog/libddwaf/pull/242), [#243](https://github.com/DataDog/libddwaf/pull/243), [#244](https://github.com/DataDog/libddwaf/pull/244), [#245](https://github.com/DataDog/libddwaf/pull/245), [#246](https://github.com/DataDog/libddwaf/pull/246), [#247](https://github.com/DataDog/libddwaf/pull/247), [#248](https://github.com/DataDog/libddwaf/pull/248), [#250](https://github.com/DataDog/libddwaf/pull/250))
 
-### v1.15.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.15.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 #### Fixes
 - Fix duplicate processor check ([#234](https://github.com/DataDog/libddwaf/pull/234))
 
-### v1.15.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.15.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 This new version of the WAF includes the following new features:
 - Ephemeral addresses for composite requests
@@ -131,7 +222,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Use `fmt::format` for logging and vendorize some dependencies within `src/` ([#226](https://github.com/DataDog/libddwaf/pull/226))
 - Reduce linux binary size and fix some flaky tests ([#227](https://github.com/DataDog/libddwaf/pull/227))
 
-### v1.14.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.14.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 This release of the WAF includes the following new features:
 - Schema data classification through the use of scanners.
@@ -156,12 +247,12 @@ This release of the WAF includes the following new features:
 - Remove ptr typedefs ([#212](https://github.com/DataDog/libddwaf/pull/212))
 - Indexer abstraction to encapsulate rule and scanner search and storage ([#213](https://github.com/DataDog/libddwaf/pull/213))
 
-### v1.13.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.13.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 #### Changes
 - Allow conversions between signed/unsigned types during parsing ([#205](https://github.com/DataDog/libddwaf/pull/205))
 
-### v1.13.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.13.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 This new version of the WAF includes the following new features:
 - Schema extraction preprocessor
@@ -195,7 +286,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Linux musl/libc++ builds using alpine-based sysroots and llvm16 ([#198](https://github.com/DataDog/libddwaf/pull/198))([#200](https://github.com/DataDog/libddwaf/pull/200))([#201](https://github.com/DataDog/libddwaf/pull/201))
 
 
-### v1.12.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.12.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Per-input transformers support on exclusion filter conditions ([#177](https://github.com/DataDog/libddwaf/pull/177))
 - Read-only transformers ([#178](https://github.com/DataDog/libddwaf/pull/178))([#185](https://github.com/DataDog/libddwaf/pull/185))([#190](https://github.com/DataDog/libddwaf/pull/190))
@@ -208,7 +299,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Reduce build parallelism ([#183](https://github.com/DataDog/libddwaf/pull/183))
 - Change standard to C++20 ([#186](https://github.com/DataDog/libddwaf/pull/186))
 
-### v1.11.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.11.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### API & Breaking Changes
 - Full ruleset parsing diagnostics ([#161](https://github.com/DataDog/libddwaf/pull/161))
 - Event result as `ddwaf_object` ([#162](https://github.com/DataDog/libddwaf/pull/162))
@@ -226,11 +317,11 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Update ruleset to 1.7.1 ([#173](https://github.com/DataDog/libddwaf/pull/173))
 - Refactor and simplify tools to reduce code duplication ([#173](https://github.com/DataDog/libddwaf/pull/173))
 
-### v1.10.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.10.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Add all rule tags to event ([#160](https://github.com/DataDog/libddwaf/pull/160))
 
-### v1.9.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.9.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Remove a libinjection signature ([#145](https://github.com/DataDog/libddwaf/pull/145))
 - Priority collection, rule and filter simplification ([#150](https://github.com/DataDog/libddwaf/pull/150))
@@ -246,7 +337,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Remove unused json rule files and vendorise aho-corasick submodule ([#153](https://github.com/DataDog/libddwaf/pull/153))
 - Cancel jobs in progress ([#158](https://github.com/DataDog/libddwaf/pull/158))
 
-### v1.8.2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.8.2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
 - Use raw pointers instead of shared pointers for rule targets ([#141](https://github.com/DataDog/libddwaf/pull/141))
 
@@ -254,11 +345,11 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Relax rule override restrictions ([#140](https://github.com/DataDog/libddwaf/pull/140))
 - Initialise `ruleset_info` on invalid input ([#142](https://github.com/DataDog/libddwaf/pull/142))
 
-### v1.8.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.8.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
 - Return `NULL` handle when incorrect version or empty rules provided to `ddwaf_init` ([#139](https://github.com/DataDog/libddwaf/pull/139))
 
-### v1.8.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.8.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### API \& Breaking Changes
 - Add `ddwaf_update` for all-in-one ruleset updates ([#138](https://github.com/DataDog/libddwaf/pull/138))
 - Remove `ddwaf_required_rule_data_ids` ([#138](https://github.com/DataDog/libddwaf/pull/138))
@@ -268,12 +359,12 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 #### Changes
 - Add WAF Builder ([#138](https://github.com/DataDog/libddwaf/pull/138))
 
-### v1.7.0  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/02/06
+## v1.7.0  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/02/06
 #### Changes
 - Handle lifetime extension ([#135](https://github.com/DataDog/libddwaf/pull/135))
 - Create macos universal binary ([#136](https://github.com/DataDog/libddwaf/pull/136))
 
-### v1.6.2  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/26
+## v1.6.2  ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/26
 #### Changes
 - Add boolean getter ([#132](https://github.com/DataDog/libddwaf/pull/132))
 - Add support for converting string to bool in parameter bool cast operator ([#133](https://github.com/DataDog/libddwaf/pull/133))
@@ -284,13 +375,13 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Replace `isdigit` with custom version due to windows locale-dependence ([#133](https://github.com/DataDog/libddwaf/pull/133))
 - Minor fixes and parsing improvements ([#133](https://github.com/DataDog/libddwaf/pull/133))
 
-### v1.6.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/17
+## v1.6.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/17
 
 #### Miscellaneous
 - Add SHA256 to packages ([#128](https://github.com/DataDog/libddwaf/pull/128))
 - Automatic draft release on tag ([#129](https://github.com/DataDog/libddwaf/pull/129))
 
-### v1.6.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/10
+## v1.6.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2023/01/10
 
 #### Changes
 - Exclusion filters: targets and conditions ([#110](https://github.com/DataDog/libddwaf/pull/110))
@@ -310,7 +401,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Run clang tidy / format on CI ([#116](https://github.com/DataDog/libddwaf/pull/116))
 - Exclusion filters on fuzzer ([#118](https://github.com/DataDog/libddwaf/pull/118))
 
-### v1.5.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/22
+## v1.5.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/22
 
 #### API \& Breaking Changes
 - Add `ddwaf_required_rule_data_ids` to obtain the rule data IDs defined in the ruleset ([#104](https://github.com/DataDog/libddwaf/pull/104))
@@ -320,7 +411,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Replace `std::optional::value()` with `std::optional::operator*()` ([#105](https://github.com/DataDog/libddwaf/pull/105))
 - Add new and missing exports ([#106](https://github.com/DataDog/libddwaf/pull/106))
 
-### v1.5.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/08
+## v1.5.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/08
 
 #### API \& Breaking Changes
 - Remove `ddwaf_version`, `ddwaf_get_version` now returns a version string ([#89](https://github.com/DataDog/libddwaf/pull/89))
@@ -375,7 +466,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Update ruleset version for testing to 1.3.2 ([#101](https://github.com/DataDog/libddwaf/pull/101))
 - Fix missing build flags from `utf8proc` build ([#100](https://github.com/DataDog/libddwaf/pull/100))
 
-### v1.5.0-rc0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/02
+## v1.5.0-rc0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/09/02
 
 #### API \& Breaking Changes
 - Add `ddwaf_object_bool` for backwards-compatible support for boolean `ddwaf_object` ([#99](https://github.com/DataDog/libddwaf/pull/99))
@@ -388,7 +479,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Update ruleset version for testing to 1.3.2 ([#101](https://github.com/DataDog/libddwaf/pull/101))
 - Fix missing build flags from `utf8proc` build ([#100](https://github.com/DataDog/libddwaf/pull/100))
 
-### v1.5.0-alpha1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/30
+## v1.5.0-alpha1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/30
 
 #### API \& Breaking Changes
 - Deanonymize nested structs ([#97](https://github.com/DataDog/libddwaf/pull/97))
@@ -397,7 +488,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Disable the `1)c` libinjection fingerprint ([#94](https://github.com/DataDog/libddwaf/pull/94))
 - Configurable rule data ([#96](https://github.com/DataDog/libddwaf/pull/96))
 
-### v1.5.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/04
+## v1.5.0-alpha0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/08/04
 
 #### API \& Breaking Changes
 - Remove `ddwaf_version`, `ddwaf_get_version` now returns a version string ([#89](https://github.com/DataDog/libddwaf/pull/89))
@@ -444,7 +535,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Add CODEOWNERS  ([#88](https://github.com/DataDog/libddwaf/pull/88))
 - Add `benchmerge` to merge multiple benchmark results ([#85](https://github.com/DataDog/libddwaf/pull/85))
 
-### v1.4.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/06/29
+## v1.4.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics)) - 2022/06/29
 - Correct nuget url ([#68](https://github.com/DataDog/libddwaf/pull/68))
 - Only take params ownership when needed ([#69](https://github.com/DataDog/libddwaf/pull/69))
 - WAF Benchmark Utility ([#70](https://github.com/DataDog/libddwaf/pull/70))
@@ -452,7 +543,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Make libinjection look for backticks ([#80](https://github.com/DataDog/libddwaf/pull/80))
 - Add version semantic and unstable release information  ([#81](https://github.com/DataDog/libddwaf/pull/81))
 
-### v1.3.0 (unstable) - 2022/04/04
+## v1.3.0 (unstable) - 2022/04/04
 - WAF event obfuscator.
 - Add obfuscator configuration to `ddwaf_config`.
 - Changes to limits in `ddwaf_config`:
@@ -462,17 +553,17 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
   - All limits are now `uint32`.
   - Relevant macros renamed accordingly.
 
-### v1.2.1 (unstable) - 2022/03/17
+## v1.2.1 (unstable) - 2022/03/17
 - Fix issue on ruleset error map reallocation causing cached pointer invalidation.
 - Add check for empty input map on parser.
 - Update github actions windows build VM to windows-2019.
 
-### v1.2.0 (unstable) - 2022/03/16
+## v1.2.0 (unstable) - 2022/03/16
 - Remove metrics collector.
 - Add `total_runtime` to `ddwaf_result`.
 - Fix issue when reporting timeouts.
 
-### v1.1.0 (unstable) - 2022/03/09
+## v1.1.0 (unstable) - 2022/03/09
 - Add `ddwaf_object` getters.
 - Provide ruleset parsing diagnostics on `ddwaf_init`.
 - Add support for metrics collection on `ddwaf_run`.
@@ -482,20 +573,20 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Refactor input verification.
 - Remove deprecated features.
 
-### v1.0.18 (unstable) - 2022/02/16
+## v1.0.18 (unstable) - 2022/02/16
 - Add arm64 build to nuget package.
 - Upgrade RE2 to 2022-02-01.
 
-### v1.0.17 (unstable) - 2022/01/24
+## v1.0.17 (unstable) - 2022/01/24
 - Add missing libunwind to x86\_64 linux build.
 - Fix potential integer overflow in `DDWAF_LOG_HELPER`.
 - Add missing shared mingw64 build.
 - Add example tool to run the WAF on a single rule with multiple test vectors.
 
-### v1.0.16 (unstable) - 2021/12/15
+## v1.0.16 (unstable) - 2021/12/15
 - Fix duplicate matches in output ([#36](https://github.com/DataDog/libddwaf/issues/36))
 
-### v1.0.15 (unstable) - 2021/12/07
+## v1.0.15 (unstable) - 2021/12/07
 - Support `min_length` option on `regex_match` operator.
 - Remove `DDWAF_ERR_TIMEOUT` and update value of other errors.
 - Add timeout field to `ddwaf_result`.
@@ -503,41 +594,41 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Support MacOS 10.9.
 - Minor CMake compatibility improvements.
 
-### v1.0.14 (unstable) - 2021/10/26
+## v1.0.14 (unstable) - 2021/10/26
 - WAF output now conforms to the appsec event format v1.0.0.
 - Add schema for output validation.
 - Remove zip package generation.
 - Minor improvements.
 
-### v1.0.13 (unstable) - 2021/10/11
+## v1.0.13 (unstable) - 2021/10/11
 - Add support for ruleset format v2.1.
 - Update fuzzer.
 - Fix addresses with key path missing from ddwaf\_required\_addresses.
 - Improve ruleset parsing logging.
 
-### v1.0.12 (unstable) - 2021/10/01
+## v1.0.12 (unstable) - 2021/10/01
 - Add libinjection SQL and XSS rule processors.
 - Add support for ruleset format v1.1 (adding is\_sqli and is\_xss operators).
 - Improved universal x86\_64 and arm64 builds.
 - Added darwin arm64 build.
 - Fixed error on corpus generator for fuzzer.
 
-### v1.0.11 (unstable) - 2021/09/16
+## v1.0.11 (unstable) - 2021/09/16
 - Improve contributor onboarding and readme.
 - Cross-compile aarch64 static/shared libraries.
 - Improve corpus generator for fuzzer.
 
-### v1.0.10 (unstable) - 2021/09/13
+## v1.0.10 (unstable) - 2021/09/13
 - Add license to nuget package.
 
-### v1.0.9 (unstable) - 2021/09/13
+## v1.0.9 (unstable) - 2021/09/13
 - Renamed static windows library to `ddwaf_static`.
 - Correctly publish DSO dependencies.
 - Add license and notice.
 - Add copyright note to source files.
 - Add issue and pull-request templates.
 
-### v1.0.8 (unstable) - 2021/09/07
+## v1.0.8 (unstable) - 2021/09/07
 - Removed spdlog dependency.
 - Fixed crash on base64encode transformer.
 - Fixed crash on compressWhiteSpace transformer.
@@ -545,7 +636,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Fixed missing static library on windows packages.
 - Other minor fixes and improvements.
 
-### v1.0.7 (unstable) - 2021/08/31
+## v1.0.7 (unstable) - 2021/08/31
 - Support for new rule format, using `ddwaf::object`.
 - Interface updated with `ddwaf` namespace.
 - Removed pass-by-value and return-by-value from interface.
@@ -555,37 +646,37 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Removed functionality not supported by the new rule format.
 - Added exception catch-all on interface functions to prevent std::terminate.
 
-### v1.0.6 - 2020/10/23
+## v1.0.6 - 2020/10/23
 - Convert integers to strings at the input of the WAF
 - Report the manifest key of the parameter that we matched in the trigger report
 - Fix a bug where we could send reports from a previously reported attack in follow-up executions of the additive API
 
-### v1.0.5 - 2020/10/13
+## v1.0.5 - 2020/10/13
 - Fix behavior of @exist on empty list
 - Improve the cache bypass logic to only bypass it once per run
 - Fix the cache overwrite logic when the bypass resulted in a match
 
-### v1.0.4 - 2020/10/01
+## v1.0.4 - 2020/10/01
 - Fix an issue where we wouldn't run on keys if the associtated value was a container in specific encapsulated containers
 - Introduce a `numerize` transformer to better handle `Content-Length`
 
-### v1.0.3 - 2020/09/29
+## v1.0.3 - 2020/09/29
 - Fix an issue where we wouldn't run on keys if the associtated value was a container
 
-### v1.0.2 - 2020/09/25
+## v1.0.2 - 2020/09/25
 - Fix an issue where reports would be generated when no action is triggered
 - Fix an issue where only the last step of a flow will trigger a report
 - Fix an issue where reports would be incomplete if some rules triggered in previous run of the additive API
 
-### v1.0.1 - 2020/09/23
+## v1.0.1 - 2020/09/23
 - Fix a bug where we wouldn't run on keys if the associated value was shorter than a rule's options.min_length
 
-### v1.0 - 2020/08/28
+## v1.0 - 2020/08/28
 - Introduce transformers to extract CRS targets from the raw URI
 - Introduce `removeComments` transformer
 - Introduce `@ipMatch` operator
 
-### v0.9.1 (1.0 preview 2) - 2020/08/24
+## v0.9.1 (1.0 preview 2) - 2020/08/24
 - Introduce modifiers for a rule execution
 - Introduce `@exist` operator
 - Improve performance of the Additive API
@@ -594,7 +685,7 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Introduce allocation helpers
 - Other performance optimisations
 
-### v0.9.0 (1.0 preview) - 2020/08/10
+## v0.9.0 (1.0 preview) - 2020/08/10
 - Introduce Additive API
 - Introduce expanded initialization format
 - Introduce Handle API
@@ -605,39 +696,39 @@ The [upgrading guide](UPGRADING.md) has also been updated to cover the new chang
 - Rename and shorten the API names
 - More...
 
-### v0.7.0 - 2020/06/19
+## v0.7.0 - 2020/06/19
 - Fix false positives in libinjection SQL heuristics
 - Fix a false positive in libinjection XSS heuristics
 
-### v0.6.1 - 2020/04/03
+## v0.6.1 - 2020/04/03
 - When running a rule with multiple parameters, don't stop processing if a parameter is missing
 - Add support for the `config` key in the init payload
 - Add support for prefixes to operators
 - Add a switch through both means to revert the first fix
 
-### v0.6.0 - 2020/03/19
+## v0.6.0 - 2020/03/19
 - Replace the clock we were using with a more efficient one
 - When processing a multi step rule where a parameter is missing to one step, fail the step instead of ignoring it
 
-### v0.5.1 - 2020/01/10
+## v0.5.1 - 2020/01/10
 - Fix a bug where the Compare operators could read one byte after the end of a PWArgs buffer
 - Fix a bug where lib injection might read one byte past an internal buffer
 
-### v0.5.0 - 2019/11/15
+## v0.5.0 - 2019/11/15
 - Give more control over the safety features to the API
 
-### v0.4.0 - 2019/10/02
+## v0.4.0 - 2019/10/02
 - Introduce `@pm` operator
 
-### v0.3.0 - 2019/09/24
+## v0.3.0 - 2019/09/24
 - Introduce `@beginsWith`, `@contains`, and `@endsWith` operators
 - Cap the memory each RE2 object can use to 512kB
 
-### v0.2.0 - 2019/09/13
+## v0.2.0 - 2019/09/13
 - Introduce `powerwaf_initializePowerWAFWithDiag`
 - Fix a UTF-8 trucation bug (SQR-8164)
 - Cleanup headers
 - Improved locking performance
 
-### v0.1.0
+## v0.1.0
 - Initial release
