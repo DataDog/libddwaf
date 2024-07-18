@@ -2,11 +2,22 @@
 
 ## v1.19.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
-This version of libddwaf introduces a multitude of new features in order to support new use cases and improve existing ones.
+This version introduces a multitude of new features in order to support new use cases and improve existing ones.
 
-- Shell injection detection: as part of the exploit prevention feature, this release introduces a new rule which can be used to detect and block shell injections.
-- Attacker and request fingerprinting: this release includes a new family of processors which can be used to generate different fingerprints for a request and / or user, depending on available information.
-- Suspicious attacker blocking: with the combination of custom exclusion filter actions and exclusion data, it is now possible to change the action of a rule dynamically depending on a condition, e.g. all rules could be set to blocking mode if a given IP performs a known attack.
+### New features
+#### Exploit prevention: Shell injection detection
+As part of the exploit prevention feature, this release introduces a new rule which can be used to detect and block shell injections.
+
+#### Attacker \& Request Fingerprinting
+This release includes a new family of processors which can be used to generate different fingerprints for a request and / or user, depending on available information.
+
+#### Suspicious attacker blocking
+With the combination of custom exclusion filter actions and exclusion data, it is now possible to change the action of a rule dynamically depending on a condition, e.g. all rules could be set to blocking mode if a given IP performs a known attack.
+
+#### Other new features
+- New `exists` operator
+- Rule tagging through rule overrides
+- New function to obtain available actions `ddwaf_known-actions`
 
 ### Release changelog
 #### Changes
