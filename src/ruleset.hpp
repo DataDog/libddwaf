@@ -126,28 +126,27 @@ struct ruleset {
     [[nodiscard]] const std::vector<const char *> &get_available_action_types()
     {
         if (available_action_types.empty()) {
-            for (const auto &rule : rules) {
-                for (const auto &action : rule->get_actions()) {
-                    auto it = actions->find(action);
-                    if (it == actions->end()) {
-                        continue;
-                    }
-                    available_action_types_set.emplace(it->second.type_str);
+            std::unordered_set<std::string_view> all_types;
+            // We preallocate at least the total available actions in the mapper
+            all_types.reserve(actions->size());
+
+            auto maybe_add_action = [&](auto &&action) {
+                auto it = actions->find(action);
+                if (it == actions->end()) {
+                    return;
                 }
+                auto [new_it, res] = all_types.emplace(it->second.type_str);
+                if (res) {
+                    available_action_types.emplace_back(it->second.type_str.c_str());
+                }
+            };
+
+            for (const auto &rule : rules) {
+                for (const auto &action : rule->get_actions()) { maybe_add_action(action); }
             }
 
             for (const auto &[name, filter] : rule_filters) {
-                auto it = actions->find(filter->get_action());
-                if (it == actions->end()) {
-                    continue;
-                }
-                available_action_types_set.emplace(it->second.type_str);
-            }
-
-            // We generate everything at the end so in the future we can change
-            // the std::unordered_set for a flat_set.
-            for (const auto &type : available_action_types_set) {
-                available_action_types.emplace_back(type.c_str());
+                maybe_add_action(filter->get_action());
             }
         }
         return available_action_types;
@@ -181,14 +180,16 @@ struct ruleset {
     std::unordered_map<target_index, std::string> preprocessor_addresses;
     std::unordered_map<target_index, std::string> postprocessor_addresses;
 
+    // The following two members are computed only when required; they are
+    // provided to the caller of ddwaf_known_* and are only cached for the
+    // purpose of avoiding the need for a destruction method in the API.
+    //
     // Root addresses, lazily computed
     std::vector<const char *> root_addresses;
     // A list of the possible action types that can be returned as a result of
     // the evaluation of the current set of rules and exclusion filters.
-    // These are lazily computed, while the backing memory exists within rules
-    // and / or filters, we keep a separate set of copies to avoid potential
-    // unexpected invalidations in the future.
-    std::unordered_set<std::string> available_action_types_set;
+    // These are lazily computed andthe underlying memory of each string is
+    // owned by the action mapper.
     std::vector<const char *> available_action_types;
 };
 

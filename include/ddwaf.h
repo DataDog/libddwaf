@@ -247,7 +247,8 @@ void ddwaf_destroy(ddwaf_handle handle);
  *             size will be 0 if the return value is NULL.
  * @return NULL if empty, otherwise a pointer to an array with size elements.
  *
- * @Note The returned array should be considered invalid after calling ddwaf_destroy
+ * @note This function is not thread-safe
+ * @note The returned array should be considered invalid after calling ddwaf_destroy
  *       on the handle used to obtain it.
  **/
 const char* const* ddwaf_known_addresses(const ddwaf_handle handle, uint32_t *size);
@@ -264,7 +265,8 @@ const char* const* ddwaf_known_addresses(const ddwaf_handle handle, uint32_t *si
  *             size will be 0 if the return value is NULL.
  * @return NULL if empty, otherwise a pointer to an array with size elements.
  *
- * @Note The returned array should be considered invalid after calling ddwaf_destroy
+ * @note This function is not thread-safe
+ * @note The returned array should be considered invalid after calling ddwaf_destroy
  *       on the handle used to obtain it.
  **/
 const char *const *ddwaf_known_actions(const ddwaf_handle handle, uint32_t *size);
