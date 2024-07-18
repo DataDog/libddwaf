@@ -123,6 +123,36 @@ struct ruleset {
         return root_addresses;
     }
 
+    [[nodiscard]] const std::vector<const char *> &get_available_action_types()
+    {
+        if (available_action_types.empty()) {
+            for (const auto &rule : rules) {
+                for (const auto &action : rule->get_actions()) {
+                    auto it = actions->find(action);
+                    if (it == actions->end()) {
+                        continue;
+                    }
+                    available_action_types_set.emplace(it->second.type_str);
+                }
+            }
+
+            for (const auto &[name, filter] : rule_filters) {
+                auto it = actions->find(filter->get_action());
+                if (it == actions->end()) {
+                    continue;
+                }
+                available_action_types_set.emplace(it->second.type_str);
+            }
+
+            // We generate everything at the end so in the future we can change
+            // the std::unordered_set for a flat_set.
+            for (const auto &type : available_action_types_set) {
+                available_action_types.emplace_back(type.c_str());
+            }
+        }
+        return available_action_types;
+    }
+
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
@@ -153,6 +183,13 @@ struct ruleset {
 
     // Root addresses, lazily computed
     std::vector<const char *> root_addresses;
+    // A list of the possible action types that can be returned as a result of
+    // the evaluation of the current set of rules and exclusion filters.
+    // These are lazily computed, while the backing memory exists within rules
+    // and / or filters, we keep a separate set of copies to avoid potential
+    // unexpected invalidations in the future.
+    std::unordered_set<std::string> available_action_types_set;
+    std::vector<const char *> available_action_types;
 };
 
 } // namespace ddwaf
