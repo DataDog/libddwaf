@@ -47,6 +47,8 @@ public:
         expr_->get_addresses(addresses);
     }
 
+    std::string_view get_action() const { return action_; }
+
 protected:
     std::string id_;
     std::shared_ptr<expression> expr_;

@@ -168,6 +168,23 @@ const char *const *ddwaf_known_addresses(ddwaf::waf *handle, uint32_t *size)
     return addresses.data();
 }
 
+const char *const *ddwaf_known_actions(ddwaf::waf *handle, uint32_t *size)
+{
+    if (handle == nullptr) {
+        *size = 0;
+        return nullptr;
+    }
+
+    const auto &action_types = handle->get_available_action_types();
+    if (action_types.empty() || action_types.size() > std::numeric_limits<uint32_t>::max()) {
+        *size = 0;
+        return nullptr;
+    }
+
+    *size = (uint32_t)action_types.size();
+    return action_types.data();
+}
+
 ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
 {
     try {

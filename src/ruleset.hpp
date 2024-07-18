@@ -123,6 +123,35 @@ struct ruleset {
         return root_addresses;
     }
 
+    [[nodiscard]] const std::vector<const char *> &get_available_action_types()
+    {
+        if (available_action_types.empty()) {
+            std::unordered_set<std::string_view> all_types;
+            // We preallocate at least the total available actions in the mapper
+            all_types.reserve(actions->size());
+
+            auto maybe_add_action = [&](auto &&action) {
+                auto it = actions->find(action);
+                if (it == actions->end()) {
+                    return;
+                }
+                auto [new_it, res] = all_types.emplace(it->second.type_str);
+                if (res) {
+                    available_action_types.emplace_back(it->second.type_str.c_str());
+                }
+            };
+
+            for (const auto &rule : rules) {
+                for (const auto &action : rule->get_actions()) { maybe_add_action(action); }
+            }
+
+            for (const auto &[name, filter] : rule_filters) {
+                maybe_add_action(filter->get_action());
+            }
+        }
+        return available_action_types;
+    }
+
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
@@ -151,8 +180,17 @@ struct ruleset {
     std::unordered_map<target_index, std::string> preprocessor_addresses;
     std::unordered_map<target_index, std::string> postprocessor_addresses;
 
+    // The following two members are computed only when required; they are
+    // provided to the caller of ddwaf_known_* and are only cached for the
+    // purpose of avoiding the need for a destruction method in the API.
+    //
     // Root addresses, lazily computed
     std::vector<const char *> root_addresses;
+    // A list of the possible action types that can be returned as a result of
+    // the evaluation of the current set of rules and exclusion filters.
+    // These are lazily computed andthe underlying memory of each string is
+    // owned by the action mapper.
+    std::vector<const char *> available_action_types;
 };
 
 } // namespace ddwaf
