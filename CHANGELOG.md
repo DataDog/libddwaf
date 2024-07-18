@@ -10,29 +10,29 @@ This version of libddwaf introduces a multitude of new features in order to supp
 
 ### Release changelog
 #### Changes
-- Multivariate processors and remove generators (#298)
-- Custom rule filter actions (#303)
-- SHA256 hash based on OpenSSL (#304)
-- Shell injection detection operator (#308)
-- Limit the number of transformers per rule or input (#309)
-- Validate redirection location and restrict status codes (#310)
-- Rule override for adding tags (#313)
-- Add support for dynamic exclusion filter data (#316)
-- HTTP Endpoint Fingerprint Processor (#318)
-- HTTP Header, HTTP Network and Session Fingerprints (#320)
-- Exists operator and waf.context.event virtual address (#321)
-- Add function to obtain available actions (#324)
+- Multivariate processors and remove generators ([#298](https://github.com/DataDog/libddwaf/pull/298))
+- Custom rule filter actions ([#303](https://github.com/DataDog/libddwaf/pull/303))
+- SHA256 hash based on OpenSSL ([#304](https://github.com/DataDog/libddwaf/pull/304))
+- Shell injection detection operator ([#308](https://github.com/DataDog/libddwaf/pull/308))
+- Limit the number of transformers per rule or input ([#309](https://github.com/DataDog/libddwaf/pull/309))
+- Validate redirection location and restrict status codes ([#310](https://github.com/DataDog/libddwaf/pull/310))
+- Rule override for adding tags ([#313](https://github.com/DataDog/libddwaf/pull/313))
+- Add support for dynamic exclusion filter data ([#316](https://github.com/DataDog/libddwaf/pull/316))
+- HTTP Endpoint Fingerprint Processor ([#318](https://github.com/DataDog/libddwaf/pull/318))
+- HTTP Header, HTTP Network and Session Fingerprints ([#320](https://github.com/DataDog/libddwaf/pull/320))
+- Exists operator and waf.context.event virtual address ([#321](https://github.com/DataDog/libddwaf/pull/321))
+- Add function to obtain available actions ([#324](https://github.com/DataDog/libddwaf/pull/324))
 
 #### Fixes
-- Transformer fixes and improvements (#299)
+- Transformer fixes and improvements ([#299](https://github.com/DataDog/libddwaf/pull/299))
 
 #### Miscellaneous
-- Fix object generator stray container (#294)
-- Regex tools & benchmark rename (#290)
-- Order benchmark scenarios (#300)
-- Upgrade to macos-12 (#312)
-- Skip disabled rules when generating ruleset (#314)
-- Update default obfuscator regex (#317)
+- Fix object generator stray container ([#294](https://github.com/DataDog/libddwaf/pull/294))
+- Regex tools & benchmark rename ([#290](https://github.com/DataDog/libddwaf/pull/290))
+- Order benchmark scenarios ([#300](https://github.com/DataDog/libddwaf/pull/300))
+- Upgrade to macos-12 ([#312](https://github.com/DataDog/libddwaf/pull/312))
+- Skip disabled rules when generating ruleset ([#314](https://github.com/DataDog/libddwaf/pull/314))
+- Update default obfuscator regex ([#317](https://github.com/DataDog/libddwaf/pull/317))
 
 ## v1.18.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 This version introduces a new operator `sqli_detector` for the detection of SQL injections. In addition, the ruleset parser has been updated to allow non-string parameter values on action definitions.
