@@ -6,9 +6,9 @@
 This new version of `libddwaf` introduces a multitude of new features in order to support new use cases and expand existing ones.
 
 #### Exploit prevention: Shell injection detection
-A new operator `shi_detector` has been introduced for detecting and blocking shell injections, based on input parameters and the final shell code being evaluated. This new operator is part of the exploit prevention feature, so it is meant to be used in combination with targetted instrumentation. 
+A new operator `shi_detector` has been introduced for detecting and blocking shell injections, based on input parameters and the final shell code being evaluated. This new operator is part of the exploit prevention feature, so it is meant to be used in combination with targeted instrumentation. 
 
-The following example rule takes advantage of the shi_detector operator to identify injections originating from request parameters:
+The following example rule takes advantage of the new operator to identify injections originating from request parameters:
 
 ```yaml
   - id: rsp-930-004
@@ -33,7 +33,7 @@ The following example rule takes advantage of the shi_detector operator to ident
 
 #### Attacker \& Request Fingerprinting
 This release includes a new family of processors which can be used to generate different fingerprints for a request and / or user, depending on available information:
-- `http_endpoint_fingerprint`: this processor generates a fingerprint which uniquely identifies theHTTP  endpoint accessed by the request, as well as how this endpoint was accessed (i.e. which parameters were used).
+- `http_endpoint_fingerprint`: this processor generates a fingerprint which uniquely identifies the HTTP endpoint accessed by the request as well as how this endpoint was accessed (i.e. which parameters were used).
 - `http_headers_fingerprint`: generates a fingerprint which provides information about the headers used when accessing said HTTP endpoint.
 - `http_network_fingerprint`: provides a fingerprint containing some information about the network-related HTTP headers used within the request.
 - `session_fingerprint`: this processor generates a specific fingeprint with sufficient information to track a unique session and / or attacker.
