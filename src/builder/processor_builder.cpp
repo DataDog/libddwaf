@@ -51,6 +51,30 @@ template <> struct typed_processor_builder<http_endpoint_fingerprint> {
     }
 };
 
+template <> struct typed_processor_builder<http_header_fingerprint> {
+    std::shared_ptr<base_processor> build(const auto &spec)
+    {
+        return std::make_shared<http_header_fingerprint>(
+            spec.id, spec.expr, spec.mappings, spec.evaluate, spec.output);
+    }
+};
+
+template <> struct typed_processor_builder<http_network_fingerprint> {
+    std::shared_ptr<base_processor> build(const auto &spec)
+    {
+        return std::make_shared<http_network_fingerprint>(
+            spec.id, spec.expr, spec.mappings, spec.evaluate, spec.output);
+    }
+};
+
+template <> struct typed_processor_builder<session_fingerprint> {
+    std::shared_ptr<base_processor> build(const auto &spec)
+    {
+        return std::make_shared<session_fingerprint>(
+            spec.id, spec.expr, spec.mappings, spec.evaluate, spec.output);
+    }
+};
+
 template <typename T, typename Spec, typename Scanners>
 concept has_build_with_scanners =
     requires(typed_processor_builder<T> b, Spec spec, Scanners scanners) {
@@ -81,6 +105,12 @@ template <typename T>
         return build_with_type<extract_schema>(*this, scanners);
     case processor_type::http_endpoint_fingerprint:
         return build_with_type<http_endpoint_fingerprint>(*this, scanners);
+    case processor_type::http_header_fingerprint:
+        return build_with_type<http_header_fingerprint>(*this, scanners);
+    case processor_type::http_network_fingerprint:
+        return build_with_type<http_network_fingerprint>(*this, scanners);
+    case processor_type::session_fingerprint:
+        return build_with_type<session_fingerprint>(*this, scanners);
     default:
         break;
     }
