@@ -2,22 +2,68 @@
 
 ## v1.19.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
-This version introduces a multitude of new features in order to support new use cases and improve existing ones.
-
 ### New features
+This new version of `libddwaf` introduces a multitude of new features in order to support new use cases and expand existing ones.
+
 #### Exploit prevention: Shell injection detection
-As part of the exploit prevention feature, this release introduces a new rule which can be used to detect and block shell injections.
+A new operator `shi_detector` has been introduced for detecting and blocking shell injections, based on input parameters and the final shell code being evaluated. This new operator is part of the exploit prevention feature, so it is meant to be used in combination with targetted instrumentation. 
+
+The following example rule takes advantage of the shi_detector operator to identify injections originating from request parameters:
+
+```yaml
+  - id: rsp-930-004
+    name: SHi Exploit detection
+    tags:
+      type: shi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.sys.shell.cmd
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+        operator: shi_detector
+```
 
 #### Attacker \& Request Fingerprinting
-This release includes a new family of processors which can be used to generate different fingerprints for a request and / or user, depending on available information.
+This release includes a new family of processors which can be used to generate different fingerprints for a request and / or user, depending on available information:
+- `http_endpoint_fingerprint`: this processor generates a fingerprint which uniquely identifies theHTTP  endpoint accessed by the request, as well as how this endpoint was accessed (i.e. which parameters were used).
+- `http_headers_fingerprint`: generates a fingerprint which provides information about the headers used when accessing said HTTP endpoint.
+- `http_network_fingerprint`: provides a fingerprint containing some information about the network-related HTTP headers used within the request.
+- `session_fingerprint`: this processor generates a specific fingeprint with sufficient information to track a unique session and / or attacker.
 
 #### Suspicious attacker blocking
-With the combination of custom exclusion filter actions and exclusion data, it is now possible to change the action of a rule dynamically depending on a condition, e.g. all rules could be set to blocking mode if a given IP performs a known attack.
+Suspicious attackers can now be blocked conditionally when they perform a restricted action or an attack. With the combination of custom exclusion filter actions and exclusion data, it is now possible to change the action of a rule dynamically depending on a condition, e.g. all rules could be set to blocking mode if a given IP performs a known attack.
+
+The following exclusion filter, in combination with the provided exclusion data, changes the action of all rules based on the client IP:
+
+```yaml
+exclusions:
+  - id: suspicious_attacker
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs:
+            - address: http.client_ip
+          data: ip_data
+exclusion_data:
+  - id: ip_data
+    type: ip_with_expiration
+    data:
+      - value: 1.2.3.4
+        expiration: 0
+```
 
 #### Other new features
-- New `exists` operator
-- Rule tagging through rule overrides
-- New function to obtain available actions `ddwaf_known-actions`
+- New operator `exists`: this new operator can be used to assert the presence of a given address, regardless of its underlying value.
+- Rule tagging overrides: rule overrides now allow adding tags to an existing rule, e.g. to provide information about the policy used.
+- New function `ddwaf_known-actions`: this new function can be used to obtain a list of the action types which can be triggered given the set of rules and exclusion filters available.
 
 ### Release changelog
 #### Changes
