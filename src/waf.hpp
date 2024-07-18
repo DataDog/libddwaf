@@ -31,6 +31,11 @@ public:
         return ruleset_->get_root_addresses();
     }
 
+    [[nodiscard]] const std::vector<const char *> &get_available_action_types() const
+    {
+        return ruleset_->get_available_action_types();
+    }
+
 protected:
     waf(std::shared_ptr<ruleset_builder> builder, std::shared_ptr<ruleset> ruleset)
         : builder_(std::move(builder)), ruleset_(std::move(ruleset))
