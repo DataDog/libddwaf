@@ -228,7 +228,7 @@ ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
  *
  * Destroy a WAF instance.
  *
- * @param Handle to the WAF instance.
+ * @param handle Handle to the WAF instance.
  */
 void ddwaf_destroy(ddwaf_handle handle);
 
@@ -242,7 +242,7 @@ void ddwaf_destroy(ddwaf_handle handle);
  *
  * The memory is owned by the WAF and should not be freed.
  *
- * @param Handle to the WAF instance.
+ * @param handle Handle to the WAF instance.
  * @param size Output parameter in which the size will be returned. The value of
  *             size will be 0 if the return value is NULL.
  * @return NULL if empty, otherwise a pointer to an array with size elements.
@@ -259,7 +259,7 @@ const char* const* ddwaf_known_addresses(const ddwaf_handle handle, uint32_t *si
  *
  * The memory is owned by the WAF and should not be freed.
  *
- * @param Handle to the WAF instance.
+ * @param handle Handle to the WAF instance.
  * @param size Output parameter in which the size will be returned. The value of
  *             size will be 0 if the return value is NULL.
  * @return NULL if empty, otherwise a pointer to an array with size elements.
