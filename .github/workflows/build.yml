@@ -241,19 +241,25 @@ jobs:
         with:
           submodules: recursive
       - uses: docker/setup-buildx-action@v3
+        if: matrix.target.name != "armv7" && matrix.target.name != "i386"
         id: buildx
         with:
           install: true
-      - run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build/Dockerfile -o packages .
+      - name: Install docker
+        if: matrix.target.name == "armv7" || matrix.target.name == "i386"
+        run: |
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
+      - run: sudo docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build/Dockerfile -o packages .
       - name: Smoketest musl (gcc)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl/Dockerfile  .
+        run: sudo docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl/Dockerfile  .
       - name: Smoketest musl (clang)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_llvm/Dockerfile  .
+        run: sudo docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_llvm/Dockerfile  .
       - name: Smoketest gnu (gcc)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
+        run: sudo docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
       - name: Smoketest gnu rhel 6 (gcc)
         if: matrix.target.qemu_action_arch == 'amd64'
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
+        run: sudo docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
       - name: Generate Package sha256
         working-directory: packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
