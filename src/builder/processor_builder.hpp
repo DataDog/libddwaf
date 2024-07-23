@@ -19,10 +19,10 @@ namespace ddwaf {
 enum class processor_type : unsigned {
     extract_schema,
     // Reserved
-    http_fingerprint,
+    http_endpoint_fingerprint,
+    http_network_fingerprint,
+    http_header_fingerprint,
     session_fingerprint,
-    network_fingerprint,
-    header_fingerprint,
 };
 
 struct processor_builder {

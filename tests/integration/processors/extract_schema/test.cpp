@@ -4,14 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../../test_utils.hpp"
+#include "../../../test_utils.hpp"
 
 using namespace ddwaf;
 
 namespace {
-constexpr std::string_view base_dir = "integration/processors/";
+constexpr std::string_view base_dir = "integration/processors/extract_schema";
 
-TEST(TestProcessors, Postprocessor)
+TEST(TestExtractSchemaIntegration, Postprocessor)
 {
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -55,7 +55,7 @@ TEST(TestProcessors, Postprocessor)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, Preprocessor)
+TEST(TestExtractSchemaIntegration, Preprocessor)
 {
     auto rule = read_json_file("preprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -108,7 +108,7 @@ TEST(TestProcessors, Preprocessor)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, Processor)
+TEST(TestExtractSchemaIntegration, Processor)
 {
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -166,7 +166,7 @@ TEST(TestProcessors, Processor)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, ProcessorWithScannerByTags)
+TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
 {
     auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -203,7 +203,7 @@ TEST(TestProcessors, ProcessorWithScannerByTags)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, ProcessorWithScannerByID)
+TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
 {
     auto rule = read_json_file("processor_with_scanner_by_id.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -241,7 +241,7 @@ TEST(TestProcessors, ProcessorWithScannerByID)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, ProcessorUpdate)
+TEST(TestExtractSchemaIntegration, ProcessorUpdate)
 {
     auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -318,7 +318,7 @@ TEST(TestProcessors, ProcessorUpdate)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, ScannerUpdate)
+TEST(TestExtractSchemaIntegration, ScannerUpdate)
 {
     auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -397,7 +397,7 @@ TEST(TestProcessors, ScannerUpdate)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, ProcessorAndScannerUpdate)
+TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
 {
     auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -475,7 +475,7 @@ TEST(TestProcessors, ProcessorAndScannerUpdate)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, EmptyScannerUpdate)
+TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
 {
     auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -552,7 +552,7 @@ TEST(TestProcessors, EmptyScannerUpdate)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, EmptyProcessorUpdate)
+TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
 {
     auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -627,7 +627,7 @@ TEST(TestProcessors, EmptyProcessorUpdate)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, PostprocessorWithEphemeralMapping)
+TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
 {
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -694,7 +694,7 @@ TEST(TestProcessors, PostprocessorWithEphemeralMapping)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, PreprocessorWithEphemeralMapping)
+TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
 {
     auto rule = read_json_file("preprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -777,7 +777,7 @@ TEST(TestProcessors, PreprocessorWithEphemeralMapping)
     ddwaf_destroy(handle);
 }
 
-TEST(TestProcessors, ProcessorEphemeralExpression)
+TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
 {
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);

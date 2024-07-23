@@ -11,7 +11,30 @@
 
 namespace ddwaf {
 
+namespace {
 using attribute = object_store::attribute;
+
+// This function adds the waf.context.event "virtual" address, specifically
+// meant to be used to tryigger post-processors when there has been an event
+// during the lifecycle of the context.
+// Since post-processors aren't typically used with ephemeral addresses or
+// composite requests in general, we don't need to make this address dependent
+// on whether the events were ephemeral or not.
+void set_context_event_address(object_store &store)
+{
+    static std::string_view event_addr = "waf.context.event";
+    static auto event_addr_idx = get_target_index(event_addr);
+
+    if (store.has_target(event_addr_idx)) {
+        return;
+    }
+
+    ddwaf_object true_obj;
+    ddwaf_object_bool(&true_obj, true);
+    store.insert(event_addr_idx, event_addr, true_obj, attribute::none);
+}
+
+} // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
@@ -81,6 +104,9 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
 
             if (should_eval_rules) {
                 events = eval_rules(policy, deadline);
+                if (!events.empty()) {
+                    set_context_event_address(store_);
+                }
             }
         }
 

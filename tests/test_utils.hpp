@@ -58,6 +58,7 @@ bool operator==(const event &lhs, const event &rhs);
 
 std::string object_to_json(const ddwaf_object &obj);
 rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
+std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj);
 
 class expression_builder {
 public:
