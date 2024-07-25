@@ -228,13 +228,13 @@ jobs:
             qemu_action_arch: arm64
             platform: linux/arm64
             package: libddwaf-aarch64-linux-musl
-            runner: arm-4core-linux
+            runner: arm-4core-linux-arm-limited
           - name: armv7
             arch: armv7
             qemu_action_arch: arm
             platform: linux/arm/v7
             package: libddwaf-armv7-linux-musl
-            runner: arm-4core-linux
+            runner: arm-4core-linux-arm-limited
     runs-on: ${{ matrix.target.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -245,11 +245,6 @@ jobs:
         id: buildx
         with:
           install: true
-      - name: Install docker
-        if: matrix.target.runner == 'arm-4core-linux'
-        run: |
-          curl -fsSL https://get.docker.com -o get-docker.sh
-          sudo sh get-docker.sh
       - run: sudo docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build/Dockerfile -o packages .
       - name: Smoketest musl (gcc)
         run: sudo docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl/Dockerfile  .
