@@ -1,0 +1,260 @@
+{
+  "version": "2.2",
+  "metadata": {
+    "rules_version": "1.8.0"
+  },
+  "rules": [
+    {
+      "id": "rule1",
+      "name": "rule1",
+      "tags": {
+        "type": "flow1",
+        "category": "category1"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "_dd.appsec.fp.http.endpoint"
+              }
+            ],
+            "regex": ".*"
+          },
+          "operator": "match_regex"
+        }
+      ]
+    },
+    {
+      "id": "rule2",
+      "name": "rule2",
+      "tags": {
+        "type": "flow2",
+        "category": "category2"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "_dd.appsec.fp.http.header"
+              }
+            ],
+            "regex": ".*"
+          },
+          "operator": "match_regex"
+        }
+      ]
+    },
+    {
+      "id": "rule3",
+      "name": "rule3",
+      "tags": {
+        "type": "flow3",
+        "category": "category3"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "_dd.appsec.fp.http.network"
+              }
+            ],
+            "regex": ".*"
+          },
+          "operator": "match_regex"
+        }
+      ]
+    },
+    {
+      "id": "rule4",
+      "name": "rule4",
+      "tags": {
+        "type": "flow4",
+        "category": "category4"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "_dd.appsec.fp.session"
+              }
+            ],
+            "regex": ".*"
+          },
+          "operator": "match_regex"
+        }
+      ]
+    }
+
+  ],
+  "processors": [
+    {
+      "id": "processor-001",
+      "generator": "http_endpoint_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "method": [
+              {
+                "address": "server.request.method"
+              }
+            ],
+            "uri_raw": [
+              {
+                "address": "server.request.uri.raw"
+              }
+            ],
+            "body": [
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "query": [
+              {
+                "address": "server.request.query"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.endpoint"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": false
+    },
+    {
+      "id": "processor-002",
+      "generator": "http_header_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.header"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": false
+    },
+    {
+      "id": "processor-003",
+      "generator": "http_network_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.network"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": false
+    },
+    {
+      "id": "processor-004",
+      "generator": "session_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "cookies": [
+              {
+                "address": "server.request.cookies"
+              }
+            ],
+            "session_id": [
+              {
+                "address": "usr.session_id"
+              }
+            ],
+            "user_id": [
+              {
+                "address": "usr.id"
+              }
+            ],
+            "output": "_dd.appsec.fp.session"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": false
+    }
+  ]
+}

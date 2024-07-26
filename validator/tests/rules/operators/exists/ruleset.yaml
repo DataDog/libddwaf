@@ -1,0 +1,12 @@
+version: '2.1'
+rules:
+  - id: "1"
+    name: rule1-exists
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: exists
+        parameters:
+          inputs:
+            - address: rule1-input

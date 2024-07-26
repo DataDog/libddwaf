@@ -4,8 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "condition/exists.hpp"
 #include "condition/lfi_detector.hpp"
 #include "condition/scalar_condition.hpp"
+#include "condition/shi_detector.hpp"
 #include "condition/sqli_detector.hpp"
 #include "condition/ssrf_detector.hpp"
 #include "expression.hpp"
@@ -19,7 +21,8 @@ namespace {
 
 template <typename T>
 std::vector<condition_parameter> parse_arguments(const parameter::map &params, data_source source,
-    const std::vector<transformer_id> &transformers, address_container &addresses)
+    const std::vector<transformer_id> &transformers, address_container &addresses,
+    const object_limits &limits)
 {
     const auto &specification = T::arguments();
     std::vector<condition_parameter> definitions;
@@ -67,6 +70,10 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
                     address, get_target_index(address), std::move(kp), transformers, source});
             } else {
                 auto input_transformers = static_cast<parameter::vector>(it->second);
+                if (input_transformers.size() > limits.max_transformers_per_address) {
+                    throw ddwaf::parsing_error("number of transformers beyond allowed limit");
+                }
+
                 source = data_source::values;
                 auto new_transformers = parse_transformers(input_transformers, source);
                 targets.emplace_back(condition_target{address, get_target_index(address),
@@ -81,7 +88,7 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
 } // namespace
 
 std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
-    std::unordered_map<std::string, std::string> &data_ids, data_source source,
+    std::unordered_map<std::string, std::string> &data_ids_to_type, data_source source,
     const std::vector<transformer_id> &transformers, address_container &addresses,
     const object_limits &limits)
 {
@@ -93,25 +100,35 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         auto params = at<parameter::map>(root, "parameters");
 
         if (operator_name == "lfi_detector") {
-            auto arguments = parse_arguments<lfi_detector>(params, source, transformers, addresses);
+            auto arguments =
+                parse_arguments<lfi_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<lfi_detector>(std::move(arguments), limits));
         } else if (operator_name == "ssrf_detector") {
             auto arguments =
-                parse_arguments<ssrf_detector>(params, source, transformers, addresses);
+                parse_arguments<ssrf_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<ssrf_detector>(std::move(arguments), limits));
         } else if (operator_name == "sqli_detector") {
             auto arguments =
-                parse_arguments<sqli_detector>(params, source, transformers, addresses);
+                parse_arguments<sqli_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<sqli_detector>(std::move(arguments), limits));
+        } else if (operator_name == "shi_detector") {
+            auto arguments =
+                parse_arguments<shi_detector>(params, source, transformers, addresses, limits);
+            conditions.emplace_back(std::make_unique<shi_detector>(std::move(arguments), limits));
+        } else if (operator_name == "exists") {
+            auto arguments =
+                parse_arguments<exists_condition>(params, source, transformers, addresses, limits);
+            conditions.emplace_back(
+                std::make_unique<exists_condition>(std::move(arguments), limits));
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 
             if (!matcher && !data_id.empty()) {
-                data_ids.emplace(data_id, operator_name);
+                data_ids_to_type.emplace(data_id, operator_name);
             }
 
             auto arguments =
-                parse_arguments<scalar_condition>(params, source, transformers, addresses);
+                parse_arguments<scalar_condition>(params, source, transformers, addresses, limits);
 
             conditions.emplace_back(std::make_unique<scalar_condition>(
                 std::move(matcher), data_id, std::move(arguments), limits));

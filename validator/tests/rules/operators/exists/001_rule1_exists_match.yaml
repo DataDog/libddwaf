@@ -1,0 +1,20 @@
+{
+  name: "Basic run with exists operator",
+  runs: [
+    {
+      persistent-input: {
+        rule1-input: "something else"
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

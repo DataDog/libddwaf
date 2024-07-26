@@ -44,7 +44,7 @@ public:
 
     void insert(const std::shared_ptr<rule> &rule) { rules_.emplace_back(rule.get()); }
 
-    void match(std::vector<event> &events, const object_store &store, collection_cache &cache,
+    void match(std::vector<event> &events, object_store &store, collection_cache &cache,
         const exclusion::context_policy &exclusion,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;

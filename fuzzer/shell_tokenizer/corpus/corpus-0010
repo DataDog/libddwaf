@@ -1,0 +1,1 @@
+ls public/1.json 2> /tmp/toto

@@ -8,5 +8,6 @@ core,https://github.com/llvm/llvm-project/libcxxabi,Apache-2.0,"Copyright (c) 20
 core,https://github.com/llvm/llvm-project/libunwind,Apache-2.0,"Copyright (c) 2009-2019 by the contributors listed in CREDITS.TXT"
 core,https://github.com/JuliaStrings/utf8proc,MIT,"Copyright (c) 2014-2021 by Steven G. Johnson, Jiahao Chen, Tony Kelman, Jonas Fonseca, and other contributors listed in the git history"
 core,https://github.com/fmtlib/fmt,MIT,"Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors"
+core,https://github.com/openssl/openssl,Apache-2.0,"Copyright © 1999-2024, OpenSSL Project Authors. All Rights Reserved."
 dev,https://github.com/jbeder/yaml-cpp,MIT,Copyright (c) 2008-2015 Jesse Beder
 dev,https://github.com/Tencent/rapidjson,MIT,"Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip"

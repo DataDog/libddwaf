@@ -324,4 +324,43 @@ TEST(TestParserV1, TestInvalidDuplicate)
     ddwaf_destroy(handle);
 }
 
+TEST(TestParserV1, TestInvalidTooManyTransformers)
+{
+    auto rule = read_file("invalid_too_many_transformers_v1.yaml");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter root(diagnostics);
+    auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version", "");
+    EXPECT_STREQ(version.c_str(), "");
+
+    auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+
+    auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
+    EXPECT_EQ(loaded.size(), 0);
+
+    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    EXPECT_EQ(failed.size(), 1);
+
+    auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+    EXPECT_EQ(errors.size(), 1);
+
+    auto it = errors.find("number of transformers beyond allowed limit");
+    EXPECT_NE(it, errors.end());
+
+    auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+    EXPECT_EQ(error_rules.size(), 1);
+    EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+    ddwaf_object_free(&diagnostics);
+    ddwaf_destroy(handle);
+}
+
 } // namespace

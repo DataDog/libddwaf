@@ -19,6 +19,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/utils.cpp
     ${libddwaf_SOURCE_DIR}/src/waf.cpp
     ${libddwaf_SOURCE_DIR}/src/platform.cpp
+    ${libddwaf_SOURCE_DIR}/src/sha256.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/processor_builder.cpp
@@ -27,6 +28,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/tokenizer/mysql.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/sqlite.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/generic_sql.cpp
+    ${libddwaf_SOURCE_DIR}/src/tokenizer/shell.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
@@ -34,7 +36,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/common.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/rule_data_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/data_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/processor_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/expression_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/matcher_parser.cpp
@@ -44,10 +46,12 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/scanner_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/exclusion_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
+    ${libddwaf_SOURCE_DIR}/src/processor/fingerprint.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/sqli_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/ssrf_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/scalar_condition.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/shi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/phrase_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/regex_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/is_sqli.cpp

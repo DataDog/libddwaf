@@ -28,6 +28,12 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
         current.actions = std::move(actions);
     }
 
+    it = node.find("tags");
+    if (it != node.end()) {
+        auto tags = static_cast<std::unordered_map<std::string, std::string>>(it->second);
+        current.tags = std::move(tags);
+    }
+
     reference_type type = reference_type::none;
 
     auto rules_target_array = at<parameter::vector>(node, "rules_target", {});
@@ -51,7 +57,7 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
         type = reference_type::id;
     }
 
-    if (!current.actions.has_value() && !current.enabled.has_value()) {
+    if (!current.actions.has_value() && !current.enabled.has_value() && current.tags.empty()) {
         throw ddwaf::parsing_error("rule override without side-effects");
     }
 

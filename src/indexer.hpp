@@ -27,6 +27,14 @@ public:
         by_tags_.insert(item->get_tags(), item.get());
     }
 
+    iterator erase(iterator &it)
+    {
+        auto &item = *it;
+        by_tags_.erase(item->get_tags(), item.get());
+        by_id_.erase(item->get_id());
+        return items_.erase(it);
+    }
+
     T *find_by_id(std::string_view id) const
     {
         auto it = by_id_.find(id);
@@ -58,7 +66,7 @@ public:
 protected:
     std::vector<std::shared_ptr<T>> items_;
     std::unordered_map<std::string_view, T *> by_id_;
-    multi_key_map<std::string_view, T *> by_tags_;
+    multi_key_map<std::string, T *> by_tags_;
 };
 
 } // namespace ddwaf

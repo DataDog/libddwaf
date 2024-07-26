@@ -258,6 +258,18 @@ rapidjson::Document object_to_rapidjson(const ddwaf_object &obj)
     return document;
 }
 
+std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj)
+{
+    std::unordered_map<std::string_view, std::string_view> map;
+    for (unsigned i = 0; i < obj.nbEntries; ++i) {
+        const ddwaf_object &child = obj.array[i];
+        map.emplace(std::string_view{child.parameterName,
+                        static_cast<std::size_t>(child.parameterNameLength)},
+            std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)});
+    }
+    return map;
+}
+
 //} // namespace ddwaf::test
 void PrintTo(const ddwaf_object &actions, ::std::ostream *os)
 {

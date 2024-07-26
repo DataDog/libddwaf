@@ -11,7 +11,30 @@
 
 namespace ddwaf {
 
+namespace {
 using attribute = object_store::attribute;
+
+// This function adds the waf.context.event "virtual" address, specifically
+// meant to be used to tryigger post-processors when there has been an event
+// during the lifecycle of the context.
+// Since post-processors aren't typically used with ephemeral addresses or
+// composite requests in general, we don't need to make this address dependent
+// on whether the events were ephemeral or not.
+void set_context_event_address(object_store &store)
+{
+    static std::string_view event_addr = "waf.context.event";
+    static auto event_addr_idx = get_target_index(event_addr);
+
+    if (store.has_target(event_addr_idx)) {
+        return;
+    }
+
+    ddwaf_object true_obj;
+    ddwaf_object_bool(&true_obj, true);
+    store.insert(event_addr_idx, event_addr, true_obj, attribute::none);
+}
+
+} // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
@@ -81,6 +104,9 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
 
             if (should_eval_rules) {
                 events = eval_rules(policy, deadline);
+                if (!events.empty()) {
+                    set_context_event_address(store_);
+                }
             }
         }
 
@@ -156,10 +182,11 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, deadline);
+        auto exclusion = filter->match(store_, cache, ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                exclusion_policy_.add_rule_exclusion(rule, exclusion->mode, exclusion->ephemeral);
+                exclusion_policy_.add_rule_exclusion(
+                    rule, exclusion->mode, exclusion->action, exclusion->ephemeral);
             }
         }
     }
@@ -180,7 +207,7 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, deadline);
+        auto exclusion = filter->match(store_, cache, ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_input_exclusion(rule, exclusion->objects);
@@ -202,7 +229,7 @@ std::vector<event> context::eval_rules(
             auto [new_it, res] = collection_cache_.emplace(type, collection_cache{});
             it = new_it;
         }
-        collection.match(events, store_, it->second, policy, ruleset_->dynamic_matchers, deadline);
+        collection.match(events, store_, it->second, policy, ruleset_->rule_matchers, deadline);
     };
 
     // Evaluate user priority collections first

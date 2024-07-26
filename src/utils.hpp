@@ -52,6 +52,7 @@ struct object_limits {
     uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
     uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
     uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
+    uint32_t max_transformers_per_address{10}; // can't be overridden for now
 };
 
 using target_index = std::size_t;

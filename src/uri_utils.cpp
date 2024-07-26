@@ -14,6 +14,11 @@
                  / path-absolute
                  / path-rootless
                  / path-empty
+   relative-ref  = relative-part [ "?" query ] [ "#" fragment ]
+   relative-part = "//" authority path-abempty
+                 / path-absolute
+                 / path-noscheme -> Not supported
+                 / path-empty -> Not supported
    scheme        = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
    authority     = [ userinfo "@" ] host [ ":" port ]
    userinfo      = *( unreserved / pct-encoded / sub-delims / ":" )
@@ -59,6 +64,7 @@ namespace {
 enum class token_type {
     none,
     scheme,
+    scheme_authority_or_path,
     hierarchical_part,
     authority,
     userinfo,
@@ -67,7 +73,6 @@ enum class token_type {
     ipv6address,
     regname_or_ipv4address,
     path,
-    path_no_authority,
     query,
     fragment,
 };
@@ -107,7 +112,7 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
     uri_decomposed decomposed;
     decomposed.raw = uri;
 
-    auto expected_token = token_type::scheme;
+    auto expected_token = token_type::scheme_authority_or_path;
     auto lookahead_token = token_type::none;
 
     // Authority helpers
@@ -120,6 +125,20 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
         expected_token = token_type::none;
 
         switch (current_token) {
+        case token_type::scheme_authority_or_path: {
+            if (uri[i] == '/') {
+                // Path or authority
+                if ((i + 1) < uri.size() && uri[i + 1] == '/') {
+                    expected_token = token_type::authority;
+                    i += 2;
+                } else {
+                    expected_token = token_type::path;
+                }
+            } else if (isalpha(uri[i])) {
+                expected_token = token_type::scheme;
+            }
+            break;
+        }
         case token_type::scheme: {
             auto token_begin = i;
             if (!isalpha(uri[i++])) {
@@ -157,25 +176,9 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                 i += 2;
             } else {
                 // Otherwise we expect a path (path-absolute, path-rootless, path-empty)
-                expected_token = token_type::path_no_authority;
+                expected_token = token_type::path;
             }
             break;
-        }
-        case token_type::path_no_authority: {
-            auto token_begin = i;
-            // The path can be empty but we wouldn't be here...
-            while (i < uri.size()) {
-                const auto c = uri[i++];
-                if (!is_path_char(c) && c != '/') {
-                    return std::nullopt;
-                }
-            }
-
-            decomposed.path_index = token_begin;
-            decomposed.path = uri.substr(token_begin, i - token_begin);
-
-            // We're done, nothing else to parse
-            return decomposed;
         }
         case token_type::authority: {
             auto token_begin = i;

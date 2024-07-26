@@ -40,6 +40,17 @@ exclusions:
     rules_target:
       - rule_id: "1"
     on_match: monitor
+  # Test precedence of bypass over custom
+  - id: "9"
+    rules_target:
+      - rule_id: "1"
+      - rule_id: "9"
+    on_match: redirect
+  - id: "10"
+    rules_target:
+      - rule_id: "11"
+    on_match: block
+
 
 rules:
   - id: "1"
@@ -154,3 +165,14 @@ rules:
             - address: rule10-input
           regex: rule10
     on_match: [ block ]
+  - id: "11"
+    name: rule11-custom-by-id
+    tags:
+      type: flow11
+      category: category11
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule11-input
+          regex: rule11

@@ -40,12 +40,14 @@ struct override_spec {
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
     std::vector<reference_spec> targets;
+    std::unordered_map<std::string, std::string> tags;
 };
 
 struct rule_filter_spec {
     std::shared_ptr<expression> expr;
     std::vector<reference_spec> targets;
     exclusion::filter_mode on_match;
+    std::string custom_action;
 };
 
 struct input_filter_spec {
@@ -56,7 +58,7 @@ struct input_filter_spec {
 
 // Containers
 using rule_spec_container = std::unordered_map<std::string, rule_spec>;
-using rule_data_container = std::unordered_map<std::string, std::shared_ptr<matcher::base>>;
+using matcher_container = std::unordered_map<std::string, std::shared_ptr<matcher::base>>;
 using scanner_container = std::unordered_map<std::string_view, std::shared_ptr<scanner>>;
 
 struct override_spec_container {

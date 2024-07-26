@@ -227,6 +227,21 @@ int main() {
         return 1;
     }
 
+    puts("addresses:");
+    uint32_t addrs_size = 0;
+    const char * const* addrs = ddwaf_known_addresses(handle, &addrs_size);
+    for (uint32_t i = 0; i < addrs_size; ++i) {
+        puts(addrs[i]);
+    }
+
+    puts("actions:");
+    uint32_t actions_size = 0;
+    const char * const* actions = ddwaf_known_actions(handle, &actions_size);
+    for (uint32_t i = 0; i < actions_size; ++i) {
+        puts(actions[i]);
+    }
+
+
     ddwaf_context ctx = ddwaf_context_init(handle);
     if (!ctx) {
         puts("ctx is null");

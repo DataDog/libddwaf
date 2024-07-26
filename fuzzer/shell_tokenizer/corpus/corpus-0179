@@ -1,0 +1,1 @@
+true && echo "hello" | tr h '' | tr e a

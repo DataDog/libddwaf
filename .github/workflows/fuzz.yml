@@ -86,6 +86,20 @@ jobs:
             params: "--dialect=sqlite"
           - fuzzer: sqli_detector
             params: "--dialect=standard"
+          - fuzzer: shell_tokenizer
+            params: ""
+          - fuzzer: shi_detector
+            params: ""
+          - fuzzer: sha256
+            params: ""
+          - fuzzer: http_endpoint_fingerprint
+            params: ""
+          - fuzzer: http_header_fingerprint
+            params: ""
+          - fuzzer: http_network_fingerprint
+            params: ""
+          - fuzzer: session_fingerprint
+            params: ""
 
     steps:
       - uses: actions/checkout@v4
