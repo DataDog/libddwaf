@@ -26,18 +26,21 @@ struct ruleset {
     {
         rules.emplace_back(rule);
         std::string_view type = rule->get_tag("type");
-        collection_types.emplace(type);
+        std::string_view mod = rule->get_tag_or("module", "waf");
+
+        auto [it, res] = collection_types.emplace(ddwaf::fmt::format("{}.{}", mod, type));
+        const auto &collection = *it;
         if (rule->get_actions().empty()) {
             if (rule->get_source() == rule::source_type::user) {
-                user_collections[type].insert(rule);
+                user_collections[collection].insert(rule);
             } else {
-                base_collections[type].insert(rule);
+                base_collections[collection].insert(rule);
             }
         } else {
             if (rule->get_source() == rule::source_type::user) {
-                user_priority_collections[type].insert(rule);
+                user_priority_collections[collection].insert(rule);
             } else {
-                base_priority_collections[type].insert(rule);
+                base_priority_collections[collection].insert(rule);
             }
         }
         rule->get_addresses(rule_addresses);
@@ -169,7 +172,7 @@ struct ruleset {
     std::shared_ptr<action_mapper> actions;
 
     // The key used to organise collections is rule.type
-    std::unordered_set<std::string_view> collection_types;
+    std::unordered_set<std::string> collection_types;
     std::unordered_map<std::string_view, priority_collection> user_priority_collections;
     std::unordered_map<std::string_view, priority_collection> base_priority_collections;
     std::unordered_map<std::string_view, collection> user_collections;

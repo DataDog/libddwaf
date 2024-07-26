@@ -939,4 +939,52 @@ TEST(TestContextIntegration, WafContextEventAddress)
     ddwaf_destroy(handle);
 }
 
+TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
+{
+    // NOTE: this test only works due to the order of the rules in the ruleset
+    // Initialize a WAF rule
+    auto rule = read_file("same-type-different-module.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_result ret;
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object param1 = DDWAF_OBJECT_MAP;
+    ddwaf_object tmp;
+    ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
+
+    EXPECT_EQ(ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_FALSE(ret.timeout);
+    EXPECT_EVENTS(ret,
+        {.id = "1",
+            .name = "rule1",
+            .tags = {{"type", "flow1"}, {"category", "category1"}, {"module", "rasp"}},
+            .matches = {{.op = "match_regex",
+                .op_value = "Sqreen",
+                .highlight = "Sqreen",
+                .args = {{
+                    .value = "Sqreen",
+                    .address = "param1",
+                }}}}},
+        {.id = "2",
+            .name = "rule2",
+            .tags = {{"type", "flow1"}, {"category", "category1"}},
+            .matches = {{.op = "match_regex",
+                .op_value = "Sqreen",
+                .highlight = "Sqreen",
+                .args = {{
+                    .value = "Sqreen",
+                    .address = "param1",
+                }}}}});
+    ddwaf_result_free(&ret);
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 } // namespace
