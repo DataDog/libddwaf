@@ -1,5 +1,9 @@
 # libddwaf release
 
+## v1.19.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Fixes
+- Split collections by module ([#328](https://github.com/DataDog/libddwaf/pull/328))
+
 ## v1.19.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 ### New features

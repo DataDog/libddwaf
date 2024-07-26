@@ -171,7 +171,7 @@ struct ruleset {
     std::vector<std::shared_ptr<const scanner>> scanners;
     std::shared_ptr<action_mapper> actions;
 
-    // The key used to organise collections is rule.type
+    // The key used to organise collections is "${rule.module}.${rule.type}"
     std::unordered_set<std::string> collection_types;
     std::unordered_map<std::string_view, priority_collection> user_priority_collections;
     std::unordered_map<std::string_view, priority_collection> base_priority_collections;
