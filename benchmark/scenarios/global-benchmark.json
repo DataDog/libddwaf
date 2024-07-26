@@ -1,5 +1,5 @@
 {
-  "scenario": "ruleset_1.13.0",
+  "scenario": "global-benchmark",
   "max_cycles": 1,
   "ruleset": {
     "version": "2.2",
