@@ -78,6 +78,12 @@ public:
         return it == tags_.end() ? std::string_view() : it->second;
     }
 
+    std::string_view get_tag_or(const std::string &tag, std::string_view or_value) const
+    {
+        auto it = tags_.find(tag);
+        return it == tags_.end() ? or_value : it->second;
+    }
+
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
     const std::unordered_map<std::string, std::string> &get_ancillary_tags() const
     {
