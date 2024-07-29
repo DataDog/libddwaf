@@ -1,5 +1,13 @@
 # libddwaf release
 
+## v1.19.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Fixes
+- Split collections by module ([#328](https://github.com/DataDog/libddwaf/pull/328))
+
+#### Miscellaneous
+- Upgrade arm64 runner ([#326](https://github.com/DataDog/libddwaf/pull/326))
+- Remove noisy scenarios and add new scenario ([#327](https://github.com/DataDog/libddwaf/pull/327))
+
 ## v1.19.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 ### New features
