@@ -46,7 +46,7 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
     std::span<sql_token> param_tokens, std::size_t param_tokens_begin);
 
 bool is_query_comment(const std::vector<sql_token> &resource_tokens,
-    std::span<sql_token> param_tokens, std::size_t param_tokens_begin);
+    std::span<sql_token> param_tokens, std::size_t param_index, std::size_t param_tokens_begin);
 
 } // namespace internal
 

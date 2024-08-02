@@ -233,6 +233,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
         {R"(SELECT * FROM ships WHERE id=--  AND password=HASH('str')
         1 OR 1)",
             R"(--  )"},
+        {"-- thisisacomment\nSELECT * FROM ships WHERE id=paco", "-- thisisacomment"},
     };
 
     for (const auto &[statement, param] : samples) {
@@ -245,7 +246,29 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
         auto [param_tokens, param_index] =
             internal::get_consecutive_tokens(resource_tokens, param_begin, param_end);
 
-        EXPECT_TRUE(internal::is_query_comment(resource_tokens, param_tokens, param_index));
+        EXPECT_TRUE(
+            internal::is_query_comment(resource_tokens, param_tokens, param_begin, param_index));
+    }
+}
+
+TEST(TestSqliDetectorInternals, IsQueryCommentFailure)
+{
+    std::vector<std::pair<std::string, std::string>> samples{
+        {"-- thisisacomment\nSELECT * FROM ships WHERE id=paco", "thisisacomment"},
+    };
+
+    for (const auto &[statement, param] : samples) {
+        auto resource_tokens = tokenize(statement);
+
+        auto param_begin = statement.find(param);
+        ASSERT_NE(param_begin, std::string::npos);
+        auto param_end = param_begin + param.size();
+
+        auto [param_tokens, param_index] =
+            internal::get_consecutive_tokens(resource_tokens, param_begin, param_end);
+
+        EXPECT_FALSE(
+            internal::is_query_comment(resource_tokens, param_tokens, param_begin, param_index));
     }
 }
 
