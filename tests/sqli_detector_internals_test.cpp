@@ -235,6 +235,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
             R"(--  )"},
         {"-- thisisacomment\nSELECT * FROM ships WHERE id=paco", "-- thisisacomment"},
         {"SELECT * FROM users WHERE user = 'admin'--' AND password = '' LIMIT 1", "admin'--'"},
+        {"SELECT * FROM Customers WHERE CustomerName = -- AND\nCity = 'Berlin';", "--"},
     };
 
     for (const auto &[statement, param] : samples) {
