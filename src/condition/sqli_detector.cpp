@@ -80,6 +80,7 @@ std::string strip_literals(std::string_view statement, std::span<sql_token> toke
 
 bool is_query_comment(const std::vector<sql_token> &resource_tokens,
     std::span<sql_token> param_tokens,
+    std::size_t param_index /* the position of the injection on the resource */,
     std::size_t param_tokens_begin /* first index of param_tokens in resource_tokens */)
 
 {
@@ -97,7 +98,13 @@ bool is_query_comment(const std::vector<sql_token> &resource_tokens,
      */
     for (std::size_t i = 0; i < param_tokens.size(); ++i) {
         if (param_tokens[i].type == sql_token_type::eol_comment) {
-            return i > 0 || param_tokens_begin < (resource_tokens.size() - 1);
+            if (param_tokens.size() == 1 && param_tokens_begin < (resource_tokens.size() - 1)) {
+                // If the first and only token is the comment, ensure that it was introduced
+                // by the injection itself, rather than it being a partial match
+                return param_index <= resource_tokens[param_tokens_begin].index;
+            }
+
+            return i > 0;
         }
     }
 
@@ -482,7 +489,8 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
                 !is_benign_order_by_clause(resource_tokens, param_tokens, param_tokens_begin)) ||
             (param_tokens.size() < min_token_count &&
                 (is_where_tautology(resource_tokens, param_tokens, param_tokens_begin) ||
-                    is_query_comment(resource_tokens, param_tokens, param_tokens_begin)))) {
+                    is_query_comment(
+                        resource_tokens, param_tokens, param_index, param_tokens_begin)))) {
             return matched_param{std::string(value), it.get_current_path()};
         }
     }
