@@ -234,6 +234,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
         1 OR 1)",
             R"(--  )"},
         {"-- thisisacomment\nSELECT * FROM ships WHERE id=paco", "-- thisisacomment"},
+        {"SELECT * FROM users WHERE user = 'admin'--' AND password = '' LIMIT 1", "admin'--'"},
     };
 
     for (const auto &[statement, param] : samples) {
@@ -255,6 +256,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentFailure)
 {
     std::vector<std::pair<std::string, std::string>> samples{
         {"-- thisisacomment\nSELECT * FROM ships WHERE id=paco", "thisisacomment"},
+        {"SELECT * FROM user WHERE id = 1 -- thisisacomment", "thisisacomment"},
     };
 
     for (const auto &[statement, param] : samples) {

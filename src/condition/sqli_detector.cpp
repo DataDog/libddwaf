@@ -96,16 +96,15 @@ bool is_query_comment(const std::vector<sql_token> &resource_tokens,
      *                              \---/
      *                            injected string
      */
-    bool is_not_last_token = param_tokens_begin < (resource_tokens.size() - 1);
     for (std::size_t i = 0; i < param_tokens.size(); ++i) {
         if (param_tokens[i].type == sql_token_type::eol_comment) {
-            if (i == 0 && param_tokens.size() == 1 && is_not_last_token) {
+            if (param_tokens.size() == 1 && param_tokens_begin < (resource_tokens.size() - 1)) {
                 // If the first and only token is the comment, ensure that it was introduced
                 // by the injection itself, rather than it being a partial match
                 return param_index <= resource_tokens[param_tokens_begin].index;
             }
 
-            return i > 0 || is_not_last_token;
+            return i > 0;
         }
     }
 
