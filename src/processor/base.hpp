@@ -42,6 +42,24 @@ template <typename Class, typename... Args>
 function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
     std::pair<ddwaf_object, object_store::attribute> (Class::*)(Args...) const);
 
+template <typename T, typename... Ts> constexpr bool contains_optional()
+{
+    if constexpr (sizeof...(Ts) == 0) {
+        return is_optional_argument<T>::value;
+    } else {
+        return is_optional_argument<T>::value || contains_optional<Ts...>();
+    }
+}
+
+template <typename T> struct is_tuple_with_optional;
+
+template <typename... Ts> struct is_tuple_with_optional<std::tuple<Ts...>> {
+    static constexpr bool value = contains_optional<Ts...>();
+};
+
+template <typename T>
+concept tuple_with_optional = is_tuple_with_optional<T>::value;
+
 class base_processor {
 public:
     base_processor() = default;
@@ -91,6 +109,7 @@ public:
         }
 
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));
+        using tuple_type = typename func_traits::tuple_type;
         static_assert(func_traits::nargs == Self::param_names.size());
 
         for (const auto &mapping : mappings_) {
@@ -103,9 +122,12 @@ public:
                 continue;
             }
 
-            typename func_traits::tuple_type args;
-            if (!resolve_arguments(
-                    mapping, store, args, std::make_index_sequence<func_traits::nargs>{})) {
+            tuple_type args;
+            if constexpr (tuple_with_optional<tuple_type>) {}
+
+            auto arg_count = resolve_arguments(
+                mapping, store, args, std::make_index_sequence<func_traits::nargs>{});
+            if (arg_count == 0) {
                 continue;
             }
 
@@ -177,31 +199,38 @@ public:
 
 protected:
     template <size_t I, size_t... Is, typename Args>
-    bool resolve_arguments(const processor_mapping &mapping, const object_store &store, Args &args,
-        std::index_sequence<I, Is...> /*unused*/) const
+    std::size_t resolve_arguments(const processor_mapping &mapping, const object_store &store,
+        Args &args, std::index_sequence<I, Is...> /*unused*/, std::size_t count = 0) const
     {
         using TupleElement = std::tuple_element_t<I, Args>;
         auto arg = resolve_argument<I>(mapping, store);
         if constexpr (is_unary_argument<TupleElement>::value) {
             if (!arg.has_value()) {
-                return false;
+                return 0;
             }
 
+            ++count;
             std::get<I>(args) = std::move(arg.value());
         } else if constexpr (is_variadic_argument<TupleElement>::value) {
             if (arg.empty()) {
-                return false;
+                return 0;
             }
 
+            ++count;
             std::get<I>(args) = std::move(arg);
         } else {
+            // If an optional value is not available, the resolution of said
+            // argument doesn't increase the number of arguments resolsved.
+            // This ensures that when all arguments in a method are optional,
+            // we can prevent calling it if none of the arguments are available.
+            count += static_cast<std::size_t>(arg.has_value());
             std::get<I>(args) = std::move(arg);
         }
 
         if constexpr (sizeof...(Is) > 0) {
-            return resolve_arguments(mapping, store, args, std::index_sequence<Is...>{});
+            return resolve_arguments(mapping, store, args, std::index_sequence<Is...>{}, count);
         } else {
-            return true;
+            return count;
         }
     }
 

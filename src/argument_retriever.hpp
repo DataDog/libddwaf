@@ -24,6 +24,7 @@ template <typename T> struct unary_argument {
     // The memory associated with the address and the key path is owned
     // by either the condition (condition_target) or the processor (processor_target).
     std::string_view address{};
+    target_index target{};
     std::span<const std::string> key_path;
     bool ephemeral{false};
     T value;
@@ -43,6 +44,11 @@ template <typename T> using variadic_argument = std::vector<unary_argument<T>>;
 
 template <typename T, typename = void> struct is_variadic_argument : std::false_type {};
 template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
+
+template <typename T> T value_or(const optional_argument<T> &arg, const T &default_value)
+{
+    return arg.has_value() ? arg.value().value : default_value;
+}
 
 template <typename T> std::optional<T> convert(const ddwaf_object *obj)
 {
@@ -102,7 +108,7 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
             return std::nullopt;
         }
 
-        return unary_argument<T>{target.name, target.key_path,
+        return unary_argument<T>{target.name, target.index, target.key_path,
             attr == object_store::attribute::ephemeral, std::move(converted.value())};
     }
 };

@@ -34,9 +34,9 @@ TEST(TestHttpEndpointFingerprint, Basic)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+        {{}, 0, {}, false, "/path/to/whatever?param=hello"}, {{}, 0, {}, false, &query},
+        {{{}, 0, {}, false, &body}}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -66,9 +66,9 @@ TEST(TestHttpEndpointFingerprint, EmptyQuery)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+        {{}, 0, {}, false, "/path/to/whatever?param=hello"}, {{}, 0, {}, false, &query},
+        {{{}, 0, {}, false, &body}}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -96,9 +96,9 @@ TEST(TestHttpEndpointFingerprint, EmptyBody)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+        {{}, 0, {}, false, "/path/to/whatever?param=hello"}, {{}, 0, {}, false, &query},
+        {{{}, 0, {}, false, &body}}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -121,8 +121,8 @@ TEST(TestHttpEndpointFingerprint, EmptyEverything)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, ""}, {{}, {}, false, ""},
-        {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, ""}, {{}, 0, {}, false, ""},
+        {{}, 0, {}, false, &query}, {{{}, 0, {}, false, &body}}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -154,9 +154,9 @@ TEST(TestHttpEndpointFingerprint, KeyConsistency)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+        {{}, 0, {}, false, "/path/to/whatever?param=hello"}, {{}, 0, {}, false, &query},
+        {{{}, 0, {}, false, &body}}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -188,9 +188,9 @@ TEST(TestHttpEndpointFingerprint, InvalidQueryType)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+        {{}, 0, {}, false, "/path/to/whatever?param=hello"}, {{}, 0, {}, false, &query},
+        {{{}, 0, {}, false, &body}}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -222,9 +222,9 @@ TEST(TestHttpEndpointFingerprint, InvalidBodyType)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+        {{}, 0, {}, false, "/path/to/whatever?param=hello"}, {{}, 0, {}, false, &query},
+        {{{}, 0, {}, false, &body}}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -256,9 +256,9 @@ TEST(TestHttpEndpointFingerprint, InvalidQueryAndBodyType)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+        {{}, 0, {}, false, "/path/to/whatever?param=hello"}, {{}, 0, {}, false, &query},
+        {{{}, 0, {}, false, &body}}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -290,9 +290,37 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
     {
         ddwaf::timer deadline{2s};
-        auto [output, attr] =
-            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-                {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+        auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+            {{}, 0, {}, false, "/path/to/whatever?param=hello"}, {{}, 0, {}, false, &query},
+            {{{}, 0, {}, false, &body}}, deadline);
+        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        std::string_view output_sv{output.stringValue,
+            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
+        ddwaf_object_free(&output);
+    }
+
+    {
+        ddwaf::timer deadline{2s};
+        auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+            {{}, 0, {}, false, "/path/to/whatever#fragment"}, {{}, 0, {}, false, &query},
+            {{{}, 0, {}, false, &body}}, deadline);
+        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        std::string_view output_sv{output.stringValue,
+            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
+        ddwaf_object_free(&output);
+    }
+
+    {
+        ddwaf::timer deadline{2s};
+        auto [output, attr] = gen.eval_impl({{}, 0, {}, false, "GET"},
+            {{}, 0, {}, false, "/path/to/whatever?param=hello#fragment"},
+            {{}, 0, {}, false, &query}, {{{}, 0, {}, false, &body}}, deadline);
         EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
         EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -305,22 +333,8 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
     {
         ddwaf::timer deadline{2s};
         auto [output, attr] =
-            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever#fragment"},
-                {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
-        EXPECT_EQ(attr, object_store::attribute::none);
-
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
-        EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-        ddwaf_object_free(&output);
-    }
-
-    {
-        ddwaf::timer deadline{2s};
-        auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
-            {{}, {}, false, "/path/to/whatever?param=hello#fragment"}, {{}, {}, false, &query},
-            {{}, {}, false, &body}, deadline);
+            gen.eval_impl({{}, 0, {}, false, "GET"}, {{}, 0, {}, false, "/path/to/whatever"},
+                {{}, 0, {}, false, &query}, {{{}, 0, {}, false, &body}}, deadline);
         EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
         EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -333,22 +347,8 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
     {
         ddwaf::timer deadline{2s};
         auto [output, attr] =
-            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever"},
-                {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
-        EXPECT_EQ(attr, object_store::attribute::none);
-
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
-        EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-        ddwaf_object_free(&output);
-    }
-
-    {
-        ddwaf::timer deadline{2s};
-        auto [output, attr] =
-            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/PaTh/To/WhAtEVER"},
-                {{}, {}, false, &query}, {{}, {}, false, &body}, deadline);
+            gen.eval_impl({{}, 0, {}, false, "GET"}, {{}, 0, {}, false, "/PaTh/To/WhAtEVER"},
+                {{}, 0, {}, false, &query}, {{{}, 0, {}, false, &body}}, deadline);
         EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
         EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -382,7 +382,7 @@ TEST(TestHttpHeaderFingerprint, AllKnownHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -402,7 +402,7 @@ TEST(TestHttpHeaderFingerprint, NoHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -430,7 +430,7 @@ TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -463,7 +463,7 @@ TEST(TestHttpHeaderFingerprint, UserAgent)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -509,7 +509,7 @@ TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -559,7 +559,7 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -591,7 +591,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -610,7 +610,7 @@ TEST(TestHttpNetworkFingerprint, NoHeaders)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -643,7 +643,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -676,7 +676,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -715,7 +715,7 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
 
     auto match_frag = [&](ddwaf_object headers, const std::string &expected) {
         ddwaf::timer deadline{2s};
-        auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, deadline);
+        auto [output, attr] = gen.eval_impl({{}, 0, {}, false, &headers}, deadline);
         EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
         EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -747,8 +747,8 @@ TEST(TestSessionFingerprint, UserOnly)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl(
-        {{}, {}, false, &cookies}, {{}, {}, false, {}}, {{}, {}, false, "admin"}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, 0, {}, false, &cookies}}, {{{}, 0, {}, false, {}}},
+        {{{}, 0, {}, false, "admin"}}, deadline);
 
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
@@ -769,8 +769,8 @@ TEST(TestSessionFingerprint, SessionOnly)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl(
-        {{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"}, {{}, {}, false, {}}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, 0, {}, false, &cookies}},
+        {{{}, 0, {}, false, "ansd0182u2n"}}, {{{}, 0, {}, false, {}}}, deadline);
 
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
@@ -800,8 +800,8 @@ TEST(TestSessionFingerprint, CookiesOnly)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl(
-        {{}, {}, false, &cookies}, {{}, {}, false, {}}, {{}, {}, false, {}}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, 0, {}, false, &cookies}}, {{{}, 0, {}, false, {}}},
+        {{{}, 0, {}, false, {}}}, deadline);
 
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
@@ -831,8 +831,8 @@ TEST(TestSessionFingerprint, UserCookieAndSession)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"},
-        {{}, {}, false, "admin"}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, 0, {}, false, &cookies}},
+        {{{}, 0, {}, false, "ansd0182u2n"}}, {{{}, 0, {}, false, "admin"}}, deadline);
 
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
@@ -862,8 +862,8 @@ TEST(TestSessionFingerprint, CookieKeysNormalization)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"},
-        {{}, {}, false, "admin"}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, 0, {}, false, &cookies}},
+        {{{}, 0, {}, false, "ansd0182u2n"}}, {{{}, 0, {}, false, "admin"}}, deadline);
 
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
@@ -893,8 +893,8 @@ TEST(TestSessionFingerprint, CookieValuesNormalization)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"},
-        {{}, {}, false, "admin"}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, 0, {}, false, &cookies}},
+        {{{}, 0, {}, false, "ansd0182u2n"}}, {{{}, 0, {}, false, "admin"}}, deadline);
 
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
@@ -924,8 +924,8 @@ TEST(TestSessionFingerprint, CookieEmptyValues)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"},
-        {{}, {}, false, "admin"}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, 0, {}, false, &cookies}},
+        {{{}, 0, {}, false, "ansd0182u2n"}}, {{{}, 0, {}, false, "admin"}}, deadline);
 
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
@@ -955,8 +955,8 @@ TEST(TestSessionFingerprint, CookieEmptyKeys)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &cookies}, {{}, {}, false, "ansd0182u2n"},
-        {{}, {}, false, "admin"}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, 0, {}, false, &cookies}},
+        {{{}, 0, {}, false, "ansd0182u2n"}}, {{{}, 0, {}, false, "admin"}}, deadline);
 
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);
@@ -977,8 +977,8 @@ TEST(TestSessionFingerprint, EmptyEverything)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl(
-        {{}, {}, false, &cookies}, {{}, {}, false, {}}, {{}, {}, false, {}}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, 0, {}, false, &cookies}}, {{{}, 0, {}, false, {}}},
+        {{{}, 0, {}, false, {}}}, deadline);
 
     EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
     EXPECT_EQ(attr, object_store::attribute::none);

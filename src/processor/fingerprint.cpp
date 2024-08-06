@@ -496,7 +496,7 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
 std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
     const unary_argument<const ddwaf_object *> &query,
-    const unary_argument<const ddwaf_object *> &body, ddwaf::timer &deadline) const
+    const optional_argument<const ddwaf_object *> &body, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -512,8 +512,14 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
     ddwaf_object res;
     ddwaf_object_invalid(&res);
     try {
+        ddwaf_object body_obj;
+        ddwaf_object_invalid(&body_obj);
+        if (body.has_value()) {
+            body_obj = *body.value().value;
+        }
+
         res = generate_fragment("http", string_field{method.value}, string_hash_field{stripped_uri},
-            key_hash_field{*query.value}, key_hash_field{*body.value});
+            key_hash_field{*query.value}, key_hash_field{body_obj});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http endpoint fingerprint: {}", e.what());
     }
@@ -608,16 +614,19 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> session_fingerprint::eval_impl(
-    const unary_argument<const ddwaf_object *> &cookies,
-    const unary_argument<std::string_view> &session_id,
-    const unary_argument<std::string_view> &user_id, ddwaf::timer &deadline) const
+    const optional_argument<const ddwaf_object *> &cookies,
+    const optional_argument<std::string_view> &session_id,
+    const optional_argument<std::string_view> &user_id, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
     }
 
-    auto res = generate_fragment("ssn", string_hash_field{user_id.value},
-        kv_hash_fields{*cookies.value}, string_hash_field{session_id.value});
+    const ddwaf_object invalid_object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID};
+
+    auto res = generate_fragment("ssn", string_hash_field{value_or(user_id, {})},
+        kv_hash_fields{*value_or(cookies, &invalid_object)},
+        string_hash_field{value_or(session_id, {})});
     return {res, object_store::attribute::none};
 }
 

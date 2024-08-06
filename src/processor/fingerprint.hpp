@@ -27,7 +27,7 @@ public:
         const unary_argument<std::string_view> &method,
         const unary_argument<std::string_view> &uri_raw,
         const unary_argument<const ddwaf_object *> &query,
-        const unary_argument<const ddwaf_object *> &body, ddwaf::timer &deadline) const;
+        const optional_argument<const ddwaf_object *> &body, ddwaf::timer &deadline) const;
 };
 
 class http_header_fingerprint : public structured_processor<http_header_fingerprint> {
@@ -70,9 +70,9 @@ public:
     {}
 
     std::pair<ddwaf_object, object_store::attribute> eval_impl(
-        const unary_argument<const ddwaf_object *> &cookies,
-        const unary_argument<std::string_view> &session_id,
-        const unary_argument<std::string_view> &user_id, ddwaf::timer &deadline) const;
+        const optional_argument<const ddwaf_object *> &cookies,
+        const optional_argument<std::string_view> &session_id,
+        const optional_argument<std::string_view> &user_id, ddwaf::timer &deadline) const;
 };
 
 } // namespace ddwaf
