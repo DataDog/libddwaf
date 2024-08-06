@@ -38,6 +38,11 @@ struct processor_cache {
     std::unordered_set<target_index> generated;
 
     std::vector<std::size_t> optionals_evaluated;
+
+    // Fingerprinting cache
+    struct {
+        std::vector<std::string> fragment_fields;
+    } fingerprint;
 };
 
 template <typename Class, typename... Args>
