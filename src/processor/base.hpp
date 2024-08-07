@@ -160,7 +160,6 @@ public:
                 // If there are no new optional arguments, or no arguments at all, skip
                 if (arg_count.all == 0 || (arg_count.all == cache.evaluated[i].all &&
                                               arg_count.optional == cache.evaluated[i].optional)) {
-                    std::cout << "NOthing found\n";
                     continue;
                 }
             } else {
