@@ -38,19 +38,6 @@ struct string_buffer {
     string_buffer &operator=(const string_buffer &) = delete;
     string_buffer &operator=(string_buffer &&) = delete;
 
-    template <std::size_t N>
-    [[nodiscard]] std::span<char, N> subspan()
-        requires(N > 0)
-    {
-        if ((index + N - 1) >= length) {
-            throw std::out_of_range("span[index, N) beyond buffer limit");
-        }
-
-        std::span<char, N> res{&buffer[index], N};
-        index += N;
-        return res;
-    }
-
     void append(std::string_view str)
     {
         if (str.empty()) {
@@ -64,31 +51,11 @@ struct string_buffer {
         index += str.size();
     }
 
-    void append_lowercase(std::string_view str)
-    {
-        if (str.empty()) {
-            return;
-        }
-
-        if ((index + str.length() - 1) >= length) {
-            throw std::out_of_range("appending string beyond buffer limit");
-        }
-
-        for (auto c : str) { buffer[index++] = ddwaf::tolower(c); }
-    }
-
     template <std::size_t N>
     void append(std::array<char, N> str)
         requires(N > 0)
     {
         append(std::string_view{str.data(), N});
-    }
-
-    template <std::size_t N>
-    void append_lowercase(std::array<char, N> str)
-        requires(N > 0)
-    {
-        append_lowercase(std::string_view{str.data(), N});
     }
 
     void append(char c) { append(std::string_view{&c, 1}); }
@@ -104,6 +71,18 @@ struct string_buffer {
     std::size_t index{0};
     std::size_t length;
 };
+
+std::string str_lowercase(std::string_view str)
+{
+    auto buffer = std::string{str};
+
+    cow_string str_lc{buffer.data(), buffer.size()};
+    transformer::lowercase::transform(str_lc);
+
+    str_lc.move(); // move to avoid freeing the string
+
+    return buffer;
+}
 
 // Return true if the first argument is less than (i.e. is ordered before) the second
 bool str_casei_cmp(std::string_view left, std::string_view right)
@@ -212,7 +191,7 @@ template <typename Derived, typename Output = std::string> struct field_generato
 struct string_field : field_generator<string_field> {
     explicit string_field(std::string_view input) : value(input) {}
     // NOLINTNEXTLINE(readability-make-member-function-const)
-    [[nodiscard]] std::string generate() { return std::string{value}; }
+    [[nodiscard]] std::string generate() { return str_lowercase(value); }
 
     std::string_view value;
 };
@@ -457,10 +436,10 @@ ddwaf_object generate_fragment(std::string_view header, Generators... generators
         generate_fragment_field(std::span<std::string, num_fields>{fields}, generators...);
 
     string_buffer buffer{length + header.size() + num_fields + 1};
-    buffer.append_lowercase(header);
+    buffer.append(header);
     for (const auto &field : fields) {
         buffer.append('-');
-        buffer.append_lowercase(field);
+        buffer.append(field);
     }
 
     ddwaf_object res;
@@ -517,11 +496,11 @@ ddwaf_object generate_fragment_cached(std::string_view header,
     auto length = generate_fragment_field_cached(cache, generators...);
 
     string_buffer buffer{length + header.size() + num_fields + 1};
-    buffer.append_lowercase(header);
+    buffer.append(header);
     for (const auto &field : cache) {
         buffer.append('-');
         if (field.has_value()) {
-            buffer.append_lowercase(*field);
+            buffer.append(*field);
         }
     }
 
@@ -634,9 +613,15 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
     std::sort(unknown_headers.begin(), unknown_headers.end());
 
     auto unknown_header_size = unknown_headers.size();
-    auto res =
-        generate_fragment("hdr", string_field{known_header_bitset}, string_hash_field{user_agent},
-            unsigned_field{unknown_header_size}, vector_hash_field{std::move(unknown_headers)});
+    ddwaf_object res;
+    ddwaf_object_invalid(&res);
+    try {
+        res = generate_fragment("hdr", string_field{known_header_bitset},
+            string_hash_field{user_agent}, unsigned_field{unknown_header_size},
+            vector_hash_field{std::move(unknown_headers)});
+    } catch (const std::out_of_range &e) {
+        DDWAF_WARN("Failed to generate http header fingerprint: {}", e.what());
+    }
 
     return {res, object_store::attribute::none};
 }
@@ -684,7 +669,13 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
         for (auto c : chosen_header_value) { ip_count += static_cast<unsigned int>(c == ','); }
     }
 
-    auto res = generate_fragment("net", unsigned_field{ip_count}, string_field{ip_origin_bitset});
+    ddwaf_object res;
+    ddwaf_object_invalid(&res);
+    try {
+        res = generate_fragment("net", unsigned_field{ip_count}, string_field{ip_origin_bitset});
+    } catch (const std::out_of_range &e) {
+        DDWAF_WARN("Failed to generate http network fingerprint: {}", e.what());
+    }
 
     return {res, object_store::attribute::none};
 }
@@ -701,10 +692,17 @@ std::pair<ddwaf_object, object_store::attribute> session_fingerprint::eval_impl(
         throw ddwaf::timeout_exception();
     }
 
-    // This fingerprint needs to be cached:
-    auto res = generate_fragment_cached("ssn", cache.fingerprint.fragment_fields,
-        optional_generator<string_hash_field>{user_id}, optional_generator<kv_hash_fields>{cookies},
-        optional_generator<string_hash_field>{session_id});
+    ddwaf_object res;
+    ddwaf_object_invalid(&res);
+    try {
+        res = generate_fragment_cached("ssn", cache.fingerprint.fragment_fields,
+            optional_generator<string_hash_field>{user_id},
+            optional_generator<kv_hash_fields>{cookies},
+            optional_generator<string_hash_field>{session_id});
+    } catch (const std::out_of_range &e) {
+        DDWAF_WARN("Failed to generate session fingerprint: {}", e.what());
+    }
+
     return {res, object_store::attribute::none};
 }
 
