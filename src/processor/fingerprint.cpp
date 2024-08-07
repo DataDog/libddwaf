@@ -7,8 +7,8 @@
 #include "processor/fingerprint.hpp"
 #include "ddwaf.h"
 #include "sha256.hpp"
+#include "traits.hpp"
 #include "transformer/lowercase.hpp"
-#include "type_traits.hpp"
 #include "utils.hpp"
 
 #include <stdexcept>
