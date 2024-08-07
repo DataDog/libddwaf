@@ -45,9 +45,9 @@ template <typename T> using variadic_argument = std::vector<unary_argument<T>>;
 template <typename T, typename = void> struct is_variadic_argument : std::false_type {};
 template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
 
-template <typename T> T value_or(const optional_argument<T> &arg, const T &default_value)
+template <typename T> std::optional<T> to_optional_value(const optional_argument<T> &arg)
 {
-    return arg.has_value() ? arg.value().value : default_value;
+    return arg.has_value() ? arg.value().value : std::nullopt;
 }
 
 template <typename T> std::optional<T> convert(const ddwaf_object *obj)

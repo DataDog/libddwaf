@@ -35,12 +35,10 @@ struct string_buffer {
         }
     }
 
-    // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
     ~string_buffer()
     {
-        if (owned) {
-            free(buffer);
-        }
+        // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
+        if (owned) { free(buffer); }
     }
 
     string_buffer(const string_buffer &) = delete;
@@ -125,9 +123,12 @@ struct string_field {
     string_field &operator=(const string_field &) = default;
     string_field &operator=(string_field &&) = default;
 
+    [[nodiscard]] bool valid() const { return !value.empty(); }
     [[nodiscard]] std::size_t length() const { return value.size(); }
     [[nodiscard]] static constexpr std::size_t fields() { return 1; }
-    void operator()(string_buffer &output) const { output.append_lowercase(value); }
+    void operator()(string_buffer &output, std::size_t /*index*/) const {
+        output.append_lowercase(value);
+    }
 
     std::string_view value;
 };
@@ -144,24 +145,29 @@ struct unsigned_field {
     unsigned_field &operator=(const unsigned_field &) = default;
     unsigned_field &operator=(unsigned_field &&) = default;
 
+    [[nodiscard]] bool valid() const { return !value.empty(); }
     [[nodiscard]] std::size_t length() const { return value.size(); }
     [[nodiscard]] static constexpr std::size_t fields() { return 1; }
-    void operator()(string_buffer &output) const { output.append(value); }
+    void operator()(string_buffer &output, std::size_t /*index*/) const {
+         output.append(value);
+    }
 
     std::string value;
 };
 
 struct string_hash_field {
     explicit string_hash_field(std::string_view input) : value(input) {}
+    explicit string_hash_field(std::nullopt_t /*unused*/) {}
     ~string_hash_field() = default;
     string_hash_field(const string_hash_field &) = default;
     string_hash_field(string_hash_field &&) = default;
     string_hash_field &operator=(const string_hash_field &) = default;
     string_hash_field &operator=(string_hash_field &&) = default;
 
+    [[nodiscard]] bool valid() const { return !value.empty(); }
     [[nodiscard]] static constexpr std::size_t length() { return 8; }
     [[nodiscard]] static constexpr std::size_t fields() { return 1; }
-    void operator()(string_buffer &output) const;
+    void operator()(string_buffer &output, std::size_t /*index*/) const;
 
     std::string_view value;
 };
@@ -176,7 +182,9 @@ struct key_hash_field {
 
     [[nodiscard]] std::size_t length() const { return valid ? 8 : 0; }
     [[nodiscard]] static constexpr std::size_t fields() { return 1; }
-    void operator()(string_buffer &output) { hasher.write_digest(output.subspan<8>()); }
+    void operator()(string_buffer &output, std::size_t /*index*/) {
+        hasher.write_digest(output.subspan<8>());
+    }
 
     bool valid{false};
     sha256_hash hasher;
@@ -192,7 +200,7 @@ struct vector_hash_field {
 
     [[nodiscard]] std::size_t length() const { return value.empty() ? 0 : 8; }
     [[nodiscard]] static constexpr std::size_t fields() { return 1; }
-    void operator()(string_buffer &output) const;
+    void operator()(string_buffer &output, std::size_t /*index*/) const;
 
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const std::vector<std::string> &value;
@@ -230,6 +238,38 @@ struct kv_hash_fields {
     sha256_hash val_hasher;
 };
 
+template <typename Generator>
+struct optional_generator {
+    template <typename T>
+    explicit optional_generator(const optional_argument<T> &input) {
+        if (input.has_value()) {
+            generator = Generator{input.value().value};
+        }
+    }
+    ~optional_generator() = default;
+    optional_generator(const optional_generator &) = default;
+    optional_generator(optional_generator &&) = default;
+    optional_generator &operator=(const optional_generator &) = default;
+    optional_generator &operator=(optional_generator &&) = default;
+
+    [[nodiscard]] bool has_value() const { return generator.has_value(); }
+    [[nodiscard]] std::size_t length() const {
+        return generator.has_value() ? generator->length() : 0;
+    }
+    [[nodiscard]] std::size_t fields() const {
+        return generator.has_value() ? generator->fields() : 0;
+    }
+    void operator()(string_buffer &output, std::size_t index)
+    {
+        if (generator.has_value()) {
+            (*generator)(output, index);
+        }
+    }
+
+    std::optional<Generator> generator;
+};
+
+
 template <typename... Generators> std::size_t generate_fragment_length(Generators &...generators)
 {
     static_assert(sizeof...(generators) > 0, "At least one generator is required");
@@ -237,22 +277,18 @@ template <typename... Generators> std::size_t generate_fragment_length(Generator
 }
 
 template <typename T, typename... Rest>
-void generate_fragment_field(string_buffer &buffer, std::size_t index, T &generator, Rest &&...rest)
+void generate_fragment_field(string_buffer &buffer, T &generator, Rest &&...rest)
 {
-    if constexpr (T::fields() == 1) {
-        generator(buffer);
-    } else {
-        generator(buffer, index);
-        if (++index < T::fields()) {
+    for (std::size_t i = 0; i < T::fields(); ++i) {
+        generator(buffer, i);
+        if ((i + 1) < T::fields()) {
             buffer.append('-');
-            generate_fragment_field(buffer, index, generator, std::forward<Rest>(rest)...);
-            return;
         }
     }
 
     if constexpr (sizeof...(rest) > 0) {
         buffer.append('-');
-        generate_fragment_field(buffer, 0, std::forward<Rest>(rest)...);
+        generate_fragment_field(buffer, std::forward<Rest>(rest)...);
     }
 }
 
@@ -265,7 +301,7 @@ ddwaf_object generate_fragment(std::string_view header, Generators... generators
     buffer.append_lowercase(header);
     buffer.append('-');
 
-    generate_fragment_field(buffer, 0, generators...);
+    generate_fragment_field(buffer, generators...);
 
     ddwaf_object res;
     auto [ptr, size] = buffer.move();
@@ -275,47 +311,41 @@ ddwaf_object generate_fragment(std::string_view header, Generators... generators
 }
 
 /*template <typename T, typename... Rest>*/
-/*void generate_fragment_field_cached(string_buffer &buffer, std::span<std::string> &cache, T
- * &generator, Rest&&... rest)*/
+/*void generate_fragment_field_cached(*/
+    /*string_buffer &buffer, std::span<std::string> cache, T &generator, Rest &&...rest)*/
 /*{*/
-/*if constexpr (T::fields() == 1) {*/
-/*auto &cache_entry = cache.front();*/
-/*cache_entry.resize(generator.length());*/
-/*generator(string_buffer{cache_entry.data(), cache_entry.size()});*/
-/*} else {*/
-/*for (std::size_t i = 0; i < generator.fields(); ++i) {*/
-/*auto &cache_entry = cache.front();*/
-/*generator(string_buffer{cache_entry.data(), cache_entry.size()}, i);*/
-/*if ((i + 1) < generator.fields()) {*/
-/*buffer.append('-');*/
-/*cache = cache.subspan(1);*/
-/*}*/
-/*}*/
-/*}*/
+    /*for (std::size_t i = 0; i < T::fields(); ++i) {*/
+        /*auto &cache_entry = cache[i];*/
+        /*generator(string_buffer{cache_entry.data(), cache_entry.size()}, i);*/
+        /*if ((i + 1) < generator.fields()) {*/
+            /*buffer.append('-');*/
+        /*}*/
+    /*}*/
 
-/*if constexpr (sizeof...(rest) > 0) {*/
-/*buffer.append('-');*/
-/*generate_fragment_field_cached(buffer, cache.subspan(1), std::forward<Rest>(rest)...);*/
-/*}*/
+    /*if constexpr (sizeof...(rest) > 0) {*/
+        /*buffer.append('-');*/
+        /*generate_fragment_field_cached(buffer, cache.subspan(T::fields()), std::forward<Rest>(rest)...);*/
+    /*}*/
 /*}*/
 
 /*template <typename... Generators>*/
-/*ddwaf_object generate_fragment_cached(std::string_view header, std::vector<std::string> &cache,
- * Generators... generators)*/
+/*ddwaf_object generate_fragment_cached(*/
+    /*std::string_view header, std::vector<std::string> &cache, Generators... generators)*/
 /*{*/
-/*std::size_t total_length = header.size() + 1 + generate_fragment_length(generators...);*/
+    /*for (auto */
+    /*std::size_t total_length = header.size() + 1 + generate_fragment_length(generators...);*/
 
-/*string_buffer buffer{total_length};*/
-/*buffer.append_lowercase(header);*/
-/*buffer.append('-');*/
+    /*string_buffer buffer{total_length};*/
+    /*buffer.append_lowercase(header);*/
+    /*buffer.append('-');*/
 
-/*generate_fragment_field(buffer, generators...);*/
+    /*generate_fragment_field(buffer, generators...);*/
 
-/*ddwaf_object res;*/
-/*auto [ptr, size] = buffer.move();*/
-/*ddwaf_object_stringl_nc(&res, ptr, size);*/
+    /*ddwaf_object res;*/
+    /*auto [ptr, size] = buffer.move();*/
+    /*ddwaf_object_stringl_nc(&res, ptr, size);*/
 
-/*return res;*/
+    /*return res;*/
 /*}*/
 
 // Return true if the first argument is less than (i.e. is ordered before) the second
@@ -400,7 +430,7 @@ void normalize_value(std::string_view key, std::string &buffer, bool trailing_se
     }
 }
 
-void string_hash_field::operator()(string_buffer &output) const
+void string_hash_field::operator()(string_buffer &output, std::size_t /*index*/) const
 {
     if (value.empty()) {
         return;
@@ -451,7 +481,7 @@ key_hash_field::key_hash_field(const ddwaf_object &input)
     }
 }
 
-void vector_hash_field::operator()(string_buffer &output) const
+void vector_hash_field::operator()(string_buffer &output, std::size_t /*index*/) const
 {
     if (value.empty()) {
         return;
@@ -559,7 +589,8 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
 std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
     const unary_argument<const ddwaf_object *> &query,
-    const optional_argument<const ddwaf_object *> &body, ddwaf::timer &deadline) const
+    const optional_argument<const ddwaf_object *> &body,
+    processor_cache &/*cache*/, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -592,7 +623,8 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_impl(
-    const unary_argument<const ddwaf_object *> &headers, ddwaf::timer &deadline) const
+    const unary_argument<const ddwaf_object *> &headers,
+    processor_cache &/*cache*/, ddwaf::timer &deadline) const
 {
     std::string known_header_bitset;
     known_header_bitset.resize(standard_headers_length, '0');
@@ -630,7 +662,8 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_impl(
-    const unary_argument<const ddwaf_object *> &headers, ddwaf::timer &deadline) const
+    const unary_argument<const ddwaf_object *> &headers,
+    processor_cache &/*cache*/, ddwaf::timer &deadline) const
 {
     std::string ip_origin_bitset;
     ip_origin_bitset.resize(ip_origin_headers_length, '0');
@@ -678,20 +711,20 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> session_fingerprint::eval_impl(
     const optional_argument<const ddwaf_object *> &cookies,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     const optional_argument<std::string_view> &session_id,
-    const optional_argument<std::string_view> &user_id, ddwaf::timer &deadline) const
+    const optional_argument<std::string_view> &user_id,
+    processor_cache & cache, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
     }
 
-    const ddwaf_object invalid_object = {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_INVALID};
-
     // This fingerprint needs to be cached:
-
-    auto res = generate_fragment("ssn", string_hash_field{value_or(user_id, {})},
-        kv_hash_fields{*value_or(cookies, &invalid_object)},
-        string_hash_field{value_or(session_id, {})});
+    auto res = generate_fragment("ssn",
+        optional_generator<string_hash_field>{user_id},
+        optional_generator<kv_hash_fields>{cookies},
+        optional_generator<string_hash_field>{session_id});
     return {res, object_store::attribute::none};
 }
 

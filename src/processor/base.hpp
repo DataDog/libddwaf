@@ -41,7 +41,7 @@ struct processor_cache {
 
     // Fingerprinting cache
     struct {
-        std::vector<std::string> fragment_fields;
+        std::vector<std::optional<std::string>> fragment_fields;
     } fingerprint;
 };
 
@@ -165,7 +165,7 @@ public:
             auto [object, attr] = std::apply(
                 [&](auto &&...args) {
                     return static_cast<const Self *>(this)->eval_impl(
-                        std::forward<decltype(args)>(args)..., deadline);
+                        std::forward<decltype(args)>(args)..., cache, deadline);
                 },
                 std::move(args));
             if (attr != object_store::attribute::ephemeral) {
