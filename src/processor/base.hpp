@@ -33,11 +33,16 @@ struct processor_mapping {
     processor_target output;
 };
 
+struct resolved_argument_count {
+    std::size_t all{0};
+    std::size_t optional{0};
+};
+
 struct processor_cache {
     expression::cache_type expr_cache;
     std::unordered_set<target_index> generated;
 
-    std::vector<std::size_t> optionals_evaluated;
+    std::vector<resolved_argument_count> evaluated;
 
     // Fingerprinting cache
     struct {
@@ -124,8 +129,8 @@ public:
             // If the processor has optional parameters, initialise the cache to
             // ensure that we can keep track of the number of optional arguments
             // seen and reevaluate as necessary.
-            if (cache.optionals_evaluated.size() < mappings_.size()) {
-                cache.optionals_evaluated.resize(mappings_.size(), 0);
+            if (cache.evaluated.size() < mappings_.size()) {
+                cache.evaluated.resize(mappings_.size());
             }
         }
 
@@ -140,7 +145,7 @@ public:
                 if constexpr (is_tuple_with_optional<tuple_type>) {
                     // When the processor has optional arguments, these should still be
                     // resolved as there could be new ones available
-                    if (cache.optionals_evaluated[i] == tuple_optionals_trait<tuple_type>::count) {
+                    if (cache.evaluated[i].optional == tuple_optionals_trait<tuple_type>::count) {
                         continue;
                     }
                 } else {
@@ -153,7 +158,9 @@ public:
                 mapping, store, args, std::make_index_sequence<func_traits::nargs>{});
             if constexpr (is_tuple_with_optional<tuple_type>) {
                 // If there are no new optional arguments, or no arguments at all, skip
-                if (arg_count.all == 0 || arg_count.optional == cache.optionals_evaluated[i]) {
+                if (arg_count.all == 0 || (arg_count.all == cache.evaluated[i].all &&
+                                              arg_count.optional == cache.evaluated[i].optional)) {
+                    std::cout << "NOthing found\n";
                     continue;
                 }
             } else {
@@ -177,7 +184,7 @@ public:
                 // again or not. The number of optionals found should increase
                 // on every call, hence why we simply replace the value.
                 if constexpr (is_tuple_with_optional<tuple_type>) {
-                    cache.optionals_evaluated[i] = arg_count.optional;
+                    cache.evaluated[i] = arg_count;
                 }
             }
 
@@ -236,14 +243,10 @@ public:
     }
 
 protected:
-    struct resolved_count {
-        std::size_t all{0};
-        std::size_t optional{0};
-    };
-
     template <size_t I, size_t... Is, typename Args>
-    resolved_count resolve_arguments(const processor_mapping &mapping, const object_store &store,
-        Args &args, std::index_sequence<I, Is...> /*unused*/, resolved_count count = {}) const
+    resolved_argument_count resolve_arguments(const processor_mapping &mapping,
+        const object_store &store, Args &args, std::index_sequence<I, Is...> /*unused*/,
+        resolved_argument_count count = {}) const
     {
         using TupleElement = std::tuple_element_t<I, Args>;
         auto arg = resolve_argument<I>(mapping, store);
