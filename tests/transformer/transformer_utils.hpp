@@ -38,13 +38,13 @@ template <std::size_t N> constexpr std::array<char, N - 1> literal_to_array(cons
 #define EXPECT_TRANSFORM(name, source, expected)                                                   \
     {                                                                                              \
         {                                                                                          \
-            cow_string str({source, sizeof(source) - 1});                                          \
+            cow_string str(std::string_view{source, sizeof(source) - 1});                          \
             EXPECT_TRUE(transformer::name::transform(str));                                        \
             EXPECT_STREQ(str.data(), expected);                                                    \
         }                                                                                          \
         if constexpr (sizeof(source) > 1) {                                                        \
             std::array<char, sizeof(source) - 1> copy{literal_to_array(source)};                   \
-            cow_string str({copy.data(), copy.size()});                                            \
+            cow_string str(std::string_view{copy.data(), copy.size()});                            \
             EXPECT_TRUE(transformer::name::transform(str)) << "Non nul-terminated string";         \
             EXPECT_STREQ(str.data(), expected) << "Non nul-terminated string";                     \
         }                                                                                          \
@@ -53,13 +53,13 @@ template <std::size_t N> constexpr std::array<char, N - 1> literal_to_array(cons
 #define EXPECT_NO_TRANSFORM(name, source)                                                          \
     {                                                                                              \
         {                                                                                          \
-            cow_string str({source, sizeof(source) - 1});                                          \
+            cow_string str(std::string_view{source, sizeof(source) - 1});                          \
             EXPECT_FALSE(transformer::name::transform(str));                                       \
             EXPECT_FALSE(str.modified());                                                          \
         }                                                                                          \
         if constexpr (sizeof(source) > 1) {                                                        \
             std::array<char, sizeof(source) - 1> copy{literal_to_array(source)};                   \
-            cow_string str({copy.data(), copy.size()});                                            \
+            cow_string str(std::string_view{copy.data(), copy.size()});                            \
             EXPECT_FALSE(transformer::name::transform(str)) << "Non nul-terminated string";        \
             EXPECT_FALSE(str.modified());                                                          \
         }                                                                                          \

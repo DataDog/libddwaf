@@ -32,7 +32,7 @@ public:
     {}
 
     MOCK_METHOD((std::pair<ddwaf_object, object_store::attribute>), eval_impl,
-        (const unary_argument<const ddwaf_object *> &, ddwaf::timer &), (const));
+        (const unary_argument<const ddwaf_object *> &, processor_cache &, ddwaf::timer &), (const));
 };
 
 } // namespace mock
@@ -58,7 +58,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
-    EXPECT_CALL(proc, eval_impl(_, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
             output, object_store::attribute::none}));
 
@@ -111,7 +111,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
             first_output, object_store::attribute::none)))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
@@ -173,7 +173,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     mock::processor proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
             output, object_store::attribute::none}));
 
@@ -221,7 +221,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     mock::processor proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
             output, object_store::attribute::none}));
 
@@ -323,7 +323,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
             output, object_store::attribute::none}));
 
@@ -376,7 +376,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     mock::processor proc{"id", builder.build(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
             output, object_store::attribute::none}));
     processor_cache cache;
@@ -468,7 +468,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
             first_output, object_store::attribute::none)))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
@@ -518,7 +518,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
             output, object_store::attribute::none}));
 
@@ -573,7 +573,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).Times(0);
+    EXPECT_CALL(proc, eval_impl(_, _, _)).Times(0);
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -607,7 +607,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).Times(1);
+    EXPECT_CALL(proc, eval_impl(_, _, _)).Times(1);
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
@@ -643,7 +643,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).Times(0);
+    EXPECT_CALL(proc, eval_impl(_, _, _)).Times(0);
 
     processor_cache cache;
     timer deadline{2s};
@@ -671,7 +671,7 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).Times(0);
+    EXPECT_CALL(proc, eval_impl(_, _, _)).Times(0);
 
     processor_cache cache;
     timer deadline{2s};
@@ -702,7 +702,7 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
             output, object_store::attribute::none}));
 
@@ -736,7 +736,7 @@ TEST(TestProcessor, Timeout)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _)).Times(0);
+    EXPECT_CALL(proc, eval_impl(_, _, _)).Times(0);
 
     processor_cache cache;
     timer deadline{0s};

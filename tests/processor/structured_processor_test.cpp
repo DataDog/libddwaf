@@ -34,7 +34,7 @@ public:
     MOCK_METHOD((std::pair<ddwaf_object, object_store::attribute>), eval_impl,
         (const unary_argument<const ddwaf_object *> &unary,
             const optional_argument<std::string_view> &optional,
-            const variadic_argument<unsigned> &variadic, ddwaf::timer &),
+            const variadic_argument<unsigned> &variadic, processor_cache &, ddwaf::timer &),
         (const));
 };
 
@@ -67,7 +67,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
-    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
             output, object_store::attribute::none}));
 
@@ -116,7 +116,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
-    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+    EXPECT_CALL(proc, eval_impl(_, _, _, _, _))
         .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
             output, object_store::attribute::none}));
 
@@ -162,7 +162,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
-    EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(0);
+    EXPECT_CALL(proc, eval_impl(_, _, _, _, _)).Times(0);
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -201,7 +201,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
-    EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(0);
+    EXPECT_CALL(proc, eval_impl(_, _, _, _, _)).Times(0);
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 

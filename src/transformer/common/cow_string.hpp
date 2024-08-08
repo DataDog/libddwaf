@@ -27,6 +27,9 @@ public:
         }
     }
 
+    explicit cow_string(char *str, std::size_t length)
+        : modified_(true), buffer_(str), length_(length)
+    {}
     cow_string(const cow_string &) = delete;
     cow_string &operator=(const cow_string &) = delete;
     cow_string(cow_string &&other) = delete;

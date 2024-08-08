@@ -42,10 +42,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
+    processor_cache cache;
     ddwaf::timer deadline{2s};
     auto [output, attr] = gen.eval_impl({{}, {}, false, buffer.get<std::string_view>()},
         {{}, {}, false, buffer.get<std::string_view>()}, {{}, {}, false, &query},
-        {{}, {}, false, &body}, deadline);
+        {{{}, {}, false, &body}}, cache, deadline);
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
