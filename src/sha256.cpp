@@ -150,7 +150,7 @@ std::string sha256_hash::digest()
     requires(DigestLength % 8 == 0 && DigestLength <= 64)
 {
     std::string final_digest;
-    final_digest.resize(DigestLength, 0);
+    final_digest.resize(DigestLength);
     write_digest(std::span<char, DigestLength>{final_digest});
     return final_digest;
 }

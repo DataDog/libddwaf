@@ -439,19 +439,21 @@ std::size_t generate_fragment_field_cached(
     std::span<std::optional<std::string>> cache, T &generator, Rest &&...rest)
 {
     std::size_t length = 0;
-    if (generator.has_value()) {
-        if constexpr (is_pair_v<typename T::output_type>) {
-            // We can assume that cache[1] will have a value as well
-            if (!cache[0].has_value() || !cache[1].has_value()) {
-                auto value = generator();
-                cache[0] = value.first;
-                cache[1] = value.second;
-            }
+    if constexpr (is_pair_v<typename T::output_type>) {
+        // We can assume that cache[1] will have a value as well
+        if (cache[0].has_value() && cache[1].has_value()) {
             length += cache[0]->size() + cache[1]->size();
-        } else {
-            if (!cache[0].has_value()) {
-                cache[0] = generator();
-            }
+        } else if (generator.has_value()) {
+            auto value = generator();
+            cache[0] = value.first;
+            cache[1] = value.second;
+            length += cache[0]->size() + cache[1]->size();
+        }
+    } else {
+        if (cache[0].has_value()) {
+            length += cache[0]->size();
+        } else if (generator.has_value()) {
+            cache[0] = generator();
             length += cache[0]->size();
         }
     }

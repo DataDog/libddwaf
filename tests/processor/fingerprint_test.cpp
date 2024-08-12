@@ -1024,4 +1024,80 @@ TEST(TestSessionFingerprint, EmptyEverything)
     ddwaf_object_free(&output);
 }
 
+TEST(TestSessionFingerprint, Regeneration)
+{
+    session_fingerprint gen{"id", {}, {}, false, true};
+    processor_cache cache;
+
+    {
+        ddwaf::timer deadline{2s};
+        auto [output, attr] =
+            gen.eval_impl(std::nullopt, std::nullopt, std::nullopt, cache, deadline);
+        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        std::string_view output_sv{output.stringValue,
+            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        EXPECT_STRV(output_sv, "ssn----");
+        ddwaf_object_free(&output);
+    }
+
+    {
+        ddwaf_object tmp;
+
+        ddwaf_object cookies;
+        ddwaf_object_map(&cookies);
+        ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert,martinez"));
+        ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
+        ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB,en-US"));
+        ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
+        ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, ",yes"));
+        ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n,"));
+        ddwaf_object_map_add(
+            &cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+
+        ddwaf::timer deadline{2s};
+
+        auto [output, attr] =
+            gen.eval_impl({{{}, {}, false, &cookies}}, std::nullopt, std::nullopt, cache, deadline);
+        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        std::string_view output_sv{output.stringValue,
+            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        EXPECT_STRV(output_sv, "ssn--df6143bc-64f82cf7-");
+        ddwaf_object_free(&output);
+
+        ddwaf_object_free(&cookies);
+    }
+
+    {
+        ddwaf::timer deadline{2s};
+
+        auto [output, attr] = gen.eval_impl(
+            std::nullopt, {{{}, {}, false, "ansd0182u2n"}}, std::nullopt, cache, deadline);
+        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        std::string_view output_sv{output.stringValue,
+            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        EXPECT_STRV(output_sv, "ssn--df6143bc-64f82cf7-269500d3");
+        ddwaf_object_free(&output);
+    }
+
+    {
+        ddwaf::timer deadline{2s};
+
+        auto [output, attr] =
+            gen.eval_impl(std::nullopt, std::nullopt, {{{}, {}, false, "user"}}, cache, deadline);
+        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        std::string_view output_sv{output.stringValue,
+            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        EXPECT_STRV(output_sv, "ssn-04f8996d-df6143bc-64f82cf7-269500d3");
+        ddwaf_object_free(&output);
+    }
+}
+
 } // namespace
