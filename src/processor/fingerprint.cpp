@@ -40,31 +40,20 @@ struct string_buffer {
 
     void append(std::string_view str)
     {
-        if (str.empty()) {
-            return;
+        if (!str.empty() && (index + str.size()) < length) [[likely]] {
+            memcpy(&buffer[index], str.data(), str.size());
+            index += str.size();
         }
-
-        if ((index + str.length() - 1) >= length) {
-            throw std::out_of_range("appending string beyond buffer limit");
-        }
-        memcpy(&buffer[index], str.data(), str.size());
-        index += str.size();
     }
 
-    template <std::size_t N>
-    void append(std::array<char, N> str)
-        requires(N > 0)
-    {
-        append(std::string_view{str.data(), N});
-    }
+    void append(char c) { buffer[index++] = c; }
 
-    void append(char c) { append(std::string_view{&c, 1}); }
-
-    std::pair<char *, std::size_t> move()
+    ddwaf_object to_object()
     {
-        auto *ptr = buffer;
+        ddwaf_object object;
+        ddwaf_object_stringl_nc(&object, buffer, index);
         buffer = nullptr;
-        return {ptr, index};
+        return object;
     }
 
     char *buffer{nullptr};
@@ -442,11 +431,7 @@ ddwaf_object generate_fragment(std::string_view header, Generators... generators
         buffer.append(field);
     }
 
-    ddwaf_object res;
-    auto [ptr, size] = buffer.move();
-    ddwaf_object_stringl_nc(&res, ptr, size);
-
-    return res;
+    return buffer.to_object();
 }
 
 template <typename T, typename... Rest>
@@ -504,11 +489,7 @@ ddwaf_object generate_fragment_cached(std::string_view header,
         }
     }
 
-    ddwaf_object res;
-    auto [ptr, size] = buffer.move();
-    ddwaf_object_stringl_nc(&res, ptr, size);
-
-    return res;
+    return buffer.to_object();
 }
 
 enum class header_type { unknown, standard, ip_origin, user_agent, datadog };
