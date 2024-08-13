@@ -19,7 +19,7 @@
                 "address": "_dd.appsec.fp.http.endpoint"
               }
             ],
-            "regex": ".*"
+            "regex": "http-put-729d56c3-2c70e12b-2c70e12b"
           },
           "operator": "match_regex"
         }
@@ -40,7 +40,7 @@
                 "address": "_dd.appsec.fp.http.header"
               }
             ],
-            "regex": ".*"
+            "regex": "hdr-1111111111-a441b15f-0-"
           },
           "operator": "match_regex"
         }
@@ -61,7 +61,7 @@
                 "address": "_dd.appsec.fp.http.network"
               }
             ],
-            "regex": ".*"
+            "regex": "net-1-1111111111"
           },
           "operator": "match_regex"
         }
@@ -82,7 +82,7 @@
                 "address": "_dd.appsec.fp.session"
               }
             ],
-            "regex": ".*"
+            "regex": "ssn-8c6976e5-df6143bc-60ba1602-269500d3"
           },
           "operator": "match_regex"
         }
