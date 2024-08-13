@@ -68,6 +68,8 @@ TEST(TestSHIDetector, ExecutablesAndRedirections)
         {"ls 2> file; echo hello", "2> file"},
         {"ls &> file; echo hello", "&> file"},
         {"$(<file) -l", "$(<file) -l"},
+        {"ls injection ls; injection ls", "injection ls"},
+        {"ls $(<file) -l ; $(<file) -l", "$(<file) -l"},
     };
 
     for (const auto &[resource, param] : samples) {

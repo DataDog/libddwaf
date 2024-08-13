@@ -233,6 +233,13 @@ TEST_P(DialectTestFixture, Tautologies)
             "SELECT x FROM t WHERE id = ? or (?) = (?)", "(1) = ('1')"},
         {R"(SELECT * FROM ships WHERE name LIKE '%neb%' OR 1=1)",
             R"(SELECT * FROM ships WHERE name LIKE ? OR ?=?)", R"(neb%' OR 1=1)"},
+        {
+            R"(-- 'something' OR 1=1; --
+            SELECT * FROM table WHERE id='' OR 1=1; --)",
+            R"(-- 'something' OR 1=1; --
+            SELECT * FROM table WHERE id=? OR ?=?; --)",
+            "' OR 1=1; --",
+        },
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
