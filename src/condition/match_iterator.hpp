@@ -21,9 +21,12 @@ public:
         for (; it_; ++it_) {
             const auto *current_obj = *it_;
             if (current_obj->type == DDWAF_OBJ_STRING && current_obj->nbEntries >= MinLength) {
-                current_param_ = std::string_view{current_obj->stringValue, current_obj->nbEntries};
+                current_param_ = std::string_view{
+                    current_obj->stringValue, static_cast<std::size_t>(current_obj->nbEntries)};
                 current_index_ = resource_.find(current_param_, 0);
-                break;
+                if (current_index_ != npos) {
+                    break;
+                }
             }
         }
     }
@@ -53,9 +56,12 @@ public:
         while (++it_) {
             const auto *current_obj = *it_;
             if (current_obj->type == DDWAF_OBJ_STRING && current_obj->nbEntries >= MinLength) {
-                current_param_ = std::string_view{current_obj->stringValue, current_obj->nbEntries};
+                current_param_ = std::string_view{
+                    current_obj->stringValue, static_cast<std::size_t>(current_obj->nbEntries)};
                 current_index_ = resource_.find(current_param_, 0);
-                return true;
+                if (current_index_ != npos) {
+                    return true;
+                }
             }
         }
 
