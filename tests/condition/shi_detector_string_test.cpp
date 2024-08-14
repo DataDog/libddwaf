@@ -17,7 +17,7 @@ template <typename... Args> std::vector<condition_parameter> gen_param_def(Args.
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
-TEST(TestSHIDetector, NoMatchAndFalsePositives)
+TEST(TestShiDetectorString, NoMatchAndFalsePositives)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -57,7 +57,7 @@ TEST(TestSHIDetector, NoMatchAndFalsePositives)
     }
 }
 
-TEST(TestSHIDetector, ExecutablesAndRedirections)
+TEST(TestShiDetectorString, ExecutablesAndRedirections)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -104,7 +104,7 @@ TEST(TestSHIDetector, ExecutablesAndRedirections)
     }
 }
 
-TEST(TestSHIDetector, InjectionsWithinCommandSubstitution)
+TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -152,7 +152,7 @@ TEST(TestSHIDetector, InjectionsWithinCommandSubstitution)
     }
 }
 
-TEST(TestSHIDetector, InjectionsWithinProcessSubstitution)
+TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -193,7 +193,7 @@ TEST(TestSHIDetector, InjectionsWithinProcessSubstitution)
     }
 }
 
-TEST(TestSHIDetector, OffByOnePayloadsMatch)
+TEST(TestShiDetectorString, OffByOnePayloadsMatch)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -236,7 +236,7 @@ TEST(TestSHIDetector, OffByOnePayloadsMatch)
     }
 }
 
-TEST(TestSHIDetector, MultipleArgumentsMatch)
+TEST(TestShiDetectorString, MultipleArgumentsMatch)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 

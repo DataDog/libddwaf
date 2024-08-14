@@ -195,7 +195,7 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
-    shell_argument_array arguments{resource.value->nbEntries};
+    shell_argument_array arguments{static_cast<std::size_t>(resource.value->nbEntries)};
     for (std::size_t i = 0; i < resource.value->nbEntries; ++i) {
         const auto &child = resource.value->array[i];
         std::string_view str;
