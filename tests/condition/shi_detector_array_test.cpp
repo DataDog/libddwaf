@@ -75,11 +75,14 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
         {{"ls", "/sqreensecure/home/zeta/repos/RubyAgentTests/weblog-rails4/public/", ";", "echo",
              R"("testing")", ";", "ls robots.txt"},
             R"(ls robots)"},
-          {{"ls", ";echo hello"}, ";echo hello"},
+        {{"ls", ";echo hello"}, ";echo hello"},
         {{"ls", "2> file", ";", "echo", "hello"}, "2> file"},
         {{"ls", "&> file", ";", "echo", "hello"}, "&> file"},
         {{"$(<file) -l"}, "$(<file) -l"},
-        {{"ls", "injection ls", ";" "injection ls"}, "injection ls"},
+        {{"ls", "injection ls",
+             ";"
+             "injection ls"},
+            "injection ls"},
         {{"ls", "$(<file) -l", ";", "$(<file) -l"}, "$(<file) -l"},
     };
 
@@ -93,7 +96,8 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
         ddwaf_object_array(&array);
         for (const auto &arg : resource) {
             ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-            resource_str.append(arg); resource_str.append(" ");
+            resource_str.append(arg);
+            resource_str.append(" ");
         }
         ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
 
