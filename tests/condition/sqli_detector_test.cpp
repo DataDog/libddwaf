@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "../test_utils.hpp"
 #include "condition/sqli_detector.hpp"
-#include "test_utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -233,6 +233,13 @@ TEST_P(DialectTestFixture, Tautologies)
             "SELECT x FROM t WHERE id = ? or (?) = (?)", "(1) = ('1')"},
         {R"(SELECT * FROM ships WHERE name LIKE '%neb%' OR 1=1)",
             R"(SELECT * FROM ships WHERE name LIKE ? OR ?=?)", R"(neb%' OR 1=1)"},
+        {
+            R"(-- 'something' OR 1=1; --
+            SELECT * FROM table WHERE id='' OR 1=1; --)",
+            R"(-- 'something' OR 1=1; --
+            SELECT * FROM table WHERE id=? OR ?=?; --)",
+            "' OR 1=1; --",
+        },
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {

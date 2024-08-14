@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include "condition/sqli_detector.hpp"
+#include "condition/match_iterator.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
 #include "tokenizer/generic_sql.hpp"
@@ -452,22 +453,13 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 {
     static constexpr std::size_t min_str_len = 3;
 
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    match_iterator<min_str_len> it(resource, &params, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING || param.nbEntries < min_str_len) {
-            continue;
-        }
-
-        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        std::size_t param_index = resource.find(value);
-        if (param_index == npos) {
-            continue;
-        }
+        const auto [value, param_index] = *it;
 
         if (resource_tokens.empty()) {
             // We found a potential injection, so we tokenize the resource which will
