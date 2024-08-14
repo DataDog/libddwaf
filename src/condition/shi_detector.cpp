@@ -22,52 +22,6 @@ struct shi_result {
     std::vector<std::string> key_path;
 };
 
-std::optional<shi_result> shi_string_impl(std::string_view resource,
-    std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
-{
-    match_iterator it(resource, &params, objects_excluded, limits);
-    for (; it; ++it) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
-
-        const auto [param, param_index] = *it;
-
-        if (resource_tokens.empty()) {
-            shell_tokenizer tokenizer(resource);
-            resource_tokens = tokenizer.tokenize();
-        }
-
-        auto end_index = param_index + param.size();
-
-        // Find first token
-        std::size_t i = 0;
-        for (; i < resource_tokens.size(); ++i) {
-            const auto &token = resource_tokens[i];
-            if (end_index >= token.index && param_index < (token.index + token.str.size())) {
-                break;
-            }
-        }
-
-        // Ignore if it's a single token
-        if ((i + 1) < resource_tokens.size() && resource_tokens[i + 1].index >= end_index) {
-            continue;
-        }
-
-        for (; i < resource_tokens.size(); ++i) {
-            const auto &token = resource_tokens[i];
-            if (token.type == shell_token_type::executable ||
-                token.type == shell_token_type::redirection) {
-                return {{std::string(param), it.get_current_path()}};
-            }
-        }
-    }
-
-    return std::nullopt;
-}
-
 struct shell_argument_array {
     static constexpr std::size_t npos = std::string_view::npos;
 
@@ -106,12 +60,13 @@ struct shell_argument_array {
     std::size_t index{};
 };
 
-std::optional<shi_result> shi_array_impl(const shell_argument_array &arguments,
+template <typename ResourceType>
+std::optional<shi_result> shi_impl(const ResourceType &resource,
     std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    match_iterator it(arguments, &params, objects_excluded, limits);
+    match_iterator it(resource, &params, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -120,8 +75,13 @@ std::optional<shi_result> shi_array_impl(const shell_argument_array &arguments,
         const auto [param, param_index] = *it;
 
         if (resource_tokens.empty()) {
-            shell_tokenizer tokenizer(arguments.resource);
-            resource_tokens = tokenizer.tokenize();
+            if constexpr (std::is_same_v<ResourceType, shell_argument_array>) {
+                shell_tokenizer tokenizer(resource.resource);
+                resource_tokens = tokenizer.tokenize();
+            } else {
+                shell_tokenizer tokenizer(resource);
+                resource_tokens = tokenizer.tokenize();
+            }
         }
 
         auto end_index = param_index + param.size();
@@ -168,7 +128,7 @@ eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *>
 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
-        auto res = shi_string_impl(
+        auto res = shi_impl(
             resource_sv, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
             std::vector<std::string> resource_kp{
@@ -207,8 +167,8 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
-        auto res = shi_array_impl(
-            arguments, resource_tokens, *param.value, objects_excluded, limits_, deadline);
+        auto res =
+            shi_impl(arguments, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
             std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
