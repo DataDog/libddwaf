@@ -126,6 +126,50 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
     }
 }
 
+TEST(TestShiDetectorArray, OverlappingInjections)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    std::vector<std::pair<std::vector<std::string>, std::string>> samples{
+        {{"ls", "/sqreensecure/home/zeta/repos/RubyAgentTests/weblog-rails4/public/", ";", "echo",
+             R"("testing")", ";", "ls", "robots.txt"},
+            R"(ls robots)"},
+        {{"ls", ";", "echo", "hello"}, "; echo hello"},
+        {{"ls", "2>", "file", ";", "echo", "hello"}, "2> file"},
+        {{"ls", "&>", "file", ";", "echo", "hello"}, "&> file"},
+        {{"$(<file)", "-l"}, "$(<file) -l"},
+        {{"ls", "injection", "ls", ";", "injection", "ls"}, "injection ls"},
+        {{"ls", "$(<file)", "-l", ";", "$(<file)", "-l"}, "$(<file) -l"},
+    };
+
+    for (const auto &[resource, param] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+        ddwaf_object_map(&root);
+
+        std::string resource_str;
+        ddwaf_object array;
+        ddwaf_object_array(&array);
+        for (const auto &arg : resource) {
+            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            resource_str.append(arg);
+            resource_str.append(" ");
+        }
+        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
+
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_FALSE(res.outcome) << param;
+    }
+}
+
 /*TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)*/
 /*{*/
 /*shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};*/
@@ -215,48 +259,56 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
 /*}*/
 /*}*/
 
-/*TEST(TestShiDetectorArray, OffByOnePayloadsMatch)*/
-/*{*/
-/*shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};*/
+TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-/*std::vector<std::pair<std::string, std::string>> samples{*/
-/*{R"(cat hello> cat /etc/passwd; echo "")", R"(hello>)"},*/
-/*{R"(cat hello> cat /etc/passwd; echo "")", R"(t hello)"},*/
-/*{R"(cat hello> cat /etc/passwd; echo "")", R"(cat hello)"},*/
-/*{R"!(diff <(file) <(rm -rf /etc/systemd/))!", "rm -"},*/
-/*};*/
+    std::vector<std::pair<std::vector<std::string>, std::string>> samples{
+        {{"cat", "hello>", "cat", "/etc/passwd", ";", "echo", R"("")"}, R"(hello>)"},
+        {{"cat hello>", "cat", "/etc/passwd", ";", "echo", R"("")"}, R"(t hello)"},
+        {{"cat hello", ">", "cat", "/etc/passwd", ";", "echo", R"("")"}, R"(cat hello)"},
+        {{"diff", "<(file)", "<(rm -rf /etc/systemd/)"}, "rm -"},
+    };
 
-/*for (const auto &[resource, param] : samples) {*/
-/*ddwaf_object tmp;*/
-/*ddwaf_object root;*/
+    for (const auto &[resource, param] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+        ddwaf_object_map(&root);
 
-/*ddwaf_object_map(&root);*/
-/*ddwaf_object_map_add(*/
-/*&root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));*/
-/*ddwaf_object_map_add(*/
-/*&root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));*/
+        std::string resource_str;
+        ddwaf_object array;
+        ddwaf_object_array(&array);
+        for (const auto &arg : resource) {
+            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            resource_str.append(arg);
+            resource_str.append(" ");
+        }
+        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
 
-/*object_store store;*/
-/*store.insert(root);*/
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
-/*ddwaf::timer deadline{2s};*/
-/*condition_cache cache;*/
-/*auto res = cond.eval(cache, store, {}, {}, deadline);*/
-/*ASSERT_TRUE(res.outcome) << resource;*/
-/*EXPECT_FALSE(res.ephemeral);*/
+        object_store store;
+        store.insert(root);
 
-/*EXPECT_TRUE(cache.match);*/
-/*EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");*/
-/*EXPECT_STR(cache.match->args[0].resolved, resource.c_str());*/
-/*EXPECT_TRUE(cache.match->args[0].key_path.empty());*/
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome) << param;
+        EXPECT_FALSE(res.ephemeral);
 
-/*EXPECT_STRV(cache.match->args[1].address, "server.request.query");*/
-/*EXPECT_STR(cache.match->args[1].resolved, param.c_str());*/
-/*EXPECT_TRUE(cache.match->args[1].key_path.empty());*/
+        EXPECT_TRUE(cache.match);
+        EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
+        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
-/*EXPECT_STR(cache.match->highlights[0], param.c_str());*/
-/*}*/
-/*}*/
+        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+        EXPECT_STR(cache.match->highlights[0], param.c_str());
+    }
+}
 
 /*TEST(TestShiDetectorArray, MultipleArgumentsMatch)*/
 /*{*/
