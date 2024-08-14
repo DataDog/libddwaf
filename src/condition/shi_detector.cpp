@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "condition/shi_detector.hpp"
+#include "condition/match_iterator.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
 #include "tokenizer/shell.hpp"
@@ -26,23 +27,13 @@ std::optional<shi_result> shi_string_impl(std::string_view resource,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    match_iterator it(resource, &params, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &object = *(*it);
-        if (object.type != DDWAF_OBJ_STRING) {
-            continue;
-        }
-
-        std::string_view param{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
-        auto param_index = resource.find(param);
-        if (param_index == std::string_view::npos) {
-            // Seemingly no injection
-            continue;
-        }
+        const auto [param, param_index] = *it;
 
         if (resource_tokens.empty()) {
             shell_tokenizer tokenizer(resource);

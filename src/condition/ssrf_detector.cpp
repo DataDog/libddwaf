@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "condition/ssrf_detector.hpp"
+#include "condition/match_iterator.hpp"
 #include "exception.hpp"
 #include "iterator.hpp"
 #include "uri_utils.hpp"
@@ -150,23 +151,13 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
 
     std::optional<ssrf_result> parameter_injection;
 
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    match_iterator<min_str_len> it{uri.raw, &params, objects_excluded, limits};
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &object = *(*it);
-        if (object.type != DDWAF_OBJ_STRING || object.nbEntries < min_str_len) {
-            continue;
-        }
-
-        std::string_view param{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
-        auto param_index = uri.raw.find(param);
-        if (param_index == npos) {
-            // Seemingly no injection
-            continue;
-        }
+        const auto [param, param_index] = *it;
 
         // Verify if the injected param intereferes with the authority:
         //

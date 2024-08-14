@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "../test_utils.hpp"
 #include "condition/shi_detector.hpp"
-#include "test_utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -68,6 +68,8 @@ TEST(TestSHIDetector, ExecutablesAndRedirections)
         {"ls 2> file; echo hello", "2> file"},
         {"ls &> file; echo hello", "&> file"},
         {"$(<file) -l", "$(<file) -l"},
+        {"ls injection ls; injection ls", "injection ls"},
+        {"ls $(<file) -l ; $(<file) -l", "$(<file) -l"},
     };
 
     for (const auto &[resource, param] : samples) {

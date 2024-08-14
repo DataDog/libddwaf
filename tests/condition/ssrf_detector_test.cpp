@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "../test_utils.hpp"
 #include "condition/ssrf_detector.hpp"
-#include "test_utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
