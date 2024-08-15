@@ -88,6 +88,8 @@ struct shell_argument_array {
         return npos;
     }
 
+    [[nodiscard]] bool empty() const { return resource.empty(); }
+
     std::vector<std::pair<std::size_t, std::size_t>> indices;
     std::string resource;
     std::size_t index{};
@@ -196,6 +198,10 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
             str = std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
         }
         arguments.append(str);
+    }
+
+    if (arguments.empty()) {
+        return {};
     }
 
     std::vector<shell_token> resource_tokens;
