@@ -17,6 +17,46 @@ template <typename... Args> std::vector<condition_parameter> gen_param_def(Args.
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
+TEST(TestShiDetectorString, InvalidType)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.sys.shell.cmd", ddwaf_object_map(&tmp));
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+}
+
+TEST(TestShiDetectorString, EmptyResource)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, ""));
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+}
+
 TEST(TestShiDetectorString, NoMatchAndFalsePositives)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};

@@ -29,6 +29,10 @@ struct shell_argument_array {
 
     void append(std::string_view arg)
     {
+        if (arg.empty()) {
+            return;
+        }
+
         indices.emplace_back(index, index + arg.size() - 1);
 
         index += arg.size() + 1;

@@ -17,6 +17,87 @@ template <typename... Args> std::vector<condition_parameter> gen_param_def(Args.
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
+TEST(TestShiDetectorArray, InvalidType)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.sys.shell.cmd", ddwaf_object_map(&tmp));
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+}
+
+TEST(TestShiDetectorArray, EmptyResource)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.sys.shell.cmd", ddwaf_object_array(&tmp));
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+}
+
+TEST(TestShiDetectorArray, InvalidTypeWithinArray)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "ls"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "-l"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, ";"));
+    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, 22));
+    ddwaf_object_array_add(&array, ddwaf_object_map(&tmp));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "cat /etc/passwd"));
+    ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
+    ddwaf_object_map_add(
+        &root, "server.request.query", ddwaf_object_string(&tmp, "cat /etc/passwd"));
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_TRUE(res.outcome);
+    EXPECT_FALSE(res.ephemeral);
+
+    EXPECT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
+    EXPECT_STR(cache.match->args[0].resolved, "ls -l ; cat /etc/passwd");
+    EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    EXPECT_STR(cache.match->args[1].resolved, "cat /etc/passwd");
+    EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+    EXPECT_STR(cache.match->highlights[0], "cat /etc/passwd");
+}
+
 TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
