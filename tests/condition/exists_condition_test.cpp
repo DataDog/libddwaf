@@ -36,6 +36,38 @@ TEST(TestExistsCondition, AddressAvailable)
     ASSERT_TRUE(res.outcome);
 }
 
+TEST(TestExistsCondition, KeyPathAvailable)
+{
+    exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
+        {"path", "to", "object"}}}}}}};
+
+    ddwaf_object tmp;
+    ddwaf_object path;
+    ddwaf_object to;
+    ddwaf_object object;
+
+    ddwaf_object_map(&object);
+    ddwaf_object_map_add(&object, "object", ddwaf_object_invalid(&tmp));
+
+    ddwaf_object_map(&to);
+    ddwaf_object_map_add(&to, "to", &object);
+
+    ddwaf_object_map(&path);
+    ddwaf_object_map_add(&path, "path", &to);
+
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_TRUE(res.outcome);
+}
+
 TEST(TestExistsCondition, AddressNotAvaialble)
 {
     exists_condition cond{{gen_variadic_param("server.request.uri_raw")}};
