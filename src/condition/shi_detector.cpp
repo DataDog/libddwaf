@@ -42,19 +42,44 @@ struct shell_argument_array {
         resource.append(arg);
     }
 
-    std::size_t find(std::string_view str, std::size_t pos = 0)
+    std::size_t find(std::string_view str, std::size_t start = 0)
     {
-        auto start = resource.find(str, pos);
-        if (start != npos) {
+        while ((start = resource.find(str, start)) != npos) {
             auto end = start + str.size() - 1;
 
             // Ensure that both start and end are within the same argument
-            // TODO: binary search
-            for (auto [arg_start, arg_end] : indices) {
-                if (arg_start <= start && end <= arg_end) {
+            std::size_t low = 0;
+            std::size_t high = indices.size() - 1;
+            while (high >= low) {
+                auto mid = low + (high - low) / 2;
+                auto [arg_start, arg_end] = indices[mid];
+
+                // If the end of the current argument is after the start,
+                // search the remaining arguments to the right of this one
+                if (arg_end < start) {
+                    low = mid + 1;
+                    continue;
+                }
+
+                // If the start of the current argument is before the end,
+                // search the remaining arguments to the left of this one.
+                if (arg_start > end) {
+                    high = mid - 1;
+                    continue;
+                }
+
+                // If the start and end are within the boundaries of this
+                // argument, we have determined that there is no overlap
+                if (arg_start <= start && arg_end >= end) {
                     return start;
                 }
+
+                // Otherwise, there's overlap and it's not a valid match.
+                break;
             }
+
+            // Attempt the next match
+            start += 1;
         }
         return npos;
     }

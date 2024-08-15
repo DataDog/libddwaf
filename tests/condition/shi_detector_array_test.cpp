@@ -41,6 +41,7 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
             "blabla-bla"},
         {{"ls", "-l", "-r -t"}, "-r -t"},
         {{R"!({ ( $(echo ls) ) })!"}, "ls)"},
+        {{R"!({ ( $(echo ls) ) } #)!", "cat /etc/passwd"}, "cat /etc/passwd)"},
     };
 
     for (const auto &[resource, param] : samples) {
@@ -84,6 +85,8 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
              "injection ls"},
             "injection ls"},
         {{"ls", "$(<file) -l", ";", "$(<file) -l"}, "$(<file) -l"},
+        // The first match is overlapping, the second one isn't
+        {{"$(<file)", "-l", ";", "$(<file) -l"}, "$(<file) -l"},
     };
 
     for (const auto &[resource, param] : samples) {
@@ -142,6 +145,9 @@ TEST(TestShiDetectorArray, OverlappingInjections)
         {{"$(<file)", "-l"}, "$(<file) -l"},
         {{"ls", "injection", "ls", ";", "injection", "ls"}, "injection ls"},
         {{"ls", "$(<file)", "-l", ";", "$(<file)", "-l"}, "$(<file) -l"},
+        {{"ls", "$(<file)", "-l", ";", "$(<file)", "-l"}, "; $(<file)"},
+        {{"ls", "$(<file)", "-l", ";", "$(<file)", "-l"}, "$(<file) -"},
+        {{"ls", "$(<file)", "-l", ";", "$(<file)", "-l"}, "; $(<file) -"},
     };
 
     for (const auto &[resource, param] : samples) {
@@ -236,18 +242,28 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    std::vector<std::pair<std::string, std::string>> samples{
-        {R"!(echo >(ls -l))!", "ls -l"},
-        {R"!(diff <(file) <(rm -rf /etc/systemd/))!", "rm -rf /etc/systemd/"},
+    std::vector<std::pair<std::vector<std::string>, std::string>> samples{
+        {{"echo", ">(ls -l))"}, "ls -l"},
+        {{"diff", "<(file)", "<(rm -rf /etc/systemd/))"}, "rm -rf /etc/systemd/"},
     };
 
     for (const auto &[resource, param] : samples) {
         ddwaf_object tmp;
         ddwaf_object root;
-
         ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));
+
+        std::string resource_str;
+        ddwaf_object array;
+        ddwaf_object_array(&array);
+        for (const auto &arg : resource) {
+            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            if (!resource_str.empty()) {
+                resource_str.append(" ");
+            }
+            resource_str.append(arg);
+        }
+        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
+
         ddwaf_object_map_add(
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
@@ -257,12 +273,12 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << resource;
+        ASSERT_TRUE(res.outcome) << param;
         EXPECT_FALSE(res.ephemeral);
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
@@ -284,7 +300,9 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
         {{"diff", "<(file)", "<(rm -rf /etc/systemd/)"}, "rm -"},
         {{"diff", "<(file)", "<(rm -rf /etc/systemd/)"}, "rm -"},
         {{"ls -l", "-a", "--classify", "--full-time"}, "ls -l"},
-        {{"ls -l", "-a", "--classify", "--full-time", ";", "cat /etc/passwd"}, "cat /etc/passwd"}};
+        {{"ls -l", "-a", "--classify", "--full-time", ";", "cat /etc/passwd"}, "cat /etc/passwd"},
+        {{"ls -l", "-a", "--classify ; cat /etc/passwd #", "--full-time"}, "; cat /etc/passwd"},
+        {{"l", "-l", "-a", ";", "l -l"}, "l -l"}};
 
     for (const auto &[resource, param] : samples) {
         ddwaf_object tmp;

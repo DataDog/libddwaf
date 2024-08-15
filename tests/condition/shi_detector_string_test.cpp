@@ -35,6 +35,7 @@ TEST(TestShiDetectorString, NoMatchAndFalsePositives)
             "blabla-bla"},
         {R"(ls -l -r -t)", "-r -t"},
         {R"!({ ( $(echo ls) ) })!", "ls)"},
+        {R"!({ ( $(echo ls) ) } # cat /etc/passwd)!", "cat /etc/passwd"},
     };
 
     for (const auto &[resource, param] : samples) {
