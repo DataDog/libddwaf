@@ -86,6 +86,34 @@ TEST(TestExistsCondition, AddressNotAvaialble)
     ASSERT_FALSE(res.outcome);
 }
 
+TEST(TestExistsCondition, KeyPathNotAvailable)
+{
+    exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
+        {"path", "to", "object"}}}}}}};
+
+    ddwaf_object tmp;
+    ddwaf_object path;
+    ddwaf_object to;
+
+    ddwaf_object_map(&to);
+    ddwaf_object_map_add(&to, "to", ddwaf_object_invalid(&tmp));
+
+    ddwaf_object_map(&path);
+    ddwaf_object_map_add(&path, "path", &to);
+
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+}
+
 TEST(TestExistsCondition, MultipleAddresses)
 {
     exists_condition cond{
@@ -111,6 +139,51 @@ TEST(TestExistsCondition, MultipleAddresses)
     validate_address("server.request.uri_raw");
     validate_address("server.request.query", false);
     validate_address("usr.session_id", false);
+}
+
+TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
+{
+    exists_condition cond{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
+                                 {"path", "to", "object"}},
+        {"usr.id", get_target_index("usr.id")},
+        {"server.request.body", get_target_index("server.request.body"), {"key"}}}}}};
+
+    auto validate_address = [&](const std::string &address, const std::vector<std::string> &kp,
+                                bool expected = true) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+        ddwaf_object_map(&root);
+        ddwaf_object_invalid(&tmp);
+
+        for (auto it = kp.rbegin(); it != kp.rend(); ++it) {
+            ddwaf_object path;
+            ddwaf_object_map(&path);
+            ddwaf_object_map_add(&path, it->c_str(), &tmp);
+
+            tmp = path;
+        }
+
+        ddwaf_object_map_add(&root, address.c_str(), &tmp);
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_EQ(res.outcome, expected);
+    };
+
+    validate_address("usr.id", {});
+    validate_address("usr.id", {"whatever"});
+    validate_address("server.request.uri_raw", {"path", "to", "object"});
+    validate_address("server.request.body", {"key"});
+    validate_address("server.request.body", {}, false);
+    validate_address("server.request.uri_raw", {"path", "to"}, false);
+    validate_address("server.request.uri_raw", {"path"}, false);
+    validate_address("server.request.uri_raw", {}, false);
+    validate_address("server.request.query", {}, false);
+    validate_address("usr.session_id", {}, false);
 }
 
 } // namespace
