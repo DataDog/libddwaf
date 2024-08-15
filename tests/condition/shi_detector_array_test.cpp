@@ -96,8 +96,10 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
         ddwaf_object_array(&array);
         for (const auto &arg : resource) {
             ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            if (!resource_str.empty()) {
+                resource_str.append(" ");
+            }
             resource_str.append(arg);
-            resource_str.append(" ");
         }
         ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
 
@@ -152,8 +154,10 @@ TEST(TestShiDetectorArray, OverlappingInjections)
         ddwaf_object_array(&array);
         for (const auto &arg : resource) {
             ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            if (!resource_str.empty()) {
+                resource_str.append(" ");
+            }
             resource_str.append(arg);
-            resource_str.append(" ");
         }
         ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
 
@@ -170,104 +174,20 @@ TEST(TestShiDetectorArray, OverlappingInjections)
     }
 }
 
-/*TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)*/
-/*{*/
-/*shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};*/
-
-/*std::vector<std::pair<std::string, std::string>> samples{*/
-/*{R"!(echo "$(cat /etc/passwd)")!", "cat /etc/passwd"},*/
-/*{R"!($(cat /etc/passwd))!", "cat /etc/passwd"},*/
-/*{R"!($(echo $(echo $(echo ls))))!", "$(echo $(echo ls))"},*/
-/*{R"!($(echo $(echo $(echo ls))))!", "echo ls"},*/
-/*{R"!(ls -l $(echo /etc/passwd))!", "-l $(echo /etc/passwd)"},*/
-/*{R"!({ ( $(echo ls) ) })!", "echo ls"},*/
-/*{R"!({ ( $(echo ls) ) })!", "$(echo ls)"},*/
-/*{R"!({ ( $(echo ls) ) })!", "( $(echo ls) )"},*/
-/*{R"!({ ( $(echo ls) ) })!", "{ ( $(echo ls) ) }"},*/
-/*};*/
-
-/*for (const auto &[resource, param] : samples) {*/
-/*ddwaf_object tmp;*/
-/*ddwaf_object root;*/
-
-/*ddwaf_object_map(&root);*/
-/*ddwaf_object_map_add(*/
-/*&root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));*/
-/*ddwaf_object_map_add(*/
-/*&root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));*/
-
-/*object_store store;*/
-/*store.insert(root);*/
-
-/*ddwaf::timer deadline{2s};*/
-/*condition_cache cache;*/
-/*auto res = cond.eval(cache, store, {}, {}, deadline);*/
-/*ASSERT_TRUE(res.outcome) << resource;*/
-/*EXPECT_FALSE(res.ephemeral);*/
-
-/*EXPECT_TRUE(cache.match);*/
-/*EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");*/
-/*EXPECT_STR(cache.match->args[0].resolved, resource.c_str());*/
-/*EXPECT_TRUE(cache.match->args[0].key_path.empty());*/
-
-/*EXPECT_STRV(cache.match->args[1].address, "server.request.query");*/
-/*EXPECT_STR(cache.match->args[1].resolved, param.c_str());*/
-/*EXPECT_TRUE(cache.match->args[1].key_path.empty());*/
-
-/*EXPECT_STR(cache.match->highlights[0], param.c_str());*/
-/*}*/
-/*}*/
-
-/*TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)*/
-/*{*/
-/*shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};*/
-
-/*std::vector<std::pair<std::string, std::string>> samples{*/
-/*{R"!(echo >(ls -l))!", "ls -l"},*/
-/*{R"!(diff <(file) <(rm -rf /etc/systemd/))!", "rm -rf /etc/systemd/"},*/
-/*};*/
-
-/*for (const auto &[resource, param] : samples) {*/
-/*ddwaf_object tmp;*/
-/*ddwaf_object root;*/
-
-/*ddwaf_object_map(&root);*/
-/*ddwaf_object_map_add(*/
-/*&root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));*/
-/*ddwaf_object_map_add(*/
-/*&root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));*/
-
-/*object_store store;*/
-/*store.insert(root);*/
-
-/*ddwaf::timer deadline{2s};*/
-/*condition_cache cache;*/
-/*auto res = cond.eval(cache, store, {}, {}, deadline);*/
-/*ASSERT_TRUE(res.outcome) << resource;*/
-/*EXPECT_FALSE(res.ephemeral);*/
-
-/*EXPECT_TRUE(cache.match);*/
-/*EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");*/
-/*EXPECT_STR(cache.match->args[0].resolved, resource.c_str());*/
-/*EXPECT_TRUE(cache.match->args[0].key_path.empty());*/
-
-/*EXPECT_STRV(cache.match->args[1].address, "server.request.query");*/
-/*EXPECT_STR(cache.match->args[1].resolved, param.c_str());*/
-/*EXPECT_TRUE(cache.match->args[1].key_path.empty());*/
-
-/*EXPECT_STR(cache.match->highlights[0], param.c_str());*/
-/*}*/
-/*}*/
-
-TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
+TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
     std::vector<std::pair<std::vector<std::string>, std::string>> samples{
-        {{"cat", "hello>", "cat", "/etc/passwd", ";", "echo", R"("")"}, R"(hello>)"},
-        {{"cat hello>", "cat", "/etc/passwd", ";", "echo", R"("")"}, R"(t hello)"},
-        {{"cat hello", ">", "cat", "/etc/passwd", ";", "echo", R"("")"}, R"(cat hello)"},
-        {{"diff", "<(file)", "<(rm -rf /etc/systemd/)"}, "rm -"},
+        {{"echo", R"!("$(cat /etc/passwd)")!"}, "cat /etc/passwd"},
+        {{R"!($(cat /etc/passwd))!"}, "cat /etc/passwd"},
+        {{"echo", R"!($(echo $(echo ls)))!"}, "$(echo $(echo ls))"},
+        {{"echo", R"!($(echo $(echo ls)))!"}, "echo ls"},
+        {{"ls", R"!(-l $(echo /etc/passwd))!"}, "-l $(echo /etc/passwd)"},
+        {{"{", "(", "$(", R"!(echo ls)!", ")", ")", "}"}, "echo ls"},
+        {{"{", "(", R"!($(echo ls))!", ")", "}"}, "$(echo ls)"},
+        {{"{", R"!(( $(echo ls) ))!", "}"}, "( $(echo ls) )"},
+        {{R"!({ ( $(echo ls) ) })!"}, "{ ( $(echo ls) ) }"},
     };
 
     for (const auto &[resource, param] : samples) {
@@ -280,8 +200,10 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
         ddwaf_object_array(&array);
         for (const auto &arg : resource) {
             ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            if (!resource_str.empty()) {
+                resource_str.append(" ");
+            }
             resource_str.append(arg);
-            resource_str.append(" ");
         }
         ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
 
@@ -310,64 +232,100 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
     }
 }
 
-/*TEST(TestShiDetectorArray, MultipleArgumentsMatch)*/
-/*{*/
-/*shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};*/
+TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-/*std::string params = R"({*/
-/*post: {*/
-/*blank: "",*/
-/*name: "Create",*/
-/*other: "hello",*/
-/*other2: "hello; ls /etc/passwd",*/
-/*other3: "hello\"; cat /etc/passwd; echo \"",*/
-/*other4: "\"hello\\\\\"; cat /etc/passwd; echo",*/
-/*other5: "1.json 2> /tmp/toto",*/
-/*other6: "1.json > /tmp/toto",*/
-/*other7: "google.com; ls",*/
-/*other8: "google.com; ${a:-ls}",*/
-/*other9: "google.com; TOTO=ls ${a:-$TOTO}",*/
-/*other10: "google.com; TOTO=ls $TOTO"*/
-/*}*/
-/*})";*/
+    std::vector<std::pair<std::string, std::string>> samples{
+        {R"!(echo >(ls -l))!", "ls -l"},
+        {R"!(diff <(file) <(rm -rf /etc/systemd/))!", "rm -rf /etc/systemd/"},
+    };
 
-/*std::vector<std::string> samples{*/
-/*R"(cat hello; ls /etc/passwd)",*/
-/*R"(cat "hello"; cat /etc/passwd; echo "")",*/
-/*R"(ping -c 1 google.com; ls)",*/
-/*R"(cat "hello\\"; cat /etc/passwd; echo ")",*/
-/*R"(ls public/1.json 2> /tmp/toto)",*/
-/*R"(ls public/1.json > /tmp/toto)",*/
-/*R"(ping -c 1 google.com; ${a:-ls})",*/
-/*R"(ping -c 1 google.com; TOTO=ls ${a:-$TOTO})",*/
-/*R"(ping -c 1 google.com; TOTO=ls $TOTO)",*/
+    for (const auto &[resource, param] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
 
-/*};*/
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(
+            &root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
-/*for (const auto &resource : samples) {*/
-/*ddwaf_object tmp;*/
-/*ddwaf_object root;*/
+        object_store store;
+        store.insert(root);
 
-/*ddwaf_object_map(&root);*/
-/*ddwaf_object_map_add(*/
-/*&root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));*/
-/*auto params_obj = yaml_to_object(params);*/
-/*ddwaf_object_map_add(&root, "server.request.query", &params_obj);*/
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome) << resource;
+        EXPECT_FALSE(res.ephemeral);
 
-/*object_store store;*/
-/*store.insert(root);*/
+        EXPECT_TRUE(cache.match);
+        EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
+        EXPECT_STR(cache.match->args[0].resolved, resource.c_str());
+        EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
-/*ddwaf::timer deadline{2s};*/
-/*condition_cache cache;*/
-/*auto res = cond.eval(cache, store, {}, {}, deadline);*/
-/*ASSERT_TRUE(res.outcome) << resource;*/
-/*EXPECT_FALSE(res.ephemeral);*/
+        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-/*EXPECT_TRUE(cache.match);*/
-/*EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");*/
-/*EXPECT_STR(cache.match->args[0].resolved, resource.c_str());*/
-/*EXPECT_TRUE(cache.match->args[0].key_path.empty());*/
-/*}*/
-/*}*/
+        EXPECT_STR(cache.match->highlights[0], param.c_str());
+    }
+}
+
+TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    std::vector<std::pair<std::vector<std::string>, std::string>> samples{
+        {{"cat", "hello>", "cat", "/etc/passwd", ";", "echo", R"("")"}, R"(hello>)"},
+        {{"cat hello>", "cat", "/etc/passwd", ";", "echo", R"("")"}, R"(t hello)"},
+        {{"cat hello", ">", "cat", "/etc/passwd", ";", "echo", R"("")"}, R"(cat hello)"},
+        {{"diff", "<(file)", "<(rm -rf /etc/systemd/)"}, "rm -"},
+        {{"diff", "<(file)", "<(rm -rf /etc/systemd/)"}, "rm -"},
+        {{"ls -l", "-a", "--classify", "--full-time"}, "ls -l"},
+        {{"ls -l", "-a", "--classify", "--full-time", ";", "cat /etc/passwd"}, "cat /etc/passwd"}};
+
+    for (const auto &[resource, param] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+        ddwaf_object_map(&root);
+
+        std::string resource_str;
+        ddwaf_object array;
+        ddwaf_object_array(&array);
+        for (const auto &arg : resource) {
+            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            if (!resource_str.empty()) {
+                resource_str.append(" ");
+            }
+            resource_str.append(arg);
+        }
+        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
+
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome) << param;
+        EXPECT_FALSE(res.ephemeral);
+
+        EXPECT_TRUE(cache.match);
+        EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
+        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
+        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+        EXPECT_STR(cache.match->highlights[0], param.c_str());
+    }
+}
 
 } // namespace

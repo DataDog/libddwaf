@@ -1,0 +1,28 @@
+{
+  name: "Basic run with match on array",
+  runs: [
+    {
+      persistent-input: {
+        server.sys.shell.cmd: [ "ls", "-l", "; cat /etc/passwd" ],
+        server.request.query: [ "; cat /etc/passwd" ]
+      },
+      rules: [
+        {
+          "rsp-930-004": [
+            {
+              resource: {
+                address: "server.sys.shell.cmd",
+                value: "ls -l ; cat /etc/passwd"
+              },
+              params: {
+                address: "server.request.query",
+                value: "; cat /etc/passwd"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

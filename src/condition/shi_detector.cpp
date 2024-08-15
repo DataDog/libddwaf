@@ -33,9 +33,13 @@ struct shell_argument_array {
 
         index += arg.size() + 1;
 
-        resource.reserve(resource.size() + arg.size() + 1);
+        if (!resource.empty()) {
+            resource.reserve(resource.size() + arg.size() + 1);
+            resource.append(" "sv);
+        } else {
+            resource.reserve(arg.size());
+        }
         resource.append(arg);
-        resource.append(" "sv);
     }
 
     std::size_t find(std::string_view str, std::size_t pos = 0)
