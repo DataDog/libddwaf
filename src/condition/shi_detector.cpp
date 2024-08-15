@@ -25,25 +25,49 @@ struct shi_result {
 struct shell_argument_array {
     static constexpr std::size_t npos = std::string_view::npos;
 
-    explicit shell_argument_array(std::size_t argc) { indices.reserve(argc); }
-
-    void append(std::string_view arg)
+    explicit shell_argument_array(const ddwaf_object &root)
     {
-        if (arg.empty()) {
+        // Since the type check is performed elsewhere, we don't need to check again
+        auto argc = static_cast<std::size_t>(root.nbEntries);
+        if (argc == 0) {
             return;
         }
 
-        indices.emplace_back(index, index + arg.size() - 1);
-
-        index += arg.size() + 1;
-
-        if (!resource.empty()) {
-            resource.reserve(resource.size() + arg.size() + 1);
-            resource.append(" "sv);
-        } else {
-            resource.reserve(arg.size());
+        // Calculate the final resource length
+        std::size_t resource_len = 0;
+        for (std::size_t i = 0; i < argc; ++i) {
+            const auto &child = root.array[i];
+            if (child.type == DDWAF_OBJ_STRING && child.stringValue != nullptr &&
+                child.nbEntries > 0) {
+                // if the string is valid or non-empty, increase the resource
+                // length + 1 for the extra space when relevant
+                resource_len +=
+                    static_cast<std::size_t>(child.nbEntries) + static_cast<std::size_t>(i > 0);
+            }
         }
-        resource.append(arg);
+
+        indices.reserve(argc);
+        resource.reserve(resource_len);
+
+        std::size_t index = 0;
+        for (std::size_t i = 0; i < argc; ++i) {
+            const auto &child = root.array[i];
+            if (child.type != DDWAF_OBJ_STRING || child.stringValue == nullptr ||
+                child.nbEntries == 0) {
+                continue;
+            }
+
+            std::string_view str{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+
+            indices.emplace_back(index, index + str.size() - 1);
+
+            index += str.size() + 1;
+
+            if (!resource.empty()) {
+                resource.append(" "sv);
+            }
+            resource.append(str);
+        }
     }
 
     std::size_t find(std::string_view str, std::size_t start = 0)
@@ -92,7 +116,6 @@ struct shell_argument_array {
 
     std::vector<std::pair<std::size_t, std::size_t>> indices;
     std::string resource;
-    std::size_t index{};
 };
 
 template <typename ResourceType>
@@ -190,16 +213,7 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
-    shell_argument_array arguments{static_cast<std::size_t>(resource.value->nbEntries)};
-    for (std::size_t i = 0; i < resource.value->nbEntries; ++i) {
-        const auto &child = resource.value->array[i];
-        std::string_view str;
-        if (child.type == DDWAF_OBJ_STRING) {
-            str = std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
-        }
-        arguments.append(str);
-    }
-
+    shell_argument_array arguments{*resource.value};
     if (arguments.empty()) {
         return {};
     }
