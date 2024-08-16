@@ -141,17 +141,30 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
             conditions.emplace_back(
                 std::make_unique<exists_negated_condition>(std::move(arguments), limits));
         } else {
+            auto raw_operator_name = operator_name;
+            auto negated = operator_name.starts_with('!');
+            if (negated) {
+                operator_name = operator_name.substr(1);
+            }
+
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 
             if (!matcher && !data_id.empty()) {
                 data_ids_to_type.emplace(data_id, operator_name);
             }
 
-            auto arguments =
-                parse_arguments<scalar_condition>(params, source, transformers, addresses, limits);
-
-            conditions.emplace_back(std::make_unique<scalar_condition>(
-                std::move(matcher), data_id, std::move(arguments), limits));
+            if (!negated) {
+                auto arguments = parse_arguments<scalar_condition>(
+                    params, source, transformers, addresses, limits);
+                conditions.emplace_back(std::make_unique<scalar_condition>(
+                    std::move(matcher), data_id, std::move(arguments), limits));
+            } else {
+                auto arguments = parse_arguments<scalar_negated_condition>(
+                    params, source, transformers, addresses, limits);
+                conditions.emplace_back(
+                    std::make_unique<scalar_negated_condition>(std::move(matcher), data_id,
+                        std::move(arguments), std::string{raw_operator_name}, limits));
+            }
         }
     }
 

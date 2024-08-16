@@ -1,0 +1,11 @@
+{
+  name: "negated ip_match operator, no match on IPv6 CIDR",
+  runs: [
+    {
+      persistent-input: {
+        rule3-input: "abcd::1234:0:ab11:0"
+      },
+      code: ok
+    }
+  ]
+}

@@ -39,17 +39,55 @@ public:
 
     static constexpr auto arguments()
     {
-        return std::array<parameter_specification, 1>{{{"inputs", true, false}}};
+        return std::array<parameter_specification, 1>{{{"inputs", /*variadic*/ true, false}}};
     }
 
 protected:
-    [[nodiscard]] const matcher::base *get_matcher(
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers)
-        const;
-
     std::unique_ptr<matcher::base> matcher_;
     std::string data_id_;
     std::vector<condition_target> targets_;
+    const object_limits limits_;
+};
+
+class scalar_negated_condition : public base_condition {
+public:
+    scalar_negated_condition(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
+        std::vector<condition_parameter> args, std::string matcher_name,
+        const object_limits &limits = {})
+        : matcher_(std::move(matcher)), data_id_(std::move(data_id)),
+          matcher_name_(std::move(matcher_name)), limits_(limits)
+    {
+        if (args.size() > 1) {
+            throw std::invalid_argument("Matcher initialised with more than one argument");
+        }
+
+        if (args.empty()) {
+            throw std::invalid_argument("Matcher initialised without arguments");
+        }
+
+        targets_ = std::move(args[0].targets);
+    }
+
+    eval_result eval(condition_cache &cache, const object_store &store,
+        const exclusion::object_set_ref &objects_excluded,
+        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+        ddwaf::timer &deadline) const override;
+
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
+    {
+        for (const auto &target : targets_) { addresses.emplace(target.index, target.name); }
+    }
+
+    static constexpr auto arguments()
+    {
+        return std::array<parameter_specification, 1>{{{"inputs", /*variadic*/ false, false}}};
+    }
+
+protected:
+    std::unique_ptr<matcher::base> matcher_;
+    std::string data_id_;
+    std::vector<condition_target> targets_;
+    std::string matcher_name_;
     const object_limits limits_;
 };
 
