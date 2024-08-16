@@ -32,3 +32,13 @@ rules:
           inputs:
             - address: rule3-input
               key_path: ["path", "to", "object"]
+  - id: "4"
+    name: rule4-does-not-exist-invalid
+    tags:
+      type: flow4
+      category: category
+    conditions:
+      - operator: "!exists"
+        parameters:
+          inputs:
+            - address: rule4-input

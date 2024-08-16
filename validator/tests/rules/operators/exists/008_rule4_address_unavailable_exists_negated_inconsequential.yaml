@@ -1,0 +1,14 @@
+{
+  name: "Validate that the !exists operator without key path doesn't match when an address
+    isn't present Note that this is due to the fact that",
+  runs: [
+    {
+      persistent-input: {
+        random-input: {
+          "nowhere": "something else"
+        }
+      },
+      code: ok
+    }
+  ]
+}
