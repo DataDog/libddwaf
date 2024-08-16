@@ -28,3 +28,16 @@ rules:
             - string01
           options:
             enforce_word_boundary: true
+  - id: "3"
+    name: rule3-phrase-match
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: "!phrase_match"
+        parameters:
+          inputs:
+            - address: rule3-input
+          list:
+            - string00
+            - string01

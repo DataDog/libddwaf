@@ -1,0 +1,21 @@
+{
+  name: "Basic run with not equals operator",
+  runs: [
+    {
+      persistent-input: {
+        rule6-input: "arachn"
+      },
+      rules: [
+        {
+          6: [
+            {
+              address: rule6-input,
+              value: "arachn"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

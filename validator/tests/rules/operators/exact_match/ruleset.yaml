@@ -14,3 +14,17 @@ rules:
             - "string"
             - "other"
             - "something else"
+  - id: "2"
+    name: rule2-ip-match
+    tags:
+      type: flow2
+      category: category
+    conditions:
+      - operator: "!exact_match"
+        parameters:
+          inputs:
+            - address: rule2-input
+          list:
+            - "string"
+            - "other"
+            - "something else"

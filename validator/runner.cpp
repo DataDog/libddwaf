@@ -224,7 +224,9 @@ void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node 
     expect(expected.size(), obtained.size());
 
     static std::set<std::string_view, std::less<>> scalar_operators{"match_regex", "phrase_match",
-        "exact_match", "ip_match", "equals", "is_sqli", "is_xss", "greater_than", "lower_than"};
+        "exact_match", "ip_match", "equals", "is_sqli", "is_xss", "exists", "greater_than",
+        "lower_than", "!match_regex", "!phrase_match", "!exact_match", "!ip_match", "!equals",
+        "!is_sqli", "!is_xss", "!exists"};
 
     // Iterate through matches, assume they are in the same order as rule
     // conditions for now.
@@ -240,7 +242,9 @@ void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node 
             if (expected_match["key_path"].IsDefined()) {
                 expect(expected_match["key_path"], obtained_match["key_path"]);
             }
-            expect(expected_match["value"], obtained_match["value"]);
+            if (expected_match["value"].IsDefined()) {
+                expect(expected_match["value"], obtained_match["value"]);
+            }
         } else {
             for (YAML::const_iterator it = expected_match.begin(); it != expected_match.end();
                  ++it) {
@@ -255,7 +259,9 @@ void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node 
                     if (expected_param["key_path"].IsDefined()) {
                         expect(expected_param["key_path"], obtained_param["key_path"]);
                     }
-                    expect(expected_param["value"], obtained_param["value"]);
+                    if (expected_param["value"].IsDefined()) {
+                        expect(expected_param["value"], obtained_param["value"]);
+                    }
                 }
             }
         }
