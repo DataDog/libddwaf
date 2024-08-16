@@ -4,15 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../../test_utils.hpp"
+#include "../../../test_utils.hpp"
 #include "ddwaf.h"
 
 using namespace ddwaf;
 
 namespace {
-constexpr std::string_view base_dir = "integration/conditions/";
+constexpr std::string_view base_dir = "integration/conditions/transformers/";
 
-TEST(TestConditionsIntegration, GlobalTransformer)
+TEST(TestConditionTransformersIntegration, GlobalTransformer)
 {
     auto rule = read_file("global_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -75,7 +75,7 @@ TEST(TestConditionsIntegration, GlobalTransformer)
     ddwaf_destroy(handle);
 }
 
-TEST(TestConditionsIntegration, GlobalTransformerKeysOnly)
+TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
 {
     auto rule = read_file("global_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -146,7 +146,7 @@ TEST(TestConditionsIntegration, GlobalTransformerKeysOnly)
     ddwaf_destroy(handle);
 }
 
-TEST(TestConditionsIntegration, InputTransformer)
+TEST(TestConditionTransformersIntegration, InputTransformer)
 {
     auto rule = read_file("input_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -209,7 +209,7 @@ TEST(TestConditionsIntegration, InputTransformer)
     ddwaf_destroy(handle);
 }
 
-TEST(TestConditionsIntegration, InputTransformerKeysOnly)
+TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
 {
     auto rule = read_file("input_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -280,7 +280,7 @@ TEST(TestConditionsIntegration, InputTransformerKeysOnly)
     ddwaf_destroy(handle);
 }
 
-TEST(TestConditionsIntegration, OverlappingTransformer)
+TEST(TestConditionTransformersIntegration, OverlappingTransformer)
 {
     auto rule = read_file("overlapping_transformers.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -379,7 +379,7 @@ TEST(TestConditionsIntegration, OverlappingTransformer)
     ddwaf_destroy(handle);
 }
 
-TEST(TestConditionsIntegration, OverlappingTransformerKeysOnly)
+TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
 {
     auto rule = read_file("overlapping_transformers.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);

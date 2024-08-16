@@ -28,9 +28,10 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
     const ddwaf_object *parent = root;
     auto it = key_path.begin();
 
-    std::size_t depth = 0;
     std::size_t size = parent->nbEntries;
 
+    // The parser ensures that the key path is within the limits specified by
+    // the user, hence we don't need to check for depth
     for (std::size_t i = 0; i < size;) {
         const auto &child = parent->array[i++];
 
@@ -53,10 +54,6 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 
             if (child.type != DDWAF_OBJ_MAP) {
                 return search_outcome::not_found;
-            }
-
-            if (++depth >= limits.max_container_depth) [[unlikely]] {
-                return search_outcome::unknown;
             }
 
             // Reset the loop and iterate child
