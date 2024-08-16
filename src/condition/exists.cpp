@@ -16,11 +16,6 @@ enum class search_outcome { found, not_found, unknown };
 search_outcome exists(const ddwaf_object *root, std::span<const std::string> key_path,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
 {
-    if (objects_excluded.contains(root) || key_path.size() > limits.max_container_depth) {
-        // The object might be present, but we can't know for sure
-        return search_outcome::unknown;
-    }
-
     if (key_path.empty()) {
         return search_outcome::found;
     }
@@ -60,7 +55,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
                 return search_outcome::not_found;
             }
 
-            if (++depth >= limits.max_container_depth) {
+            if (++depth >= limits.max_container_depth) [[unlikely]] {
                 return search_outcome::unknown;
             }
 
@@ -80,10 +75,6 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
     const variadic_argument<const ddwaf_object *> &inputs, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
-    if (inputs.empty()) {
-        return {false, false};
-    }
-    // We only care about the first input
     for (const auto &input : inputs) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

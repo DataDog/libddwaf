@@ -57,6 +57,10 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
             }
 
             auto kp = at<std::vector<std::string>>(input, "key_path", {});
+            if (kp.size() > limits.max_container_depth) {
+                throw ddwaf::parsing_error("key_path beyond maximum container depth");
+            }
+
             for (const auto &path : kp) {
                 if (path.empty()) {
                     throw ddwaf::parsing_error("empty key_path");
