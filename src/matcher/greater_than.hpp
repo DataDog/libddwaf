@@ -18,9 +18,9 @@ namespace ddwaf::matcher {
 
 template <typename T> class greater_than : public base_impl<greater_than<T>> {
 public:
-    explicit greater_than(T expected)
+    explicit greater_than(T minimum)
         requires(std::is_integral_v<T> || std::is_floating_point_v<T>)
-        : expected_(std::move(expected))
+        : minimum_(std::move(minimum))
     {}
     ~greater_than() override = default;
     greater_than(const greater_than &) = default;
@@ -30,7 +30,7 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "greater-than"; }
+    static constexpr std::string_view name_impl() { return "greater_than"; }
 
     static constexpr DDWAF_OBJ_TYPE supported_type_impl()
     {
@@ -47,10 +47,10 @@ protected:
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(const T &obtained) const
     {
-        return {expected_ > obtained, {}};
+        return {minimum_ < obtained, {}};
     }
 
-    T expected_;
+    T minimum_;
 
     friend class base_impl<greater_than<T>>;
 };

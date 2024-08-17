@@ -13,6 +13,7 @@
 
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
+#include "matcher/greater_than.hpp"
 #include "matcher/ip_match.hpp"
 #include "matcher/is_sqli.hpp"
 #include "matcher/is_xss.hpp"
@@ -103,6 +104,21 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
         } else {
             throw ddwaf::parsing_error("invalid type for matcher equals " + value_type);
         }
+    } else if (name == "greater_than") {
+        auto value_type = at<std::string>(params, "type");
+        if (value_type == "unsigned") {
+            auto value = at<uint64_t>(params, "value");
+            matcher = std::make_unique<matcher::greater_than<uint64_t>>(value);
+        } else if (value_type == "signed") {
+            auto value = at<int64_t>(params, "value");
+            matcher = std::make_unique<matcher::greater_than<int64_t>>(value);
+        } else if (value_type == "float") {
+            auto value = at<double>(params, "value");
+            matcher = std::make_unique<matcher::greater_than<double>>(value);
+        } else {
+            throw ddwaf::parsing_error("invalid type for matcher greater_than " + value_type);
+        }
+
     } else {
         throw ddwaf::parsing_error("unknown matcher: " + std::string(name));
     }
