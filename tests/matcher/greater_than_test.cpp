@@ -16,6 +16,7 @@ TEST(TestGreaterThanInt, Basic)
     matcher::greater_than<int64_t> matcher(5);
 
     EXPECT_TRUE(matcher.match(6).first);
+    EXPECT_FALSE(matcher.match(5).first);
     EXPECT_FALSE(matcher.match(1).first);
     EXPECT_FALSE(matcher.match(-1).first);
 }
@@ -25,6 +26,7 @@ TEST(TestGreaterThanUint, Basic)
     matcher::greater_than<uint64_t> matcher(2132132);
 
     EXPECT_TRUE(matcher.match(2132133).first);
+    EXPECT_FALSE(matcher.match(2132132).first);
     EXPECT_FALSE(matcher.match(1).first);
 }
 
@@ -33,6 +35,7 @@ TEST(TestGreaterThanDouble, Basic)
     matcher::greater_than<double> matcher(5.1);
 
     EXPECT_TRUE(matcher.match(5.11).first);
+    EXPECT_FALSE(matcher.match(5.1).first);
     EXPECT_FALSE(matcher.match(5.09).first);
     EXPECT_FALSE(matcher.match(-5.1).first);
 }
