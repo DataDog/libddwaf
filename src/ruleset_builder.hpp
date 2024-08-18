@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "builder/processor_builder.hpp"
+#include "global_context.hpp"
 #include "indexer.hpp"
 #include "parameter.hpp"
 #include "parser/specification.hpp"
@@ -54,6 +55,7 @@ protected:
         scanners = 64,
         actions = 128,
         exclusion_data = 256,
+        global_rules = 512,
     };
 
     friend constexpr change_state operator|(change_state lhs, change_state rhs);
@@ -112,6 +114,9 @@ protected:
 
     // Actions
     std::shared_ptr<action_mapper> actions_;
+
+    // Global Context
+    std::shared_ptr<global_context> gctx_;
 };
 
 } // namespace ddwaf

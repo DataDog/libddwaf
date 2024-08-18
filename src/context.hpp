@@ -50,7 +50,8 @@ public:
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
-    std::vector<event> eval_rules(const exclusion::context_policy &policy, ddwaf::timer &deadline);
+    void eval_rules(std::vector<ddwaf::event> &events, const exclusion::context_policy &policy,
+        ddwaf::timer &deadline);
 
 protected:
     bool is_first_run() const { return collection_cache_.empty(); }
@@ -89,6 +90,8 @@ protected:
 
     // Cache of collections to avoid processing once a result has been obtained
     memory::unordered_map<std::string_view, collection::cache_type> collection_cache_{};
+
+    global_context::cache_type gctx_cache_{};
 };
 
 class context_wrapper {

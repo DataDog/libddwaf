@@ -4,6 +4,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
     ${libddwaf_SOURCE_DIR}/src/context.cpp
+    ${libddwaf_SOURCE_DIR}/src/global_context.cpp
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
     ${libddwaf_SOURCE_DIR}/src/event.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
@@ -21,6 +22,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/platform.cpp
     ${libddwaf_SOURCE_DIR}/src/sha256.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
+    ${libddwaf_SOURCE_DIR}/src/rule.cpp
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/processor_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/sql_base.cpp
@@ -45,6 +47,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/rule_override_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/scanner_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/exclusion_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/parser/global_rule_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/fingerprint.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp

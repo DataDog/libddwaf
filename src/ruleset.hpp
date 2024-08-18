@@ -14,6 +14,7 @@
 #include "collection.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "global_context.hpp"
 #include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
@@ -194,6 +195,8 @@ struct ruleset {
     // These are lazily computed andthe underlying memory of each string is
     // owned by the action mapper.
     std::vector<const char *> available_action_types;
+
+    std::shared_ptr<global_context> gctx;
 };
 
 } // namespace ddwaf
