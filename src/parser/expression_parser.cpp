@@ -103,11 +103,6 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         auto operator_name = at<std::string_view>(root, "operator");
         auto params = at<parameter::map>(root, "parameters");
 
-        bool negated = operator_name.starts_with("!");
-        if (negated) {
-            operator_name = operator_name.substr(1);
-        }
-
         if (operator_name == "lfi_detector") {
             auto arguments =
                 parse_arguments<lfi_detector>(params, source, transformers, addresses, limits);
@@ -125,17 +120,15 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
                 parse_arguments<shi_detector>(params, source, transformers, addresses, limits);
             conditions.emplace_back(std::make_unique<shi_detector>(std::move(arguments), limits));
         } else if (operator_name == "exists") {
-            if (negated) {
-                auto arguments = parse_arguments<exists_negated_condition>(
-                    params, source, transformers, addresses, limits);
-                conditions.emplace_back(
-                    std::make_unique<exists_negated_condition>(std::move(arguments), limits));
-            } else {
-                auto arguments = parse_arguments<exists_condition>(
-                    params, source, transformers, addresses, limits);
-                conditions.emplace_back(
-                    std::make_unique<exists_condition>(std::move(arguments), limits));
-            }
+            auto arguments =
+                parse_arguments<exists_condition>(params, source, transformers, addresses, limits);
+            conditions.emplace_back(
+                std::make_unique<exists_condition>(std::move(arguments), limits));
+        } else if (operator_name == "!exists") {
+            auto arguments = parse_arguments<exists_negated_condition>(
+                params, source, transformers, addresses, limits);
+            conditions.emplace_back(
+                std::make_unique<exists_negated_condition>(std::move(arguments), limits));
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 
