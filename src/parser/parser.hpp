@@ -59,6 +59,7 @@ std::shared_ptr<expression> parse_simplified_expression(const parameter::vector 
     address_container &addresses, const object_limits &limits);
 
 std::vector<transformer_id> parse_transformers(const parameter::vector &root, data_source &source);
+std::vector<transformer_id> parse_transformers(const parameter::vector &root);
 
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
     std::string_view name, const parameter::map &params);

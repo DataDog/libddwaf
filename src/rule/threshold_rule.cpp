@@ -5,11 +5,41 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "rule/threshold_rule.hpp"
-#include <variant>
+#include "transformer/manager.hpp"
 
 using namespace std::literals;
 
 namespace ddwaf {
+
+namespace {
+
+std::string filter_with_matcher(ddwaf_object &src, auto &filter)
+{
+    if (!filter.transformers.empty()) {
+        ddwaf_object dst;
+        ddwaf_object_invalid(&dst);
+
+        auto transformed = transformer::manager::transform(src, dst, filter.transformers);
+        const scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
+        if (transformed) {
+            auto [res, highlight] = filter.matcher->match(dst);
+            if (!res) {
+                return {};
+            }
+            return highlight;
+        }
+    }
+
+    // The value must be filtered
+    auto [res, highlight] = filter.matcher->match(src);
+    if (!res) {
+        // If the matcher fails, there is nothing to filter on
+        return {};
+    }
+    return highlight;
+}
+
+} // namespace
 
 std::optional<event> threshold_rule::eval(const object_store &store, cache_type &cache,
     monotonic_clock::time_point now, ddwaf::timer &deadline)
@@ -59,14 +89,7 @@ std::optional<event> indexed_threshold_rule::eval(const object_store &store, cac
 
     std::string filtered_key;
     if (criteria_.filter.matcher) {
-        // The value must be filtered
-        auto [res, highlight] = criteria_.filter.matcher->match(*obj);
-        if (!res) {
-            // If the matcher fails, there is nothing to filter on
-            return std::nullopt;
-        }
-
-        filtered_key = std::move(highlight);
+        filter_with_matcher(*obj, criteria_.filter);
     }
 
     uint64_t count = 0;

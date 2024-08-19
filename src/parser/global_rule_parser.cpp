@@ -43,6 +43,15 @@ std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
     criteria.filter.name = at<std::string>(input_map, "address");
     criteria.filter.target = get_target_index(criteria.filter.name);
 
+    if (input_map.contains("transformers")) {
+        auto input_transformers = at<parameter::vector>(input_map, "transformers");
+        if (input_transformers.size() > limits.max_transformers_per_address) {
+            throw ddwaf::parsing_error("number of transformers beyond allowed limit");
+        }
+
+        criteria.filter.transformers = parse_transformers(input_transformers);
+    }
+
     if (filter_map.contains("operator")) {
         auto operator_name = at<std::string_view>(filter_map, "operator");
         auto params = at<parameter::map>(filter_map, "parameters");

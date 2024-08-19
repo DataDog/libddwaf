@@ -62,6 +62,7 @@ public:
         struct {
             std::string name;
             target_index target;
+            std::vector<transformer_id> transformers{};
             std::unique_ptr<matcher::base> matcher;
         } filter;
     };
