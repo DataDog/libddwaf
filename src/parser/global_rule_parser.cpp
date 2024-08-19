@@ -13,8 +13,7 @@ namespace ddwaf::parser::v2 {
 
 namespace {
 std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    std::string id, parameter::map &rule, parameter::map &criteria_map, const object_limits &limits)
+    std::string id, parameter::map &rule, const object_limits &limits)
 {
     auto conditions_array = at<parameter::vector>(rule, "conditions", {});
 
@@ -33,20 +32,36 @@ std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
         throw ddwaf::parsing_error("missing key 'type'");
     }
 
+    auto criteria_map = at<parameter::map>(rule, "criteria");
     indexed_threshold_rule::evaluation_criteria criteria;
     criteria.threshold = at<uint64_t>(criteria_map, "threshold");
     criteria.period = std::chrono::milliseconds(at<uint64_t>(criteria_map, "period"));
-    criteria.name = at<std::string>(criteria_map, "input");
-    criteria.target = get_target_index(criteria.name);
+
+    auto filter_map = at<parameter::map>(rule, "filter");
+
+    auto input_map = at<parameter::map>(filter_map, "input");
+    criteria.filter.name = at<std::string>(input_map, "address");
+    criteria.filter.target = get_target_index(criteria.filter.name);
+
+    if (filter_map.contains("operator")) {
+        auto operator_name = at<std::string_view>(filter_map, "operator");
+        auto params = at<parameter::map>(filter_map, "parameters");
+
+        auto [data_id, matcher] = parse_matcher(operator_name, params);
+        if (!data_id.empty()) {
+            throw ddwaf::parsing_error("unsupported: global rule filter with data ID");
+        }
+
+        criteria.filter.matcher = std::move(matcher);
+    }
 
     return std::make_unique<indexed_threshold_rule>(std::move(id), at<std::string>(rule, "name"),
-        std::move(tags), std::move(expr), criteria,
+        std::move(tags), std::move(expr), std::move(criteria),
         at<std::vector<std::string>>(rule, "on_match", {}), at<bool>(rule, "enabled", true));
 }
 
 std::unique_ptr<base_threshold_rule> parse_threshold_rule(
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    std::string id, parameter::map &rule, parameter::map &criteria_map, const object_limits &limits)
+    std::string id, parameter::map &rule, const object_limits &limits)
 {
     auto conditions_array = at<parameter::vector>(rule, "conditions", {});
 
@@ -65,6 +80,7 @@ std::unique_ptr<base_threshold_rule> parse_threshold_rule(
         throw ddwaf::parsing_error("missing key 'type'");
     }
 
+    auto criteria_map = at<parameter::map>(rule, "criteria");
     threshold_rule::evaluation_criteria criteria;
     criteria.threshold = at<uint64_t>(criteria_map, "threshold");
     criteria.period = std::chrono::milliseconds(at<uint64_t>(criteria_map, "period"));
@@ -77,11 +93,10 @@ std::unique_ptr<base_threshold_rule> parse_threshold_rule(
 std::unique_ptr<base_threshold_rule> parse_global_rule(
     std::string id, parameter::map &rule, const object_limits &limits)
 {
-    auto criteria = at<parameter::map>(rule, "criteria");
-    if (criteria.contains("input")) {
-        return parse_indexed_threshold_rule(std::move(id), rule, criteria, limits);
+    if (rule.contains("filter")) {
+        return parse_indexed_threshold_rule(std::move(id), rule, limits);
     }
-    return parse_threshold_rule(std::move(id), rule, criteria, limits);
+    return parse_threshold_rule(std::move(id), rule, limits);
 }
 } // namespace
 

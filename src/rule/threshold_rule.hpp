@@ -57,10 +57,13 @@ protected:
 class indexed_threshold_rule : public base_threshold_rule {
 public:
     struct evaluation_criteria {
-        std::string name;
-        target_index target;
         uint64_t threshold;
         std::chrono::milliseconds period;
+        struct {
+            std::string name;
+            target_index target;
+            std::unique_ptr<matcher::base> matcher;
+        } filter;
     };
 
     indexed_threshold_rule(std::string id, std::string name,
