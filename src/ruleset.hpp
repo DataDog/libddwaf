@@ -17,7 +17,7 @@
 #include "global_context.hpp"
 #include "obfuscator.hpp"
 #include "processor/base.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "scanner.hpp"
 
 namespace ddwaf {

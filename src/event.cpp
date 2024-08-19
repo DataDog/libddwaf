@@ -9,7 +9,7 @@
 #include "action_mapper.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "uuid.hpp"
 
 namespace ddwaf {

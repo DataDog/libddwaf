@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "global_context.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 
 namespace ddwaf {
 void global_context::eval(std::vector<event> &events, const object_store &store, cache_type &cache,

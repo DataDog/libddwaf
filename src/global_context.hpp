@@ -8,7 +8,7 @@
 
 #include <unordered_map>
 
-#include "rule.hpp"
+#include "rule/rule.hpp"
 
 namespace ddwaf {
 

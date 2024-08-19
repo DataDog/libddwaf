@@ -4,8 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "rule.hpp"
-#include "timed_counter.hpp"
+#include "rule/threshold_rule.hpp"
 
 using namespace std::literals;
 
@@ -25,13 +24,13 @@ std::optional<event> threshold_rule::eval(const object_store &store, cache_type 
     }
 
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
-    auto count = counter_.add_timepoint_and_count(ms);
+    auto count = counter_->add_timepoint_and_count(ms);
     if (count > criteria_.threshold) {
         // Match should be generated differently
         // Match should be generated differently
         auto matches = expression::get_matches(cache);
         matches.emplace_back(condition_match{{}, {}, "threshold", threshold_str_, false});
-        return {ddwaf::event{this, std::move(matches), false}};
+        return {ddwaf::event{this, std::move(matches), false, {}}};
     }
 
     return std::nullopt;
@@ -58,14 +57,14 @@ std::optional<event> indexed_threshold_rule::eval(const object_store &store, cac
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
     std::string_view key{obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
 
-    auto count = counter_.add_timepoint_and_count(key, ms);
+    auto count = counter_->add_timepoint_and_count(key, ms);
     if (count > criteria_.threshold) {
         // Match should be generated differently
         auto matches = expression::get_matches(cache);
         matches.emplace_back(
             condition_match{{{"input"sv, object_to_string(*obj), criteria_.name, {}}}, {},
                 "threshold", threshold_str_, false});
-        return {ddwaf::event{this, std::move(matches), false}};
+        return {ddwaf::event{this, std::move(matches), false, {}}};
     }
 
     return std::nullopt;

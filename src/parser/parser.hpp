@@ -15,7 +15,7 @@
 #include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/specification.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "ruleset.hpp"
 #include "ruleset_info.hpp"
 

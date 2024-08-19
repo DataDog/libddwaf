@@ -17,7 +17,7 @@
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "obfuscator.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "ruleset.hpp"
 #include "utils.hpp"
 

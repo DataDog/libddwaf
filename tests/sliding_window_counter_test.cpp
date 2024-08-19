@@ -4,9 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "sliding_window_counter.hpp"
 #include "test.hpp"
 #include "test_utils.hpp"
-#include "timed_counter.hpp"
 
 using namespace std::literals;
 using namespace std::chrono_literals;
@@ -15,7 +15,7 @@ namespace {
 
 TEST(TestTimedCounter, BasicMs)
 {
-    ddwaf::timed_counter_ts window{10ms, 5};
+    ddwaf::sliding_window_counter window{10ms, 5};
 
     EXPECT_EQ(window.add_timepoint_and_count(1ms), 1);
     EXPECT_EQ(window.add_timepoint_and_count(11ms), 1);
@@ -35,7 +35,7 @@ TEST(TestTimedCounter, BasicMs)
 
 TEST(TestTimedCounter, BasicS)
 {
-    ddwaf::timed_counter_ts window{10s, 5};
+    ddwaf::sliding_window_counter window{10s, 5};
 
     EXPECT_EQ(window.add_timepoint_and_count(1s), 1);
     EXPECT_EQ(window.add_timepoint_and_count(11s), 1);
@@ -54,7 +54,7 @@ TEST(TestTimedCounter, BasicS)
 
 TEST(TestIndexedTimedCounter, BasicString)
 {
-    ddwaf::indexed_timed_counter_ts<std::string, std::chrono::milliseconds> window{10s, 5, 5};
+    ddwaf::indexed_sliding_window_counter<std::string, std::chrono::milliseconds> window{10s, 5, 5};
 
     EXPECT_EQ(window.add_timepoint_and_count("admin"sv, 1s), 1);
     EXPECT_EQ(window.add_timepoint_and_count("user"sv, 10s), 1);

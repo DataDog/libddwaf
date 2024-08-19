@@ -7,12 +7,13 @@
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
+#include "rule/threshold_rule.hpp"
 
 namespace ddwaf::parser::v2 {
 
 namespace {
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     std::string id, parameter::map &rule, parameter::map &criteria_map, const object_limits &limits)
 {
     auto conditions_array = at<parameter::vector>(rule, "conditions", {});
@@ -43,8 +44,8 @@ std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
         at<std::vector<std::string>>(rule, "on_match", {}), at<bool>(rule, "enabled", true));
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 std::unique_ptr<base_threshold_rule> parse_threshold_rule(
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     std::string id, parameter::map &rule, parameter::map &criteria_map, const object_limits &limits)
 {
     auto conditions_array = at<parameter::vector>(rule, "conditions", {});
