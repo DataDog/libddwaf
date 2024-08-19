@@ -16,12 +16,11 @@
 
 namespace ddwaf::matcher {
 
-template <typename T> class greater_than : public base_impl<greater_than<T>> {
+template <typename T>
+    requires std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t> || std::is_same_v<T, double>
+class greater_than : public base_impl<greater_than<T>> {
 public:
-    explicit greater_than(T minimum)
-        requires(std::is_integral_v<T> || std::is_floating_point_v<T>)
-        : minimum_(std::move(minimum))
-    {}
+    explicit greater_than(T minimum) : minimum_(std::move(minimum)) {}
     ~greater_than() override = default;
     greater_than(const greater_than &) = default;
     greater_than(greater_than &&) noexcept = default;
