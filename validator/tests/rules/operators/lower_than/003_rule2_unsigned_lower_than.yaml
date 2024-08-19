@@ -1,0 +1,21 @@
+{
+  name: "Basic run with lower_than operator",
+  runs: [
+    {
+      persistent-input: {
+        rule2-input: 41
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input,
+              value: "41"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
