@@ -29,7 +29,7 @@ public:
         time_points_.resize(max_window_size);
     }
 
-    std::size_t add_timepoint_and_count(T point)
+    uint64_t add_timepoint_and_count(T point)
     {
         // Discard old elements
         update_count(point);
@@ -70,7 +70,7 @@ public:
         return time_points_[index].point;
     }
 
-    std::size_t update_count(T point)
+    uint64_t update_count(T point)
     {
         // Discard old elements
         auto window_begin = point - period_;
@@ -85,27 +85,27 @@ public:
     void reset() { left = right = count = buckets = 0; }
 
 protected:
-    [[nodiscard]] std::size_t increment(std::size_t value) const
+    [[nodiscard]] uint64_t increment(uint64_t value) const
     {
         return (value + 1) % time_points_.size();
     }
 
-    [[nodiscard]] std::size_t decrement(std::size_t value) const
+    [[nodiscard]] uint64_t decrement(uint64_t value) const
     {
         return (value + time_points_.size() - 1) % time_points_.size();
     }
 
     struct time_bucket {
         T point;
-        std::size_t count;
+        uint64_t count;
     };
 
     std::chrono::milliseconds period_{};
     std::vector<time_bucket> time_points_;
-    std::size_t left{0};
-    std::size_t right{0};
-    std::size_t count{0};
-    std::size_t buckets{0};
+    uint64_t left{0};
+    uint64_t right{0};
+    uint64_t count{0};
+    uint64_t buckets{0};
 };
 
 template <typename Key, typename Duration>
@@ -121,7 +121,7 @@ public:
 
     template <typename T>
         requires std::is_constructible_v<T, Key>
-    std::size_t add_timepoint_and_count(T key, Duration point)
+    uint64_t add_timepoint_and_count(T key, Duration point)
     {
         auto it = index_.find(key);
         if (it == index_.end()) {

@@ -34,7 +34,7 @@ std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
     }
 
     indexed_threshold_rule::evaluation_criteria criteria;
-    criteria.threshold = at<std::size_t>(criteria_map, "threshold");
+    criteria.threshold = at<uint64_t>(criteria_map, "threshold");
     criteria.period = std::chrono::milliseconds(at<uint64_t>(criteria_map, "period"));
     criteria.name = at<std::string>(criteria_map, "input");
     criteria.target = get_target_index(criteria.name);
@@ -66,7 +66,7 @@ std::unique_ptr<base_threshold_rule> parse_threshold_rule(
     }
 
     threshold_rule::evaluation_criteria criteria;
-    criteria.threshold = at<std::size_t>(criteria_map, "threshold");
+    criteria.threshold = at<uint64_t>(criteria_map, "threshold");
     criteria.period = std::chrono::milliseconds(at<uint64_t>(criteria_map, "period"));
 
     return std::make_unique<threshold_rule>(std::move(id), at<std::string>(rule, "name"),

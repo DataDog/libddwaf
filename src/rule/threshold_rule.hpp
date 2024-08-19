@@ -26,7 +26,7 @@ namespace ddwaf {
 class threshold_rule : public base_threshold_rule {
 public:
     struct evaluation_criteria {
-        std::size_t threshold;
+        uint64_t threshold;
         std::chrono::milliseconds period{};
     };
 
@@ -59,7 +59,7 @@ public:
     struct evaluation_criteria {
         std::string name;
         target_index target;
-        std::size_t threshold;
+        uint64_t threshold;
         std::chrono::milliseconds period;
     };
 
