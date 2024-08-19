@@ -1,0 +1,38 @@
+version: '2.1'
+rules:
+  - id: "1"
+    name: rule1-signed-lower-than
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: lower_than
+        parameters:
+          inputs:
+            - address: rule1-input
+          type: signed
+          value: -42
+  - id: "2"
+    name: rule2-unsigned-lower-than
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: lower_than
+        parameters:
+          inputs:
+            - address: rule2-input
+          type: unsigned
+          value: 42
+  - id: "3"
+    name: rule3-float-lower-than
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: lower_than
+        parameters:
+          inputs:
+            - address: rule3-input
+          type: float
+          value: 4.2
