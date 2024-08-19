@@ -1,0 +1,11 @@
+{
+  name: "Basic run with greater_than operator, no match",
+  runs: [
+    {
+      persistent-input: {
+        rule1-input: -43
+      },
+      code: ok
+    }
+  ]
+}
