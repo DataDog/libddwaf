@@ -105,7 +105,7 @@ const matcher::base *scalar_condition::get_matcher(
 eval_result scalar_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     const auto *matcher = get_matcher(dynamic_matchers);
     if (matcher == nullptr) {
@@ -135,13 +135,13 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
-            object::key_iterator it(object, target.key_path, objects_excluded, limits_);
+            object::key_iterator it(object, target.key_path, objects_excluded, limits);
             match = eval_target(
-                it, target.name, ephemeral, *matcher, target.transformers, limits_, deadline);
+                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         } else {
-            object::value_iterator it(object, target.key_path, objects_excluded, limits_);
+            object::value_iterator it(object, target.key_path, objects_excluded, limits);
             match = eval_target(
-                it, target.name, ephemeral, *matcher, target.transformers, limits_, deadline);
+                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         }
 
         if (match.has_value()) {

@@ -15,12 +15,13 @@ class ssrf_detector : public base_impl<ssrf_detector> {
 public:
     static constexpr std::array<std::string_view, 2> param_names{"resource", "params"};
 
-    explicit ssrf_detector(std::vector<condition_parameter> args, const object_limits &limits = {});
+    explicit ssrf_detector(std::vector<condition_parameter> args);
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &uri,
         const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
+        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+        ddwaf::timer &deadline) const;
 
     std::unique_ptr<matcher::ip_match> dangerous_ip_matcher_;
     std::unordered_set<std::string_view> authorised_schemes_;

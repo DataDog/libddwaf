@@ -201,6 +201,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->actions = actions_;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
+    rs->limits = limits_;
 
     // Since disabled rules aren't added to the final ruleset, we must check
     // again that there are rules available.

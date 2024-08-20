@@ -70,19 +70,20 @@ std::optional<shi_result> shi_string_impl(std::string_view resource,
 
 } // namespace
 
-shi_detector::shi_detector(std::vector<condition_parameter> args, const object_limits &limits)
-    : base_impl<shi_detector>(std::move(args), limits)
+shi_detector::shi_detector(std::vector<condition_parameter> args)
+    : base_impl<shi_detector>(std::move(args))
 {}
 
 eval_result shi_detector::eval_impl(const unary_argument<std::string_view> &resource,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline) const
 {
     std::vector<shell_token> resource_tokens;
 
     for (const auto &param : params) {
         auto res = shi_string_impl(
-            resource.value, resource_tokens, *param.value, objects_excluded, limits_, deadline);
+            resource.value, resource_tokens, *param.value, objects_excluded, limits, deadline);
         if (res.has_value()) {
             std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};

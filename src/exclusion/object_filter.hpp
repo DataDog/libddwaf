@@ -239,7 +239,7 @@ class object_filter {
 public:
     using cache_type = memory::unordered_set<ddwaf_object *>;
 
-    explicit object_filter(const ddwaf::object_limits &limits = {}) : limits_(limits) {}
+    object_filter() = default;
 
     void insert(
         target_index target, std::string name, const std::vector<std::string_view> &key_path = {})
@@ -248,8 +248,8 @@ public:
         targets_.emplace(target, std::move(name));
     }
 
-    object_set match(
-        const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const;
+    object_set match(const object_store &store, cache_type &cache, bool ephemeral,
+        const object_limits &limits, ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
@@ -257,7 +257,6 @@ public:
     }
 
 protected:
-    object_limits limits_;
     std::unordered_map<target_index, path_trie> target_paths_;
     std::unordered_map<target_index, std::string> targets_;
 };

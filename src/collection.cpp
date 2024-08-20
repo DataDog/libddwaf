@@ -15,7 +15,7 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     memory::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
     const exclusion::context_policy &policy,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline)
+    const object_limits &limits, ddwaf::timer &deadline)
 {
     const auto &id = rule->get_id();
 
@@ -55,7 +55,8 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
 
         rule::cache_type &rule_cache = it->second;
         std::optional<event> event;
-        event = rule->match(store, rule_cache, exclusion.objects, dynamic_matchers, deadline);
+        event =
+            rule->match(store, rule_cache, exclusion.objects, dynamic_matchers, limits, deadline);
 
         if (event.has_value()) {
             event->action_override = action_override;
@@ -74,7 +75,7 @@ template <typename Derived>
 void base_collection<Derived>::match(std::vector<event> &events, object_store &store,
     collection_cache &cache, const exclusion::context_policy &exclusion,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     if (cache.result >= Derived::type()) {
         // If the result was cached but ephemeral, clear it. Note that this is
@@ -89,8 +90,8 @@ void base_collection<Derived>::match(std::vector<event> &events, object_store &s
     }
 
     for (auto *rule : rules_) {
-        auto event =
-            match_rule(rule, store, cache.rule_cache, exclusion, dynamic_matchers, deadline);
+        auto event = match_rule(
+            rule, store, cache.rule_cache, exclusion, dynamic_matchers, limits, deadline);
         if (event.has_value()) {
             cache.result = Derived::type();
             cache.ephemeral = event->ephemeral;

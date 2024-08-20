@@ -21,7 +21,7 @@ namespace ddwaf {
 eval_result expression::eval(cache_type &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     if (cache.result || conditions_.empty()) {
         return {true, false};
@@ -41,7 +41,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         }
 
         auto [res, ephemeral] =
-            cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, deadline);
+            cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, limits, deadline);
         if (!res) {
             return {false, false};
         }

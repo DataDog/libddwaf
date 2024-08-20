@@ -15,13 +15,14 @@ class shi_detector : public base_impl<shi_detector> {
 public:
     static constexpr std::array<std::string_view, 2> param_names{"resource", "params"};
 
-    explicit shi_detector(std::vector<condition_parameter> args, const object_limits &limits = {});
+    explicit shi_detector(std::vector<condition_parameter> args);
 
 protected:
     // TODO support array shell_args
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &resource,
         const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
+        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+        ddwaf::timer &deadline) const;
 
     friend class base_impl<shi_detector>;
 };

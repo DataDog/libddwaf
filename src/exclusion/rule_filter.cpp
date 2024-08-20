@@ -28,7 +28,7 @@ rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
 
 std::optional<excluded_set> rule_filter::match(const object_store &store, cache_type &cache,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     DDWAF_DEBUG("Evaluating rule filter '{}'", id_);
 
@@ -37,7 +37,7 @@ std::optional<excluded_set> rule_filter::match(const object_store &store, cache_
         return std::nullopt;
     }
 
-    auto res = expr_->eval(cache, store, {}, dynamic_matchers, deadline);
+    auto res = expr_->eval(cache, store, {}, dynamic_matchers, limits, deadline);
     if (!res.outcome) {
         return std::nullopt;
     }

@@ -155,6 +155,7 @@ struct ruleset {
         return available_action_types;
     }
 
+    object_limits limits;
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 

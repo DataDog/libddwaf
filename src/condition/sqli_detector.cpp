@@ -497,7 +497,8 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 [[nodiscard]] eval_result sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
     const variadic_argument<const ddwaf_object *> &params,
     const unary_argument<std::string_view> &db_type, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline) const
 {
     auto dialect = sql_dialect_from_type(db_type.value);
 
@@ -505,7 +506,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
     for (const auto &param : params) {
         auto res = internal::sqli_impl(
-            sql.value, resource_tokens, *param.value, dialect, objects_excluded, limits_, deadline);
+            sql.value, resource_tokens, *param.value, dialect, objects_excluded, limits, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             bool ephemeral = sql.ephemeral || param.ephemeral;

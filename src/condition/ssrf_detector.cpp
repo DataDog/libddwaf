@@ -232,15 +232,16 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
 
 } // namespace
 
-ssrf_detector::ssrf_detector(std::vector<condition_parameter> args, const object_limits &limits)
-    : base_impl<ssrf_detector>(std::move(args), limits),
+ssrf_detector::ssrf_detector(std::vector<condition_parameter> args)
+    : base_impl<ssrf_detector>(std::move(args)),
       dangerous_ip_matcher_(std::make_unique<matcher::ip_match>(dangerous_ips)),
       authorised_schemes_(authorised_schemes.begin(), authorised_schemes.end())
 {}
 
 eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline) const
 {
     auto decomposed = uri_parse(uri.value);
     if (!decomposed.has_value()) {
@@ -248,7 +249,7 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
     }
 
     for (const auto &param : params) {
-        auto res = ssrf_impl(*decomposed, *param.value, objects_excluded, limits_,
+        auto res = ssrf_impl(*decomposed, *param.value, objects_excluded, limits,
             dangerous_ip_matcher_, authorised_schemes_, deadline);
         if (res.has_value()) {
             std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
