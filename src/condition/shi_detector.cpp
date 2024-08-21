@@ -69,7 +69,8 @@ struct shell_argument_array {
                 continue;
             }
 
-            std::string_view str{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+            const std::string_view str{
+                child.stringValue, static_cast<std::size_t>(child.nbEntries)};
 
             indices.emplace_back(index, index + str.size() - 1);
 
@@ -237,7 +238,7 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
         if (res.has_value()) {
             std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
-            bool ephemeral = resource.ephemeral || param.ephemeral;
+            const bool ephemeral = resource.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
 
