@@ -9,12 +9,10 @@
 
 #include "context.hpp"
 #include "ddwaf.h"
-#include "parser/parser.hpp"
 #include "ruleset.hpp"
 #include "ruleset_builder.hpp"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
-#include "version.hpp"
 
 namespace ddwaf {
 
@@ -22,7 +20,8 @@ class waf {
 public:
     waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_limits limits,
         ddwaf_object_free_fn free_fn, std::shared_ptr<ddwaf::obfuscator> event_obfuscator);
-    waf *update(ddwaf::parameter input, ddwaf::base_ruleset_info &info);
+    waf *update(ddwaf::parameter input, ddwaf::base_ruleset_info &info,
+        std::optional<object_limits> limits);
 
     ddwaf::context_wrapper *create_context() { return new context_wrapper(ruleset_); }
 

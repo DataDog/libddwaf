@@ -1308,7 +1308,7 @@ TEST(TestRuleFilter, CustomFilterModeUnknownAction)
     {
         auto overrides =
             yaml_to_object(R"({actions: [{id: block2, type: block_request, parameters: {}}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        handle2 = ddwaf_update(handle1, &overrides, nullptr, nullptr);
         ddwaf_object_free(&overrides);
         ASSERT_NE(handle2, nullptr);
     }

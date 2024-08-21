@@ -16,6 +16,7 @@
 #include "ruleset_info.hpp"
 #include "unordered_map"
 #include "utils.hpp"
+#include "version.hpp"
 #include "waf.hpp"
 
 #if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_INFO
@@ -113,20 +114,26 @@ ddwaf::waf *ddwaf_init(
     return nullptr;
 }
 
-ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_object *diagnostics)
+ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset,
+    const ddwaf_config *config, ddwaf_object *diagnostics)
 {
     try {
         if (handle != nullptr && ruleset != nullptr) {
             const ddwaf::parameter input = *ruleset;
+            std::optional<ddwaf::object_limits> limits;
+            if (config != nullptr) {
+                limits = limits_from_config(config);
+            }
+
             if (diagnostics == nullptr) {
                 ddwaf::null_ruleset_info ri;
-                return handle->update(input, ri);
+                return handle->update(input, ri, limits);
             }
 
             ddwaf::ruleset_info ri;
             const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
 
-            return handle->update(input, ri);
+            return handle->update(input, ri, limits);
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());

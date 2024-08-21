@@ -23,9 +23,9 @@ namespace ddwaf {
 
 class ruleset_builder {
 public:
-    ruleset_builder(object_limits limits, ddwaf_object_free_fn free_fn,
-        std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
-        : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
+    ruleset_builder(
+        ddwaf_object_free_fn free_fn, std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
+        : free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
     {}
 
     ~ruleset_builder() = default;
@@ -34,13 +34,15 @@ public:
     ruleset_builder &operator=(ruleset_builder &&) = delete;
     ruleset_builder &operator=(const ruleset_builder &) = delete;
 
-    std::shared_ptr<ruleset> build(parameter root_map, base_ruleset_info &info)
+    std::shared_ptr<ruleset> build(
+        parameter root_map, base_ruleset_info &info, std::optional<object_limits> limits = {})
     {
         auto root = static_cast<parameter::map>(root_map);
-        return build(root, info);
+        return build(root, info, limits);
     }
 
-    std::shared_ptr<ruleset> build(parameter::map &root, base_ruleset_info &info);
+    std::shared_ptr<ruleset> build(
+        parameter::map &root, base_ruleset_info &info, std::optional<object_limits> limits = {});
 
 protected:
     enum class change_state : uint32_t {
@@ -63,7 +65,7 @@ protected:
 
     // These members are obtained through ddwaf_config and are persistent across
     // all updates.
-    const object_limits limits_;
+    object_limits limits_;
     const ddwaf_object_free_fn free_fn_;
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator_;
 

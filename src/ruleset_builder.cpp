@@ -59,8 +59,13 @@ std::set<rule *> references_to_rules(
 
 } // namespace
 
-std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_ruleset_info &info)
+std::shared_ptr<ruleset> ruleset_builder::build(
+    parameter::map &root, base_ruleset_info &info, std::optional<object_limits> limits)
 {
+    if (limits.has_value()) {
+        limits_ = limits.value();
+    }
+
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
 

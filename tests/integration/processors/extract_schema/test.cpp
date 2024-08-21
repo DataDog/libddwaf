@@ -281,7 +281,7 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
 
     {
         auto new_ruleset = read_json_file("postprocessor.json", base_dir);
-        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
+        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr, nullptr);
         ddwaf_object_free(&new_ruleset);
         ddwaf_destroy(handle);
 
@@ -359,7 +359,7 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
     {
         auto new_scanners = json_to_object(
             R"({"scanners":[{"id":"scanner-002","value":{"operator":"match_regex","parameters":{"regex":"notanemail","options":{"case_sensitive":false,"min_length":1}}},"tags":{"type":"email","category":"pii"}}]})");
-        auto *new_handle = ddwaf_update(handle, &new_scanners, nullptr);
+        auto *new_handle = ddwaf_update(handle, &new_scanners, nullptr, nullptr);
         ddwaf_object_free(&new_scanners);
         ddwaf_destroy(handle);
 
@@ -437,7 +437,7 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
 
     {
         auto new_ruleset = read_json_file("processor_with_scanner_by_id.json", base_dir);
-        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
+        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr, nullptr);
         ddwaf_object_free(&new_ruleset);
         ddwaf_destroy(handle);
 
@@ -515,7 +515,7 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
 
     {
         auto new_ruleset = json_to_object(R"({"scanners":[]})");
-        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
+        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr, nullptr);
         ddwaf_object_free(&new_ruleset);
         ddwaf_destroy(handle);
 
@@ -592,7 +592,7 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
 
     {
         auto new_ruleset = json_to_object(R"({"processors":[]})");
-        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
+        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr, nullptr);
         ddwaf_object_free(&new_ruleset);
         ddwaf_destroy(handle);
 
