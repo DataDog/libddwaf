@@ -42,7 +42,7 @@ TEST(TestRule, Match)
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::none, nullptr);
 
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
 
         EXPECT_STREQ(event->rule->get_id().c_str(), "id");
@@ -68,7 +68,7 @@ TEST(TestRule, Match)
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::none, nullptr);
 
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 
@@ -103,7 +103,7 @@ TEST(TestRule, EphemeralMatch)
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::ephemeral, nullptr);
 
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(event.has_value());
         EXPECT_TRUE(event->ephemeral);
     }
@@ -112,7 +112,7 @@ TEST(TestRule, EphemeralMatch)
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::ephemeral, nullptr);
 
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(event.has_value());
         EXPECT_TRUE(event->ephemeral);
     }
@@ -144,7 +144,7 @@ TEST(TestRule, NoMatch)
     ddwaf::timer deadline{2s};
 
     rule::cache_type cache;
-    auto match = rule.match(store, cache, {}, {}, deadline);
+    auto match = rule.match(store, cache, {}, {}, {}, deadline);
     EXPECT_FALSE(match.has_value());
 }
 
@@ -179,7 +179,7 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 
@@ -193,7 +193,7 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
         EXPECT_STREQ(event->rule->get_id().c_str(), "id");
         EXPECT_STREQ(event->rule->get_name().c_str(), "name");
@@ -253,7 +253,7 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         ddwaf::rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 
@@ -266,7 +266,7 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         ddwaf::rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
 
         {
@@ -319,7 +319,7 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         ddwaf::rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 
@@ -333,7 +333,7 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         ddwaf::rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 }
@@ -369,7 +369,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
     }
 
@@ -383,7 +383,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, deadline);
+        auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 }
@@ -412,7 +412,7 @@ TEST(TestRule, ExcludeObject)
 
     std::unordered_set<const ddwaf_object *> excluded_set{&root.array[0]};
     rule::cache_type cache;
-    auto event = rule.match(store, cache, {excluded_set, {}}, {}, deadline);
+    auto event = rule.match(store, cache, {excluded_set, {}}, {}, {}, deadline);
     EXPECT_FALSE(event.has_value());
 }
 } // namespace

@@ -33,7 +33,7 @@ input_filter_spec parse_input_filter(const parameter::map &filter, address_conta
         }
     }
 
-    auto obj_filter = std::make_shared<exclusion::object_filter>(limits);
+    auto obj_filter = std::make_shared<exclusion::object_filter>();
     auto inputs_array = at<parameter::vector>(filter, "inputs");
 
     // TODO: add empty method to object filter and check after

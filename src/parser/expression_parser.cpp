@@ -102,24 +102,23 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         if (operator_name == "lfi_detector") {
             auto arguments =
                 parse_arguments<lfi_detector>(params, source, transformers, addresses, limits);
-            conditions.emplace_back(std::make_unique<lfi_detector>(std::move(arguments), limits));
+            conditions.emplace_back(std::make_unique<lfi_detector>(std::move(arguments)));
         } else if (operator_name == "ssrf_detector") {
             auto arguments =
                 parse_arguments<ssrf_detector>(params, source, transformers, addresses, limits);
-            conditions.emplace_back(std::make_unique<ssrf_detector>(std::move(arguments), limits));
+            conditions.emplace_back(std::make_unique<ssrf_detector>(std::move(arguments)));
         } else if (operator_name == "sqli_detector") {
             auto arguments =
                 parse_arguments<sqli_detector>(params, source, transformers, addresses, limits);
-            conditions.emplace_back(std::make_unique<sqli_detector>(std::move(arguments), limits));
+            conditions.emplace_back(std::make_unique<sqli_detector>(std::move(arguments)));
         } else if (operator_name == "shi_detector") {
             auto arguments =
                 parse_arguments<shi_detector>(params, source, transformers, addresses, limits);
-            conditions.emplace_back(std::make_unique<shi_detector>(std::move(arguments), limits));
+            conditions.emplace_back(std::make_unique<shi_detector>(std::move(arguments)));
         } else if (operator_name == "exists") {
             auto arguments =
                 parse_arguments<exists_condition>(params, source, transformers, addresses, limits);
-            conditions.emplace_back(
-                std::make_unique<exists_condition>(std::move(arguments), limits));
+            conditions.emplace_back(std::make_unique<exists_condition>(std::move(arguments)));
         } else {
             auto [data_id, matcher] = parse_matcher(operator_name, params);
 
@@ -131,7 +130,7 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
                 parse_arguments<scalar_condition>(params, source, transformers, addresses, limits);
 
             conditions.emplace_back(std::make_unique<scalar_condition>(
-                std::move(matcher), data_id, std::move(arguments), limits));
+                std::move(matcher), data_id, std::move(arguments)));
         }
     }
 

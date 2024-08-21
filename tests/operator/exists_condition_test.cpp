@@ -32,7 +32,7 @@ TEST(TestExistsCondition, AddressAvailable)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
 }
 
@@ -50,7 +50,7 @@ TEST(TestExistsCondition, AddressNotAvaialble)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -70,7 +70,7 @@ TEST(TestExistsCondition, MultipleAddresses)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_EQ(res.outcome, expected);
     };
 

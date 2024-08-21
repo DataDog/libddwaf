@@ -27,8 +27,8 @@ namespace ddwaf::parser::v1 {
 
 namespace {
 
-std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array,
-    const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
+std::shared_ptr<expression> parse_expression(
+    parameter::vector &conditions_array, const std::vector<transformer_id> &transformers)
 {
     std::vector<std::unique_ptr<base_condition>> conditions;
 
@@ -104,7 +104,7 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
         }
 
         conditions.emplace_back(std::make_unique<scalar_condition>(
-            std::move(matcher), std::string{}, std::move(definitions), limits));
+            std::move(matcher), std::string{}, std::move(definitions)));
     }
 
     return std::make_shared<expression>(std::move(conditions));
@@ -137,7 +137,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
         }
 
         auto conditions_array = at<parameter::vector>(rule, "conditions");
-        auto expression = parse_expression(conditions_array, rule_transformers, limits);
+        auto expression = parse_expression(conditions_array, rule_transformers);
 
         std::unordered_map<std::string, std::string> tags;
         for (auto &[key, value] : at<parameter::map>(rule, "tags")) {

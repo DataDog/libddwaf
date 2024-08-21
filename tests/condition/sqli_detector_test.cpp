@@ -49,7 +49,7 @@ TEST_P(DialectTestFixture, InvalidSql)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -81,7 +81,7 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -123,7 +123,7 @@ TEST_P(DialectTestFixture, BenignInjections)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -180,7 +180,7 @@ TEST_P(DialectTestFixture, MaliciousInjections)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -258,7 +258,7 @@ TEST_P(DialectTestFixture, Tautologies)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -313,7 +313,7 @@ TEST_P(DialectTestFixture, Comments)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -365,7 +365,7 @@ TEST(TestSQLiDetectorMySql, Comments)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -417,7 +417,7 @@ TEST(TestSQLiDetectorMySql, Tautologies)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -472,7 +472,7 @@ TEST(TestSQLiDetectorPgSql, Tautologies)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
