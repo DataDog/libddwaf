@@ -4,13 +4,23 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <exception>
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
 #include "builder/processor_builder.hpp"
+#include "exception.hpp"
+#include "log.hpp"
+#include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
+#include "parser/specification.hpp"
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
-#include <vector>
+#include "utils.hpp"
 
 namespace ddwaf::parser::v2 {
 

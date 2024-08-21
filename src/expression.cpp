@@ -4,16 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <charconv>
-#include <iostream>
 #include <memory>
-#include <variant>
+#include <string>
+#include <unordered_map>
 
-#include "event.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
 #include "exclusion/common.hpp"
 #include "expression.hpp"
-#include "log.hpp"
-#include "transformer/manager.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {

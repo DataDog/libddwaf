@@ -3,6 +3,22 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <exception>
+#include <memory>
+#include <stdexcept>
+#include <utility>
+
+#include "action_mapper.hpp"
+#include "ddwaf.h"
+#include "exception.hpp"
+#include "log.hpp"
+#include "obfuscator.hpp"
+#include "parameter.hpp"
+#include "parser/parser.hpp"
+#include "ruleset.hpp"
+#include "ruleset_builder.hpp"
+#include "ruleset_info.hpp"
+#include "utils.hpp"
 #include "waf.hpp"
 #include "parser/parser.hpp"
 #include "version.hpp"

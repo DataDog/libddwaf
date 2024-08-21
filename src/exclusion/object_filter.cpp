@@ -3,10 +3,19 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstddef>
+#include <stack>
+#include <string_view>
+#include <tuple>
+#include <unordered_set>
 
-#include "exclusion/object_filter.hpp"
+#include "clock.hpp"
+#include "ddwaf.h"
 #include "exception.hpp"
+#include "exclusion/common.hpp"
+#include "exclusion/object_filter.hpp"
 #include "log.hpp"
+#include "object_store.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::exclusion {

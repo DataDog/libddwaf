@@ -4,6 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstdint>
+
+#include "transformer/common/cow_string.hpp"
 #include "transformer/shell_unescape.hpp"
 #include "utils.hpp"
 

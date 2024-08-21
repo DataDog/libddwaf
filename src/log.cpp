@@ -4,9 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstdarg>
 #include <cstdio>
 
+#include "ddwaf.h"
 #include "log.hpp"
 
 namespace ddwaf {

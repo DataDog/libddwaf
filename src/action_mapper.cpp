@@ -4,10 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <functional>
+#include <map>
+#include <memory>
 #include <stdexcept>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
 
 #include "action_mapper.hpp"
-#include "uuid.hpp"
 
 namespace ddwaf {
 action_type action_type_from_string(std::string_view type)

@@ -3,10 +3,21 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <chrono>
+#include <cstdint>
+#include <string_view>
+#include <vector>
 
+#include "clock.hpp"
+#include "collection.hpp"
 #include "context.hpp"
+#include "ddwaf.h"
+#include "event.hpp"
 #include "exception.hpp"
+#include "exclusion/common.hpp"
 #include "log.hpp"
+#include "object_store.hpp"
+#include "processor/base.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -22,7 +33,7 @@ using attribute = object_store::attribute;
 // on whether the events were ephemeral or not.
 void set_context_event_address(object_store &store)
 {
-    static std::string_view event_addr = "waf.context.event";
+    static const std::string_view event_addr = "waf.context.event";
     static auto event_addr_idx = get_target_index(event_addr);
 
     if (store.has_target(event_addr_idx)) {
@@ -111,6 +122,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         }
 
         eval_postprocessors(derived, deadline);
+        // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
