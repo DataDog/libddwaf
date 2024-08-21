@@ -3,19 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "processor/fingerprint.hpp"
-#include "argument_retriever.hpp"
-#include "clock.hpp"
-#include "ddwaf.h"
-#include "exception.hpp"
-#include "log.hpp"
-#include "object_store.hpp"
-#include "sha256.hpp"
-#include "transformer/common/cow_string.hpp"
-#include "transformer/lowercase.hpp"
-#include "utils.hpp"
-
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -29,6 +16,18 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "ddwaf.h"
+#include "exception.hpp"
+#include "log.hpp"
+#include "object_store.hpp"
+#include "processor/fingerprint.hpp"
+#include "sha256.hpp"
+#include "transformer/common/cow_string.hpp"
+#include "transformer/lowercase.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 namespace {

@@ -6,7 +6,6 @@
 
 // NOLINTBEGIN(misc-include-cleaner)
 
-#include "transformer/common/cow_string.hpp"
 #include "utils.hpp"
 #include <cstddef>
 #include <string_view>
@@ -14,6 +13,7 @@
 #  include <immintrin.h>
 #endif
 
+#include "transformer/common/cow_string.hpp"
 #include "transformer/lowercase.hpp"
 
 namespace ddwaf::transformer {

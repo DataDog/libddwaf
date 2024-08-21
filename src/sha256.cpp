@@ -14,7 +14,6 @@
 // https://www.openssl.org/source/license.html
 //
 
-#include "sha256.hpp"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -22,6 +21,8 @@
 #include <span>
 #include <string>
 #include <string_view>
+
+#include "sha256.hpp"
 
 namespace ddwaf {
 namespace {

@@ -8,15 +8,15 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "condition/base.hpp"
 #include "exception.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
 #include "transformer/base.hpp"
-#include <string>
-#include <string_view>
-#include <vector>
 
 namespace ddwaf::parser::v2 {
 

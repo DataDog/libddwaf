@@ -3,20 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "condition/ssrf_detector.hpp"
-#include "argument_retriever.hpp"
-#include "clock.hpp"
-#include "condition/base.hpp"
-#include "condition/match_iterator.hpp"
-#include "condition/structured_condition.hpp"
-#include "ddwaf.h"
-#include "exception.hpp"
-#include "exclusion/common.hpp"
-#include "log.hpp"
-#include "matcher/ip_match.hpp"
-#include "uri_utils.hpp"
-#include "utils.hpp"
 #include <array>
 #include <cstddef>
 #include <memory>
@@ -26,6 +12,20 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
+#include "condition/match_iterator.hpp"
+#include "condition/ssrf_detector.hpp"
+#include "condition/structured_condition.hpp"
+#include "ddwaf.h"
+#include "exception.hpp"
+#include "exclusion/common.hpp"
+#include "log.hpp"
+#include "matcher/ip_match.hpp"
+#include "uri_utils.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 

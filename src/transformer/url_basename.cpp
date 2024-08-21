@@ -4,9 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "transformer/url_basename.hpp"
-#include "transformer/common/cow_string.hpp"
 #include <cstddef>
+
+#include "transformer/common/cow_string.hpp"
+#include "transformer/url_basename.hpp"
 
 namespace ddwaf::transformer {
 

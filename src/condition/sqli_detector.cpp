@@ -3,11 +3,21 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include "condition/sqli_detector.hpp"
+#include <cstddef>
+#include <limits>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <variant>
+#include <vector>
+
 #include "argument_retriever.hpp"
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "condition/match_iterator.hpp"
+#include "condition/sqli_detector.hpp"
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
@@ -18,16 +28,6 @@
 #include "tokenizer/sql_base.hpp"
 #include "tokenizer/sqlite.hpp"
 #include "utils.hpp"
-
-#include <cstddef>
-#include <limits>
-#include <span>
-#include <stdexcept>
-#include <string>
-#include <string_view>
-#include <utility>
-#include <variant>
-#include <vector>
 
 using namespace std::literals;
 

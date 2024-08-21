@@ -3,13 +3,13 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "transformer/unicode_normalize.hpp"
-#include "transformer/common/cow_string.hpp"
-#include "transformer/common/utf8.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+
+#include "transformer/common/cow_string.hpp"
+#include "transformer/common/utf8.hpp"
+#include "transformer/unicode_normalize.hpp"
 
 using namespace ddwaf::utf8;
 

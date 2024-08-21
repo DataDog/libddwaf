@@ -3,15 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "clock.hpp"
-#include "exclusion/common.hpp"
-#include "expression.hpp"
-#include "matcher/base.hpp"
-#include "object_store.hpp"
-#include "rule.hpp"
-#include <exclusion/rule_filter.hpp>
-#include <log.hpp>
 #include <memory>
 #include <optional>
 #include <set>
@@ -19,6 +10,15 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+
+#include "clock.hpp"
+#include "exclusion/common.hpp"
+#include "exclusion/rule_filter.hpp"
+#include "expression.hpp"
+#include "log.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
+#include "rule.hpp"
 
 namespace ddwaf::exclusion {
 

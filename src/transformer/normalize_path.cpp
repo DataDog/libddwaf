@@ -3,11 +3,11 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "transformer/normalize_path.hpp"
-#include "transformer/common/cow_string.hpp"
 #include <algorithm>
 #include <cstddef>
+
+#include "transformer/common/cow_string.hpp"
+#include "transformer/normalize_path.hpp"
 
 namespace ddwaf::transformer {
 

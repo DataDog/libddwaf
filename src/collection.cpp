@@ -3,9 +3,16 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
-#include "collection.hpp"
 #include "clock.hpp"
+#include "collection.hpp"
 #include "context_allocator.hpp"
 #include "event.hpp"
 #include "exception.hpp"
@@ -14,13 +21,6 @@
 #include "matcher/base.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
-#include <memory>
-#include <optional>
-#include <string>
-#include <string_view>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 namespace ddwaf {
 

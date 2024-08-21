@@ -3,19 +3,19 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "tokenizer/mysql.hpp"
-#include "log.hpp"
-#include "re2.h"
-#include "stringpiece.h"
-#include "tokenizer/sql_base.hpp"
-#include "utils.hpp"
 #include <cstdint>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "log.hpp"
+#include "re2.h"
+#include "stringpiece.h"
+#include "tokenizer/mysql.hpp"
+#include "tokenizer/sql_base.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 

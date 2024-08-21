@@ -3,15 +3,15 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "obfuscator.hpp"
-#include "log.hpp"
-#include "re2.h"
-#include "stringpiece.h"
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string_view>
+
+#include "log.hpp"
+#include "obfuscator.hpp"
+#include "re2.h"
+#include "stringpiece.h"
 
 namespace ddwaf {
 

@@ -3,15 +3,15 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "uri_utils.hpp"
-#include "ip_utils.hpp"
-#include "utils.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <optional>
 #include <string_view>
+
+#include "ip_utils.hpp"
+#include "uri_utils.hpp"
+#include "utils.hpp"
 
 /*
    URI           = scheme ":" hier-part [ "?" query ] [ "#" fragment ]

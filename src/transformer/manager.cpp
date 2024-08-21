@@ -3,8 +3,9 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstddef>
+#include <span>
 
-#include "transformer/manager.hpp"
 #include "ddwaf.h"
 #include "transformer/base.hpp"
 #include "transformer/base64_decode.hpp"
@@ -15,6 +16,7 @@
 #include "transformer/html_entity_decode.hpp"
 #include "transformer/js_decode.hpp"
 #include "transformer/lowercase.hpp"
+#include "transformer/manager.hpp"
 #include "transformer/normalize_path.hpp"
 #include "transformer/remove_comments.hpp"
 #include "transformer/remove_nulls.hpp"
@@ -24,8 +26,6 @@
 #include "transformer/url_decode.hpp"
 #include "transformer/url_path.hpp"
 #include "transformer/url_querystring.hpp"
-#include <cstddef>
-#include <span>
 
 namespace ddwaf::transformer {
 

@@ -3,12 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "tokenizer/shell.hpp"
-#include "re2.h"
-#include "stringpiece.h"
-#include "tokenizer/base.hpp"
-#include "utils.hpp"
 #include <cstddef>
 #include <ostream>
 #include <stdexcept>
@@ -16,6 +10,12 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "re2.h"
+#include "stringpiece.h"
+#include "tokenizer/base.hpp"
+#include "tokenizer/shell.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 
