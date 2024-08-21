@@ -3,8 +3,22 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
 #include "condition/exists.hpp"
+#include "ddwaf.h"
+#include "exception.hpp"
+#include "exclusion/common.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -38,7 +52,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
         if (child.parameterName == nullptr) [[unlikely]] {
             continue;
         }
-        std::string_view key{
+        const std::string_view key{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
         if (key == *it) {
