@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
             const ddwaf_config config{{0, 0, 0}, {key_regex, value_regex}, ddwaf_object_free};
             handle = ddwaf_init(&rule, &config, nullptr);
         } else {
-            auto *updated_handle = ddwaf_update(handle, &rule, nullptr);
+            auto *updated_handle = ddwaf_update(handle, &rule, nullptr, nullptr);
             ddwaf_destroy(handle);
             handle = updated_handle;
         }
