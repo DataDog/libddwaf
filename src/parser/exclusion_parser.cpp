@@ -3,8 +3,19 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <exception>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
+#include "condition/base.hpp"
+#include "exception.hpp"
+#include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
+#include "log.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"

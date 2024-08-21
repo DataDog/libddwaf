@@ -3,22 +3,39 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+#include <new>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
-#include "processor/fingerprint.hpp"
+#include "argument_retriever.hpp"
+#include "clock.hpp"
 #include "ddwaf.h"
+#include "exception.hpp"
+#include "log.hpp"
+#include "object_store.hpp"
+#include "processor/fingerprint.hpp"
 #include "sha256.hpp"
 #include "traits.hpp"
+#include "transformer/common/cow_string.hpp"
 #include "transformer/lowercase.hpp"
 #include "utils.hpp"
-
-#include <stdexcept>
 
 namespace ddwaf {
 namespace {
 
 struct string_buffer {
     explicit string_buffer(std::size_t length)
-        // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
+        // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
         : buffer(reinterpret_cast<char *>(malloc(sizeof(char) * length))), length(length)
     {
         if (buffer == nullptr) {
@@ -26,11 +43,8 @@ struct string_buffer {
         }
     }
 
-    ~string_buffer()
-    {
-        // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
-        free(buffer);
-    }
+    // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
+    ~string_buffer() { free(buffer); }
 
     string_buffer(const string_buffer &) = delete;
     string_buffer(string_buffer &&) = delete;
@@ -53,7 +67,7 @@ struct string_buffer {
         ddwaf_object object;
         ddwaf_object_stringl_nc(&object, buffer, index);
         buffer = nullptr;
-        return object;
+        return object; // NOLINT(clang-analyzer-unix.Malloc)
     }
 
     char *buffer{nullptr};
@@ -580,7 +594,7 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
         }
 
         const auto &child = headers.value->array[i];
-        std::string_view header{
+        const std::string_view header{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
         normalize_header(header, normalized_header);
@@ -627,7 +641,7 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
 
         const auto &child = headers.value->array[i];
 
-        std::string_view header{
+        const std::string_view header{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
         normalize_header(header, normalized_header);

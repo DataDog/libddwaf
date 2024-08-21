@@ -249,7 +249,7 @@ jobs:
         working-directory: Debug
 
       - name: Tidy
-        run: make tidy || true
+        run: make tidy
         working-directory: Debug
 
   tools:

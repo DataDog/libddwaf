@@ -4,10 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+// NOLINTBEGIN(misc-include-cleaner)
+
+#include "utils.hpp"
+#include <cstddef>
+#include <string_view>
 #if defined(__SSE2__) && defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
 #  include <immintrin.h>
 #endif
 
+#include "transformer/common/cow_string.hpp"
 #include "transformer/lowercase.hpp"
 
 namespace ddwaf::transformer {
@@ -87,6 +93,7 @@ bool lowercase::transform_impl(cow_string &str)
         const __m128i cmp_result = _mm_and_si128(cmp_upper, cmp_lower);
 
         const __m128i result =
+            // NOLINTNEXTLINE(portability-simd-intrinsics)
             _mm_add_epi8(input_data, _mm_and_si128(cmp_result, sse_addition_value));
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
         _mm_storeu_si128((__m128i *)(input + i), result);
@@ -102,3 +109,5 @@ bool lowercase::transform_impl(cow_string &str)
 #endif
 
 } // namespace ddwaf::transformer
+
+// NOLINTEND(misc-include-cleaner)

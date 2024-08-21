@@ -15,6 +15,7 @@ namespace {
 std::unique_ptr<null_memory_resource> global_memory_resource{new null_memory_resource};
 } // namespace
 
+// NOLINTNEXTLINE(misc-include-cleaner)
 thread_local std::pmr::memory_resource *local_memory_resource{global_memory_resource.get()};
 
 } // namespace ddwaf::memory
