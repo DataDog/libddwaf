@@ -5,9 +5,16 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <array>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <utility>
 
 #include "exception.hpp"
 #include "matcher/regex_match.hpp"
+#include "re2.h"
+#include "stringpiece.h"
 
 namespace ddwaf::matcher {
 

@@ -4,6 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "transformer/common/cow_string.hpp"
+#include "utils.hpp"
+#include <cstddef>
+#include <string_view>
 #if defined(__SSE2__) && defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
 #  include <immintrin.h>
 #endif

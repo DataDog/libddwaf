@@ -4,10 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2022 Datadog, Inc.
 
-#include <algorithm>
+#include "transformer/common/cow_string.hpp"
+#include <cstdlib>
 #include <cstring>
-#include <string>
-#include <unordered_map>
 #include <vector>
 
 extern "C" {
@@ -16,7 +15,6 @@ extern "C" {
 }
 
 #include "transformer/common/utf8.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::utf8 {
 

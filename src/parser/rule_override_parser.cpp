@@ -4,9 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "exception.hpp"
+#include "log.hpp"
+#include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/specification.hpp"
+#include <exception>
+#include <string>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace ddwaf::parser::v2 {
 

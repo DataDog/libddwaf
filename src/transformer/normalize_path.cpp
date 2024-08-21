@@ -5,6 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/normalize_path.hpp"
+#include "transformer/common/cow_string.hpp"
+#include <algorithm>
+#include <cstddef>
 
 namespace ddwaf::transformer {
 

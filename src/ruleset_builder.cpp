@@ -4,14 +4,27 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 //
+#include <exception>
+#include <memory>
+#include <set>
 #include <string_view>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #include "exception.hpp"
+#include "exclusion/input_filter.hpp"
+#include "exclusion/rule_filter.hpp"
+#include "indexer.hpp"
 #include "log.hpp"
+#include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
+#include "rule.hpp"
+#include "ruleset.hpp"
 #include "ruleset_builder.hpp"
+#include "ruleset_info.hpp"
 
 namespace ddwaf {
 

@@ -5,7 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/unicode_normalize.hpp"
+#include "transformer/common/cow_string.hpp"
 #include "transformer/common/utf8.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
 
 using namespace ddwaf::utf8;
 

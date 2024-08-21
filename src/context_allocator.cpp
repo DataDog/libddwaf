@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <memory>
+#include <memory_resource>
 
 #include "context_allocator.hpp"
 

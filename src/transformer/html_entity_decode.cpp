@@ -5,8 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/html_entity_decode.hpp"
+#include "transformer/common/cow_string.hpp"
 #include "transformer/common/utf8.hpp"
 #include "utils.hpp"
+#include <cstddef>
+#include <cstdint>
 
 namespace ddwaf::transformer {
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

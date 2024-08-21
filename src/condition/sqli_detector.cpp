@@ -4,16 +4,30 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include "condition/sqli_detector.hpp"
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
 #include "condition/match_iterator.hpp"
+#include "ddwaf.h"
 #include "exception.hpp"
-#include "iterator.hpp"
+#include "exclusion/common.hpp"
+#include "log.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
+#include "tokenizer/sql_base.hpp"
 #include "tokenizer/sqlite.hpp"
 #include "utils.hpp"
 
+#include <cstddef>
+#include <limits>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
 #include <variant>
+#include <vector>
 
 using namespace std::literals;
 
@@ -356,8 +370,8 @@ bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
         return false;
     }
 
-    std::string_view order = resource_tokens[param_tokens_begin - 2].str;
-    std::string_view by = resource_tokens[param_tokens_begin - 1].str;
+    const std::string_view order = resource_tokens[param_tokens_begin - 2].str;
+    const std::string_view by = resource_tokens[param_tokens_begin - 1].str;
 
     if (!string_iequals_literal(order, "order") || !string_iequals_literal(by, "by")) {
         return false;
@@ -508,7 +522,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
             sql.value, resource_tokens, *param.value, dialect, objects_excluded, limits_, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
-            bool ephemeral = sql.ephemeral || param.ephemeral;
+            const bool ephemeral = sql.ephemeral || param.ephemeral;
 
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
 

@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
 
-#include <atomic>
 #include <version>
 
 #if !defined(__cpp_lib_memory_resource) && !defined(__cpp_lib_experimental_memory_resources)

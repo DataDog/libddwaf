@@ -5,8 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/js_decode.hpp"
+#include "transformer/common/cow_string.hpp"
 #include "transformer/common/utf8.hpp"
 #include "utils.hpp"
+#include <cstddef>
+#include <cstdint>
 
 namespace ddwaf::transformer {
 

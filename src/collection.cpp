@@ -5,9 +5,22 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "collection.hpp"
+#include "clock.hpp"
+#include "context_allocator.hpp"
+#include "event.hpp"
 #include "exception.hpp"
-#include "exclusion/rule_filter.hpp"
+#include "exclusion/common.hpp"
 #include "log.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
+#include "rule.hpp"
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace ddwaf {
 

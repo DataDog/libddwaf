@@ -6,7 +6,15 @@
 
 #include "tokenizer/generic_sql.hpp"
 #include "log.hpp"
+#include "re2.h"
+#include "stringpiece.h"
+#include "tokenizer/sql_base.hpp"
 #include "utils.hpp"
+#include <stdexcept>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace std::literals;
 

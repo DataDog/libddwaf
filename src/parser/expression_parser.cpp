@@ -4,16 +4,26 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "condition/base.hpp"
 #include "condition/exists.hpp"
 #include "condition/lfi_detector.hpp"
 #include "condition/scalar_condition.hpp"
 #include "condition/shi_detector.hpp"
 #include "condition/sqli_detector.hpp"
 #include "condition/ssrf_detector.hpp"
+#include "exception.hpp"
 #include "expression.hpp"
+#include "log.hpp"
+#include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
+#include "transformer/base.hpp"
+#include "utils.hpp"
 #include <memory>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace ddwaf::parser::v2 {
 

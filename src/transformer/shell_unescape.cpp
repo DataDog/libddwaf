@@ -5,7 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/shell_unescape.hpp"
+#include "transformer/common/cow_string.hpp"
 #include "utils.hpp"
+#include <cstdint>
 
 namespace ddwaf::transformer {
 /*

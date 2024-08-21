@@ -4,18 +4,25 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <algorithm>
-#include <iostream>
-#include <map>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "ddwaf.h"
 #include "exception.hpp"
-#include "log.hpp"
+#include "object_store.hpp"
 #include "processor/extract_schema.hpp"
+#include "scanner.hpp"
 
 namespace ddwaf {
 namespace schema {
@@ -30,7 +37,7 @@ enum class scalar_type : uint8_t { null = 1, boolean = 2, integer = 4, string = 
 
 struct node_scalar {
     scalar_type type{scalar_type::null};
-    std::unordered_map<std::string, std::string> tags{};
+    std::unordered_map<std::string, std::string> tags;
     mutable std::size_t hash{0};
 };
 
@@ -345,7 +352,7 @@ std::pair<ddwaf_object, object_store::attribute> extract_schema::eval_impl(
         return {};
     }
 
-    object_store::attribute attr =
+    const object_store::attribute attr =
         input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
     return {schema::generate(input.value, scanners_, deadline), attr};
 }

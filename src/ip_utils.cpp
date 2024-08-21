@@ -6,8 +6,11 @@
 
 #include <array>
 #include <cctype>
+#include <cstdint>
 #include <cstring>
 #include <string>
+#include <string_view>
+#include <sys/socket.h>
 
 #include "ip_utils.hpp"
 
@@ -32,7 +35,7 @@ namespace ddwaf {
 namespace {
 template <int af, std::size_t N> bool parse_ip_internal(std::array<char, N> ip, ipaddr &out)
 {
-    int ret = inet_pton(af, ip.data(), &out.data);
+    const int ret = inet_pton(af, ip.data(), &out.data);
     if (ret != 1) {
         return false;
     }

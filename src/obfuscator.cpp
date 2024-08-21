@@ -6,7 +6,12 @@
 
 #include "obfuscator.hpp"
 #include "log.hpp"
-#include "utils.hpp"
+#include "re2.h"
+#include "stringpiece.h"
+#include <cstdint>
+#include <memory>
+#include <stdexcept>
+#include <string_view>
 
 namespace ddwaf {
 

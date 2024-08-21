@@ -5,9 +5,18 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "exclusion/object_filter.hpp"
+#include "clock.hpp"
+#include "ddwaf.h"
 #include "exception.hpp"
+#include "exclusion/common.hpp"
 #include "log.hpp"
+#include "object_store.hpp"
 #include "utils.hpp"
+#include <cstddef>
+#include <stack>
+#include <string_view>
+#include <tuple>
+#include <unordered_set>
 
 namespace ddwaf::exclusion {
 

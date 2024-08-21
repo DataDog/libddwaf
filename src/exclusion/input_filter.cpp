@@ -11,7 +11,20 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "exclusion/input_filter.hpp"
+#include "clock.hpp"
+#include "exclusion/object_filter.hpp"
+#include "expression.hpp"
 #include "log.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
+#include "rule.hpp"
+#include <memory>
+#include <optional>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <utility>
 
 namespace ddwaf::exclusion {
 

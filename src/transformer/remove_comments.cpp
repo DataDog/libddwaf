@@ -5,6 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/remove_comments.hpp"
+#include "transformer/common/cow_string.hpp"
+#include <cstddef>
+#include <utility>
 
 namespace ddwaf::transformer {
 

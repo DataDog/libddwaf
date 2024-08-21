@@ -5,9 +5,19 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "context.hpp"
+#include "clock.hpp"
+#include "collection.hpp"
+#include "ddwaf.h"
+#include "event.hpp"
 #include "exception.hpp"
 #include "log.hpp"
+#include "object_store.hpp"
+#include "processor/base.hpp"
 #include "utils.hpp"
+#include <chrono>
+#include <cstdint>
+#include <string_view>
+#include <vector>
 
 namespace ddwaf {
 
@@ -22,7 +32,7 @@ using attribute = object_store::attribute;
 // on whether the events were ephemeral or not.
 void set_context_event_address(object_store &store)
 {
-    static std::string_view event_addr = "waf.context.event";
+    static const std::string_view event_addr = "waf.context.event";
     static auto event_addr_idx = get_target_index(event_addr);
 
     if (store.has_target(event_addr_idx)) {

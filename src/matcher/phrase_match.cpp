@@ -4,10 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
-#include "exception.hpp"
+#include "ac.h"
 #include "matcher/phrase_match.hpp"
 #include "utils.hpp"
 

@@ -5,6 +5,8 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "transformer/url_querystring.hpp"
+#include "transformer/common/cow_string.hpp"
+#include <cstddef>
 
 namespace ddwaf::transformer {
 

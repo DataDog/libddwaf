@@ -5,8 +5,13 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "uri_utils.hpp"
+#include "ip_utils.hpp"
 #include "utils.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <iostream>
+#include <optional>
+#include <string_view>
 
 /*
    URI           = scheme ":" hier-part [ "?" query ] [ "#" fragment ]

@@ -5,12 +5,28 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "processor/fingerprint.hpp"
+#include "argument_retriever.hpp"
+#include "clock.hpp"
 #include "ddwaf.h"
+#include "log.hpp"
+#include "object_store.hpp"
 #include "sha256.hpp"
+#include "transformer/common/cow_string.hpp"
 #include "transformer/lowercase.hpp"
 #include "utils.hpp"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+#include <span>
 #include <stdexcept>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace ddwaf {
 namespace {
@@ -42,7 +58,7 @@ struct string_buffer {
             throw std::out_of_range("span[index, N) beyond buffer limit");
         }
 
-        std::span<char, N> res{&buffer[index], N};
+        const std::span<char, N> res{&buffer[index], N};
         index += N;
         return res;
     }
@@ -231,7 +247,7 @@ void generate_fragment_field(string_buffer &buffer, T &generator, Rest... rest)
 template <typename... Generators>
 ddwaf_object generate_fragment(std::string_view header, Generators... generators)
 {
-    std::size_t total_length = header.size() + 1 + generate_fragment_length(generators...);
+    const std::size_t total_length = header.size() + 1 + generate_fragment_length(generators...);
 
     string_buffer buffer{total_length};
     buffer.append_lowercase(header);
@@ -356,7 +372,7 @@ void key_hash_field::operator()(string_buffer &output)
     for (unsigned i = 0; i < value.nbEntries; ++i) {
         const auto &child = value.array[i];
 
-        std::string_view key{
+        const std::string_view key{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
         if (max_string_size > key.size()) {
             max_string_size = key.size();
@@ -373,7 +389,7 @@ void key_hash_field::operator()(string_buffer &output)
     // We also add +1 to account for the trailing comma
     normalized.reserve(max_string_size + 1);
     for (unsigned i = 0; i < keys.size(); ++i) {
-        bool trailing_comma = ((i + 1) < keys.size());
+        const bool trailing_comma = ((i + 1) < keys.size());
         normalize_key(keys[i], normalized, trailing_comma);
         hasher << normalized;
     }
@@ -411,7 +427,7 @@ void kv_hash_fields::operator()(string_buffer &output)
     for (std::size_t i = 0; i < value.nbEntries; ++i) {
         const auto &child = value.array[i];
 
-        std::string_view key{
+        const std::string_view key{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
         std::string_view val;
@@ -440,7 +456,7 @@ void kv_hash_fields::operator()(string_buffer &output)
     for (unsigned i = 0; i < kv_sorted.size(); ++i) {
         auto [key, val] = kv_sorted[i];
 
-        bool trailing_comma = ((i + 1) < kv_sorted.size());
+        const bool trailing_comma = ((i + 1) < kv_sorted.size());
 
         normalize_key(key, normalized, trailing_comma);
         key_hasher << normalized;
@@ -537,7 +553,7 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
         }
 
         const auto &child = headers.value->array[i];
-        std::string_view header{
+        const std::string_view header{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
         normalize_header(header, normalized_header);
@@ -576,7 +592,7 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
 
         const auto &child = headers.value->array[i];
 
-        std::string_view header{
+        const std::string_view header{
             child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
         normalize_header(header, normalized_header);

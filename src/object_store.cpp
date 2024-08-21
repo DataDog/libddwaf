@@ -7,6 +7,10 @@
 #include "object_store.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
+#include "utils.hpp"
+#include <cstddef>
+#include <string>
+#include <string_view>
 
 namespace ddwaf {
 

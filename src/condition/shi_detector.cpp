@@ -5,11 +5,23 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "condition/shi_detector.hpp"
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
 #include "condition/match_iterator.hpp"
+#include "condition/structured_condition.hpp"
+#include "ddwaf.h"
 #include "exception.hpp"
-#include "iterator.hpp"
+#include "exclusion/common.hpp"
+#include "log.hpp"
 #include "tokenizer/shell.hpp"
 #include "utils.hpp"
+#include <cstddef>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 using namespace std::literals;
 
@@ -86,7 +98,7 @@ eval_result shi_detector::eval_impl(const unary_argument<std::string_view> &reso
         if (res.has_value()) {
             std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
-            bool ephemeral = resource.ephemeral || param.ephemeral;
+            const bool ephemeral = resource.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
 

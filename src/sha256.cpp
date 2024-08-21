@@ -15,9 +15,13 @@
 //
 
 #include "sha256.hpp"
-#include <iostream>
-#include <ostream>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <span>
+#include <string>
+#include <string_view>
 
 namespace ddwaf {
 namespace {
@@ -95,7 +99,7 @@ sha256_hash &sha256_hash::operator<<(std::string_view str)
     uint32_t l;
     size_t n;
 
-    if (str.length() == 0) {
+    if (str.empty()) {
         return *this;
     }
     auto len = static_cast<uint32_t>(str.length());
@@ -194,7 +198,7 @@ void sha256_hash::write_digest(std::span<char, DigestLength> output)
     memset(p, 0, block_size);
 
     for (unsigned int nn = 0; nn < DigestLength; nn += 8) {
-        uint32_t ll = hash[nn >> 3];
+        const uint32_t ll = hash[nn >> 3];
         output[nn + 0] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 28) & 0x0f));
         output[nn + 1] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 24) & 0x0f));
         output[nn + 2] = UINT8_TO_HEX_CHAR(static_cast<uint8_t>((ll >> 20) & 0x0f));

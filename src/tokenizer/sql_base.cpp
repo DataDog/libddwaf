@@ -5,12 +5,20 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "tokenizer/sql_base.hpp"
+#include "re2.h"
+#include "stringpiece.h"
+#include "tokenizer/base.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
 #include "tokenizer/sqlite.hpp"
+#include "utils.hpp"
 
 #include <iostream>
+#include <stdexcept>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
 
 namespace ddwaf {
 namespace {

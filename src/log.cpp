@@ -7,6 +7,7 @@
 #include <cstdarg>
 #include <cstdio>
 
+#include "ddwaf.h"
 #include "log.hpp"
 
 namespace ddwaf {

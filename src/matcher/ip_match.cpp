@@ -5,11 +5,17 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <stdexcept>
+#include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
+#include "ip_utils.hpp"
 #include "matcher/ip_match.hpp"
+#include "radixlib.h"
 
 namespace ddwaf::matcher {
 

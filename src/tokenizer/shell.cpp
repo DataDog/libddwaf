@@ -5,7 +5,17 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "tokenizer/shell.hpp"
+#include "re2.h"
+#include "stringpiece.h"
+#include "tokenizer/base.hpp"
 #include "utils.hpp"
+#include <cstddef>
+#include <ostream>
+#include <stdexcept>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace std::literals;
 

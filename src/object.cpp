@@ -228,7 +228,7 @@ static bool ddwaf_object_insert(ddwaf_object *array, ddwaf_object object)
         array->array = newArray;
     }
 
-    memcpy(&((ddwaf_object *)array->array)[array->nbEntries], &object, sizeof(ddwaf_object));
+    memcpy(&(array->array)[array->nbEntries], &object, sizeof(ddwaf_object));
     array->nbEntries += 1;
     return true;
 }
@@ -332,7 +332,7 @@ void ddwaf_object_free(ddwaf_object *object)
     switch (object->type) {
     case DDWAF_OBJ_MAP:
     case DDWAF_OBJ_ARRAY: {
-        auto *value = (ddwaf_object *)object->array;
+        auto *value = object->array;
         if (value != nullptr) {
             for (uint64_t i = 0; i < object->nbEntries; ++i) { ddwaf_object_free(&value[i]); }
 
