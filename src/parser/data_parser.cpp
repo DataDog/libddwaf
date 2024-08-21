@@ -4,11 +4,20 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstdint>
+#include <memory>
+#include <string>
 #include <string_view>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "exception.hpp"
+#include "log.hpp"
+#include "matcher/base.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
+#include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/specification.hpp"
 

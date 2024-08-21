@@ -3,14 +3,21 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <iostream>
+#include <stdexcept>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
 
-#include "tokenizer/sql_base.hpp"
+#include "re2.h"
+#include "stringpiece.h"
+#include "tokenizer/base.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
+#include "tokenizer/sql_base.hpp"
 #include "tokenizer/sqlite.hpp"
-
-#include <iostream>
+#include "utils.hpp"
 
 namespace ddwaf {
 namespace {

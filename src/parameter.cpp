@@ -4,10 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <charconv>
-#include <cinttypes>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
-#include <sstream>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "ddwaf.h"
 #include "exception.hpp"

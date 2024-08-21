@@ -4,10 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2022 Datadog, Inc.
 
-#include <algorithm>
+#include <cstdlib>
 #include <cstring>
-#include <string>
-#include <unordered_map>
 #include <vector>
 
 extern "C" {
@@ -15,8 +13,8 @@ extern "C" {
 #include <utf8proc.h>
 }
 
+#include "transformer/common/cow_string.hpp"
 #include "transformer/common/utf8.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::utf8 {
 
@@ -75,9 +73,11 @@ uint8_t write_codepoint(uint32_t codepoint, char *utf8Buffer, uint64_t lengthLef
         //  A fully correct implementation would make room for the error bytes if there isn't enough
         //  room but we won't bother with that
         if (lengthLeft > 2) {
-            *((uint8_t *)utf8Buffer++) = 0xEFU;
-            *((uint8_t *)utf8Buffer++) = 0xBFU;
-            *((uint8_t *)utf8Buffer++) = 0xBDU;
+            // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+            *reinterpret_cast<uint8_t *>(utf8Buffer++) = 0xEFU;
+            *reinterpret_cast<uint8_t *>(utf8Buffer++) = 0xBFU;
+            *reinterpret_cast<uint8_t *>(utf8Buffer++) = 0xBDU;
+            // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
             return 3;
         }
 
@@ -193,24 +193,35 @@ uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64
     return codepoint;
 }
 
-struct ScratchpadChunck {
+struct ScratchpadChunk {
     char *scratchpad;
     uint64_t length, used{0};
 
-    explicit ScratchpadChunck(uint64_t chunckLength) : length(chunckLength)
+    explicit ScratchpadChunk(uint64_t chunkLength) : length(chunkLength)
     {
         // Allow for potential \0
-        scratchpad = (char *)malloc(length + 1);
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-no-malloc,hicpp-no-malloc)
+        scratchpad = reinterpret_cast<char *>(malloc(length + 1));
     }
 
-    ScratchpadChunck(ScratchpadChunck &) = delete;
-    ScratchpadChunck(ScratchpadChunck &&chunck) noexcept
-        : scratchpad(chunck.scratchpad), length(chunck.length), used(chunck.used)
+    // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc)
+    ~ScratchpadChunk() { free(scratchpad); }
+
+    ScratchpadChunk(const ScratchpadChunk &) = delete;
+    ScratchpadChunk(ScratchpadChunk &&chunk) noexcept
+        : scratchpad(chunk.scratchpad), length(chunk.length), used(chunk.used)
     {
-        chunck.scratchpad = nullptr;
+        chunk.scratchpad = nullptr;
     }
-
-    ~ScratchpadChunck() { free(scratchpad); }
+    ScratchpadChunk &operator=(const ScratchpadChunk &) = delete;
+    ScratchpadChunk &operator=(ScratchpadChunk &&chunk) noexcept
+    {
+        scratchpad = chunk.scratchpad;
+        length = chunk.length;
+        used = chunk.used;
+        chunk.scratchpad = nullptr;
+        return *this;
+    }
 };
 
 size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBufferLength)
@@ -279,12 +290,13 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
 }
 
 // We empirically measured that no codepoint decomposition exceeded 18 codepoints.
-#define INFLIGHT_BUFFER_SIZE 24
-
 bool normalize_string(cow_string &str)
 {
-    int32_t inFlightBuffer[INFLIGHT_BUFFER_SIZE];
-    std::vector<ScratchpadChunck> scratchPad;
+    static constexpr std::size_t inflight_buffer_size = 24;
+
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+    int32_t inFlightBuffer[inflight_buffer_size];
+    std::vector<ScratchpadChunk> scratchPad;
 
     // A tricky part of this conversion is that the output size is totally unknown, but we want to
     // be efficient with our allocations. We're going to write the glyph we're normalising in a
@@ -303,17 +315,18 @@ bool normalize_string(cow_string &str)
         }
 
         const size_t decomposedLength =
-            normalize_codepoint(codepoint, inFlightBuffer, INFLIGHT_BUFFER_SIZE);
+            normalize_codepoint(codepoint, inFlightBuffer, inflight_buffer_size);
 
         // No codepoint can generate more than 18 codepoints, that's extremely odd
         //  Let's drop this codepoint
-        if (decomposedLength > INFLIGHT_BUFFER_SIZE) {
+        if (decomposedLength > inflight_buffer_size) {
             continue;
         }
 
         // Write the codepoints to the scratchpad
         for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength;
              ++inflightBufferIndex) {
+            // NOLINTNEXTLINE(modernize-avoid-c-arrays)
             char utf8Write[4];
             const uint8_t lengthWritten =
                 write_codepoint((uint32_t)inFlightBuffer[inflightBufferIndex], utf8Write, 4);
@@ -322,7 +335,7 @@ bool normalize_string(cow_string &str)
                 scratchPad.emplace_back(scratchPad.back().length);
             }
 
-            ScratchpadChunck &last = scratchPad.back();
+            ScratchpadChunk &last = scratchPad.back();
             memcpy(&last.scratchpad[last.used], utf8Write, lengthWritten);
             last.used += lengthWritten;
         }
@@ -338,17 +351,18 @@ bool normalize_string(cow_string &str)
         scratchPad.front().scratchpad = nullptr;
     } else {
         // Compile the scratch pads into the final normalized string
-        for (const ScratchpadChunck &chunck : scratchPad) { new_length += chunck.used; }
+        for (const ScratchpadChunk &chunk : scratchPad) { new_length += chunk.used; }
 
-        new_buffer = (char *)malloc(new_length + 1);
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-no-malloc,hicpp-no-malloc)
+        new_buffer = reinterpret_cast<char *>(malloc(new_length + 1));
         if (new_buffer == nullptr) {
             return false;
         }
 
         uint64_t writeIndex = 0;
-        for (const ScratchpadChunck &chunck : scratchPad) {
-            memcpy(&new_buffer[writeIndex], chunck.scratchpad, chunck.used);
-            writeIndex += chunck.used;
+        for (const ScratchpadChunk &chunk : scratchPad) {
+            memcpy(&new_buffer[writeIndex], chunk.scratchpad, chunk.used);
+            writeIndex += chunk.used;
         }
     }
 
