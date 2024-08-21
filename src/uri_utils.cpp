@@ -336,7 +336,7 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                 // path which has to be kept
                 expected_token = lookahead_token;
             } else if (i < uri.size() && uri[i] == ':') {
-                token_begin = ++i; // Skip the ':'
+                ++i; // Skip the ':'
                 expected_token = token_type::port;
             } else {
                 // Unexpected characters after IPv6 terminator
