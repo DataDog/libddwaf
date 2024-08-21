@@ -59,8 +59,8 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
         }
     } else {
         // Since the rules_target array is empty, the ID is mandatory
-        current.targets.emplace_back(reference_type::id, at<std::string>(node, "id"),
-            std::unordered_map<std::string, std::string>{});
+        reference_spec ref_spec{reference_type::id, at<std::string>(node, "id"), {}};
+        current.targets.emplace_back(std::move(ref_spec));
         type = reference_type::id;
     }
 

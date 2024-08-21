@@ -18,7 +18,7 @@ if (USE_COLOR EQUAL 0)
 endif()
 
 add_custom_target(tidy
-    COMMAND ${CLANG_TIDY} ${COLOR_OPT} -p ${CMAKE_BINARY_DIR} ${FILE_LIST}
+    COMMAND ${CLANG_TIDY} ${COLOR_OPT} -p ${CMAKE_BINARY_DIR} /home/anil/datadog/libddwaf/src/processor/fingerprint.cpp  #${FILE_LIST}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(tidy_fix

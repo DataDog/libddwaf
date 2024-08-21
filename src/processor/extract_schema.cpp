@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <set>
 #include <string>
@@ -100,19 +101,21 @@ std::size_t node_hash::operator()(const node_scalar &node) const
     return node.hash;
 }
 
-// NOLINTNEXLINE(misc-no-recursion)
+// NOLINTNEXTLINE(misc-no-recursion)
 std::size_t node_hash::operator()(const node_array_ptr &node) const
 {
     if (node->hash == 0) {
         std::size_t value =
             std::hash<bool>{}(node->truncated) ^ std::hash<std::size_t>{}(node->length);
+
+        // NOLINTNEXTLINE(misc-no-recursion)
         for (const auto &child : node->children) { value ^= std::visit(node_hash{}, child); }
         node->hash = value;
     }
     return node->hash;
 }
 
-// NOLINTNEXLINE(misc-no-recursion)
+// NOLINTNEXTLINE(misc-no-recursion)
 std::size_t node_hash::operator()(const node_record_ptr &node) const
 {
     if (node->hash == 0) {
@@ -171,13 +174,13 @@ bool node_equal::operator()(const base_node &lhs, const base_node &rhs) const
 }
 
 struct node_serialize {
-    ddwaf_object operator()(const std::monostate & /*node*/) const noexcept;
-    ddwaf_object operator()(const node_scalar &node) const noexcept;
-    ddwaf_object operator()(const node_array_ptr &node) const noexcept;
-    ddwaf_object operator()(const node_record_ptr &node) const noexcept;
+    ddwaf_object operator()(const std::monostate & /*node*/) const;
+    ddwaf_object operator()(const node_scalar &node) const;
+    ddwaf_object operator()(const node_array_ptr &node) const;
+    ddwaf_object operator()(const node_record_ptr &node) const;
 };
 
-ddwaf_object node_serialize::operator()(const std::monostate & /*node*/) const noexcept
+ddwaf_object node_serialize::operator()(const std::monostate & /*node*/) const
 {
     static constexpr unsigned unknown_type = 0;
 
@@ -188,7 +191,7 @@ ddwaf_object node_serialize::operator()(const std::monostate & /*node*/) const n
     return array;
 }
 
-ddwaf_object node_serialize::operator()(const node_scalar &node) const noexcept
+ddwaf_object node_serialize::operator()(const node_scalar &node) const
 {
     ddwaf_object tmp;
     ddwaf_object array;
@@ -213,7 +216,7 @@ ddwaf_object node_serialize::operator()(const node_scalar &node) const noexcept
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object node_serialize::operator()(const node_array_ptr &node) const noexcept
+ddwaf_object node_serialize::operator()(const node_array_ptr &node) const
 {
     ddwaf_object tmp;
     ddwaf_object array;
@@ -240,7 +243,7 @@ ddwaf_object node_serialize::operator()(const node_array_ptr &node) const noexce
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object node_serialize::operator()(const node_record_ptr &node) const noexcept
+ddwaf_object node_serialize::operator()(const node_record_ptr &node) const
 {
     ddwaf_object tmp;
     ddwaf_object array;
@@ -264,6 +267,7 @@ ddwaf_object node_serialize::operator()(const node_record_ptr &node) const noexc
     return array;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
 
 // NOLINTNEXTLINE(misc-no-recursion)

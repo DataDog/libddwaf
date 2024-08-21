@@ -294,7 +294,7 @@ bool normalize_string(cow_string &str)
 {
     static constexpr std::size_t inflight_buffer_size = 24;
 
-    // NOLINTNEXTLINE(hicpp-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
     int32_t inFlightBuffer[inflight_buffer_size];
     std::vector<ScratchpadChunk> scratchPad;
 
@@ -326,7 +326,7 @@ bool normalize_string(cow_string &str)
         // Write the codepoints to the scratchpad
         for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength;
              ++inflightBufferIndex) {
-            // NOLINTNEXTLINE(hicpp-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
+            // NOLINTNEXTLINE(modernize-avoid-c-arrays)
             char utf8Write[4];
             const uint8_t lengthWritten =
                 write_codepoint((uint32_t)inFlightBuffer[inflightBufferIndex], utf8Write, 4);

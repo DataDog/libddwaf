@@ -35,7 +35,7 @@ namespace {
 
 struct string_buffer {
     explicit string_buffer(std::size_t length)
-        // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
+        // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
         : buffer(reinterpret_cast<char *>(malloc(sizeof(char) * length))), length(length)
     {
         if (buffer == nullptr) {
@@ -43,7 +43,7 @@ struct string_buffer {
         }
     }
 
-    // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
+    // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
     ~string_buffer() { free(buffer); }
 
     string_buffer(const string_buffer &) = delete;
@@ -112,7 +112,7 @@ struct string_buffer {
         ddwaf_object res;
         ddwaf_object_stringl_nc(&res, buffer, index);
         buffer = nullptr;
-        return res;
+        return res; // NOLINT(clang-analyzer-unix.Malloc)
     }
 
     char *buffer{nullptr};
@@ -258,7 +258,6 @@ ddwaf_object generate_fragment(std::string_view header, Generators... generators
 
     generate_fragment_field(buffer, generators...);
 
-    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return buffer.move();
 }
 
