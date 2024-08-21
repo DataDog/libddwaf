@@ -4,17 +4,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "clock.hpp"
+#include <atomic>
+#include <cerrno>
+#include <chrono>
 
 #ifdef __linux__
-
-#  include <system_error>
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #  define _GNU_SOURCE 1
 #  include <ctime>
 #  include <dlfcn.h>
-#  include <log.hpp>
+
+#  include "clock.hpp"
+#  include "log.hpp"
 
 namespace ddwaf {
 namespace {
@@ -25,15 +27,17 @@ constexpr const char *VDSO_CLOCK_GETTIME = "__vdso_clock_gettime64";
 #  else
 constexpr const char *VDSO_CLOCK_GETTIME = "__vdso_clock_gettime";
 #  endif
-} // namespace
 
+// NOLINTNEXTLINE(misc-include-cleaner)
 using clock_gettime_t = int (*)(clockid_t, timespec *);
-
-static clock_gettime_t clock_gettime = &::clock_gettime;
+// NOLINTNEXTLINE(misc-include-cleaner)
+clock_gettime_t clock_gettime = &::clock_gettime;
+} // namespace
 
 monotonic_clock::time_point monotonic_clock::now() noexcept
 {
     struct timespec ts {};
+    // NOLINTNEXTLINE(misc-include-cleaner)
     const int ret = ddwaf::clock_gettime(CLOCK_MONOTONIC, &ts);
     if (ret < 0) {
         bool expected = false;
@@ -64,6 +68,7 @@ struct VdsoInitializer {
     ~VdsoInitializer()
     {
         if (handle != nullptr) {
+            // NOLINTNEXTLINE(misc-include-cleaner)
             ddwaf::clock_gettime = &::clock_gettime;
             dlclose(handle);
         }

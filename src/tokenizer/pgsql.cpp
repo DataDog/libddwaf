@@ -3,9 +3,18 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstdint>
+#include <stdexcept>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
-#include "tokenizer/pgsql.hpp"
 #include "log.hpp"
+#include "re2.h"
+#include "stringpiece.h"
+#include "tokenizer/pgsql.hpp"
+#include "tokenizer/sql_base.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;

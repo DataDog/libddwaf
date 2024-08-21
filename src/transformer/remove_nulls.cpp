@@ -4,6 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstddef>
+
+#include "transformer/common/cow_string.hpp"
 #include "transformer/remove_nulls.hpp"
 
 namespace ddwaf::transformer {
@@ -25,7 +28,7 @@ bool remove_nulls::transform_impl(cow_string &str)
     for (; read < str.length(); ++read) {
         auto c = str.at(read);
         str[write] = c;
-        write += !!c;
+        write += static_cast<std::size_t>(!(c == 0));
     }
 
     str.truncate(write);

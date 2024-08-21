@@ -5,6 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <chrono>
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 #include "matcher/exact_match.hpp"
